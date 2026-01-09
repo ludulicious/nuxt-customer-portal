@@ -73,12 +73,12 @@ const techStack: TechStackItem[] = [
   { label: 'TypeScript', description: 'Typed end-to-end', icon: 'i-simple-icons-typescript', href: 'https://www.typescriptlang.org/', color: '#3178C6' },
   { label: 'PostgreSQL', description: 'Primary database', icon: 'i-simple-icons-postgresql', href: 'https://www.postgresql.org/', color: '#4169E1' },
   // Neon isn't in our installed Simple Icons set; keep a clean fallback icon but still tint it.
-  { label: 'Neon', description: 'Hosted Postgres option', icon: 'i-lucide-database', href: 'https://neon.com/', color: '#00E599' },
   { label: 'Drizzle ORM', description: 'Type-safe ORM', icon: 'i-simple-icons-drizzle', href: 'https://orm.drizzle.team/', color: '#C5F74F' },
   // No Simple Icon found in this repo for better-auth; fallback icon tinted to match the site's cyan accents.
   { label: 'better-auth', description: 'Authentication', icon: 'i-lucide-shield-check', href: 'https://www.better-auth.com/', color: '#00D8FF' },
   { label: 'Docker', description: 'Containerized deployments', icon: 'i-simple-icons-docker', href: 'https://www.docker.com/', color: '#2496ED' },
-  { label: 'Vercel', description: 'Edge hosting & deployments', icon: 'i-simple-icons-vercel', href: 'https://vercel.com/', color: { light: '#000000', dark: '#FFFFFF' } }
+  { label: 'Vercel', description: 'Edge hosting & deployments', icon: 'i-simple-icons-vercel', href: 'https://vercel.com/', color: { light: '#000000', dark: '#FFFFFF' } },
+  { label: 'Neon', description: 'Hosted Postgres option', icon: 'i-lucide-database', href: 'https://neon.com/', color: '#00E599' },
 ]
 
 useSeoMeta({
@@ -94,51 +94,26 @@ useSeoMeta({
 
 <template>
   <div>
-    <UPageHero
-      orientation="horizontal"
-      :ui="{
-        root: 'relative isolate overflow-hidden border-b border-default bg-gradient-to-b from-primary/5 via-transparent to-transparent',
-        container: 'py-14 sm:py-20 lg:py-24 gap-10 sm:gap-14 lg:gap-16'
-      }"
-      :description="description"
-    >
+    <UPageHero orientation="horizontal" :ui="{
+      root: 'relative isolate overflow-hidden border-b border-default bg-gradient-to-b from-primary/5 via-transparent to-transparent',
+      container: 'py-14 sm:py-20 lg:py-24 gap-10 sm:gap-14 lg:gap-16'
+    }" :description="description">
       <template #top>
         <StarsBg />
       </template>
 
       <template #headline>
         <div class="flex flex-wrap items-center gap-2">
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="gap-1"
-          >
-            <UIcon
-              name="i-lucide-sparkles"
-              class="size-3.5"
-            />
+          <UBadge color="primary" variant="subtle" class="gap-1">
+            <UIcon name="i-lucide-sparkles" class="size-3.5" />
             Free & Open Source
           </UBadge>
-          <UBadge
-            color="neutral"
-            variant="subtle"
-            class="gap-1"
-          >
-            <UIcon
-              name="i-lucide-server"
-              class="size-3.5"
-            />
+          <UBadge color="neutral" variant="subtle" class="gap-1">
+            <UIcon name="i-lucide-server" class="size-3.5" />
             Single service
           </UBadge>
-          <UBadge
-            color="neutral"
-            variant="subtle"
-            class="gap-1"
-          >
-            <UIcon
-              name="i-lucide-database"
-              class="size-3.5"
-            />
+          <UBadge color="neutral" variant="subtle" class="gap-1">
+            <UIcon name="i-lucide-database" class="size-3.5" />
             PostgreSQL
           </UBadge>
         </div>
@@ -147,26 +122,16 @@ useSeoMeta({
       <template #title>
         <span>A modern </span>
         <span class="text-primary">Customer Portal</span>
-        <span> built with Nuxt, ready to extend.</span>
+        <span> built with Nuxt, ready to extend</span>
       </template>
 
       <template #links>
-        <UButton
-          to="/getting-started"
-          size="xl"
-          trailing-icon="i-lucide-arrow-right"
-        >
+        <UButton to="/getting-started" size="xl" trailing-icon="i-lucide-arrow-right">
           Get started
         </UButton>
 
-        <UButton
-          to="https://github.com/ludulicious/customer-portal"
-          target="_blank"
-          icon="i-simple-icons-github"
-          size="xl"
-          color="neutral"
-          variant="outline"
-        >
+        <UButton to="https://github.com/ludulicious/customer-portal" target="_blank" icon="i-simple-icons-github"
+          size="xl" color="neutral" variant="outline">
           View on GitHub
         </UButton>
       </template>
@@ -175,19 +140,12 @@ useSeoMeta({
         <div class="space-y-5">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-              <img
-                src="/logo.svg"
-                alt="Project logo"
-                class="size-6"
-              >
+              <img src="/logo.svg" alt="Project logo" class="size-6">
               <div class="font-medium">
                 Portal blueprint
               </div>
             </div>
-            <UBadge
-              color="neutral"
-              variant="subtle"
-            >
+            <UBadge color="neutral" variant="subtle">
               Nuxt 4 + Nuxt UI
             </UBadge>
           </div>
@@ -195,10 +153,7 @@ useSeoMeta({
           <div class="grid gap-3 sm:grid-cols-2">
             <div class="rounded-lg border border-default bg-default/30 p-4">
               <div class="flex items-center gap-2 font-medium">
-                <UIcon
-                  name="i-lucide-log-in"
-                  class="size-4 text-primary"
-                />
+                <UIcon name="i-lucide-log-in" class="size-4 text-primary" />
                 Auth & sessions
               </div>
               <p class="mt-1 text-sm text-muted">
@@ -207,10 +162,7 @@ useSeoMeta({
             </div>
             <div class="rounded-lg border border-default bg-default/30 p-4">
               <div class="flex items-center gap-2 font-medium">
-                <UIcon
-                  name="i-lucide-users"
-                  class="size-4 text-primary"
-                />
+                <UIcon name="i-lucide-users" class="size-4 text-primary" />
                 Multi-tenant structure
               </div>
               <p class="mt-1 text-sm text-muted">
@@ -219,10 +171,7 @@ useSeoMeta({
             </div>
             <div class="rounded-lg border border-default bg-default/30 p-4">
               <div class="flex items-center gap-2 font-medium">
-                <UIcon
-                  name="i-lucide-receipt"
-                  class="size-4 text-primary"
-                />
+                <UIcon name="i-lucide-receipt" class="size-4 text-primary" />
                 Billing flows
               </div>
               <p class="mt-1 text-sm text-muted">
@@ -231,10 +180,7 @@ useSeoMeta({
             </div>
             <div class="rounded-lg border border-default bg-default/30 p-4">
               <div class="flex items-center gap-2 font-medium">
-                <UIcon
-                  name="i-lucide-plug"
-                  class="size-4 text-primary"
-                />
+                <UIcon name="i-lucide-plug" class="size-4 text-primary" />
                 Extensible data
               </div>
               <p class="mt-1 text-sm text-muted">
@@ -248,16 +194,9 @@ useSeoMeta({
               Built with
             </span>
             <div class="flex flex-wrap items-center gap-2">
-              <span
-                v-for="item in techStack.slice(0, 6)"
-                :key="item.label"
-                class="inline-flex items-center gap-1.5 rounded-full border border-default bg-default/30 px-2 py-1 text-xs"
-              >
-                <UIcon
-                  :name="item.icon"
-                  class="size-3.5"
-                  :style="{ color: iconColor(item) }"
-                />
+              <span v-for="item in techStack.slice(0, 6)" :key="item.label"
+                class="inline-flex items-center gap-1.5 rounded-full border border-default bg-default/30 px-2 py-1 text-xs">
+                <UIcon :name="item.icon" class="size-3.5" :style="{ color: iconColor(item) }" />
                 <span class="text-muted">
                   {{ item.label }}
                 </span>
@@ -267,52 +206,25 @@ useSeoMeta({
         </div>
       </UCard>
     </UPageHero>
-
-    <UContainer class="py-10 sm:py-14">
-      <div class="grid gap-4 sm:grid-cols-3">
-        <UPageFeature
-          icon="i-lucide-shield-check"
-          title="Secure by default"
-          description="Multiple login methods, email flows, and 2FA support."
-        />
-        <UPageFeature
-          icon="i-lucide-settings"
-          title="Admin-ready"
-          description="Clients, users, roles/permissions, and custom fields."
-        />
-        <UPageFeature
-          icon="i-lucide-layout-dashboard"
-          title="Customer area"
-          description="Dashboards, orders, invoices, and payments integrations."
-        />
-      </div>
-    </UContainer>
-
-    <UContainer class="py-10 sm:py-14">
+    <UContainer class="py-2 sm:py-4">
       <div class="space-y-12">
-        <USeparator />
-
         <section class="space-y-6">
           <div class="space-y-2">
             <h2 class="text-xl sm:text-2xl font-semibold">
-              What’s included (functional scope)
+              What is included?
             </h2>
             <p class="text-muted max-w-3xl">
-              The portal is structured around clear layouts, secure authentication flows, an admin area, and a customer area.
+              The portal is structured around clear layouts, secure authentication flows, an admin area, and a
+              customer
+              area.
             </p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UCard
-              v-for="section in functionalitySections"
-              :key="section.title"
-            >
+            <UCard v-for="section in functionalitySections" :key="section.title">
               <template #header>
                 <div class="flex items-center gap-2">
-                  <UIcon
-                    :name="section.icon"
-                    class="size-5 text-primary"
-                  />
+                  <UIcon :name="section.icon" class="size-5 text-primary" />
                   <span class="font-medium">
                     {{ section.title }}
                   </span>
@@ -320,10 +232,7 @@ useSeoMeta({
               </template>
 
               <ul class="list-disc ps-5 space-y-1 text-sm text-muted">
-                <li
-                  v-for="item in section.items"
-                  :key="item"
-                >
+                <li v-for="item in section.items" :key="item">
                   {{ item }}
                 </li>
               </ul>
@@ -344,22 +253,12 @@ useSeoMeta({
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <UCard
-              v-for="item in techStack"
-              :key="item.label"
-              as="a"
-              :href="item.href"
-              target="_blank"
+            <UCard v-for="item in techStack" :key="item.label" as="a" :href="item.href" target="_blank"
               rel="noopener noreferrer"
-              class="transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
+              class="transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
               <div class="flex items-start gap-3">
                 <div class="shrink-0 rounded-md border border-default bg-elevated p-2">
-                  <UIcon
-                    :name="item.icon"
-                    class="size-5"
-                    :style="{ color: iconColor(item) }"
-                  />
+                  <UIcon :name="item.icon" class="size-5" :style="{ color: iconColor(item) }" />
                 </div>
                 <div class="space-y-1">
                   <div class="font-medium">
