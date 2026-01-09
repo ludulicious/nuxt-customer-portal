@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@source "../../../content/**/*";
+
+@theme static {
+  --container-8xl: 90rem;
+  --font-sans: 'Public Sans', sans-serif;
+
+  /*
+    Brand palette
+    - primary:   #6EE2F5
+    - secondary: #6454F0
+    Nuxt UI expects full shades from 50..950.
+  */
+
+  /* Primary */
+  --color-primary-50: color-mix(in srgb, #6EE2F5 6%, white);
+  --color-primary-100: color-mix(in srgb, #6EE2F5 12%, white);
+  --color-primary-200: color-mix(in srgb, #6EE2F5 24%, white);
+  --color-primary-300: color-mix(in srgb, #6EE2F5 40%, white);
+  --color-primary-400: color-mix(in srgb, #6EE2F5 70%, white);
+  --color-primary-500: #6EE2F5;
+  --color-primary-600: color-mix(in srgb, #6EE2F5 85%, black);
+  --color-primary-700: color-mix(in srgb, #6EE2F5 70%, black);
+  --color-primary-800: color-mix(in srgb, #6EE2F5 55%, black);
+  --color-primary-900: color-mix(in srgb, #6EE2F5 40%, black);
+  --color-primary-950: color-mix(in srgb, #6EE2F5 25%, black);
+
+  /* Secondary */
+  --color-secondary-50: color-mix(in srgb, #6454F0 6%, white);
+  --color-secondary-100: color-mix(in srgb, #6454F0 12%, white);
+  --color-secondary-200: color-mix(in srgb, #6454F0 24%, white);
+  --color-secondary-300: color-mix(in srgb, #6454F0 40%, white);
+  --color-secondary-400: color-mix(in srgb, #6454F0 70%, white);
+  --color-secondary-500: #6454F0;
+  --color-secondary-600: color-mix(in srgb, #6454F0 85%, black);
+  --color-secondary-700: color-mix(in srgb, #6454F0 70%, black);
+  --color-secondary-800: color-mix(in srgb, #6454F0 55%, black);
+  --color-secondary-900: color-mix(in srgb, #6454F0 40%, black);
+  --color-secondary-950: color-mix(in srgb, #6454F0 25%, black);
+}
+
+:root {
+  --ui-container: var(--container-8xl);
+}
