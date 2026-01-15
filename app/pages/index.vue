@@ -130,6 +130,10 @@ useSeoMeta({
           Get started
         </UButton>
 
+        <UButton to="https://demo.portalnuxt.com" target="_blank" size="xl" color="primary" variant="outline">
+          Try it out
+        </UButton>
+
         <UButton to="https://github.com/ludulicious/customer-portal" target="_blank" icon="i-simple-icons-github"
           size="xl" color="neutral" variant="outline">
           View on GitHub

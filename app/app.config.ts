@@ -36,6 +36,12 @@ export default defineAppConfig({
     credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
     colorMode: false,
     links: [{
+      'label': 'Privacy Policy',
+      'to': '/privacy-policy'
+    }, {
+      'label': 'Terms of Service',
+      'to': '/terms-of-service'
+    }, {
       'icon': 'i-simple-icons-discord',
       'to': 'https://go.nuxt.com/discord',
       'target': '_blank',
