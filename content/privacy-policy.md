@@ -2,9 +2,6 @@
 title: Privacy Policy
 description: How we handle information for the PortalNuxt open source project.
 ---
-
-# Privacy Policy
-
 Effective date: January 15, 2026
 
 This Privacy Policy explains how the PortalNuxt open source project ("Project", "we", "us") collects, uses, and shares information when you use our software, website, documentation, or any hosted demo we operate.

@@ -3,8 +3,6 @@ title: Terms of Service
 description: Terms for using the PortalNuxt open source project and any hosted demo.
 ---
 
-# Terms of Service
-
 Effective date: January 15, 2026
 
 These Terms of Service ("Terms") govern your use of the PortalNuxt open source project ("Project", "we", "us"), our documentation, and any hosted demo we operate. By using the Project or a hosted demo, you agree to these Terms.
