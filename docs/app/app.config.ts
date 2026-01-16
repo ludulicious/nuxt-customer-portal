@@ -36,11 +36,11 @@ export default defineAppConfig({
     credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
     colorMode: false,
     links: [{
-      'label': 'Privacy Policy',
-      'to': '/privacy-policy'
+      label: 'Privacy Policy',
+      to: '/privacy-policy'
     }, {
-      'label': 'Terms of Service',
-      'to': '/terms-of-service'
+      label: 'Terms of Service',
+      to: '/terms-of-service'
     }, {
       'icon': 'i-simple-icons-discord',
       'to': 'https://go.nuxt.com/discord',
@@ -62,11 +62,11 @@ export default defineAppConfig({
     title: 'Table of Contents',
     bottom: {
       title: 'Community',
-      edit: 'https://github.com/nuxt-ui-templates/docs/edit/main/content',
+      edit: 'https://github.com/ludulicious/portalnuxt/edit/main/content',
       links: [{
         icon: 'i-lucide-star',
         label: 'Star on GitHub',
-        to: 'https://github.com/nuxt/ui',
+        to: 'https://github.com/ludulicious/portalnuxt',
         target: '_blank'
       }, {
         icon: 'i-lucide-book-open',
