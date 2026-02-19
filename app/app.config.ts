@@ -27,7 +27,7 @@ export default defineAppConfig({
     colorMode: true,
     links: [{
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/ludulicious/portalnuxt',
+      'to': 'https://github.com/ludulicious/customer-portal',
       'target': '_blank',
       'aria-label': 'GitHub'
     }]
