@@ -14,12 +14,14 @@ type TechStackItem = {
   color: string | { light: string, dark: string }
 }
 
-const colorMode = useColorMode()
+/** Returns style for string colors. Use iconClass for light/dark variants to avoid hydration mismatch. */
+function iconStyle(item: TechStackItem) {
+  return typeof item.color === 'string' ? { color: item.color } : undefined
+}
 
-function iconColor(item: TechStackItem) {
-  return typeof item.color === 'string'
-    ? item.color
-    : (colorMode.value === 'dark' ? item.color.dark : item.color.light)
+/** Returns Tailwind classes for light/dark color variants. Avoids hydration mismatch vs inline style. */
+function iconClass(item: TechStackItem) {
+  return typeof item.color === 'object' ? 'text-black dark:text-white' : ''
 }
 
 const functionalitySections = [
@@ -200,7 +202,7 @@ useSeoMeta({
             <div class="flex flex-wrap items-center gap-2">
               <span v-for="item in techStack.slice(0, 6)" :key="item.label"
                 class="inline-flex items-center gap-1.5 rounded-full border border-default bg-default/30 px-2 py-1 text-xs">
-                <UIcon :name="item.icon" class="size-3.5" :style="{ color: iconColor(item) }" />
+                <UIcon :name="item.icon" class="size-3.5" :class="iconClass(item)" :style="iconStyle(item)" />
                 <span class="text-muted">
                   {{ item.label }}
                 </span>
@@ -262,7 +264,7 @@ useSeoMeta({
               class="transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
               <div class="flex items-start gap-3">
                 <div class="shrink-0 rounded-md border border-default bg-elevated p-2">
-                  <UIcon :name="item.icon" class="size-5" :style="{ color: iconColor(item) }" />
+                  <UIcon :name="item.icon" class="size-5" :class="iconClass(item)" :style="iconStyle(item)" />
                 </div>
                 <div class="space-y-1">
                   <div class="font-medium">

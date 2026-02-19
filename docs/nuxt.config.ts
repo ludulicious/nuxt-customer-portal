@@ -59,6 +59,15 @@ export default defineNuxtConfig({
     provider: 'iconify'
   },
 
+  colorMode: {
+    storage: 'cookie',
+    cookieAttrs: {
+      'max-age': '31536000',
+      path: '/',
+      sameSite: 'Lax'
+    }
+  },
+
   llms: {
     domain: 'https://docs-template.nuxt.dev/',
     title: 'Nuxt Docs Template',
