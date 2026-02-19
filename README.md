@@ -1,82 +1,62 @@
-# Customer Portal (Nuxt)
+# Nuxt Docs Template
 
-A Nuxt application (Nuxt 4) with authentication (Better Auth), organizations, and a PostgreSQL database via Drizzle.
+[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 
-## Quick start (scaffold from GitHub template)
+Use this template to build your own documentation with [Nuxt UI](https://ui.nuxt.com) quickly.
 
-Use Nuxt’s initializer (powered by `unjs/giget`) to create a new project from this repository:
+- [Live demo](https://docs-template.nuxt.dev/)
+- [Documentation](https://ui.nuxt.com/docs/getting-started/installation)
 
-```bash
-npx nuxi init -t github:<org>/<repo> my-customer-portal
+<a href="https://docs-template.nuxt.dev/" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/docs-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/docs-light.png">
+    <img alt="Nuxt Docs Template" src="https://ui.nuxt.com/assets/templates/nuxt/docs-light.png">
+  </picture>
+</a>
+
+## Quick Start
+
+```bash [Terminal]
+npm create nuxt@latest -- -t github:nuxt-ui-templates/docs
 ```
 
-If you prefer the `create-nuxt` wrapper:
+## Deploy your own
 
-```bash
-npm create nuxt@latest -- -t github:<org>/<repo> my-customer-portal
-```
-
-Tip: pin a stable tag/branch if you publish releases for your template:
-
-```bash
-npx nuxi init -t github:<org>/<repo>#<tag-or-branch> my-customer-portal
-```
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=docs&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fdocs&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fdocs-dark.png&demo-url=https%3A%2F%2Fdocs-template.nuxt.dev%2F&demo-title=Nuxt%20Docs%20Template&demo-description=A%20documentation%20template%20powered%20by%20Nuxt%20Content.)
 
 ## Setup
 
-Install dependencies:
+Make sure to install the dependencies:
 
 ```bash
 pnpm install
 ```
 
-Create your local env file from the example:
+## Development Server
 
-```bash
-# macOS / Linux
-cp .env.example .env
-
-# Windows (cmd)
-copy .env.example .env
-```
-
-At minimum, set `DATABASE_URL` in `.env`. Optional providers (Resend, GitHub OAuth) can be left empty until you enable them.
-
-## Development
-
-Start the dev server:
+Start the development server on `http://localhost:3000`:
 
 ```bash
 pnpm dev
 ```
 
-By default this repo runs on `http://localhost:3051` (see `nuxt.config.ts` → `devServer.port`).
-
 ## Production
 
-Build:
+Build the application for production:
 
 ```bash
 pnpm build
 ```
 
-Preview:
+Locally preview production build:
 
 ```bash
 pnpm preview
 ```
 
-## Docker
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 
-Build the image:
+## Renovate integration
 
-```bash
-docker build -t customer-portal .
-```
-
-Run (provide your own `DATABASE_URL`):
-
-```bash
-docker run --rm -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/dbname?schema=public" customer-portal
-```
-
+Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
