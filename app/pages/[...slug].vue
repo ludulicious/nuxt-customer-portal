@@ -38,18 +38,9 @@ defineOgImageComponent('Docs', {
 })
 
 const links = computed(() => {
-  const links = []
-  if (toc?.bottom?.edit) {
-    links.push({
-      icon: 'i-lucide-external-link',
-      label: 'Edit this page',
-      to: `${toc.bottom.edit}/${page?.value?.stem}.${page?.value?.extension}`,
-      target: '_blank'
-    })
-  }
-
-  return [...links, ...(toc?.bottom?.links || [])].filter(Boolean)
+  return toc?.bottom?.links || []
 })
+
 </script>
 
 <template>
@@ -60,12 +51,6 @@ const links = computed(() => {
       :headline="headline"
     >
       <template #links>
-        <UButton
-          v-for="(link, index) in links"
-          :key="index"
-          v-bind="link"
-        />
-
         <PageHeaderLinks />
       </template>
     </UPageHeader>
