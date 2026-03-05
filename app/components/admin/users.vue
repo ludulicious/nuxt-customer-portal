@@ -141,7 +141,7 @@ const updateUserRole = async (userId: string) => {
     showEditRoleModal.value = false
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.updateRole.success'),
+      description: t('admin.user.updateRole.success'),
       color: 'success'
     })
   } catch (err) {
@@ -163,7 +163,7 @@ const openBanModal = (user: AdminUserResponse) => {
   if (user.role === 'admin') {
     toast.add({
       title: t('common.error'),
-      description: t('admin.userManagement.ban.cannotBanAdmin'),
+      description: t('admin.user.ban.cannotBanAdmin'),
       color: 'error'
     })
     return
@@ -240,7 +240,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
     { accessorKey: 'name', header: t('admin.table.name') },
     { accessorKey: 'email', header: t('admin.table.email') },
     { accessorKey: 'role', header: t('admin.table.role') },
-    { accessorKey: 'banned', header: t('admin.userManagement.status.banned') },
+    { accessorKey: 'banned', header: t('admin.user.status.banned') },
     { accessorKey: 'emailVerified', header: t('admin.table.verified') },
     { accessorKey: 'createdAt', header: t('admin.table.created') },
     { accessorKey: 'actions', header: t('admin.table.actions') }
@@ -274,7 +274,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
       <UAlert v-if="error" color="error" variant="soft" :title="error" />
 
       <div v-else-if="users.length === 0" class="text-center py-8">
-        <p class="text-gray-600 dark:text-gray-400">{{ t('admin.table.noUsersFound') }}</p>
+        <p class="text-gray-600 dark:text-gray-400">{{ t('admin.table.noDataFound') }}</p>
       </div>
 
       <UTable
@@ -315,7 +315,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
 
         <template #banned-cell="{ row }">
           <UBadge :color="row.original.banned ? 'error' : 'success'" variant="soft">
-            {{ row.original.banned ? t('admin.userManagement.status.banned') : t('admin.userManagement.status.notBanned') }}
+            {{ row.original.banned ? t('admin.user.status.banned') : t('admin.user.status.notBanned') }}
           </UBadge>
         </template>
 
@@ -337,16 +337,16 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
             // Only show ban/unban option for non-admin users
             if (row.original.role !== 'admin') {
               items.push({
-                label: row.original.banned ? t('admin.userManagement.actions.unban') : t('admin.userManagement.actions.ban'),
+                label: row.original.banned ? t('admin.user.actions.unban') : t('admin.user.actions.ban'),
                 icon: 'i-lucide-ban',
                 onSelect: () => row.original.banned ? openUnbanModal(row.original) : openBanModal(row.original)
               })
             }
             items.push(
-              { label: t('admin.userManagement.actions.impersonate'), icon: 'i-lucide-user-cog', onSelect: () => openImpersonateModal(row.original) },
-              { label: t('admin.userManagement.actions.sessions'), icon: 'i-lucide-monitor', onSelect: () => openSessionsModal(row.original) },
-              { label: t('admin.userManagement.actions.changePassword'), icon: 'i-lucide-key', onSelect: () => openPasswordModal(row.original) },
-              { label: t('admin.userManagement.actions.update'), icon: 'i-lucide-edit', onSelect: () => openUpdateModal(row.original) }
+              { label: t('admin.user.actions.impersonate'), icon: 'i-lucide-user-cog', onSelect: () => openImpersonateModal(row.original) },
+              { label: t('admin.user.actions.sessions'), icon: 'i-lucide-monitor', onSelect: () => openSessionsModal(row.original) },
+              { label: t('admin.user.actions.changePassword'), icon: 'i-lucide-key', onSelect: () => openPasswordModal(row.original) },
+              { label: t('admin.user.actions.update'), icon: 'i-lucide-edit', onSelect: () => openUpdateModal(row.original) }
             )
             return items
           })()]" :content="{ align: 'end' }">

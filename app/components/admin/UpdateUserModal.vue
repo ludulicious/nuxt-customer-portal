@@ -59,13 +59,13 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.update.success'),
+      description: t('admin.user.update.success'),
       color: 'success'
     })
     open.value = false
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.update.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.update.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -77,25 +77,25 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.update.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.update.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="updateForm" :schema="updateSchema" class="space-y-4" @submit="handleUpdateSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('admin.userManagement.update.description') }}
+          {{ t('admin.user.update.description') }}
         </p>
 
-        <UFormField name="name" :label="t('admin.userManagement.update.name')">
+        <UFormField name="name" :label="t('admin.user.update.name')">
           <UInput
             v-model="updateForm.name"
-            :placeholder="t('admin.userManagement.update.name')"
+            :placeholder="t('admin.user.update.name')"
             class="w-full"
           />
         </UFormField>
 
-        <UFormField name="image" :label="t('admin.userManagement.update.image')">
+        <UFormField name="image" :label="t('admin.user.update.image')">
           <UInput
             v-model="updateForm.image"
-            :placeholder="t('admin.userManagement.update.imagePlaceholder')"
+            :placeholder="t('admin.user.update.imagePlaceholder')"
             class="w-full"
           />
         </UFormField>
@@ -105,7 +105,7 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
             {{ t('common.cancel') }}
           </UButton>
           <UButton type="submit">
-            {{ t('admin.userManagement.update.confirm') }}
+            {{ t('admin.user.update.confirm') }}
           </UButton>
         </div>
       </UForm>

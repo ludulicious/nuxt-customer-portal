@@ -29,13 +29,13 @@ const unbanUser = async () => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.unban.success'),
+      description: t('admin.user.unban.success'),
       color: 'success'
     })
     open.value = false
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.unban.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.unban.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -47,11 +47,11 @@ const unbanUser = async () => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.unban.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.unban.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <div class="space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('admin.userManagement.unban.description') }}
+          {{ t('admin.user.unban.description') }}
         </p>
       </div>
     </template>
@@ -62,7 +62,7 @@ const unbanUser = async () => {
           {{ t('common.cancel') }}
         </UButton>
         <UButton color="success" @click="unbanUser">
-          {{ t('admin.userManagement.unban.confirm') }}
+          {{ t('admin.user.unban.confirm') }}
         </UButton>
       </div>
     </template>

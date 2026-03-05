@@ -2,6 +2,7 @@
 import type { Organization } from '#types'
 
 const { t } = useI18n()
+
 const userStore = useUserStore()
 const { activeOrganizationId, myOrganizations } = storeToRefs(userStore)
 const { setActiveOrganizationId } = userStore

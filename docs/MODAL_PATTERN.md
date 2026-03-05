@@ -244,13 +244,13 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.ban.success'),
+      description: t('admin.user.ban.success'),
       color: 'success'
     })
     open.value = false
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.ban.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.ban.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -262,10 +262,10 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.ban.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.ban.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="form" :schema="formSchema" @submit="handleSubmit">
-        <UFormField name="reason" :label="t('admin.userManagement.ban.reason')">
+        <UFormField name="reason" :label="t('admin.user.ban.reason')">
           <UTextarea v-model="form.reason" />
         </UFormField>
         <div class="flex gap-4 justify-end pt-4">
@@ -273,7 +273,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
             {{ t('common.cancel') }}
           </UButton>
           <UButton type="submit" color="error">
-            {{ t('admin.userManagement.ban.confirm') }}
+            {{ t('admin.user.ban.confirm') }}
           </UButton>
         </div>
       </UForm>

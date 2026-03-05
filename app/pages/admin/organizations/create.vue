@@ -4,10 +4,6 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiError } from '#types'
 import { useOrganization } from '~/composables/useOrganization'
 
-definePageMeta({
-  layout: 'default'
-})
-
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 

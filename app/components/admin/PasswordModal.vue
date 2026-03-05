@@ -44,14 +44,14 @@ const handlePasswordSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.password.success'),
+      description: t('admin.user.password.success'),
       color: 'success'
     })
     open.value = false
     passwordForm.newPassword = ''
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.password.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.password.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -63,18 +63,18 @@ const handlePasswordSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.password.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.password.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="passwordForm" :schema="passwordSchema" class="space-y-4" @submit="handlePasswordSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('admin.userManagement.password.description') }}
+          {{ t('admin.user.password.description') }}
         </p>
 
-        <UFormField name="newPassword" :label="t('admin.userManagement.password.newPassword')" required>
+        <UFormField name="newPassword" :label="t('admin.user.password.newPassword')" required>
           <UInput
             v-model="passwordForm.newPassword"
             type="password"
-            :placeholder="t('admin.userManagement.password.newPasswordPlaceholder')"
+            :placeholder="t('admin.user.password.newPasswordPlaceholder')"
             class="w-full"
           />
         </UFormField>
@@ -84,7 +84,7 @@ const handlePasswordSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
             {{ t('common.cancel') }}
           </UButton>
           <UButton type="submit">
-            {{ t('admin.userManagement.password.confirm') }}
+            {{ t('admin.user.password.confirm') }}
           </UButton>
         </div>
       </UForm>

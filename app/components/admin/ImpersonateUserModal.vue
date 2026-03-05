@@ -29,7 +29,7 @@ const impersonateUser = async () => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.impersonate.success'),
+      description: t('admin.user.impersonate.success'),
       color: 'success'
     })
     open.value = false
@@ -37,7 +37,7 @@ const impersonateUser = async () => {
     // Reload dashboard page
     window.location.href = '/dashboard'
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.impersonate.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -49,12 +49,12 @@ const impersonateUser = async () => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.impersonate.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.impersonate.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <div class="space-y-4">
-        <UAlert color="warning" variant="soft" :title="t('admin.userManagement.impersonate.warning')" />
+        <UAlert color="warning" variant="soft" :title="t('admin.user.impersonate.warning')" />
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('admin.userManagement.impersonate.description') }}
+          {{ t('admin.user.impersonate.description') }}
         </p>
       </div>
     </template>
@@ -65,7 +65,7 @@ const impersonateUser = async () => {
           {{ t('common.cancel') }}
         </UButton>
         <UButton color="warning" @click="impersonateUser">
-          {{ t('admin.userManagement.impersonate.confirm') }}
+          {{ t('admin.user.impersonate.confirm') }}
         </UButton>
       </div>
     </template>

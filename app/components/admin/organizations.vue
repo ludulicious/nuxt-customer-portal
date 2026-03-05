@@ -32,7 +32,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UCard>
+  <UCard class="w-full">
     <template #header>
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 class="text-xl font-semibold">

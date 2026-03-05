@@ -231,7 +231,7 @@ await loadOrganization()
 
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-    <UContainer>
+    <div class="w-full">
       <!-- Back Button -->
       <div v-if="showBackButton" class="mb-4">
         <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" :to="backRoute">
@@ -394,6 +394,6 @@ await loadOrganization()
         message="admin.organization.detail.invitations.confirmDelete.message"
         confirm-text="admin.organization.detail.invitations.confirmDelete.confirm" confirm-color="error"
         @confirm="handleDeleteInvitation" />
-    </UContainer>
+    </div>
   </div>
 </template>

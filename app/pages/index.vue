@@ -51,7 +51,8 @@ useSeoMeta({
   ogDescription: description
 })
 definePageMeta({
-  public: true
+  public: true,
+  layout: 'portal'
 })
 </script>
 

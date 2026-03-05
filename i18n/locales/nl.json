@@ -110,7 +110,7 @@
       "created": "Aangemaakt",
       "email": "E-mail",
       "name": "Naam",
-      "noUsersFound": "Geen gebruikers gevonden",
+      "noDataFound": "Geen gebruikers gevonden",
       "notAvailable": "N.v.t.",
       "role": "Rol",
       "title": "Alle Gebruikers",
@@ -120,7 +120,7 @@
       "pending": "In behandeling",
       "verified": "Geverifieerd"
     },
-    "userManagement": {
+    "user": {
       "updateRole": {
         "title": "Rol Wijzigen",
         "description": "Wijzig de rol voor deze gebruiker",

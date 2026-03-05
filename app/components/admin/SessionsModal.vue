@@ -80,7 +80,7 @@ const revokeSession = async (sessionToken: string) => {
   if (sessionToRevoke && isCurrentSession(sessionToRevoke)) {
     toast.add({
       title: t('common.error'),
-      description: t('admin.userManagement.sessions.cannotRevokeCurrentSession'),
+      description: t('admin.user.sessions.cannotRevokeCurrentSession'),
       color: 'error'
     })
     return
@@ -98,13 +98,13 @@ const revokeSession = async (sessionToken: string) => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.sessions.revokeSuccess'),
+      description: t('admin.user.sessions.revokeSuccess'),
       color: 'success'
     })
     await loadUserSessions()
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.sessions.revokeError')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.sessions.revokeError')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -123,7 +123,7 @@ const revokeAllSessions = async () => {
   if (currentUser.value && currentUser.value.id === props.user.id && currentSession.value?.token) {
     toast.add({
       title: t('common.error'),
-      description: t('admin.userManagement.sessions.cannotRevokeCurrentSession'),
+      description: t('admin.user.sessions.cannotRevokeCurrentSession'),
       color: 'error'
     })
     return
@@ -141,13 +141,13 @@ const revokeAllSessions = async () => {
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.sessions.revokeAllSuccess'),
+      description: t('admin.user.sessions.revokeAllSuccess'),
       color: 'success'
     })
     await loadUserSessions()
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.sessions.revokeError')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.sessions.revokeError')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -163,13 +163,13 @@ const revokeAllSessions = async () => {
 <template>
   <UModal
     v-model:open="open"
-    :title="t('admin.userManagement.sessions.title')"
-    :description="t('admin.userManagement.sessions.description')"
+    :title="t('admin.user.sessions.title')"
+    :description="t('admin.user.sessions.description')"
     :ui="{ content: 'max-w-4xl', footer: 'justify-end' }"
   >
     <template #header>
       <div class="flex items-center justify-between w-full">
-        <h3 class="text-lg font-semibold">{{ t('admin.userManagement.sessions.title') }}</h3>
+        <h3 class="text-lg font-semibold">{{ t('admin.user.sessions.title') }}</h3>
         <UButton
           v-if="currentUser && user && currentUser.id !== user.id"
           color="error"
@@ -178,7 +178,7 @@ const revokeAllSessions = async () => {
           :loading="revokingSession === 'all'"
           @click="revokeAllSessions"
         >
-          {{ t('admin.userManagement.sessions.revokeAll') }}
+          {{ t('admin.user.sessions.revokeAll') }}
         </UButton>
       </div>
     </template>
@@ -191,7 +191,7 @@ const revokeAllSessions = async () => {
         </div>
 
         <div v-else-if="sessions.length === 0" class="text-center py-8">
-          <p class="text-gray-600 dark:text-gray-400">{{ t('admin.userManagement.sessions.noSessions') }}</p>
+          <p class="text-gray-600 dark:text-gray-400">{{ t('admin.user.sessions.noSessions') }}</p>
         </div>
 
         <div v-else class="space-y-2">
@@ -203,19 +203,19 @@ const revokeAllSessions = async () => {
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2">
                 <UBadge :color="isSessionExpired(session.expiresAt) ? 'error' : 'success'" variant="soft" size="xs">
-                  {{ isSessionExpired(session.expiresAt) ? t('admin.userManagement.sessions.expired') : t('admin.userManagement.sessions.active') }}
+                  {{ isSessionExpired(session.expiresAt) ? t('admin.user.sessions.expired') : t('admin.user.sessions.active') }}
                 </UBadge>
               </div>
               <div class="text-sm">
-                <div><strong>{{ t('admin.userManagement.sessions.ipAddress') }}:</strong> {{ session.ipAddress || t('admin.table.notAvailable') }}</div>
-                <div><strong>{{ t('admin.userManagement.sessions.userAgent') }}:</strong> {{ session.userAgent || t('admin.table.notAvailable') }}</div>
-                <div><strong>{{ t('admin.userManagement.sessions.createdAt') }}:</strong> {{ new Date(session.createdAt).toLocaleString(locale) }}</div>
-                <div><strong>{{ t('admin.userManagement.sessions.expiresAt') }}:</strong> {{ new Date(session.expiresAt).toLocaleString(locale) }}</div>
+                <div><strong>{{ t('admin.user.sessions.ipAddress') }}:</strong> {{ session.ipAddress || t('admin.table.notAvailable') }}</div>
+                <div><strong>{{ t('admin.user.sessions.userAgent') }}:</strong> {{ session.userAgent || t('admin.table.notAvailable') }}</div>
+                <div><strong>{{ t('admin.user.sessions.createdAt') }}:</strong> {{ new Date(session.createdAt).toLocaleString(locale) }}</div>
+                <div><strong>{{ t('admin.user.sessions.expiresAt') }}:</strong> {{ new Date(session.expiresAt).toLocaleString(locale) }}</div>
               </div>
             </div>
             <template v-if="isCurrentSession(session)">
               <UBadge color="primary" variant="soft" size="sm">
-                {{ t('admin.userManagement.sessions.currentSession') }}
+                {{ t('admin.user.sessions.currentSession') }}
               </UBadge>
             </template>
             <UButton
@@ -226,7 +226,7 @@ const revokeAllSessions = async () => {
               :loading="revokingSession === session.token"
               @click="revokeSession(session.token)"
             >
-              {{ t('admin.userManagement.sessions.revoke') }}
+              {{ t('admin.user.sessions.revoke') }}
             </UButton>
           </div>
         </div>

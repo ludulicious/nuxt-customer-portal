@@ -99,39 +99,42 @@
         }
       },
       "list": {
-        "title": "All Organizations",
+        "title": "Organizations",
         "createButton": "Create Organization",
         "loading": "Loading organizations...",
         "empty": "No organizations found",
         "view": "View"
       }
     },
-    "roles": {
-      "admin": "admin",
-      "user": "user"
-    },
-    "table": {
-      "actions": "Actions",
-      "created": "Created",
-      "email": "Email",
-      "name": "Name",
-      "noUsersFound": "No users found",
-      "notAvailable": "N/A",
-      "role": "Role",
-      "title": "All Users",
-      "verified": "Verified"
-    },
-    "verification": {
-      "pending": "Pending",
-      "verified": "Verified"
-    },
-    "userManagement": {
+    "user": {
+      "roles": {
+        "admin": "admin",
+        "user": "user"
+      },
+      "list": {
+        "title": "Users",
+        "createButton": "Create User",
+        "loading": "Loading users...",
+        "empty": "No users found",
+        "actions": "Actions",
+        "created": "Created",
+        "email": "Email",
+        "name": "Name",
+        "noDataFound": "No users found",
+        "notAvailable": "N/A",
+        "role": "Role",
+        "verified": "Verified"
+      },
       "updateRole": {
         "title": "Update Role",
         "description": "Update the role for this user",
         "confirm": "Update Role",
         "success": "Role updated successfully",
         "error": "Failed to update role"
+      },
+      "verification": {
+        "pending": "Pending",
+        "verified": "Verified"
       },
       "ban": {
         "title": "Ban User",

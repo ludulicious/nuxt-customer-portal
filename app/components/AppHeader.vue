@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '~/utils/auth-client'
 
@@ -20,37 +19,16 @@ const hasMultipleOrganizations = computed(() => {
 // Dummy ref for sidebarOpen (not used in header, but required by composable)
 const sidebarOpen = ref(false)
 
-// Get navigation links from composable
-const { links, searchGroups } = useNavigationLinks(sidebarOpen)
+// Get navigation links for search groups
+const { searchGroups } = useNavigationLinks(sidebarOpen)
 
-// Function to check if a route is active
-const isRouteActive = (itemPath: string) => {
-  const currentPath = route.path
+const { modules, activeModuleId } = useModuleNavigation()
 
-  // Exact match for root paths
-  if (itemPath === '/' && currentPath === '/') return true
-
-  // For other paths, check if current path starts with the item path
-  // This handles sub-pages like /blog/[slug] matching /blog
-  if (itemPath !== '/' && currentPath.startsWith(itemPath)) return true
-
-  return false
-}
-
-// Transform navigation links for horizontal menu
-const navigationItems = computed(() => {
-  // Get main navigation links (first group) - these are already context-aware from the composable
-  return links.value[0]?.map(item => ({
-    ...item,
-    active: isRouteActive(item.to as string)
-  })) || []
-})
-
-// Combined items for display
-const items = computed(() => {
-  // The composable already handles different menus for home vs dashboard
-  // So we just use the navigation items directly
-  return navigationItems.value
+const moduleItems = computed(() => {
+  return modules.value.map(module => ({
+    ...module,
+    active: module.id === activeModuleId.value
+  }))
 })
 
 // Create a reactive locale ref that's properly initialized
@@ -79,13 +57,13 @@ const stopImpersonating = async () => {
     await authClient.admin.stopImpersonating()
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.impersonate.stopSuccess'),
+      description: t('admin.user.impersonate.stopSuccess'),
       color: 'success'
     })
     // Reload dashboard page
     window.location.href = '/dashboard'
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.stopError')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.impersonate.stopError')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -103,7 +81,7 @@ const stopImpersonating = async () => {
       color="warning"
       variant="soft"
       orientation="horizontal"
-      :title="t('admin.userManagement.impersonate.indicator')"
+      :title="t('admin.user.impersonate.indicator')"
       :ui="{
         root: 'rounded-none py-2 px-4',
         wrapper: 'flex-1',
@@ -118,13 +96,13 @@ const stopImpersonating = async () => {
           size="sm"
           @click="stopImpersonating"
         >
-          {{ t('admin.userManagement.impersonate.stop') }}
+          {{ t('admin.user.impersonate.stop') }}
         </UButton>
       </template>
     </UAlert>
   </div>
 
-  <UHeader>
+  <UHeader :ui="{ container: 'w-full max-w-none px-0' }">
     <template #left>
       <div class="flex items-center gap-3">
         <!-- Logo Icon -->
@@ -178,47 +156,22 @@ const stopImpersonating = async () => {
       </div>
     </template>
 
-    <nav class="hidden lg:flex items-center gap-6">
-      <template v-for="item in items" :key="item.to">
-        <!-- Settings dropdown with children -->
-        <UDropdownMenu v-if="'type' in item && item.type === 'trigger' && 'children' in item && item.children" :items="[item.children.map((child: NavigationMenuItem) => ({
-          label: child.label,
-          to: child.to,
-          exact: 'exact' in child ? child.exact : undefined,
-          icon: child.icon
-        }))]">
-          <UButton
-            :variant="item.active ? 'solid' : 'ghost'"
-            :color="item.active ? 'primary' : 'neutral'"
-            size="sm"
-            :class="[
-              'text-sm font-medium transition-colors',
-              item.active
-                ? 'text-primary font-semibold'
-                : 'text-muted hover:text-highlighted'
-            ]"
-          >
-            <UIcon v-if="'icon' in item && item.icon" :name="item.icon" class="w-4 h-4 mr-1.5" />
-            {{ item.label }}
-            <UIcon name="i-lucide-chevron-down" class="w-4 h-4 ml-1.5" />
-          </UButton>
-        </UDropdownMenu>
-        <!-- Regular link -->
-        <NuxtLink v-else :to="item.to as string" :class="[
+    <nav class="hidden lg:flex flex-1 items-center justify-center gap-6">
+      <template v-for="module in moduleItems" :key="module.id">
+        <NuxtLink :to="module.to" :class="[
           'text-sm font-medium transition-colors flex items-center gap-1.5',
-          item.active
+          module.active
             ? 'text-primary font-semibold'
             : 'text-muted hover:text-highlighted'
         ]">
-          <UIcon v-if="'icon' in item && item.icon" :name="item.icon" class="w-4 h-4" />
-          {{ item.label }}
-          <UBadge v-if="'badge' in item && item.badge" :label="typeof item.badge === 'object' ? item.badge.label : item.badge" variant="subtle" size="xs" />
+          <UIcon v-if="module.icon" :name="module.icon" class="w-4 h-4" />
+          {{ module.label }}
         </NuxtLink>
       </template>
     </nav>
 
     <template #right>
-      <div class="hidden lg:flex items-center gap-3">
+      <div class="hidden lg:flex items-center gap-3 ml-auto">
         <UButton
           icon="i-lucide-search"
           color="neutral"
@@ -246,47 +199,16 @@ const stopImpersonating = async () => {
     </template>
 
     <template #body>
-      <nav class="flex flex-col gap-4 -mx-2.5">
-        <template v-for="item in items" :key="item.to">
-          <!-- Settings dropdown with children (mobile) -->
-          <div v-if="'type' in item && item.type === 'trigger' && 'children' in item && item.children" class="flex flex-col gap-2">
-            <div :class="[
-              'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md flex items-center justify-between',
-              item.active
-                ? 'text-primary font-semibold bg-primary/10'
-                : 'text-muted'
-            ]">
-              <div class="flex items-center gap-2">
-                <UIcon v-if="'icon' in item && item.icon" :name="item.icon" class="w-4 h-4" />
-                {{ item.label }}
-              </div>
-            </div>
-            <div class="flex flex-col gap-1 pl-6">
-              <NuxtLink
-                v-for="child in item.children"
-                :key="child.to"
-                :to="child.to"
-                :class="[
-                  'text-sm transition-colors px-2.5 py-1.5 rounded-md',
-                  isRouteActive(child.to as string)
-                    ? 'text-primary font-semibold bg-primary/10'
-                    : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
-                ]"
-              >
-                {{ child.label }}
-              </NuxtLink>
-            </div>
-          </div>
-          <!-- Regular link (mobile) -->
-          <NuxtLink v-else :to="item.to as string" :class="[
+      <nav class="flex flex-col gap-2 -mx-2.5">
+        <template v-for="module in moduleItems" :key="module.id">
+          <NuxtLink :to="module.to" :class="[
             'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md flex items-center gap-2',
-            item.active
+            module.active
               ? 'text-primary font-semibold bg-primary/10'
               : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
           ]">
-            <UIcon v-if="'icon' in item && item.icon" :name="item.icon" class="w-4 h-4" />
-            {{ item.label }}
-            <UBadge v-if="'badge' in item && item.badge" :label="typeof item.badge === 'object' ? item.badge.label : item.badge" variant="subtle" size="xs" />
+            <UIcon v-if="module.icon" :name="module.icon" class="w-4 h-4" />
+            {{ module.label }}
           </NuxtLink>
         </template>
       </nav>

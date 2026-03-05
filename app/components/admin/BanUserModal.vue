@@ -54,7 +54,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
   if (props.user.role === 'admin') {
     toast.add({
       title: t('common.error'),
-      description: t('admin.userManagement.ban.cannotBanAdmin'),
+      description: t('admin.user.ban.cannotBanAdmin'),
       color: 'error'
     })
     open.value = false
@@ -83,13 +83,13 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
 
     toast.add({
       title: t('common.success'),
-      description: t('admin.userManagement.ban.success'),
+      description: t('admin.user.ban.success'),
       color: 'success'
     })
     open.value = false
     emit('success')
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.ban.error')
+    const errorMessage = err instanceof Error ? err.message : t('admin.user.ban.error')
     toast.add({
       title: t('common.error'),
       description: errorMessage,
@@ -101,29 +101,29 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.userManagement.ban.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('admin.user.ban.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="banForm" :schema="banSchema" class="space-y-4" @submit="handleBanSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('admin.userManagement.ban.description') }}
+          {{ t('admin.user.ban.description') }}
         </p>
 
-        <UFormField name="reason" :label="t('admin.userManagement.ban.reason')">
+        <UFormField name="reason" :label="t('admin.user.ban.reason')">
           <UTextarea
             v-model="banForm.reason"
-            :placeholder="t('admin.userManagement.ban.reasonPlaceholder')"
+            :placeholder="t('admin.user.ban.reasonPlaceholder')"
             class="w-full"
           />
         </UFormField>
 
         <div>
-          <label class="block text-sm font-medium mb-2">{{ t('admin.userManagement.ban.expiresIn') }}</label>
+          <label class="block text-sm font-medium mb-2">{{ t('admin.user.ban.expiresIn') }}</label>
           <div class="flex gap-2">
             <UFormField name="expiresInDays" class="flex-1">
               <UInput
                 v-model="banForm.expiresInDays"
                 type="number"
-                :placeholder="t('admin.userManagement.ban.expiresInDays')"
+                :placeholder="t('admin.user.ban.expiresInDays')"
                 min="0"
               />
             </UFormField>
@@ -131,7 +131,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
               <UInput
                 v-model="banForm.expiresInHours"
                 type="number"
-                :placeholder="t('admin.userManagement.ban.expiresInHours')"
+                :placeholder="t('admin.user.ban.expiresInHours')"
                 min="0"
               />
             </UFormField>
@@ -139,13 +139,13 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
               <UInput
                 v-model="banForm.expiresInMinutes"
                 type="number"
-                :placeholder="t('admin.userManagement.ban.expiresInMinutes')"
+                :placeholder="t('admin.user.ban.expiresInMinutes')"
                 min="0"
               />
             </UFormField>
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            {{ t('admin.userManagement.ban.never') }} - Leave all fields empty
+            {{ t('admin.user.ban.never') }} - Leave all fields empty
           </p>
         </div>
 
@@ -154,7 +154,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
             {{ t('common.cancel') }}
           </UButton>
           <UButton type="submit" color="error">
-            {{ t('admin.userManagement.ban.confirm') }}
+            {{ t('admin.user.ban.confirm') }}
           </UButton>
         </div>
       </UForm>
