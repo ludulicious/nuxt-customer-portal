@@ -1,9 +1,7 @@
 {
   "admin": {
-    "dashboard": {
-      "description": " Manage organizations and users",
+    "menu": {
       "organizations": "Organizations",
-      "title": "Admin Dashboard",
       "users": "Users"
     },
     "errors": {

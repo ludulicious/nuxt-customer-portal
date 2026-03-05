@@ -90,13 +90,13 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
 
   const adminMenuConfig: ModuleMenuItemConfig[] = [
     {
-      labelKey: 'admin.dashboard.organizations',
+      labelKey: 'admin.menu.organizations',
       icon: 'i-lucide-building-2',
       to: '/admin/organizations',
       roles: ['admin']
     },
     {
-      labelKey: 'admin.dashboard.users',
+      labelKey: 'admin.menu.users',
       icon: 'i-lucide-users',
       to: '/admin/users',
       roles: ['admin']

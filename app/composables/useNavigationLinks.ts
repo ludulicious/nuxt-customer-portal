@@ -153,7 +153,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
       children: [
         {
           id: 'admin-organizations',
-          labelKey: 'admin.dashboard.organizations',
+          labelKey: 'admin.menu.organizations',
           icon: 'i-lucide-building-2',
           to: '/admin/organizations',
           roles: ['admin'],
@@ -162,7 +162,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
         },
         {
           id: 'admin-users',
-          labelKey: 'admin.dashboard.users',
+          labelKey: 'admin.menu.users',
           icon: 'i-lucide-users',
           to: '/admin/users',
           roles: ['admin'],
