@@ -438,7 +438,7 @@ const toggleSortDir = () => {
                 // Only show ban/unban option for non-admin users
                 if (row.original.role !== 'admin') {
                   items.push({
-                    label: row.original.banned ? t('admin.user.list.actions.unban') : t('admin.user.list.actions.ban'),
+                    label: row.original.banned ? t('admin.user.actions.unban') : t('admin.user.actions.ban'),
                     icon: 'i-lucide-ban',
                     onSelect: () => row.original.banned ? openUnbanModal(row.original) : openBanModal(row.original)
                   })

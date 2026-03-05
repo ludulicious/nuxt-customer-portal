@@ -58,7 +58,7 @@ onMounted(async () => {
 
     <UDashboardGroup
       unit="rem"
-      class="pt-20 lg:pt-16 px-4 mx-auto max-w-[1600px]! w-full!"
+      class="px-4 mx-auto max-w-[1600px]! w-full!"
     >
       <UDashboardSidebar
         id="default"
@@ -68,7 +68,7 @@ onMounted(async () => {
         class="bg-elevated/25 lg:pb-12"
         :ui="{ footer: 'lg:border-t lg:border-default' }"
       >
-        <template #header="{ collapsed }">
+        <template #header>
           <div class="flex flex-col gap-2">
             <UDropdownMenu
               class="lg:hidden"
@@ -85,20 +85,14 @@ onMounted(async () => {
                 class="justify-between"
               />
             </UDropdownMenu>
-            <TeamsMenu :collapsed="collapsed" />
           </div>
         </template>
         <template #default="{ collapsed }">
-          <TeamsMenu :collapsed="collapsed" class="lg:hidden" />
-          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+          <UDashboardSearchButton :collapsed="collapsed" class="mt-2 bg-transparent ring-default" />
           <div v-if="!collapsed && activeModule" class="px-2.5 pt-3 pb-1 text-xs font-semibold uppercase text-muted">
             {{ activeModule.label }}
           </div>
           <UNavigationMenu :collapsed="collapsed" :items="activeModuleMenuItems" orientation="vertical" tooltip popover />
-        </template>
-
-        <template #footer="{ collapsed }">
-          <UserMenu :collapsed="collapsed" />
         </template>
       </UDashboardSidebar>
 
@@ -114,7 +108,7 @@ onMounted(async () => {
       />
 
       <NotificationsSlideover />
-      <UMain class="flex-1 min-w-0">
+      <UMain class="flex-1 min-w-0 pt-20 lg:pt-16">
         <slot />
       </UMain>
     </UDashboardGroup>
