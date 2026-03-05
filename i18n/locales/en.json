@@ -41,9 +41,9 @@
         "backToMyOrganizations": "Back to my organizations",
         "loading": "Loading organization...",
         "title": "Organization Details",
-        "name": "Name:",
-        "slug": "Slug:",
-        "created": "Created:",
+        "name": "",
+        "slug": "Slug",
+        "created": "Created",
         "members": {
           "title": "Members",
           "empty": "No members yet",
@@ -101,7 +101,10 @@
         "createButton": "Create Organization",
         "loading": "Loading organizations...",
         "empty": "No organizations found",
-        "view": "View"
+        "view": "View",
+        "name": "Name",
+        "slug": "Slug",
+        "created": "Created"
       }
     },
     "user": {

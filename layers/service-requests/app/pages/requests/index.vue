@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { QueryResult } from '~~/shared/types'
 
+const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const toast = useToast()
 const userStore = useUserStore()
@@ -18,13 +20,18 @@ const showFiltersModal = ref(false)
 const showSortModal = ref(false)
 
 const pending = ref(true)
-const currentPage = ref(1)
 const pageSize = ref(10)
 const canLoadMore = ref(false)
 const error = ref<Error | null>(null)
 const list = ref<ServiceRequestWithRelations[]>([])
 const totalCount = ref(0)
 const initialLoadComplete = ref(false)
+
+// Initialize from URL (with defaults)
+const currentPage = ref(Math.max(1, Number(route.query.page) || 1))
+const listScrollTop = ref(0)
+const listContainerRef = ref<HTMLElement | null>(null)
+const scrollRestored = ref(false)
 
 // Drawer state (create / view / edit)
 type DrawerMode = 'create' | 'view' | 'edit'
@@ -65,15 +72,27 @@ const closeDrawer = () => {
   drawerOpen.value = false
 }
 
-// Filter state
-const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
-const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
-const categoryFilter = ref<string | undefined>(undefined)
-const searchQuery = ref('')
+// Filter state (init from URL)
+const statusFilter = ref<ServiceRequestStatus | undefined>(
+  (route.query.status as ServiceRequestStatus) || undefined
+)
+const priorityFilter = ref<ServiceRequestPriority | undefined>(
+  (route.query.priority as ServiceRequestPriority) || undefined
+)
+const categoryFilter = ref<string | undefined>(
+  (route.query.category as string) || undefined
+)
+const searchQuery = ref((route.query.search as string) ?? '')
 
-// Sort state
-const sortBy = ref<'createdAt' | 'status' | 'priority'>('createdAt')
-const sortDir = ref<'asc' | 'desc'>('desc')
+// Sort state (init from URL)
+const sortBy = ref<'createdAt' | 'status' | 'priority'>(
+  ['createdAt', 'status', 'priority'].includes(route.query.sortBy as string)
+    ? (route.query.sortBy as 'createdAt' | 'status' | 'priority')
+    : 'createdAt'
+)
+const sortDir = ref<'asc' | 'desc'>(
+  route.query.sortDir === 'asc' ? 'asc' : 'desc'
+)
 
 const sortOptions = computed(() => [
   { label: t('serviceRequest.fields.createdAt'), value: 'createdAt' as const },
@@ -97,6 +116,28 @@ const sortDropdownItems = computed(() => [
 
 const toggleSortDir = () => {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+}
+
+function buildListQuery(includeScrollAndPage = false) {
+  const q: Record<string, string> = {}
+  if (searchQuery.value.trim()) q.search = searchQuery.value.trim()
+  if (statusFilter.value) q.status = statusFilter.value
+  if (priorityFilter.value) q.priority = priorityFilter.value
+  if (categoryFilter.value) q.category = categoryFilter.value
+  if (sortBy.value !== 'createdAt') q.sortBy = sortBy.value
+  if (sortDir.value !== 'desc') q.sortDir = sortDir.value
+  if (includeScrollAndPage && listScrollTop.value > 0) q.scroll = String(listScrollTop.value)
+  if (includeScrollAndPage && currentPage.value > 1) q.page = String(currentPage.value)
+  return q
+}
+
+function getDetailTo(request: ServiceRequestWithRelations) {
+  const query = new URLSearchParams({ from: 'list', ...buildListQuery(true) })
+  return `/requests/${request.id}?${query.toString()}`
+}
+
+function onListScroll() {
+  if (listContainerRef.value) listScrollTop.value = listContainerRef.value.scrollTop
 }
 
 // Extract unique categories from loaded requests
@@ -278,6 +319,7 @@ const handleSearch = () => {
     currentPage.value = 1
     list.value = []
     loadData()
+    router.replace({ path: '/requests', query: buildListQuery() })
   }, 300) // 300ms debounce
 }
 
@@ -286,12 +328,14 @@ watch([statusFilter, priorityFilter, categoryFilter], () => {
   currentPage.value = 1
   list.value = []
   loadData()
+  router.replace({ path: '/requests', query: buildListQuery() })
 })
 
 watch([sortBy, sortDir], () => {
   currentPage.value = 1
   list.value = []
   loadData()
+  router.replace({ path: '/requests', query: buildListQuery() })
 })
 
 // Watch search query with debouncing
@@ -299,14 +343,45 @@ watch(searchQuery, () => {
   handleSearch()
 })
 
-await loadData()
-initialLoadComplete.value = true
+async function loadPagesUpTo(pageNum: number) {
+  if (pageNum < 1) return
+  list.value = []
+  totalCount.value = 0
+  canLoadMore.value = false
+  for (let p = 1; p <= pageNum; p++) {
+    currentPage.value = p
+    await loadData()
+  }
+}
+
+async function restoreScrollAfterLoad() {
+  const scrollVal = route.query.scroll
+  if (scrollRestored.value || scrollVal === undefined || scrollVal === null) return
+  const scrollNum = Number(scrollVal)
+  if (!Number.isFinite(scrollNum) || scrollNum < 0) return
+  await nextTick()
+  if (!listContainerRef.value) return
+  listContainerRef.value.scrollTop = scrollNum
+  scrollRestored.value = true
+}
+
+const initialPage = Math.max(1, Number(route.query.page) || 1)
+if (initialPage > 1) {
+  await loadPagesUpTo(initialPage)
+  initialLoadComplete.value = true
+  await nextTick()
+  restoreScrollAfterLoad()
+} else {
+  await loadData()
+  initialLoadComplete.value = true
+  await nextTick()
+  restoreScrollAfterLoad()
+}
 
 const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString()
 }
 
-const listContainerRef = ref<HTMLElement | null>(null)
 const loadMoreInProgress = ref(false)
 
 const loadMore = async () => {
@@ -596,7 +671,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
       </UModal>
     </template>
     <template #body>
-      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2">
+      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2" @scroll="onListScroll">
         <!-- Keep content away from the scrollbar (works even with overlay scrollbars) -->
         <div class="pr-10">
           <UEmpty
@@ -610,10 +685,10 @@ useInfiniteScroll(listContainerRef, loadMore, {
               v-for="request in list"
               :key="request.id"
               class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
-              @click="openViewDrawer(request)"
+              @click="navigateTo(getDetailTo(request))"
             >
               <div class="flex justify-between items-start">
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                   <h3 class="font-semibold">{{ request.title }}</h3>
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                     {{ request.description }}
@@ -623,7 +698,16 @@ useInfiniteScroll(listContainerRef, loadMore, {
                     <span v-if="request.category">• {{ request.category }}</span>
                   </div>
                 </div>
-                <div class="flex flex-col items-end gap-2">
+                <div class="flex flex-col items-end gap-2 shrink-0">
+                  <UButton
+                    :to="getDetailTo(request)"
+                    variant="outline"
+                    size="sm"
+                    class="shrink-0"
+                    @click.stop
+                  >
+                    {{ t('common.view') }}
+                  </UButton>
                   <UBadge :color="getStatusColor(request.status)" variant="solid" size="md">
                     {{ getStatusBadgeText(request.status) }}
                   </UBadge>

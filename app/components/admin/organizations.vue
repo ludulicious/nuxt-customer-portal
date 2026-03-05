@@ -233,7 +233,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
     </template>
 
     <template #body>
-      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2">
+      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2 -mb-5">
         <div class="pr-10">
           <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
 
@@ -278,7 +278,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
         </div>
       </div>
 
-      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between">
+      <div class="shrink-0 border-t border-default px-4 pt-5 py-2 text-sm text-muted flex items-center justify-between">
         <span>
           {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ organizations.length }}</span>
         </span>

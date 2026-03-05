@@ -30,10 +30,17 @@ const showBackButton = computed(() => {
 // Determine back route based on query parameter and user role
 const backRoute = computed(() => {
   if (isAdmin.value) {
-    // For admins, default to admin organizations list unless coming from my-organizations
-    return route.query.from === 'my-organizations' ? '/my-organizations' : '/admin/organizations'
+    if (route.query.from === 'my-organizations') return '/my-organizations'
+    if (route.query.from === 'admin-organizations') {
+      const query: Record<string, string> = {}
+      if (route.query.search != null && route.query.search !== '') query.search = String(route.query.search)
+      if (route.query.sortBy != null && route.query.sortBy !== '') query.sortBy = String(route.query.sortBy)
+      if (route.query.sortDir != null && route.query.sortDir !== '') query.sortDir = String(route.query.sortDir)
+      if (route.query.scroll != null && route.query.scroll !== '') query.scroll = String(route.query.scroll)
+      return { path: '/admin/organizations', query }
+    }
+    return '/admin/organizations'
   }
-  // For non-admins, only allow going back to my-organizations
   return undefined
 })
 
