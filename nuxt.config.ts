@@ -10,8 +10,7 @@ export default defineNuxtConfig({
     '@nuxtjs/mcp-toolkit',
     '@nuxt/a11y',
     '@nuxt/hints',
-    '@nuxt/scripts',
-    '@nuxt/test-utils'
+    '@nuxt/scripts'
   ],
 
   devtools: {
@@ -28,10 +27,6 @@ export default defineNuxtConfig({
         }
       }
     }
-  },
-
-  experimental: {
-    asyncContext: true
   },
 
   compatibilityDate: '2024-07-11',

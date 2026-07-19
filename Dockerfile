@@ -1,33 +1,35 @@
-# ---- Base Node ----
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
-# ---- Dependencies ----
-FROM base AS builder
-
 # Install pnpm and build tools for native modules
-ENV PNPM_VERSION=10.19.0
+ENV PNPM_VERSION=10.26.1
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm i -g pnpm@$PNPM_VERSION
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++
 
-# Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.yaml* ./
+# Install exactly the dependency graph committed in the lockfile
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Install **all** dependencies (dev + prod)
-RUN pnpm install
-RUN pnpm add -D tailwindcss
 COPY . .
 
 # Rebuild native modules for the target platform
 RUN pnpm rebuild
 
 RUN pnpm build
+
+FROM node:22-bookworm-slim AS runner
+WORKDIR /app
+
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
+ENV PORT=3000
+
+COPY --from=builder /app/.output ./.output
 
 # Copy and set up entrypoint script
 COPY entrypoint.sh .
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 EXPOSE 3000
 
