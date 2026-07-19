@@ -60,12 +60,7 @@ export default defineNuxtConfig({
   },
 
   colorMode: {
-    storage: 'cookie',
-    cookieAttrs: {
-      'max-age': '31536000',
-      path: '/',
-      sameSite: 'Lax'
-    }
+    storage: 'cookie'
   },
 
   llms: {
