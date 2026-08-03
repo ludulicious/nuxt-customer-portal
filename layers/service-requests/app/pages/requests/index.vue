@@ -672,11 +672,9 @@ onUnmounted(() => {
           <UAlert
             v-if="loadError"
             color="error"
-            variant="soft"
             icon="i-lucide-circle-alert"
             :title="t('features.serviceRequests.messages.fetchError')"
-            class="mb-4"
-          />
+            class="mb-4" variant="outline" />
 
           <UEmpty
             v-if="list.length === 0 && !pending"

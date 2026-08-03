@@ -93,7 +93,6 @@ const stopImpersonating = async () => {
   <div v-if="isImpersonating" class="sticky top-0 z-50">
     <UAlert
       color="warning"
-      variant="soft"
       orientation="horizontal"
       :title="t('admin.user.impersonate.indicator')"
       :ui="{
@@ -101,8 +100,7 @@ const stopImpersonating = async () => {
         wrapper: 'flex-1',
         title: 'text-sm font-medium',
         actions: 'ml-auto'
-      }"
-    >
+      }" variant="outline" >
       <template #actions>
         <UButton
           color="warning"

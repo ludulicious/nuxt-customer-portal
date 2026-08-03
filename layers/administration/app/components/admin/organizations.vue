@@ -235,7 +235,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
     <template #body>
       <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2 -mb-5">
         <div class="pr-10">
-          <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
+          <UAlert v-if="error" color="error" :title="error" class="mb-4" variant="outline" />
 
           <UEmpty
             v-if="filteredAndSortedOrganizations.length === 0 && !loading"

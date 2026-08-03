@@ -199,7 +199,7 @@ const toggleSortDir = () => {
       </template>
       <template #body>
         <div class="flex-1 min-h-0 overflow-y-auto p-2">
-          <UAlert v-if="error" color="error" variant="soft" :title="error" />
+          <UAlert v-if="error" color="error" :title="error" variant="outline" />
 
           <AdminUsersTable v-else :users="users" :loading="loading" @refresh="loadUsers" />
         </div>

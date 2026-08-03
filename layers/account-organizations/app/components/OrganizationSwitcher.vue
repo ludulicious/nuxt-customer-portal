@@ -89,11 +89,9 @@ const createNewOrg = () => {
       <div v-else-if="organizations.error" class="space-y-4">
         <UAlert
           color="error"
-          variant="soft"
           :title="t('common.error')"
           :description="organizations.error?.message || 'Failed to load organizations'"
-          icon="i-lucide-alert-circle"
-        />
+          icon="i-lucide-alert-circle" variant="outline" />
       </div>
       <div v-else class="flex flex-col gap-4">
         <UFormField label="Select Organization" name="organization">

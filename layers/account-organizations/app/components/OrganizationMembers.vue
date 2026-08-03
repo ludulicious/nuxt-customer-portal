@@ -226,9 +226,7 @@ onMounted(() => {
           <UAlert
             v-if="error"
             color="error"
-            variant="soft"
-            :title="error"
-          />
+            :title="error" variant="outline" />
 
           <div class="flex gap-4 justify-end">
             <UButton

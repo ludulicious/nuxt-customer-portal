@@ -52,7 +52,7 @@ const impersonateUser = async () => {
   <UModal v-model:open="open" :title="t('admin.user.impersonate.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <div class="space-y-4">
-        <UAlert color="warning" variant="soft" :title="t('admin.user.impersonate.warning')" />
+        <UAlert color="warning" :title="t('admin.user.impersonate.warning')" variant="outline" />
         <p class="text-sm text-gray-600 dark:text-gray-400">
           {{ t('admin.user.impersonate.description') }}
         </p>

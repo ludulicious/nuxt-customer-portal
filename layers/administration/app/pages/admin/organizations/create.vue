@@ -115,10 +115,8 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
           <UAlert
             v-if="error"
             color="error"
-            variant="soft"
             :title="error"
-            class="mb-4"
-          />
+            class="mb-4" variant="outline" />
 
           <div class="flex flex-col sm:flex-row gap-4">
             <UButton

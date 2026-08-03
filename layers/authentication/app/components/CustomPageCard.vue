@@ -16,8 +16,8 @@ const props = withDefaults(defineProps<{
 
 <template>
   <div>
-    <UAlert v-if="props.success" color="success" variant="soft" :description="props.success" />
-    <UAlert v-if="props.error" color="error" variant="soft" :description="props.error" />
+    <UAlert v-if="props.success" color="success" :description="props.success" variant="outline" />
+    <UAlert v-if="props.error" color="error" :description="props.error" variant="outline" />
     <UPageCard variant="subtle" class="max-w-sm w-full mt-10 space-y-6 text-center">
       <template v-if="props.title" #title>
         <div class="flex justify-center mb-10">

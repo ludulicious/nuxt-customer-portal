@@ -307,7 +307,7 @@ const handleGoogleLogin = async () => {
 
 <template>
   <div>
-    <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
+    <UAlert v-if="errorMessage" color="error" :description="errorMessage" variant="outline" />
     <!-- Company Logo -->
     <div class="flex justify-center mb-8">
       <AppLogo class="w-auto h-8 shrink-0" />

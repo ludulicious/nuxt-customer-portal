@@ -74,13 +74,13 @@ const send = async () => {
     <template #body>
       <div v-if="loadingPreview" class="flex justify-center py-10" role="status"><UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" /><span class="sr-only">{{ t('features.timesheets.loading') }}</span></div>
       <UForm v-else :state="draft" :schema="schema" class="space-y-4" @submit="send">
-        <UAlert v-if="preview && !preview.emailProviderConfigured" color="error" icon="i-lucide-key-round" :title="t('features.timesheets.admin.emailProviderNotConfigured')">
+        <UAlert v-if="preview && !preview.emailProviderConfigured" color="error" icon="i-lucide-key-round" :title="t('features.timesheets.admin.emailProviderNotConfigured')" variant="outline" >
           <template #description><p>{{ t(canConfigureEmailProvider ? 'features.timesheets.admin.emailProviderConfigureDescription' : 'features.timesheets.admin.emailProviderContactOwner') }}</p><UButton v-if="canConfigureEmailProvider" to="/settings/organization" color="neutral" variant="solid" size="xs" icon="i-lucide-settings" class="mt-2">{{ t('features.timesheets.admin.emailProviderOpenSettings') }}</UButton></template>
         </UAlert>
-        <UAlert v-else-if="preview && !preview.senderDomainVerified" color="error" icon="i-lucide-shield-alert" :title="t('features.timesheets.admin.emailDomainUnverified')">
+        <UAlert v-else-if="preview && !preview.senderDomainVerified" color="error" icon="i-lucide-shield-alert" :title="t('features.timesheets.admin.emailDomainUnverified')" variant="outline" >
           <template #description><p>{{ preview.senderDomain }}</p><UButton to="https://resend.com/docs/dashboard/domains/introduction" target="_blank" rel="noopener noreferrer" color="neutral" variant="solid" size="xs" trailing-icon="i-lucide-external-link" class="mt-2">{{ t('features.timesheets.admin.emailDomainVerificationHelp') }}</UButton></template>
         </UAlert>
-        <UAlert v-if="preview && preview.totalAttachmentSize > preview.maximumAttachmentSize" color="error" icon="i-lucide-file-warning" :title="t('features.timesheets.admin.emailAttachmentsTooLarge')" />
+        <UAlert v-if="preview && preview.totalAttachmentSize > preview.maximumAttachmentSize" color="error" icon="i-lucide-file-warning" :title="t('features.timesheets.admin.emailAttachmentsTooLarge')" variant="outline" />
         <div class="grid gap-3 sm:grid-cols-2"><UFormField name="to" :label="t('features.timesheets.admin.recipientEmail')"><UInput v-model="draft.to" type="email" class="w-full" /></UFormField><UFormField name="cc" label="CC"><UInput v-model="draft.cc" :placeholder="t('features.timesheets.admin.ccPlaceholder')" class="w-full" /></UFormField></div>
         <UFormField name="locale" :label="t('features.timesheets.admin.emailLanguage')"><USelect v-model="draft.locale" :items="[{ label: t('features.timesheets.languages.nl'), value: 'nl' }, { label: t('features.timesheets.languages.en'), value: 'en' }]" value-key="value" class="w-full" @update:model-value="changeLocale" /></UFormField>
         <UFormField name="subject" :label="t('features.timesheets.admin.emailSubject')"><UInput v-model="draft.subject" class="w-full" /></UFormField>

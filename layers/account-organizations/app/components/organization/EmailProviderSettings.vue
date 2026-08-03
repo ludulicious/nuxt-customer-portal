@@ -64,13 +64,13 @@ const remove = async () => {
       </div>
     </template>
     <div class="space-y-4">
-      <UAlert v-if="statusError" color="error" variant="outline" icon="i-lucide-server-crash"
+      <UAlert v-if="statusError" color="error" icon="i-lucide-server-crash"
         :title="t('organization.emailProvider.statusFailed')"
-        :description="t('organization.emailProvider.statusFailedDescription')" />
-      <UAlert v-else :color="status?.configured ? 'success' : 'warning'" variant="outline"
+        :description="t('organization.emailProvider.statusFailedDescription')" variant="outline" />
+      <UAlert v-else :color="status?.configured ? 'success' : 'warning'"
         :icon="status?.configured ? 'i-lucide-key-round' : 'i-lucide-triangle-alert'"
         :title="t(status?.configured ? 'organization.emailProvider.configured' : 'organization.emailProvider.notConfigured')"
-        :description="status?.configured ? t('organization.emailProvider.masked', { suffix: status.keyLastFour }) : t('organization.emailProvider.required')" />
+        :description="status?.configured ? t('organization.emailProvider.masked', { suffix: status.keyLastFour }) : t('organization.emailProvider.required')" variant="outline" />
       <div v-if="status?.verifiedDomains.length">
         <p class="text-sm font-medium">{{ t('organization.emailProvider.verifiedDomains') }}</p>
         <div class="mt-2 flex flex-wrap gap-2">
