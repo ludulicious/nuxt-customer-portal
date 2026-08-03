@@ -65,7 +65,7 @@ export const useTimesheets = () => {
     $fetch(`/api/timesheets/weeks/${id}/submit`, { method: 'POST' })
 
   const adminBootstrap = (section?: string) => $fetch<TimesheetsAdminBootstrap>('/api/timesheets/admin/bootstrap', { query: section ? { section } : undefined })
-  const createClient = (input: { organizationId: string }) =>
+  const createClient = (input: { mode: 'link', organizationId: string } | { mode: 'create', name: string, slug: string }) =>
     $fetch('/api/timesheets/admin/clients', { method: 'POST', body: input })
   const getClientDeletionEligibility = (id: string) =>
     $fetch<{ clientId: string, clientName: string, canDelete: boolean }>(

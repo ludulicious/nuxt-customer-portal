@@ -113,8 +113,9 @@ test('activity deletion requires an exact non-empty confirmation name', () => {
 })
 
 test('client links require an organization and deletion requires an exact non-empty name', () => {
-  assert.equal(clientCreateSchema.safeParse({ organizationId: 'organization' }).success, true)
-  assert.equal(clientCreateSchema.safeParse({ mode: 'create', name: 'Client', slug: 'client' }).success, false)
+  assert.equal(clientCreateSchema.safeParse({ mode: 'link', organizationId: 'organization' }).success, true)
+  assert.equal(clientCreateSchema.safeParse({ mode: 'create', name: 'Client', slug: 'client' }).success, true)
+  assert.equal(clientCreateSchema.safeParse({ mode: 'create', name: 'Client', slug: 'Invalid slug' }).success, false)
   assert.equal(clientDeleteSchema.safeParse({ clientName: 'Acme' }).success, true)
   assert.equal(clientDeleteSchema.safeParse({ clientName: '' }).success, false)
 })

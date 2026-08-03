@@ -12,7 +12,7 @@ const toast = useToast()
 const api = useTimesheets()
 const busy = ref(false)
 const formOpen = ref(false)
-const organizationId = ref('')
+const newClient = reactive({ mode: (props.data.availableClientOrganizations.length ? 'link' : 'create') as 'link' | 'create', organizationId: '', name: '', slug: '' })
 const editingClientId = ref('')
 const editingContactId = ref('')
 const contactFormOpen = ref(false)
@@ -157,10 +157,17 @@ const saveContact = async () => {
     busy.value = false
   }
 }
-const saveClient = () => run(async () => { await api.createClient({ organizationId: organizationId.value }); organizationId.value = ''; formOpen.value = false })
+const saveClient = () => run(async () => {
+  const input = newClient.mode === 'create'
+    ? { mode: 'create' as const, name: newClient.name, slug: newClient.slug }
+    : { mode: 'link' as const, organizationId: newClient.organizationId }
+  await api.createClient(input)
+  Object.assign(newClient, { mode: props.data.availableClientOrganizations.length ? 'link' : 'create', organizationId: '', name: '', slug: '' })
+  formOpen.value = false
+})
 const removeClient = (client: DeepReadonly<ClientDto>) => run(() => api.deleteClient(client.id, client.name))
 defineExpose({
-  canCreate: computed(() => Boolean(props.data.availableClientOrganizations.length)),
+  canCreate: computed(() => true),
   openCreate: () => { formOpen.value = true },
   refreshList: () => listing.refresh(),
   showCreate: computed(() => Boolean(clients.value.length) && !formOpen.value)
@@ -172,9 +179,9 @@ await listing.load()
   <section class="flex h-full min-h-0 flex-col gap-4">
     <TimesheetsAdminListToolbar v-model:search="listing.search.value" :filters="clientFilters" :filter-values="listing.filters" :sort-options="sortOptions" :sort-by="listing.sortBy.value" :sort-dir="listing.sortDir.value" @filter="listing.setFilter" @sort="listing.sortBy.value = $event" @toggle-direction="listing.toggleSortDir" />
     <TimesheetsAdminPaginatedList class="min-h-0 flex-1" :pagination="listing.pagination.value" :pending="listing.pending.value" :loading-next="listing.loadingNextPage.value" :loading-previous="listing.loadingPreviousPage.value" :has-next="listing.hasNextPage.value" :has-previous="listing.hasPreviousPage.value" @next="listing.loadNext" @previous="listing.loadPrevious" @page="listing.goToPage">
-      <TimesheetsAdminEmptyState v-if="!clients.length && !formOpen && !listing.pending.value" icon="i-lucide-building-2" :title="t('features.timesheets.admin.noClientsTitle')" :description="t('features.timesheets.admin.noClientsDescription')" :action-label="t('features.timesheets.admin.createFirstClient')" :action-disabled="!data.availableClientOrganizations.length" @action="formOpen = true" />
+      <TimesheetsAdminEmptyState v-if="!clients.length && !formOpen && !listing.pending.value" icon="i-lucide-building-2" :title="t('features.timesheets.admin.noClientsTitle')" :description="t('features.timesheets.admin.noClientsDescription')" :action-label="t('features.timesheets.admin.createFirstClient')" @action="formOpen = true" />
       <div class="grid gap-3">
-      <TimesheetsClientForm v-if="formOpen" v-model="organizationId" :data="data" :busy="busy" :show-cancel="true" @submit="saveClient" @cancel="formOpen = false" />
+      <TimesheetsClientForm v-if="formOpen" v-model="newClient" :data="data" :busy="busy" :show-cancel="true" @submit="saveClient" @cancel="formOpen = false" />
     <template v-for="client in clients" :key="client.id">
       <UCard
         role="button"

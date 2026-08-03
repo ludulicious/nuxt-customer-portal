@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
       name,
       slug,
       userId: user.id,
-      keepCurrentActiveOrganization: false
+      keepCurrentActiveOrganization: true
     }
   })
 

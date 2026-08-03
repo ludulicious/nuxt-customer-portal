@@ -54,7 +54,8 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     const result = await createOrganization({
       name: event.data.name,
-      slug: event.data.slug
+      slug: event.data.slug,
+      keepCurrentActiveOrganization: true
     })
 
     if (result.error) {

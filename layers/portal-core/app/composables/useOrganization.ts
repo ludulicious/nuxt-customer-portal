@@ -26,7 +26,7 @@ export const useOrganization = () => {
     return data
   }
 
-  const createOrganization = async (data: { name: string, slug: string }) => {
+  const createOrganization = async (data: { name: string, slug: string, keepCurrentActiveOrganization?: boolean }) => {
     return await authClient.organization.create(data)
   }
 

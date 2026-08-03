@@ -65,7 +65,14 @@ export const timerStartSchema = z.object({
   note: z.string().trim().max(2000).nullable().optional()
 })
 
-export const clientCreateSchema = z.object({ organizationId: id })
+export const clientCreateSchema = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('link'), organizationId: id }),
+  z.object({
+    mode: z.literal('create'),
+    name: z.string().trim().min(2).max(160),
+    slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  })
+])
 
 export const clientDeleteSchema = z.object({ clientName: z.string().min(1).max(160) })
 
