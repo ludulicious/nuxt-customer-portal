@@ -169,7 +169,7 @@ const handleGoogleLogin = async () => {
     </div>
 
     <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
-      :loading="loading" @submit="onSubmit">
+      :loading="loading" :submit="{ label: t('login.submitButton') }" @submit="onSubmit">
       <template #description>
         <template v-if="portalAuth.registrationMode === 'open'">
           {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
@@ -183,7 +183,7 @@ const handleGoogleLogin = async () => {
       </template>
 
       <template #footer>
-        {{ t('login.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink>.
+        {{ t('login.footer') }} <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink>.
       </template>
     </UAuthForm>
   </div>

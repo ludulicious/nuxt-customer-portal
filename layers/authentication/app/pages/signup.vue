@@ -321,7 +321,7 @@ const handleGoogleLogin = async () => {
       </template>
 
       <template #footer>
-        {{ t('signup.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
+        {{ t('signup.footer') }} <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
       </template>
     </UAuthForm>
   </div>
