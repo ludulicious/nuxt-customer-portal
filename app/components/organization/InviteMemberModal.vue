@@ -63,7 +63,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 <template>
   <UModal v-model:open="open" :title="t('organization.members.invitations.modalTitle')" :ui="{ footer: 'justify-end' }">
     <template #body>
-      <UForm :state="form" :schema="formSchema" @submit="handleSubmit" class="space-y-4">
+      <UForm :state="form" :schema="formSchema" class="space-y-4" @submit="handleSubmit">
         <UFormField name="email" :label="t('organization.members.invitations.emailLabel')" required>
           <UInput
             v-model="form.email"
@@ -88,8 +88,8 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
           <UButton
             type="button"
             variant="outline"
-            @click="open = false"
             class="flex-1 sm:flex-none"
+            @click="open = false"
           >
             {{ t('organization.members.invitations.cancel') }}
           </UButton>

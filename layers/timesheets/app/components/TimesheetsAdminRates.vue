@@ -6,7 +6,7 @@ const { t } = useI18n()
 const toast = useToast()
 const timesheets = useTimesheets()
 const busy = ref(false)
-const tariffDrafts = reactive<Record<string, number | null>>({})
+const tariffDrafts = reactive<Record<string, number | undefined>>({})
 
 const run = async (operation: () => Promise<unknown>) => {
   busy.value = true
@@ -27,7 +27,7 @@ const saveTariff = (userId: string) => {
 }
 watch(() => props.data, (data) => {
   for (const member of data.team) {
-    tariffDrafts[member.id] = member.defaultHourlyRateMinor === null ? null : member.defaultHourlyRateMinor / 100
+    tariffDrafts[member.id] = member.defaultHourlyRateMinor === null ? undefined : member.defaultHourlyRateMinor / 100
   }
 }, { immediate: true })
 </script>

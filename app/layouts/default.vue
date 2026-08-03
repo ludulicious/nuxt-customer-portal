@@ -11,7 +11,11 @@ const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
-  items: links.value.flat()
+  items: links.value.flat().map(item => ({
+    label: item.label,
+    icon: item.icon,
+    to: item.to
+  }))
 }])
 
 onMounted(async () => {

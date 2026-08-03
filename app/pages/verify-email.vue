@@ -19,10 +19,10 @@ onMounted(async () => {
 
   // Check for invitation ID in query params or localStorage
   const invIdFromQuery = route.query.invitationId as string | undefined
-  const invIdFromStorage = process.client ? localStorage.getItem('pendingInvitationId') : null
+  const invIdFromStorage = import.meta.client ? localStorage.getItem('pendingInvitationId') : null
   if (invIdFromQuery || invIdFromStorage) {
     invitationId.value = invIdFromQuery || invIdFromStorage || null
-    if (process.client && invIdFromQuery) {
+    if (import.meta.client && invIdFromQuery) {
       localStorage.setItem('pendingInvitationId', invIdFromQuery)
     }
   }
@@ -122,7 +122,7 @@ const verifyCode = async () => {
       if (!isLoginVerification) {
         console.log('Signup verification successful, user may need to sign in')
         // Keep invitation ID in localStorage for acceptance after login
-        if (invitationId.value && process.client) {
+        if (invitationId.value && import.meta.client) {
           localStorage.setItem('pendingInvitationId', invitationId.value)
         }
         // Show a message and redirect to login
@@ -227,7 +227,7 @@ const acceptPendingInvitation = async () => {
     } else {
       console.log('Invitation accepted successfully')
       // Clear stored invitation ID
-      if (process.client) {
+      if (import.meta.client) {
         localStorage.removeItem('pendingInvitationId')
       }
     }

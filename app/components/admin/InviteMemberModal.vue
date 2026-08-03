@@ -106,7 +106,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 <template>
   <UModal v-model:open="open" :title="t('admin.organization.detail.invitations.modalTitle')" :ui="{ footer: 'justify-end' }">
     <template #body>
-      <UForm :state="form" :schema="formSchema" @submit="handleSubmit" class="space-y-4">
+      <UForm :state="form" :schema="formSchema" class="space-y-4" @submit="handleSubmit">
         <UFormField name="email" :label="t('admin.organization.detail.invitations.emailLabel')" required>
           <UInput
             v-model="form.email"

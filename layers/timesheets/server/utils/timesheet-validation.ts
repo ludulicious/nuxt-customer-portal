@@ -93,7 +93,7 @@ export const activityDeleteSchema = z.object({
   activityName: z.string().min(1).max(120)
 })
 
-export const projectCreateSchema = z.object({
+const projectSchema = z.object({
   clientOrganizationId: id,
   name: z.string().trim().min(2).max(160),
   code: z.string().trim().max(40).nullable().optional(),
@@ -102,14 +102,19 @@ export const projectCreateSchema = z.object({
   budgetMinutes: z.number().int().positive().nullable().optional(),
   budgetMinor: moneyMinor.positive().nullable().optional(),
   activityTypeIds: z.array(id).min(1)
-}).refine(v => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
+})
+
+export const projectCreateSchema = projectSchema.refine(v => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
   message: 'End date must not precede start date',
   path: ['endsOn']
 })
 
-export const projectUpdateSchema = projectCreateSchema.partial().extend({
+export const projectUpdateSchema = projectSchema.partial().extend({
   status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
   personRates: z.record(id, moneyMinor).optional()
+}).refine(v => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
+  message: 'End date must not precede start date',
+  path: ['endsOn']
 })
 
 export const hasInvalidProjectActivityAssignments = (

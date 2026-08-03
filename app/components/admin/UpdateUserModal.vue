@@ -22,8 +22,7 @@ const updateSchema = computed(() => z.object({
   name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength')).optional(),
   image: z.union([
     z.string().url(t('profile.validation.imageInvalidUrl')),
-    z.literal('').transform(() => null),
-    z.null()
+    z.literal('').transform(() => null)
   ]).optional()
 }).refine(
   (data) => data.name !== undefined || data.image !== undefined,
@@ -33,9 +32,10 @@ const updateSchema = computed(() => z.object({
 ))
 
 type UpdateSchema = z.output<typeof updateSchema.value>
+type UpdateFormInput = z.input<typeof updateSchema.value>
 
 // Update form state
-const updateForm = reactive<Partial<UpdateSchema>>({
+const updateForm = reactive<Partial<UpdateFormInput>>({
   name: '',
   image: ''
 })

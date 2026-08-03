@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
 
   // Cancel invitation using Better Auth API
   const result = await auth.api.cancelInvitation({
+    headers: event.headers,
     body: {
       invitationId
     }

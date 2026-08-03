@@ -20,7 +20,7 @@ const hasMultipleOrganizations = computed(() => {
 })
 
 const userMenuItems = computed(() => {
-  const menuItems = [
+  const menuItems: DropdownMenuItem[][] = [
     [
       {
         label: currentUser.value?.name || currentUser.value?.email || 'User',
@@ -44,7 +44,7 @@ const userMenuItems = computed(() => {
         target: '_blank'
       }
     ]
-  ] as DropdownMenuItem[]
+  ]
 
   // Add organization menu items for admins/owners
   if (isOrgAdmin.value && menuItems[1]) {

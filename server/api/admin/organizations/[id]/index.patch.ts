@@ -61,7 +61,7 @@ export default defineEventHandler(async (event): Promise<Organization> => {
     throw createError({ statusCode: 409, message: 'Organization slug is already taken' })
   }
 
-  let metadata: Record<string, unknown> = {}
+  let metadata: Record<string, unknown>
   try {
     metadata = existing.metadata ? JSON.parse(existing.metadata) as Record<string, unknown> : {}
   } catch {

@@ -20,18 +20,18 @@ const toast = useToast()
 // Ban form schema
 const banSchema = computed(() => z.object({
   reason: z.string().optional(),
-  expiresInDays: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
-    if (val === '' || val === null || val === undefined) return undefined
+  expiresInDays: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
+    if (val === '' || val === undefined) return undefined
     const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional(),
-  expiresInHours: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
-    if (val === '' || val === null || val === undefined) return undefined
+  expiresInHours: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
+    if (val === '' || val === undefined) return undefined
     const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional(),
-  expiresInMinutes: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
-    if (val === '' || val === null || val === undefined) return undefined
+  expiresInMinutes: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
+    if (val === '' || val === undefined) return undefined
     const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional()

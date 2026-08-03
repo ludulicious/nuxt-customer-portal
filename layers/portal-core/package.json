@@ -9,6 +9,6 @@
     "./server": "./server/portal.ts"
   },
   "peerDependencies": {
-    "nuxt": "^4.2.1"
+    "nuxt": "^4.5.1"
   }
 }
