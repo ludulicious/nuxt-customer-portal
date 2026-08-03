@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
   alias: {
-    '#types': fileURLToPath(new URL('./shared/types', import.meta.url)),
+    '#types': fileURLToPath(new URL('./layers/portal-core/shared/types', import.meta.url)),
     '#portal': fileURLToPath(new URL('./layers/portal-core', import.meta.url)),
   },
   image: {

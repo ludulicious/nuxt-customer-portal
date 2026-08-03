@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { enrichOpenApiContracts } from '../../../server/utils/openapi-contracts'
+import { enrichOpenApiContracts } from '../server/utils/openapi-contracts'
 
 test('adds query parameters and JSON request bodies from validation schemas', () => {
   const document = enrichOpenApiContracts({

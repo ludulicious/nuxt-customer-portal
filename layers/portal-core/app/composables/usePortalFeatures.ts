@@ -16,9 +16,14 @@ export const usePortalFeatures = () => {
     .flatMap(feature => feature.dashboardWidgets ?? [])
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100)))
 
+  const modules = computed(() => features.value
+    .flatMap(feature => feature.modules ?? [])
+    .sort((a, b) => (a.order ?? 100) - (b.order ?? 100)))
+
   return {
     features: readonly(features),
     navigation,
+    modules,
     dashboardWidgets,
     registerFeature
   }

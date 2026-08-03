@@ -1,5 +1,5 @@
 import { requireFeatureAccess } from '#portal/server/portal'
-import { getOrganizationEmailCredentialStatus } from '~~/server/utils/organization-email-provider'
+import { getOrganizationEmailCredentialStatus } from '#portal/server/utils/organization-email-provider'
 import { timesheetsFeature } from '#layers/timesheets/shared/feature'
 import { getOrganizationInvoiceProfile } from '#layers/timesheets/server/utils/timesheet-repository'
 

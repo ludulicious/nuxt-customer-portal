@@ -17,6 +17,26 @@ export interface PortalDashboardWidget {
   order?: number
 }
 
+export interface PortalModuleMenuItem {
+  id: string
+  labelKey: string
+  icon?: string
+  to: string
+  audiences: PortalAudience[]
+  order?: number
+}
+
+export interface PortalModuleContribution {
+  id: string
+  labelKey: string
+  icon?: string
+  to: string
+  routePrefixes: string[]
+  audiences: PortalAudience[]
+  order?: number
+  menuItems?: readonly PortalModuleMenuItem[]
+}
+
 export interface PortalFeaturePolicy<Action extends string = string> {
   owner: readonly Action[]
   admin: readonly Action[]
@@ -26,6 +46,7 @@ export interface PortalFeaturePolicy<Action extends string = string> {
 export interface PortalFeatureDefinition<Action extends string = string> {
   id: string
   navigation?: readonly PortalNavigationItem[]
+  modules?: readonly PortalModuleContribution[]
   dashboardWidgets?: readonly PortalDashboardWidget[]
   policy: PortalFeaturePolicy<Action>
 }

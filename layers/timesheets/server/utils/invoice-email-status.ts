@@ -1,6 +1,6 @@
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '#portal/server/portal'
-import { EmailProviderRejectedError, retrieveOrganizationEmail } from '~~/server/utils/organization-email-provider'
+import { EmailProviderRejectedError, retrieveOrganizationEmail } from '#portal/server/utils/organization-email-provider'
 import { normalizeEmailProviderEvent } from '#layers/timesheets/shared/email-delivery-status'
 import type { InvoiceEmailStatusRefreshDto } from '#layers/timesheets/shared/types/timesheet'
 import { invoice, invoiceEmailDelivery } from '#layers/timesheets/server/db/schema/timesheets'

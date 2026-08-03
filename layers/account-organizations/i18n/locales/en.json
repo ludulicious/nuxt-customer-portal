@@ -1,0 +1,209 @@
+{
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "organization": "Organization",
+    "notifications": "Notifications",
+    "security": "Security",
+    "documentation": "Documentation"
+  },
+  "security": {
+    "password": {
+      "title": "Password",
+      "description": "Confirm your current password before setting a new one.",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter your current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter your new password",
+      "updateButton": "Update Password",
+      "validation": {
+        "currentPasswordRequired": "Current password is required",
+        "newPasswordRequired": "New password is required",
+        "passwordsMustBeDifferent": "New password must be different from current password",
+        "passwordsMustBeDifferentShort": "Passwords must be different"
+      },
+      "success": "Password changed successfully",
+      "error": "Failed to change password"
+    },
+    "account": {
+      "title": "Terminate Account",
+      "description": "No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.",
+      "deleteButton": "Delete account",
+      "deleteRequested": "Account Deletion Requested",
+      "deleteRequestedDescription": "We have sent you a verification email. Please check your email and click the link to complete the account deletion process.",
+      "delete": {
+        "confirmTitle": "Confirm Account Deletion",
+        "confirmMessage": "Are you sure you want to delete your account? This action cannot be undone.",
+        "passwordRequired": "Please enter your password to confirm account deletion",
+        "passwordPlaceholder": "Enter your password",
+        "deleteButton": "Delete Account",
+        "cancelButton": "Cancel",
+        "success": "Account deleted successfully",
+        "error": "Failed to delete account",
+        "emailVerificationSent": "Verification email sent. Please check your email to complete account deletion."
+      }
+    }
+  },
+  "myOrganizations": {
+    "title": "My Organizations",
+    "description": "Manage your organizations and switch between them"
+  },
+  "organization": {
+    "emailProvider": {
+      "title": "Email provider",
+      "description": "Configure this organization's Resend account for invoices, reminders, and other transactional email.",
+      "configured": "Resend is configured",
+      "notConfigured": "Resend is not configured",
+      "required": "Transactional email is blocked until an organization owner configures a key.",
+      "masked": "Active API key ending in {suffix}",
+      "verifiedDomains": "Verified sending domains",
+      "keyLabel": "Resend API key",
+      "replaceLabel": "New Resend API key",
+      "configure": "Configure and validate",
+      "replace": "Validate and replace",
+      "checkAgain": "Check domains again",
+      "remove": "Remove key",
+      "saved": "Resend API key saved",
+      "documentation": "Resend domain verification guide",
+      "invalid": "The Resend API key could not be validated",
+      "invalidDescription": "Check that the key is active and belongs to the intended Resend account.",
+      "permissionRequired": "This Resend key is send-only",
+      "permissionRequiredDescription": "Create a Full access API key in Resend. Domain access is required to verify that this organization may use its configured sender address.",
+      "checkFailed": "Could not check Resend domains",
+      "removed": "Resend API key removed",
+      "statusFailed": "Email provider status could not be loaded",
+      "statusFailedDescription": "Check the server and database migration before configuring a key.",
+      "removeTitle": "Remove Resend API key?",
+      "removeDescription": "Invoices and reminders cannot be sent until a new organization key is configured."
+    },
+    "settings": {
+      "editTitle": "Edit organization",
+      "editButton": "Edit organization",
+      "updateSuccess": "Organization updated successfully",
+      "nameLabel": "Organization Name",
+      "namePlaceholder": "Organization name",
+      "officialCompanyNameLabel": "Official company name",
+      "officialCompanyNamePlaceholder": "Company name as registered",
+      "officialCompanyNameHint": "Used as the sender name on invoices.",
+      "slugLabel": "Organization Slug",
+      "slugPlaceholder": "organization-slug",
+      "slugHint": "URL-friendly identifier for your organization",
+      "slugChecking": "Checking availability...",
+      "slugAvailable": "Slug is available",
+      "slugUnavailable": "Slug is already in use",
+      "slugError": "Unable to check slug availability",
+      "logoLabel": "Organization Logo",
+      "logoChoose": "Choose logo",
+      "logoRemove": "Remove logo",
+      "invoiceLogoHint": "PNG, JPG, GIF, or WebP. The logo is used on new invoices.",
+      "logoHint": "Upload a PNG, JPG, or GIF. Recommended size: 280×160.",
+      "ownerOnly": "Only organization owners can edit name or slug.",
+      "errors": {
+        "loadFailed": "Failed to load organization",
+        "updateFailed": "Failed to update organization",
+        "slugTaken": "Organization slug is already taken"
+      },
+      "validation": {
+        "nameRequired": "Organization name is required",
+        "officialCompanyNameRequired": "Official company name is required",
+        "slugRequired": "Organization slug is required",
+        "slugInvalid": "Slug must be lowercase letters, numbers, and hyphens only",
+        "logoInvalid": "Logo must be a valid image",
+        "logoTooLarge": "Logo must be smaller than 2 MB"
+      }
+    },
+    "members": {
+      "loading": "Loading organization data...",
+      "title": "Members",
+      "empty": "No members yet",
+      "email": "Email",
+      "name": "Name",
+      "role": "Role",
+      "invitations": {
+        "title": "Invitations",
+        "empty": "No pending invitations",
+        "status": "Status",
+        "expires": "Expires",
+        "actions": "Actions",
+        "resend": "Resend",
+        "delete": "Delete",
+        "inviteButton": "Invite Member",
+        "modalTitle": "Invite Member",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "Enter the email address of the member",
+        "roleLabel": "Role",
+        "roleMember": "Member",
+        "roleAdmin": "Admin",
+        "sendButton": "Send Invitation",
+        "sendSuccess": "Invitation sent successfully",
+        "cancel": "Cancel",
+        "confirmResend": {
+          "title": "Resend Invitation",
+          "message": "Are you sure you want to resend the invitation to {email} as {role}?",
+          "confirm": "Resend"
+        },
+        "confirmDelete": {
+          "title": "Delete Invitation",
+          "message": "Are you sure you want to delete this invitation? This action cannot be undone.",
+          "confirm": "Delete"
+        },
+        "resendSuccess": "Invitation resent successfully",
+        "deleteSuccess": "Invitation deleted successfully"
+      },
+      "errors": {
+        "noActiveOrganization": "No active organization found",
+        "onlyOwnerCanManage": "Only organization owners can manage members",
+        "loadFailed": "Failed to load organization data",
+        "sendInvitationFailed": "Failed to send invitation",
+        "resendFailed": "Failed to resend invitation",
+        "cancelFailed": "Failed to cancel invitation"
+      },
+      "confirm": {
+        "cancelInvitation": "Are you sure you want to cancel this invitation?"
+      },
+      "validation": {
+        "emailInvalid": "Invalid email address",
+        "roleRequired": "Role is required"
+      }
+    }
+  },
+  "profile": {
+    "badges": {
+      "active": "Active"
+    },
+    "buttons": {
+      "setActive": "Set active"
+    },
+    "description": "Manage your personal information and profile settings",
+    "fields": {
+      "email": "Email",
+      "emailDescription": "Your email address cannot be changed",
+      "name": "Name",
+      "nameDescription": "Your display name",
+      "namePlaceholder": "Enter your name",
+      "profilePicture": "Profile Picture",
+      "profilePictureDescription": "JPG, GIF or PNG. 1MB Max.",
+      "profilePicturePlaceholder": "https://example.com/avatar.jpg",
+      "chooseAvatar": "Choose"
+    },
+    "messages": {
+      "error": "Error",
+      "failedToActivateOrganization": "Failed to activate organization",
+      "organizationActivated": "Organization activated successfully",
+      "profileUpdated": "Your profile has been updated successfully",
+      "success": "Success",
+      "updateFailed": "Failed to update profile"
+    },
+    "sections": {
+      "organizations": "My organizations",
+      "profileInfo": "Profile Information"
+    },
+    "title": "Profile Settings",
+    "validation": {
+      "atLeastOneField": "At least one field (name or image) must be provided",
+      "imageInvalidUrl": "Image must be a valid URL",
+      "nameMaxLength": "Name must be less than 255 characters",
+      "nameRequired": "Name is required"
+    }
+  }
+}

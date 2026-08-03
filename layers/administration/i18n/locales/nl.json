@@ -1,0 +1,242 @@
+{
+  "admin": {
+    "menu": {
+      "organizations": "Organisaties",
+      "users": "Gebruikers"
+    },
+    "errors": {
+      "accessRequired": "Beheerders toegang vereist",
+      "failedToLoadUsers": "Gebruikers laden mislukt",
+      "failedToUpdateRole": "Gebruikersrol bijwerken mislukt",
+      "cannotChangeOwnRole": "Je kunt je eigen rol niet wijzigen"
+    },
+    "organization": {
+      "title": "Organisatie details",
+      "manage": {
+        "title": "Organisaties beheren",
+        "back": "Terug",
+        "name": "Organisatienaam"
+      },
+      "create": {
+        "title": "Organisatie Aanmaken",
+        "back": "Terug",
+        "name": "Organisatienaam",
+        "namePlaceholder": "Voer organisatienaam in",
+        "slug": "Organisatie Slug",
+        "slugPlaceholder": "organisatie-slug",
+        "slugHint": "URL-vriendelijke identifier voor je organisatie",
+        "createButton": "Organisatie Aanmaken",
+        "cancel": "Annuleren",
+        "errors": {
+          "createFailed": "Organisatie aanmaken mislukt"
+        },
+        "validation": {
+          "nameRequired": "Organisatienaam is verplicht",
+          "slugRequired": "Organisatie slug is verplicht",
+          "slugInvalid": "Slug mag alleen kleine letters, cijfers en streepjes bevatten"
+        }
+      },
+      "detail": {
+        "back": "Terug naar Organisaties",
+        "backToMyOrganizations": "Terug naar mijn organisaties",
+        "loading": "Organisatie laden...",
+        "title": "Organisatie Details",
+        "name": "Naam:",
+        "slug": "Slug:",
+        "created": "Aangemaakt:",
+        "members": {
+          "title": "Leden",
+          "empty": "Nog geen leden",
+          "email": "E-mail",
+          "name": "Naam",
+          "role": "Rol",
+          "remove": "Uit organisatie verwijderen",
+          "removeSuccess": "Lid uit de organisatie verwijderd",
+          "removeFailed": "Lid verwijderen mislukt",
+          "confirmRemove": {
+            "title": "Organisatielid verwijderen",
+            "message": "Wil je {name} uit deze organisatie verwijderen? Het gebruikersaccount wordt niet verwijderd.",
+            "confirm": "Lid verwijderen"
+          }
+        },
+        "invitations": {
+          "title": "Uitnodigingen",
+          "empty": "Geen openstaande uitnodigingen",
+          "email": "E-mail",
+          "role": "Rol",
+          "status": "Status",
+          "expires": "Verloopt",
+          "actions": "Acties",
+          "resend": "Opnieuw Verzenden",
+          "delete": "Verwijderen",
+          "inviteMember": "Lid Uitnodigen",
+          "modalTitle": "Organisatie Lid Uitnodigen",
+          "emailLabel": "E-mailadres",
+          "emailPlaceholder": "Voer het e-mailadres in",
+          "roleLabel": "Rol",
+          "roleRequired": "Rol is verplicht",
+          "roleOwner": "Eigenaar",
+          "roleAdmin": "Beheerder",
+          "roleMember": "Lid",
+          "sendButton": "Uitnodiging Verzenden",
+          "sendSuccess": "Uitnodiging succesvol verzonden",
+          "cancel": "Annuleren",
+          "confirmResend": {
+            "title": "Uitnodiging Opnieuw Verzenden",
+            "message": "Weet je zeker dat je de uitnodiging naar {email} als {role} wilt opnieuw verzenden?",
+            "confirm": "Opnieuw Verzenden"
+          },
+          "confirmDelete": {
+            "title": "Uitnodiging Verwijderen",
+            "message": "Weet je zeker dat je deze uitnodiging wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+            "confirm": "Verwijderen"
+          },
+          "resendSuccess": "Uitnodiging succesvol opnieuw verzonden",
+          "deleteSuccess": "Uitnodiging succesvol verwijderd"
+        },
+        "errors": {
+          "loadFailed": "Organisatie laden mislukt",
+          "sendInvitationFailed": "Uitnodiging verzenden mislukt",
+          "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
+          "cancelFailed": "Uitnodiging annuleren mislukt"
+        },
+        "confirm": {
+          "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"
+        }
+      },
+      "list": {
+        "title": "Alle Organisaties",
+        "description": "Beheer de organisaties die dit portaal gebruiken.",
+        "createButton": "Organisatie Aanmaken",
+        "newOrganization": "Nieuwe organisatie",
+        "createFirstOrganization": "Maak je eerste organisatie aan",
+        "loading": "Organisaties laden...",
+        "empty": "Geen organisaties gevonden",
+        "emptyDescription": "Maak een organisatie aan om leden en instellingen te beheren.",
+        "emptyFiltered": "Geen organisaties gevonden voor de huidige zoekopdracht.",
+        "searchPlaceholder": "Organisaties zoeken...",
+        "resultCount": "{count} organisaties",
+        "totalCount": "{count} totaal",
+        "viewOrganization": "{name} bekijken",
+        "view": "Bekijken",
+        "name": "Naam",
+        "slug": "Slug",
+        "created": "Aangemaakt"
+      }
+    },
+    "user": {
+      "roles": {
+        "admin": "beheerder",
+        "user": "gebruiker"
+      },
+      "list": {
+        "title": "Gebruikers",
+        "createButton": "Gebruiker aanmaken",
+        "loading": "Gebruikers laden...",
+        "empty": "Geen gebruikers gevonden",
+        "actions": "Acties",
+        "created": "Aangemaakt",
+        "email": "E-mail",
+        "name": "Naam",
+        "noDataFound": "Geen gebruikers gevonden",
+        "notAvailable": "N.v.t.",
+        "role": "Rol",
+        "verified": "Geverifieerd"
+      },
+      "updateRole": {
+        "title": "Rol Wijzigen",
+        "description": "Wijzig de rol voor deze gebruiker",
+        "confirm": "Rol Wijzigen",
+        "success": "Rol succesvol gewijzigd",
+        "error": "Rol wijzigen mislukt"
+      },
+      "ban": {
+        "title": "Gebruiker Blokkeren",
+        "description": "Blokkeer deze gebruiker om toegang te krijgen tot de applicatie",
+        "reason": "Blokkeringsreden",
+        "reasonPlaceholder": "Voer reden voor blokkering in (optioneel)",
+        "expiresIn": "Blokkering Verloopt Over",
+        "expiresInDays": "Dagen",
+        "expiresInHours": "Uren",
+        "expiresInMinutes": "Minuten",
+        "never": "Nooit",
+        "confirm": "Gebruiker Blokkeren",
+        "success": "Gebruiker succesvol geblokkeerd",
+        "error": "Gebruiker blokkeren mislukt",
+        "cannotBanAdmin": "Admin gebruikers kunnen niet worden geblokkeerd"
+      },
+      "unban": {
+        "title": "Gebruiker Deblokkeren",
+        "description": "Verwijder de blokkering van deze gebruiker",
+        "confirm": "Gebruiker Deblokkeren",
+        "success": "Gebruiker succesvol gedeblokkeerd",
+        "error": "Gebruiker deblokkeren mislukt"
+      },
+      "impersonate": {
+        "title": "Gebruiker Impersoneren",
+        "description": "Je wordt ingelogd als deze gebruiker. Alle acties worden uitgevoerd namens hen.",
+        "warning": "Waarschuwing: Het impersoneren van een gebruiker geeft je volledige toegang tot hun account.",
+        "confirm": "Impersoneren",
+        "success": "Impersonatie succesvol gestart",
+        "error": "Impersonatie starten mislukt",
+        "stop": "Stop Impersoneren",
+        "stopSuccess": "Impersonatie succesvol gestopt",
+        "stopError": "Impersonatie stoppen mislukt",
+        "indicator": "Je impersoneert momenteel een gebruiker"
+      },
+      "sessions": {
+        "title": "Gebruikerssessies",
+        "description": "Beheer actieve sessies voor deze gebruiker",
+        "noSessions": "Geen actieve sessies",
+        "revoke": "Sessie Intrekken",
+        "revokeAll": "Alle Sessies Intrekken",
+        "revokeSuccess": "Sessie succesvol ingetrokken",
+        "revokeAllSuccess": "Alle sessies succesvol ingetrokken",
+        "revokeError": "Sessie intrekken mislukt",
+        "cannotRevokeCurrentSession": "Je kunt je huidige sessie niet intrekken",
+        "currentSession": "Huidige Sessie",
+        "ipAddress": "IP-adres",
+        "userAgent": "User Agent",
+        "createdAt": "Aangemaakt",
+        "expiresAt": "Verloopt",
+        "active": "Actief",
+        "expired": "Verlopen"
+      },
+      "password": {
+        "title": "Wachtwoord Wijzigen",
+        "description": "Stel een nieuw wachtwoord in voor deze gebruiker",
+        "newPassword": "Nieuw Wachtwoord",
+        "newPasswordPlaceholder": "Voer nieuw wachtwoord in",
+        "confirm": "Wachtwoord Wijzigen",
+        "success": "Wachtwoord succesvol gewijzigd",
+        "error": "Wachtwoord wijzigen mislukt"
+      },
+      "update": {
+        "title": "Gebruiker Bijwerken",
+        "description": "Gebruikersinformatie bijwerken",
+        "name": "Naam",
+        "image": "Profielfoto URL",
+        "imagePlaceholder": "https://voorbeeld.nl/avatar.jpg",
+        "confirm": "Gebruiker Bijwerken",
+        "success": "Gebruiker succesvol bijgewerkt",
+        "error": "Gebruiker bijwerken mislukt"
+      },
+      "actions": {
+        "ban": "Gebruiker Blokkeren",
+        "unban": "Gebruiker Deblokkeren",
+        "impersonate": "Impersoneren",
+        "sessions": "Sessies Bekijken",
+        "changePassword": "Wachtwoord Wijzigen",
+        "update": "Gebruiker Bijwerken"
+      },
+      "status": {
+        "banned": "Geblokkeerd",
+        "notBanned": "Actief"
+      },
+      "verification": {
+        "pending": "In behandeling",
+        "verified": "Geverifieerd"
+      }
+    }
+  }
+}

@@ -5,6 +5,8 @@ import rootEn from '../../../i18n/locales/en.json' with { type: 'json' }
 import rootNl from '../../../i18n/locales/nl.json' with { type: 'json' }
 import layerEn from '../i18n/locales/en.json' with { type: 'json' }
 import layerNl from '../i18n/locales/nl.json' with { type: 'json' }
+import coreEn from '../../portal-core/i18n/locales/en.json' with { type: 'json' }
+import coreNl from '../../portal-core/i18n/locales/nl.json' with { type: 'json' }
 import { serviceRequestFeature } from '../shared/feature'
 import { filterServiceRequestSchema } from '../server/utils/service-request-validation'
 
@@ -20,8 +22,8 @@ test('English and Dutch expose identical feature locale keys', () => {
 
 test('all app translation references exist in both locales', () => {
   const localeKeys = {
-    en: new Set([...objectKeys(rootEn), ...objectKeys(layerEn)]),
-    nl: new Set([...objectKeys(rootNl), ...objectKeys(layerNl)])
+    en: new Set([...objectKeys(rootEn), ...objectKeys(coreEn), ...objectKeys(layerEn)]),
+    nl: new Set([...objectKeys(rootNl), ...objectKeys(coreNl), ...objectKeys(layerNl)])
   }
   const files = [
     ...sourceFiles(new URL('../../../app/', import.meta.url)),

@@ -13,7 +13,7 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "test:features": "tsx --test layers/portal-core/test/*.test.ts layers/service-requests/test/*.test.ts layers/timesheets/test/*.test.ts",
+    "test:features": "tsx --test layers/*/test/*.test.ts",
     "validate:feature-locales": "tsx --test layers/service-requests/test/service-request.test.ts layers/timesheets/test/timesheets.test.ts"
   },
   "dependencies": {

@@ -1,0 +1,242 @@
+{
+  "admin": {
+    "menu": {
+      "organizations": "Organizations",
+      "users": "Users"
+    },
+    "errors": {
+      "accessRequired": "Admin access required",
+      "failedToLoadUsers": "Failed to load users",
+      "failedToUpdateRole": "Failed to update user role",
+      "cannotChangeOwnRole": "You cannot change your own role"
+    },
+    "organization": {
+      "title": "Organization Details",
+      "manage": {
+        "title": "Manage Organizations",
+        "back": "Back",
+        "name": "Organization Name"
+      },
+      "create": {
+        "title": "Create Organization",
+        "back": "Back",
+        "name": "Organization Name",
+        "namePlaceholder": "Enter organization name",
+        "slug": "Organization Slug",
+        "slugPlaceholder": "organization-slug",
+        "slugHint": "URL-friendly identifier for your organization",
+        "createButton": "Create Organization",
+        "cancel": "Cancel",
+        "errors": {
+          "createFailed": "Failed to create organization"
+        },
+        "validation": {
+          "nameRequired": "Organization name is required",
+          "slugRequired": "Organization slug is required",
+          "slugInvalid": "Slug can only contain lowercase letters, numbers, and hyphens"
+        }
+      },
+      "detail": {
+        "back": "Back to Organizations",
+        "backToMyOrganizations": "Back to my organizations",
+        "loading": "Loading organization...",
+        "title": "Organization Details",
+        "name": "Name",
+        "slug": "Slug",
+        "created": "Created",
+        "members": {
+          "title": "Members",
+          "empty": "No members yet",
+          "email": "Email",
+          "name": "Name",
+          "role": "Role",
+          "remove": "Remove from organization",
+          "removeSuccess": "Member removed from the organization",
+          "removeFailed": "Failed to remove the member",
+          "confirmRemove": {
+            "title": "Remove organization member",
+            "message": "Remove {name} from this organization? Their user account will not be deleted.",
+            "confirm": "Remove member"
+          }
+        },
+        "invitations": {
+          "title": "Invitations",
+          "empty": "No pending invitations",
+          "email": "Email",
+          "role": "Role",
+          "status": "Status",
+          "expires": "Expires",
+          "actions": "Actions",
+          "resend": "Resend",
+          "delete": "Delete",
+          "inviteMember": "Invite Member",
+          "modalTitle": "Invite Organization Member",
+          "emailLabel": "Email Address",
+          "emailPlaceholder": "Enter the email address",
+          "roleLabel": "Role",
+          "roleRequired": "Role is required",
+          "roleOwner": "Owner",
+          "roleAdmin": "Admin",
+          "roleMember": "Member",
+          "sendButton": "Send Invitation",
+          "sendSuccess": "Invitation sent successfully",
+          "cancel": "Cancel",
+          "confirmResend": {
+            "title": "Resend Invitation",
+            "message": "Are you sure you want to resend the invitation to {email} as {role}?",
+            "confirm": "Resend"
+          },
+          "confirmDelete": {
+            "title": "Delete Invitation",
+            "message": "Are you sure you want to delete this invitation? This action cannot be undone.",
+            "confirm": "Delete"
+          },
+          "resendSuccess": "Invitation resent successfully",
+          "deleteSuccess": "Invitation deleted successfully"
+        },
+        "errors": {
+          "loadFailed": "Failed to load organization",
+          "sendInvitationFailed": "Failed to send invitation",
+          "resendFailed": "Failed to resend invitation",
+          "cancelFailed": "Failed to cancel invitation"
+        },
+        "confirm": {
+          "cancelInvitation": "Are you sure you want to cancel this invitation?"
+        }
+      },
+      "list": {
+        "title": "Organizations",
+        "description": "Manage the organizations that use this portal.",
+        "createButton": "Create Organization",
+        "newOrganization": "New organization",
+        "createFirstOrganization": "Create your first organization",
+        "loading": "Loading organizations...",
+        "empty": "No organizations found",
+        "emptyDescription": "Create an organization to start managing its members and settings.",
+        "emptyFiltered": "No organizations match the current search.",
+        "searchPlaceholder": "Search organizations...",
+        "resultCount": "{count} organizations",
+        "totalCount": "{count} total",
+        "viewOrganization": "View {name}",
+        "view": "View",
+        "name": "Name",
+        "slug": "Slug",
+        "created": "Created"
+      }
+    },
+    "user": {
+      "roles": {
+        "admin": "admin",
+        "user": "user"
+      },
+      "list": {
+        "title": "Users",
+        "createButton": "Create User",
+        "loading": "Loading users...",
+        "empty": "No users found",
+        "actions": "Actions",
+        "created": "Created",
+        "email": "Email",
+        "name": "Name",
+        "noDataFound": "No users found",
+        "notAvailable": "N/A",
+        "role": "Role",
+        "verified": "Verified"
+      },
+      "updateRole": {
+        "title": "Update Role",
+        "description": "Update the role for this user",
+        "confirm": "Update Role",
+        "success": "Role updated successfully",
+        "error": "Failed to update role"
+      },
+      "verification": {
+        "pending": "Pending",
+        "verified": "Verified"
+      },
+      "ban": {
+        "title": "Ban User",
+        "description": "Ban this user from accessing the application",
+        "reason": "Ban Reason",
+        "reasonPlaceholder": "Enter reason for ban (optional)",
+        "expiresIn": "Ban Expires In",
+        "expiresInDays": "Days",
+        "expiresInHours": "Hours",
+        "expiresInMinutes": "Minutes",
+        "never": "Never",
+        "confirm": "Ban User",
+        "success": "User banned successfully",
+        "error": "Failed to ban user",
+        "cannotBanAdmin": "Admin users cannot be banned"
+      },
+      "unban": {
+        "title": "Unban User",
+        "description": "Remove the ban from this user",
+        "confirm": "Unban User",
+        "success": "User unbanned successfully",
+        "error": "Failed to unban user"
+      },
+      "impersonate": {
+        "title": "Impersonate User",
+        "description": "You will be logged in as this user. All actions will be performed on their behalf.",
+        "warning": "Warning: Impersonating a user gives you full access to their account.",
+        "confirm": "Impersonate",
+        "success": "Impersonation started successfully",
+        "error": "Failed to start impersonation",
+        "stop": "Stop Impersonating",
+        "stopSuccess": "Stopped impersonating successfully",
+        "stopError": "Failed to stop impersonation",
+        "indicator": "You are currently impersonating a user"
+      },
+      "sessions": {
+        "title": "User Sessions",
+        "description": "Manage active sessions for this user",
+        "noSessions": "No active sessions",
+        "revoke": "Revoke Session",
+        "revokeAll": "Revoke All Sessions",
+        "revokeSuccess": "Session revoked successfully",
+        "revokeAllSuccess": "All sessions revoked successfully",
+        "revokeError": "Failed to revoke session",
+        "cannotRevokeCurrentSession": "You cannot revoke your current session",
+        "currentSession": "Current Session",
+        "ipAddress": "IP Address",
+        "userAgent": "User Agent",
+        "createdAt": "Created",
+        "expiresAt": "Expires",
+        "active": "Active",
+        "expired": "Expired"
+      },
+      "password": {
+        "title": "Change Password",
+        "description": "Set a new password for this user",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Enter new password",
+        "confirm": "Change Password",
+        "success": "Password changed successfully",
+        "error": "Failed to change password"
+      },
+      "update": {
+        "title": "Update User",
+        "description": "Update user information",
+        "name": "Name",
+        "image": "Profile Image URL",
+        "imagePlaceholder": "https://example.com/avatar.jpg",
+        "confirm": "Update User",
+        "success": "User updated successfully",
+        "error": "Failed to update user"
+      },
+      "actions": {
+        "ban": "Ban User",
+        "unban": "Unban User",
+        "impersonate": "Impersonate",
+        "sessions": "View Sessions",
+        "changePassword": "Change Password",
+        "update": "Update User"
+      },
+      "status": {
+        "banned": "Banned",
+        "notBanned": "Active"
+      }
+    }
+  }
+}

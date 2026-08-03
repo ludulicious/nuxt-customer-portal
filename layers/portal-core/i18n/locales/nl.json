@@ -1,0 +1,107 @@
+{
+  "common": {
+    "refresh": "Verversen",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "create": "Aanmaken",
+    "createdAt": "Aangemaakt op",
+    "delete": "Verwijderen",
+    "descending": "Aflopend",
+    "direction": "Richting",
+    "edit": "Bewerken",
+    "error": "Er is een fout opgetreden",
+    "learnMore": "Meer informatie",
+    "loaded": "Geladen",
+    "loading": "Laden...",
+    "readMore": "Lees meer",
+    "reset": "Resetten",
+    "confirm": "Bevestigen",
+    "save": "Opslaan",
+    "sort": "Sorteren",
+    "sortBy": "Sorteren op",
+    "success": "Succesvol!",
+    "totalRecords": "Totaal records",
+    "searchPlaceholder": "Zoeken...",
+    "ascending": "Oplopend",
+    "view": "Bekijken"
+  },
+  "menu": {
+    "mobileNavigation": "Modulenavigatie",
+    "activeModuleNavigation": "Menu van actieve module",
+    "moduleMenuDescription": "Pagina's in deze module",
+    "search": "Zoeken",
+    "switchOrganization": "Van organisatie wisselen",
+    "module": "Module",
+    "selectModule": "Selecteer een module",
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "customers": "Customers",
+    "helpSupport": "Help & Support",
+    "feedback": "Feedback",
+    "home": "Home",
+    "documentation": "API-documentatie",
+    "profile": "Profiel",
+    "theme": "Thema",
+    "settings": {
+      "title": "Instellingen",
+      "profile": "Profiel",
+      "organization": "Organisatie",
+      "notifications": "Notificaties",
+      "security": "Beveiliging"
+    },
+    "logout": "Uitloggen"
+  },
+  "dashboard": {
+    "activity": {
+      "recentActivity": "Recente Activiteit"
+    },
+    "buttons": {
+      "export": "Exporteren",
+      "generateReport": "Rapport Genereren",
+      "newOrder": "Nieuwe Order",
+      "newRequest": "Nieuw Verzoek",
+      "viewAll": "Bekijk Alles",
+      "viewAllOrders": "Bekijk Alle Orders",
+      "viewInvoices": "Bekijk Facturen"
+    },
+    "cards": {
+      "completed": "voltooid",
+      "invoices": "Facturen",
+      "overdue": "achterstallig",
+      "paid": "betaald",
+      "pending": "in behandeling",
+      "satisfaction": "Tevredenheid",
+      "slaCompliance": "SLA Naleving",
+      "totalOrders": "Totaal Orders"
+    },
+    "charts": {
+      "chartPlaceholder": "Grafiek visualisatie zou hier komen",
+      "integrationNote": "Integratie met grafiek bibliotheek nodig",
+      "ordersCompleted": "Orders Voltooid",
+      "slaChartPlaceholder": "SLA prestaties grafiek zou hier komen",
+      "slaPerformance": "SLA Prestaties"
+    },
+    "seo": {
+      "description": "Beheer je facilitaire diensten, orders en facturen met ApexPro",
+      "title": "Dashboard - ApexPro Portaal"
+    },
+    "stats": {
+      "avgResolutionTime": "Gem. Oplostijd",
+      "avgResponseTime": "Gem. Reactietijd",
+      "quickActions": "Snelle Acties"
+    },
+    "title": "Dashboard",
+    "welcome": "Welkom terug! Hier is wat er gebeurt met je facilitaire diensten."
+  },
+  "nav": {
+    "admin": "Beheer",
+    "blog": "Blog",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "language": "Taal",
+    "myOrganization": "Mijn Organisatie",
+    "organization": "Organisatie",
+    "portfolio": "Portfolio",
+    "profile": "Profiel"
+  }
+}

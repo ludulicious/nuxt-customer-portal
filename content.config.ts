@@ -1,4 +1,7 @@
 import { defineCollection, z } from '@nuxt/content'
+import { fileURLToPath } from 'node:url'
+
+const publicSiteContent = fileURLToPath(new URL('./layers/public-site/content', import.meta.url))
 
 const variantEnum = z.enum(['solid', 'outline', 'subtle', 'soft', 'ghost', 'link'])
 const colorEnum = z.enum(['primary', 'secondary', 'neutral', 'error', 'warning', 'success', 'info'])
@@ -35,7 +38,7 @@ const createImageSchema = () => z.object({
 
 export const collections = {
   index_en: defineCollection({
-    source: 'en/0.index.yml',
+    source: { cwd: publicSiteContent, include: 'en/0.index.yml' },
     type: 'page',
     schema: z.object({
       hero: z.object({
@@ -71,7 +74,7 @@ export const collections = {
     })
   }),
   index_nl: defineCollection({
-    source: 'nl/0.index.yml',
+    source: { cwd: publicSiteContent, include: 'nl/0.index.yml' },
     type: 'page',
     schema: z.object({
       hero: z.object({
@@ -107,11 +110,11 @@ export const collections = {
     })
   }),
   blog_en: defineCollection({
-    source: 'en/2.blog.yml',
+    source: { cwd: publicSiteContent, include: 'en/2.blog.yml' },
     type: 'page'
   }),
   blog_nl: defineCollection({
-    source: 'nl/2.blog.yml',
+    source: { cwd: publicSiteContent, include: 'nl/2.blog.yml' },
     type: 'page'
   }),
   posts_en: defineCollection({
@@ -119,6 +122,7 @@ export const collections = {
     source: {
       include: 'en/blog/**/*',
       prefix: 'blog/',
+      cwd: publicSiteContent,
     },
     schema: z.object({
       image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),
@@ -138,6 +142,7 @@ export const collections = {
     source: {
       include: 'nl/blog/**/*',
       prefix: 'blog/',
+      cwd: publicSiteContent,
     },
     schema: z.object({
       image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),

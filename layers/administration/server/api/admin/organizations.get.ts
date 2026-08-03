@@ -1,0 +1,35 @@
+import { defineEventHandler, createError } from 'h3'
+import { auth } from '#portal/server/utils/auth'
+import { db } from '#portal/server/utils/db'
+import { organization as organizationTable } from '#portal/server/db/schema/auth-schema'
+import type { SessionUser, AdminOrganizationsResponse } from '#types'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsGet',
+    summary: 'List organizations',
+    description: 'List organizations. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
+export default defineEventHandler(async (event): Promise<AdminOrganizationsResponse> => {
+  const session = await auth.api.getSession({ headers: event.headers })
+  if (!session?.user) {
+    throw createError({ statusCode: 401, message: 'Unauthorized' })
+  }
+
+  // Check if user is admin
+  const user = session.user as SessionUser
+  if (user.role !== 'admin') {
+    throw createError({ statusCode: 403, message: 'Admin access required' })
+  }
+
+  // Get all organizations with member counts
+  const organizations = await db
+    .select()
+    .from(organizationTable)
+    .orderBy(organizationTable.createdAt)
+
+  return organizations as AdminOrganizationsResponse
+})

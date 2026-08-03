@@ -5,9 +5,9 @@ import type { PortalFeaturePolicy, PortalOrganizationRole } from '#layers/portal
 import { canManageOrganizationEmailCredential, isPortalActionAllowed } from '#layers/portal-core/shared/feature-registry'
 import { getActiveOrganizationId, type PortalSession } from '#layers/portal-core/shared/portal-session'
 import { member, organization, user } from './db/schema/auth-schema'
-import { auth } from '~~/server/utils/auth'
-import { db } from '~~/server/utils/db'
-import { getUserOrganizationRole } from '~~/server/utils/permissions'
+import { auth } from '#portal/server/utils/auth'
+import { db } from '#portal/server/utils/db'
+import { getUserOrganizationRole } from '#portal/server/utils/permissions'
 
 export { db }
 export type { PortalSession } from '#layers/portal-core/shared/portal-session'

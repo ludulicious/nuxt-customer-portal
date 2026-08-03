@@ -1,0 +1,107 @@
+{
+  "common": {
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "create": "Create",
+    "createdAt": "Created at",
+    "delete": "Delete",
+    "descending": "Descending",
+    "direction": "Direction",
+    "edit": "Edit",
+    "error": "An error occurred",
+    "learnMore": "Learn more",
+    "loaded": "Loaded",
+    "loading": "Loading...",
+    "readMore": "Read more",
+    "reset": "Reset",
+    "save": "Save",
+    "sort": "Sort",
+    "sortBy": "Sort by",
+    "success": "Success",
+    "totalRecords": "Total records",
+    "searchPlaceholder": "Search...",
+    "ascending": "Ascending",
+    "view": "View"
+  },
+  "menu": {
+    "mobileNavigation": "Module navigation",
+    "activeModuleNavigation": "Active module menu",
+    "moduleMenuDescription": "Pages in this module",
+    "search": "Search",
+    "switchOrganization": "Switch organization",
+    "module": "Module",
+    "selectModule": "Select a module",
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "customers": "Customers",
+    "helpSupport": "Help & Support",
+    "feedback": "Feedback",
+    "home": "Home",
+    "documentation": "API documentation",
+    "profile": "Profile",
+    "theme": "Theme",
+    "settings": {
+      "title": "Settings",
+      "profile": "Profile",
+      "organization": "Organization",
+      "notifications": "Notifications",
+      "security": "Security"
+    },
+    "logout": "Log Out"
+  },
+  "dashboard": {
+    "activity": {
+      "recentActivity": "Recent Activity"
+    },
+    "buttons": {
+      "export": "Export",
+      "generateReport": "Generate Report",
+      "newOrder": "New Order",
+      "newRequest": "New Request",
+      "viewAll": "View All",
+      "viewAllOrders": "View All Orders",
+      "viewInvoices": "View Invoices"
+    },
+    "cards": {
+      "completed": "completed",
+      "invoices": "Invoices",
+      "overdue": "overdue",
+      "paid": "paid",
+      "pending": "pending",
+      "satisfaction": "Satisfaction",
+      "slaCompliance": "SLA Compliance",
+      "totalOrders": "Total Orders"
+    },
+    "charts": {
+      "chartPlaceholder": "Chart visualization would go here",
+      "integrationNote": "Integration with chart library needed",
+      "ordersCompleted": "Orders Completed",
+      "slaChartPlaceholder": "SLA performance chart would go here",
+      "slaPerformance": "SLA Performance"
+    },
+    "seo": {
+      "description": "Manage your facility services, orders, and invoices with ApexPro",
+      "title": "Dashboard - ApexPro Portal"
+    },
+    "stats": {
+      "avgResolutionTime": "Avg Resolution Time",
+      "avgResponseTime": "Avg Response Time",
+      "quickActions": "Quick Actions"
+    },
+    "title": "Dashboard",
+    "welcome": "Welcome back! Here's what's happening with your facility services."
+  },
+  "nav": {
+    "admin": "Admin",
+    "blog": "Blog",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "language": "Language",
+    "myOrganization": "My Organisation",
+    "organization": "Organization",
+    "portfolio": "Portfolio",
+    "profile": "Profile"
+  }
+}

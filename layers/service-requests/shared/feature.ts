@@ -24,6 +24,20 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       order: 120
     }
   ],
+  modules: [{
+    id: 'service-requests',
+    labelKey: 'features.serviceRequests.navigation.myRequests',
+    icon: 'i-lucide-ticket',
+    to: '/requests',
+    routePrefixes: ['/requests', '/admin/requests'],
+    audiences: ['authenticated'],
+    order: 20,
+    menuItems: [
+      { id: 'requests', labelKey: 'features.serviceRequests.navigation.myRequests', icon: 'i-lucide-inbox', to: '/requests', audiences: ['authenticated'] },
+      { id: 'new-request', labelKey: 'features.serviceRequests.navigation.newRequest', icon: 'i-lucide-plus', to: '/requests/new', audiences: ['authenticated'] },
+      { id: 'manage-requests', labelKey: 'features.serviceRequests.navigation.manageRequests', icon: 'i-lucide-list-checks', to: '/admin/requests', audiences: ['organizationAdmin', 'admin'] }
+    ]
+  }],
   dashboardWidgets: [
     {
       id: 'recent-service-requests',

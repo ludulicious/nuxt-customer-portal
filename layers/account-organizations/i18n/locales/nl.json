@@ -1,0 +1,209 @@
+{
+  "settings": {
+    "documentation": "Documentatie",
+    "title": "Instellingen",
+    "profile": "Profiel",
+    "organization": "Organisatie",
+    "notifications": "Notificaties",
+    "security": "Beveiliging"
+  },
+  "security": {
+    "password": {
+      "title": "Wachtwoord",
+      "description": "Bevestig uw huidige wachtwoord voordat u een nieuw wachtwoord instelt.",
+      "currentPassword": "Huidig wachtwoord",
+      "currentPasswordPlaceholder": "Voer uw huidige wachtwoord in",
+      "newPassword": "Nieuw wachtwoord",
+      "newPasswordPlaceholder": "Voer uw nieuwe wachtwoord in",
+      "updateButton": "Wachtwoord bijwerken",
+      "validation": {
+        "currentPasswordRequired": "Huidig wachtwoord is verplicht",
+        "newPasswordRequired": "Nieuw wachtwoord is verplicht",
+        "passwordsMustBeDifferent": "Nieuw wachtwoord moet verschillen van het huidige wachtwoord",
+        "passwordsMustBeDifferentShort": "Wachtwoorden moeten verschillend zijn"
+      },
+      "success": "Wachtwoord succesvol gewijzigd",
+      "error": "Wachtwoord wijzigen mislukt"
+    },
+    "account": {
+      "title": "Account beëindigen",
+      "description": "Wilt u onze service niet meer gebruiken? U kunt hier uw account verwijderen. Deze actie kan niet ongedaan worden gemaakt. Alle informatie met betrekking tot dit account wordt permanent verwijderd.",
+      "deleteButton": "Account verwijderen",
+      "deleteRequested": "Accountverwijdering aangevraagd",
+      "deleteRequestedDescription": "We hebben u een verificatie-e-mail gestuurd. Controleer uw e-mail en klik op de link om het accountverwijderingsproces te voltooien.",
+      "delete": {
+        "confirmTitle": "Accountverwijdering bevestigen",
+        "confirmMessage": "Weet u zeker dat u uw account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+        "passwordRequired": "Voer uw wachtwoord in om accountverwijdering te bevestigen",
+        "passwordPlaceholder": "Voer uw wachtwoord in",
+        "deleteButton": "Account verwijderen",
+        "cancelButton": "Annuleren",
+        "success": "Account succesvol verwijderd",
+        "error": "Account verwijderen mislukt",
+        "emailVerificationSent": "Verificatie-e-mail verzonden. Controleer uw e-mail om de accountverwijdering te voltooien."
+      }
+    }
+  },
+  "myOrganizations": {
+    "title": "Mijn Organisaties",
+    "description": "Beheer je organisaties en wissel tussen hen"
+  },
+  "organization": {
+    "emailProvider": {
+      "title": "E-mailprovider",
+      "description": "Configureer het Resend-account van deze organisatie voor facturen, herinneringen en andere transactionele e-mail.",
+      "configured": "Resend is geconfigureerd",
+      "notConfigured": "Resend is niet geconfigureerd",
+      "required": "Transactionele e-mail is geblokkeerd totdat een organisatie-eigenaar een sleutel configureert.",
+      "masked": "Actieve API-sleutel eindigend op {suffix}",
+      "verifiedDomains": "Geverifieerde verzenddomeinen",
+      "keyLabel": "Resend API-sleutel",
+      "replaceLabel": "Nieuwe Resend API-sleutel",
+      "configure": "Configureren en valideren",
+      "replace": "Valideren en vervangen",
+      "checkAgain": "Domeinen opnieuw controleren",
+      "remove": "Sleutel verwijderen",
+      "saved": "Resend API-sleutel opgeslagen",
+      "documentation": "Handleiding voor domeinverificatie in Resend",
+      "invalid": "De Resend API-sleutel kon niet worden gevalideerd",
+      "invalidDescription": "Controleer of de sleutel actief is en bij het juiste Resend-account hoort.",
+      "permissionRequired": "Deze Resend-sleutel kan alleen verzenden",
+      "permissionRequiredDescription": "Maak in Resend een API-sleutel met Full access aan. Domeintoegang is nodig om te controleren of deze organisatie het ingestelde afzenderadres mag gebruiken.",
+      "checkFailed": "Resend-domeinen konden niet worden gecontroleerd",
+      "removed": "Resend API-sleutel verwijderd",
+      "statusFailed": "Status van de e-mailprovider kon niet worden geladen",
+      "statusFailedDescription": "Controleer de server en databasemigratie voordat je een sleutel configureert.",
+      "removeTitle": "Resend API-sleutel verwijderen?",
+      "removeDescription": "Facturen en herinneringen kunnen niet worden verzonden totdat een nieuwe organisatiesleutel is geconfigureerd."
+    },
+    "settings": {
+      "editTitle": "Organisatie bewerken",
+      "editButton": "Organisatie bewerken",
+      "updateSuccess": "Organisatie succesvol bijgewerkt",
+      "nameLabel": "Organisatienaam",
+      "namePlaceholder": "Organisatienaam",
+      "officialCompanyNameLabel": "Officiële bedrijfsnaam",
+      "officialCompanyNamePlaceholder": "Bedrijfsnaam zoals geregistreerd",
+      "officialCompanyNameHint": "Wordt gebruikt als afzendernaam op facturen.",
+      "slugLabel": "Organisatie Slug",
+      "slugPlaceholder": "organisatie-slug",
+      "slugHint": "URL-vriendelijke identifier voor je organisatie",
+      "slugChecking": "Beschikbaarheid controleren...",
+      "slugAvailable": "Slug is beschikbaar",
+      "slugUnavailable": "Slug is al in gebruik",
+      "slugError": "Slug beschikbaarheid controleren mislukt",
+      "logoLabel": "Organisatielogo",
+      "logoChoose": "Logo kiezen",
+      "logoRemove": "Logo verwijderen",
+      "invoiceLogoHint": "PNG, JPG, GIF of WebP. Het logo wordt gebruikt op nieuwe facturen.",
+      "logoHint": "Upload een PNG, JPG of GIF. Aanbevolen formaat: 280×160.",
+      "ownerOnly": "Alleen organisatie-eigenaren kunnen naam of slug wijzigen.",
+      "errors": {
+        "loadFailed": "Organisatie laden mislukt",
+        "updateFailed": "Organisatie bijwerken mislukt",
+        "slugTaken": "Organisatie slug is al in gebruik"
+      },
+      "validation": {
+        "nameRequired": "Organisatienaam is verplicht",
+        "officialCompanyNameRequired": "Officiële bedrijfsnaam is verplicht",
+        "slugRequired": "Organisatie slug is verplicht",
+        "slugInvalid": "Slug mag alleen kleine letters, cijfers en streepjes bevatten",
+        "logoInvalid": "Logo moet een geldige afbeelding zijn",
+        "logoTooLarge": "Logo moet kleiner zijn dan 2 MB"
+      }
+    },
+    "members": {
+      "loading": "Organisatiegegevens laden...",
+      "title": "Leden",
+      "empty": "Nog geen leden",
+      "email": "E-mail",
+      "name": "Naam",
+      "role": "Rol",
+      "invitations": {
+        "title": "Uitnodigingen",
+        "empty": "Geen openstaande uitnodigingen",
+        "status": "Status",
+        "expires": "Verloopt",
+        "actions": "Acties",
+        "resend": "Opnieuw Verzenden",
+        "delete": "Verwijderen",
+        "inviteButton": "Lid Uitnodigen",
+        "modalTitle": "Lid Uitnodigen",
+        "emailLabel": "E-mailadres",
+        "emailPlaceholder": "Voer het e-mailadres van het lid in",
+        "roleLabel": "Rol",
+        "roleMember": "Lid",
+        "roleAdmin": "Beheerder",
+        "sendButton": "Uitnodiging Verzenden",
+        "sendSuccess": "Uitnodiging succesvol verzonden",
+        "cancel": "Annuleren",
+        "confirmResend": {
+          "title": "Uitnodiging Opnieuw Verzenden",
+          "message": "Weet je zeker dat je de uitnodiging naar {email} als {role} wilt opnieuw verzenden?",
+          "confirm": "Opnieuw Verzenden"
+        },
+        "confirmDelete": {
+          "title": "Uitnodiging Verwijderen",
+          "message": "Weet je zeker dat je deze uitnodiging wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+          "confirm": "Verwijderen"
+        },
+        "resendSuccess": "Uitnodiging succesvol opnieuw verzonden",
+        "deleteSuccess": "Uitnodiging succesvol verwijderd"
+      },
+      "errors": {
+        "noActiveOrganization": "Geen actieve organisatie gevonden",
+        "onlyOwnerCanManage": "Alleen organisatie-eigenaren kunnen leden beheren",
+        "loadFailed": "Organisatiegegevens laden mislukt",
+        "sendInvitationFailed": "Uitnodiging verzenden mislukt",
+        "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
+        "cancelFailed": "Uitnodiging annuleren mislukt"
+      },
+      "confirm": {
+        "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"
+      },
+      "validation": {
+        "emailInvalid": "Ongeldig e-mailadres",
+        "roleRequired": "Rol is verplicht"
+      }
+    }
+  },
+  "profile": {
+    "badges": {
+      "active": "Actief"
+    },
+    "buttons": {
+      "setActive": "Activeren"
+    },
+    "description": "Beheer je persoonlijke informatie en profielinstellingen",
+    "fields": {
+      "email": "E-mail",
+      "emailDescription": "Je e-mailadres kan niet worden gewijzigd",
+      "name": "Naam",
+      "nameDescription": "Je weergavenaam",
+      "namePlaceholder": "Voer je naam in",
+      "profilePicture": "Profielfoto",
+      "profilePictureDescription": "JPG, GIF of PNG. Max. 1MB.",
+      "profilePicturePlaceholder": "https://voorbeeld.nl/avatar.jpg",
+      "chooseAvatar": "Kiezen"
+    },
+    "messages": {
+      "error": "Fout",
+      "failedToActivateOrganization": "Organisatie activeren mislukt",
+      "organizationActivated": "Organisatie succesvol geactiveerd",
+      "profileUpdated": "Je profiel is succesvol bijgewerkt",
+      "success": "Succes",
+      "updateFailed": "Profiel bijwerken mislukt"
+    },
+    "sections": {
+      "organizations": "Mijn organisaties",
+      "profileInfo": "Profielinformatie"
+    },
+    "title": "Profielinstellingen",
+    "validation": {
+      "atLeastOneField": "Ten minste één veld (naam of afbeelding) moet worden ingevuld",
+      "imageInvalidUrl": "Afbeelding moet een geldige URL zijn",
+      "nameMaxLength": "Naam moet minder dan 255 tekens zijn",
+      "nameRequired": "Naam is verplicht"
+    }
+  }
+}

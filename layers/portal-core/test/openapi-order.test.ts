@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { orderOpenApiDocument } from '../../../server/utils/openapi-order'
+import { orderOpenApiDocument } from '../server/utils/openapi-order'
 
 test('orders OpenAPI paths by module menu and operation lifecycle', () => {
   const document = orderOpenApiDocument({

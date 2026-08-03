@@ -1,0 +1,138 @@
+{
+  "forgotPassword": {
+    "buttons": {
+      "backToLogin": "Terug naar Inloggen",
+      "resendCode": "Code Opnieuw Verzenden",
+      "resetPassword": "Wachtwoord Resetten",
+      "sendCode": "Code Verzenden"
+    },
+    "description": "Voer je e-mailadres in en wij sturen je een verificatiecode om je wachtwoord te resetten.",
+    "fields": {
+      "confirmPassword": "Bevestig Wachtwoord",
+      "confirmPasswordPlaceholder": "Bevestig je nieuwe wachtwoord",
+      "email": "E-mailadres",
+      "emailPlaceholder": "Voer je e-mailadres in",
+      "newPassword": "Nieuw Wachtwoord",
+      "newPasswordPlaceholder": "Voer je nieuwe wachtwoord in",
+      "otp": "Verificatiecode",
+      "otpPlaceholder": "000000"
+    },
+    "messages": {
+      "codeSent": "Verificatiecode verzonden naar je e-mail!",
+      "invalidCode": "Ongeldige verificatiecode",
+      "passwordReset": "Wachtwoord succesvol gereset! Doorverwijzen naar inloggen...",
+      "resendError": "Code opnieuw verzenden mislukt",
+      "resendIn": "Opnieuw verzenden over {seconds}s",
+      "resetError": "Wachtwoord resetten mislukt",
+      "userNotFound": "Geen account gevonden met dit e-mailadres"
+    },
+    "step2Description": "Voer de 6-cijferige code in die is verzonden naar {email} en je nieuwe wachtwoord.",
+    "title": "Reset Je Wachtwoord",
+    "validation": {
+      "confirmPasswordRequired": "Bevestig je wachtwoord",
+      "emailRequired": "E-mailadres is verplicht",
+      "invalidEmail": "Voer een geldig e-mailadres in",
+      "otpLength": "Voer een 6-cijferige code in",
+      "otpRequired": "Verificatiecode is verplicht",
+      "passwordMinLength": "Wachtwoord moet minimaal 8 tekens zijn",
+      "passwordRequired": "Wachtwoord is verplicht",
+      "passwordsMatch": "Wachtwoorden moeten overeenkomen"
+    }
+  },
+  "login": {
+    "description": "Heb je nog geen account?",
+    "errors": {
+      "emailNotVerified": "E-mail niet geverifieerd",
+      "githubError": "GitHub inloggen kon niet worden gestart.",
+      "googleError": "Google inloggen kon niet worden gestart.",
+      "invalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
+      "unexpectedError": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."
+    },
+    "fields": {
+      "email": "E-mail",
+      "emailPlaceholder": "Voer je e-mail in",
+      "password": "Wachtwoord",
+      "passwordPlaceholder": "Voer je wachtwoord in",
+      "remember": "Onthoud mij"
+    },
+    "footer": "Door in te loggen, ga je akkoord met onze",
+    "forgotPassword": "Wachtwoord vergeten?",
+    "providers": {
+      "github": "GitHub",
+      "githubDescription": "Inloggen met GitHub",
+      "google": "Google",
+      "googleDescription": "Inloggen met Google"
+    },
+    "signupLink": "Aanmelden",
+    "submitButton": "Inloggen",
+    "success": "Inloggen is gelukt, volgende pagina wordt geladen....",
+    "termsLink": "Servicevoorwaarden",
+    "title": "Welkom terug",
+    "validation": {
+      "invalidEmail": "Ongeldig e-mailadres",
+      "passwordMinLength": "Moet minimaal 8 tekens zijn"
+    }
+  },
+  "signup": {
+    "description": "Heb je al een account?",
+    "invitation": {
+      "title": "Je bent uitgenodigd om lid te worden van {organizationName}",
+      "description": "Je wordt toegevoegd als {role} na het aanmaken van je account.",
+      "accepting": "Uitnodiging accepteren als {role}...",
+      "accepted": {
+        "title": "Uitnodiging Geaccepteerd",
+        "description": "Je bent succesvol toegevoegd aan de organisatie."
+      },
+      "loggedIn": {
+        "accepting": "Uitnodiging accepteren...",
+        "success": "Succesvol lid geworden van {organizationName} als {role}",
+        "emailMismatch": "Deze uitnodiging is verzonden naar een ander e-mailadres. Log uit en gebruik het e-mailadres waarop de uitnodiging is verzonden.",
+        "error": "Uitnodiging accepteren mislukt: {error}"
+      }
+    },
+    "errors": {
+      "errorTitle": "Fout",
+      "unknownError": "Er is een onbekende fout opgetreden tijdens het aanmelden."
+    },
+    "fields": {
+      "email": "E-mail",
+      "emailPlaceholder": "Voer je e-mail in",
+      "name": "Naam",
+      "namePlaceholder": "Voer je naam in",
+      "password": "Wachtwoord",
+      "passwordPlaceholder": "Voer je wachtwoord in"
+    },
+    "footer": "Door je aan te melden, ga je akkoord met onze",
+    "loginLink": "Inloggen",
+    "providers": {
+      "github": "GitHub",
+      "githubDescription": "Inloggen met GitHub",
+      "google": "Google",
+      "googleDescription": "Inloggen met Google"
+    },
+    "submitButton": "Account aanmaken",
+    "termsLink": "Servicevoorwaarden",
+    "title": "Maak een account aan",
+    "validation": {
+      "invalidEmail": "Ongeldig e-mailadres",
+      "nameRequired": "Naam is verplicht",
+      "passwordMinLength": "Moet minimaal 8 tekens zijn"
+    }
+  },
+  "verify": {
+    "backToLogin": "Terug naar Inloggen",
+    "codePlaceholder": "000000",
+    "codeSent": "Verificatiecode verzonden!",
+    "enterCode": "Verificatiecode",
+    "error": "Verificatie mislukt",
+    "invalidCode": "Ongeldige verificatiecode",
+    "invalidCodeLength": "Voer een 6-cijferige code in",
+    "resendCode": "Code Opnieuw Verzenden",
+    "resendError": "Code opnieuw verzenden mislukt",
+    "resendIn": "Opnieuw verzenden over {seconds}s",
+    "subtitle": "Voer de 6-cijferige code in die is verzonden naar {email}",
+    "success": "E-mail succesvol geverifieerd!",
+    "title": "Verifieer Je E-mail",
+    "verifyButton": "E-mail Verifiëren"
+  }
+}

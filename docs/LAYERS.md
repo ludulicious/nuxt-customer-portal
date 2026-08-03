@@ -11,6 +11,19 @@ The portal has two kinds of layers:
 - `portal-core` defines the stable contracts shared by the host and feature layers.
 - Feature layers, such as `service-requests`, implement one business capability.
 
+The host application is intentionally thin. Its remaining pages and vertical
+slices are owned by these layers:
+
+- `public-site`: home, contact, blog content, and public-site assets.
+- `authentication`: login, signup, password recovery, and verification flows.
+- `account-organizations`: profile, settings, memberships, invitations, and organization configuration.
+- `administration`: system-administrator user and organization management.
+
+`portal-core` also owns the application shell, session/authentication plumbing,
+shared authorization and database contracts, dashboard aggregation, and the
+feature registry. The root `app` directory contains only the application entry,
+configuration, error page, and global assets.
+
 Feature code should depend on portal core instead of importing host files directly. Do not use `~/`, `~~/`, `useUserStore`, or `authClient` from a feature layer.
 
 Use these portal-core interfaces instead:
@@ -19,6 +32,11 @@ Use these portal-core interfaces instead:
 - `usePortalFeatures()` to register navigation and dashboard contributions.
 - `#portal/server/portal` for the database, authenticated session, active organization, and authorization.
 - `PortalFeatureDefinition` and `PortalFeaturePolicy` for feature metadata and permissions.
+
+Feature layers register complete modules through `PortalFeatureDefinition.modules`.
+A module contribution defines its landing route, matching route prefixes,
+audiences, ordering, and sidebar menu. The shell must not import a feature's
+menu composable directly.
 
 Drizzle schema files are the only exception to alias-only imports. Drizzle Kit does not resolve Nuxt aliases, so a feature schema may reference the physical portal-core schema path for foreign keys.
 

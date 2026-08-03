@@ -1,0 +1,130 @@
+{
+  "contact": {
+    "cards": {
+      "email": {
+        "description": "Stuur ons een e-mail en wij reageren binnen 24 uur",
+        "title": "E-mail Ons"
+      },
+      "follow": {
+        "description": "Verbind met ons op sociale media",
+        "title": "Volg Ons"
+      },
+      "phone": {
+        "description": "Spreek direct met ons team",
+        "title": "Bel Ons"
+      },
+      "visit": {
+        "description": "Gevestigd in Rotterdam, Nederland",
+        "title": "Bezoek Ons"
+      }
+    },
+    "company": {
+      "description": "ApexPro levert betrouwbare schoonmaak-, onderhouds- en coördinatiediensten voor bedrijven, ondersteund door een modern en transparant klantenportaal.",
+      "experience": "15+ jaar",
+      "founded": "2010",
+      "name": "ApexPro",
+      "tagline": "Facilitaire diensten voor bedrijven"
+    },
+    "cta": {
+      "description": "Neem contact op met verkoop voor diensten en offertes, of met portaalondersteuning.",
+      "sales": "Contact verkoop",
+      "support": "Portaalondersteuning",
+      "title": "Waarmee kunnen we helpen?"
+    },
+    "description": "Wij helpen graag met diensten, offertes en portaalondersteuning.",
+    "info": {
+      "address": "Commerce Ave 1200, Suite 500, Rotterdam, NL",
+      "phone": "+31 10 123 4567"
+    },
+    "title": "Contact met ApexPro"
+  },
+  "home": {
+    "cta": {
+      "description": "Laten we je project bespreken en kijken hoe wij je kunnen helpen iets geweldigs te creëren. Wij zijn altijd enthousiast om aan nieuwe uitdagingen te werken.",
+      "getInTouch": "Neem Contact Op",
+      "title": "Klaar om je idee tot leven te brengen?",
+      "viewPortfolio": "Bekijk Ons Portfolio"
+    },
+    "description": "Wij zijn een softwareontwikkelingsbedrijf dat innovatieve webapplicaties en digitale oplossingen creëert. Van e-commerce platforms tot educatieve tools, wij brengen je ideeën tot leven met geavanceerde technologie.",
+    "hero": {
+      "getInTouch": "Neem Contact Op",
+      "viewPortfolio": "Bekijk Ons Portfolio"
+    },
+    "links": {
+      "dashboard": "Mijn Dashboard"
+    },
+    "sections": {
+      "developmentExpertise": {
+        "description": "Wij specialiseren ons in het creëren van moderne, schaalbare webapplicaties met de nieuwste technologieën. Van concept tot implementatie, wij beheren elk aspect van je digitale project.",
+        "features": {
+          "ecommerce": {
+            "description": "Aangepaste e-commerce platforms met betalingsintegratie, voorraadbeheer en gebruiksvriendelijke interfaces.",
+            "name": "E-commerce Oplossingen"
+          },
+          "fullStack": {
+            "description": "Volledige webapplicatie-ontwikkeling van frontend tot backend, met moderne frameworks en best practices.",
+            "name": "Full-Stack Ontwikkeling"
+          },
+          "mobileFirst": {
+            "description": "Responsieve applicaties die perfect werken op alle apparaten, met focus op gebruikerservaring en prestaties.",
+            "name": "Mobile-First Ontwerp"
+          }
+        },
+        "title": "Onze Ontwikkelingsexpertise"
+      },
+      "whyChoose": {
+        "description": "Wij combineren technische expertise met creatieve visie om oplossingen te leveren die niet alleen aan je vereisten voldoen, maar deze overtreffen.",
+        "features": {
+          "modernTech": {
+            "description": "Wij gebruiken geavanceerde technologieën zoals Vue, Nuxt, Node.js, Asp.Net Core en cloud platforms om toekomstbestendige applicaties te bouwen.",
+            "name": "Moderne Technologieën"
+          },
+          "provenResults": {
+            "description": "Ons portfolio omvat succesvolle projecten voor verschillende industrieën, van educatieve tools tot marketplace platforms.",
+            "name": "Bewezen Resultaten"
+          },
+          "smallTeam": {
+            "description": "Als klein bedrijf bieden wij persoonlijke aandacht en directe communicatie met ons ontwikkelteam.",
+            "name": "Klein Team, Grote Impact"
+          }
+        },
+        "title": "Waarom Kiezen voor Ludulicious"
+      }
+    },
+    "services": {
+      "description": "Van eerste concept tot finale implementatie, wij bieden uitgebreide softwareontwikkelingsdiensten afgestemd op je bedrijfsbehoeften.",
+      "items": {
+        "api": {
+          "description": "RESTful API endpoints die je applicaties aandrijven en third-party integraties mogelijk maken.",
+          "title": "API Ontwikkeling"
+        },
+        "cloud": {
+          "description": "Schaalbare cloud oplossingen met AWS, Google Cloud, Azure, Vercel, Coolify of Dokploy met geautomatiseerde implementatie en monitoring.",
+          "title": "Cloud Implementatie"
+        },
+        "maintenance": {
+          "description": "Doorlopend onderhoud, updates en technische ondersteuning om je applicaties soepel te laten draaien.",
+          "title": "Onderhoud & Ondersteuning"
+        },
+        "marketplace": {
+          "description": "Volledige marketplace oplossingen met geavanceerde zoek- en filtermogelijkheden en geavanceerd biedsysteem.",
+          "title": "Marketplace Platforms"
+        },
+        "webApp": {
+          "description": "Aangepaste webapplicaties gebouwd met moderne frameworks zoals Vue.js, Nuxt.js en Asp.Net Core voor optimale prestaties en gebruikerservaring.",
+          "title": "Webapplicatie Ontwikkeling"
+        }
+      },
+      "title": "Onze Diensten"
+    },
+    "testimonials": {
+      "description": "Geloof ons niet zomaar. Hier is wat onze klanten zeggen over het werken met Ludulicious.",
+      "headline": "Klant Succesverhalen",
+      "title": "Wat Onze Klanten Zeggen"
+    },
+    "title": "Ludulicious - Innovatieve Software Oplossingen"
+  },
+  "footer": {
+    "copyright": "Alle rechten voorbehouden."
+  }
+}
