@@ -6,6 +6,7 @@ const props = defineProps<{
   members: OrganizationMemberWithUser[]
   loading?: boolean
   canRemove?: boolean
+  canLink?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +18,7 @@ const { currentUser } = storeToRefs(useUserStore())
 const toast = useToast()
 const selectedMember = ref<OrganizationMemberWithUser | null>(null)
 const showRemoveModal = ref(false)
+const showLinkModal = ref(false)
 const removing = ref(false)
 const users = computed<AdminUserResponse[]>(() => props.members.map(member => ({
   ...member.user,
@@ -52,9 +54,21 @@ const removeMember = async () => {
 <template>
   <UCard>
     <template #header>
-      <h2 class="text-xl font-semibold">
-        {{ t('admin.organization.detail.members.title') }} ({{ members.length }})
-      </h2>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-xl font-semibold">
+          {{ t('admin.organization.detail.members.title') }} ({{ members.length }})
+        </h2>
+        <UButton
+          v-if="canLink"
+          icon="i-lucide-user-plus"
+          color="primary"
+          variant="outline"
+          size="sm"
+          @click="showLinkModal = true"
+        >
+          {{ t('admin.organization.detail.members.link.action') }}
+        </UButton>
+      </div>
     </template>
 
     <AdminUsersTable :users="users" :loading="loading" :removable-user-ids="removableUserIds" @refresh="emit('refresh')" @remove="requestRemove" />
@@ -65,5 +79,13 @@ const removeMember = async () => {
       :message-params="{ name: selectedMember.user.name || selectedMember.user.email }"
       confirm-text="admin.organization.detail.members.confirmRemove.confirm"
       confirm-color="error" @confirm="removeMember" />
+
+    <AdminLinkOrganizationMemberModal
+      v-if="canLink"
+      v-model:open="showLinkModal"
+      :organization-id="organizationId"
+      :member-user-ids="members.map(member => member.userId)"
+      @linked="emit('refresh')"
+    />
   </UCard>
 </template>

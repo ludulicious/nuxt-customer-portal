@@ -53,6 +53,23 @@
           "remove": "Remove from organization",
           "removeSuccess": "Member removed from the organization",
           "removeFailed": "Failed to remove the member",
+          "link": {
+            "action": "Link existing user",
+            "title": "Link existing user",
+            "searchLabel": "Search users",
+            "searchPlaceholder": "Search by name or email...",
+            "userLabel": "User",
+            "roleLabel": "Organization role",
+            "noUsers": "No available users found",
+            "submit": "Link user",
+            "success": "User linked to the organization",
+            "failed": "Failed to link the user",
+            "searchFailed": "Failed to search users",
+            "validation": {
+              "userRequired": "Select a user",
+              "roleRequired": "Select an organization role"
+            }
+          },
           "confirmRemove": {
             "title": "Remove organization member",
             "message": "Remove {name} from this organization? Their user account will not be deleted.",

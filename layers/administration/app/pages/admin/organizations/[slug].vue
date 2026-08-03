@@ -167,7 +167,7 @@ await loadOrganization()
 
         <OrganizationEmailProviderSettings v-if="isAdmin" :organization-id="organization.id" />
 
-        <AdminOrganizationMembersCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :members="members" :loading="loading" :can-remove="isAdmin || userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" @refresh="loadMembers" />
+        <AdminOrganizationMembersCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :members="members" :loading="loading" :can-remove="isAdmin || userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" :can-link="isAdmin" @refresh="loadMembers" />
         <AdminOrganizationInvitationsCard v-if="hasPermission('invitation', 'list')" :organization-id="organization.id" :invitations="invitations" :loading="loading" @refresh="loadInvitations" />
       </div>
     </UContainer>

@@ -53,6 +53,23 @@
           "remove": "Uit organisatie verwijderen",
           "removeSuccess": "Lid uit de organisatie verwijderd",
           "removeFailed": "Lid verwijderen mislukt",
+          "link": {
+            "action": "Bestaande gebruiker koppelen",
+            "title": "Bestaande gebruiker koppelen",
+            "searchLabel": "Gebruikers zoeken",
+            "searchPlaceholder": "Zoek op naam of e-mailadres...",
+            "userLabel": "Gebruiker",
+            "roleLabel": "Organisatierol",
+            "noUsers": "Geen beschikbare gebruikers gevonden",
+            "submit": "Gebruiker koppelen",
+            "success": "Gebruiker aan de organisatie gekoppeld",
+            "failed": "Gebruiker koppelen mislukt",
+            "searchFailed": "Gebruikers zoeken mislukt",
+            "validation": {
+              "userRequired": "Selecteer een gebruiker",
+              "roleRequired": "Selecteer een organisatierol"
+            }
+          },
           "confirmRemove": {
             "title": "Organisatielid verwijderen",
             "message": "Wil je {name} uit deze organisatie verwijderen? Het gebruikersaccount wordt niet verwijderd.",
