@@ -155,7 +155,7 @@ await loadOrganization()
       </div>
 
       <!-- Error State -->
-      <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
+      <UAlert v-else-if="error" color="error" :title="error" variant="outline" />
 
       <!-- Organization Details -->
       <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">

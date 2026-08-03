@@ -87,7 +87,7 @@ const save = async () => {
       </h2>
     </template>
     <UForm :state="draft" :schema="schema" class="space-y-4" @submit="save">
-      <UAlert v-if="!domainStatus?.configured" color="warning" icon="i-lucide-key-round" :title="t('features.timesheets.admin.emailProviderNotConfigured')">
+      <UAlert v-if="!domainStatus?.configured" color="warning" icon="i-lucide-key-round" :title="t('features.timesheets.admin.emailProviderNotConfigured')" variant="outline" >
         <template #description>
           <p>{{ t(canConfigureProvider ? 'features.timesheets.admin.emailProviderConfigureDescription' : 'features.timesheets.admin.emailProviderContactOwner') }}</p>
           <UButton v-if="canConfigureProvider" to="/settings/organization" color="neutral" variant="solid" size="xs" icon="i-lucide-settings" class="mt-2">{{ t('features.timesheets.admin.emailProviderOpenSettings') }}</UButton>
@@ -95,10 +95,8 @@ const save = async () => {
       </UAlert>
       <UAlert v-else
         :color="domainStatus?.verified ? 'success' : 'warning'"
-        variant="outline"
         :icon="domainStatus?.verified ? 'i-lucide-badge-check' : 'i-lucide-triangle-alert'"
-        :title="t(domainStatus?.verified ? 'features.timesheets.admin.emailDomainVerified' : 'features.timesheets.admin.emailDomainUnverified')"
-      >
+        :title="t(domainStatus?.verified ? 'features.timesheets.admin.emailDomainVerified' : 'features.timesheets.admin.emailDomainUnverified')" variant="outline" >
         <template #description><p>{{ domainStatus?.domain ? t('features.timesheets.admin.emailDomainStatusDescription', { domain: domainStatus.domain }) : t('features.timesheets.admin.emailDomainMissing') }}</p><div v-if="domainStatus?.domain" class="mt-2 flex flex-wrap gap-2"><UButton v-if="!domainStatus.verified" to="https://resend.com/docs/dashboard/domains/introduction" target="_blank" rel="noopener noreferrer" color="neutral" variant="solid" size="xs" trailing-icon="i-lucide-external-link">{{ t('features.timesheets.admin.emailDomainVerificationHelp') }}</UButton><UButton type="button" color="neutral" variant="solid" size="xs" icon="i-lucide-refresh-cw" :loading="checkingDomain" @click="checkDomain()">{{ t('features.timesheets.admin.emailDomainCheckAgain') }}</UButton></div></template>
       </UAlert>
       <UFormField name="address" :label="t('features.timesheets.admin.address')" required>

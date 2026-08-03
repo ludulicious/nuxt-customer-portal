@@ -169,7 +169,7 @@ const handleDeleteError = (message: string) => {
         @click="showDeleteModal = true"
       />
       </template>
-      <UAlert v-if="isDeleteRequested" variant="outline" color="warning" :title="t('security.account.deleteRequested')" :description="t('security.account.deleteRequestedDescription')" />
+      <UAlert v-if="isDeleteRequested" color="warning" :title="t('security.account.deleteRequested')" :description="t('security.account.deleteRequestedDescription')" variant="outline" />
     </UCard>
 
     <!-- Delete Account Modal -->

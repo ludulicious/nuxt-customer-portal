@@ -303,11 +303,9 @@ const runningDuration = computed(() => {
     <UAlert
       v-if="week?.status === 'REJECTED'"
       color="error"
-      variant="subtle"
       icon="i-lucide-message-square-warning"
       :title="t('features.timesheets.status.rejected')"
-      :description="week.rejectionComment ?? undefined"
-    />
+      :description="week.rejectionComment ?? undefined" variant="outline" />
 
     <UCard v-if="runningEntry" class="timesheet-timer">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

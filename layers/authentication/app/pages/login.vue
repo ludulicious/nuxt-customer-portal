@@ -160,8 +160,8 @@ const handleGoogleLogin = async () => {
 
 <template>
   <div>
-    <UAlert v-if="successMessage" color="success" variant="soft" :description="successMessage" />
-    <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
+    <UAlert v-if="successMessage" color="success" :description="successMessage" variant="outline" />
+    <UAlert v-if="errorMessage" color="error" :description="errorMessage" variant="outline" />
 
     <!-- Company Logo -->
     <div class="flex justify-center mb-8">

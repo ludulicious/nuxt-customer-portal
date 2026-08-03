@@ -225,7 +225,7 @@ watch([loading, listContainerRef], () => {
 
         <div ref="listContainerRef" class="-mx-1 min-h-0 flex-1 overflow-y-auto" @scroll="onListScroll">
           <div class="px-1 pb-4 pt-1">
-            <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
+            <UAlert v-if="error" color="error" :title="error" class="mb-4" variant="outline" />
 
             <UEmpty
               v-if="filteredAndSortedOrganizations.length === 0 && !loading"

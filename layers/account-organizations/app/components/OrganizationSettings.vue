@@ -217,10 +217,10 @@ onUnmounted(() => {
       <p class="text-gray-600 dark:text-gray-400 mt-2">{{ t('common.loading') }}</p>
     </div>
 
-    <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
+    <UAlert v-else-if="error" color="error" :title="error" variant="outline" />
 
     <UForm v-else class="space-y-4" :state="formState" :schema="formSchema" @submit="updateOrganization">
-      <UAlert v-if="!isOwner" color="warning" variant="soft" :title="t('organization.settings.ownerOnly')" />
+      <UAlert v-if="!isOwner" color="warning" :title="t('organization.settings.ownerOnly')" variant="outline" />
       <UFormField name="name" :label="t('organization.settings.nameLabel')" required>
         <UInput v-model="formState.name" type="text" :placeholder="t('organization.settings.namePlaceholder')" required :disabled="!isOwner"
           class="w-full" />
