@@ -17,6 +17,7 @@ useSeoMeta({
 
 const router = useRouter()
 const route = useRoute()
+const portalAuth = useRuntimeConfig().public.portalAuth
 const fields = computed(() => [{
   name: 'email',
   type: 'text' as const,
@@ -35,18 +36,20 @@ const fields = computed(() => [{
 }])
 
 const providers = computed(() => [{
+  enabled: portalAuth.googleEnabled,
   label: t('login.providers.google'),
   icon: 'i-simple-icons-google',
   onClick: async () => {
     await handleGoogleLogin()
   }
 }, {
+  enabled: portalAuth.githubEnabled,
   label: t('login.providers.github'),
   icon: 'i-simple-icons-github',
   onClick: async () => {
     await handleGitHubLogin()
   }
-}])
+}].filter(provider => provider.enabled))
 
 const schema = computed(() => z.object({
   email: z.email(t('login.validation.invalidEmail')),
@@ -168,8 +171,10 @@ const handleGoogleLogin = async () => {
     <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
       :loading="loading" @submit="onSubmit">
       <template #description>
-        {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
+        <template v-if="portalAuth.registrationMode === 'open'">
+          {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
         </ULink>.
+        </template>
       </template>
 
       <template #password-hint>
