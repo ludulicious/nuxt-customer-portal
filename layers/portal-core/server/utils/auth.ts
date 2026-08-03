@@ -22,6 +22,14 @@ const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .map(email => email.trim().toLowerCase())
   .filter(Boolean) ?? []
 
+const envFlag = (value: string | undefined, fallback = true) => value === undefined ? fallback : value === 'true'
+const portalAuthConfig = useRuntimeConfig().portalAuth
+const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
+  ? process.env.PORTAL_REGISTRATION_MODE
+  : portalAuthConfig.registrationMode
+const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED, portalAuthConfig.githubEnabled)
+const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED, portalAuthConfig.googleEnabled)
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
   database: drizzleAdapter(db, {
@@ -40,6 +48,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    disableSignUp: registrationMode === 'disabled',
     requireEmailVerification: true
   },
   user: {
@@ -81,18 +90,39 @@ export const auth = betterAuth({
     }
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!
-    },
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
-    }
+    ...(githubEnabled && process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? { github: {
+          clientId: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET
+        } }
+      : {}),
+    ...(googleEnabled && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? { google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET
+        } }
+      : {})
   },
   databaseHooks: {
     user: {
       create: {
+        before: async (user) => {
+          if (registrationMode !== 'invitation-only') return
+
+          const [invitation] = await db
+            .select({ id: organizationInvitationTable.id })
+            .from(organizationInvitationTable)
+            .where(and(
+              eq(organizationInvitationTable.email, user.email),
+              eq(organizationInvitationTable.status, 'pending'),
+              gt(organizationInvitationTable.expiresAt, new Date())
+            ))
+            .limit(1)
+
+          if (!invitation) {
+            throw new APIError('FORBIDDEN', { message: 'Registration requires a valid invitation' })
+          }
+        },
         after: async (user) => {
           // Type assertion for user object
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

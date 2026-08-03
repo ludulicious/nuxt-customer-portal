@@ -17,6 +17,12 @@ useSeoMeta({
 })
 
 const toast = useToast()
+const portalAuth = useRuntimeConfig().public.portalAuth
+
+const invitationId = useRoute().query.invitationId
+if (portalAuth.registrationMode === 'disabled' || (portalAuth.registrationMode === 'invitation-only' && !invitationId)) {
+  await navigateTo('/login')
+}
 
 const fields = computed(() => [{
   name: 'name',
@@ -36,18 +42,20 @@ const fields = computed(() => [{
 }])
 
 const providers = computed(() => [{
+  enabled: portalAuth.googleEnabled,
   label: t('signup.providers.google'),
   icon: 'i-simple-icons-google',
   onClick: async () => {
     await handleGoogleLogin()
   }
 }, {
+  enabled: portalAuth.githubEnabled,
   label: t('signup.providers.github'),
   icon: 'i-simple-icons-github',
   onClick: async () => {
     await handleGitHubLogin()
   }
-}])
+}].filter(provider => provider.enabled))
 
 const schema = computed(() => z.object({
   name: z.string().min(1, t('signup.validation.nameRequired')),
@@ -64,7 +72,6 @@ type Schema = {
 const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
-const invitationId = ref<string | null>(null)
 const invitationInfo = ref<{ organizationName?: string, role?: string, email?: string } | null>(null)
 const acceptingInvitation = ref(false)
 
@@ -256,8 +263,6 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
 }
 const invId = route.query.invitationId as string | undefined
 if (invId) {
-  invitationId.value = invId
-
   // Check if user is already logged in
   if (isAuthenticated.value && currentUser.value) {
     // User is logged in, try to accept invitation automatically
