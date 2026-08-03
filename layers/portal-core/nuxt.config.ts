@@ -19,7 +19,8 @@ export default defineNuxtConfig({
       portalAuth: {
         registrationMode,
         githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),
-        googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED)
+        googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED),
+        termsUrl: process.env.PORTAL_TERMS_URL || '/'
       }
     }
   },
