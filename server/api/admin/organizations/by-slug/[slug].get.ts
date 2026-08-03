@@ -5,6 +5,15 @@ import { db } from '~~/server/utils/db'
 import { organization as organizationTable, member as memberTable } from '~~/server/db/schema/auth-schema'
 import type { SessionUser, Organization } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsBySlugBySlugGet',
+    summary: 'Get an organization by slug',
+    description: 'Get an organization by slug. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<Organization> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

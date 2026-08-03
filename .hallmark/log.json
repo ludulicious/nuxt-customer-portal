@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2026-08-01",
+    "macrostructure": "Workbench",
+    "theme": "existing portal system",
+    "enrichment": "none",
+    "brief": "Invoice wizard final-step ledger redesign",
+    "scope": "single-page"
+  },
+  {
+    "date": "2026-07-30",
+    "macrostructure": "Workbench",
+    "theme": "portal-native",
+    "enrichment": "none",
+    "brief": "Harvest-style weekly timesheets and administration layer"
+  }
+]

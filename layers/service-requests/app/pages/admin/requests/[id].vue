@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import type {
+  AdminServiceRequestUpdateInput,
+  ServiceRequestWithRelations
+} from '#layers/service-requests/shared/types/service-request'
+
 const route = useRoute()
+const { t } = useI18n()
 const requestId = route.params.id as string
 
 const { adminUpdateRequest } = useAdminServiceRequests()
@@ -9,43 +15,48 @@ const request = ref<ServiceRequestWithRelations | null>(null)
 const loading = ref(true)
 const updating = ref(false)
 
-const adminUpdates = reactive({
-  status: '',
-  priority: '',
+useSeoMeta({
+  title: () => request.value?.title || t('features.serviceRequests.navigation.manageRequests')
+})
+
+const adminUpdates = reactive<AdminServiceRequestUpdateInput>({
+  status: undefined,
+  priority: undefined,
   assignedToId: '',
   internalNotes: ''
 })
 
-const statusOptions = [
-  { label: 'Open', value: 'OPEN' },
-  { label: 'In Progress', value: 'IN_PROGRESS' },
-  { label: 'Resolved', value: 'RESOLVED' },
-  { label: 'Closed', value: 'CLOSED' }
-]
+const statusOptions = computed(() => [
+  { label: t('features.serviceRequests.status.open'), value: 'OPEN' },
+  { label: t('features.serviceRequests.status.in_progress'), value: 'IN_PROGRESS' },
+  { label: t('features.serviceRequests.status.resolved'), value: 'RESOLVED' },
+  { label: t('features.serviceRequests.status.closed'), value: 'CLOSED' }
+])
 
-const priorityOptions = [
-  { label: 'Low', value: 'LOW' },
-  { label: 'Medium', value: 'MEDIUM' },
-  { label: 'High', value: 'HIGH' },
-  { label: 'Urgent', value: 'URGENT' }
-]
+const priorityOptions = computed(() => [
+  { label: t('features.serviceRequests.priority.low'), value: 'LOW' },
+  { label: t('features.serviceRequests.priority.medium'), value: 'MEDIUM' },
+  { label: t('features.serviceRequests.priority.high'), value: 'HIGH' },
+  { label: t('features.serviceRequests.priority.urgent'), value: 'URGENT' }
+])
 
 const userOptions = [
   // This would be populated with users from the organization
-  { label: 'Select User', value: '' }
+  { label: t('features.serviceRequests.placeholders.selectUser'), value: '' }
 ]
 
 onMounted(async () => {
   try {
     request.value = await $fetch(`/api/service-requests/${requestId}`)
+    if (!request.value) return
     adminUpdates.status = request.value.status
     adminUpdates.priority = request.value.priority
     adminUpdates.assignedToId = request.value.assignedToId || ''
     adminUpdates.internalNotes = request.value.internalNotes || ''
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to load request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.fetchError'),
       color: 'error'
     })
   } finally {
@@ -58,13 +69,13 @@ const handleUpdate = async () => {
   try {
     request.value = await adminUpdateRequest(requestId, adminUpdates)
     toast.add({
-      title: 'Success',
-      description: 'Request updated successfully'
+      title: t('common.success'),
+      description: t('features.serviceRequests.messages.updateSuccess')
     })
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to update request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.updateError'),
       color: 'error'
     })
   } finally {
@@ -76,9 +87,6 @@ const handleQuickUpdate = () => {
   handleUpdate()
 }
 
-definePageMeta({
-  middleware: ['auth', 'admin']
-})
 </script>
 
 <template>
@@ -90,18 +98,18 @@ definePageMeta({
 
     <div v-else-if="request" class="space-y-6">
       <!-- Full request details with admin controls -->
-      <CustomerRequestDetail :request="request" />
+      <CustomerRequestDetail :request-id="request.id" />
 
       <USeparator />
 
       <!-- Admin Actions -->
       <UCard>
         <template #header>
-          <h3 class="text-lg font-semibold">Admin Actions</h3>
+          <h3 class="text-lg font-semibold">{{ t('features.serviceRequests.actions.adminActions') }}</h3>
         </template>
 
         <div class="space-y-4">
-          <UFormField label="Status">
+          <UFormField :label="t('features.serviceRequests.fields.status')">
             <USelect
               v-model="adminUpdates.status"
               :options="statusOptions"
@@ -109,7 +117,7 @@ definePageMeta({
             />
           </UFormField>
 
-          <UFormField label="Priority">
+          <UFormField :label="t('features.serviceRequests.fields.priority')">
             <USelect
               v-model="adminUpdates.priority"
               :options="priorityOptions"
@@ -117,7 +125,7 @@ definePageMeta({
             />
           </UFormField>
 
-          <UFormField label="Assign To">
+          <UFormField :label="t('features.serviceRequests.fields.assignedTo')">
             <USelect
               v-model="adminUpdates.assignedToId"
               :options="userOptions"
@@ -125,16 +133,16 @@ definePageMeta({
             />
           </UFormField>
 
-          <UFormField label="Internal Notes">
+          <UFormField :label="t('features.serviceRequests.fields.internalNotes')">
             <UTextarea
               v-model="adminUpdates.internalNotes"
               :rows="4"
-              placeholder="Notes visible only to admins..."
+              :placeholder="t('features.serviceRequests.placeholders.internalNotes')"
             />
           </UFormField>
 
           <UButton :loading="updating" @click="handleUpdate">
-            Save Changes
+            {{ t('features.serviceRequests.actions.saveChanges') }}
           </UButton>
         </div>
       </UCard>

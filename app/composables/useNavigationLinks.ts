@@ -1,11 +1,12 @@
 import type { CommandPaletteGroup, CommandPaletteItem, NavigationMenuItem } from '@nuxt/ui'
+import type { PortalNavigationItem } from '#portal/shared/types/feature'
 
 type CommandPaletteItemWithChildren = CommandPaletteItem & {
   children?: CommandPaletteItem[]
   _searchText?: string
 }
 
-type MenuItemRole = 'public' | 'authenticated' | 'admin'
+type MenuItemRole = 'public' | 'authenticated' | 'organizationAdmin' | 'admin'
 
 interface MenuItemConfig {
   id: string
@@ -25,13 +26,14 @@ interface MenuItemConfig {
 export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const userStore = useUserStore()
-  const { isAdmin, isAuthenticated } = storeToRefs(userStore)
+  const { isAdmin, isAuthenticated, activeOrganizationRole } = storeToRefs(userStore)
+  const { navigation: featureNavigation } = usePortalFeatures()
 
   const route = useRoute()
   const isHome = computed(() => route.path === '/')
 
   // Define all menu items in a structured array
-  const menuItemsConfig: MenuItemConfig[] = [
+  const coreMenuItemsConfig: MenuItemConfig[] = [
     // Home group items
     {
       id: 'home',
@@ -73,15 +75,6 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
       roles: ['public', 'authenticated'],
       showInRoot: true,
       showInHome: true
-    },
-    {
-      id: 'service-requests',
-      labelKey: 'menu.serviceRequests.title',
-      icon: 'i-lucide-ticket',
-      to: '/requests',
-      roles: ['authenticated'],
-      searchGroup: 'navigation',
-      showInRoot: true
     },
     {
       id: 'my-organizations',
@@ -183,11 +176,27 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
     }
   ]
 
+  const featureToMenuItem = (item: PortalNavigationItem): MenuItemConfig => ({
+    id: item.id,
+    labelKey: item.labelKey,
+    icon: item.icon,
+    to: item.to,
+    roles: item.audiences,
+    searchGroup: 'navigation',
+    showInRoot: true
+  })
+
+  const menuItemsConfig = computed<MenuItemConfig[]>(() => [
+    ...coreMenuItemsConfig,
+    ...featureNavigation.value.map(featureToMenuItem)
+  ])
+
   // Helper function to check if user has required role
   const hasRequiredRole = (roles?: MenuItemRole[]): boolean => {
     if (!roles || roles.length === 0) return true
     if (roles.includes('public')) return true
     if (roles.includes('authenticated') && isAuthenticated.value) return true
+    if (roles.includes('organizationAdmin') && (activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin')) return true
     if (roles.includes('admin') && isAdmin.value) return true
     return false
   }
@@ -268,7 +277,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
     const mainLinks: NavigationMenuItem[] = []
     const footerLinks: NavigationMenuItem[] = []
 
-    menuItemsConfig.forEach((config) => {
+    menuItemsConfig.value.forEach((config) => {
       // Skip home item itself, but include its children for home page
       if (config.id === 'home') {
         if (isHome.value && config.children) {
@@ -301,7 +310,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
     const navigationGroupItems: CommandPaletteItemWithChildren[] = []
 
     // Process each menu item config
-    menuItemsConfig.forEach((config) => {
+    menuItemsConfig.value.forEach((config) => {
       // Skip if user doesn't have required role or item shouldn't be in search
       if (!hasRequiredRole(config.roles) || config.showInSearch === false) return
 

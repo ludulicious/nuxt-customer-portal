@@ -3,6 +3,15 @@ import { statement } from '~~/shared/permissions'
 import { auth } from '~~/server/utils/auth'
 import { getUserPermissions } from '~~/server/utils/permissions'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAuthPermissionsGet',
+    summary: 'Get current user permissions',
+    description: 'Get current user permissions. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event) => {
   // Get authenticated user
   const session = await auth.api.getSession({ headers: event.headers })

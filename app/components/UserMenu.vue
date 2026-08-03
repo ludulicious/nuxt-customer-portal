@@ -15,6 +15,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   icon: 'i-lucide-user',
   to: '/settings'
 }, {
+  label: t('menu.documentation'),
+  icon: 'i-lucide-book-open-code',
+  to: '/api-docs',
+  target: '_blank'
+}, {
   label: 'Appearance',
   icon: 'i-lucide-sun-moon',
   children: [{

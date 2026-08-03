@@ -1,5 +1,5 @@
 import { authClient } from '~/utils/auth-client'
-import type { MemberRole } from '#types'
+import type { MemberRole, Organization } from '#types'
 
 export const useOrganization = () => {
   // Get current user's organization
@@ -30,6 +30,13 @@ export const useOrganization = () => {
     return await authClient.organization.create(data)
   }
 
+  const updateAdminOrganization = async (organizationId: string, data: { name: string, slug: string, officialCompanyName: string, logo: string }) => {
+    return await $fetch<Organization>(`/api/admin/organizations/${organizationId}`, {
+      method: 'PATCH',
+      body: data
+    })
+  }
+
   const getActiveMember = async () => {
     return await authClient.organization.getActiveMember()
   }
@@ -51,7 +58,7 @@ export const useOrganization = () => {
 
   const listInvitations = async (organizationId: string) => {
     return await authClient.organization.listInvitations({
-      organizationId
+      query: { organizationId }
     })
   }
 
@@ -82,6 +89,7 @@ export const useOrganization = () => {
     isOrganizationAdmin,
     getUserOrganizations,
     createOrganization,
+    updateAdminOrganization,
     getActiveMember,
     listMembers,
     inviteMember,

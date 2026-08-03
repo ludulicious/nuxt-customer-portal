@@ -18,7 +18,7 @@ const toast = useToast()
 
 const formSchema = computed(() => z.object({
   email: z.string().email(t('organization.members.validation.emailInvalid')),
-  role: z.enum(['owner', 'admin', 'member'], { required_error: t('admin.organization.detail.invitations.roleRequired') })
+  role: z.enum(['owner', 'admin', 'member'], { error: t('admin.organization.detail.invitations.roleRequired') })
 }))
 
 const form = reactive({

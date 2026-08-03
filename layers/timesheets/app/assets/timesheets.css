@@ -1,0 +1,102 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: portal-native · enrichment: none · contrast: pass (40–41) · mobile: pass (34, 49–57) */
+@import "../../tokens.css";
+
+html,
+body {
+  overflow-x: clip;
+}
+
+.timesheet-workbench {
+  min-width: 0;
+}
+
+.timesheet-workbench button,
+.timesheet-workbench a,
+.timesheet-admin button,
+.timesheet-admin a {
+  white-space: nowrap;
+}
+
+.timesheet-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2.2fr) repeat(7, minmax(3.5rem, 0.65fr)) minmax(4rem, 0.65fr);
+  min-width: 47rem;
+}
+
+.timesheet-grid__cell {
+  min-width: 0;
+  padding: var(--timesheets-space-cell);
+  border-right: 1px solid var(--timesheets-rule);
+  border-bottom: 1px solid var(--timesheets-rule);
+}
+
+.timesheet-grid__cell--weekend {
+  background: var(--timesheets-color-weekend);
+}
+
+.timesheet-grid__identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  overflow-wrap: anywhere;
+}
+
+.timesheet-grid__client,
+.timesheet-grid__project,
+.timesheet-grid__activity {
+  display: block;
+  min-width: 0;
+  white-space: normal;
+}
+
+.timesheet-grid__client {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.timesheet-grid__project {
+  color: var(--ui-text-highlighted);
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.timesheet-grid__activity {
+  color: var(--ui-primary);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.timesheet-timer {
+  border-inline-start: 3px solid var(--timesheets-color-running);
+  background: var(--timesheets-color-running-soft);
+}
+
+.timesheet-row-action {
+  transition:
+    opacity var(--timesheets-duration-fast) var(--timesheets-ease-out),
+    transform var(--timesheets-duration-fast) var(--timesheets-ease-out);
+}
+
+.timesheet-row-action:active {
+  transform: translateY(1px);
+}
+
+.timesheet-row-action:focus-visible {
+  outline: 3px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .timesheet-grid {
+    grid-template-columns: minmax(14rem, 1fr) repeat(7, minmax(3.5rem, 0.55fr)) minmax(4rem, 0.55fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timesheet-row-action {
+    transition-duration: 0ms;
+  }
+}

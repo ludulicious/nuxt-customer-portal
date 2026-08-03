@@ -17,7 +17,6 @@ const dashboardData = ref({
   },
   monthlyStats: {
     ordersCompleted: [12, 15, 18, 14, 16, 20, 18],
-    serviceRequests: [8, 12, 10, 15, 13, 17, 14],
     slaCompliance: [95, 97, 94, 96, 98, 99, 97]
   },
   recentActivity: [
@@ -114,8 +113,7 @@ const getStatusIcon = (type: string, status: string) => {
   return 'i-lucide-circle'
 }
 
-// Try to use service request widget composable (will be undefined if layer not present)
-const serviceRequestWidget = useServiceRequestWidget?.() || null
+const { dashboardWidgets } = usePortalFeatures()
 
 // Page metadata
 useSeoMeta({
@@ -341,19 +339,12 @@ const period = ref<Period>('daily')
         </UCard>
       </div>
 
-      <!-- Service Requests Widget (only if layer is present) -->
-      <UCard v-if="serviceRequestWidget" class="mb-8">
-        <template #header>
-          <div class="flex justify-between items-center">
-            <h2 class="text-xl font-bold">Recent Service Requests</h2>
-            <NuxtLink to="/requests">
-              <UButton variant="ghost" size="xs">View All</UButton>
-            </NuxtLink>
-          </div>
-        </template>
-
-        <RecentServiceRequestsWidget />
-      </UCard>
+      <component
+        :is="resolveComponent(widget.component)"
+        v-for="widget in dashboardWidgets"
+        :key="widget.id"
+        class="mb-8"
+      />
 
       <!-- Recent Activity and Quick Stats -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -433,9 +424,6 @@ const period = ref<Period>('daily')
             <div class="space-y-3">
               <UButton to="/orders/new" color="primary" variant="outline" block icon="i-lucide-plus">
                 {{ $t('dashboard.buttons.newOrder') }}
-              </UButton>
-              <UButton to="/requests/new" color="neutral" variant="outline" block icon="i-lucide-life-buoy">
-                {{ $t('dashboard.buttons.newRequest') }}
               </UButton>
               <UButton to="/reports" color="neutral" variant="outline" block icon="i-lucide-file-text">
                 {{ $t('dashboard.buttons.generateReport') }}

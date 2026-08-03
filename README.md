@@ -2,6 +2,11 @@
 
 A Nuxt application (Nuxt 4) with authentication (Better Auth), organizations, and a PostgreSQL database via Drizzle.
 
+## Architecture documentation
+
+- [Portal feature layers](docs/LAYERS.md): create, register, enable, disable, test, and remove reusable feature layers.
+- [Service-request layer](layers/service-requests/README.md): reference implementation and feature-specific lifecycle notes.
+
 ## Quick start (scaffold from GitHub template)
 
 Use Nuxt’s initializer (powered by `unjs/giget`) to create a new project from this repository:
@@ -79,4 +84,3 @@ Run (provide your own `DATABASE_URL`):
 ```bash
 docker run --rm -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/dbname?schema=public" customer-portal
 ```
-

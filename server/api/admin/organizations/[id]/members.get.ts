@@ -5,6 +5,15 @@ import { member as memberTable, user as userTable } from '~~/server/db/schema/au
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser, OrganizationMemberWithUser } from '#types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsByIdMembersGet',
+    summary: 'List organization members',
+    description: 'List organization members. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<OrganizationMemberWithUser[]> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
@@ -53,7 +62,12 @@ export default defineEventHandler(async (event): Promise<OrganizationMemberWithU
         id: userTable.id,
         email: userTable.email,
         name: userTable.name,
-        image: userTable.image
+        image: userTable.image,
+        role: userTable.role,
+        emailVerified: userTable.emailVerified,
+        createdAt: userTable.createdAt,
+        updatedAt: userTable.updatedAt,
+        banned: userTable.banned
       }
     })
     .from(memberTable)
@@ -63,4 +77,3 @@ export default defineEventHandler(async (event): Promise<OrganizationMemberWithU
 
   return members as OrganizationMemberWithUser[]
 })
-

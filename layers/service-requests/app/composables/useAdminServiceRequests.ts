@@ -1,78 +1,43 @@
-import { authClient } from '~/utils/auth-client'
+import type {
+  AdminServiceRequestUpdateInput,
+  ServiceRequest,
+  ServiceRequestFilters,
+  ServiceRequestListResponse
+} from '#layers/service-requests/shared/types/service-request'
 
 export const useAdminServiceRequests = () => {
-  const requests = ref<ServiceRequestWithRelations[]>([])
+  const requests = ref<ServiceRequest[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const pagination = ref({ total: 0, page: 1, limit: 20, pages: 0 })
-  const stats = ref<Record<string, number>>({})
+  const pagination = ref({ total: 0, page: 1, pageSize: 20, pageCount: 0 })
+  const stats = computed(() => requests.value.reduce<Record<string, number>>((result, request) => {
+    result[request.status] = (result[request.status] ?? 0) + 1
+    return result
+  }, {}))
 
-  const fetchAllRequests = async (filters?: ServiceRequestFilters) => {
+  const fetchAllRequests = async (filters: ServiceRequestFilters = {}) => {
     loading.value = true
     error.value = null
-
     try {
-      // Verify admin access using better-auth
-      const { data: role } = await authClient.organization.getActiveMemberRole()
-      const isAdmin = role?.role === 'owner' || role?.role === 'admin'
-
-      if (!isAdmin) {
-        throw new Error('Admin access required')
-      }
-
-      const response = await $fetch('/api/service-requests/admin', {
-        query: filters
-      })
-      requests.value = response.requests
+      const response = await $fetch<ServiceRequestListResponse>('/api/service-requests/admin', { query: filters })
+      requests.value = response.items
       pagination.value = response.pagination
-      stats.value = response.stats
-    } catch (e: any) {
-      error.value = e.message
-      console.error('Error fetching admin service requests:', e)
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Failed to fetch service requests'
+      throw cause
     } finally {
       loading.value = false
     }
   }
 
-  const adminUpdateRequest = async (
-    id: string,
-    data: AdminServiceRequestUpdateInput
-  ) => {
-    loading.value = true
-    error.value = null
-
-    try {
-      const updated = await $fetch(`/api/service-requests/admin/${id}`, {
-        method: 'PATCH',
-        body: data
-      })
-      const index = requests.value.findIndex(r => r.id === id)
-      if (index !== -1) {
-        requests.value[index] = updated
-      }
-      return updated
-    } catch (e: any) {
-      error.value = e.message
-      throw e
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const assignRequest = async (id: string, userId: string) => {
-    return adminUpdateRequest(id, { assignedToId: userId })
-  }
-
-  const resolveRequest = async (id: string) => {
-    return adminUpdateRequest(id, { status: 'RESOLVED' })
-  }
-
-  const closeRequest = async (id: string) => {
-    return adminUpdateRequest(id, { status: 'CLOSED' })
-  }
-
-  const reopenRequest = async (id: string) => {
-    return adminUpdateRequest(id, { status: 'OPEN' })
+  const adminUpdateRequest = async (id: string, data: AdminServiceRequestUpdateInput) => {
+    const updated = await $fetch<ServiceRequest>(`/api/service-requests/admin/${id}`, {
+      method: 'PATCH',
+      body: data
+    })
+    const index = requests.value.findIndex(request => request.id === id)
+    if (index >= 0) requests.value[index] = updated
+    return updated
   }
 
   return {
@@ -80,12 +45,12 @@ export const useAdminServiceRequests = () => {
     loading: readonly(loading),
     error: readonly(error),
     pagination: readonly(pagination),
-    stats: readonly(stats),
+    stats,
     fetchAllRequests,
     adminUpdateRequest,
-    assignRequest,
-    resolveRequest,
-    closeRequest,
-    reopenRequest
+    assignRequest: (id: string, userId: string) => adminUpdateRequest(id, { assignedToId: userId }),
+    resolveRequest: (id: string) => adminUpdateRequest(id, { status: 'RESOLVED' }),
+    closeRequest: (id: string) => adminUpdateRequest(id, { status: 'CLOSED' }),
+    reopenRequest: (id: string) => adminUpdateRequest(id, { status: 'OPEN' })
   }
 }

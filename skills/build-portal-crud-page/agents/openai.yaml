@@ -1,0 +1,4 @@
+interface:
+  display_name: "Portal CRUD Pages"
+  short_description: "Build consistent inline CRUD admin pages"
+  default_prompt: "Use $build-portal-crud-page to add or update an admin CRUD page in this portal."

@@ -3,7 +3,7 @@ import { APIError } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
-import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
+import { admin, customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
 import { db } from './db'
 import { and, eq, gt, or } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
@@ -172,6 +172,9 @@ export const auth = betterAuth({
     }
   },
   plugins: [
+    openAPI({
+      disableDefaultReference: true
+    }),
     organization({
       allowUserToCreateOrganization: true,
       sendInvitationEmail: async ({ invitation, organization, inviter }) => {

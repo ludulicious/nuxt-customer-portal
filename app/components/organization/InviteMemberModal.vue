@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { MemberRole } from '#types'
 import { useOrganization } from '~/composables/useOrganization'
 
 const props = defineProps<{
@@ -20,12 +19,12 @@ const { inviteMember } = useOrganization()
 
 const formSchema = computed(() => z.object({
   email: z.string().email(t('organization.members.validation.emailInvalid')),
-  role: z.enum(['member', 'admin'], { required_error: t('organization.members.validation.roleRequired') })
+  role: z.enum(['member', 'admin'], { error: t('organization.members.validation.roleRequired') })
 }))
 
 const form = reactive({
   email: '',
-  role: 'member' as MemberRole
+  role: 'member' as 'member' | 'admin'
 })
 
 const inviting = ref(false)
@@ -107,4 +106,3 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
     </template>
   </UModal>
 </template>
-

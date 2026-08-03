@@ -2,6 +2,15 @@ import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '~~/server/utils/auth'
 import { checkOrganizationPermission } from '~~/server/utils/permissions'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalOrganizationsByIdInvitationsByInvitationIdDeletePost',
+    summary: 'Cancel an organization invitation',
+    description: 'Cancel an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

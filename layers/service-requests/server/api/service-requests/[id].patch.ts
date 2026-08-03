@@ -1,55 +1,33 @@
-import { auth } from '~~/server/utils/auth'
-import { updateServiceRequestSchema } from '../../utils/service-request-validation'
-import { verifyServiceRequestAccess, verifyRequestOwnership } from '../../utils/service-request-helpers'
-import { db } from '~~/server/utils/db'
-import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { requireFeatureAccess } from '#portal/server/portal'
+import { serviceRequestFeature } from '#layers/service-requests/shared/feature'
+import { findServiceRequest, toServiceRequestDto, updateServiceRequest } from '#layers/service-requests/server/utils/service-request-repository'
+import { updateServiceRequestSchema } from '#layers/service-requests/server/utils/service-request-validation'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Service Requests'],
+operationId: 'serviceRequestsByIdPatch',
+    summary: 'Update a service request',
+    description: 'Update a service request. Scoped to the active organization and the applicable Service Requests permission.'
+  }
+})
 
 export default defineEventHandler(async (event) => {
-  const session = await auth.api.getSession({ headers: event.headers })
-  if (!session?.user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
+  const { organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'update')
   const id = getRouterParam(event, 'id')
-  const body = await readBody(event)
-  const data = updateServiceRequestSchema.parse(body)
-
-  // Get the request to check organization
-  const [existingRequest] = await db
-    .select({ organizationId: serviceRequest.organizationId })
-    .from(serviceRequest)
-    .where(eq(serviceRequest.id, id!))
-    .limit(1)
-
-  if (!existingRequest) {
+  if (!id) throw createError({ statusCode: 400, message: 'Request id is required' })
+  const existing = await findServiceRequest(id)
+  if (!existing || existing.organizationId !== organizationId) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
 
-  // Verify user has permission to update (must be owner or have update permission)
-  const isOwner = await verifyRequestOwnership(session.user.id, id!)
-  const hasUpdatePermission = await verifyServiceRequestAccess(
-    session,
-    existingRequest.organizationId,
-    'update'
-  )
-
-  if (!isOwner && !hasUpdatePermission) {
-    throw createError({ statusCode: 403, message: 'Access denied' })
-  }
-
-  // Users can only update certain fields
-  const allowedUpdates: Record<string, string> = {}
-  if (data.title) allowedUpdates.title = data.title
-  if (data.description) allowedUpdates.description = data.description
-  if (data.priority) allowedUpdates.priority = data.priority
-  if (data.category) allowedUpdates.category = data.category
-
-  const [request] = await db
-    .update(serviceRequest)
-    .set(allowedUpdates)
-    .where(eq(serviceRequest.id, id!))
-    .returning()
-
-  return request
+  const data = updateServiceRequestSchema.parse(await readBody(event))
+  const row = await updateServiceRequest(id, {
+    title: data.title,
+    description: data.description,
+    priority: data.priority,
+    category: data.category
+  })
+  if (!row) throw createError({ statusCode: 404, message: 'Request not found' })
+  return toServiceRequestDto(row)
 })

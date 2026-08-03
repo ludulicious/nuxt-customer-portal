@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { en, nl } from '@nuxt/ui/locale'
 
 const colorMode = useColorMode()
+const { locale } = useI18n()
+const uiLocale = computed(() => locale.value === 'nl' ? nl : en)
 
 // Dynamic theme color based on current mode
 const color = computed(() => {
@@ -26,7 +29,7 @@ useHead({
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }
   ],
   htmlAttrs: {
-    lang: 'en',
+    lang: locale,
     class: computed(() => colorMode.value)
   }
 })
@@ -46,7 +49,7 @@ provide('navigation', navigation)
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocale">
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />

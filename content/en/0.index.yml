@@ -23,13 +23,13 @@ sections:
     id: features
     orientation: horizontal
     features:
-      - name: Track orders
+      - title: Track orders
         description: Follow service orders from request to completion with real‑time status.
         icon: i-lucide-clipboard-list
-      - name: View invoices
+      - title: View invoices
         description: Access invoices and download PDFs anytime.
         icon: i-lucide-receipt-text
-      - name: Service requests
+      - title: Service requests
         description: Open and follow up requests with clear timelines.
         icon: i-lucide-life-buoy
   - title: Why ApexPro
@@ -37,13 +37,13 @@ sections:
     orientation: horizontal
     reverse: true
     features:
-      - name: Reliable delivery
+      - title: Reliable delivery
         description: Teams scheduled and monitored to meet your service windows.
         icon: i-lucide-calendar-check
-      - name: Transparent reporting
+      - title: Transparent reporting
         description: SLA dashboards and exportable reports.
         icon: i-lucide-chart-line
-      - name: Dedicated support
+      - title: Dedicated support
         description: Fast responses from our portal support team.
         icon: i-lucide-headset
 features:

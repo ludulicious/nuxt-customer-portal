@@ -41,7 +41,7 @@
         "backToMyOrganizations": "Back to my organizations",
         "loading": "Loading organization...",
         "title": "Organization Details",
-        "name": "",
+        "name": "Name",
         "slug": "Slug",
         "created": "Created",
         "members": {
@@ -49,7 +49,15 @@
           "empty": "No members yet",
           "email": "Email",
           "name": "Name",
-          "role": "Role"
+          "role": "Role",
+          "remove": "Remove from organization",
+          "removeSuccess": "Member removed from the organization",
+          "removeFailed": "Failed to remove the member",
+          "confirmRemove": {
+            "title": "Remove organization member",
+            "message": "Remove {name} from this organization? Their user account will not be deleted.",
+            "confirm": "Remove member"
+          }
         },
         "invitations": {
           "title": "Invitations",
@@ -98,9 +106,18 @@
       },
       "list": {
         "title": "Organizations",
+        "description": "Manage the organizations that use this portal.",
         "createButton": "Create Organization",
+        "newOrganization": "New organization",
+        "createFirstOrganization": "Create your first organization",
         "loading": "Loading organizations...",
         "empty": "No organizations found",
+        "emptyDescription": "Create an organization to start managing its members and settings.",
+        "emptyFiltered": "No organizations match the current search.",
+        "searchPlaceholder": "Search organizations...",
+        "resultCount": "{count} organizations",
+        "totalCount": "{count} total",
+        "viewOrganization": "View {name}",
         "view": "View",
         "name": "Name",
         "slug": "Slug",
@@ -227,6 +244,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "confirm": "Confirm",
+    "create" : "Create",
     "createdAt": "Created at",
     "delete": "Delete",
     "descending": "Descending",
@@ -248,16 +266,20 @@
     "view": "View"
   },
   "menu": {
+    "mobileNavigation": "Module navigation",
+    "activeModuleNavigation": "Active module menu",
+    "moduleMenuDescription": "Pages in this module",
+    "search": "Search",
+    "switchOrganization": "Switch organization",
+    "module": "Module",
+    "selectModule": "Select a module",
     "dashboard": "Dashboard",
-    "serviceRequests": {
-      "title": "Service Requests"
-    },
     "inbox": "Inbox",
     "customers": "Customers",
     "helpSupport": "Help & Support",
     "feedback": "Feedback",
     "home": "Home",
-    "documentation": "Documentation",
+    "documentation": "API documentation",
     "profile": "Profile",
     "theme": "Theme",
     "settings": {
@@ -533,6 +555,7 @@
     "errors": {
       "emailNotVerified": "Email not verified",
       "githubError": "Could not initiate GitHub login.",
+      "googleError": "Could not initiate Google login.",
       "invalidCredentials": "Invalid email or password.",
       "unexpectedError": "An unexpected error occurred. Please try again."
     },
@@ -573,11 +596,27 @@
     "profile": "Profile"
   },
   "organization": {
+    "emailProvider": {
+      "title": "Email provider", "description": "Configure this organization's Resend account for invoices, reminders, and other transactional email.",
+      "configured": "Resend is configured", "notConfigured": "Resend is not configured", "required": "Transactional email is blocked until an organization owner configures a key.",
+      "masked": "Active API key ending in {suffix}", "verifiedDomains": "Verified sending domains", "keyLabel": "Resend API key", "replaceLabel": "New Resend API key",
+      "configure": "Configure and validate", "replace": "Validate and replace", "checkAgain": "Check domains again", "remove": "Remove key", "saved": "Resend API key saved",
+      "documentation": "Resend domain verification guide",
+      "invalid": "The Resend API key could not be validated", "invalidDescription": "Check that the key is active and belongs to the intended Resend account.",
+      "permissionRequired": "This Resend key is send-only", "permissionRequiredDescription": "Create a Full access API key in Resend. Domain access is required to verify that this organization may use its configured sender address.",
+      "checkFailed": "Could not check Resend domains", "removed": "Resend API key removed",
+      "statusFailed": "Email provider status could not be loaded", "statusFailedDescription": "Check the server and database migration before configuring a key.",
+      "removeTitle": "Remove Resend API key?", "removeDescription": "Invoices and reminders cannot be sent until a new organization key is configured."
+    },
     "settings": {
       "editTitle": "Edit organization",
       "editButton": "Edit organization",
+      "updateSuccess": "Organization updated successfully",
       "nameLabel": "Organization Name",
       "namePlaceholder": "Organization name",
+      "officialCompanyNameLabel": "Official company name",
+      "officialCompanyNamePlaceholder": "Company name as registered",
+      "officialCompanyNameHint": "Used as the sender name on invoices.",
       "slugLabel": "Organization Slug",
       "slugPlaceholder": "organization-slug",
       "slugHint": "URL-friendly identifier for your organization",
@@ -587,6 +626,8 @@
       "slugError": "Unable to check slug availability",
       "logoLabel": "Organization Logo",
       "logoChoose": "Choose logo",
+      "logoRemove": "Remove logo",
+      "invoiceLogoHint": "PNG, JPG, GIF, or WebP. The logo is used on new invoices.",
       "logoHint": "Upload a PNG, JPG, or GIF. Recommended size: 280×160.",
       "ownerOnly": "Only organization owners can edit name or slug.",
       "errors": {
@@ -596,9 +637,11 @@
       },
       "validation": {
         "nameRequired": "Organization name is required",
+        "officialCompanyNameRequired": "Official company name is required",
         "slugRequired": "Organization slug is required",
         "slugInvalid": "Slug must be lowercase letters, numbers, and hyphens only",
-        "logoInvalid": "Logo must be a valid URL"
+        "logoInvalid": "Logo must be a valid image",
+        "logoTooLarge": "Logo must be smaller than 2 MB"
       }
     },
     "members": {

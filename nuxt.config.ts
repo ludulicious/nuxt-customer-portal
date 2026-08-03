@@ -3,9 +3,6 @@ import { fileURLToPath } from 'node:url'
 
 export default defineNuxtConfig({
   ssr: false,
-  extends: [
-    './layers/service-requests'
-  ],
   modules: [
     '@nuxt/eslint',
     '@nuxt/image',
@@ -17,6 +14,7 @@ export default defineNuxtConfig({
   ],
   alias: {
     '#types': fileURLToPath(new URL('./shared/types', import.meta.url)),
+    '#portal': fileURLToPath(new URL('./layers/portal-core', import.meta.url)),
   },
   image: {
     quality: 80,
@@ -71,6 +69,31 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-10-24',
 
   nitro: {
+    experimental: {
+      openAPI: true
+    },
+    openAPI: {
+      production: 'runtime',
+      meta: {
+        title: 'ApexPro API',
+        description: 'Interactive API documentation for the ApexPro customer portal. Requests are made using your current authenticated session and permissions.',
+        version: '1.0.0'
+      },
+      route: '/api-docs/openapi.raw.json',
+      ui: {
+        scalar: {
+          route: '/api-docs',
+          theme: 'default',
+          hideClientButton: true,
+          spec: {
+            url: '/api-docs/openapi.json'
+          }
+        },
+        swagger: {
+          route: '/api-docs/swagger'
+        }
+      }
+    },
     routeRules: {
       '/': { swr: 300 },
       '/blog/**': { swr: 600 }

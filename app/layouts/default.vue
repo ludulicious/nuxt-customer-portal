@@ -1,3 +1,4 @@
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
 <script setup lang="ts">
 const route = useRoute()
 const toast = useToast()
@@ -5,21 +6,13 @@ const open = ref(false)
 const showFooter = computed(() => route.meta?.public === true)
 
 const { links } = useNavigationLinks(open)
-const { modules, activeModule, activeModuleMenuItems } = useModuleNavigation(open)
+const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
 
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
   items: links.value.flat()
 }])
-
-const moduleSwitchItems = computed(() => [
-  modules.value.map(module => ({
-    label: module.label,
-    icon: module.icon,
-    to: module.to
-  }))
-])
 
 onMounted(async () => {
   const cookie = useCookie('cookie-consent')
@@ -52,7 +45,7 @@ onMounted(async () => {
     <!-- AppHeader - fixed at top -->
     <div class="fixed top-0 left-0 right-0 z-50">
       <div class="mx-auto w-full max-w-[1600px] px-4">
-        <AppHeader :show-navigation="false" />
+        <AppHeader />
       </div>
     </div>
 
@@ -69,22 +62,9 @@ onMounted(async () => {
         :ui="{ footer: 'lg:border-t lg:border-default' }"
       >
         <template #header>
-          <div class="flex flex-col gap-2">
-            <UDropdownMenu
-              class="lg:hidden"
-              :items="moduleSwitchItems"
-              :content="{ align: 'start', collisionPadding: 12 }"
-            >
-              <UButton
-                :label="activeModule?.label || 'Module'"
-                :icon="activeModule?.icon"
-                trailing-icon="i-lucide-chevrons-up-down"
-                color="neutral"
-                variant="ghost"
-                block
-                class="justify-between"
-              />
-            </UDropdownMenu>
+          <div v-if="activeModule" class="flex min-w-0 items-center gap-2 px-2 text-sm font-semibold">
+            <UIcon v-if="activeModule.icon" :name="activeModule.icon" class="size-4 shrink-0 text-primary" />
+            <span class="truncate">{{ activeModule.label }}</span>
           </div>
         </template>
         <template #default="{ collapsed }">

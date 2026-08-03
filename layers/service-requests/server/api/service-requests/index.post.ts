@@ -1,45 +1,27 @@
-import { auth } from '~~/server/utils/auth'
-import { createServiceRequestSchema } from '../../utils/service-request-validation'
-import { db } from '~~/server/utils/db'
-import { serviceRequest } from '~~/server/db/schema/service-requests'
-import { verifyServiceRequestAccess } from '../../utils/service-request-helpers'
 import { nanoid } from 'nanoid'
+import { requireFeatureAccess } from '#portal/server/portal'
+import { serviceRequestFeature } from '#layers/service-requests/shared/feature'
+import { createServiceRequestSchema } from '#layers/service-requests/server/utils/service-request-validation'
+import { createServiceRequest, toServiceRequestDto } from '#layers/service-requests/server/utils/service-request-repository'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Service Requests'],
+operationId: 'serviceRequestsPost',
+    summary: 'Create a service request',
+    description: 'Create a service request. Scoped to the active organization and the applicable Service Requests permission.'
+  }
+})
 
 export default defineEventHandler(async (event) => {
-  const session = await auth.api.getSession({ headers: event.headers })
-  if (!session?.user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  const body = await readBody(event)
-  const data = createServiceRequestSchema.parse(body)
-
-  // Get user's active organization from session
-  type SessionWithOrg = { session?: { activeOrganizationId?: string }, activeOrganizationId?: string }
-  const sessionWithOrg = session as SessionWithOrg
-  const organizationId = sessionWithOrg?.session?.activeOrganizationId || sessionWithOrg?.activeOrganizationId
-
-  if (!organizationId) {
-    throw createError({ statusCode: 400, message: 'No organization found' })
-  }
-
-  // Verify user has permission to create service requests
-  const hasAccess = await verifyServiceRequestAccess(session, organizationId, 'create')
-  if (!hasAccess) {
-    throw createError({ statusCode: 403, message: 'Access denied' })
-  }
-
-  const [request] = await db
-    .insert(serviceRequest)
-    .values({
-      id: nanoid(),
-      ...data,
-      organizationId,
-      createdById: session.user.id,
-      status: 'OPEN',
-      priority: (data as any).priority || 'MEDIUM',
-    })
-    .returning()
-
-  return request
+  const { session, organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'create')
+  const data = createServiceRequestSchema.parse(await readBody(event))
+  const row = await createServiceRequest({
+    id: nanoid(),
+    ...data,
+    organizationId,
+    createdById: session.user.id
+  })
+  if (!row) throw createError({ statusCode: 500, message: 'Failed to create request' })
+  return toServiceRequestDto(row)
 })

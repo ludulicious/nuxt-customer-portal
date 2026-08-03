@@ -8,6 +8,97 @@
       "when": 1762447868539,
       "tag": "0000_gifted_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785434913754,
+      "tag": "0001_service_request_layer_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785442539989,
+      "tag": "0002_service_requests_postgres_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785444164236,
+      "tag": "0003_timesheets_layer",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785531526000,
+      "tag": "0004_timesheet_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785574800000,
+      "tag": "0005_timesheet_organization_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785600000000,
+      "tag": "0006_timesheet_default_vat_rate",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785603600000,
+      "tag": "0007_timesheet_invoice_history_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785607200000,
+      "tag": "0008_timesheet_invoice_history_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785610800000,
+      "tag": "0009_invoice_sender_logo",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785614400000,
+      "tag": "0010_invoice_email_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785700800000,
+      "tag": "0011_organization_email_credential",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785704400000,
+      "tag": "0012_invoice_email_provider_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785708000000,
+      "tag": "0013_invoice_payment_reminders",
+      "breakpoints": true
     }
   ]
 }

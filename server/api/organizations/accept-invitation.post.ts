@@ -1,10 +1,18 @@
 import { defineEventHandler, createError, readBody } from 'h3'
-import { auth } from '~~/server/utils/auth'
+import { auth, generateId } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { invitation as invitationTable, member as memberTable, organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
-import { generateId } from '~~/server/utils/auth'
 import type { SessionUser } from '#types'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalOrganizationsAcceptInvitationPost',
+    summary: 'Accept an organization invitation',
+    description: 'Accept an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
 
 /**
  * Custom endpoint to accept invitations, bypassing Better Auth's inviter membership check.
@@ -121,4 +129,3 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: errorMessage })
   }
 })
-

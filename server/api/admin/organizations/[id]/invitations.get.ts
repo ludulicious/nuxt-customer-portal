@@ -5,6 +5,15 @@ import { invitation as invitationTable, member as memberTable } from '~~/server/
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser, OrganizationInvitationsResponse } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsByIdInvitationsGet',
+    summary: 'List organization invitations',
+    description: 'List organization invitations. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<OrganizationInvitationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
@@ -52,5 +61,3 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
 
   return invitations as OrganizationInvitationsResponse
 })
-
-

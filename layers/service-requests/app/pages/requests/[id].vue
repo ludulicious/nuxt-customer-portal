@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import type {
+  ServiceRequestUpdateInput,
+  ServiceRequestWithRelations
+} from '#layers/service-requests/shared/types/service-request'
+
 const route = useRoute()
+const { t } = useI18n()
 const requestId = route.params.id as string
 
 const { getRequest, updateRequest, deleteRequest } = useServiceRequests()
-const { t } = useI18n()
-const userStore = useUserStore()
+const { currentUser } = usePortalSession()
 const toast = useToast()
 
 const request = ref<ServiceRequestWithRelations | null>(null)
@@ -12,12 +17,16 @@ const loading = ref(true)
 const updating = ref(false)
 const showEditModal = ref(false)
 
+useSeoMeta({
+  title: () => request.value?.title || t('features.serviceRequests.title')
+})
+
 const canEdit = computed(() => {
-  return request.value?.createdById === userStore.currentUser?.id
+  return request.value?.createdById === currentUser.value?.id
 })
 
 const canDelete = computed(() => {
-  return request.value?.createdById === userStore.currentUser?.id
+  return request.value?.createdById === currentUser.value?.id
 })
 
 const backRoute = computed(() => {
@@ -31,7 +40,6 @@ const backRoute = computed(() => {
   if (route.query.category != null && route.query.category !== '') query.category = String(route.query.category)
   if (route.query.sortBy != null && route.query.sortBy !== '') query.sortBy = String(route.query.sortBy)
   if (route.query.sortDir != null && route.query.sortDir !== '') query.sortDir = String(route.query.sortDir)
-  if (route.query.scroll != null && route.query.scroll !== '') query.scroll = String(route.query.scroll)
   if (route.query.page != null && route.query.page !== '') query.page = String(route.query.page)
   return { path: '/requests', query }
 })
@@ -39,10 +47,10 @@ const backRoute = computed(() => {
 onMounted(async () => {
   try {
     request.value = await getRequest(requestId)
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to load request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.fetchError'),
       color: 'error'
     })
   } finally {
@@ -56,13 +64,13 @@ const handleUpdate = async (data: ServiceRequestUpdateInput) => {
     request.value = await updateRequest(requestId, data)
     showEditModal.value = false
     toast.add({
-      title: 'Success',
-      description: 'Request updated successfully'
+      title: t('common.success'),
+      description: t('features.serviceRequests.messages.updateSuccess')
     })
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to update request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.updateError'),
       color: 'error'
     })
   } finally {
@@ -76,14 +84,14 @@ const handleDelete = async () => {
   try {
     await deleteRequest(requestId)
     toast.add({
-      title: 'Success',
-      description: 'Request deleted successfully'
+      title: t('common.success'),
+      description: t('features.serviceRequests.messages.deleteSuccess')
     })
     navigateTo(backRoute.value)
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to delete request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.deleteError'),
       color: 'error'
     })
   }
@@ -100,7 +108,7 @@ const handleDelete = async () => {
         size="sm"
         :to="backRoute"
       >
-        {{ t('serviceRequest.backToList') || 'Back to Requests' }}
+        {{ t('features.serviceRequests.actions.back') }}
       </UButton>
     </div>
 
@@ -110,13 +118,13 @@ const handleDelete = async () => {
     </div>
 
     <div v-else-if="!request" class="text-center py-8">
-      <p>{{ t('serviceRequest.notFound') || 'Request not found' }}</p>
-      <UButton :to="backRoute">{{ t('serviceRequest.backToList') || 'Back to Requests' }}</UButton>
+      <p>{{ t('features.serviceRequests.messages.notFound') }}</p>
+      <UButton :to="backRoute">{{ t('features.serviceRequests.actions.back') }}</UButton>
     </div>
 
     <div v-else>
       <CustomerRequestDetail
-        :request-id="requestId"
+        :request-id="request.id"
         :can-edit="canEdit"
         :can-delete="canDelete"
         @edit="showEditModal = true"
@@ -127,7 +135,7 @@ const handleDelete = async () => {
       <UModal v-model="showEditModal">
         <UCard>
           <template #header>
-            <h2 class="text-xl font-bold">Edit Request</h2>
+            <h2 class="text-xl font-bold">{{ t('features.serviceRequests.edit') }}</h2>
           </template>
 
           <CustomerRequestForm

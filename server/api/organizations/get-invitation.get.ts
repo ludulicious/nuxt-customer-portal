@@ -3,6 +3,15 @@ import { db } from '~~/server/utils/db'
 import { invitation as invitationTable, organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalOrganizationsGetInvitationGet',
+    summary: 'Get an organization invitation',
+    description: 'Get an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 /**
  * Custom endpoint to get invitation details, bypassing Better Auth's inviter membership check.
  * This is necessary because admins who create organizations and invite owners

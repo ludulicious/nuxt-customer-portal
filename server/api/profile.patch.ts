@@ -6,6 +6,15 @@ import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 import type { SessionUser } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalProfilePatch',
+    summary: 'Update the current user profile',
+    description: 'Update the current user profile. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 // Zod schema for profile update request
 const updateProfileSchema = z.object({
   name: z.string()

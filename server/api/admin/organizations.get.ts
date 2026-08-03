@@ -4,6 +4,15 @@ import { db } from '~~/server/utils/db'
 import { organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import type { SessionUser, AdminOrganizationsResponse } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsGet',
+    summary: 'List organizations',
+    description: 'List organizations. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<AdminOrganizationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

@@ -5,6 +5,15 @@ import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { or, ilike } from 'drizzle-orm'
 import type { SessionUser, AdminUsersResponse } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminUsersGet',
+    summary: 'List users',
+    description: 'List users. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<AdminUsersResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

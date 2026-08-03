@@ -29,6 +29,22 @@ export const filterServiceRequestSchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(['createdAt', 'status', 'priority']).optional().default('createdAt'),
   sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
-  skip: z.coerce.number().int().nonnegative().optional().default(0),
-  take: z.coerce.number().int().positive().max(1000).optional().default(20)
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(100).optional(),
+  skip: z.coerce.number().int().nonnegative().optional(),
+  take: z.coerce.number().int().positive().max(100).optional()
+}).transform((value) => {
+  const pageSize = value.pageSize ?? value.take ?? 20
+  const page = value.page ?? (value.skip === undefined ? 1 : Math.floor(value.skip / pageSize) + 1)
+  return {
+    ...value,
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize
+  }
 })
+
+export type CreateServiceRequestInput = z.infer<typeof createServiceRequestSchema>
+export type UpdateServiceRequestInput = z.infer<typeof updateServiceRequestSchema>
+export type AdminUpdateServiceRequestInput = z.infer<typeof adminUpdateServiceRequestSchema>
+export type ServiceRequestQuery = z.output<typeof filterServiceRequestSchema>

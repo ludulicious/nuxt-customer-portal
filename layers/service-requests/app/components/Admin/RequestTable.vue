@@ -1,8 +1,16 @@
 <script setup lang="ts">
-const props = defineProps<{
-  requests: ServiceRequestWithRelations[]
+import type {
+  AdminServiceRequestUpdateInput,
+  ServiceRequestFilters,
+  ServiceRequestPagination,
+  ServiceRequestPriority,
+  ServiceRequest
+} from '#layers/service-requests/shared/types/service-request'
+
+defineProps<{
+  requests: readonly ServiceRequest[]
   loading: boolean
-  pagination: any
+  pagination: ServiceRequestPagination
 }>()
 
 const emit = defineEmits<{
@@ -11,6 +19,7 @@ const emit = defineEmits<{
   assign: [id: string]
   update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
 }>()
+const { t } = useI18n()
 
 const currentPage = ref(1)
 const filters = reactive({
@@ -27,46 +36,36 @@ watch(currentPage, (page) => {
   emit('filter', { ...filters, page })
 })
 
-const columns = [
-  { key: 'title', label: 'Title' },
-  { key: 'status', label: 'Status' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'organization', label: 'Organization' },
-  { key: 'assignedTo', label: 'Assigned To' },
-  { key: 'createdAt', label: 'Created' },
-  { key: 'actions', label: '' }
-]
-
-const getActions = (request: ServiceRequestWithRelations) => {
+const getActions = (request: ServiceRequest) => {
   return [[
-    { label: 'View', click: () => emit('select', request.id) },
-    { label: 'Assign', click: () => emit('assign', request.id) },
-    { label: 'Resolve', click: () => emit('update', { id: request.id, updates: { status: 'RESOLVED' } }) },
-    { label: 'Close', click: () => emit('update', { id: request.id, updates: { status: 'CLOSED' } }) }
+    { label: t('features.serviceRequests.actions.view'), click: () => emit('select', request.id) },
+    { label: t('features.serviceRequests.actions.assign'), click: () => emit('assign', request.id) },
+    { label: t('features.serviceRequests.actions.resolve'), click: () => emit('update', { id: request.id, updates: { status: 'RESOLVED' } }) },
+    { label: t('features.serviceRequests.actions.close'), click: () => emit('update', { id: request.id, updates: { status: 'CLOSED' } }) }
   ]]
 }
 
-const statusOptions = [
-  { label: 'Open', value: 'OPEN' },
-  { label: 'In Progress', value: 'IN_PROGRESS' },
-  { label: 'Resolved', value: 'RESOLVED' },
-  { label: 'Closed', value: 'CLOSED' }
-]
+const statusOptions = computed(() => [
+  { label: t('features.serviceRequests.status.open'), value: 'OPEN' },
+  { label: t('features.serviceRequests.status.in_progress'), value: 'IN_PROGRESS' },
+  { label: t('features.serviceRequests.status.resolved'), value: 'RESOLVED' },
+  { label: t('features.serviceRequests.status.closed'), value: 'CLOSED' }
+])
 
-const priorityOptions = [
-  { label: 'Low', value: 'LOW' },
-  { label: 'Medium', value: 'MEDIUM' },
-  { label: 'High', value: 'HIGH' },
-  { label: 'Urgent', value: 'URGENT' }
-]
+const priorityOptions = computed(() => [
+  { label: t('features.serviceRequests.priority.low'), value: 'LOW' },
+  { label: t('features.serviceRequests.priority.medium'), value: 'MEDIUM' },
+  { label: t('features.serviceRequests.priority.high'), value: 'HIGH' },
+  { label: t('features.serviceRequests.priority.urgent'), value: 'URGENT' }
+])
 
 const getPriorityColor = (priority: ServiceRequestPriority) => {
   switch (priority) {
-    case 'LOW': return 'green'
-    case 'MEDIUM': return 'blue'
-    case 'HIGH': return 'orange'
-    case 'URGENT': return 'red'
-    default: return 'gray'
+    case 'LOW': return 'success'
+    case 'MEDIUM': return 'info'
+    case 'HIGH': return 'warning'
+    case 'URGENT': return 'error'
+    default: return 'neutral'
   }
 }
 </script>
@@ -75,74 +74,57 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
   <UCard>
     <!-- Filters -->
     <div class="flex gap-2 mb-4">
-      <USelect v-model="filters.status" :options="statusOptions" placeholder="Status" />
-      <USelect v-model="filters.priority" :options="priorityOptions" placeholder="Priority" />
-      <UInput v-model="filters.search" placeholder="Search..." icon="i-lucide-search" />
+      <USelect v-model="filters.status" :options="statusOptions" :placeholder="t('features.serviceRequests.fields.status')" />
+      <USelect v-model="filters.priority" :options="priorityOptions" :placeholder="t('features.serviceRequests.fields.priority')" />
+      <UInput v-model="filters.search" :placeholder="t('common.searchPlaceholder')" icon="i-lucide-search" />
     </div>
 
     <!-- Table -->
     <div v-if="loading">
-      <USkeleton class="h-12 w-full mb-2" v-for="i in 5" :key="i" />
+      <USkeleton v-for="i in 5" :key="i" class="h-12 w-full mb-2" />
     </div>
 
     <UEmpty
       v-else-if="requests.length === 0"
       icon="i-lucide-ticket"
-      description="No service requests found"
+      :description="t('features.serviceRequests.messages.empty')"
     />
 
-    <UTable
-      v-else
-      :rows="requests"
-      :columns="columns"
-    >
-      <template #title-data="{ row }">
-        <div class="cursor-pointer hover:underline" @click="$emit('select', row.id)">
-          {{ row.title }}
-        </div>
-      </template>
-
-      <template #status-data="{ row }">
-        <StatusBadge :status="row.status" />
-      </template>
-
-      <template #priority-data="{ row }">
-        <UBadge :color="getPriorityColor(row.priority)" size="xs">
-          {{ row.priority }}
-        </UBadge>
-      </template>
-
-      <template #organization-data="{ row }">
-        {{ row.organization?.name }}
-      </template>
-
-      <template #assignedTo-data="{ row }">
-        <span v-if="row.assignedTo">
-          {{ row.assignedTo.name || row.assignedTo.email }}
-        </span>
-        <UButton
-          v-else
-          size="xs"
-          variant="ghost"
-          @click="$emit('assign', row.id)"
-        >
-          Assign
-        </UButton>
-      </template>
-
-      <template #actions-data="{ row }">
-        <UDropdownMenu :items="getActions(row)">
-          <UButton variant="ghost" icon="i-lucide-more-vertical" />
-        </UDropdownMenu>
-      </template>
-    </UTable>
+    <div v-else class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b text-left">
+            <th class="p-3">{{ t('features.serviceRequests.fields.title') }}</th>
+            <th class="p-3">{{ t('features.serviceRequests.fields.status') }}</th>
+            <th class="p-3">{{ t('features.serviceRequests.fields.priority') }}</th>
+            <th class="p-3">{{ t('features.serviceRequests.fields.assignedTo') }}</th>
+            <th class="p-3" />
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="request in requests" :key="request.id" class="border-b">
+            <td class="p-3">
+              <button class="hover:underline" @click="$emit('select', request.id)">{{ request.title }}</button>
+            </td>
+            <td class="p-3"><StatusBadge :status="request.status" /></td>
+            <td class="p-3"><UBadge :color="getPriorityColor(request.priority)">{{ request.priority }}</UBadge></td>
+            <td class="p-3">{{ request.assignedToId || '—' }}</td>
+            <td class="p-3">
+              <UDropdownMenu :items="getActions(request)">
+                <UButton variant="ghost" icon="i-lucide-more-vertical" />
+              </UDropdownMenu>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
-    <div v-if="pagination.pages > 1" class="flex justify-center mt-4">
+    <div v-if="pagination.pageCount > 1" class="flex justify-center mt-4">
       <UPagination
         v-model="currentPage"
         :total="pagination.total"
-        :page-size="pagination.limit"
+        :page-size="pagination.pageSize"
       />
     </div>
   </UCard>

@@ -5,10 +5,9 @@ const { t } = useI18n()
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 
-const breakpoints = useBreakpoints({
-  mobile: 768
+useSeoMeta({
+  title: () => t('admin.organization.list.title')
 })
-const isMobile = breakpoints.smaller('mobile')
 
 if (!isAdmin.value) {
   throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -18,7 +17,6 @@ const loading = ref(true)
 const error = ref('')
 const organizations = ref<AdminOrganizationsResponse>([])
 const searchQuery = ref((route.query.search as string) ?? '')
-const showSortModal = ref(false)
 const sortBy = ref<'name' | 'createdAt'>(
   route.query.sortBy === 'createdAt' ? 'createdAt' : 'name'
 )
@@ -51,6 +49,10 @@ const sortDropdownItems = computed(() =>
 
 const toggleSortDir = () => {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+}
+
+const openOrganization = (org: { slug: string }) => {
+  return navigateTo(getViewTo(org))
 }
 
 function buildListQuery(includeScroll = false) {
@@ -146,188 +148,147 @@ watch([loading, listContainerRef], () => {
 <template>
   <UDashboardPanel
     id="admin-organizations"
-    class="lg:pb-8 min-h-0 overflow-hidden"
+    class="min-h-0 overflow-hidden"
     style="height: calc(100dvh - var(--ui-header-height));"
-    :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
+    :ui="{ body: 'flex-1 min-h-0 p-0 sm:p-0 overflow-hidden' }"
   >
-    <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }" :toggle="false">
-        <template #leading>
-          <UIcon name="i-lucide-building-2" class="size-6 shrink-0" />
-          <span class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ t('admin.organization.list.title') }}
-          </span>
-        </template>
-
-        <template #right>
-          <div class="flex gap-2 w-full sm:w-auto">
-            <UButton
-              icon="i-lucide-plus"
-              color="primary"
-              :to="'/admin/organizations/create'"
-              class="flex-1 sm:flex-none"
-              :title="t('admin.organization.list.createButton')"
-            />
-            <UButton
-              icon="i-lucide-refresh-cw"
-              variant="outline"
-              :loading="loading"
-              class="flex-1 sm:flex-none"
-              :title="t('common.refresh')"
-              @click="loadOrganizations"
-            />
+    <template #body>
+      <div class="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <header class="mb-5 shrink-0 border-b border-default pb-5">
+          <div class="flex items-end justify-between gap-4">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-building-2" class="size-6 shrink-0" />
+                <h1 class="text-2xl font-semibold text-highlighted">
+                  {{ t('admin.organization.list.title') }}
+                </h1>
+              </div>
+              <p class="mt-1 text-sm text-muted">
+                {{ t('admin.organization.list.description') }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-1">
+              <UButton
+                icon="i-lucide-plus"
+                size="sm"
+                variant="outline"
+                class="h-8"
+                :to="'/admin/organizations/create'"
+              >
+                <span class="hidden sm:inline">{{ t('admin.organization.list.newOrganization') }}</span>
+              </UButton>
+              <UButton
+                icon="i-lucide-refresh-cw"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                :loading="loading"
+                :aria-label="t('common.refresh')"
+                @click="loadOrganizations"
+              />
+            </div>
           </div>
-        </template>
-      </UDashboardNavbar>
+        </header>
 
-      <UDashboardToolbar>
-        <template #left>
-          <div class="flex items-center gap-2 w-full">
-            <UInput
-              v-model="searchQuery"
-              :placeholder="t('common.searchPlaceholder')"
-              icon="i-lucide-search"
-              :loading="loading"
-              class="flex-1 max-w-md"
-              clearable
-            />
-          </div>
-        </template>
-        <template #right>
+        <div class="mb-4 grid shrink-0 grid-cols-1 gap-3 border-b border-default pb-5 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
+          <UInput
+            v-model="searchQuery"
+            :placeholder="t('admin.organization.list.searchPlaceholder')"
+            icon="i-lucide-search"
+            :loading="loading"
+            class="w-full"
+            clearable
+          />
           <div class="flex items-center gap-2">
-            <UButton
-              v-if="isMobile"
-              icon="i-lucide-arrow-down-up"
-              variant="outline"
-              :title="t('common.sort')"
-              @click="showSortModal = true"
-            >
-              {{ t('common.sort') }}
-            </UButton>
-
             <UDropdownMenu
-              v-if="!isMobile"
               :items="sortDropdownItems"
               :content="{ align: 'end', collisionPadding: 12 }"
+              class="min-w-0 flex-1"
             >
               <UButton
                 icon="i-lucide-arrow-down-up"
                 variant="outline"
-                class="w-48 justify-between"
+                class="w-full justify-between"
               >
                 <span class="truncate">{{ currentSortLabel }}</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
               </UButton>
             </UDropdownMenu>
             <UButton
-              v-if="!isMobile"
               :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
               variant="outline"
-              :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
+              :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
               @click="toggleSortDir"
             />
           </div>
-        </template>
-      </UDashboardToolbar>
+        </div>
 
-      <!-- Mobile Sort Modal -->
-      <UModal v-model:open="showSortModal" :title="t('common.sort')" :ui="{ content: 'w-full sm:max-w-md' }">
-        <template #body>
-          <div class="space-y-4">
-            <UFormField :label="t('common.sortBy')">
-              <USelect
-                v-model="sortBy"
-                class="w-full"
-                :items="sortOptions"
-                :placeholder="t('common.sortBy')"
-              />
-            </UFormField>
+        <div ref="listContainerRef" class="-mx-1 min-h-0 flex-1 overflow-y-auto" @scroll="onListScroll">
+          <div class="px-1 pb-4 pt-1">
+            <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
 
-            <UFormField :label="t('common.direction')">
-              <div class="flex gap-2">
-                <UButton
-                  class="flex-1"
-                  :variant="sortDir === 'asc' ? 'solid' : 'outline'"
-                  :icon="sortDir === 'asc' ? 'i-lucide-check' : undefined"
-                  @click="sortDir = 'asc'"
-                >
-                  {{ t('common.ascending') }}
-                </UButton>
-                <UButton
-                  class="flex-1"
-                  :variant="sortDir === 'desc' ? 'solid' : 'outline'"
-                  :icon="sortDir === 'desc' ? 'i-lucide-check' : undefined"
-                  @click="sortDir = 'desc'"
-                >
-                  {{ t('common.descending') }}
-                </UButton>
-              </div>
-            </UFormField>
-          </div>
-        </template>
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="outline" @click="showSortModal = false">
-              {{ t('common.close') }}
-            </UButton>
-          </div>
-        </template>
-      </UModal>
-    </template>
-
-    <template #body>
-      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2" @scroll="onListScroll">
-        <div class="pr-10">
-          <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
-
-          <UEmpty
-            v-if="filteredAndSortedOrganizations.length === 0 && !loading"
-            icon="i-lucide-building-2"
-            :description="t('admin.organization.list.empty')"
-          />
-
-          <div v-else class="space-y-4">
-            <div
-              v-for="org in filteredAndSortedOrganizations"
-              :key="org.id"
-              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            <UEmpty
+              v-if="filteredAndSortedOrganizations.length === 0 && !loading"
+              icon="i-lucide-building-2"
+              :title="t('admin.organization.list.empty')"
+              :description="searchQuery ? t('admin.organization.list.emptyFiltered') : t('admin.organization.list.emptyDescription')"
+              variant="outline"
             >
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-semibold text-lg">
-                    {{ org.name }}
-                  </h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
-                    {{ t('admin.organization.detail.slug') }} {{ org.slug }}
-                  </p>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
-                  </p>
-                </div>
-                <UButton
-                  :to="getViewTo(org)"
-                  variant="outline"
-                  size="sm"
-                >
-                  {{ t('admin.organization.list.view') }}
+              <template v-if="!searchQuery" #actions>
+                <UButton icon="i-lucide-plus" size="lg" to="/admin/organizations/create">
+                  {{ t('admin.organization.list.createFirstOrganization') }}
                 </UButton>
-              </div>
+              </template>
+            </UEmpty>
+
+            <div v-else class="grid gap-3">
+              <UCard
+                v-for="org in filteredAndSortedOrganizations"
+                :key="org.id"
+                class="cursor-pointer transition-colors hover:ring-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                role="button"
+                tabindex="0"
+                @click="openOrganization(org)"
+                @keydown.enter="openOrganization(org)"
+                @keydown.space.prevent="openOrganization(org)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <h2 class="truncate font-medium">
+                      {{ org.name }}
+                    </h2>
+                    <p class="mt-0.5 truncate text-sm text-muted">
+                      {{ org.slug }}
+                    </p>
+                    <p class="mt-2 text-xs text-muted">
+                      {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
+                    </p>
+                  </div>
+                  <UButton
+                    :to="getViewTo(org)"
+                    icon="i-lucide-chevron-right"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    :aria-label="t('admin.organization.list.viewOrganization', { name: org.name })"
+                    @click.stop
+                    @keydown.stop
+                  />
+                </div>
+              </UCard>
+            </div>
+
+            <div v-if="loading" class="grid gap-3" role="status">
+              <USkeleton v-for="i in 4" :key="i" class="h-28 w-full rounded-lg" />
+              <span class="sr-only">{{ t('admin.organization.list.loading') }}</span>
             </div>
           </div>
-
-          <div v-if="loading" class="py-4 space-y-2">
-            <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
-          </div>
         </div>
-      </div>
 
-      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between">
-        <span>
-          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ organizations.length }}</span>
-        </span>
-        <span>
-          {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ filteredAndSortedOrganizations.length }}</span>
-        </span>
+        <div class="flex shrink-0 items-center justify-between border-t border-default pt-3 text-sm text-muted">
+          <span>{{ t('admin.organization.list.resultCount', { count: filteredAndSortedOrganizations.length }) }}</span>
+          <span v-if="searchQuery">{{ t('admin.organization.list.totalCount', { count: organizations.length }) }}</span>
+        </div>
       </div>
     </template>
   </UDashboardPanel>

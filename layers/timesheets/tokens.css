@@ -1,0 +1,16 @@
+:root {
+  --timesheets-color-running: var(--color-success-600);
+  --timesheets-color-running-soft: var(--color-success-50);
+  --timesheets-color-weekend: var(--color-neutral-50);
+  --timesheets-rule: var(--ui-border);
+  --timesheets-radius: var(--ui-radius);
+  --timesheets-space-cell: 0.75rem;
+  --timesheets-duration-fast: 120ms;
+  --timesheets-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark {
+  --timesheets-color-running: var(--color-success-400);
+  --timesheets-color-running-soft: var(--color-neutral-800);
+  --timesheets-color-weekend: var(--color-neutral-900);
+}

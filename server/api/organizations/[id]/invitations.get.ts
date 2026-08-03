@@ -6,6 +6,15 @@ import { eq, and } from 'drizzle-orm'
 import { checkOrganizationPermission } from '~~/server/utils/permissions'
 import type { OrganizationInvitationsResponse } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalOrganizationsByIdInvitationsGet',
+    summary: 'List organization invitations',
+    description: 'List organization invitations. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<OrganizationInvitationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

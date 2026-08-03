@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import type {
+  AdminServiceRequestUpdateInput,
+  ServiceRequestFilters
+} from '#layers/service-requests/shared/types/service-request'
+
 const {
   requests,
   loading,
@@ -9,6 +14,11 @@ const {
 } = useAdminServiceRequests()
 
 const toast = useToast()
+const { t } = useI18n()
+
+useSeoMeta({
+  title: () => t('features.serviceRequests.navigation.manageRequests')
+})
 
 onMounted(() => {
   fetchAllRequests()
@@ -22,26 +32,23 @@ const handleUpdate = async ({ id, updates }: { id: string, updates: AdminService
   try {
     await adminUpdateRequest(id, updates)
     toast.add({
-      title: 'Success',
-      description: 'Request updated successfully'
+      title: t('common.success'),
+      description: t('features.serviceRequests.messages.updateSuccess')
     })
-  } catch (error) {
+  } catch {
     toast.add({
-      title: 'Error',
-      description: 'Failed to update request',
+      title: t('common.error'),
+      description: t('features.serviceRequests.messages.updateError'),
       color: 'error'
     })
   }
 }
 
-definePageMeta({
-  middleware: ['auth', 'admin']
-})
 </script>
 
 <template>
   <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-bold mb-6">Service Requests Management</h1>
+    <h1 class="text-3xl font-bold mb-6">{{ t('features.serviceRequests.navigation.manageRequests') }}</h1>
 
     <AdminRequestDashboard
       :requests="requests"

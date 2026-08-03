@@ -17,6 +17,11 @@ const router = useRouter()
 const { createOrganization } = useOrganization()
 const loading = ref(false)
 const error = ref('')
+
+useSeoMeta({
+  title: () => t('admin.organization.create.title')
+})
+
 const formData = ref({
   name: '',
   slug: ''

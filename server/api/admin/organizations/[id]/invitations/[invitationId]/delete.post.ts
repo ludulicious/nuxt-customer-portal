@@ -5,6 +5,15 @@ import { invitation as invitationTable, member as memberTable } from '~~/server/
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser } from '#types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsByIdInvitationsByInvitationIdDeletePost',
+    summary: 'Cancel an organization invitation',
+    description: 'Cancel an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
@@ -62,5 +71,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true, message: 'Invitation cancelled successfully' }
 })
-
-

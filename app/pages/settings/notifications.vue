@@ -1,4 +1,10 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
+useSeoMeta({
+  title: () => t('settings.notifications')
+})
+
 const state = reactive<{ [key: string]: boolean }>({
   email: true,
   desktop: false,

@@ -207,8 +207,8 @@ const revokeAllSessions = async () => {
                 </UBadge>
               </div>
               <div class="text-sm">
-                <div><strong>{{ t('admin.user.sessions.ipAddress') }}:</strong> {{ session.ipAddress || t('admin.table.notAvailable') }}</div>
-                <div><strong>{{ t('admin.user.sessions.userAgent') }}:</strong> {{ session.userAgent || t('admin.table.notAvailable') }}</div>
+                <div><strong>{{ t('admin.user.sessions.ipAddress') }}:</strong> {{ session.ipAddress || t('admin.user.list.notAvailable') }}</div>
+                <div><strong>{{ t('admin.user.sessions.userAgent') }}:</strong> {{ session.userAgent || t('admin.user.list.notAvailable') }}</div>
                 <div><strong>{{ t('admin.user.sessions.createdAt') }}:</strong> {{ new Date(session.createdAt).toLocaleString(locale) }}</div>
                 <div><strong>{{ t('admin.user.sessions.expiresAt') }}:</strong> {{ new Date(session.expiresAt).toLocaleString(locale) }}</div>
               </div>

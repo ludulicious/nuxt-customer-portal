@@ -5,6 +5,15 @@ import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { buildDrizzleQuery, BaseQuerySchema } from '~~/server/utils/query-builder'
 import type { SessionUser, AdminUsersResponse, QueryInput } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminUsersQueryGet',
+    summary: 'Search users',
+    description: 'Search users. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 /**
  * GET /api/admin/users-query
  *

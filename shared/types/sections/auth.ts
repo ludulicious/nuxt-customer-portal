@@ -52,6 +52,10 @@ export interface OrganizationMemberWithUser {
     email: string
     image: string | null
     emailVerified: boolean
+    role: UserRole
+    createdAt: Date
+    updatedAt: Date
+    banned: boolean
   }
 }
 

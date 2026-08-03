@@ -5,6 +5,15 @@ import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 import type { SessionUser, UpdateUserRoleRequest, UpdateUserRoleResponse } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminUsersByIdRolePatch',
+    summary: 'Update a user role',
+    description: 'Update a user role. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event): Promise<UpdateUserRoleResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

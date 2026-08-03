@@ -249,6 +249,10 @@ definePageMeta({
   layout: 'centerform',
   public: true,
 })
+
+useSeoMeta({
+  title: () => t('verify.title')
+})
 </script>
 
 <template>

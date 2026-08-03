@@ -1,41 +1,29 @@
-import { auth } from '~~/server/utils/auth'
-import { verifyServiceRequestAccess, verifyRequestOwnership } from '../../utils/service-request-helpers'
-import { db } from '~~/server/utils/db'
-import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { authorize, hasFeatureAccess, requireFeatureAccess } from '#portal/server/portal'
+import { serviceRequestFeature } from '#layers/service-requests/shared/feature'
+import { deleteServiceRequest, findServiceRequest } from '#layers/service-requests/server/utils/service-request-repository'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Service Requests'],
+operationId: 'serviceRequestsByIdDelete',
+    summary: 'Delete a service request',
+    description: 'Delete a service request. Scoped to the active organization and the applicable Service Requests permission.'
+  }
+})
 
 export default defineEventHandler(async (event) => {
-  const session = await auth.api.getSession({ headers: event.headers })
-  if (!session?.user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
+  const { session, organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'read')
   const id = getRouterParam(event, 'id')
-
-  // Get the request to check organization
-  const [existingRequest] = await db
-    .select({ organizationId: serviceRequest.organizationId })
-    .from(serviceRequest)
-    .where(eq(serviceRequest.id, id!))
-    .limit(1)
-
-  if (!existingRequest) {
+  if (!id) throw createError({ statusCode: 400, message: 'Request id is required' })
+  const existing = await findServiceRequest(id)
+  if (!existing || existing.organizationId !== organizationId) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
 
-  // Verify ownership or admin delete permission
-  const isOwner = await verifyRequestOwnership(session.user.id, id!)
-  const hasDeletePermission = await verifyServiceRequestAccess(
-    session,
-    existingRequest.organizationId,
-    'delete'
-  )
-
-  if (!isOwner && !hasDeletePermission) {
-    throw createError({ statusCode: 403, message: 'Access denied' })
+  const isOwner = existing.createdById === session.user.id
+  if (!isOwner && !await hasFeatureAccess(session, organizationId, serviceRequestFeature.policy, 'delete')) {
+    await authorize(session, organizationId, serviceRequestFeature.policy, 'delete')
   }
-
-  await db.delete(serviceRequest).where(eq(serviceRequest.id, id!))
-
+  await deleteServiceRequest(id)
   return { success: true }
 })

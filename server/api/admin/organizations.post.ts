@@ -2,6 +2,15 @@ import { defineEventHandler, createError, readBody } from 'h3'
 import { auth } from '~~/server/utils/auth'
 import type { SessionUser } from '~~/shared/types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsPost',
+    summary: 'Create an organization',
+    description: 'Create an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
@@ -40,5 +49,3 @@ export default defineEventHandler(async (event) => {
 
   return result
 })
-
-

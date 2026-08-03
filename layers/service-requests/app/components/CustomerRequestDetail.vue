@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ServiceRequest } from '#layers/service-requests/shared/types/service-request'
+
 const props = defineProps<{
   requestId: string
   canEdit?: boolean
@@ -6,14 +8,14 @@ const props = defineProps<{
 }>()
 const { t } = useI18n()
 const { getPriorityColor } = useServiceRequests()
-const emit = defineEmits<{
+defineEmits<{
   edit: []
   delete: []
 }>()
 const { getRequest } = useServiceRequests()
 const request = ref<ServiceRequest | null>(await getRequest(props.requestId))
 
-const formatDate = (date: Date) => {
+const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString()
 }
 </script>
@@ -39,7 +41,7 @@ const formatDate = (date: Date) => {
           variant="ghost"
           @click="$emit('edit')"
         >
-          Edit
+          {{ t('features.serviceRequests.edit') }}
         </UButton>
         <UButton
           v-if="canDelete"
@@ -47,7 +49,7 @@ const formatDate = (date: Date) => {
           color="error"
           @click="$emit('delete')"
         >
-          Delete
+          {{ t('features.serviceRequests.delete') }}
         </UButton>
       </div>
     </div>
@@ -55,7 +57,7 @@ const formatDate = (date: Date) => {
     <USeparator />
 
     <div class="prose dark:prose-invert max-w-none">
-      <h3>{{ t('serviceRequest.fields.description') }}</h3>
+      <h3>{{ t('features.serviceRequests.fields.description') }}</h3>
       <p>{{ request.description }}</p>
     </div>
 
@@ -63,19 +65,19 @@ const formatDate = (date: Date) => {
 
     <div class="grid grid-cols-2 gap-4 text-sm">
       <!-- <div>
-        <span class="font-semibold">{{ t('serviceRequest.fields.createdBy') }}:</span>
+        <span class="font-semibold">{{ t('features.serviceRequests.fields.createdBy') }}:</span>
         {{ request.createdBy?.name || request.createdBy?.email }}
       </div> -->
       <div>
-        <span class="font-semibold">Created at:</span>
+        <span class="font-semibold">{{ t('features.serviceRequests.fields.createdAt') }}:</span>
         {{ formatDate(request.createdAt) }}
       </div>
       <!-- <div v-if="request.assignedTo">
-        <span class="font-semibold">Assigned to:</span>
+        <span class="font-semibold">{{ t('features.serviceRequests.fields.assignedTo') }}:</span>
         {{ request.assignedTo.name || request.assignedTo.email }}
       </div> -->
       <div v-if="request.resolvedAt">
-        <span class="font-semibold">Resolved at:</span>
+        <span class="font-semibold">{{ t('features.serviceRequests.fields.resolvedAt') }}:</span>
         {{ formatDate(request.resolvedAt) }}
       </div>
     </div>

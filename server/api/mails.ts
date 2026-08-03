@@ -1,5 +1,14 @@
 import { sub } from 'date-fns'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalMailsAll',
+    summary: 'List sample mail messages',
+    description: 'List sample mail messages. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 const mails = [{
   id: 1,
   from: {

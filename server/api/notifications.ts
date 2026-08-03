@@ -1,5 +1,14 @@
 import { sub } from 'date-fns'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalNotificationsAll',
+    summary: 'List sample notifications',
+    description: 'List sample notifications. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 const notifications = [{
   id: 1,
   unread: true,

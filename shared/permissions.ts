@@ -1,24 +1,17 @@
 import { createAccessControl } from 'better-auth/plugins/access'
 import { defaultStatements, adminAc } from 'better-auth/plugins/admin/access'
 
-// Define our custom statements for questionnaires and responses
+// Core portal statements. Feature authorization is owned by each feature policy.
 export const statement = {
   ...defaultStatements,
-  'service-request': [
-    'create',
-    'read',
-    'update',
-    'delete',
-    'list',
-  ],
   // Organization-related permissions
-  'organization': [
+  organization: [
     'read',
     'create',
     'update',
     'delete',
   ],
-  'member': [
+  member: [
     'read',
     'list',
     'create',
@@ -26,7 +19,7 @@ export const statement = {
     'delete',
     'update-name',
   ],
-  'invitation': [
+  invitation: [
     'list',
     'create',
     'resend',
@@ -40,12 +33,11 @@ const ac = createAccessControl(statement)
 
 // Define our roles with their permissions
 export const user = ac.newRole({
-  'service-request': ['create', 'read', 'update', 'delete', 'list',],
+  organization: ['read']
 })
 
 export const admin = ac.newRole({
-  ...adminAc.statements,
-  'service-request': ['create', 'read', 'update', 'delete', 'list',],
+  ...adminAc.statements
 })
 
 // Export the access control instance and roles

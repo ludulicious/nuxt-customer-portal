@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ServiceRequestStatus } from '#layers/service-requests/shared/types/service-request'
+
 const props = defineProps<{
   status: ServiceRequestStatus
   variant?: 'solid' | 'outline' | 'soft'

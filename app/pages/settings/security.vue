@@ -6,6 +6,10 @@ import { authClient } from '~/utils/auth-client'
 const { t } = useI18n()
 const toast = useToast()
 
+useSeoMeta({
+  title: () => t('settings.security')
+})
+
 const passwordSchema = z.object({
   currentPassword: z.string()
     .min(1, t('security.password.validation.currentPasswordRequired'))

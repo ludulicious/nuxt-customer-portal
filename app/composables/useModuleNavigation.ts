@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 type ModuleRole = 'public' | 'authenticated' | 'admin'
 
 interface ModuleConfig {
-  id: 'dashboard' | 'service-requests' | 'admin'
+  id: 'dashboard' | 'service-requests' | 'timesheets' | 'admin'
   labelKey: string
   icon?: string
   to: string
@@ -27,8 +27,8 @@ const hasRequiredRole = (roles: ModuleRole[] | undefined, isAuthenticated: boole
   return false
 }
 
-const applySidebarClose = (items: NavigationMenuItem[], sidebarOpen?: Ref<boolean>) => {
-  if (!sidebarOpen) return items
+const applySidebarClose = (items: readonly NavigationMenuItem[], sidebarOpen?: Ref<boolean>) => {
+  if (!sidebarOpen) return [...items]
   return items.map(item => ({
     ...item,
     onSelect: () => {
@@ -43,6 +43,7 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
   const userStore = useUserStore()
   const { isAdmin, isAuthenticated } = storeToRefs(userStore)
   const { menuItems: serviceRequestMenuItems } = useServiceRequestMenu()
+  const { menuItems: timesheetMenuItems } = useTimesheetMenu()
 
   const moduleConfigs: ModuleConfig[] = [
     {
@@ -55,11 +56,19 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
     },
     {
       id: 'service-requests',
-      labelKey: 'menu.serviceRequests.title',
+      labelKey: 'features.serviceRequests.navigation.myRequests',
       icon: 'i-lucide-ticket',
       to: '/requests',
       roles: ['authenticated'],
       routePrefixes: ['/requests', '/admin/requests']
+    },
+    {
+      id: 'timesheets',
+      labelKey: 'features.timesheets.navigation.myTimesheet',
+      icon: 'i-lucide-clock-3',
+      to: '/timesheets',
+      roles: ['authenticated'],
+      routePrefixes: ['/timesheets', '/admin/timesheets']
     },
     {
       id: 'admin',
@@ -126,6 +135,10 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
     const id = activeModuleId.value
     if (id === 'service-requests') {
       return applySidebarClose(serviceRequestMenuItems.value, sidebarOpen)
+    }
+
+    if (id === 'timesheets') {
+      return applySidebarClose(timesheetMenuItems.value, sidebarOpen)
     }
 
     if (id === 'admin') {

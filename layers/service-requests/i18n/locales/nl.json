@@ -1,56 +1,82 @@
 {
-  "serviceRequest": {
-    "title": "Serviceaanvragen",
-    "subTitle": "Bekijk en beheer alle serviceaanvragen",
-    "create": "Aanvraag Maken",
-    "edit": "Aanvraag Bewerken",
-    "delete": "Aanvraag Verwijderen",
-    "status": {
-      "open": "Open",
-      "in_progress": "In Behandeling",
-      "resolved": "Opgelost",
-      "closed": "Gesloten"
-    },
-    "statusBadge": {
-      "open": "Open",
-      "in_progress": "In Behandeling",
-      "resolved": "Opgelost",
-      "closed": "Gesloten"
-    },
-    "priority": {
-      "low": "Laag",
-      "medium": "Gemiddeld",
-      "high": "Hoog",
-      "urgent": "Urgent"
-    },
-    "priorityBadge": {
-      "low": "Laag",
-      "medium": "Gemiddeld",
-      "high": "Hoog",
-      "urgent": "Urgent"
-    },
-    "fields": {
-      "title": "Titel",
-      "description": "Beschrijving",
-      "priority": "Prioriteit",
-      "category": "Categorie",
-      "status": "Status",
-      "createdBy": "Gemaakt Door",
-      "assignedTo": "Toegewezen Aan",
-      "createdAt": "Gemaakt Op",
-      "updatedAt": "Bijgewerkt Op",
-      "resolvedAt": "Opgelost Op"
-    },
-    "messages": {
-      "createSuccess": "Serviceaanvraag succesvol aangemaakt",
-      "updateSuccess": "Serviceaanvraag succesvol bijgewerkt",
-      "deleteSuccess": "Serviceaanvraag succesvol verwijderd",
-      "createError": "Serviceaanvraag maken mislukt",
-      "updateError": "Serviceaanvraag bijwerken mislukt",
-      "deleteError": "Serviceaanvraag verwijderen mislukt"
+  "features": {
+    "serviceRequests": {
+      "title": "Serviceaanvragen",
+      "subTitle": "Bekijk en beheer alle serviceaanvragen",
+      "create": "Aanvraag maken",
+      "edit": "Aanvraag bewerken",
+      "delete": "Aanvraag verwijderen",
+      "navigation": {
+        "myRequests": "Serviceaanvragen",
+        "manageRequests": "Serviceaanvragen beheren"
+      },
+      "widget": {
+        "title": "Recente serviceaanvragen",
+        "viewAll": "Alles bekijken",
+        "empty": "Geen recente aanvragen",
+        "create": "Aanvraag maken"
+      },
+      "status": {
+        "open": "Open",
+        "in_progress": "In behandeling",
+        "resolved": "Opgelost",
+        "closed": "Gesloten"
+      },
+      "priority": {
+        "low": "Laag",
+        "medium": "Gemiddeld",
+        "high": "Hoog",
+        "urgent": "Urgent"
+      },
+      "filters": {
+        "title": "Filters",
+        "allStatuses": "Alle statussen",
+        "allPriorities": "Alle prioriteiten",
+        "allCategories": "Alle categorieën",
+        "status": "Filter op status",
+        "priority": "Filter op prioriteit",
+        "category": "Filter op categorie"
+      },
+      "fields": {
+        "title": "Titel",
+        "description": "Beschrijving",
+        "priority": "Prioriteit",
+        "category": "Categorie",
+        "status": "Status",
+        "createdBy": "Aangemaakt door",
+        "assignedTo": "Toegewezen aan",
+        "createdAt": "Aangemaakt op",
+        "updatedAt": "Bijgewerkt op",
+        "resolvedAt": "Opgelost op",
+        "internalNotes": "Interne notities"
+      },
+      "actions": {
+        "back": "Terug naar aanvragen",
+        "view": "Bekijken",
+        "assign": "Toewijzen",
+        "resolve": "Oplossen",
+        "close": "Sluiten",
+        "saveChanges": "Wijzigingen opslaan",
+        "adminActions": "Beheeracties"
+      },
+      "placeholders": {
+        "category": "bijv. Technisch, Facturatie, Algemeen",
+        "selectUser": "Selecteer gebruiker",
+        "internalNotes": "Notities die alleen voor beheerders zichtbaar zijn"
+      },
+      "messages": {
+        "createSuccess": "Serviceaanvraag succesvol aangemaakt",
+        "updateSuccess": "Serviceaanvraag succesvol bijgewerkt",
+        "deleteSuccess": "Serviceaanvraag succesvol verwijderd",
+        "fetchError": "Serviceaanvragen laden mislukt",
+        "createError": "Serviceaanvraag maken mislukt",
+        "updateError": "Serviceaanvraag bijwerken mislukt",
+        "deleteError": "Serviceaanvraag verwijderen mislukt",
+        "notFound": "Aanvraag niet gevonden",
+        "empty": "Geen serviceaanvragen gevonden",
+        "endOfList": "Je hebt het einde bereikt"
+      },
+      "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
     }
-    ,
-    "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
   }
 }
-

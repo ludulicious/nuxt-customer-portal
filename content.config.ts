@@ -4,6 +4,7 @@ const variantEnum = z.enum(['solid', 'outline', 'subtle', 'soft', 'ghost', 'link
 const colorEnum = z.enum(['primary', 'secondary', 'neutral', 'error', 'warning', 'success', 'info'])
 const sizeEnum = z.enum(['xs', 'sm', 'md', 'lg', 'xl'])
 const orientationEnum = z.enum(['vertical', 'horizontal'])
+const imageLoadingEnum = z.enum(['lazy', 'eager'])
 
 const createBaseSchema = () => z.object({
   title: z.string().min(1),
@@ -28,7 +29,7 @@ const createLinkSchema = () => z.object({
 const createImageSchema = () => z.object({
   src: z.string().min(1).editor({ input: 'media' }),
   alt: z.string().optional(),
-  loading: z.string().optional(),
+  loading: imageLoadingEnum.optional(),
   srcset: z.string().optional()
 })
 

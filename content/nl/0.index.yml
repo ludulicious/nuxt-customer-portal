@@ -23,13 +23,13 @@ sections:
     id: features
     orientation: horizontal
     features:
-      - name: Orders volgen
+      - title: Orders volgen
         description: Volg serviceorders van aanvraag tot oplevering met realtime status.
         icon: i-lucide-clipboard-list
-      - name: Facturen bekijken
+      - title: Facturen bekijken
         description: Raadpleeg facturen en download PDF’s wanneer u wilt.
         icon: i-lucide-receipt-text
-      - name: Serviceverzoeken
+      - title: Serviceverzoeken
         description: Dien verzoeken in en volg ze op met duidelijke termijnen.
         icon: i-lucide-life-buoy
   - title: Waarom ApexPro
@@ -37,13 +37,13 @@ sections:
     orientation: horizontal
     reverse: true
     features:
-      - name: Betrouwbare levering
+      - title: Betrouwbare levering
         description: Teams ingepland en gemonitord om uw servicevensters te halen.
         icon: i-lucide-calendar-check
-      - name: Transparante rapportage
+      - title: Transparante rapportage
         description: SLA-dashboards en exporteerbare rapporten.
         icon: i-lucide-chart-line
-      - name: Toegewijde support
+      - title: Toegewijde support
         description: Snelle reacties van ons portaalondersteuningsteam.
         icon: i-lucide-headset
 features:

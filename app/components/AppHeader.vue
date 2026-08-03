@@ -2,7 +2,12 @@
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '~/utils/auth-client'
 
-const route = useRoute()
+withDefaults(defineProps<{
+  showNavigation?: boolean
+}>(), {
+  showNavigation: true
+})
+
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
 // User store
@@ -11,6 +16,7 @@ const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrg
 
 const showOrgSwitcherModal = ref(false)
 const searchOpen = ref(false)
+const headerMenuOpen = ref(false)
 
 const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
@@ -22,7 +28,7 @@ const sidebarOpen = ref(false)
 // Get navigation links for search groups
 const { searchGroups } = useNavigationLinks(sidebarOpen)
 
-const { modules, activeModuleId } = useModuleNavigation()
+const { modules, activeModuleId, activeModule, activeModuleMenuItems } = useModuleNavigation()
 
 const moduleItems = computed(() => {
   return modules.value.map(module => ({
@@ -30,6 +36,14 @@ const moduleItems = computed(() => {
     active: module.id === activeModuleId.value
   }))
 })
+
+const moduleSwitchItems = computed(() => [
+  modules.value.map(module => ({
+    label: module.label,
+    icon: module.icon,
+    to: module.to
+  }))
+])
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)
@@ -102,7 +116,17 @@ const stopImpersonating = async () => {
     </UAlert>
   </div>
 
-  <UHeader :ui="{ container: 'w-full max-w-none px-0' }">
+  <UHeader
+    v-model:open="headerMenuOpen"
+    :title="activeModule?.label || t('menu.module')"
+    mode="slideover"
+    :menu="{ side: 'right' }"
+    :ui="{
+      container: 'w-full max-w-none px-0',
+      content: 'w-full max-w-sm',
+      body: 'flex h-full flex-col overflow-y-auto p-0 sm:p-0'
+    }"
+  >
     <template #left>
       <div class="flex items-center gap-3">
         <!-- Logo Icon -->
@@ -124,18 +148,33 @@ const stopImpersonating = async () => {
         </NuxtLink>
 
         <!-- ApexPro Title with Organization Name or Facility Services Subtitle -->
-        <div class="flex flex-col">
+        <div class="hidden flex-col sm:flex">
           <span class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
             ApexPro
           </span>
-          <button
+          <div
             v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
-            type="button"
-            class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1 text-left hover:text-highlighted transition-colors"
-            @click="showOrgSwitcherModal = true"
+            class="-mt-1 flex items-center gap-1"
           >
-            {{ activeOrganization.name }}
-          </button>
+            <button
+              type="button"
+              class="text-left text-sm leading-tight text-gray-600 transition-colors hover:text-highlighted dark:text-gray-400"
+              @click="showOrgSwitcherModal = true"
+            >
+              {{ activeOrganization.name }}
+            </button>
+            <UButton
+              :aria-label="t('menu.switchOrganization')"
+              :title="t('menu.switchOrganization')"
+              icon="i-lucide-arrow-left-right"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              square
+              class="hidden size-6 text-muted hover:text-highlighted lg:inline-flex"
+              @click="showOrgSwitcherModal = true"
+            />
+          </div>
           <span
             v-else-if="isAuthenticated && activeOrganization"
             class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1"
@@ -156,7 +195,7 @@ const stopImpersonating = async () => {
       </div>
     </template>
 
-    <nav class="hidden lg:flex flex-1 items-center justify-center gap-6">
+    <nav v-if="showNavigation" class="hidden lg:flex flex-1 items-center justify-center gap-6">
       <template v-for="module in moduleItems" :key="module.id">
         <NuxtLink :to="module.to" :class="[
           'text-sm font-medium transition-colors flex items-center gap-1.5',
@@ -171,6 +210,24 @@ const stopImpersonating = async () => {
     </nav>
 
     <template #right>
+      <UDropdownMenu
+        v-if="showNavigation && activeModule && !headerMenuOpen"
+        class="min-w-0 lg:hidden"
+        :items="moduleSwitchItems"
+        :content="{ align: 'end', collisionPadding: 12 }"
+      >
+        <UButton
+          :label="activeModule.label"
+          :icon="activeModule.icon"
+          trailing-icon="i-lucide-chevrons-up-down"
+          color="neutral"
+          variant="ghost"
+          size="md"
+          class="min-h-11 max-w-56 justify-center px-2 font-semibold [&>span]:truncate"
+          :aria-label="t('menu.selectModule')"
+        />
+      </UDropdownMenu>
+
       <div class="hidden lg:flex items-center gap-3 ml-auto">
         <UButton
           icon="i-lucide-search"
@@ -188,7 +245,7 @@ const stopImpersonating = async () => {
       </div>
 
       <!-- Organization Switcher Modal -->
-      <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
+      <UModal v-model:open="showOrgSwitcherModal" :title="t('menu.switchOrganization')" :ui="{ footer: 'justify-end' }">
         <template #body>
           <OrganizationSwitcher v-if="isAuthenticated" :show-create-button="false" @switched="showOrgSwitcherModal = false" />
         </template>
@@ -199,66 +256,75 @@ const stopImpersonating = async () => {
     </template>
 
     <template #body>
-      <nav class="flex flex-col gap-2 -mx-2.5">
-        <template v-for="module in moduleItems" :key="module.id">
-          <NuxtLink :to="module.to" :class="[
-            'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md flex items-center gap-2',
-            module.active
-              ? 'text-primary font-semibold bg-primary/10'
-              : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
-          ]">
-            <UIcon v-if="module.icon" :name="module.icon" class="w-4 h-4" />
-            {{ module.label }}
-          </NuxtLink>
-        </template>
+      <div class="border-b border-default px-4 py-2">
+        <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
+          <UButton
+            icon="i-lucide-search"
+            :label="t('menu.search')"
+            color="neutral"
+            variant="outline"
+            size="md"
+            class="min-h-11 justify-start"
+            @click="searchOpen = true"
+          />
+          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-32" />
+          <UColorModeButton size="md" class="min-h-11 min-w-11" />
+        </div>
+      </div>
+
+      <nav v-if="showNavigation && activeModule" :aria-label="t('menu.activeModuleNavigation')" class="p-5 pt-4">
+        <div class="flex min-w-0 items-center gap-3 pb-5">
+          <span class="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <UIcon v-if="activeModule.icon" :name="activeModule.icon" class="size-5" />
+          </span>
+          <div class="min-w-0">
+            <div class="truncate text-base font-bold text-highlighted">
+              {{ activeModule.label }}
+            </div>
+            <div class="text-sm text-muted">
+              {{ t('menu.moduleMenuDescription') }}
+            </div>
+          </div>
+        </div>
+        <UNavigationMenu
+          :items="activeModuleMenuItems"
+          orientation="vertical"
+          class="w-full"
+          :ui="{
+            list: 'gap-1',
+            link: 'min-h-11 rounded-md px-3 text-base font-medium'
+          }"
+        />
       </nav>
 
-      <USeparator class="my-6" />
-
-      <!-- Active Organization Display for Mobile -->
-      <div v-if="isAuthenticated && (activeOrganization || loadingOrganization)" class="mb-4">
+      <div class="mt-auto border-t border-default p-4">
+        <!-- Active Organization Display for Mobile -->
         <UButton
-          v-if="loadingOrganization"
+          v-if="isAuthenticated && loadingOrganization"
           variant="ghost"
-          size="sm"
+          size="md"
           disabled
           block
-          class="text-muted"
+          class="min-h-11 justify-start text-muted"
         >
           <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         </UButton>
         <UButton
-          v-else-if="activeOrganization"
+          v-else-if="isAuthenticated && activeOrganization"
           variant="ghost"
-          size="sm"
+          size="md"
           icon="i-lucide-building-2"
           block
-          class="text-muted hover:text-highlighted"
+          class="min-h-11 justify-start text-muted hover:text-highlighted"
           @click="showOrgSwitcherModal = true"
         >
           {{ activeOrganization.name }}
         </UButton>
-      </div>
 
-      <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
-      <div v-if="currentUser" class="mb-6">
-        <AppUserMenu size="md" />
+        <div v-if="currentUser" class="mt-2">
+          <UserMenu />
+        </div>
       </div>
-      <UButton
-        icon="i-lucide-search"
-        color="neutral"
-        variant="outline"
-        size="sm"
-        block
-        class="mb-4"
-        @click="searchOpen = true"
-      >
-        Search
-      </UButton>
-      <UFormField :label="t('nav.language')" name="language">
-        <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-48" />
-      </UFormField>
-      <UserMenu />
     </template>
   </UHeader>
 

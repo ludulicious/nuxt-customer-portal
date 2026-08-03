@@ -7,6 +7,15 @@ import { sendEmail } from '~~/server/utils/email'
 import { getInvitationEmailContent } from '~~/server/utils/email-texts'
 import type { SessionUser } from '#types'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['General'],
+    operationId: 'generalAdminOrganizationsByIdInvitationsPost',
+    summary: 'Invite an organization member',
+    description: 'Invite an organization member. Uses the current authenticated session and enforces the relevant portal permissions.'
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {

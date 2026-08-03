@@ -1,5 +1,9 @@
 {
   "admin": {
+    "menu": {
+      "organizations": "Organisaties",
+      "users": "Gebruikers"
+    },
     "dashboard": {
       "description": "Beheer organisaties en gebruikers",
       "organizations": "Organisaties",
@@ -14,6 +18,11 @@
     },
     "organization": {
       "title": "Organisatie details",
+      "manage": {
+        "title": "Organisaties beheren",
+        "back": "Terug",
+        "name": "Organisatienaam"
+      },
       "create": {
         "title": "Organisatie Aanmaken",
         "back": "Terug",
@@ -46,7 +55,15 @@
           "empty": "Nog geen leden",
           "email": "E-mail",
           "name": "Naam",
-          "role": "Rol"
+          "role": "Rol",
+          "remove": "Uit organisatie verwijderen",
+          "removeSuccess": "Lid uit de organisatie verwijderd",
+          "removeFailed": "Lid verwijderen mislukt",
+          "confirmRemove": {
+            "title": "Organisatielid verwijderen",
+            "message": "Wil je {name} uit deze organisatie verwijderen? Het gebruikersaccount wordt niet verwijderd.",
+            "confirm": "Lid verwijderen"
+          }
         },
         "invitations": {
           "title": "Uitnodigingen",
@@ -95,10 +112,22 @@
       },
       "list": {
         "title": "Alle Organisaties",
+        "description": "Beheer de organisaties die dit portaal gebruiken.",
         "createButton": "Organisatie Aanmaken",
+        "newOrganization": "Nieuwe organisatie",
+        "createFirstOrganization": "Maak je eerste organisatie aan",
         "loading": "Organisaties laden...",
         "empty": "Geen organisaties gevonden",
-        "view": "Bekijken"
+        "emptyDescription": "Maak een organisatie aan om leden en instellingen te beheren.",
+        "emptyFiltered": "Geen organisaties gevonden voor de huidige zoekopdracht.",
+        "searchPlaceholder": "Organisaties zoeken...",
+        "resultCount": "{count} organisaties",
+        "totalCount": "{count} totaal",
+        "viewOrganization": "{name} bekijken",
+        "view": "Bekijken",
+        "name": "Naam",
+        "slug": "Slug",
+        "created": "Aangemaakt"
       }
     },
     "roles": {
@@ -121,6 +150,24 @@
       "verified": "Geverifieerd"
     },
     "user": {
+      "roles": {
+        "admin": "beheerder",
+        "user": "gebruiker"
+      },
+      "list": {
+        "title": "Gebruikers",
+        "createButton": "Gebruiker aanmaken",
+        "loading": "Gebruikers laden...",
+        "empty": "Geen gebruikers gevonden",
+        "actions": "Acties",
+        "created": "Aangemaakt",
+        "email": "E-mail",
+        "name": "Naam",
+        "noDataFound": "Geen gebruikers gevonden",
+        "notAvailable": "N.v.t.",
+        "role": "Rol",
+        "verified": "Geverifieerd"
+      },
       "updateRole": {
         "title": "Rol Wijzigen",
         "description": "Wijzig de rol voor deze gebruiker",
@@ -210,6 +257,10 @@
       "status": {
         "banned": "Geblokkeerd",
         "notBanned": "Actief"
+      },
+      "verification": {
+        "pending": "In behandeling",
+        "verified": "Geverifieerd"
       }
     }
   },
@@ -217,6 +268,7 @@
     "refresh": "Verversen",
     "cancel": "Annuleren",
     "close": "Sluiten",
+    "create": "Aanmaken",
     "createdAt": "Aangemaakt op",
     "delete": "Verwijderen",
     "descending": "Aflopend",
@@ -239,16 +291,20 @@
     "view": "Bekijken"
   },
   "menu": {
+    "mobileNavigation": "Modulenavigatie",
+    "activeModuleNavigation": "Menu van actieve module",
+    "moduleMenuDescription": "Pagina's in deze module",
+    "search": "Zoeken",
+    "switchOrganization": "Van organisatie wisselen",
+    "module": "Module",
+    "selectModule": "Selecteer een module",
     "dashboard": "Dashboard",
-    "serviceRequests": {
-      "title": "Service Requests"
-    },
     "inbox": "Inbox",
     "customers": "Customers",
     "helpSupport": "Help & Support",
     "feedback": "Feedback",
     "home": "Home",
-    "documentation": "Documentation",
+    "documentation": "API-documentatie",
     "profile": "Profiel",
     "theme": "Thema",
     "settings": {
@@ -523,6 +579,7 @@
     "errors": {
       "emailNotVerified": "E-mail niet geverifieerd",
       "githubError": "GitHub inloggen kon niet worden gestart.",
+      "googleError": "Google inloggen kon niet worden gestart.",
       "invalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
       "unexpectedError": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."
     },
@@ -563,11 +620,27 @@
     "profile": "Profiel"
   },
   "organization": {
+    "emailProvider": {
+      "title": "E-mailprovider", "description": "Configureer het Resend-account van deze organisatie voor facturen, herinneringen en andere transactionele e-mail.",
+      "configured": "Resend is geconfigureerd", "notConfigured": "Resend is niet geconfigureerd", "required": "Transactionele e-mail is geblokkeerd totdat een organisatie-eigenaar een sleutel configureert.",
+      "masked": "Actieve API-sleutel eindigend op {suffix}", "verifiedDomains": "Geverifieerde verzenddomeinen", "keyLabel": "Resend API-sleutel", "replaceLabel": "Nieuwe Resend API-sleutel",
+      "configure": "Configureren en valideren", "replace": "Valideren en vervangen", "checkAgain": "Domeinen opnieuw controleren", "remove": "Sleutel verwijderen", "saved": "Resend API-sleutel opgeslagen",
+      "documentation": "Handleiding voor domeinverificatie in Resend",
+      "invalid": "De Resend API-sleutel kon niet worden gevalideerd", "invalidDescription": "Controleer of de sleutel actief is en bij het juiste Resend-account hoort.",
+      "permissionRequired": "Deze Resend-sleutel kan alleen verzenden", "permissionRequiredDescription": "Maak in Resend een API-sleutel met Full access aan. Domeintoegang is nodig om te controleren of deze organisatie het ingestelde afzenderadres mag gebruiken.",
+      "checkFailed": "Resend-domeinen konden niet worden gecontroleerd", "removed": "Resend API-sleutel verwijderd",
+      "statusFailed": "Status van de e-mailprovider kon niet worden geladen", "statusFailedDescription": "Controleer de server en databasemigratie voordat je een sleutel configureert.",
+      "removeTitle": "Resend API-sleutel verwijderen?", "removeDescription": "Facturen en herinneringen kunnen niet worden verzonden totdat een nieuwe organisatiesleutel is geconfigureerd."
+    },
     "settings": {
       "editTitle": "Organisatie bewerken",
       "editButton": "Organisatie bewerken",
+      "updateSuccess": "Organisatie succesvol bijgewerkt",
       "nameLabel": "Organisatienaam",
       "namePlaceholder": "Organisatienaam",
+      "officialCompanyNameLabel": "Officiële bedrijfsnaam",
+      "officialCompanyNamePlaceholder": "Bedrijfsnaam zoals geregistreerd",
+      "officialCompanyNameHint": "Wordt gebruikt als afzendernaam op facturen.",
       "slugLabel": "Organisatie Slug",
       "slugPlaceholder": "organisatie-slug",
       "slugHint": "URL-vriendelijke identifier voor je organisatie",
@@ -577,6 +650,8 @@
       "slugError": "Slug beschikbaarheid controleren mislukt",
       "logoLabel": "Organisatielogo",
       "logoChoose": "Logo kiezen",
+      "logoRemove": "Logo verwijderen",
+      "invoiceLogoHint": "PNG, JPG, GIF of WebP. Het logo wordt gebruikt op nieuwe facturen.",
       "logoHint": "Upload een PNG, JPG of GIF. Aanbevolen formaat: 280×160.",
       "ownerOnly": "Alleen organisatie-eigenaren kunnen naam of slug wijzigen.",
       "errors": {
@@ -586,9 +661,11 @@
       },
       "validation": {
         "nameRequired": "Organisatienaam is verplicht",
+        "officialCompanyNameRequired": "Officiële bedrijfsnaam is verplicht",
         "slugRequired": "Organisatie slug is verplicht",
         "slugInvalid": "Slug mag alleen kleine letters, cijfers en streepjes bevatten",
-        "logoInvalid": "Logo moet een geldige URL zijn"
+        "logoInvalid": "Logo moet een geldige afbeelding zijn",
+        "logoTooLarge": "Logo moet kleiner zijn dan 2 MB"
       }
     },
     "members": {

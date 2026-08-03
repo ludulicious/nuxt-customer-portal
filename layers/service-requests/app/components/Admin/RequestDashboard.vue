@@ -1,16 +1,24 @@
 <script setup lang="ts">
-const props = defineProps<{
-  requests: ServiceRequestWithRelations[]
+import type {
+  AdminServiceRequestUpdateInput,
+  ServiceRequestFilters,
+  ServiceRequestPagination,
+  ServiceRequest
+} from '#layers/service-requests/shared/types/service-request'
+
+defineProps<{
+  requests: readonly ServiceRequest[]
   loading: boolean
-  pagination: any
+  pagination: ServiceRequestPagination
   stats: Record<string, number>
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   select: [id: string]
   filter: [filters: ServiceRequestFilters]
   update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
 }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -20,25 +28,25 @@ const emit = defineEmits<{
       <UCard>
         <div class="text-center">
           <div class="text-3xl font-bold text-blue-600">{{ stats.OPEN || 0 }}</div>
-          <div class="text-sm text-gray-600">Open</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.open') }}</div>
         </div>
       </UCard>
       <UCard>
         <div class="text-center">
           <div class="text-3xl font-bold text-yellow-600">{{ stats.IN_PROGRESS || 0 }}</div>
-          <div class="text-sm text-gray-600">In Progress</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.in_progress') }}</div>
         </div>
       </UCard>
       <UCard>
         <div class="text-center">
           <div class="text-3xl font-bold text-green-600">{{ stats.RESOLVED || 0 }}</div>
-          <div class="text-sm text-gray-600">Resolved</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.resolved') }}</div>
         </div>
       </UCard>
       <UCard>
         <div class="text-center">
           <div class="text-3xl font-bold text-gray-600">{{ stats.CLOSED || 0 }}</div>
-          <div class="text-sm text-gray-600">Closed</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.closed') }}</div>
         </div>
       </UCard>
     </div>

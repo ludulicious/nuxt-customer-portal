@@ -1,11 +1,25 @@
 <script setup lang="ts">
-import type { QueryResult } from '~~/shared/types'
+import { useAutoPagination } from '#portal/app/composables/useAutoPagination'
+import type {
+  ServiceRequest,
+  ServiceRequestCreateInput,
+  ServiceRequestFilters,
+  ServiceRequestPriority,
+  ServiceRequestStatus,
+  ServiceRequestUpdateInput,
+  ServiceRequestWithRelations
+} from '#layers/service-requests/shared/types/service-request'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const toast = useToast()
-const userStore = useUserStore()
+const { currentUser } = usePortalSession()
+const { can } = useServiceRequestAccess()
+
+useSeoMeta({
+  title: () => t('features.serviceRequests.title')
+})
 
 const { getStatusColor, getStatusBadgeText, getPriorityBadgeText, getPriorityColor, statusOptions, priorityOptions } = useServiceRequests()
 
@@ -19,19 +33,26 @@ const isMobile = breakpoints.smaller('mobile')
 const showFiltersModal = ref(false)
 const showSortModal = ref(false)
 
-const pending = ref(true)
-const pageSize = ref(10)
-const canLoadMore = ref(false)
-const error = ref<Error | null>(null)
-const list = ref<ServiceRequestWithRelations[]>([])
-const totalCount = ref(0)
-const initialLoadComplete = ref(false)
+const pageSize = 20
+const {
+  items: list,
+  pagination,
+  pending,
+  loadingNextPage,
+  loadingPreviousPage,
+  hasNextPage,
+  hasPreviousPage,
+  error: loadError,
+  loadPage,
+  loadNextPage: appendNextPage,
+  loadPreviousPage: prependPreviousPage
+} = usePaginatedServiceRequests(pageSize)
 
 // Initialize from URL (with defaults)
 const currentPage = ref(Math.max(1, Number(route.query.page) || 1))
-const listScrollTop = ref(0)
 const listContainerRef = ref<HTMLElement | null>(null)
-const scrollRestored = ref(false)
+const loadPreviousSentinelRef = ref<HTMLElement | null>(null)
+const loadMoreSentinelRef = ref<HTMLElement | null>(null)
 
 // Drawer state (create / view / edit)
 type DrawerMode = 'create' | 'view' | 'edit'
@@ -41,30 +62,24 @@ const selectedRequest = ref<ServiceRequest | null>(null)
 const mutationPending = ref(false)
 
 const drawerTitle = computed(() => {
-  if (drawerMode.value === 'create') return t('serviceRequest.create')
-  if (drawerMode.value === 'edit') return t('serviceRequest.edit')
-  return selectedRequest.value?.title || t('serviceRequest.title')
+  if (drawerMode.value === 'create') return t('features.serviceRequests.create')
+  if (drawerMode.value === 'edit') return t('features.serviceRequests.edit')
+  return selectedRequest.value?.title || t('features.serviceRequests.title')
 })
 
-const canCreate = computed(() => userStore.hasPermission('service-request', 'create'))
+const canCreate = computed(() => can('create'))
 const isOwner = computed(() => {
   if (!selectedRequest.value?.createdById) return false
-  return selectedRequest.value.createdById === userStore.currentUser?.id
+  return selectedRequest.value.createdById === currentUser.value?.id
 })
-const canEdit = computed(() => isOwner.value || userStore.hasPermission('service-request', 'update'))
-const canDelete = computed(() => isOwner.value || userStore.hasPermission('service-request', 'delete'))
+const canEdit = computed(() => isOwner.value || can('update'))
+const canDelete = computed(() => isOwner.value || can('delete'))
 
 const showDeleteConfirm = ref(false)
 
 const openCreateDrawer = () => {
   drawerMode.value = 'create'
   selectedRequest.value = null
-  drawerOpen.value = true
-}
-
-const openViewDrawer = async (request: ServiceRequest) => {
-  drawerMode.value = 'view'
-  selectedRequest.value = request
   drawerOpen.value = true
 }
 
@@ -95,9 +110,9 @@ const sortDir = ref<'asc' | 'desc'>(
 )
 
 const sortOptions = computed(() => [
-  { label: t('serviceRequest.fields.createdAt'), value: 'createdAt' as const },
-  { label: t('serviceRequest.fields.status'), value: 'status' as const },
-  { label: t('serviceRequest.fields.priority'), value: 'priority' as const }
+  { label: t('features.serviceRequests.fields.createdAt'), value: 'createdAt' as const },
+  { label: t('features.serviceRequests.fields.status'), value: 'status' as const },
+  { label: t('features.serviceRequests.fields.priority'), value: 'priority' as const }
 ])
 
 const currentSortLabel = computed(() => {
@@ -118,7 +133,7 @@ const toggleSortDir = () => {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
 }
 
-function buildListQuery(includeScrollAndPage = false) {
+function buildListQuery(includePage = true) {
   const q: Record<string, string> = {}
   if (searchQuery.value.trim()) q.search = searchQuery.value.trim()
   if (statusFilter.value) q.status = statusFilter.value
@@ -126,18 +141,13 @@ function buildListQuery(includeScrollAndPage = false) {
   if (categoryFilter.value) q.category = categoryFilter.value
   if (sortBy.value !== 'createdAt') q.sortBy = sortBy.value
   if (sortDir.value !== 'desc') q.sortDir = sortDir.value
-  if (includeScrollAndPage && listScrollTop.value > 0) q.scroll = String(listScrollTop.value)
-  if (includeScrollAndPage && currentPage.value > 1) q.page = String(currentPage.value)
+  if (includePage && currentPage.value > 1) q.page = String(currentPage.value)
   return q
 }
 
 function getDetailTo(request: ServiceRequestWithRelations) {
-  const query = new URLSearchParams({ from: 'list', ...buildListQuery(true) })
+  const query = new URLSearchParams({ from: 'list', ...buildListQuery() })
   return `/requests/${request.id}?${query.toString()}`
-}
-
-function onListScroll() {
-  if (listContainerRef.value) listScrollTop.value = listContainerRef.value.scrollTop
 }
 
 // Extract unique categories from loaded requests
@@ -150,60 +160,71 @@ const categoryOptions = computed(() => {
   })
   const sortedCategories = Array.from(categories).sort()
   return [
-    { label: 'All Categories', value: undefined },
+    { label: t('features.serviceRequests.filters.allCategories'), value: undefined },
     ...sortedCategories.map(cat => ({ label: cat, value: cat }))
   ]
 })
 
+const currentFilters = (): ServiceRequestFilters => ({
+  status: statusFilter.value,
+  priority: priorityFilter.value,
+  category: categoryFilter.value,
+  search: searchQuery.value.trim() || undefined,
+  sortBy: sortBy.value,
+  sortDir: sortDir.value
+})
+
 const loadData = async () => {
-  error.value = null
-  pending.value = true
   try {
-    const query: Record<string, string | number | undefined> = {
-      skip: (currentPage.value - 1) * pageSize.value,
-      take: pageSize.value
-    }
-
-    if (statusFilter.value) {
-      query.status = statusFilter.value
-    }
-
-    if (priorityFilter.value) {
-      query.priority = priorityFilter.value
-    }
-
-    if (categoryFilter.value) {
-      query.category = categoryFilter.value
-    }
-
-    if (searchQuery.value.trim()) {
-      query.search = searchQuery.value.trim()
-    }
-
-    query.sortBy = sortBy.value
-    query.sortDir = sortDir.value
-
-    const result = await $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
-      query
+    const result = await loadPage(currentFilters(), {
+      page: currentPage.value,
+      pageSize
     })
-    totalCount.value = result.totalCount
-    if (currentPage.value === 1) {
-      list.value = result.items
-    } else {
-      const newItems = result.items.filter(item => !list.value.some((existing: ServiceRequestWithRelations) => existing.id === item.id))
-      list.value = [...list.value, ...newItems]
+
+    if (result && result.pagination.pageCount > 0 && currentPage.value > result.pagination.pageCount) {
+      currentPage.value = result.pagination.pageCount
+      await updateRoute()
+      await loadData()
     }
-    canLoadMore.value = list.value.length < result.totalCount
   } catch (e) {
     console.error(e)
-  } finally {
-    pending.value = false
+  }
+}
+
+const loadNextPage = async () => {
+  try {
+    const result = await appendNextPage(currentFilters())
+
+    if (!result) return
+    currentPage.value = result.pagination.page
+    await updateRoute()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const loadPreviousPage = async () => {
+  const container = listContainerRef.value
+  const previousScrollHeight = container?.scrollHeight ?? 0
+
+  try {
+    const result = await prependPreviousPage(currentFilters())
+    if (!result) return
+
+    await nextTick()
+    if (container) {
+      container.scrollTop += container.scrollHeight - previousScrollHeight
+    }
+    currentPage.value = result.pagination.page
+    await updateRoute()
+  } catch (e) {
+    console.error(e)
   }
 }
 
 const refresh = async () => {
   currentPage.value = 1
-  list.value = []
+  await updateRoute()
   await loadData()
 }
 
@@ -227,7 +248,7 @@ const handleCreate = async (data: ServiceRequestCreateInput) => {
 
     toast.add({
       title: t('common.success'),
-      description: t('serviceRequest.messages.createSuccess')
+      description: t('features.serviceRequests.messages.createSuccess')
     })
 
     closeDrawer()
@@ -236,7 +257,7 @@ const handleCreate = async (data: ServiceRequestCreateInput) => {
     console.error(e)
     toast.add({
       title: t('common.error'),
-      description: t('serviceRequest.messages.createError'),
+      description: t('features.serviceRequests.messages.createError'),
       color: 'error'
     })
   } finally {
@@ -259,7 +280,7 @@ const handleUpdate = async (data: ServiceRequestCreateInput) => {
 
     toast.add({
       title: t('common.success'),
-      description: t('serviceRequest.messages.updateSuccess')
+      description: t('features.serviceRequests.messages.updateSuccess')
     })
 
     closeDrawer()
@@ -268,7 +289,7 @@ const handleUpdate = async (data: ServiceRequestCreateInput) => {
     console.error(e)
     toast.add({
       title: t('common.error'),
-      description: t('serviceRequest.messages.updateError'),
+      description: t('features.serviceRequests.messages.updateError'),
       color: 'error'
     })
   } finally {
@@ -282,12 +303,12 @@ const handleDelete = async () => {
   mutationPending.value = true
   try {
     await $fetch(`/api/service-requests/${selectedRequest.value.id}`, {
-      method: 'DELETE'
+      method: 'DELETE' as never
     })
 
     toast.add({
       title: t('common.success'),
-      description: t('serviceRequest.messages.deleteSuccess')
+      description: t('features.serviceRequests.messages.deleteSuccess')
     })
 
     closeDrawer()
@@ -296,7 +317,7 @@ const handleDelete = async () => {
     console.error(e)
     toast.add({
       title: t('common.error'),
-      description: t('serviceRequest.messages.deleteError'),
+      description: t('features.serviceRequests.messages.deleteError'),
       color: 'error'
     })
   } finally {
@@ -309,33 +330,38 @@ const editInitialData = computed<Partial<ServiceRequest> | undefined>(() => {
   return selectedRequest.value ?? undefined
 })
 
+const updateRoute = () => router.replace({ path: '/requests', query: buildListQuery() })
+
+const getPageTo = (page: number) => {
+  const query = buildListQuery(false)
+  if (page > 1) query.page = String(page)
+  return { path: '/requests', query }
+}
+
 // Debounced search function
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const handleSearch = () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
-  searchTimeout = setTimeout(() => {
+  searchTimeout = setTimeout(async () => {
     currentPage.value = 1
-    list.value = []
-    loadData()
-    router.replace({ path: '/requests', query: buildListQuery() })
+    await updateRoute()
+    await loadData()
   }, 300) // 300ms debounce
 }
 
 // Watch filters and reset pagination when they change
-watch([statusFilter, priorityFilter, categoryFilter], () => {
+watch([statusFilter, priorityFilter, categoryFilter], async () => {
   currentPage.value = 1
-  list.value = []
-  loadData()
-  router.replace({ path: '/requests', query: buildListQuery() })
+  await updateRoute()
+  await loadData()
 })
 
-watch([sortBy, sortDir], () => {
+watch([sortBy, sortDir], async () => {
   currentPage.value = 1
-  list.value = []
-  loadData()
-  router.replace({ path: '/requests', query: buildListQuery() })
+  await updateRoute()
+  await loadData()
 })
 
 // Watch search query with debouncing
@@ -343,76 +369,46 @@ watch(searchQuery, () => {
   handleSearch()
 })
 
-async function loadPagesUpTo(pageNum: number) {
-  if (pageNum < 1) return
-  list.value = []
-  totalCount.value = 0
-  canLoadMore.value = false
-  for (let p = 1; p <= pageNum; p++) {
-    currentPage.value = p
-    await loadData()
-  }
-}
-
-async function restoreScrollAfterLoad() {
-  const scrollVal = route.query.scroll
-  if (scrollRestored.value || scrollVal === undefined || scrollVal === null) return
-  const scrollNum = Number(scrollVal)
-  if (!Number.isFinite(scrollNum) || scrollNum < 0) return
-  await nextTick()
-  if (!listContainerRef.value) return
-  listContainerRef.value.scrollTop = scrollNum
-  scrollRestored.value = true
-}
-
-const initialPage = Math.max(1, Number(route.query.page) || 1)
-if (initialPage > 1) {
-  await loadPagesUpTo(initialPage)
-  initialLoadComplete.value = true
-  await nextTick()
-  restoreScrollAfterLoad()
-} else {
+watch(() => route.query.page, async (page) => {
+  const nextPage = Math.max(1, Number(page) || 1)
+  if (nextPage === currentPage.value) return
+  currentPage.value = nextPage
   await loadData()
-  initialLoadComplete.value = true
-  await nextTick()
-  restoreScrollAfterLoad()
-}
+  listContainerRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+})
 
-const formatDate = (date: Date) => {
+useAutoPagination({
+  sentinel: loadMoreSentinelRef,
+  scrollContainer: listContainerRef,
+  canLoadMore: hasNextPage,
+  loading: pending,
+  loadMore: loadNextPage
+})
+
+useAutoPagination({
+  sentinel: loadPreviousSentinelRef,
+  scrollContainer: listContainerRef,
+  canLoadMore: hasPreviousPage,
+  loading: pending,
+  loadMore: loadPreviousPage,
+  rootMargin: '240px 0px 0px 0px'
+})
+
+await loadData()
+
+const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString()
 }
 
-const loadMoreInProgress = ref(false)
-
-const loadMore = async () => {
-  if (!initialLoadComplete.value) return
-  if (pending.value || loadMoreInProgress.value) return
-  if (!canLoadMore.value) return
-
-  // Prevent "load everything instantly" when the container isn't scrollable yet.
-  const el = listContainerRef.value
-  if (el && el.scrollHeight <= el.clientHeight + 16) return
-
-  loadMoreInProgress.value = true
-  try {
-    currentPage.value++
-    await loadData()
-    await nextTick()
-  } finally {
-    loadMoreInProgress.value = false
-  }
-}
-
-useInfiniteScroll(listContainerRef, loadMore, {
-  distance: 200,
-  canLoadMore: () => initialLoadComplete.value && canLoadMore.value && !pending.value && !loadMoreInProgress.value
+onUnmounted(() => {
+  if (searchTimeout) clearTimeout(searchTimeout)
 })
 </script>
 
 <template>
   <UDashboardPanel
     id="service-requests"
-    class="lg:pb-8 min-h-0 overflow-hidden"
+    class="min-h-0 overflow-hidden"
     style="height: calc(100dvh - var(--ui-header-height));"
     :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
   >
@@ -431,7 +427,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               icon="i-lucide-plus"
               color="primary"
               class="flex-1 sm:flex-none"
-              :title="t('serviceRequest.create')"
+              :title="t('features.serviceRequests.create')"
               :disabled="!canCreate"
               @click="openCreateDrawer"
             />
@@ -462,7 +458,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               v-if="!isMobile"
               v-model="statusFilter"
               :items="statusOptions"
-              placeholder="Filter by status"
+              :placeholder="t('features.serviceRequests.filters.status')"
               class="w-48"
             >
               <template #item="{ item }">
@@ -483,7 +479,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               v-if="!isMobile"
               v-model="priorityFilter"
               :items="priorityOptions"
-              placeholder="Filter by priority"
+              :placeholder="t('features.serviceRequests.filters.priority')"
               class="w-48"
             >
               <template #item="{ item }">
@@ -504,7 +500,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               v-if="!isMobile"
               v-model="categoryFilter"
               :items="categoryOptions"
-              placeholder="Filter by category"
+              :placeholder="t('features.serviceRequests.filters.category')"
               class="w-48"
             />
           </div>
@@ -555,15 +551,15 @@ useInfiniteScroll(listContainerRef, loadMore, {
       </UDashboardToolbar>
 
       <!-- Mobile Filters Modal -->
-      <UModal v-model:open="showFiltersModal" title="Filters" :ui="{ content: 'w-full sm:max-w-md' }">
+      <UModal v-model:open="showFiltersModal" :title="t('features.serviceRequests.filters.title')" :ui="{ content: 'w-full sm:max-w-md' }">
         <template #body>
           <div class="space-y-4">
-            <UFormField label="Status">
+            <UFormField :label="t('features.serviceRequests.fields.status')">
               <USelect
                 v-model="statusFilter"
                 class="w-full"
                 :items="statusOptions"
-                placeholder="Filter by status"
+                :placeholder="t('features.serviceRequests.filters.status')"
               >
                 <template #item="{ item }">
                   <div class="flex items-center justify-between w-full gap-2">
@@ -581,11 +577,11 @@ useInfiniteScroll(listContainerRef, loadMore, {
               </USelect>
             </UFormField>
 
-            <UFormField label="Priority">
+            <UFormField :label="t('features.serviceRequests.fields.priority')">
               <USelect
                 v-model="priorityFilter"
                 :items="priorityOptions"
-                placeholder="Filter by priority"
+                :placeholder="t('features.serviceRequests.filters.priority')"
                 class="w-full"
               >
                 <template #item="{ item }">
@@ -604,12 +600,12 @@ useInfiniteScroll(listContainerRef, loadMore, {
               </USelect>
             </UFormField>
 
-            <UFormField label="Category">
+            <UFormField :label="t('features.serviceRequests.fields.category')">
               <USelect
                 v-model="categoryFilter"
                 class="w-full"
                 :items="categoryOptions"
-                placeholder="Filter by category"
+                :placeholder="t('features.serviceRequests.filters.category')"
               />
             </UFormField>
           </div>
@@ -671,20 +667,40 @@ useInfiniteScroll(listContainerRef, loadMore, {
       </UModal>
     </template>
     <template #body>
-      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2" @scroll="onListScroll">
-        <!-- Keep content away from the scrollbar (works even with overlay scrollbars) -->
-        <div class="pr-10">
+      <div ref="listContainerRef" class="request-list-scroll flex-1 min-h-0 overflow-y-auto py-2 pr-2">
+        <div>
+          <UAlert
+            v-if="loadError"
+            color="error"
+            variant="soft"
+            icon="i-lucide-circle-alert"
+            :title="t('features.serviceRequests.messages.fetchError')"
+            class="mb-4"
+          />
+
           <UEmpty
             v-if="list.length === 0 && !pending"
             icon="i-lucide-ticket"
-            description="No service requests found"
+            :description="t('features.serviceRequests.messages.empty')"
+            class="request-card ring-inset"
           />
+
+          <div
+            v-if="hasPreviousPage"
+            ref="loadPreviousSentinelRef"
+            aria-hidden="true"
+            class="h-px"
+          />
+
+          <div v-if="loadingPreviousPage" class="pb-4 space-y-2">
+            <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
+          </div>
 
           <div class="space-y-4">
             <UCard
               v-for="request in list"
               :key="request.id"
-              class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+              class="request-card cursor-pointer ring-inset hover:bg-gray-50 dark:hover:bg-gray-900"
               @click="navigateTo(getDetailTo(request))"
             >
               <div class="flex justify-between items-start">
@@ -719,19 +735,44 @@ useInfiniteScroll(listContainerRef, loadMore, {
             </UCard>
           </div>
 
-          <div v-if="pending" class="py-4 space-y-2">
+          <div v-if="pending && !loadingNextPage" class="py-4 space-y-2">
             <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
+          </div>
+
+          <div
+            v-if="hasNextPage"
+            ref="loadMoreSentinelRef"
+            aria-hidden="true"
+            class="h-px"
+          />
+
+          <div v-if="loadingNextPage" class="py-4 space-y-2">
+            <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
+          </div>
+
+          <div
+            v-if="pagination.total > 0 && !hasNextPage && !pending"
+            class="end-of-list-bounce flex items-center justify-center gap-2 py-6 text-sm text-muted"
+            role="status"
+          >
+            <UIcon name="i-lucide-circle-check" class="size-5 text-success" />
+            <span>{{ t('features.serviceRequests.messages.endOfList') }}</span>
           </div>
         </div>
       </div>
 
-      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between">
+      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between gap-4">
         <span>
-          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ totalCount }}</span>
+          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ pagination.total }}</span>
         </span>
-        <span>
-          {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ list.length }}</span>
-        </span>
+        <UPagination
+          v-if="pagination.pageCount > 1"
+          :page="currentPage"
+          :total="pagination.total"
+          :items-per-page="pagination.pageSize"
+          :disabled="pending"
+          :to="getPageTo"
+        />
       </div>
 
       <!-- Drawer (create / view / edit) -->
@@ -772,8 +813,8 @@ useInfiniteScroll(listContainerRef, loadMore, {
 
           <ConfirmationModal
             v-model:open="showDeleteConfirm"
-            title="serviceRequest.delete"
-            message="serviceRequest.confirmDelete"
+            title="features.serviceRequests.delete"
+            message="features.serviceRequests.confirmDelete"
             confirm-color="error"
             confirm-text="common.delete"
             @confirm="handleDelete"
@@ -783,3 +824,36 @@ useInfiniteScroll(listContainerRef, loadMore, {
     </template>
   </UDashboardPanel>
 </template>
+
+<style scoped>
+@keyframes end-of-list-bounce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+  55% { transform: translateY(0); }
+  75% { transform: translateY(-4px); }
+}
+
+.end-of-list-bounce {
+  animation: end-of-list-bounce 650ms ease-out both;
+}
+
+.request-list-scroll {
+  width: calc(100% + 1rem);
+}
+
+.request-card {
+  margin-right: 0.5rem;
+}
+
+@media (min-width: 40rem) {
+  .request-list-scroll {
+    width: calc(100% + 1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .end-of-list-bounce {
+    animation: none;
+  }
+}
+</style>

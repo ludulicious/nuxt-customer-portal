@@ -1,8 +1,6 @@
-import { authClient } from '~/utils/auth-client'
-
 export const useServiceRequestMenu = () => {
-  const userStore = useUserStore()
-  const { activeOrganizationRole } = storeToRefs(userStore)
+  const { activeOrganizationRole } = usePortalSession()
+  const { t } = useI18n()
 
   const isOrganizationAdmin = computed(() => {
     const role = activeOrganizationRole.value
@@ -12,7 +10,7 @@ export const useServiceRequestMenu = () => {
   const menuItems = computed(() => {
     const items = [
       {
-        label: 'My Requests',
+        label: t('features.serviceRequests.navigation.myRequests'),
         to: '/requests',
         icon: 'i-lucide-ticket'
       }
@@ -20,7 +18,7 @@ export const useServiceRequestMenu = () => {
 
     if (isOrganizationAdmin.value) {
       items.push({
-        label: 'Manage Requests',
+        label: t('features.serviceRequests.navigation.manageRequests'),
         to: '/admin/requests',
         icon: 'i-lucide-settings'
       })

@@ -45,6 +45,10 @@ const activeLink = computed(() => {
   return found || items[0]
 })
 
+useSeoMeta({
+  title: () => activeLink.value?.label || t('settings.title')
+})
+
 const mobileMenuItems = computed(() => [
   flatLinks.value.map(item => ({
     label: item.label,
@@ -55,7 +59,7 @@ const mobileMenuItems = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+  <div class="h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-y-auto bg-gray-50 py-8 dark:bg-gray-900">
     <UContainer>
       <div class="mb-4">
         <UDropdownMenu

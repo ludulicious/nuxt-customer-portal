@@ -1,18 +1,26 @@
 <script setup lang="ts">
+import type { ButtonProps } from '@nuxt/ui'
+
 const { locale, t } = useI18n()
 const userStore = useUserStore()
 const { currentUser } = storeToRefs(userStore)
+
+const loadHomePage = () => locale.value === 'nl'
+  ? queryCollection('index_nl').first()
+  : queryCollection('index_en').first()
+
 const { data: page } = await useAsyncData(
-  () => `index-${locale.value}`,
-  () => queryCollection(locale.value === 'en' ? 'index_en' : 'index_nl' as never).first()
+  'home-page',
+  loadHomePage,
+  { watch: [locale] }
 )
 
-const title = page.value?.seo?.title || page.value?.title || ''
-const description = page.value?.seo?.description || page.value?.description || ''
+const title = computed(() => page.value?.seo?.title || page.value?.title || '')
+const description = computed(() => page.value?.seo?.description || page.value?.description || '')
 const isLoggedIn = computed(() => currentUser.value !== null)
 
 // Dynamic hero links based on login status
-const heroLinks = computed(() => {
+const heroLinks = computed<ButtonProps[]>(() => {
   if (isLoggedIn.value) {
     return [
       {
@@ -20,7 +28,7 @@ const heroLinks = computed(() => {
         icon: 'i-lucide-layout-dashboard',
         to: '/dashboard',
         size: 'xl',
-        color: 'primary'
+        color: 'primary' as const
       }
     ]
   }
@@ -28,13 +36,13 @@ const heroLinks = computed(() => {
 })
 
 // Dynamic CTA links based on login status
-const ctaLinks = computed(() => {
+const ctaLinks = computed<ButtonProps[]>(() => {
   if (isLoggedIn.value) {
     return [
       {
         label: t('home.links.dashboard'),
         to: '/dashboard',
-        color: 'primary',
+        color: 'primary' as const,
         icon: 'i-lucide-layout-dashboard'
       }
     ]
@@ -42,7 +50,6 @@ const ctaLinks = computed(() => {
   return page.value?.cta?.links || []
 })
 
-console.log(currentUser.value)
 useSeoMeta({
   titleTemplate: '',
   title,
@@ -99,5 +106,6 @@ definePageMeta({
         <LazyStarsBg />
       </UPageCTA>
     </div>
+    <UPageSection v-else :title="t('common.error')" description="The homepage content could not be loaded." />
   </div>
 </template>

@@ -1,0 +1,10 @@
+{
+  "date": "2026-07-30",
+  "framework": "Nuxt 4",
+  "ui": "Nuxt UI 4",
+  "font": "Bricolage Grotesque",
+  "palette": "existing portal light/dark tokens",
+  "motion": "motion-cut",
+  "spacing": "Tailwind utility scale",
+  "preserve": ["font", "palette", "spacing", "Nuxt UI component vocabulary"]
+}

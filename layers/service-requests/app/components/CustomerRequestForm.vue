@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import type { ServiceRequest, ServiceRequestCreateInput } from '#layers/service-requests/shared/types/service-request'
 
 const props = defineProps<{
   initialData?: Partial<ServiceRequest>
@@ -51,10 +52,10 @@ const handleSubmit = () => {
     <!-- Wrap in real DOM nodes so spacing is guaranteed -->
     <div class="space-y-6">
       <div>
-        <UFormField :label="t('serviceRequest.fields.title')" name="title" required>
+        <UFormField :label="t('features.serviceRequests.fields.title')" name="title" required>
           <UInput
             v-model="state.title"
-            :placeholder="t('serviceRequest.fields.title')"
+            :placeholder="t('features.serviceRequests.fields.title')"
             class="w-full"
             size="lg"
           />
@@ -62,11 +63,11 @@ const handleSubmit = () => {
       </div>
 
       <div>
-        <UFormField :label="t('serviceRequest.fields.description')" name="description" required class="w-full">
+        <UFormField :label="t('features.serviceRequests.fields.description')" name="description" required class="w-full">
           <UTextarea
             v-model="state.description"
             class="w-full"
-            :placeholder="t('serviceRequest.fields.description')"
+            :placeholder="t('features.serviceRequests.fields.description')"
             :rows="7"
             size="lg"
           />
@@ -75,7 +76,7 @@ const handleSubmit = () => {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
-          <UFormField :label="t('serviceRequest.fields.priority')" name="priority" class="w-full">
+          <UFormField :label="t('features.serviceRequests.fields.priority')" name="priority" class="w-full">
             <USelect
               v-model="state.priority"
               class="w-full"
@@ -86,11 +87,11 @@ const handleSubmit = () => {
         </div>
 
         <div>
-          <UFormField :label="t('serviceRequest.fields.category')" name="category" class="w-full">
+          <UFormField :label="t('features.serviceRequests.fields.category')" name="category" class="w-full">
             <UInput
               v-model="state.category"
               class="w-full"
-              placeholder="e.g., Technical, Billing, General"
+              :placeholder="t('features.serviceRequests.placeholders.category')"
               size="lg"
             />
           </UFormField>
@@ -103,7 +104,7 @@ const handleSubmit = () => {
       >
         <div class="flex items-center justify-between gap-3">
           <div class="text-sm font-medium text-muted">
-            {{ t('serviceRequest.fields.status') }}
+            {{ t('features.serviceRequests.fields.status') }}
           </div>
           <UBadge :color="getStatusColor(props.initialData.status)" variant="soft">
             {{ getStatusBadgeText(props.initialData.status) }}

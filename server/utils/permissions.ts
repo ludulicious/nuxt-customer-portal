@@ -32,26 +32,20 @@ export const getOrganizationRolePermissions = (orgRole: MemberRole | null | unde
   const userStatements = getRoleStatements(userRole)
   const permissions: RoleStatements = { ...userStatements }
 
-  // All organization roles get full service-request permissions
-  permissions['service-request'] = ['create', 'read', 'update', 'delete', 'list']
-
   if (orgRole === 'owner') {
     // Owners get full organization management permissions
     permissions['organization'] = ['read', 'update', 'delete']
     permissions['member'] = ['read', 'list', 'create', 'update', 'delete', 'update-name']
     permissions['invitation'] = ['list', 'create', 'cancel', 'resend']
-    permissions['service-request'] = ['create', 'read', 'update', 'delete', 'list']
   } else if (orgRole === 'admin') {
     // Admins can manage members and invitations but not delete organization
     permissions['organization'] = ['read', 'update'] // No 'delete' for admins
     permissions['member'] = ['read', 'list', 'create', 'update', 'delete', 'update-name']
     permissions['invitation'] = ['list', 'create', 'cancel', 'resend']
-    permissions['service-request'] = ['create', 'read', 'update', 'delete', 'list']
   } else if (orgRole === 'member') {
     // Members can read organization and list/read members but not manage them
     permissions['organization'] = ['read']
     permissions['member'] = ['read', 'list']
-    permissions['service-request'] = ['create', 'read', 'update', 'list']
   }
 
   return permissions

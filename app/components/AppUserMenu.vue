@@ -36,6 +36,12 @@ const userMenuItems = computed(() => {
         label: t('menu.settings.title'),
         icon: 'i-lucide-cog',
         to: '/settings'
+      },
+      {
+        label: t('menu.documentation'),
+        icon: 'i-lucide-book-open-code',
+        to: '/api-docs',
+        target: '_blank'
       }
     ]
   ] as DropdownMenuItem[]
