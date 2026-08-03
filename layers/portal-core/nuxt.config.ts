@@ -10,6 +10,11 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/i18n'],
   i18n: { locales: [{ code: 'en', file: 'en.json' }, { code: 'nl', file: 'nl.json' }] },
   runtimeConfig: {
+    portalAuth: {
+      registrationMode,
+      githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),
+      googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED)
+    },
     public: {
       portalAuth: {
         registrationMode,

@@ -23,11 +23,12 @@ const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .filter(Boolean) ?? []
 
 const envFlag = (value: string | undefined, fallback = true) => value === undefined ? fallback : value === 'true'
+const portalAuthConfig = useRuntimeConfig().portalAuth
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? process.env.PORTAL_REGISTRATION_MODE
-  : 'open'
-const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED)
-const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED)
+  : portalAuthConfig.registrationMode
+const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED, portalAuthConfig.githubEnabled)
+const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED, portalAuthConfig.googleEnabled)
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
