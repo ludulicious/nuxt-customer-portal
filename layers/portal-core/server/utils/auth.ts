@@ -274,7 +274,7 @@ export const auth = betterAuth({
         const config = useRuntimeConfig()
         const emailContent = getOTPEmailContent({
           otp,
-          type: type as 'email-verification' | 'sign-in' | 'password-reset',
+          type,
           brandName: config.portalEmail?.brandName
         })
 

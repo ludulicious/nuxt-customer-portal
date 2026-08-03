@@ -8,8 +8,12 @@ test('OTP email subjects use the configured portal brand name', () => {
     'Your Ludulicious sign-in code'
   )
   assert.equal(
-    getOTPEmailContent({ otp: '123456', type: 'password-reset', brandName: 'Ludulicious' }).subject,
+    getOTPEmailContent({ otp: '123456', type: 'forget-password', brandName: 'Ludulicious' }).subject,
     'Reset your Ludulicious password'
+  )
+  assert.equal(
+    getOTPEmailContent({ otp: '123456', type: 'change-email', brandName: 'Ludulicious' }).subject,
+    'Confirm your new Ludulicious email address'
   )
 })
 

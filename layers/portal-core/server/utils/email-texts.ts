@@ -36,7 +36,7 @@ export function getInvitationEmailContent(params: InvitationEmailParams) {
  * Used for email verification, sign-in, and password reset OTP codes
  */
 
-export type OTPEmailType = 'email-verification' | 'sign-in' | 'password-reset'
+export type OTPEmailType = 'email-verification' | 'sign-in' | 'forget-password' | 'change-email'
 
 export interface OTPEmailParams {
   otp: string
@@ -50,7 +50,8 @@ export function getOTPEmailContent(params: OTPEmailParams) {
   const subjects = {
     'email-verification': `Verify your ${brandName} email address`,
     'sign-in': `Your ${brandName} sign-in code`,
-    'password-reset': `Reset your ${brandName} password`
+    'forget-password': `Reset your ${brandName} password`,
+    'change-email': `Confirm your new ${brandName} email address`
   }
 
   return {
