@@ -22,7 +22,8 @@ const draft = reactive({
   vatNumber: '',
   iban: '',
   bic: '',
-  invoiceEmail: ''
+  invoiceEmail: '',
+  invoiceEmailTemplate: ''
 })
 const schema = computed(() => z.object({
   address: z.string().trim().min(1, t('features.timesheets.validation.required')).max(1000),
@@ -30,7 +31,8 @@ const schema = computed(() => z.object({
   vatNumber: z.string().trim().min(1, t('features.timesheets.validation.required')).max(100),
   iban: z.string().trim().min(1, t('features.timesheets.validation.required')).max(100),
   bic: z.string().trim().min(1, t('features.timesheets.validation.required')).max(100),
-  invoiceEmail: z.string().trim().min(1, t('features.timesheets.validation.required')).email(t('features.timesheets.validation.validEmail')).max(320)
+  invoiceEmail: z.string().trim().min(1, t('features.timesheets.validation.required')).email(t('features.timesheets.validation.validEmail')).max(320),
+  invoiceEmailTemplate: z.string().trim().max(50_000).refine(value => !value || value.includes('{{body}}'), t('features.timesheets.admin.invoiceEmailTemplateBodyRequired'))
 }))
 
 const checkDomain = async (forceRefresh = true) => {
@@ -53,7 +55,8 @@ watch(() => props.profile, (profile) => {
     vatNumber: profile.vatNumber ?? '',
     iban: profile.iban ?? '',
     bic: profile.bic ?? '',
-    invoiceEmail: profile.invoiceEmail ?? ''
+    invoiceEmail: profile.invoiceEmail ?? '',
+    invoiceEmailTemplate: profile.invoiceEmailTemplate ?? ''
   })
 }, { immediate: true })
 
@@ -119,6 +122,25 @@ const save = async () => {
           <UInput v-model="draft.invoiceEmail" type="email" class="w-full" />
         </UFormField>
       </div>
+      <UFormField
+        name="invoiceEmailTemplate"
+        :label="t('features.timesheets.admin.invoiceEmailTemplate')"
+        :description="t('features.timesheets.admin.invoiceEmailTemplateDescription')"
+      >
+        <UTextarea
+          v-model="draft.invoiceEmailTemplate"
+          :rows="12"
+          class="w-full font-mono text-xs"
+          placeholder="<div style=&quot;font-family: Arial, sans-serif&quot;>{{body}}</div>"
+        />
+        <template #hint>
+          <span>
+            {{ t('features.timesheets.admin.invoiceEmailTemplateVariables') }}
+            <code>&#123;&#123;body&#125;&#125;</code>, <code>&#123;&#123;subject&#125;&#125;</code>, <code>&#123;&#123;invoice_number&#125;&#125;</code>,
+            <code>&#123;&#123;sender_name&#125;&#125;</code>, <code>&#123;&#123;recipient_name&#125;&#125;</code>, <code>&#123;&#123;logo_url&#125;&#125;</code>.
+          </span>
+        </template>
+      </UFormField>
       <UButton type="submit" block icon="i-lucide-save" :loading="busy">
         {{ t('features.timesheets.save') }}
       </UButton>

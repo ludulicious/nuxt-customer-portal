@@ -72,6 +72,7 @@ export const organizationProfileUpdateSchema = z.object({
   address: z.string().trim().max(1000), registrationNumber: z.string().trim().max(200).nullable().optional(),
   vatNumber: z.string().trim().max(100).nullable().optional(), iban: z.string().trim().max(100).nullable().optional(),
   bic: z.string().trim().max(100).nullable().optional(), invoiceEmail: z.string().email().max(320).nullable().optional(),
+  invoiceEmailTemplate: z.string().trim().max(50_000).refine(value => !value || value.includes('{{body}}'), 'The template must contain {{body}}').nullable().optional(),
   preferredLocale: z.enum(['nl', 'en']).default('nl')
 })
 export const contactCreateSchema = z.object({

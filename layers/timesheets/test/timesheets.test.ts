@@ -26,6 +26,7 @@ import {
 } from '../server/utils/timesheet-validation'
 import { invoiceOverdueDetails, mondayFor } from '../shared/timesheet-dates'
 import { isKnownEmailProviderEvent, normalizeEmailProviderEvent } from '../shared/email-delivery-status'
+import { DEFAULT_INVOICE_EMAIL_TEMPLATE, renderInvoiceEmailTemplate } from '../shared/invoice-email-template'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix]
@@ -177,6 +178,20 @@ test('client invoice profiles accept supported preferred languages only', () => 
   const base = { address: 'Main Street 1', invoiceEmail: 'billing@example.com' }
   assert.equal(organizationProfileUpdateSchema.safeParse({ ...base, preferredLocale: 'en' }).success, true)
   assert.equal(organizationProfileUpdateSchema.safeParse({ ...base, preferredLocale: 'de' }).success, false)
+  assert.equal(organizationProfileUpdateSchema.safeParse({ ...base, invoiceEmailTemplate: '<p>No body</p>' }).success, false)
+  assert.equal(organizationProfileUpdateSchema.safeParse({ ...base, invoiceEmailTemplate: '<main>{{body}}</main>' }).success, true)
+})
+
+test('organization invoice email templates render escaped invoice values and retain the default', () => {
+  const values = {
+    body: 'Hello <client>', subject: 'Invoice & details', invoiceNumber: '2026-001',
+    senderName: 'Sender', recipientName: 'Client', logoUrl: 'https://example.com/logo.png?a=1&b=2'
+  }
+  assert.equal(renderInvoiceEmailTemplate(null, values), DEFAULT_INVOICE_EMAIL_TEMPLATE.replace('{{body}}', 'Hello &lt;client&gt;'))
+  assert.equal(
+    renderInvoiceEmailTemplate('<h1>{{subject}}</h1><p>{{body}}</p><img src="{{logo_url}}">', values),
+    '<h1>Invoice &amp; details</h1><p>Hello &lt;client&gt;</p><img src="https://example.com/logo.png?a=1&amp;b=2">'
+  )
 })
 
 test('Resend delivery events are normalized while future events remain supported', () => {

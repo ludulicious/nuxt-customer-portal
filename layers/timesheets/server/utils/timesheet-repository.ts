@@ -165,7 +165,7 @@ export const getOrganizationInvoiceProfile = async (organizationId: string) => {
   } catch { /* Retain the organization name for legacy metadata. */ }
   return { organizationId, name: officialCompanyName, logo: organization.logo, address: profile?.address ?? '', registrationNumber: profile?.registrationNumber ?? null,
     vatNumber: profile?.vatNumber ?? null, iban: profile?.iban ?? null, bic: profile?.bic ?? null, invoiceEmail: profile?.invoiceEmail ?? null,
-    preferredLocale: profile?.preferredLocale ?? 'nl' }
+    invoiceEmailTemplate: profile?.invoiceEmailTemplate ?? null, preferredLocale: profile?.preferredLocale ?? 'nl' }
 }
 
 export const updateOrganizationInvoiceProfile = async (organizationId: string, targetOrganizationId: string, input: {
@@ -175,6 +175,7 @@ export const updateOrganizationInvoiceProfile = async (organizationId: string, t
   iban?: string | null
   bic?: string | null
   invoiceEmail?: string | null
+  invoiceEmailTemplate?: string | null
   preferredLocale?: 'nl' | 'en'
 }) => {
   if (targetOrganizationId !== organizationId && !(await listClients(organizationId)).some(client => client.organizationId === targetOrganizationId)) {

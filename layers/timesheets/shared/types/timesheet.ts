@@ -36,7 +36,7 @@ export interface ClientDto {
 }
 
 export interface OrganizationContactDto { id: string, userId: string | null, name: string, email: string, phone: string | null, jobTitle: string | null }
-export interface OrganizationInvoiceProfileDto { organizationId: string, name: string, logo: string | null, address: string, registrationNumber: string | null, vatNumber: string | null, iban: string | null, bic: string | null, invoiceEmail: string | null, preferredLocale: string }
+export interface OrganizationInvoiceProfileDto { organizationId: string, name: string, logo: string | null, address: string, registrationNumber: string | null, vatNumber: string | null, iban: string | null, bic: string | null, invoiceEmail: string | null, invoiceEmailTemplate: string | null, preferredLocale: string }
 
 export interface ClientOrganizationOptionDto {
   id: string

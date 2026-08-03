@@ -5,6 +5,7 @@ import { db } from '#portal/server/portal'
 import { EmailProviderRejectedError, getOrganizationEmailCredentialStatus, sendOrganizationEmail } from '#portal/server/utils/organization-email-provider'
 import { invoice, invoiceAttachment, invoiceEmailDelivery, invoiceHistory } from '#layers/timesheets/server/db/schema/timesheets'
 import type { InvoiceEmailPreviewDto, InvoiceEmailPurpose } from '#layers/timesheets/shared/types/timesheet'
+import { renderInvoiceEmailTemplate } from '#layers/timesheets/shared/invoice-email-template'
 import { generateInvoicePdf } from './invoice-pdf'
 import { getInvoice, getOrganizationInvoiceProfile } from './timesheet-repository'
 
@@ -24,7 +25,6 @@ const copy = {
   }
 } as const
 const domainFor = (email: string) => email.split('@')[1]?.toLowerCase() ?? ''
-const escapeHtml = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('\u0022', '&quot;').replaceAll('\u0027', '&#039;')
 
 export const getInvoiceEmailPreview = async (organizationId: string, id: string, localeOverride?: string, purpose: InvoiceEmailPurpose = 'INVOICE'): Promise<InvoiceEmailPreviewDto> => {
   const [selected, sender, files, providerStatus] = await Promise.all([
@@ -67,11 +67,16 @@ export const deliverInvoiceEmail = async (organizationId: string, actorUserId: s
   const delivery = pending ?? (await db.insert(invoiceEmailDelivery).values({ id: nanoid(), invoiceId: id, actorUserId, purpose, status: 'PENDING', recipientEmail: input.to, ccEmails: JSON.stringify(input.cc), locale: input.locale, subject: input.subject, body: input.body, payloadHash }).returning())[0]!
   const pdf = await generateInvoicePdf(currentInvoice, input.locale)
   const storedFiles = await db.select().from(invoiceAttachment).where(eq(invoiceAttachment.invoiceId, id))
+  const sender = await getOrganizationInvoiceProfile(organizationId)
   let result: { id: string }
   try {
     result = await sendOrganizationEmail(organizationId, {
       from: `${currentInvoice.senderName.replace(/[<>\r\n]/g, '')} <${preview.senderEmail}>`, to: input.to, cc: input.cc,
-      subject: input.subject, text: input.body, html: `<div style="font-family:Arial,sans-serif;white-space:pre-line">${escapeHtml(input.body)}</div>`,
+      subject: input.subject, text: input.body, html: renderInvoiceEmailTemplate(sender.invoiceEmailTemplate, {
+        body: input.body, subject: input.subject, invoiceNumber: currentInvoice.number,
+        senderName: currentInvoice.senderName, recipientName: currentInvoice.recipientName,
+        logoUrl: currentInvoice.senderLogo ?? ''
+      }),
       attachments: [{ filename: preview.attachments[0]!.fileName, content: Buffer.from(pdf), contentType: 'application/pdf' }, ...storedFiles.map(file => ({ filename: file.fileName, content: Buffer.from(file.contentBase64, 'base64'), contentType: file.contentType }))],
       idempotencyKey: delivery.id
     })

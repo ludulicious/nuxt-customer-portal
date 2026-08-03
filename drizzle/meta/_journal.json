@@ -99,6 +99,13 @@
       "when": 1785708000000,
       "tag": "0013_invoice_payment_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785769200000,
+      "tag": "0014_invoice_email_template",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,7 @@ export const organizationInvoiceProfile = timesheetsSchema.table('organization_i
   iban: text('iban'),
   bic: text('bic'),
   invoiceEmail: text('invoice_email'),
+  invoiceEmailTemplate: text('invoice_email_template'),
   preferredLocale: text('preferred_locale').default('nl').notNull(),
   ...auditColumns
 })
