@@ -271,9 +271,11 @@ export const auth = betterAuth({
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
+        const config = useRuntimeConfig()
         const emailContent = getOTPEmailContent({
           otp,
-          type: type as 'email-verification' | 'sign-in' | 'password-reset'
+          type: type as 'email-verification' | 'sign-in' | 'password-reset',
+          brandName: config.portalEmail?.brandName
         })
 
         await sendEmail({

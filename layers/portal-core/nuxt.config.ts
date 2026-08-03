@@ -10,6 +10,10 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/i18n'],
   i18n: { locales: [{ code: 'en', file: 'en.json' }, { code: 'nl', file: 'nl.json' }] },
   runtimeConfig: {
+    portalEmail: {
+      templateStorage: 'assets:portal-core',
+      brandName: 'Apex Pro'
+    },
     portalAuth: {
       registrationMode,
       githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),

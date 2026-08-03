@@ -36,7 +36,9 @@ const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
 // Updated sendEmail function using the template
 export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
-  const emailTemplate = await useStorage('assets:portal-core').getItem<string>('email-template.html')
+  const config = useRuntimeConfig()
+  const templateStorage = config.portalEmail?.templateStorage || 'assets:portal-core'
+  const emailTemplate = await useStorage(templateStorage).getItem<string>('email-template.html')
   // Check for RESEND_FROM_EMAIL
   if (!resend || !RESEND_FROM_EMAIL || !emailTemplate) {
     console.error(

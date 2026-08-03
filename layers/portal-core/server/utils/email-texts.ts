@@ -41,15 +41,16 @@ export type OTPEmailType = 'email-verification' | 'sign-in' | 'password-reset'
 export interface OTPEmailParams {
   otp: string
   type: OTPEmailType
+  brandName?: string
 }
 
 export function getOTPEmailContent(params: OTPEmailParams) {
-  const { otp, type } = params
+  const { otp, type, brandName = 'Apex Pro' } = params
 
   const subjects = {
-    'email-verification': 'Verify your Apex Pro email address',
-    'sign-in': 'Your Apex Pro sign-in code',
-    'password-reset': 'Reset your Apex Pro password'
+    'email-verification': `Verify your ${brandName} email address`,
+    'sign-in': `Your ${brandName} sign-in code`,
+    'password-reset': `Reset your ${brandName} password`
   }
 
   return {
