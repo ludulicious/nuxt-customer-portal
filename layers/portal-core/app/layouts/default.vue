@@ -62,7 +62,10 @@ onMounted(async () => {
         v-model:open="open"
         collapsible
         resizable
-        class="bg-elevated/25 lg:pb-12"
+        :default-size="18"
+        :min-size="18"
+        :max-size="24"
+        class="min-w-72 bg-elevated/25 lg:pb-12 data-[collapsed=true]:min-w-0"
         :ui="{ footer: 'lg:border-t lg:border-default' }"
       >
         <template #header>

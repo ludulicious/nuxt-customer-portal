@@ -17,6 +17,7 @@ import {
   listPortalOrganizationMembers
 } from '#portal/server/portal'
 import { organization, user } from '~~/layers/portal-core/server/db/schema/auth-schema'
+import { firstInvoiceNumber, hasNumericInvoiceSequence, incrementInvoiceNumber } from '#layers/timesheets/shared/invoice-number'
 import {
   activityType,
   invoice,
@@ -1146,6 +1147,18 @@ export const listInvoiceableEntries = async (organizationId: string): Promise<In
   return report.rows.filter(row => !billed.has(row.entryId)).map(row => ({ ...row, weeklyTimesheetId: entryWeeks.get(row.entryId)! }))
 }
 
+export const getNextInvoiceNumber = async (organizationId: string): Promise<string> => {
+  const existing = await db.select({ number: invoice.number }).from(invoice)
+    .where(eq(invoice.organizationId, organizationId))
+    .orderBy(desc(invoice.createdAt))
+  if (!existing.length) return firstInvoiceNumber()
+  const used = new Set(existing.map(item => item.number))
+  const latestSequential = existing.find(item => hasNumericInvoiceSequence(item.number))
+  let candidate = latestSequential ? incrementInvoiceNumber(latestSequential.number) : firstInvoiceNumber()
+  while (used.has(candidate)) candidate = incrementInvoiceNumber(candidate)
+  return candidate
+}
+
 export const createInvoice = async (organizationId: string, actorUserId: string, input: {
   clientOrganizationId: string
   contactId?: string | null
@@ -1164,6 +1177,9 @@ export const createInvoice = async (organizationId: string, actorUserId: string,
     timeEntryIds?: string[]
   }>
 }) => db.transaction(async (tx) => {
+  const [duplicate] = await tx.select({ id: invoice.id }).from(invoice)
+    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.number, input.number))).limit(1)
+  if (duplicate) throw createError({ statusCode: 409, message: 'Invoice number already exists' })
   const clients = await listClients(organizationId)
   const client = clients.find(item => item.organizationId === input.clientOrganizationId)
   if (!client) throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
@@ -1225,10 +1241,13 @@ export const changeInvoiceStatus = async (organizationId: string, actorUserId: s
   return updated
 })
 
-export const updateInvoice = async (organizationId: string, actorUserId: string, id: string, input: { issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => db.transaction(async (tx) => {
+export const updateInvoice = async (organizationId: string, actorUserId: string, id: string, input: { number: string, issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => db.transaction(async (tx) => {
   const [current] = await tx.select().from(invoice).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).limit(1)
   if (!current) throw createError({ statusCode: 404, message: 'Invoice not found' })
   if (current.status !== 'DRAFT') throw createError({ statusCode: 409, message: 'Only draft invoices can be edited' })
+  const [duplicate] = await tx.select({ id: invoice.id }).from(invoice)
+    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.number, input.number))).limit(1)
+  if (duplicate && duplicate.id !== id) throw createError({ statusCode: 409, message: 'Invoice number already exists' })
   const [[sender], [recipient]] = await Promise.all([
     tx.select({ logo: organization.logo }).from(organization)
       .where(eq(organization.id, organizationId)).limit(1),
