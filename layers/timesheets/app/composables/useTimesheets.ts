@@ -131,9 +131,10 @@ export const useTimesheets = () => {
   const getReport = (query: Record<string, string | undefined>) =>
     $fetch<TimesheetReportDto>('/api/timesheets/admin/report', { query })
   const createInvoice = (input: Record<string, unknown>) => $fetch('/api/timesheets/admin/invoices', { method: 'POST', body: input })
+  const getNextInvoiceNumber = () => $fetch<{ number: string }>('/api/timesheets/admin/invoices/next-number')
   const getInvoice = (id: string) => $fetch<InvoiceDto>(`/api/timesheets/admin/invoices/${id}`)
-  const updateInvoice = (id: string, input: { issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH', body: input })
-  const changeInvoiceStatus = (id: string, action: 'VOID' | 'UNVOID') => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH', body: { action } })
+  const updateInvoice = (id: string, input: { number: string, issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH' as never, body: input })
+  const changeInvoiceStatus = (id: string, action: 'VOID' | 'UNVOID') => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH' as never, body: { action } })
   const getInvoiceEmailPreview = (id: string, locale?: string) => $fetch<InvoiceEmailPreviewDto>(`/api/timesheets/admin/invoices/${id}/email-preview`, { query: { locale } })
   const issueAndSendInvoice = (id: string, input: Record<string, unknown>) => $fetch(`/api/timesheets/admin/invoices/${id}/issue`, { method: 'POST', body: input })
   const resendInvoice = (id: string, input: Record<string, unknown>) => $fetch(`/api/timesheets/admin/invoices/${id}/email`, { method: 'POST', body: input })
@@ -177,6 +178,7 @@ export const useTimesheets = () => {
     reviewWeek,
     getReport,
     createInvoice,
+    getNextInvoiceNumber,
     getInvoice,
     updateInvoice,
     changeInvoiceStatus,

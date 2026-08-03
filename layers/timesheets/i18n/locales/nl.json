@@ -41,6 +41,7 @@
         "note": "Notitie"
       },
       "validation": {
+        "invoiceNumberSequence": "Het factuurnummer moet eindigen op cijfers",
         "required": "Dit veld is verplicht",
         "validEmail": "Vul een geldig e-mailadres in",
         "contactEmailUnique": "Er bestaat al een contactpersoon met dit e-mailadres",

@@ -29,11 +29,11 @@ const periodTo = ref(localDate(new Date(now.getFullYear(), now.getMonth(), 0)))
 const today = localDate(now)
 const due = localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30))
 const emptyLine = () => ({ description: '', quantityMilli: 1000, unit: 'item', unitPriceMinor: 0, vatRateBasisPoints: props.data.settings.defaultVatRateBasisPoints, timeEntryIds: [] as string[] })
-const model = reactive({ clientOrganizationId: '', contactId: '', number: `${now.getFullYear()}-001`, currency: props.data.settings.currency, issueDate: today, dueDate: due, subject: '', notes: '', lines: [emptyLine()] })
+const model = reactive({ clientOrganizationId: '', contactId: '', number: `${now.getFullYear()}.0001`, currency: props.data.settings.currency, issueDate: today, dueDate: due, subject: '', notes: '', lines: [emptyLine()] })
 const invoiceSchema = computed(() => z.object({
   clientOrganizationId: z.string().min(1, t('features.timesheets.validation.required')),
   contactId: z.string(),
-  number: z.string().trim().min(1, t('features.timesheets.validation.required')).max(60),
+  number: z.string().trim().min(1, t('features.timesheets.validation.required')).max(60).regex(/\d+$/, t('features.timesheets.validation.invoiceNumberSequence')),
   currency: z.string().length(3, t('features.timesheets.validation.currencyLength')),
   issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
@@ -95,7 +95,9 @@ const openWizard = async () => {
     await navigateTo('/admin/timesheets/settings#sender-invoice-details')
     return
   }
-  reset(); formOpen.value = true
+  reset()
+  model.number = (await api.getNextInvoiceNumber()).number
+  formOpen.value = true
 }
 const chooseClient = (id: string) => { model.clientOrganizationId = id; model.contactId = ''; selectedProjectIds.value = []; const projects = props.data.projects.filter(project => project.clientOrganizationId === id); if (projects.length === 1) selectedProjectIds.value = [projects[0]!.id] }
 const editSelectedClient = async () => {
@@ -125,7 +127,6 @@ defineExpose({
   showCreate: computed(() => !formOpen.value && Boolean(listing.pagination.value.total) && senderInvoiceDetailsComplete.value)
 })
 await listing.load()
-model.number = `${now.getFullYear()}-${String(listing.pagination.value.total + 1).padStart(3, '0')}`
 </script>
 
 <template>

@@ -21,7 +21,7 @@ const statusConfirmation = ref<'VOID' | 'UNVOID' | null>(null)
 const statusConfirmationOpen = ref(false)
 const today = new Date().toISOString().slice(0, 10)
 const payment = reactive({ paidOn: today, amount: props.invoice.outstandingMinor / 100, reference: '', note: '' })
-const edit = reactive({ issueDate: props.invoice.issueDate, dueDate: props.invoice.dueDate, subject: props.invoice.subject ?? '', notes: props.invoice.notes ?? '' })
+const edit = reactive({ number: props.invoice.number, issueDate: props.invoice.issueDate, dueDate: props.invoice.dueDate, subject: props.invoice.subject ?? '', notes: props.invoice.notes ?? '' })
 watch(() => props.invoice.emailDeliveries, deliveries => {
   emailDeliveries.value = deliveries ?? []
 })
@@ -32,6 +32,7 @@ const paymentSchema = computed(() => z.object({
   note: z.string().trim().max(1000)
 }))
 const editSchema = computed(() => z.object({
+  number: z.string().trim().min(1, t('features.timesheets.validation.required')).max(60).regex(/\d+$/, t('features.timesheets.validation.invoiceNumberSequence')),
   issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
   subject: z.string().trim().max(500),
@@ -103,7 +104,7 @@ const openEmail = (mode: 'issue' | 'resend' | 'reminder') => {
   emailOpen.value = true
 }
 const openEdit = () => {
-  Object.assign(edit, { issueDate: props.invoice.issueDate, dueDate: props.invoice.dueDate, subject: props.invoice.subject ?? '', notes: props.invoice.notes ?? '' })
+  Object.assign(edit, { number: props.invoice.number, issueDate: props.invoice.issueDate, dueDate: props.invoice.dueDate, subject: props.invoice.subject ?? '', notes: props.invoice.notes ?? '' })
   editOpen.value = true
 }
 const saveEdit = async () => {
@@ -194,7 +195,7 @@ onMounted(() => {
 
     <UCard v-if="editOpen" class="print:hidden">
       <template #header><div class="flex items-center justify-between gap-3"><h2 class="font-semibold">{{ t('features.timesheets.admin.editInvoice') }}</h2><UButton color="neutral" variant="ghost" icon="i-lucide-x" :aria-label="t('features.timesheets.cancel')" @click="editOpen = false" /></div></template>
-      <UForm :state="edit" :schema="editSchema" class="grid gap-4" @submit="saveEdit"><div class="grid gap-3 sm:grid-cols-2"><UFormField name="issueDate" :label="t('features.timesheets.admin.invoiceDate')"><UInput v-model="edit.issueDate" type="date" class="w-full" /></UFormField><UFormField name="dueDate" :label="t('features.timesheets.admin.dueDate')"><UInput v-model="edit.dueDate" type="date" class="w-full" /></UFormField></div><UFormField name="subject" :label="t('features.timesheets.admin.subject')"><UInput v-model="edit.subject" class="w-full" /></UFormField><UFormField name="notes" :label="t('features.timesheets.admin.notes')"><UTextarea v-model="edit.notes" :rows="5" class="w-full" /></UFormField><div class="flex justify-end gap-2"><UButton type="button" color="neutral" variant="ghost" @click="editOpen = false">{{ t('features.timesheets.cancel') }}</UButton><UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.timesheets.save') }}</UButton></div></UForm>
+      <UForm :state="edit" :schema="editSchema" class="grid gap-4" @submit="saveEdit"><UFormField name="number" :label="t('features.timesheets.admin.invoiceNumber')"><UInput v-model="edit.number" class="w-full" /></UFormField><div class="grid gap-3 sm:grid-cols-2"><UFormField name="issueDate" :label="t('features.timesheets.admin.invoiceDate')"><UInput v-model="edit.issueDate" type="date" class="w-full" /></UFormField><UFormField name="dueDate" :label="t('features.timesheets.admin.dueDate')"><UInput v-model="edit.dueDate" type="date" class="w-full" /></UFormField></div><UFormField name="subject" :label="t('features.timesheets.admin.subject')"><UInput v-model="edit.subject" class="w-full" /></UFormField><UFormField name="notes" :label="t('features.timesheets.admin.notes')"><UTextarea v-model="edit.notes" :rows="5" class="w-full" /></UFormField><div class="flex justify-end gap-2"><UButton type="button" color="neutral" variant="ghost" @click="editOpen = false">{{ t('features.timesheets.cancel') }}</UButton><UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.timesheets.save') }}</UButton></div></UForm>
     </UCard>
 
     <UCard v-if="paymentOpen" class="print:hidden">

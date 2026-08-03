@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { hasNumericInvoiceSequence } from '../../shared/invoice-number'
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 const id = z.string().min(1).max(128)
@@ -171,13 +172,16 @@ const invoiceLineSchema = z.object({
   unit: z.string().trim().min(1).max(30).default('hour'), unitPriceMinor: moneyMinor,
   vatRateBasisPoints: z.number().int().min(0).max(10_000).default(2100), timeEntryIds: z.array(id).optional()
 })
+const invoiceNumber = z.string().trim().min(1).max(60)
+  .refine(hasNumericInvoiceSequence, 'Invoice number must end with a numeric sequence')
 export const invoiceCreateSchema = z.object({
-  clientOrganizationId: id, contactId: id.nullable().optional(), number: z.string().trim().min(1).max(60), currency: z.string().length(3),
+  clientOrganizationId: id, contactId: id.nullable().optional(), number: invoiceNumber, currency: z.string().length(3),
   issueDate: isoDate, dueDate: isoDate, subject: z.string().trim().max(500).nullable().optional(), notes: z.string().trim().max(5000).nullable().optional(),
   lines: z.array(invoiceLineSchema).min(1).max(500)
 }).refine(v => v.dueDate >= v.issueDate, { path: ['dueDate'], message: 'Due date must not precede invoice date' })
 export const invoiceIssueSchema = z.object({ action: z.enum(['ISSUE', 'VOID', 'UNVOID']) })
 export const invoiceUpdateSchema = z.object({
+  number: invoiceNumber,
   issueDate: isoDate,
   dueDate: isoDate,
   subject: z.string().trim().max(500).nullable().optional(),

@@ -18,6 +18,7 @@ import {
   invoiceIssueSchema,
   invoiceListQuerySchema,
   invoicePaymentSchema,
+  invoiceUpdateSchema,
   organizationProfileUpdateSchema,
   projectCreateSchema,
   projectListQuerySchema,
@@ -26,6 +27,7 @@ import {
 } from '../server/utils/timesheet-validation'
 import { invoiceOverdueDetails, mondayFor } from '../shared/timesheet-dates'
 import { isKnownEmailProviderEvent, normalizeEmailProviderEvent } from '../shared/email-delivery-status'
+import { firstInvoiceNumber, incrementInvoiceNumber } from '../shared/invoice-number'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix]
@@ -140,8 +142,19 @@ test('invoices require dated recipient snapshots, valid lines, and positive paym
   assert.equal(invoiceCreateSchema.safeParse(valid).success, true)
   assert.equal(invoiceCreateSchema.safeParse({ ...valid, dueDate: '2026-07-30' }).success, false)
   assert.equal(invoiceCreateSchema.safeParse({ ...valid, lines: [] }).success, false)
+  assert.equal(invoiceCreateSchema.safeParse({ ...valid, number: 'INV-ABC' }).success, false)
+  assert.equal(invoiceUpdateSchema.safeParse({ number: '26.10.0020', issueDate: valid.issueDate, dueDate: valid.dueDate }).success, true)
   assert.equal(invoicePaymentSchema.safeParse({ paidOn: '2026-08-01', amountMinor: 1 }).success, true)
   assert.equal(invoicePaymentSchema.safeParse({ paidOn: '2026-08-01', amountMinor: 0 }).success, false)
+})
+
+test('invoice numbers increment their trailing numeric sequence', () => {
+  assert.equal(firstInvoiceNumber(2026), '2026.0001')
+  assert.equal(incrementInvoiceNumber('2026.0001'), '2026.0002')
+  assert.equal(incrementInvoiceNumber('26.10.0020'), '26.10.0021')
+  assert.equal(incrementInvoiceNumber('INV-999'), 'INV-1000')
+  assert.equal(incrementInvoiceNumber('9'), '10')
+  assert.throws(() => incrementInvoiceNumber('INV-ABC'))
 })
 
 test('invoice overdue state starts after the due date and requires an issued balance', () => {

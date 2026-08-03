@@ -19,4 +19,6 @@ test('mobile navigation keeps module selection in the header and its menu in the
   assert.match(header, /menu\.activeModuleNavigation/)
   assert.match(header, /:items="activeModuleMenuItems"/)
   assert.match(layout, /:items="activeModuleMenuItems"/)
+  assert.match(layout, /:min-size="18"/)
+  assert.match(layout, /data-\[collapsed=true\]:min-w-0/)
 })

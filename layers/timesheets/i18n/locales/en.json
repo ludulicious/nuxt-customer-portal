@@ -41,6 +41,7 @@
         "note": "Note"
       },
       "validation": {
+        "invoiceNumberSequence": "The invoice number must end with digits",
         "required": "This field is required",
         "validEmail": "Enter a valid email address",
         "contactEmailUnique": "A contact with this email address already exists",
