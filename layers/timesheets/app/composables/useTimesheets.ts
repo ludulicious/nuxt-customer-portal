@@ -22,6 +22,7 @@ import type {
   ClientInvoiceDto,
   ClientInvoiceSupplierDto,
   ClientInvoiceViewerDto,
+  TimesheetsDashboardDto,
 } from '#layers/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
@@ -41,6 +42,7 @@ export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, 
 export const useTimesheets = () => {
   const bootstrap = (week?: string) =>
     $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
+  const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
 
   const createEntry = (input: {
     projectId: string
@@ -177,6 +179,7 @@ export const useTimesheets = () => {
 
   return {
     bootstrap,
+    dashboard,
     createEntry,
     updateEntry,
     deleteEntry,

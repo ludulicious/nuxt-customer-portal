@@ -52,46 +52,14 @@
     "logout": "Log Out"
   },
   "dashboard": {
-    "activity": {
-      "recentActivity": "Recent Activity"
-    },
-    "buttons": {
-      "export": "Export",
-      "generateReport": "Generate Report",
-      "newOrder": "New Order",
-      "newRequest": "New Request",
-      "viewAll": "View All",
-      "viewAllOrders": "View All Orders",
-      "viewInvoices": "View Invoices"
-    },
-    "cards": {
-      "completed": "completed",
-      "invoices": "Invoices",
-      "overdue": "overdue",
-      "paid": "paid",
-      "pending": "pending",
-      "satisfaction": "Satisfaction",
-      "slaCompliance": "SLA Compliance",
-      "totalOrders": "Total Orders"
-    },
-    "charts": {
-      "chartPlaceholder": "Chart visualization would go here",
-      "integrationNote": "Integration with chart library needed",
-      "ordersCompleted": "Orders Completed",
-      "slaChartPlaceholder": "SLA performance chart would go here",
-      "slaPerformance": "SLA Performance"
-    },
-    "seo": {
-      "description": "Manage your facility services, orders, and invoices with ApexPro",
-      "title": "Dashboard - ApexPro Portal"
-    },
-    "stats": {
-      "avgResolutionTime": "Avg Resolution Time",
-      "avgResponseTime": "Avg Response Time",
-      "quickActions": "Quick Actions"
-    },
     "title": "Dashboard",
-    "welcome": "Welcome back! Here's what's happening with your facility services."
+    "greeting": "Welcome back, {name}",
+    "introduction": "Start with the work that needs your attention.",
+    "notifications": "Notifications",
+    "areas": { "attention": "Needs attention", "main": "Your work", "aside": "Recent activity" },
+    "empty": { "title": "You're all caught up", "description": "There is no dashboard work available for this organization." },
+    "error": { "title": "This dashboard item is unavailable", "description": "The rest of your dashboard is still available.", "retry": "Try again" },
+    "seo": { "description": "View work requiring your attention.", "title": "Dashboard" }
   },
   "nav": {
     "admin": "Admin",

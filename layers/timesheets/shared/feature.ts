@@ -85,7 +85,12 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     ]
   }],
   dashboardWidgets: [
-    { id: 'timesheet-summary', component: 'TimesheetSummaryWidget', order: 30 }
+    { id: 'timesheets-my-week', component: 'TimesheetsDashboardMyWeek', area: 'main', size: 'half', order: 20 },
+    { id: 'timesheets-internal-approvals', component: 'TimesheetsDashboardInternalApprovals', area: 'attention', size: 'half', order: 10 },
+    { id: 'timesheets-client-approvals', component: 'TimesheetsDashboardClientApprovals', area: 'attention', size: 'half', order: 20 },
+    { id: 'timesheets-supplier-timesheets', component: 'TimesheetsDashboardSupplierTimesheets', area: 'main', size: 'half', order: 25 },
+    { id: 'timesheets-sales-invoices', component: 'TimesheetsDashboardSalesInvoices', area: 'main', size: 'half', order: 30 },
+    { id: 'timesheets-received-invoices', component: 'TimesheetsDashboardReceivedInvoices', area: 'main', size: 'half', order: 40 }
   ],
   policy: {
     owner: timesheetActions,

@@ -13,6 +13,13 @@ export const upsertPortalFeature = (
   return features.map((item, itemIndex) => itemIndex === index ? feature : item)
 }
 
+const dashboardAreaOrder = { attention: 0, main: 1, aside: 2 } as const
+
+export const sortPortalDashboardWidgets = <T extends { id: string, area: keyof typeof dashboardAreaOrder, order: number }>(widgets: readonly T[]): T[] =>
+  [...widgets].sort((left, right) => dashboardAreaOrder[left.area] - dashboardAreaOrder[right.area]
+    || left.order - right.order
+    || left.id.localeCompare(right.id))
+
 export const isPortalActionAllowed = <Action extends string>(
   policy: PortalFeaturePolicy<Action>,
   role: PortalOrganizationRole | null,

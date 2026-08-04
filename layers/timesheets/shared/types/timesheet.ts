@@ -149,6 +149,30 @@ export interface TimesheetBootstrapDto {
   week: WeekDto
 }
 
+export interface TimesheetCapabilitiesDto {
+  canEnterTime: boolean
+  canApproveInternalTimesheets: boolean
+  canReviewClientTimesheets: boolean
+  canInvoice: boolean
+  canViewSupplierTime: boolean
+  canAccessApprovals: boolean
+  canManageClientReviewers: boolean
+  canViewClientInvoices: boolean
+  canManageInvoiceViewers: boolean
+  pendingInternalApprovalCount: number
+  pendingClientApprovalCount: number
+  unassignedClientReviewerSupplierCount: number
+}
+
+export interface TimesheetsDashboardDto {
+  myWeek?: { weekStartsOn: string, status: TimesheetStatus, totalMinutes: number, rejectionComment: string | null, hasRunningTimer: boolean }
+  internalApprovals?: { pendingCount: number, items: Array<Pick<ApprovalQueueItemDto, 'id' | 'userName' | 'weekStartsOn' | 'totalMinutes' | 'submittedAt' | 'status'>> }
+  clientApprovals?: { pendingCount: number, unassignedSupplierCount: number, items: Array<Pick<ClientApprovalItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>> }
+  supplierTimesheets?: { items: Array<Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes' | 'billingStatus'>> }
+  salesInvoices?: { currency: string, draftCount: number, issuedCount: number, overdueCount: number, outstandingMinor: number, recent: Array<Pick<InvoiceDto, 'id' | 'number' | 'recipientName' | 'status' | 'dueDate' | 'outstandingMinor' | 'isOverdue'>> }
+  receivedInvoices?: { currency: string | null, overdueCount: number, outstandingMinor: number, recent: ClientInvoiceSummaryDto[] }
+}
+
 export interface ApprovalQueueItemDto {
   id: string
   userId: string

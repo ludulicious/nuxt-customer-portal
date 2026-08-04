@@ -56,6 +56,20 @@ export interface ServiceRequestListResponse {
   pagination: ServiceRequestPagination
 }
 
+export interface ServiceRequestDashboardDto {
+  overview: {
+    activeCount: number
+    resolvedCount: number
+    recent: ServiceRequestDto[]
+  }
+  attention?: {
+    urgentCount: number
+    unassignedCount: number
+    longOpenCount: number
+    items: ServiceRequestDto[]
+  }
+}
+
 export interface ServiceRequestFilters {
   status?: ServiceRequestStatus
   priority?: ServiceRequestPriority

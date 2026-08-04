@@ -1,5 +1,5 @@
 import type { PortalFeatureDefinition } from '#layers/portal-core/shared/types/feature'
-import { upsertPortalFeature } from '#layers/portal-core/shared/feature-registry'
+import { sortPortalDashboardWidgets, upsertPortalFeature } from '#layers/portal-core/shared/feature-registry'
 
 export const usePortalFeatures = () => {
   const features = useState<PortalFeatureDefinition[]>('portal-features', () => [])
@@ -12,9 +12,9 @@ export const usePortalFeatures = () => {
     .flatMap(feature => feature.navigation ?? [])
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100)))
 
-  const dashboardWidgets = computed(() => features.value
-    .flatMap(feature => feature.dashboardWidgets ?? [])
-    .sort((a, b) => (a.order ?? 100) - (b.order ?? 100)))
+  const dashboardWidgets = computed(() => sortPortalDashboardWidgets(
+    features.value.flatMap(feature => feature.dashboardWidgets ?? [])
+  ))
 
   const modules = computed(() => features.value
     .flatMap(feature => feature.modules ?? [])

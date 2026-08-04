@@ -52,46 +52,14 @@
     "logout": "Uitloggen"
   },
   "dashboard": {
-    "activity": {
-      "recentActivity": "Recente Activiteit"
-    },
-    "buttons": {
-      "export": "Exporteren",
-      "generateReport": "Rapport Genereren",
-      "newOrder": "Nieuwe Order",
-      "newRequest": "Nieuw Verzoek",
-      "viewAll": "Bekijk Alles",
-      "viewAllOrders": "Bekijk Alle Orders",
-      "viewInvoices": "Bekijk Facturen"
-    },
-    "cards": {
-      "completed": "voltooid",
-      "invoices": "Facturen",
-      "overdue": "achterstallig",
-      "paid": "betaald",
-      "pending": "in behandeling",
-      "satisfaction": "Tevredenheid",
-      "slaCompliance": "SLA Naleving",
-      "totalOrders": "Totaal Orders"
-    },
-    "charts": {
-      "chartPlaceholder": "Grafiek visualisatie zou hier komen",
-      "integrationNote": "Integratie met grafiek bibliotheek nodig",
-      "ordersCompleted": "Orders Voltooid",
-      "slaChartPlaceholder": "SLA prestaties grafiek zou hier komen",
-      "slaPerformance": "SLA Prestaties"
-    },
-    "seo": {
-      "description": "Beheer je facilitaire diensten, orders en facturen met ApexPro",
-      "title": "Dashboard - ApexPro Portaal"
-    },
-    "stats": {
-      "avgResolutionTime": "Gem. Oplostijd",
-      "avgResponseTime": "Gem. Reactietijd",
-      "quickActions": "Snelle Acties"
-    },
     "title": "Dashboard",
-    "welcome": "Welkom terug! Hier is wat er gebeurt met je facilitaire diensten."
+    "greeting": "Welkom terug, {name}",
+    "introduction": "Begin met het werk dat jouw aandacht nodig heeft.",
+    "notifications": "Meldingen",
+    "areas": { "attention": "Heeft aandacht nodig", "main": "Jouw werk", "aside": "Recente activiteit" },
+    "empty": { "title": "Je bent helemaal bij", "description": "Er is geen dashboardwerk beschikbaar voor deze organisatie." },
+    "error": { "title": "Dit dashboarditem is niet beschikbaar", "description": "De rest van je dashboard blijft beschikbaar.", "retry": "Opnieuw proberen" },
+    "seo": { "description": "Bekijk het werk dat jouw aandacht nodig heeft.", "title": "Dashboard" }
   },
   "nav": {
     "admin": "Beheer",

@@ -40,9 +40,18 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
   }],
   dashboardWidgets: [
     {
-      id: 'recent-service-requests',
-      component: 'RecentServiceRequestsWidget',
-      order: 20
+      id: 'service-requests-attention',
+      component: 'ServiceRequestsDashboardAttention',
+      area: 'attention',
+      size: 'half',
+      order: 30
+    },
+    {
+      id: 'service-requests-overview',
+      component: 'ServiceRequestsDashboardOverview',
+      area: 'aside',
+      size: 'full',
+      order: 10
     }
   ],
   policy: {

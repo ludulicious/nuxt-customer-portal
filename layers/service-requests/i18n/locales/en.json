@@ -8,13 +8,20 @@
       "delete": "Delete Request",
       "navigation": {
         "myRequests": "Service Requests",
-        "manageRequests": "Manage Service Requests"
+        "manageRequests": "Manage Service Requests",
+        "newRequest": "New request"
       },
       "widget": {
         "title": "Recent Service Requests",
         "viewAll": "View all",
         "empty": "No recent requests",
         "create": "Create request"
+      },
+      "dashboard": {
+        "error": "Service requests could not be loaded.", "retry": "Try again", "new": "New request", "viewAll": "View all", "manage": "Manage requests",
+        "active": "{count} active", "resolved": "{count} resolved", "urgent": "{count} urgent", "unassigned": "{count} unassigned", "longOpen": "{count} open over 7 days",
+        "overview": { "title": "Service requests", "empty": "No service requests yet." },
+        "attention": { "title": "Requests needing attention", "empty": "No requests currently need attention." }
       },
       "status": {
         "open": "Open",

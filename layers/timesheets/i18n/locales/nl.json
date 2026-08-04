@@ -78,6 +78,16 @@
         "title": "Tijd deze week",
         "open": "Urenstaat openen"
       },
+      "dashboard": {
+        "error": "Dit urenoverzicht kon niet worden geladen.", "retry": "Opnieuw proberen", "unavailable": "Dit overzicht is niet beschikbaar.",
+        "open": "Openen", "review": "Beoordelen", "manage": "Beheren", "outstanding": "Openstaand", "overdue": "{count} te laat",
+        "myWeek": { "title": "Mijn week", "rejected": "Wijzigingen gevraagd", "timerRunning": "Er loopt momenteel een timer." },
+        "internalApprovals": { "title": "Urenstaten", "empty": "Geen recente urenstaten." },
+        "clientApprovals": { "title": "Klantgoedkeuringen", "empty": "Er wachten geen klanturenstaten op jouw beoordeling.", "unassigned": "{count} leveranciers hebben nog een beoordelaar nodig." },
+        "supplierTimesheets": { "title": "Urenstaten van leveranciers", "empty": "Er zijn geen urenstaten van leveranciers beschikbaar.", "awaiting_invoice": "Wacht op factuur", "partially_invoiced": "Deels gefactureerd", "invoiced": "Gefactureerd" },
+        "salesInvoices": { "title": "Verkoopfacturen", "drafts": "{count} concepten", "issued": "{count} verzonden", "empty": "Geen recente facturen." },
+        "receivedInvoices": { "title": "Ontvangen facturen", "empty": "Er zijn geen facturen ontvangen." }
+      },
       "admin": {
         "refresh": "Vernieuwen",
         "title": "Urenadministratie",

@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
 import { db } from '#portal/server/portal'
 import { serviceRequest, type NewServiceRequestRecord, type ServiceRequestRecord } from '#layers/service-requests/server/db/schema/service-requests'
-import type { ServiceRequestDto, ServiceRequestListResponse } from '#layers/service-requests/shared/types/service-request'
+import type { ServiceRequestDashboardDto, ServiceRequestDto, ServiceRequestListResponse } from '#layers/service-requests/shared/types/service-request'
 import type { ServiceRequestQuery } from './service-request-validation'
 
 export const toServiceRequestDto = (row: ServiceRequestRecord): ServiceRequestDto => ({
@@ -77,6 +77,32 @@ export const listServiceRequests = async (
       pageSize: filters.pageSize,
       pageCount: Math.ceil(total / filters.pageSize)
     }
+  }
+}
+
+export const getServiceRequestDashboard = async (organizationId: string, canManage: boolean): Promise<ServiceRequestDashboardDto> => {
+  const rows = await db.select().from(serviceRequest)
+    .where(eq(serviceRequest.organizationId, organizationId))
+    .orderBy(desc(serviceRequest.updatedAt), asc(serviceRequest.id))
+  const active = rows.filter(item => item.status === 'OPEN' || item.status === 'IN_PROGRESS')
+  const longOpenBoundary = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const priorityRank = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 } as const
+  const attentionItems = [...active].sort((left, right) =>
+    priorityRank[right.priority] - priorityRank[left.priority]
+    || left.createdAt.getTime() - right.createdAt.getTime()
+    || left.id.localeCompare(right.id))
+  return {
+    overview: {
+      activeCount: active.length,
+      resolvedCount: rows.length - active.length,
+      recent: rows.slice(0, 5).map(toServiceRequestDto)
+    },
+    ...(canManage && { attention: {
+      urgentCount: active.filter(item => item.priority === 'URGENT').length,
+      unassignedCount: active.filter(item => !item.assignedToId).length,
+      longOpenCount: active.filter(item => item.createdAt.getTime() < longOpenBoundary).length,
+      items: attentionItems.slice(0, 5).map(toServiceRequestDto)
+    } })
   }
 }
 

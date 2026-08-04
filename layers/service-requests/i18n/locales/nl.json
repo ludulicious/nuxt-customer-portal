@@ -8,13 +8,20 @@
       "delete": "Aanvraag verwijderen",
       "navigation": {
         "myRequests": "Serviceaanvragen",
-        "manageRequests": "Serviceaanvragen beheren"
+        "manageRequests": "Serviceaanvragen beheren",
+        "newRequest": "Nieuwe aanvraag"
       },
       "widget": {
         "title": "Recente serviceaanvragen",
         "viewAll": "Alles bekijken",
         "empty": "Geen recente aanvragen",
         "create": "Aanvraag maken"
+      },
+      "dashboard": {
+        "error": "Serviceaanvragen konden niet worden geladen.", "retry": "Opnieuw proberen", "new": "Nieuwe aanvraag", "viewAll": "Alles bekijken", "manage": "Aanvragen beheren",
+        "active": "{count} actief", "resolved": "{count} opgelost", "urgent": "{count} urgent", "unassigned": "{count} niet toegewezen", "longOpen": "{count} langer dan 7 dagen open",
+        "overview": { "title": "Serviceaanvragen", "empty": "Nog geen serviceaanvragen." },
+        "attention": { "title": "Aanvragen die aandacht vragen", "empty": "Geen aanvragen vragen momenteel aandacht." }
       },
       "status": {
         "open": "Open",

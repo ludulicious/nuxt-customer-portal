@@ -62,6 +62,14 @@ test('service-request policy keeps management out of the member role', () => {
   assert.equal(serviceRequestFeature.policy.member.includes('manage'), false)
 })
 
+test('service-request dashboard separates manager attention from the general overview', () => {
+  assert.deepEqual(serviceRequestFeature.dashboardWidgets?.map(widget => widget.id), [
+    'service-requests-attention',
+    'service-requests-overview'
+  ])
+  assert.equal(serviceRequestFeature.dashboardWidgets?.find(widget => widget.id === 'service-requests-attention')?.area, 'attention')
+})
+
 function expectPagination(
   page: number,
   pageSize: number,

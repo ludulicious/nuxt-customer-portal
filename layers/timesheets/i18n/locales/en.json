@@ -78,6 +78,16 @@
         "title": "This week's time",
         "open": "Open timesheet"
       },
+      "dashboard": {
+        "error": "This timesheet summary could not be loaded.", "retry": "Try again", "unavailable": "This summary is not available.",
+        "open": "Open", "review": "Review", "manage": "Manage", "outstanding": "Outstanding", "overdue": "{count} overdue",
+        "myWeek": { "title": "My week", "rejected": "Changes requested", "timerRunning": "A timer is currently running." },
+        "internalApprovals": { "title": "Timesheets", "empty": "No recent timesheets." },
+        "clientApprovals": { "title": "Client approvals", "empty": "No client timesheets are waiting for your review.", "unassigned": "{count} suppliers still need an assigned reviewer." },
+        "supplierTimesheets": { "title": "Supplier timesheets", "empty": "No supplier timesheets are available.", "awaiting_invoice": "Awaiting invoice", "partially_invoiced": "Partly invoiced", "invoiced": "Invoiced" },
+        "salesInvoices": { "title": "Sales invoices", "drafts": "{count} drafts", "issued": "{count} issued", "empty": "No recent invoices." },
+        "receivedInvoices": { "title": "Received invoices", "empty": "No invoices have been received." }
+      },
       "admin": {
         "refresh": "Refresh",
         "title": "Timesheet operations",

@@ -54,6 +54,18 @@ test('feature policy reserves management and approval for admins', () => {
   assert.equal(timesheetsFeature.policy.member.includes('submit'), true)
 })
 
+test('dashboard contributions have stable ids and cover each timesheet capability', () => {
+  assert.deepEqual(timesheetsFeature.dashboardWidgets?.map(widget => widget.id), [
+    'timesheets-my-week',
+    'timesheets-internal-approvals',
+    'timesheets-client-approvals',
+    'timesheets-supplier-timesheets',
+    'timesheets-sales-invoices',
+    'timesheets-received-invoices'
+  ])
+  assert.equal(timesheetsFeature.dashboardWidgets?.every(widget => Boolean(widget.area && widget.size)), true)
+})
+
 test('client navigation separates approvals, invoices, their settings, and view-only supplier time', () => {
   const modules = timesheetsFeature.modules ?? []
   const items = modules.flatMap(module => module.menuItems)
