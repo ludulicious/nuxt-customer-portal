@@ -9,6 +9,7 @@
       "projectActivity": "Project / activiteit",
       "total": "Totaal",
       "addEntry": "Tijd toevoegen",
+      "mobile": { "entryCount": "{count} registraties", "empty": "Nog geen tijd geregistreerd", "emptyDescription": "Voeg tijd toe voor deze dag om je week compleet te maken." },
       "editEntry": "Tijd bewerken",
       "delete": "Verwijderen",
       "cancel": "Annuleren",

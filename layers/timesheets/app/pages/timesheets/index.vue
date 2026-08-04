@@ -12,6 +12,7 @@ useSeoMeta({
 })
 
 const selectedWeek = ref<string>()
+const selectedDay = ref('')
 const modalOpen = ref(false)
 const timerModalOpen = ref(false)
 const saving = ref(false)
@@ -50,6 +51,25 @@ const weekDays = computed(() => {
     return { value: format(date, 'yyyy-MM-dd'), label: format(date, 'EEE'), day: format(date, 'd') }
   })
 })
+const selectedDayEntries = computed(() => (week.value?.entries ?? [])
+  .filter(entry => entry.entryDate === selectedDay.value)
+  .map(entry => {
+    const project = projects.value.find(item => item.id === entry.projectId)
+    const activity = activities.value.find(item => item.id === entry.activityTypeId)
+    return {
+      ...entry,
+      clientName: project?.clientName ?? '',
+      projectName: project?.name ?? '',
+      activityName: activity?.name ?? ''
+    }
+  }))
+const selectedDayTotal = computed(() => totalForDate(selectedDay.value))
+
+watch(weekDays, (days) => {
+  if (!days.length || days.some(day => day.value === selectedDay.value)) return
+  const today = format(new Date(), 'yyyy-MM-dd')
+  selectedDay.value = days.find(day => day.value === today)?.value ?? days[0]!.value
+}, { immediate: true })
 
 const form = reactive({
   id: null as string | null,
@@ -294,7 +314,19 @@ const runningDuration = computed(() => {
           {{ week ? `${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}` : '—' }}
         </UBadge>
         <UButton icon="i-lucide-chevron-right" color="neutral" variant="outline" :aria-label="t('features.timesheets.nextWeek')" @click="changeWeek(1)" />
-        <UButton v-if="!runningEntry" icon="i-lucide-play" color="success" :disabled="!editable" @click="openTimer">
+        <UTooltip v-if="!runningEntry" class="ml-auto sm:hidden" :text="t('features.timesheets.timer.start')">
+          <UButton
+            class="size-11 justify-center rounded-full p-0"
+            icon="i-lucide-timer"
+            color="success"
+            size="lg"
+            square
+            :aria-label="t('features.timesheets.timer.start')"
+            :disabled="!editable"
+            @click="openTimer"
+          />
+        </UTooltip>
+        <UButton v-if="!runningEntry" class="hidden sm:ml-auto sm:inline-flex" icon="i-lucide-timer" color="success" :disabled="!editable" @click="openTimer">
           {{ t('features.timesheets.timer.start') }}
         </UButton>
       </div>
@@ -327,7 +359,7 @@ const runningDuration = computed(() => {
       </div>
     </UCard>
 
-    <UCard :ui="{ body: '!p-0' }">
+    <UCard class="hidden md:block" :ui="{ body: '!p-0' }">
       <div v-if="pending" class="p-8 text-center text-muted">
         {{ t('features.timesheets.loading') }}
       </div>
@@ -401,6 +433,78 @@ const runningDuration = computed(() => {
         </div>
       </div>
     </UCard>
+
+    <section class="timesheet-mobile md:hidden" :aria-label="t('features.timesheets.projectActivity')">
+      <div v-if="pending" class="timesheet-mobile__loading text-muted">
+        {{ t('features.timesheets.loading') }}
+      </div>
+      <template v-else>
+        <div class="timesheet-mobile__days" role="tablist" :aria-label="t('features.timesheets.projectActivity')">
+          <button
+            v-for="(day, index) in weekDays"
+            :key="day.value"
+            type="button"
+            role="tab"
+            class="timesheet-mobile__day"
+            :class="{ 'timesheet-mobile__day--active': selectedDay === day.value, 'timesheet-mobile__day--weekend': index > 4 }"
+            :aria-selected="selectedDay === day.value"
+            @click="selectedDay = day.value"
+          >
+            <span>{{ day.label }}</span>
+            <strong>{{ day.day }}</strong>
+            <small>{{ formatDuration(totalForDate(day.value)) }}</small>
+          </button>
+        </div>
+
+        <div class="timesheet-mobile__summary">
+          <div>
+            <p class="timesheet-mobile__date">
+              {{ weekDays.find(day => day.value === selectedDay)?.label }} {{ weekDays.find(day => day.value === selectedDay)?.day }}
+            </p>
+            <p class="text-sm text-muted">
+              {{ t('features.timesheets.mobile.entryCount', { count: selectedDayEntries.length }) }}
+            </p>
+          </div>
+          <strong class="timesheet-mobile__total">{{ formatDuration(selectedDayTotal) }}</strong>
+        </div>
+
+        <div v-if="selectedDayEntries.length" class="timesheet-mobile__entries">
+          <button
+            v-for="entry in selectedDayEntries"
+            :key="entry.id"
+            type="button"
+            class="timesheet-mobile__entry timesheet-row-action"
+            :disabled="!editable"
+            :aria-label="`${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}`"
+            @click="openEdit(entry)"
+          >
+            <span class="timesheet-mobile__entry-copy">
+              <small>{{ entry.clientName }}</small>
+              <strong>{{ entry.projectName }}</strong>
+              <span>{{ entry.activityName }}</span>
+            </span>
+            <span class="timesheet-mobile__duration">{{ formatDuration(entry.durationMinutes) }}</span>
+            <UIcon name="i-lucide-chevron-right" class="timesheet-mobile__chevron" aria-hidden="true" />
+          </button>
+        </div>
+        <div v-else class="timesheet-mobile__empty">
+          <p>{{ t('features.timesheets.mobile.empty') }}</p>
+          <span>{{ t('features.timesheets.mobile.emptyDescription') }}</span>
+        </div>
+
+        <UButton
+          v-if="editable"
+          class="timesheet-mobile__add"
+          size="lg"
+          variant="soft"
+          icon="i-lucide-plus"
+          block
+          @click="openCreate(selectedDay)"
+        >
+          {{ t('features.timesheets.addEntry') }}
+        </UButton>
+      </template>
+    </section>
 
     <footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-2">

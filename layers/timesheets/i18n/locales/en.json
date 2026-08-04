@@ -9,6 +9,7 @@
       "projectActivity": "Project / activity",
       "total": "Total",
       "addEntry": "Add time",
+      "mobile": { "entryCount": "{count} entries", "empty": "No time recorded yet", "emptyDescription": "Add time for this day to complete your week." },
       "editEntry": "Edit time",
       "delete": "Delete",
       "cancel": "Cancel",

@@ -89,14 +89,197 @@ body {
   outline-offset: 2px;
 }
 
-@media (max-width: 767px) {
-  .timesheet-grid {
-    grid-template-columns: minmax(14rem, 1fr) repeat(7, minmax(3.5rem, 0.55fr)) minmax(4rem, 0.55fr);
+.timesheet-mobile {
+  overflow: clip;
+  border: 1px solid var(--timesheets-rule);
+  border-radius: var(--timesheets-radius);
+  background: var(--ui-bg);
+}
+
+.timesheet-mobile__loading,
+.timesheet-mobile__empty {
+  display: grid;
+  min-height: 9rem;
+  place-items: center;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.timesheet-mobile__empty {
+  align-content: center;
+  gap: 0.5rem;
+  color: var(--ui-text-muted);
+}
+
+.timesheet-mobile__empty span {
+  max-width: 18rem;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+}
+
+.timesheet-mobile__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-block-end: 1px solid var(--timesheets-rule);
+}
+
+.timesheet-mobile__day {
+  display: grid;
+  min-width: 0;
+  min-height: 5.25rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.125rem;
+  border-inline-end: 1px solid var(--timesheets-rule);
+  color: var(--ui-text-muted);
+  transition: background-color var(--timesheets-duration-fast) var(--timesheets-ease-out);
+}
+
+.timesheet-mobile__day:last-child {
+  border-inline-end: 0;
+}
+
+.timesheet-mobile__day span,
+.timesheet-mobile__day small {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.625rem;
+  line-height: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timesheet-mobile__day strong {
+  color: var(--ui-text-highlighted);
+  font-size: 0.875rem;
+}
+
+.timesheet-mobile__day--weekend {
+  background: var(--timesheets-color-weekend);
+}
+
+.timesheet-mobile__day--active {
+  background: var(--ui-primary);
+  color: var(--ui-bg);
+}
+
+.timesheet-mobile__day--active strong {
+  color: var(--ui-bg);
+}
+
+.timesheet-mobile__day:focus-visible,
+.timesheet-mobile__entry:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid var(--ui-primary);
+  outline-offset: -3px;
+}
+
+.timesheet-mobile__summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-block-end: 1px solid var(--timesheets-rule);
+}
+
+.timesheet-mobile__date,
+.timesheet-mobile__total {
+  color: var(--ui-text-highlighted);
+  font-weight: 650;
+}
+
+.timesheet-mobile__total,
+.timesheet-mobile__duration {
+  font-variant-numeric: tabular-nums;
+}
+
+.timesheet-mobile__entries {
+  display: grid;
+}
+
+.timesheet-mobile__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-width: 0;
+  min-height: 4.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-block-end: 1px solid var(--timesheets-rule);
+  text-align: start;
+}
+
+.timesheet-mobile__entry-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.timesheet-mobile__entry-copy small,
+.timesheet-mobile__entry-copy strong,
+.timesheet-mobile__entry-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timesheet-mobile__entry-copy small {
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+}
+
+.timesheet-mobile__entry-copy strong {
+  color: var(--ui-text-highlighted);
+  font-size: 0.875rem;
+}
+
+.timesheet-mobile__entry-copy span {
+  color: var(--ui-primary);
+  font-size: 0.75rem;
+}
+
+.timesheet-mobile__duration {
+  color: var(--ui-text-highlighted);
+  font-weight: 650;
+}
+
+.timesheet-mobile__chevron {
+  color: var(--ui-text-muted);
+}
+
+.timesheet-mobile__add {
+  margin: 0.75rem;
+  width: calc(100% - 1.5rem);
+}
+
+.timesheet-mobile button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .timesheet-mobile__day:hover,
+  .timesheet-mobile__entry:hover {
+    background: var(--ui-bg-elevated);
+  }
+
+  .timesheet-mobile__day--active:hover {
+    background: var(--ui-primary);
+  }
+}
+
+@media (pointer: coarse) {
+  .timesheet-mobile button {
+    min-height: 3rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .timesheet-row-action {
+  .timesheet-row-action,
+  .timesheet-mobile__day {
     transition-duration: 0ms;
   }
 }
