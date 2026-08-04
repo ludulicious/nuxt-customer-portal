@@ -75,6 +75,19 @@ export const clientCreateSchema = z.discriminatedUnion('mode', [
 ])
 
 export const clientDeleteSchema = z.object({ clientName: z.string().min(1).max(160) })
+export const clientAccessUpdateSchema = z.object({ accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']) })
+export const organizationCapabilitiesUpdateSchema = z.object({
+  workspaceEnabled: z.boolean(),
+  invoicingEnabled: z.boolean()
+}).refine(value => value.workspaceEnabled || !value.invoicingEnabled, { path: ['invoicingEnabled'], message: 'Invoicing requires a Timesheets workspace' })
+export const clientReviewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
+export const clientReviewSchema = z.object({
+  action: z.enum(['APPROVE', 'DISPUTE']),
+  expectedVersion: z.number().int().min(0),
+  comment: z.string().trim().max(2000).nullable().optional()
+}).superRefine((value, context) => {
+  if (value.action === 'DISPUTE' && !value.comment) context.addIssue({ code: 'custom', path: ['comment'], message: 'A dispute comment is required' })
+})
 
 export const organizationProfileUpdateSchema = z.object({
   address: z.string().trim().max(1000), registrationNumber: z.string().trim().max(200).nullable().optional(),

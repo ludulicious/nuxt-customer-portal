@@ -1,6 +1,6 @@
 import { requireFeatureAccess } from '#portal/server/portal'
 import { timesheetsFeature } from '#layers/timesheets/shared/feature'
-import { getBootstrap } from '#layers/timesheets/server/utils/timesheet-repository'
+import { getBootstrap, requireTimesheetWorkspace } from '#layers/timesheets/server/utils/timesheet-repository'
 import { weekQuerySchema } from '#layers/timesheets/server/utils/timesheet-validation'
 
 defineRouteMeta({
@@ -19,5 +19,6 @@ export default defineEventHandler(async (event) => {
     'read'
   )
   const query = weekQuerySchema.parse(getQuery(event))
+  await requireTimesheetWorkspace(organizationId)
   return getBootstrap(organizationId, session.user.id, query.week)
 })

@@ -9,6 +9,9 @@ import {
   activityListQuerySchema,
   clientCreateSchema,
   clientDeleteSchema,
+  clientAccessUpdateSchema,
+  clientReviewSchema,
+  clientReviewerUpdateSchema,
   clientListQuerySchema,
   contactCreateSchema,
   entryCreateSchema,
@@ -20,6 +23,7 @@ import {
   invoicePaymentSchema,
   invoiceUpdateSchema,
   organizationProfileUpdateSchema,
+  organizationCapabilitiesUpdateSchema,
   projectCreateSchema,
   projectListQuerySchema,
   reviewSchema,
@@ -119,6 +123,21 @@ test('client links require an organization and deletion requires an exact non-em
   assert.equal(clientCreateSchema.safeParse({ mode: 'create', name: 'Client', slug: 'Invalid slug' }).success, false)
   assert.equal(clientDeleteSchema.safeParse({ clientName: 'Acme' }).success, true)
   assert.equal(clientDeleteSchema.safeParse({ clientName: '' }).success, false)
+})
+
+test('client access and versioned review inputs are constrained', () => {
+  assert.equal(clientAccessUpdateSchema.safeParse({ accessMode: 'REVIEW' }).success, true)
+  assert.equal(clientAccessUpdateSchema.safeParse({ accessMode: 'ADMIN' }).success, false)
+  assert.equal(clientReviewerUpdateSchema.safeParse({ userId: 'user', assigned: true }).success, true)
+  assert.equal(clientReviewSchema.safeParse({ action: 'DISPUTE', expectedVersion: 0 }).success, false)
+  assert.equal(clientReviewSchema.safeParse({ action: 'DISPUTE', expectedVersion: 1, comment: 'Incorrect activity.' }).success, true)
+  assert.equal(clientReviewSchema.safeParse({ action: 'APPROVE', expectedVersion: -1 }).success, false)
+})
+
+test('organization invoicing requires an enabled Timesheets workspace', () => {
+  assert.equal(organizationCapabilitiesUpdateSchema.safeParse({ workspaceEnabled: true, invoicingEnabled: true }).success, true)
+  assert.equal(organizationCapabilitiesUpdateSchema.safeParse({ workspaceEnabled: false, invoicingEnabled: false }).success, true)
+  assert.equal(organizationCapabilitiesUpdateSchema.safeParse({ workspaceEnabled: false, invoicingEnabled: true }).success, false)
 })
 
 test('contact emails are validated and normalized', () => {

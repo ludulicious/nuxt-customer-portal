@@ -90,13 +90,13 @@ const stopImpersonating = async () => {
 
 <template>
   <!-- Impersonation Banner -->
-  <div v-if="isImpersonating" class="sticky top-0 z-50">
+  <div v-if="isImpersonating" class="relative z-50 shrink-0">
     <UAlert
       color="warning"
       orientation="horizontal"
       :title="t('admin.user.impersonate.indicator')"
       :ui="{
-        root: 'rounded-none py-2 px-4',
+        root: 'rounded-none bg-warning-50 px-4 py-2 dark:bg-warning-950',
         wrapper: 'flex-1',
         title: 'text-sm font-medium',
         actions: 'ml-auto'
@@ -120,6 +120,7 @@ const stopImpersonating = async () => {
     mode="slideover"
     :menu="{ side: 'right' }"
     :ui="{
+      root: 'relative top-auto',
       container: 'w-full max-w-none px-0',
       content: 'w-full max-w-sm',
       body: 'flex h-full flex-col overflow-y-auto p-0 sm:p-0'

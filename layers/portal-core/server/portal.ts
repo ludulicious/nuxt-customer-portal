@@ -69,6 +69,14 @@ export const requireFeatureAccess = async <Action extends string>(
   return { session, organizationId }
 }
 
+export const requireActiveOrganizationRole = async (event: H3Event) => {
+  const session = await requireSession(event)
+  const organizationId = requireActiveOrganization(session)
+  const role = await getUserOrganizationRole(session.user.id, organizationId) as PortalOrganizationRole | null
+  if (!role && session.user.role !== 'admin') throw createError({ statusCode: 403, message: 'Organization membership required' })
+  return { session, organizationId, role }
+}
+
 export const requireOrganizationOwnerOrSystemAdmin = async (event: H3Event, requestedOrganizationId?: string) => {
   const session = await requireSession(event)
   const activeOrganizationId = getActiveOrganizationId(session)

@@ -106,6 +106,27 @@
       "when": 1785769200000,
       "tag": "0014_invoice_email_template",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785772800000,
+      "tag": "0015_timesheet_client_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785776400000,
+      "tag": "0016_timesheet_organization_capabilities",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785780000000,
+      "tag": "0017_timesheet_client_review_history",
+      "breakpoints": true
     }
   ]
 }

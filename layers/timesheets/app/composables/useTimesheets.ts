@@ -12,7 +12,11 @@ import type {
   InvoiceableEntryDto,
   OrganizationInvoiceProfileDto,
   InvoiceEmailPreviewDto,
-  InvoiceEmailStatusRefreshDto
+  InvoiceEmailStatusRefreshDto,
+  ClientAccessMode,
+  ClientTimesheetsDto,
+  ClientWorkspaceDto,
+  ClientReviewerDto
 } from '#layers/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
@@ -27,6 +31,7 @@ export interface TimesheetsAdminBootstrap {
   invoiceableEntries: InvoiceableEntryDto[]
   organizationProfile: OrganizationInvoiceProfileDto
 }
+export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, invoicingEnabled: boolean, clientOf: Array<{ workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode }> }
 
 export const useTimesheets = () => {
   const bootstrap = (week?: string) =>
@@ -76,6 +81,14 @@ export const useTimesheets = () => {
       method: 'DELETE' as never,
       body: { clientName }
     })
+  const updateClientAccess = (id: string, accessMode: ClientAccessMode) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { accessMode } })
+  const getOrganizationTimesheetCapabilities = (organizationId: string) => $fetch<OrganizationTimesheetCapabilities>(`/api/timesheets/admin/organization-capabilities/${organizationId}`)
+  const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean, invoicingEnabled: boolean }) => $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
+  const clientWorkspaces = () => $fetch<ClientWorkspaceDto[]>('/api/timesheets/client/workspaces')
+  const clientTimesheets = (workspaceClientId: string) => $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
+  const reviewClientSlice = (workspaceClientId: string, weekId: string, input: { action: 'APPROVE' | 'DISPUTE', expectedVersion: number, comment?: string | null }) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
+  const clientReviewers = (workspaceClientId: string) => $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
+  const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviewers`, { method: 'PUT', body: { userId, assigned } })
   const updateOrganizationProfile = (organizationId: string, input: Record<string, unknown>) =>
     $fetch(`/api/timesheets/admin/organizations/${organizationId}/profile`, { method: 'PATCH', body: input })
   const createContact = (organizationId: string, input: Record<string, unknown>) =>
@@ -161,6 +174,14 @@ export const useTimesheets = () => {
     createClient,
     getClientDeletionEligibility,
     deleteClient,
+    updateClientAccess,
+    getOrganizationTimesheetCapabilities,
+    updateOrganizationTimesheetCapabilities,
+    clientWorkspaces,
+    clientTimesheets,
+    reviewClientSlice,
+    clientReviewers,
+    setClientReviewer,
     updateOrganizationProfile,
     createContact,
     updateContact,

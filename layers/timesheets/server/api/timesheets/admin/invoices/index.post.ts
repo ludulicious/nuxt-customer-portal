@@ -1,6 +1,6 @@
 import { requireFeatureAccess } from '#portal/server/portal'
 import { timesheetsFeature } from '#layers/timesheets/shared/feature'
-import { createInvoice } from '#layers/timesheets/server/utils/timesheet-repository'
+import { createInvoice, requireInvoicingEnabled } from '#layers/timesheets/server/utils/timesheet-repository'
 import { invoiceCreateSchema } from '#layers/timesheets/server/utils/timesheet-validation'
 
 defineRouteMeta({
@@ -14,5 +14,6 @@ operationId: 'timesheetsAdminInvoicesPost',
 
 export default defineEventHandler(async (event) => {
   const { organizationId, session } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
+  await requireInvoicingEnabled(organizationId)
   return createInvoice(organizationId, session.user.id, invoiceCreateSchema.parse(await readBody(event)))
 })

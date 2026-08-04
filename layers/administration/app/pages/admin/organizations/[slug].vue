@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '#types'
+import type { OrganizationTimesheetCapabilities } from '#layers/timesheets/app/composables/useTimesheets'
 
 const userStore = useUserStore()
 const { isAdmin, myOrganizations } = storeToRefs(userStore)
@@ -54,6 +55,8 @@ const organization = ref<Organization | null>(null)
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showEditModal = ref(false)
+const timesheets = useTimesheets()
+const featureCapabilities = ref<OrganizationTimesheetCapabilities | null>(null)
 
 useSeoMeta({
   title: () => organization.value?.name || t('admin.organization.detail.title')
@@ -77,8 +80,12 @@ const loadOrganization = async () => {
     organization.value = await $fetch<Organization>(`/api/admin/organizations/by-slug/${slug.value}`)
 
     if (organization.value) {
-      await loadMembers()
-      await loadInvitations()
+      const [capabilities] = await Promise.all([
+        timesheets.getOrganizationTimesheetCapabilities(organization.value.id),
+        loadMembers(),
+        loadInvitations()
+      ])
+      featureCapabilities.value = capabilities
     }
   } catch (err) {
     const apiError = err as ApiError
@@ -165,7 +172,9 @@ await loadOrganization()
           </template>
         </OrganizationDetailsCard>
 
-        <OrganizationEmailProviderSettings v-if="isAdmin" :organization-id="organization.id" />
+        <TimesheetsOrganizationFeaturesCard v-if="isAdmin && featureCapabilities" v-model="featureCapabilities" :organization-id="organization.id" />
+
+        <OrganizationEmailProviderSettings v-if="isAdmin && featureCapabilities?.invoicingEnabled" :organization-id="organization.id" />
 
         <AdminOrganizationMembersCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :members="members" :loading="loading" :can-remove="isAdmin || userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" :can-link="isAdmin" @refresh="loadMembers" />
         <AdminOrganizationInvitationsCard v-if="hasPermission('invitation', 'list')" :organization-id="organization.id" :invitations="invitations" :loading="loading" @refresh="loadInvitations" />

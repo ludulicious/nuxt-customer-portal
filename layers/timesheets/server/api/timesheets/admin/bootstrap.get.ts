@@ -29,8 +29,8 @@ export default defineEventHandler(async (event) => {
     'manage'
   )
   const section = String(getQuery(event).section ?? '')
-  const [settings, clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile] = await Promise.all([
-    ensureSettings(organizationId),
+  const settings = await ensureSettings(organizationId)
+  const [clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile] = await Promise.all([
     section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
     listAvailableClientOrganizations(
       organizationId,
@@ -41,8 +41,8 @@ export default defineEventHandler(async (event) => {
     section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
     listTeam(organizationId),
     listApprovalQueue(organizationId),
-    section === 'invoices' ? Promise.resolve([]) : listInvoices(organizationId),
-    listInvoiceableEntries(organizationId),
+    section === 'invoices' || !settings.invoicingEnabled ? Promise.resolve([]) : listInvoices(organizationId),
+    settings.invoicingEnabled ? listInvoiceableEntries(organizationId) : Promise.resolve([]),
     getOrganizationInvoiceProfile(organizationId)
   ])
   return {

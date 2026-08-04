@@ -7,6 +7,8 @@ const showFooter = computed(() => route.meta?.public === true)
 
 const { links } = useNavigationLinks(open)
 const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
+const { currentSession } = storeToRefs(useUserStore())
+const isImpersonating = computed(() => Boolean(currentSession.value?.impersonatedBy))
 
 const groups = computed(() => [{
   id: 'links',
@@ -95,7 +97,7 @@ onMounted(async () => {
       />
 
       <NotificationsSlideover />
-      <UMain class="flex-1 min-w-0 pt-20 lg:pt-16">
+      <UMain class="flex-1 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
         <slot />
       </UMain>
     </UDashboardGroup>

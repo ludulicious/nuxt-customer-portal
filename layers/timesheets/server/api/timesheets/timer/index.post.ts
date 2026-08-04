@@ -1,6 +1,6 @@
 import { requireFeatureAccess } from '#portal/server/portal'
 import { timesheetsFeature } from '#layers/timesheets/shared/feature'
-import { startTimer } from '#layers/timesheets/server/utils/timesheet-repository'
+import { requireTimesheetWorkspace, startTimer } from '#layers/timesheets/server/utils/timesheet-repository'
 import { timerStartSchema } from '#layers/timesheets/server/utils/timesheet-validation'
 
 defineRouteMeta({
@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     timesheetsFeature.policy,
     'create'
   )
+  await requireTimesheetWorkspace(organizationId)
   return startTimer(
     organizationId,
     session.user.id,

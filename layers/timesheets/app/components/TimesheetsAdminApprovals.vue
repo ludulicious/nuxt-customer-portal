@@ -107,6 +107,11 @@ const reject = () => run(async () => {
           <p class="mt-1 text-sm text-muted">
             {{ item.weekStartsOn }} · {{ formatHours(item.totalMinutes) }} · {{ formatMoney(item.billableAmountMinor) }}
           </p>
+          <div v-if="item.clientReviews.length" class="mt-2 flex flex-wrap gap-2">
+            <UBadge v-for="clientReview in item.clientReviews" :key="clientReview.clientOrganizationId" :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'" variant="subtle">
+              {{ data.clients.find(client => client.organizationId === clientReview.clientOrganizationId)?.name }} · {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`) }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
+            </UBadge>
+          </div>
           <ul class="mt-3 flex max-w-2xl overflow-hidden rounded-md border border-default">
             <li
               v-for="day in weekdayTotals(item)"

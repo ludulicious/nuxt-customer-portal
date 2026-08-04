@@ -1,5 +1,7 @@
 export type TimesheetStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED'
 export type ProjectStatus = 'ACTIVE' | 'ARCHIVED'
+export type ClientAccessMode = 'DISABLED' | 'VIEW' | 'REVIEW'
+export type ClientReviewStatus = 'PENDING' | 'APPROVED' | 'DISPUTED'
 
 export interface TimesheetsListPagination { total: number, page: number, pageSize: number, pageCount: number }
 export interface TimesheetsListResponse<T> { items: T[], pagination: TimesheetsListPagination }
@@ -33,7 +35,15 @@ export interface ClientDto {
   invoiceEmail: string | null
   preferredLocale: string
   contacts: OrganizationContactDto[]
+  accessMode: ClientAccessMode
 }
+
+export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, canReview: boolean, canManageReviewers: boolean }
+export interface ClientReviewerDto { id: string, name: string, email: string, assigned: boolean }
+export interface ClientTimesheetEntryDto { id: string, date: string, project: string, person: string, activity: string, minutes: number, note: string | null }
+export interface ClientTimesheetHistoryDto { id: string, action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT', actorName: string, comment: string | null, createdAt: string }
+export interface ClientTimesheetSliceDto { weeklyTimesheetId: string, weekStartsOn: string, person: string, status: ClientReviewStatus, billingStatus: 'AWAITING_INVOICE' | 'PARTIALLY_INVOICED' | 'INVOICED', version: number, comment: string | null, reviewedAt: string | null, entries: ClientTimesheetEntryDto[], history: ClientTimesheetHistoryDto[] }
+export interface ClientTimesheetsDto { workspace: ClientWorkspaceDto, slices: ClientTimesheetSliceDto[] }
 
 export interface OrganizationContactDto { id: string, userId: string | null, name: string, email: string, phone: string | null, jobTitle: string | null }
 export interface OrganizationInvoiceProfileDto { organizationId: string, name: string, logo: string | null, address: string, registrationNumber: string | null, vatNumber: string | null, iban: string | null, bic: string | null, invoiceEmail: string | null, invoiceEmailTemplate: string | null, preferredLocale: string }
@@ -113,6 +123,7 @@ export interface ApprovalQueueItemDto {
   currency: string
   submittedAt: string | null
   entries: TimeEntryDto[]
+  clientReviews: Array<{ clientOrganizationId: string, status: ClientReviewStatus, comment: string | null }>
 }
 
 export interface ReportRowDto {
