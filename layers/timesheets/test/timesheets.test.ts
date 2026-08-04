@@ -10,6 +10,7 @@ import {
   clientCreateSchema,
   clientDeleteSchema,
   clientAccessUpdateSchema,
+  clientApprovalListQuerySchema,
   clientReviewSchema,
   clientReviewerUpdateSchema,
   clientListQuerySchema,
@@ -48,6 +49,20 @@ test('feature policy reserves management and approval for admins', () => {
   assert.equal(timesheetsFeature.policy.member.includes('manage'), false)
   assert.equal(timesheetsFeature.policy.member.includes('approve'), false)
   assert.equal(timesheetsFeature.policy.member.includes('submit'), true)
+})
+
+test('client review navigation separates approvals and reviewer settings', () => {
+  const items = timesheetsFeature.modules?.[0]?.menuItems ?? []
+  assert.equal(items.find(item => item.id === 'client-approvals')?.to, '/timesheets/approvals')
+  assert.equal(items.find(item => item.id === 'approval-reviewers')?.to, '/timesheets/approvals/reviewers')
+  assert.equal(items.some(item => item.id === 'supplier-timesheets'), false)
+})
+
+test('pending review migration backfills approved review-enabled supplier weeks safely', () => {
+  const migration = readFileSync(new URL('../../../drizzle/0018_timesheet_pending_client_reviews.sql', import.meta.url), 'utf8')
+  assert.match(migration, /wt\."status" = 'APPROVED'/)
+  assert.match(migration, /wc\."access_mode" = 'REVIEW'/)
+  assert.match(migration, /ON CONFLICT \("weekly_timesheet_id", "client_organization_id"\) DO NOTHING/)
 })
 
 test('admin list queries share bounded pagination and entity-specific filters', () => {
@@ -132,6 +147,14 @@ test('client access and versioned review inputs are constrained', () => {
   assert.equal(clientReviewSchema.safeParse({ action: 'DISPUTE', expectedVersion: 0 }).success, false)
   assert.equal(clientReviewSchema.safeParse({ action: 'DISPUTE', expectedVersion: 1, comment: 'Incorrect activity.' }).success, true)
   assert.equal(clientReviewSchema.safeParse({ action: 'APPROVE', expectedVersion: -1 }).success, false)
+  assert.equal(clientReviewSchema.safeParse({ action: 'APPROVE', expectedVersion: 0 }).success, false)
+})
+
+test('client approval list query has stable pagination and collection controls', () => {
+  assert.deepEqual(clientApprovalListQuerySchema.parse({}), { page: 1, pageSize: 20, sortBy: 'weekStartsOn', sortDir: 'desc' })
+  assert.equal(clientApprovalListQuerySchema.parse({ status: 'PENDING', workspaceClientId: 'supplier', sortBy: 'supplierName', sortDir: 'asc' }).status, 'PENDING')
+  assert.equal(clientApprovalListQuerySchema.safeParse({ status: 'UNKNOWN' }).success, false)
+  assert.equal(clientApprovalListQuerySchema.safeParse({ pageSize: 101 }).success, false)
 })
 
 test('organization invoicing requires an enabled Timesheets workspace', () => {

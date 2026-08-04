@@ -3,33 +3,66 @@ import { timesheetsFeature } from '#layers/timesheets/shared/feature'
 export default defineNuxtPlugin(() => {
   const portalFeatures = usePortalFeatures()
   const { activeOrganizationId } = usePortalSession()
-  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canViewClientTime: boolean }) => {
+  const primaryBadge = (count: number) => count
+    ? {
+        label: count,
+        color: 'primary' as const,
+        variant: 'solid' as const,
+        square: true,
+        class: 'size-5 justify-center rounded-full p-0'
+      }
+    : undefined
+  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canAccessApprovals: boolean, canManageClientReviewers: boolean, pendingClientApprovalCount: number, unassignedClientReviewerSupplierCount: number }) => {
+    const approvalActionCount = capabilities.pendingClientApprovalCount
+      + (capabilities.canManageClientReviewers ? capabilities.unassignedClientReviewerSupplierCount : 0)
     const keep = (id: string) => id === 'timesheet-invoices'
       ? capabilities.canInvoice
-      : ['client-timesheets', 'timesheets-client'].includes(id)
-      ? capabilities.canViewClientTime
+      : ['client-approvals', 'timesheets-approvals'].includes(id)
+      ? capabilities.canAccessApprovals
+      : id === 'approval-reviewers'
+      ? capabilities.canManageClientReviewers
       : capabilities.canEnterTime
+    const landingTo = capabilities.canEnterTime ? '/timesheets' : '/timesheets/approvals'
+    const landingLabel = capabilities.canEnterTime ? 'features.timesheets.navigation.myTimesheet' : 'features.timesheets.approvals.title'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
-      navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)),
-      modules: capabilities.canEnterTime || capabilities.canViewClientTime
+      navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)).map(item => ({
+        ...item,
+        badge: item.id === 'timesheets-approvals' ? primaryBadge(approvalActionCount) : undefined
+      })),
+      modules: capabilities.canEnterTime || capabilities.canAccessApprovals
         ? timesheetsFeature.modules?.map(module => ({
             ...module,
-            to: capabilities.canEnterTime ? module.to : '/timesheets/client',
-            labelKey: capabilities.canEnterTime ? module.labelKey : 'features.timesheets.clientPortal.title',
-            menuItems: module.menuItems?.filter(item => keep(item.id))
+            to: landingTo,
+            labelKey: landingLabel,
+            badge: primaryBadge(approvalActionCount),
+            menuItems: module.menuItems?.filter(item => keep(item.id)).map(item => ({
+              ...item,
+              badge: item.id === 'client-approvals'
+                ? primaryBadge(capabilities.pendingClientApprovalCount)
+                : item.id === 'approval-reviewers'
+                  ? primaryBadge(capabilities.unassignedClientReviewerSupplierCount)
+                  : undefined
+            }))
           }))
         : [],
       dashboardWidgets: capabilities.canEnterTime ? timesheetsFeature.dashboardWidgets : []
     })
   }
-  register({ canEnterTime: false, canInvoice: false, canViewClientTime: false })
-  watch(activeOrganizationId, async (organizationId) => {
-    if (!organizationId) return register({ canEnterTime: false, canInvoice: false, canViewClientTime: false })
+  const empty = { canEnterTime: false, canInvoice: false, canAccessApprovals: false, canManageClientReviewers: false, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
+  register(empty)
+  const refreshCapabilities = async () => {
     try {
       register(await $fetch('/api/timesheets/capabilities'))
     } catch {
-      register({ canEnterTime: false, canInvoice: false, canViewClientTime: false })
+      register(empty)
     }
+  }
+  if (import.meta.client) {
+    window.addEventListener('timesheets:capabilities-refresh', refreshCapabilities)
+  }
+  watch(activeOrganizationId, async (organizationId) => {
+    if (!organizationId) return register(empty)
+    await refreshCapabilities()
   }, { immediate: true })
 })

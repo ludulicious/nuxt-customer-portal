@@ -34,6 +34,7 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
       label: t(item.labelKey),
       icon: item.icon,
       to: item.to,
+      badge: item.badge,
       onSelect: () => {
         if (sidebarOpen) sidebarOpen.value = false
       }

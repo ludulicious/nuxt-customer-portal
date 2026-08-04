@@ -1,3 +1,5 @@
+import type { BadgeProps } from '@nuxt/ui'
+
 export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
 
@@ -9,6 +11,7 @@ export interface PortalNavigationItem {
   audiences: PortalAudience[]
   location?: 'main' | 'admin'
   order?: number
+  badge?: string | number | BadgeProps
 }
 
 export interface PortalDashboardWidget {
@@ -24,12 +27,14 @@ export interface PortalModuleMenuItem {
   to: string
   audiences: PortalAudience[]
   order?: number
+  badge?: string | number | BadgeProps
 }
 
 export interface PortalModuleContribution {
   id: string
   labelKey: string
   icon?: string
+  badge?: string | number | BadgeProps
   to: string
   routePrefixes: string[]
   audiences: PortalAudience[]

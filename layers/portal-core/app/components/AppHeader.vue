@@ -41,9 +41,13 @@ const moduleSwitchItems = computed(() => [
   modules.value.map(module => ({
     label: module.label,
     icon: module.icon,
+    badge: module.badge,
     to: module.to
   }))
 ])
+
+const moduleBadgeProps = (badge: NonNullable<(typeof modules.value)[number]['badge']>) =>
+  typeof badge === 'object' ? badge : { label: badge }
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)
@@ -204,6 +208,7 @@ const stopImpersonating = async () => {
         ]">
           <UIcon v-if="module.icon" :name="module.icon" class="w-4 h-4" />
           {{ module.label }}
+          <UBadge v-if="module.badge" v-bind="moduleBadgeProps(module.badge)" />
         </NuxtLink>
       </template>
     </nav>

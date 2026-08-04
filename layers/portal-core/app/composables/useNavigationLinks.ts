@@ -28,6 +28,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
     label: t(item.labelKey),
     icon: item.icon,
     to: item.to,
+    badge: item.badge,
     onSelect: () => { sidebarOpen.value = false }
   }))])
 

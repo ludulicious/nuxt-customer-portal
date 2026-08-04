@@ -127,6 +127,13 @@
       "when": 1785780000000,
       "tag": "0017_timesheet_client_review_history",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785859200000,
+      "tag": "0018_timesheet_pending_client_reviews",
+      "breakpoints": true
     }
   ]
 }

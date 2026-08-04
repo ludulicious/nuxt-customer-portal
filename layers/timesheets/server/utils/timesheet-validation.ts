@@ -35,11 +35,19 @@ export const invoiceListQuerySchema = z.object({
   sortBy: z.enum(['issueDate', 'dueDate', 'number', 'totalMinor']).default('issueDate'),
   sortDir: z.enum(['asc', 'desc']).default('desc')
 })
+export const clientApprovalListQuerySchema = z.object({
+  ...listBase,
+  workspaceClientId: id.optional(),
+  status: z.enum(['PENDING', 'APPROVED', 'DISPUTED']).optional(),
+  sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'status', 'totalMinutes']).default('weekStartsOn'),
+  sortDir: z.enum(['asc', 'desc']).default('desc')
+})
 
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>
 export type ClientListQuery = z.infer<typeof clientListQuerySchema>
 export type ActivityListQuery = z.infer<typeof activityListQuerySchema>
 export type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
+export type ClientApprovalListQuery = z.infer<typeof clientApprovalListQuerySchema>
 
 export const weekQuerySchema = z.object({
   week: isoDate.optional()
@@ -83,7 +91,7 @@ export const organizationCapabilitiesUpdateSchema = z.object({
 export const clientReviewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
 export const clientReviewSchema = z.object({
   action: z.enum(['APPROVE', 'DISPUTE']),
-  expectedVersion: z.number().int().min(0),
+  expectedVersion: z.number().int().min(1),
   comment: z.string().trim().max(2000).nullable().optional()
 }).superRefine((value, context) => {
   if (value.action === 'DISPUTE' && !value.comment) context.addIssue({ code: 'custom', path: ['comment'], message: 'A dispute comment is required' })
