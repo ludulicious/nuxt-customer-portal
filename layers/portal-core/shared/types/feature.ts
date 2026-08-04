@@ -25,6 +25,7 @@ export interface PortalModuleMenuItem {
   labelKey: string
   icon?: string
   to: string
+  exact?: boolean
   audiences: PortalAudience[]
   order?: number
   badge?: string | number | BadgeProps

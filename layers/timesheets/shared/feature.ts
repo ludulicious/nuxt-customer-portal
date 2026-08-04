@@ -59,7 +59,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     order: 30,
     menuItems: [
       { id: 'my-timesheet', labelKey: 'features.timesheets.navigation.myTimesheet', icon: 'i-lucide-clock-3', to: '/timesheets', audiences: ['authenticated'] },
-      { id: 'client-approvals', labelKey: 'features.timesheets.approvals.title', icon: 'i-lucide-stamp', to: '/timesheets/approvals', audiences: ['authenticated'] },
+      { id: 'client-approvals', labelKey: 'features.timesheets.approvals.title', icon: 'i-lucide-stamp', to: '/timesheets/approvals', exact: true, audiences: ['authenticated'] },
       { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['organizationAdmin', 'admin'] },
       { id: 'supplier-timesheets', labelKey: 'features.timesheets.suppliers.title', icon: 'i-lucide-building-2', to: '/timesheets/suppliers', audiences: ['authenticated'] },
       { id: 'timesheet-approvals', labelKey: 'features.timesheets.admin.approvals', icon: 'i-lucide-stamp', to: '/admin/timesheets/approvals', audiences: ['organizationAdmin', 'admin'] },
