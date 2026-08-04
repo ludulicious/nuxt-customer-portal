@@ -36,10 +36,13 @@ export interface ClientDto {
   preferredLocale: string
   contacts: OrganizationContactDto[]
   accessMode: ClientAccessMode
+  invoiceAccessEnabled: boolean
 }
 
-export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, canReview: boolean, canManageReviewers: boolean }
+export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, invoiceAccessEnabled: boolean, canReview: boolean, canViewInvoices: boolean, canManageReviewers: boolean }
 export interface ClientReviewerDto { id: string, name: string, email: string, assigned: boolean }
+export interface ClientInvoiceViewerDto { id: string, name: string, email: string, assigned: boolean }
+export interface ClientInvoiceSupplierDto extends ClientWorkspaceDto { viewerCount: number }
 export interface ClientTimesheetEntryDto { id: string, date: string, project: string, person: string, activity: string, minutes: number, note: string | null }
 export interface ClientTimesheetHistoryDto { id: string, action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT', actorName: string, comment: string | null, createdAt: string }
 export interface ClientTimesheetSliceDto { weeklyTimesheetId: string, weekStartsOn: string, person: string, status: ClientReviewStatus, billingStatus: 'AWAITING_INVOICE' | 'PARTIALLY_INVOICED' | 'INVOICED', version: number, comment: string | null, reviewedAt: string | null, entries: ClientTimesheetEntryDto[], history: ClientTimesheetHistoryDto[] }
@@ -67,6 +70,12 @@ export interface ClientApprovalsDto {
   isAdmin: boolean
   pendingCount: number
   items: ClientApprovalItemDto[]
+}
+export interface ClientSupplierTimesheetItemDto extends ClientTimesheetSliceDto {
+  id: string
+  workspaceClientId: string
+  supplierName: string
+  totalMinutes: number
 }
 export interface ClientReviewerSupplierDto extends ClientWorkspaceDto {
   pendingCount: number
@@ -232,6 +241,16 @@ export interface InvoiceDto {
   history?: InvoiceHistoryDto[]
   attachments?: InvoiceAttachmentDto[]
   emailDeliveries?: InvoiceEmailDeliveryDto[]
+}
+export type ClientInvoiceSummaryDto = Pick<InvoiceDto, 'id' | 'number' | 'status' | 'currency' | 'issueDate' | 'dueDate' | 'subject' | 'totalMinor' | 'outstandingMinor' | 'isOverdue' | 'daysOverdue'> & { supplierName: string, workspaceClientId: string }
+export type ClientInvoiceDto = Omit<InvoiceDto, 'payments' | 'reminderCount' | 'lastReminderSentAt' | 'history' | 'emailDeliveries'> & {
+  supplierName: string
+  workspaceClientId: string
+  payments?: never
+  reminderCount?: never
+  lastReminderSentAt?: never
+  history?: never
+  emailDeliveries?: never
 }
 export interface InvoiceEmailPreviewDto { to: string, cc: string[], locale: string, subject: string, body: string, senderEmail: string, senderDomain: string, emailProviderConfigured: boolean, senderDomainVerified: boolean, attachments: Array<{ fileName: string, size: number }>, totalAttachmentSize: number, maximumAttachmentSize: number }
 export interface InvoiceableEntryDto extends ReportRowDto { weeklyTimesheetId: string }

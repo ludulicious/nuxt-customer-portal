@@ -1,6 +1,6 @@
-import type { ActivityTypeDto, ClientApprovalItemDto, ClientDto, InvoiceDto, ProjectDto, TimesheetsListResponse } from '#layers/timesheets/shared/types/timesheet'
-import type { ActivityListQuery, ClientApprovalListQuery, ClientListQuery, InvoiceListQuery, ProjectListQuery } from './timesheet-validation'
-import { listActivities, listClientApprovals, listClients, listInvoices, listProjects } from './timesheet-repository'
+import type { ActivityTypeDto, ClientApprovalItemDto, ClientDto, ClientInvoiceSummaryDto, ClientSupplierTimesheetItemDto, InvoiceDto, ProjectDto, TimesheetsListResponse } from '#layers/timesheets/shared/types/timesheet'
+import type { ActivityListQuery, ClientApprovalListQuery, ClientInvoiceListQuery, ClientListQuery, ClientSupplierTimesheetListQuery, InvoiceListQuery, ProjectListQuery } from './timesheet-validation'
+import { listActivities, listClientApprovals, listClientInvoices, listClientSupplierTimesheets, listClients, listInvoices, listProjects } from './timesheet-repository'
 
 const compareText = (left: string | null | undefined, right: string | null | undefined) => (left ?? '').localeCompare(right ?? '', undefined, { sensitivity: 'base', numeric: true })
 const direction = (value: number, sortDir: 'asc' | 'desc') => sortDir === 'asc' ? value : -value
@@ -52,6 +52,17 @@ export const listInvoicesPage = async (organizationId: string, query: InvoiceLis
   return paginate<InvoiceDto>(rows, query.page, query.pageSize)
 }
 
+export const listClientInvoicesPage = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, query: ClientInvoiceListQuery) => {
+  const search = query.search?.toLocaleLowerCase() ?? ''
+  const rows = (await listClientInvoices(clientOrganizationId, actorUserId, isAdmin))
+    .filter(item => !search || [item.number, item.supplierName, item.subject].some(value => includes(value, search)))
+    .filter(item => !query.status || item.status === query.status)
+    .filter(item => !query.workspaceClientId || item.workspaceClientId === query.workspaceClientId)
+    .filter(item => query.overdue === undefined || item.isOverdue === (query.overdue === 'true'))
+    .sort((a, b) => direction(query.sortBy === 'number' ? compareText(a.number, b.number) : query.sortBy === 'dueDate' ? compareText(a.dueDate, b.dueDate) : query.sortBy === 'totalMinor' ? a.totalMinor - b.totalMinor : compareText(a.issueDate, b.issueDate), query.sortDir) || compareText(a.id, b.id))
+  return paginate<ClientInvoiceSummaryDto>(rows, query.page, query.pageSize)
+}
+
 export const listClientApprovalsPage = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, query: ClientApprovalListQuery) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
   const rows = (await listClientApprovals(clientOrganizationId, actorUserId, isAdmin)).items
@@ -60,4 +71,14 @@ export const listClientApprovalsPage = async (clientOrganizationId: string, acto
     .filter(item => !query.status || item.status === query.status)
     .sort((a, b) => direction(query.sortBy === 'supplierName' ? compareText(a.supplierName, b.supplierName) : query.sortBy === 'person' ? compareText(a.person, b.person) : query.sortBy === 'status' ? compareText(a.status, b.status) : query.sortBy === 'totalMinutes' ? a.totalMinutes - b.totalMinutes : compareText(a.weekStartsOn, b.weekStartsOn), query.sortDir) || compareText(a.id, b.id))
   return paginate<ClientApprovalItemDto>(rows, query.page, query.pageSize)
+}
+
+export const listClientSupplierTimesheetsPage = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, query: ClientSupplierTimesheetListQuery) => {
+  const search = query.search?.toLocaleLowerCase() ?? ''
+  const rows = (await listClientSupplierTimesheets(clientOrganizationId, actorUserId, isAdmin))
+    .filter(item => !search || [item.supplierName, item.person, ...item.entries.flatMap(entry => [entry.project, entry.activity, entry.note])].some(value => includes(value, search)))
+    .filter(item => !query.workspaceClientId || item.workspaceClientId === query.workspaceClientId)
+    .filter(item => !query.billingStatus || item.billingStatus === query.billingStatus)
+    .sort((a, b) => direction(query.sortBy === 'supplierName' ? compareText(a.supplierName, b.supplierName) : query.sortBy === 'person' ? compareText(a.person, b.person) : query.sortBy === 'totalMinutes' ? a.totalMinutes - b.totalMinutes : compareText(a.weekStartsOn, b.weekStartsOn), query.sortDir) || compareText(a.id, b.id))
+  return paginate<ClientSupplierTimesheetItemDto>(rows, query.page, query.pageSize)
 }

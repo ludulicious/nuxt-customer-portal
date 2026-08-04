@@ -8,6 +8,7 @@ import {
   inArray,
   isNotNull,
   lte,
+  or,
   sql
 } from 'drizzle-orm'
 import {
@@ -39,6 +40,7 @@ import {
   timesheetApprovalHistory,
   weeklyTimesheet,
   workspaceClient,
+  workspaceClientInvoiceViewer,
   workspaceClientReviewer,
   workspaceSettings,
   type TimeEntryRecord,
@@ -62,7 +64,11 @@ import type {
   ClientWorkspaceDto,
   ClientReviewerDto,
   ClientApprovalsDto,
-  ClientReviewerSupplierDto
+  ClientReviewerSupplierDto,
+  ClientInvoiceDto,
+  ClientInvoiceSummaryDto,
+  ClientInvoiceSupplierDto,
+  ClientSupplierTimesheetItemDto,
 } from '#layers/timesheets/shared/types/timesheet'
 import { hasInvalidProjectActivityAssignments, type ReportQuery } from './timesheet-validation'
 import { addIsoDays, invoiceOverdueDetails, mondayFor } from '#layers/timesheets/shared/timesheet-dates'
@@ -185,6 +191,7 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
           invoiceEmail: profileById.get(client.id)?.invoiceEmail ?? null,
           preferredLocale: profileById.get(client.id)?.preferredLocale ?? 'nl',
           accessMode: link.accessMode,
+          invoiceAccessEnabled: link.invoiceAccessEnabled,
           contacts: contacts.filter(contact => contact.organizationId === client.id).map(contact => ({
             id: contact.id, userId: contact.userId, name: contact.name, email: contact.email,
             phone: contact.phone, jobTitle: contact.jobTitle
@@ -320,10 +327,18 @@ export const updateClientAccess = async (organizationId: string, id: string, acc
   return updated
 }
 
+export const updateClientInvoiceAccess = async (organizationId: string, id: string, invoiceAccessEnabled: boolean) => {
+  const [updated] = await db.update(workspaceClient).set({ invoiceAccessEnabled, updatedAt: new Date() }).where(and(
+    eq(workspaceClient.id, id), eq(workspaceClient.workspaceOrganizationId, organizationId)
+  )).returning()
+  if (!updated) throw createError({ statusCode: 404, message: 'Client not found' })
+  return updated
+}
+
 export const listClientWorkspaces = async (clientOrganizationId: string, userId: string, canManageReviewers: boolean): Promise<ClientWorkspaceDto[]> => {
   const links = await db.select({ link: workspaceClient, workspaceName: organization.name })
     .from(workspaceClient).innerJoin(organization, eq(organization.id, workspaceClient.workspaceOrganizationId))
-    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), inArray(workspaceClient.accessMode, ['VIEW', 'REVIEW'])))
+    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), or(inArray(workspaceClient.accessMode, ['VIEW', 'REVIEW']), eq(workspaceClient.invoiceAccessEnabled, true))))
     .orderBy(asc(organization.name))
   const reviews = links.length
     ? await db.select().from(workspaceClientReviewer).where(and(
@@ -331,7 +346,39 @@ export const listClientWorkspaces = async (clientOrganizationId: string, userId:
       ))
     : []
   const reviewerLinks = new Set(reviews.map(item => item.workspaceClientId))
-  return links.map(({ link, workspaceName }) => ({ id: link.id, workspaceOrganizationId: link.workspaceOrganizationId, workspaceName, accessMode: link.accessMode, canReview: link.accessMode === 'REVIEW' && reviewerLinks.has(link.id), canManageReviewers }))
+  const invoiceAssignments = links.length
+    ? await db.select().from(workspaceClientInvoiceViewer).where(and(
+        inArray(workspaceClientInvoiceViewer.workspaceClientId, links.map(item => item.link.id)), eq(workspaceClientInvoiceViewer.userId, userId)
+      ))
+    : []
+  const invoiceViewerLinks = new Set(invoiceAssignments.map(item => item.workspaceClientId))
+  return links.map(({ link, workspaceName }) => ({ id: link.id, workspaceOrganizationId: link.workspaceOrganizationId, workspaceName, accessMode: link.accessMode, invoiceAccessEnabled: link.invoiceAccessEnabled, canReview: link.accessMode === 'REVIEW' && reviewerLinks.has(link.id), canViewInvoices: link.invoiceAccessEnabled && (canManageReviewers || invoiceViewerLinks.has(link.id)), canManageReviewers }))
+}
+
+export const listClientInvoiceViewers = async (workspaceClientId: string, clientOrganizationId: string): Promise<ClientReviewerDto[]> => {
+  const [link] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.id, workspaceClientId), eq(workspaceClient.clientOrganizationId, clientOrganizationId), eq(workspaceClient.invoiceAccessEnabled, true))).limit(1)
+  if (!link) throw createError({ statusCode: 404, message: 'Client invoice workspace not found' })
+  const [members, assigned] = await Promise.all([listPortalOrganizationMembers(clientOrganizationId), db.select().from(workspaceClientInvoiceViewer).where(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId))])
+  const assignedIds = new Set(assigned.map(item => item.userId))
+  return members.map(item => ({ id: item.id, name: item.name, email: item.email, assigned: assignedIds.has(item.id) }))
+}
+
+export const listClientInvoiceSuppliers = async (clientOrganizationId: string, userId: string, isAdmin: boolean): Promise<ClientInvoiceSupplierDto[]> => {
+  const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, isAdmin)).filter(item => item.invoiceAccessEnabled && (isAdmin || item.canViewInvoices))
+  if (!workspaces.length) return []
+  const viewers = await db.select().from(workspaceClientInvoiceViewer).where(inArray(workspaceClientInvoiceViewer.workspaceClientId, workspaces.map(item => item.id)))
+  return workspaces.map(item => ({ ...item, viewerCount: viewers.filter(viewer => viewer.workspaceClientId === item.id).length }))
+}
+
+export const setClientInvoiceViewer = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, userId: string, assigned: boolean) => {
+  const eligible = await listClientInvoiceViewers(workspaceClientId, clientOrganizationId)
+  if (!eligible.some(item => item.id === userId)) throw createError({ statusCode: 400, message: 'Invoice viewer must be a current client member' })
+  if (!assigned) {
+    await db.delete(workspaceClientInvoiceViewer).where(and(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId), eq(workspaceClientInvoiceViewer.userId, userId)))
+    return { assigned: false }
+  }
+  await db.insert(workspaceClientInvoiceViewer).values({ id: nanoid(), workspaceClientId, userId, createdById: actorUserId }).onConflictDoNothing()
+  return { assigned: true }
 }
 
 export const listClientReviewers = async (workspaceClientId: string, clientOrganizationId: string): Promise<ClientReviewerDto[]> => {
@@ -1337,6 +1384,68 @@ export const getInvoice = async (organizationId: string, id: string): Promise<In
   }
 }
 
+const requireClientInvoiceAccess = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, invoiceId?: string) => {
+  const links = await db.select().from(workspaceClient)
+    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), eq(workspaceClient.invoiceAccessEnabled, true)))
+  const assignments = links.length && !isAdmin
+    ? await db.select().from(workspaceClientInvoiceViewer).where(and(
+        inArray(workspaceClientInvoiceViewer.workspaceClientId, links.map(link => link.id)),
+        eq(workspaceClientInvoiceViewer.userId, actorUserId)
+      ))
+    : []
+  const assignedIds = new Set(assignments.map(item => item.workspaceClientId))
+  const accessible = links.filter(link => isAdmin || assignedIds.has(link.id))
+  if (invoiceId) {
+    if (!accessible.length) throw createError({ statusCode: 404, message: 'Invoice not found' })
+    const [match] = await db.select({ workspaceOrganizationId: invoice.organizationId }).from(invoice).where(and(
+      eq(invoice.id, invoiceId), eq(invoice.clientOrganizationId, clientOrganizationId), inArray(invoice.status, ['ISSUED', 'PAID']),
+      inArray(invoice.organizationId, accessible.map(link => link.workspaceOrganizationId))
+    )).limit(1)
+    const link = match && accessible.find(item => item.workspaceOrganizationId === match.workspaceOrganizationId)
+    if (!link) throw createError({ statusCode: 404, message: 'Invoice not found' })
+    return link
+  }
+  return accessible
+}
+
+const toClientInvoice = (source: InvoiceDto, workspaceName: string, workspaceClientId: string): ClientInvoiceDto => {
+  const { payments: _payments, reminderCount: _reminderCount, lastReminderSentAt: _lastReminderSentAt, history: _history, emailDeliveries: _emailDeliveries, ...safe } = source
+  return { ...safe, supplierName: workspaceName, workspaceClientId }
+}
+
+export const listClientInvoices = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean): Promise<ClientInvoiceSummaryDto[]> => {
+  const links = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin)
+  if (!Array.isArray(links)) throw createError({ statusCode: 500, message: 'Invoice access resolution failed' })
+  if (!links.length) return []
+  const organizations = await getPortalOrganizationsByIds(links.map(link => link.workspaceOrganizationId))
+  const names = new Map(organizations.map(item => [item.id, item.name]))
+  const results = await Promise.all(links.map(async (link) => (await listInvoices(link.workspaceOrganizationId))
+    .filter(item => item.clientOrganizationId === clientOrganizationId && ['ISSUED', 'PAID'].includes(item.status))
+    .map(item => ({
+      id: item.id, number: item.number, status: item.status, currency: item.currency, issueDate: item.issueDate,
+      dueDate: item.dueDate, subject: item.subject, totalMinor: item.totalMinor, outstandingMinor: item.outstandingMinor,
+      isOverdue: item.isOverdue, daysOverdue: item.daysOverdue, supplierName: names.get(link.workspaceOrganizationId) ?? item.senderName,
+      workspaceClientId: link.id
+    }))))
+  return results.flat()
+}
+
+export const getClientInvoice = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, id: string): Promise<ClientInvoiceDto> => {
+  const link = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin, id)
+  if (Array.isArray(link)) throw createError({ statusCode: 404, message: 'Invoice not found' })
+  const [workspace] = await getPortalOrganizationsByIds([link.workspaceOrganizationId])
+  const selected = await getInvoice(link.workspaceOrganizationId, id)
+  return toClientInvoice(selected, workspace?.name ?? selected.senderName, link.id)
+}
+
+export const getClientInvoiceAttachment = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, invoiceId: string, attachmentId: string) => {
+  const selected = await getClientInvoice(clientOrganizationId, actorUserId, isAdmin, invoiceId)
+  if (!selected.attachments?.some(item => item.id === attachmentId)) throw createError({ statusCode: 404, message: 'Attachment not found' })
+  const link = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin, invoiceId)
+  if (Array.isArray(link)) throw createError({ statusCode: 404, message: 'Invoice not found' })
+  return getInvoiceAttachment(link.workspaceOrganizationId, invoiceId, attachmentId)
+}
+
 export const listInvoiceableEntries = async (organizationId: string): Promise<InvoiceableEntryDto[]> => {
   const [report, weeks, linked, disputes] = await Promise.all([
     getReport(organizationId, { status: 'APPROVED', billable: true }),
@@ -1418,6 +1527,26 @@ export const getClientTimesheets = async (workspaceClientId: string, clientOrgan
   })
   return { workspace, slices }
 }
+
+export const listClientSupplierTimesheets = async (clientOrganizationId: string, userId: string, isAdmin: boolean): Promise<ClientSupplierTimesheetItemDto[]> => {
+  const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, isAdmin)).filter(item => item.accessMode === 'VIEW')
+  const collections = await Promise.all(workspaces.map(async (workspace) => {
+    const result = await getClientTimesheets(workspace.id, clientOrganizationId, userId, isAdmin)
+    return result.slices.map(slice => ({
+      ...slice,
+      id: slice.weeklyTimesheetId,
+      workspaceClientId: workspace.id,
+      supplierName: workspace.workspaceName,
+      totalMinutes: slice.entries.reduce((total, entry) => total + entry.minutes, 0)
+    }))
+  }))
+  return collections.flat()
+}
+
+export const listClientSupplierOptions = async (clientOrganizationId: string, userId: string, isAdmin: boolean) =>
+  (await listClientWorkspaces(clientOrganizationId, userId, isAdmin))
+    .filter(item => item.accessMode === 'VIEW')
+    .map(item => ({ id: item.id, name: item.workspaceName }))
 
 export const reviewClientTimesheet = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, isAdmin: boolean, weekId: string, action: 'APPROVE' | 'DISPUTE', expectedVersion: number, comment?: string | null) => db.transaction(async (tx) => {
   const [link] = await tx.select().from(workspaceClient).where(and(eq(workspaceClient.id, workspaceClientId), eq(workspaceClient.clientOrganizationId, clientOrganizationId), eq(workspaceClient.accessMode, 'REVIEW'))).limit(1)

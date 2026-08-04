@@ -12,10 +12,14 @@ export default defineNuxtPlugin(() => {
         class: 'size-5 justify-center rounded-full p-0'
       }
     : undefined
-  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canViewSupplierTime: boolean, canAccessApprovals: boolean, canManageClientReviewers: boolean, pendingClientApprovalCount: number, unassignedClientReviewerSupplierCount: number }) => {
+  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canViewSupplierTime: boolean, canAccessApprovals: boolean, canManageClientReviewers: boolean, canViewClientInvoices: boolean, canManageInvoiceViewers: boolean, pendingClientApprovalCount: number, unassignedClientReviewerSupplierCount: number }) => {
     const approvalActionCount = capabilities.pendingClientApprovalCount
       + (capabilities.canManageClientReviewers ? capabilities.unassignedClientReviewerSupplierCount : 0)
-    const keep = (id: string) => id === 'timesheet-invoices'
+    const keep = (id: string) => id === 'client-invoices'
+      ? capabilities.canViewClientInvoices
+      : id === 'invoice-viewers'
+      ? capabilities.canManageInvoiceViewers
+      : id === 'timesheet-invoices'
       ? capabilities.canInvoice
       : ['client-approvals', 'timesheets-approvals'].includes(id)
       ? capabilities.canAccessApprovals
@@ -24,20 +28,20 @@ export default defineNuxtPlugin(() => {
       : ['supplier-timesheets', 'timesheets-suppliers'].includes(id)
       ? capabilities.canViewSupplierTime
       : capabilities.canEnterTime
-    const landingTo = capabilities.canEnterTime ? '/timesheets' : capabilities.canAccessApprovals ? '/timesheets/approvals' : '/timesheets/suppliers'
-    const landingLabel = capabilities.canEnterTime ? 'features.timesheets.navigation.myTimesheet' : capabilities.canAccessApprovals ? 'features.timesheets.approvals.title' : 'features.timesheets.suppliers.title'
+    const canAccessTimesheets = capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canAccessApprovals
+    const canAccessInvoices = capabilities.canInvoice || capabilities.canViewClientInvoices
+    const timesheetsLandingTo = capabilities.canEnterTime ? '/timesheets' : capabilities.canAccessApprovals ? '/timesheets/approvals' : '/timesheets/suppliers'
+    const invoicesLandingTo = capabilities.canViewClientInvoices ? '/timesheets/invoices' : '/admin/timesheets/invoices'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
       navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)).map(item => ({
         ...item,
         badge: item.id === 'timesheets-approvals' ? primaryBadge(approvalActionCount) : undefined
       })),
-      modules: capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canAccessApprovals
-        ? timesheetsFeature.modules?.map(module => ({
+      modules: timesheetsFeature.modules?.filter(module => module.id === 'invoices' ? canAccessInvoices : canAccessTimesheets).map(module => ({
             ...module,
-            to: landingTo,
-            labelKey: landingLabel,
-            badge: primaryBadge(approvalActionCount),
+            to: module.id === 'invoices' ? invoicesLandingTo : timesheetsLandingTo,
+            badge: module.id === 'timesheets' ? primaryBadge(approvalActionCount) : undefined,
             menuItems: module.menuItems?.filter(item => keep(item.id)).map(item => ({
               ...item,
               badge: item.id === 'client-approvals'
@@ -46,12 +50,11 @@ export default defineNuxtPlugin(() => {
                   ? primaryBadge(capabilities.unassignedClientReviewerSupplierCount)
                   : undefined
             }))
-          }))
-        : [],
+          })),
       dashboardWidgets: capabilities.canEnterTime ? timesheetsFeature.dashboardWidgets : []
     })
   }
-  const empty = { canEnterTime: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
+  const empty = { canEnterTime: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, canViewClientInvoices: false, canManageInvoiceViewers: false, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
   register(empty)
   const refreshCapabilities = async () => {
     try {

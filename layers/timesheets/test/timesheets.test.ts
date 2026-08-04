@@ -10,6 +10,9 @@ import {
   clientCreateSchema,
   clientDeleteSchema,
   clientAccessUpdateSchema,
+  clientInvoiceAccessUpdateSchema,
+  clientInvoiceListQuerySchema,
+  clientInvoiceViewerUpdateSchema,
   clientApprovalListQuerySchema,
   clientReviewSchema,
   clientReviewerUpdateSchema,
@@ -51,11 +54,24 @@ test('feature policy reserves management and approval for admins', () => {
   assert.equal(timesheetsFeature.policy.member.includes('submit'), true)
 })
 
-test('client navigation separates approvals, reviewer settings, and view-only supplier time', () => {
-  const items = timesheetsFeature.modules?.[0]?.menuItems ?? []
+test('client navigation separates approvals, invoices, their settings, and view-only supplier time', () => {
+  const modules = timesheetsFeature.modules ?? []
+  const items = modules.flatMap(module => module.menuItems)
+  assert.equal(modules.find(module => module.id === 'timesheets')?.routePrefixes.includes('/timesheets'), true)
+  assert.equal(modules.find(module => module.id === 'invoices')?.routePrefixes.includes('/timesheets/invoices'), true)
   assert.equal(items.find(item => item.id === 'client-approvals')?.to, '/timesheets/approvals')
   assert.equal(items.find(item => item.id === 'approval-reviewers')?.to, '/timesheets/approvals/reviewers')
   assert.equal(items.find(item => item.id === 'supplier-timesheets')?.to, '/timesheets/suppliers')
+  assert.equal(items.find(item => item.id === 'client-invoices')?.to, '/timesheets/invoices')
+  assert.equal(items.find(item => item.id === 'invoice-viewers')?.to, '/timesheets/invoices/viewers')
+})
+
+test('client invoice migration keeps access and viewer assignments independent', () => {
+  const migration = readFileSync(new URL('../../../drizzle/0019_client_invoice_access.sql', import.meta.url), 'utf8')
+  assert.match(migration, /invoice_access_enabled.*DEFAULT false NOT NULL/)
+  assert.match(migration, /workspace_client_invoice_viewer/)
+  assert.match(migration, /workspace_client_id.*ON DELETE cascade/)
+  assert.match(migration, /user_id.*ON DELETE cascade/)
 })
 
 test('pending review migration backfills approved review-enabled supplier weeks safely', () => {
@@ -155,6 +171,16 @@ test('client approval list query has stable pagination and collection controls',
   assert.equal(clientApprovalListQuerySchema.parse({ status: 'PENDING', workspaceClientId: 'supplier', sortBy: 'supplierName', sortDir: 'asc' }).status, 'PENDING')
   assert.equal(clientApprovalListQuerySchema.safeParse({ status: 'UNKNOWN' }).success, false)
   assert.equal(clientApprovalListQuerySchema.safeParse({ pageSize: 101 }).success, false)
+})
+
+test('client invoice access and listing accept only safe values', () => {
+  assert.equal(clientInvoiceAccessUpdateSchema.safeParse({ invoiceAccessEnabled: true }).success, true)
+  assert.equal(clientInvoiceViewerUpdateSchema.safeParse({ userId: 'user', assigned: true }).success, true)
+  assert.deepEqual(clientInvoiceListQuerySchema.parse({}), { page: 1, pageSize: 20, sortBy: 'issueDate', sortDir: 'desc' })
+  assert.equal(clientInvoiceListQuerySchema.safeParse({ status: 'ISSUED' }).success, true)
+  assert.equal(clientInvoiceListQuerySchema.safeParse({ status: 'DRAFT' }).success, false)
+  assert.equal(clientInvoiceListQuerySchema.safeParse({ status: 'VOID' }).success, false)
+  assert.equal(clientInvoiceListQuerySchema.safeParse({ pageSize: 101 }).success, false)
 })
 
 test('organization invoicing requires an enabled Timesheets workspace', () => {

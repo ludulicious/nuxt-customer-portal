@@ -167,6 +167,7 @@ const saveClient = () => run(async () => {
 })
 const removeClient = (client: DeepReadonly<ClientDto>) => run(() => api.deleteClient(client.id, client.name))
 const changeClientAccess = async (id: string, value: string) => { await api.updateClientAccess(id, value as ClientAccessMode); await listing.refresh() }
+const changeClientInvoiceAccess = async (id: string, value: string) => { await api.updateClientInvoiceAccess(id, value === 'ENABLED'); await listing.refresh(); window.dispatchEvent(new CustomEvent('timesheets:capabilities-refresh')) }
 defineExpose({
   canCreate: computed(() => true),
   openCreate: () => { formOpen.value = true },
@@ -193,9 +194,14 @@ await listing.load()
         @keydown.enter="openClient(client)"
         @keydown.space.prevent="openClient(client)"
       >
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div class="flex min-w-0 items-center gap-3"><UAvatar :src="client.logo ?? undefined" :alt="client.name" /><div class="min-w-0"><p class="truncate font-medium">{{ client.name }}</p><p class="truncate text-sm text-muted">{{ client.address || t('features.timesheets.admin.missingInvoiceAddress') }}</p></div></div>
-          <div class="flex shrink-0 items-center gap-1"><USelect :model-value="client.accessMode" :items="[{ label: t('features.timesheets.clientAccess.disabled'), value: 'DISABLED' }, { label: t('features.timesheets.clientAccess.view'), value: 'VIEW' }, { label: t('features.timesheets.clientAccess.review'), value: 'REVIEW' }]" value-key="value" size="xs" @click.stop @keydown.stop @update:model-value="changeClientAccess(client.id, $event)" /><UButton type="button" size="xs" variant="ghost" icon="i-lucide-pencil" :aria-label="t('features.timesheets.admin.editClient')" @click.stop="openClient(client)" @keydown.stop /><UButton type="button" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeClient')" @click.stop="removeClient(client)" @keydown.stop /></div>
+          <div class="flex shrink-0 flex-wrap items-end gap-2" @click.stop @keydown.stop>
+            <label class="grid min-w-36 gap-1 text-xs text-muted"><span>{{ t('features.timesheets.clientInvoices.enableAccess') }}</span><USelect :model-value="client.invoiceAccessEnabled ? 'ENABLED' : 'DISABLED'" :items="[{ label: t('features.timesheets.invoiceAccessEnabled'), value: 'ENABLED' }, { label: t('features.timesheets.invoiceAccessDisabled'), value: 'DISABLED' }]" value-key="value" size="xs" @update:model-value="changeClientInvoiceAccess(client.id, $event)" /></label>
+            <label class="grid min-w-40 gap-1 text-xs text-muted"><span>{{ t('features.timesheets.timesheetAccess') }}</span><USelect :model-value="client.accessMode" :items="[{ label: t('features.timesheets.clientAccess.disabled'), value: 'DISABLED' }, { label: t('features.timesheets.clientAccess.view'), value: 'VIEW' }, { label: t('features.timesheets.clientAccess.review'), value: 'REVIEW' }]" value-key="value" size="xs" @update:model-value="changeClientAccess(client.id, $event)" /></label>
+            <UButton type="button" size="xs" variant="ghost" icon="i-lucide-pencil" :aria-label="t('features.timesheets.admin.editClient')" @click.stop="openClient(client)" @keydown.stop />
+            <UButton type="button" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeClient')" @click.stop="removeClient(client)" @keydown.stop />
+          </div>
         </div>
       </UCard>
       <UCard v-if="editingClientId === client.organizationId" :id="`client-${client.organizationId}`" class="client-editor">

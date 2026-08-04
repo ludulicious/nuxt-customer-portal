@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
-import type { InvoiceDto } from '#layers/timesheets/shared/types/timesheet'
+import type { ClientInvoiceDto, InvoiceDto } from '#layers/timesheets/shared/types/timesheet'
 
 type InvoicePdfLocale = 'en' | 'nl'
 
@@ -48,7 +48,7 @@ const wrap = (font: PDFFont, text: string, size: number, maxWidth: number) => {
   return lines
 }
 
-export async function generateInvoicePdf(invoice: InvoiceDto, requestedLocale?: string) {
+export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto, requestedLocale?: string) {
   const locale: InvoicePdfLocale = requestedLocale?.toLowerCase().startsWith('nl') ? 'nl' : 'en'
   const l = labels[locale]
   const pdf = await PDFDocument.create()

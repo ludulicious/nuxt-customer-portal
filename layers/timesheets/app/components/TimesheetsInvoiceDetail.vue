@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { InvoiceDto, InvoiceHistoryDto } from '#layers/timesheets/shared/types/timesheet'
+import type { ClientInvoiceDto, InvoiceDto, InvoiceHistoryDto } from '#layers/timesheets/shared/types/timesheet'
 import { isKnownEmailProviderEvent } from '#layers/timesheets/shared/email-delivery-status'
 
-const props = defineProps<{ invoice: InvoiceDto, refresh: () => Promise<unknown> }>()
+const props = withDefaults(defineProps<{ invoice: InvoiceDto | ClientInvoiceDto, refresh: () => Promise<unknown>, mode?: 'admin' | 'client' }>(), { mode: 'admin' })
+const isClient = computed(() => props.mode === 'client')
 const { t, locale } = useI18n()
 const api = useTimesheets()
 const toast = useToast()
@@ -145,8 +146,16 @@ const removeAttachment = async () => {
   attachmentDeletion.value = null
 }
 const printInvoice = () => {
-  window.open(`/api/timesheets/admin/invoices/${props.invoice.id}/pdf?locale=${encodeURIComponent(locale.value)}`, '_blank', 'noopener,noreferrer')
+  const base = isClient.value ? '/api/timesheets/client/invoices' : '/api/timesheets/admin/invoices'
+  window.open(`${base}/${props.invoice.id}/pdf?locale=${encodeURIComponent(locale.value)}`, '_blank', 'noopener,noreferrer')
 }
+const downloadInvoice = () => {
+  const base = isClient.value ? '/api/timesheets/client/invoices' : '/api/timesheets/admin/invoices'
+  window.open(`${base}/${props.invoice.id}/pdf?locale=${encodeURIComponent(locale.value)}&download=1`, '_blank', 'noopener,noreferrer')
+}
+const attachmentUrl = (attachmentId: string) => isClient.value
+  ? `/api/timesheets/client/invoices/${props.invoice.id}/attachments/${attachmentId}`
+  : `/api/timesheets/admin/invoices/${props.invoice.id}/attachments/${attachmentId}`
 const refreshEmailStatuses = async (forceRefresh = false) => {
   if (!emailDeliveries.value.some(delivery => delivery.providerMessageId)) return
   refreshingEmailStatuses.value = true
@@ -163,7 +172,7 @@ const refreshEmailStatuses = async (forceRefresh = false) => {
 }
 
 onMounted(() => {
-  void refreshEmailStatuses()
+  if (!isClient.value) void refreshEmailStatuses()
 })
 </script>
 
@@ -171,34 +180,35 @@ onMounted(() => {
   <div class="invoice-detail space-y-6">
     <header class="invoice-detail-header">
       <div class="min-w-0">
-        <UButton to="/admin/timesheets/invoices" variant="link" color="neutral" icon="i-lucide-arrow-left" class="mb-2 px-0">{{ t('features.timesheets.admin.backToInvoices') }}</UButton>
+        <UButton :to="isClient ? '/timesheets/invoices' : '/admin/timesheets/invoices'" variant="link" color="neutral" icon="i-lucide-arrow-left" class="mb-2 px-0">{{ t('features.timesheets.admin.backToInvoices') }}</UButton>
         <div class="flex flex-wrap items-center gap-3"><h1 class="text-2xl font-semibold text-highlighted">{{ t('features.timesheets.admin.invoiceTitle', { number: invoice.number }) }}</h1><UBadge :color="statusColor" variant="subtle">{{ t(`features.timesheets.admin.invoiceStatus.${invoice.status.toLowerCase()}`) }}</UBadge><UBadge v-if="invoice.isOverdue" color="warning" variant="subtle">{{ t('features.timesheets.admin.overdueDays', { count: invoice.daysOverdue }) }}</UBadge></div>
-        <p v-if="invoice.history?.[0]" class="invoice-latest-activity mt-1 text-sm text-muted">{{ t('features.timesheets.admin.latestActivity') }}: {{ historyText(invoice.history[0]) }} · {{ invoice.history[0].actorName }} · {{ dateTime(invoice.history[0].createdAt) }}</p>
+        <p v-if="!isClient && invoice.history?.[0]" class="invoice-latest-activity mt-1 text-sm text-muted">{{ t('features.timesheets.admin.latestActivity') }}: {{ historyText(invoice.history[0]) }} · {{ invoice.history[0].actorName }} · {{ dateTime(invoice.history[0].createdAt) }}</p>
       </div>
       <div class="invoice-detail-actions print:hidden">
-        <UButton v-if="invoice.isOverdue" color="warning" icon="i-lucide-bell-ring" @click="openEmail('reminder')">{{ t('features.timesheets.admin.sendReminder') }}</UButton>
-        <UButton v-if="invoice.status === 'DRAFT'" icon="i-lucide-send" :loading="busy" @click="openEmail('issue')">{{ t('features.timesheets.admin.issueAndSend') }}</UButton>
-        <UButton v-if="invoice.status === 'ISSUED' && !invoice.isOverdue" icon="i-lucide-mail" variant="outline" :loading="busy" @click="openEmail('resend')">{{ t('features.timesheets.admin.resendInvoice') }}</UButton>
-        <UButton v-if="invoice.status === 'ISSUED'" color="success" variant="outline" icon="i-lucide-circle-dollar-sign" @click="paymentOpen = !paymentOpen">{{ t('features.timesheets.admin.registerPayment') }}</UButton>
+        <UButton v-if="!isClient && invoice.isOverdue" color="warning" icon="i-lucide-bell-ring" @click="openEmail('reminder')">{{ t('features.timesheets.admin.sendReminder') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'DRAFT'" icon="i-lucide-send" :loading="busy" @click="openEmail('issue')">{{ t('features.timesheets.admin.issueAndSend') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'ISSUED' && !invoice.isOverdue" icon="i-lucide-mail" variant="outline" :loading="busy" @click="openEmail('resend')">{{ t('features.timesheets.admin.resendInvoice') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'ISSUED'" color="success" variant="outline" icon="i-lucide-circle-dollar-sign" @click="paymentOpen = !paymentOpen">{{ t('features.timesheets.admin.registerPayment') }}</UButton>
         <UButton color="neutral" variant="outline" icon="i-lucide-printer" @click="printInvoice">{{ t('features.timesheets.admin.print') }}</UButton>
-        <UDropdownMenu v-if="['DRAFT', 'ISSUED', 'VOID'].includes(invoice.status)" :items="menuItems" :content="{ align: 'end' }"><UButton color="neutral" variant="ghost" icon="i-lucide-ellipsis-vertical" :aria-label="t('features.timesheets.admin.moreActions')" /></UDropdownMenu>
+        <UButton color="neutral" variant="outline" icon="i-lucide-download" @click="downloadInvoice">{{ t('features.timesheets.clientInvoices.download') }}</UButton>
+        <UDropdownMenu v-if="!isClient && ['DRAFT', 'ISSUED', 'VOID'].includes(invoice.status)" :items="menuItems" :content="{ align: 'end' }"><UButton color="neutral" variant="ghost" icon="i-lucide-ellipsis-vertical" :aria-label="t('features.timesheets.admin.moreActions')" /></UDropdownMenu>
       </div>
     </header>
 
-    <TimesheetsInvoiceEmailModal v-model:open="emailOpen" :invoice-id="invoice.id" :mode="emailMode" :refresh="refresh" />
+    <TimesheetsInvoiceEmailModal v-if="!isClient" v-model:open="emailOpen" :invoice-id="invoice.id" :mode="emailMode" :refresh="refresh" />
 
-    <UAlert v-if="invoice.isOverdue" class="print:hidden" color="warning" icon="i-lucide-triangle-alert" :title="t('features.timesheets.admin.overdueAlertTitle', { count: invoice.daysOverdue })" variant="outline" >
+    <UAlert v-if="!isClient && invoice.isOverdue" class="print:hidden" color="warning" icon="i-lucide-triangle-alert" :title="t('features.timesheets.admin.overdueAlertTitle', { count: invoice.daysOverdue })" variant="outline" >
       <template #description>
         <div class="space-y-2"><p>{{ t('features.timesheets.admin.overdueAlertDescription', { dueDate: date(invoice.dueDate), amount: money(invoice.outstandingMinor) }) }}</p><p>{{ t('features.timesheets.admin.reminderSummary', { count: invoice.reminderCount, date: invoice.lastReminderSentAt ? dateTime(invoice.lastReminderSentAt) : t('features.timesheets.admin.never') }) }}</p></div>
       </template>
     </UAlert>
 
-    <UCard v-if="editOpen" class="print:hidden">
+    <UCard v-if="!isClient && editOpen" class="print:hidden">
       <template #header><div class="flex items-center justify-between gap-3"><h2 class="font-semibold">{{ t('features.timesheets.admin.editInvoice') }}</h2><UButton color="neutral" variant="ghost" icon="i-lucide-x" :aria-label="t('features.timesheets.cancel')" @click="editOpen = false" /></div></template>
       <UForm :state="edit" :schema="editSchema" class="grid gap-4" @submit="saveEdit"><UFormField name="number" :label="t('features.timesheets.admin.invoiceNumber')"><UInput v-model="edit.number" class="w-full" /></UFormField><div class="grid gap-3 sm:grid-cols-2"><UFormField name="issueDate" :label="t('features.timesheets.admin.invoiceDate')"><UInput v-model="edit.issueDate" type="date" class="w-full" /></UFormField><UFormField name="dueDate" :label="t('features.timesheets.admin.dueDate')"><UInput v-model="edit.dueDate" type="date" class="w-full" /></UFormField></div><UFormField name="subject" :label="t('features.timesheets.admin.subject')"><UInput v-model="edit.subject" class="w-full" /></UFormField><UFormField name="notes" :label="t('features.timesheets.admin.notes')"><UTextarea v-model="edit.notes" :rows="5" class="w-full" /></UFormField><div class="flex justify-end gap-2"><UButton type="button" color="neutral" variant="ghost" @click="editOpen = false">{{ t('features.timesheets.cancel') }}</UButton><UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.timesheets.save') }}</UButton></div></UForm>
     </UCard>
 
-    <UCard v-if="paymentOpen" class="print:hidden">
+    <UCard v-if="!isClient && paymentOpen" class="print:hidden">
       <UForm :state="payment" :schema="paymentSchema" class="grid gap-3 md:grid-cols-2 xl:grid-cols-4" @submit="savePayment">
         <UFormField name="paidOn" :label="t('features.timesheets.admin.paidOn')"><UInput v-model="payment.paidOn" type="date" class="w-full" /></UFormField>
         <UFormField name="amount" :label="t('features.timesheets.admin.paymentAmount')"><UInputNumber v-model="payment.amount" :min="0.01" :max="invoice.outstandingMinor / 100" :step="0.01" :increment="false" :decrement="false" :ui="{ base: 'text-right' }" class="w-full" /></UFormField>
@@ -221,16 +231,16 @@ onMounted(() => {
       <div class="invoice-summary"><dl><div><dt>{{ t('features.timesheets.admin.subtotal') }}</dt><dd>{{ money(invoice.subtotalMinor) }}</dd></div><div><dt>{{ t('features.timesheets.admin.vat') }}</dt><dd>{{ money(invoice.vatMinor) }}</dd></div><div v-if="invoice.paidMinor"><dt>{{ t('features.timesheets.admin.paid') }}</dt><dd>− {{ money(invoice.paidMinor) }}</dd></div><div class="invoice-summary-total"><dt>{{ t('features.timesheets.admin.totalPayable') }}</dt><dd>{{ money(invoice.outstandingMinor) }}</dd></div></dl></div>
       <section v-if="invoice.notes" class="invoice-notes"><h2 class="invoice-label">{{ t('features.timesheets.admin.notes') }}</h2><p class="text-sm"><span v-for="(line, index) in noteLines(invoice.notes)" :key="index" class="block">{{ line }}</span></p></section>
       <section class="invoice-attachments print:hidden">
-        <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="font-semibold">{{ t('features.timesheets.admin.attachments') }}</h2><div class="flex flex-wrap items-center gap-2"><input type="file" class="max-w-64 text-sm" @change="selectAttachment"><UButton size="sm" variant="outline" icon="i-lucide-paperclip" :disabled="!attachment" :loading="busy" @click="uploadAttachment">{{ t('features.timesheets.admin.attachFile') }}</UButton></div></div>
-        <div v-if="invoice.attachments?.length" class="mt-3 grid gap-2"><div v-for="file in invoice.attachments" :key="file.id" class="flex items-center gap-2 rounded-md border border-default p-3"><a :href="`/api/timesheets/admin/invoices/${invoice.id}/attachments/${file.id}`" class="min-w-0 flex-1 truncate text-sm font-medium hover:text-primary">{{ file.fileName }}</a><span class="shrink-0 text-xs text-muted">{{ Math.ceil(file.size / 1024) }} KB</span><UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeAttachment')" @click="requestAttachmentRemoval(file.id, file.fileName)" /></div></div><p v-else class="mt-2 text-sm text-muted">{{ t('features.timesheets.admin.noAttachments') }}</p>
+        <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="font-semibold">{{ t('features.timesheets.admin.attachments') }}</h2><div v-if="!isClient" class="flex flex-wrap items-center gap-2"><input type="file" class="max-w-64 text-sm" @change="selectAttachment"><UButton size="sm" variant="outline" icon="i-lucide-paperclip" :disabled="!attachment" :loading="busy" @click="uploadAttachment">{{ t('features.timesheets.admin.attachFile') }}</UButton></div></div>
+        <div v-if="invoice.attachments?.length" class="mt-3 grid gap-2"><div v-for="file in invoice.attachments" :key="file.id" class="flex items-center gap-2 rounded-md border border-default p-3"><a :href="attachmentUrl(file.id)" class="min-w-0 flex-1 truncate text-sm font-medium hover:text-primary">{{ file.fileName }}</a><span class="shrink-0 text-xs text-muted">{{ Math.ceil(file.size / 1024) }} KB</span><UButton v-if="!isClient" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeAttachment')" @click="requestAttachmentRemoval(file.id, file.fileName)" /></div></div><p v-else class="mt-2 text-sm text-muted">{{ t('features.timesheets.admin.noAttachments') }}</p>
       </section>
     </article>
 
-    <section class="invoice-history print:hidden">
+    <section v-if="!isClient" class="invoice-history print:hidden">
       <h2 class="text-xl font-semibold">{{ t('features.timesheets.admin.invoiceHistoryTitle') }}</h2>
       <ol class="mt-4 divide-y divide-default border-y border-default"><li v-for="entry in invoice.history" :key="entry.id" class="invoice-history-row"><div class="invoice-history-event"><span class="invoice-history-dot" /><div class="min-w-0"><p class="font-medium">{{ historyText(entry) }}</p><p class="mt-0.5 text-sm text-muted">{{ entry.actorName }}</p></div></div><time class="invoice-history-time">{{ dateTime(entry.createdAt) }}</time></li></ol>
     </section>
-    <section v-if="emailDeliveries.length" class="print:hidden">
+    <section v-if="!isClient && emailDeliveries.length" class="print:hidden">
       <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-xl font-semibold">{{ t('features.timesheets.admin.emailDeliveryHistory') }}</h2><p class="mt-1 max-w-3xl text-sm text-muted">{{ t('features.timesheets.admin.emailTrackingExplanation') }}</p></div><UButton type="button" color="neutral" variant="outline" size="sm" icon="i-lucide-refresh-cw" :loading="refreshingEmailStatuses" @click="refreshEmailStatuses(true)">{{ t('features.timesheets.admin.refreshEmailStatus') }}</UButton></div>
       <div class="mt-3 divide-y divide-default border-y border-default">
         <div v-for="delivery in emailDeliveries" :key="delivery.id" class="flex items-start justify-between gap-4 py-3">
@@ -239,8 +249,9 @@ onMounted(() => {
         </div>
       </div>
     </section>
-    <ConfirmationModal v-model:open="attachmentDeleteOpen" :title="t('features.timesheets.admin.removeAttachment')" :message="t('features.timesheets.admin.removeAttachmentDescription', { name: attachmentDeletion?.name })" :confirm-text="t('features.timesheets.admin.removeAttachment')" :cancel-text="t('features.timesheets.cancel')" confirm-color="error" @confirm="removeAttachment" @cancel="attachmentDeletion = null" />
+    <ConfirmationModal v-if="!isClient" v-model:open="attachmentDeleteOpen" :title="t('features.timesheets.admin.removeAttachment')" :message="t('features.timesheets.admin.removeAttachmentDescription', { name: attachmentDeletion?.name })" :confirm-text="t('features.timesheets.admin.removeAttachment')" :cancel-text="t('features.timesheets.cancel')" confirm-color="error" @confirm="removeAttachment" @cancel="attachmentDeletion = null" />
     <ConfirmationModal
+      v-if="!isClient"
       v-model:open="statusConfirmationOpen"
       :title="t(statusConfirmation === 'VOID' ? 'features.timesheets.admin.voidInvoiceTitle' : 'features.timesheets.admin.unvoidInvoiceTitle')"
       :message="t(statusConfirmation === 'VOID' ? 'features.timesheets.admin.voidInvoiceDescription' : 'features.timesheets.admin.unvoidInvoiceDescription', { number: invoice.number })"

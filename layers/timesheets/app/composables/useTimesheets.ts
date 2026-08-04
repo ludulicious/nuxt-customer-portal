@@ -18,7 +18,10 @@ import type {
   ClientWorkspaceDto,
   ClientReviewerDto,
   ClientReviewerSupplierDto,
-  ClientApprovalSupplierOptionDto
+  ClientApprovalSupplierOptionDto,
+  ClientInvoiceDto,
+  ClientInvoiceSupplierDto,
+  ClientInvoiceViewerDto,
 } from '#layers/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
@@ -84,15 +87,21 @@ export const useTimesheets = () => {
       body: { clientName }
     })
   const updateClientAccess = (id: string, accessMode: ClientAccessMode) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { accessMode } })
+  const updateClientInvoiceAccess = (id: string, invoiceAccessEnabled: boolean) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { invoiceAccessEnabled } })
   const getOrganizationTimesheetCapabilities = (organizationId: string) => $fetch<OrganizationTimesheetCapabilities>(`/api/timesheets/admin/organization-capabilities/${organizationId}`)
   const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean, invoicingEnabled: boolean }) => $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
   const clientWorkspaces = () => $fetch<ClientWorkspaceDto[]>('/api/timesheets/client/workspaces')
   const clientApprovalSuppliers = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/approval-suppliers')
+  const clientSupplierOptions = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/supplier-options')
   const clientReviewerSuppliers = () => $fetch<ClientReviewerSupplierDto[]>('/api/timesheets/client/reviewer-suppliers')
   const clientTimesheets = (workspaceClientId: string) => $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
   const reviewClientSlice = (workspaceClientId: string, weekId: string, input: { action: 'APPROVE' | 'DISPUTE', expectedVersion: number, comment?: string | null }) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
   const clientReviewers = (workspaceClientId: string) => $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
   const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviewers`, { method: 'PUT', body: { userId, assigned } })
+  const clientInvoiceSuppliers = () => $fetch<ClientInvoiceSupplierDto[]>('/api/timesheets/client/invoice-suppliers')
+  const clientInvoiceViewers = (workspaceClientId: string) => $fetch<ClientInvoiceViewerDto[]>(`/api/timesheets/client/${workspaceClientId}/invoice-viewers`)
+  const setClientInvoiceViewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/invoice-viewers`, { method: 'PUT', body: { userId, assigned } })
+  const getClientInvoice = (id: string) => $fetch<ClientInvoiceDto>(`/api/timesheets/client/invoices/${id}`)
   const updateOrganizationProfile = (organizationId: string, input: Record<string, unknown>) =>
     $fetch(`/api/timesheets/admin/organizations/${organizationId}/profile`, { method: 'PATCH', body: input })
   const createContact = (organizationId: string, input: Record<string, unknown>) =>
@@ -179,15 +188,21 @@ export const useTimesheets = () => {
     getClientDeletionEligibility,
     deleteClient,
     updateClientAccess,
+    updateClientInvoiceAccess,
     getOrganizationTimesheetCapabilities,
     updateOrganizationTimesheetCapabilities,
     clientWorkspaces,
     clientApprovalSuppliers,
+    clientSupplierOptions,
     clientReviewerSuppliers,
     clientTimesheets,
     reviewClientSlice,
     clientReviewers,
     setClientReviewer,
+    clientInvoiceSuppliers,
+    clientInvoiceViewers,
+    setClientInvoiceViewer,
+    getClientInvoice,
     updateOrganizationProfile,
     createContact,
     updateContact,

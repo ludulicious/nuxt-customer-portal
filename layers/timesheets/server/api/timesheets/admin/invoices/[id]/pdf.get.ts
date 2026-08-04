@@ -16,12 +16,13 @@ export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const invoice = await getInvoice(organizationId, getRouterParam(event, 'id')!)
   const locale = getQuery(event).locale
+  const disposition = getQuery(event).download === '1' ? 'attachment' : 'inline'
   const pdf = await generateInvoicePdf(invoice, typeof locale === 'string' ? locale : undefined)
   const fileName = `invoice-${invoice.number.replace(/[^a-z0-9._-]+/gi, '-')}.pdf`
 
   setResponseHeaders(event, {
     'Content-Type': 'application/pdf',
-    'Content-Disposition': `inline; filename="${fileName}"`,
+    'Content-Disposition': `${disposition}; filename="${fileName}"`,
     'Cache-Control': 'private, no-store'
   })
   return Buffer.from(pdf)

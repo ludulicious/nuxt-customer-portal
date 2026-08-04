@@ -13,12 +13,15 @@ export default defineEventHandler(async (event) => {
     isAdmin ? listClientReviewerSuppliers(organizationId, session.user.id) : Promise.resolve([])
   ])
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
+  const invoiceWorkspaces = clientWorkspaces.filter(item => item.invoiceAccessEnabled)
   return {
     canEnterTime: settings[0]?.workspaceEnabled ?? false,
     canInvoice: settings[0]?.invoicingEnabled ?? false,
     canViewSupplierTime: clientWorkspaces.some(item => item.accessMode === 'VIEW'),
     canAccessApprovals: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canManageClientReviewers: isAdmin && reviewWorkspaces.length > 0,
+    canViewClientInvoices: invoiceWorkspaces.some(item => item.canViewInvoices),
+    canManageInvoiceViewers: isAdmin && invoiceWorkspaces.length > 0,
     pendingClientApprovalCount: approvals.pendingCount,
     unassignedClientReviewerSupplierCount: reviewerSuppliers.filter(item => item.reviewerCount === 0).length
   }

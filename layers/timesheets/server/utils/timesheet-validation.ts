@@ -35,6 +35,14 @@ export const invoiceListQuerySchema = z.object({
   sortBy: z.enum(['issueDate', 'dueDate', 'number', 'totalMinor']).default('issueDate'),
   sortDir: z.enum(['asc', 'desc']).default('desc')
 })
+export const clientInvoiceListQuerySchema = z.object({
+  ...listBase,
+  status: z.enum(['ISSUED', 'PAID']).optional(),
+  workspaceClientId: id.optional(),
+  overdue: z.enum(['true', 'false']).optional(),
+  sortBy: z.enum(['issueDate', 'dueDate', 'number', 'totalMinor']).default('issueDate'),
+  sortDir: z.enum(['asc', 'desc']).default('desc')
+})
 export const clientApprovalListQuerySchema = z.object({
   ...listBase,
   workspaceClientId: id.optional(),
@@ -42,12 +50,21 @@ export const clientApprovalListQuerySchema = z.object({
   sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'status', 'totalMinutes']).default('weekStartsOn'),
   sortDir: z.enum(['asc', 'desc']).default('desc')
 })
+export const clientSupplierTimesheetListQuerySchema = z.object({
+  ...listBase,
+  workspaceClientId: id.optional(),
+  billingStatus: z.enum(['AWAITING_INVOICE', 'PARTIALLY_INVOICED', 'INVOICED']).optional(),
+  sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'totalMinutes']).default('weekStartsOn'),
+  sortDir: z.enum(['asc', 'desc']).default('desc')
+})
 
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>
 export type ClientListQuery = z.infer<typeof clientListQuerySchema>
 export type ActivityListQuery = z.infer<typeof activityListQuerySchema>
 export type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
+export type ClientInvoiceListQuery = z.infer<typeof clientInvoiceListQuerySchema>
 export type ClientApprovalListQuery = z.infer<typeof clientApprovalListQuerySchema>
+export type ClientSupplierTimesheetListQuery = z.infer<typeof clientSupplierTimesheetListQuerySchema>
 
 export const weekQuerySchema = z.object({
   week: isoDate.optional()
@@ -84,6 +101,8 @@ export const clientCreateSchema = z.discriminatedUnion('mode', [
 
 export const clientDeleteSchema = z.object({ clientName: z.string().min(1).max(160) })
 export const clientAccessUpdateSchema = z.object({ accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']) })
+export const clientInvoiceAccessUpdateSchema = z.object({ invoiceAccessEnabled: z.boolean() })
+export const clientInvoiceViewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
 export const organizationCapabilitiesUpdateSchema = z.object({
   workspaceEnabled: z.boolean(),
   invoicingEnabled: z.boolean()

@@ -23,8 +23,10 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
     .filter(module => hasAudience(module.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value))
     .map(module => ({ ...module, label: t(module.labelKey) })))
 
-  const activeModule = computed(() => modules.value.find(module =>
-    module.routePrefixes.some(prefix => route.path.startsWith(prefix))) ?? modules.value[0])
+  const activeModule = computed(() => modules.value
+    .map(module => ({ module, matchLength: Math.max(0, ...module.routePrefixes.filter(prefix => route.path.startsWith(prefix)).map(prefix => prefix.length)) }))
+    .filter(item => item.matchLength > 0)
+    .sort((left, right) => right.matchLength - left.matchLength)[0]?.module ?? modules.value[0])
 
   const activeModuleId = computed(() => activeModule.value?.id ?? '')
   const activeModuleMenuItems = computed<NavigationMenuItem[]>(() => (activeModule.value?.menuItems ?? [])

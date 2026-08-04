@@ -57,6 +57,7 @@ export const workspaceClient = timesheetsSchema.table('workspace_client', {
   clientOrganizationId: text('client_organization_id').notNull()
     .references(() => organization.id, { onDelete: 'restrict' }),
   accessMode: clientAccessMode('access_mode').default('DISABLED').notNull(),
+  invoiceAccessEnabled: boolean('invoice_access_enabled').default(false).notNull(),
   ...auditColumns
 }, table => [
   uniqueIndex('workspace_client_workspace_client_uidx')
@@ -74,6 +75,18 @@ export const workspaceClientReviewer = timesheetsSchema.table('workspace_client_
 }, table => [
   uniqueIndex('workspace_client_reviewer_link_user_uidx').on(table.workspaceClientId, table.userId),
   index('workspace_client_reviewer_user_idx').on(table.userId)
+])
+
+export const workspaceClientInvoiceViewer = timesheetsSchema.table('workspace_client_invoice_viewer', {
+  id: text('id').primaryKey(),
+  workspaceClientId: text('workspace_client_id').notNull()
+    .references(() => workspaceClient.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdById: text('created_by_id').notNull().references(() => user.id, { onDelete: 'restrict' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
+}, table => [
+  uniqueIndex('workspace_client_invoice_viewer_link_user_uidx').on(table.workspaceClientId, table.userId),
+  index('workspace_client_invoice_viewer_user_idx').on(table.userId)
 ])
 
 export const organizationInvoiceProfile = timesheetsSchema.table('organization_invoice_profile', {

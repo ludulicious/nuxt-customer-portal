@@ -66,10 +66,22 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       { id: 'timesheet-clients', labelKey: 'features.timesheets.admin.clients', icon: 'i-lucide-building-2', to: '/admin/timesheets/clients', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-invoices', labelKey: 'features.timesheets.admin.invoices', icon: 'i-lucide-receipt-text', to: '/admin/timesheets/invoices', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-rates', labelKey: 'features.timesheets.admin.teamRates', icon: 'i-lucide-badge-euro', to: '/admin/timesheets/rates', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-settings', labelKey: 'features.timesheets.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/timesheets/settings', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-reports', labelKey: 'features.timesheets.admin.reports', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/timesheets/reports', audiences: ['organizationAdmin', 'admin'] }
+    ]
+  }, {
+    id: 'invoices',
+    labelKey: 'features.timesheets.clientInvoices.title',
+    icon: 'i-lucide-receipt-text',
+    to: '/timesheets/invoices',
+    routePrefixes: ['/timesheets/invoices', '/admin/timesheets/invoices'],
+    audiences: ['authenticated'],
+    order: 31,
+    menuItems: [
+      { id: 'client-invoices', labelKey: 'features.timesheets.receivedInvoices', icon: 'i-lucide-inbox', to: '/timesheets/invoices', exact: true, audiences: ['authenticated'] },
+      { id: 'invoice-viewers', labelKey: 'features.timesheets.clientInvoices.viewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/invoices/viewers', audiences: ['organizationAdmin', 'admin'] },
+      { id: 'timesheet-invoices', labelKey: 'features.timesheets.salesInvoices', icon: 'i-lucide-send', to: '/admin/timesheets/invoices', audiences: ['organizationAdmin', 'admin'] }
     ]
   }],
   dashboardWidgets: [
