@@ -32,6 +32,14 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       order: 31
     },
     {
+      id: 'timesheets-suppliers',
+      labelKey: 'features.timesheets.suppliers.title',
+      icon: 'i-lucide-building-2',
+      to: '/timesheets/suppliers',
+      audiences: ['authenticated'],
+      order: 32
+    },
+    {
       id: 'timesheets-admin',
       labelKey: 'features.timesheets.navigation.manage',
       icon: 'i-lucide-chart-no-axes-combined',
@@ -53,6 +61,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       { id: 'my-timesheet', labelKey: 'features.timesheets.navigation.myTimesheet', icon: 'i-lucide-clock-3', to: '/timesheets', audiences: ['authenticated'] },
       { id: 'client-approvals', labelKey: 'features.timesheets.approvals.title', icon: 'i-lucide-stamp', to: '/timesheets/approvals', audiences: ['authenticated'] },
       { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['organizationAdmin', 'admin'] },
+      { id: 'supplier-timesheets', labelKey: 'features.timesheets.suppliers.title', icon: 'i-lucide-building-2', to: '/timesheets/suppliers', audiences: ['authenticated'] },
       { id: 'timesheet-approvals', labelKey: 'features.timesheets.admin.approvals', icon: 'i-lucide-stamp', to: '/admin/timesheets/approvals', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-clients', labelKey: 'features.timesheets.admin.clients', icon: 'i-lucide-building-2', to: '/admin/timesheets/clients', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['organizationAdmin', 'admin'] },

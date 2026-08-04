@@ -51,11 +51,11 @@ test('feature policy reserves management and approval for admins', () => {
   assert.equal(timesheetsFeature.policy.member.includes('submit'), true)
 })
 
-test('client review navigation separates approvals and reviewer settings', () => {
+test('client navigation separates approvals, reviewer settings, and view-only supplier time', () => {
   const items = timesheetsFeature.modules?.[0]?.menuItems ?? []
   assert.equal(items.find(item => item.id === 'client-approvals')?.to, '/timesheets/approvals')
   assert.equal(items.find(item => item.id === 'approval-reviewers')?.to, '/timesheets/approvals/reviewers')
-  assert.equal(items.some(item => item.id === 'supplier-timesheets'), false)
+  assert.equal(items.find(item => item.id === 'supplier-timesheets')?.to, '/timesheets/suppliers')
 })
 
 test('pending review migration backfills approved review-enabled supplier weeks safely', () => {

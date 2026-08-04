@@ -12,7 +12,7 @@ export default defineNuxtPlugin(() => {
         class: 'size-5 justify-center rounded-full p-0'
       }
     : undefined
-  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canAccessApprovals: boolean, canManageClientReviewers: boolean, pendingClientApprovalCount: number, unassignedClientReviewerSupplierCount: number }) => {
+  const register = (capabilities: { canEnterTime: boolean, canInvoice: boolean, canViewSupplierTime: boolean, canAccessApprovals: boolean, canManageClientReviewers: boolean, pendingClientApprovalCount: number, unassignedClientReviewerSupplierCount: number }) => {
     const approvalActionCount = capabilities.pendingClientApprovalCount
       + (capabilities.canManageClientReviewers ? capabilities.unassignedClientReviewerSupplierCount : 0)
     const keep = (id: string) => id === 'timesheet-invoices'
@@ -21,16 +21,18 @@ export default defineNuxtPlugin(() => {
       ? capabilities.canAccessApprovals
       : id === 'approval-reviewers'
       ? capabilities.canManageClientReviewers
+      : ['supplier-timesheets', 'timesheets-suppliers'].includes(id)
+      ? capabilities.canViewSupplierTime
       : capabilities.canEnterTime
-    const landingTo = capabilities.canEnterTime ? '/timesheets' : '/timesheets/approvals'
-    const landingLabel = capabilities.canEnterTime ? 'features.timesheets.navigation.myTimesheet' : 'features.timesheets.approvals.title'
+    const landingTo = capabilities.canEnterTime ? '/timesheets' : capabilities.canAccessApprovals ? '/timesheets/approvals' : '/timesheets/suppliers'
+    const landingLabel = capabilities.canEnterTime ? 'features.timesheets.navigation.myTimesheet' : capabilities.canAccessApprovals ? 'features.timesheets.approvals.title' : 'features.timesheets.suppliers.title'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
       navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)).map(item => ({
         ...item,
         badge: item.id === 'timesheets-approvals' ? primaryBadge(approvalActionCount) : undefined
       })),
-      modules: capabilities.canEnterTime || capabilities.canAccessApprovals
+      modules: capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canAccessApprovals
         ? timesheetsFeature.modules?.map(module => ({
             ...module,
             to: landingTo,
@@ -49,7 +51,7 @@ export default defineNuxtPlugin(() => {
       dashboardWidgets: capabilities.canEnterTime ? timesheetsFeature.dashboardWidgets : []
     })
   }
-  const empty = { canEnterTime: false, canInvoice: false, canAccessApprovals: false, canManageClientReviewers: false, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
+  const empty = { canEnterTime: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
   register(empty)
   const refreshCapabilities = async () => {
     try {
