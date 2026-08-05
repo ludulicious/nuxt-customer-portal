@@ -8,6 +8,7 @@
       "nextWeek": "Volgende week",
       "projectActivity": "Project / activiteit",
       "total": "Totaal",
+      "weekNumber": "Week {number}",
       "weekTotal": "Weektotaal",
       "addEntry": "Tijd toevoegen",
       "mobile": { "dayTotal": "Dagtotaal", "entryCount": "{count} registraties", "empty": "Nog geen tijd geregistreerd", "emptyDescription": "Voeg tijd toe voor deze dag om je week compleet te maken." },

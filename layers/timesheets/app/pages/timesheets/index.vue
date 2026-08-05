@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, addWeeks, format, parseISO } from 'date-fns'
+import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
 import type { TimeEntryDto } from '#layers/timesheets/shared/types/timesheet'
 
@@ -311,7 +311,7 @@ const runningDuration = computed(() => {
       <div class="flex flex-wrap items-center gap-2">
         <UButton icon="i-lucide-chevron-left" color="neutral" variant="outline" :aria-label="t('features.timesheets.previousWeek')" @click="changeWeek(-1)" />
         <UBadge color="neutral" variant="subtle" size="lg">
-          {{ week ? `${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}` : '—' }}
+          {{ week ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}` : '—' }}
         </UBadge>
         <UButton icon="i-lucide-chevron-right" color="neutral" variant="outline" :aria-label="t('features.timesheets.nextWeek')" @click="changeWeek(1)" />
         <UTooltip v-if="!runningEntry" class="ml-auto sm:hidden" :text="t('features.timesheets.timer.start')">

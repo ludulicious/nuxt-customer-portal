@@ -8,6 +8,7 @@
       "nextWeek": "Next week",
       "projectActivity": "Project / activity",
       "total": "Total",
+      "weekNumber": "Week {number}",
       "weekTotal": "Week total",
       "addEntry": "Add time",
       "mobile": { "dayTotal": "Day total", "entryCount": "{count} entries", "empty": "No time recorded yet", "emptyDescription": "Add time for this day to complete your week." },
