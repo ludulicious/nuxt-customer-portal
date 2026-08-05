@@ -13,6 +13,7 @@
       "addEntry": "Tijd toevoegen",
       "mobile": { "dayTotal": "Dagtotaal", "entryCount": "{count} registraties", "empty": "Nog geen tijd geregistreerd", "emptyDescription": "Voeg tijd toe voor deze dag om je week compleet te maken." },
       "editEntry": "Tijd bewerken",
+      "cellEntries": { "title": "Tijdregistraties", "noNote": "Geen notitie", "addAnother": "Nog een registratie toevoegen" },
       "delete": "Verwijderen",
       "cancel": "Annuleren",
       "save": "Opslaan",

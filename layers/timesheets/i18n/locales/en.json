@@ -13,6 +13,7 @@
       "addEntry": "Add time",
       "mobile": { "dayTotal": "Day total", "entryCount": "{count} entries", "empty": "No time recorded yet", "emptyDescription": "Add time for this day to complete your week." },
       "editEntry": "Edit time",
+      "cellEntries": { "title": "Time entries", "noNote": "No note", "addAnother": "Add another entry" },
       "delete": "Delete",
       "cancel": "Cancel",
       "save": "Save",

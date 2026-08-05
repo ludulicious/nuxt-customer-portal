@@ -14,6 +14,7 @@ useSeoMeta({
 const selectedWeek = ref<string>()
 const selectedDay = ref('')
 const modalOpen = ref(false)
+const cellEntriesOpen = ref(false)
 const timerModalOpen = ref(false)
 const saving = ref(false)
 const now = ref(Date.now())
@@ -156,6 +157,11 @@ const groupedRows = computed(() => {
   }
   return [...groups.values()]
 })
+const selectedCell = ref<{
+  row?: (typeof groupedRows.value)[number]
+  date: string
+  entries: TimeEntryDto[]
+} | null>(null)
 
 const formatDuration = (minutes: number) => {
   if (!minutes) return '—'
@@ -163,7 +169,7 @@ const formatDuration = (minutes: number) => {
 }
 
 const openCreate = (
-  date = weekDays.value[0]?.value ?? '',
+  date = format(new Date(), 'yyyy-MM-dd'),
   projectId?: string,
   activityTypeId?: string
 ) => {
@@ -190,18 +196,41 @@ const openEdit = (entry: TimeEntryDto) => {
     minutes: entry.durationMinutes % 60,
     note: entry.note ?? ''
   })
+  cellEntriesOpen.value = false
   modalOpen.value = true
 }
 
 const openRowCell = (row: (typeof groupedRows.value)[number], date: string) => {
-  const entry = row.entries.find(item => item.entryDate === date)
-  if (entry) {
-    openEdit(entry)
+  const entries = row.entries.filter(item => item.entryDate === date)
+  if (entries.length) {
+    selectedCell.value = { row, date, entries }
+    cellEntriesOpen.value = true
     return
   }
 
   openCreate(date, row.projectId, row.activityTypeId)
 }
+
+const openDayCell = (date: string) => {
+  const entries = (week.value?.entries ?? []).filter(entry => entry.entryDate === date)
+  if (entries.length) {
+    selectedCell.value = { date, entries }
+    cellEntriesOpen.value = true
+    return
+  }
+
+  openCreate(date)
+}
+
+const addToSelectedCell = () => {
+  if (!selectedCell.value) return
+  const { row, date } = selectedCell.value
+  cellEntriesOpen.value = false
+  openCreate(date, row?.projectId, row?.activityTypeId)
+}
+
+const entryProject = (entry: TimeEntryDto) => projects.value.find(project => project.id === entry.projectId)
+const entryActivity = (entry: TimeEntryDto) => activities.value.find(activity => activity.id === entry.activityTypeId)
 
 const saveEntry = async () => {
   saving.value = true
@@ -397,7 +426,16 @@ const runningDuration = computed(() => {
               :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
               @click="openRowCell(row, day.value)"
             >
-              {{ formatDuration(row.entries.filter(entry => entry.entryDate === day.value).reduce((sum, entry) => sum + entry.durationMinutes, 0)) }}
+              <span>{{ formatDuration(row.entries.filter(entry => entry.entryDate === day.value).reduce((sum, entry) => sum + entry.durationMinutes, 0)) }}</span>
+              <UBadge
+                v-if="row.entries.filter(entry => entry.entryDate === day.value).length > 1"
+                class="ml-1"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+              >
+                {{ row.entries.filter(entry => entry.entryDate === day.value).length }}
+              </UBadge>
             </button>
             <div class="timesheet-grid__cell text-right font-semibold">
               {{ formatDuration(row.entries.reduce((sum, entry) => sum + entry.durationMinutes, 0)) }}
@@ -422,8 +460,8 @@ const runningDuration = computed(() => {
             class="timesheet-grid__cell timesheet-row-action text-center font-semibold hover:bg-elevated"
             :class="{ 'timesheet-grid__cell--weekend': index > 4 }"
             :disabled="!editable"
-            :aria-label="`${t('features.timesheets.addEntry')}: ${day.label} ${day.day}`"
-            @click="openCreate(day.value)"
+            :aria-label="`${totalForDate(day.value) ? t('features.timesheets.cellEntries.title') : t('features.timesheets.addEntry')}: ${day.label} ${day.day}`"
+            @click="openDayCell(day.value)"
           >
             {{ formatDuration(totalForDate(day.value)) }}
           </button>
@@ -478,13 +516,14 @@ const runningDuration = computed(() => {
             type="button"
             class="timesheet-mobile__entry timesheet-row-action"
             :disabled="!editable"
-            :aria-label="`${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}`"
+            :aria-label="`${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}${entry.note ? `, ${entry.note}` : ''}`"
             @click="openEdit(entry)"
           >
             <span class="timesheet-mobile__entry-copy">
               <small>{{ entry.clientName }}</small>
               <strong>{{ entry.projectName }}</strong>
               <span>{{ entry.activityName }}</span>
+              <span v-if="entry.note" class="timesheet-mobile__entry-note">{{ entry.note }}</span>
             </span>
             <span class="timesheet-mobile__entry-meta">
               <UIcon name="i-lucide-pencil" class="timesheet-mobile__edit-cue" aria-hidden="true" />
@@ -567,6 +606,46 @@ const runningDuration = computed(() => {
             </div>
           </div>
         </UForm>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="cellEntriesOpen" :title="t('features.timesheets.cellEntries.title')">
+      <template #body>
+        <div v-if="selectedCell" class="space-y-4">
+          <div>
+            <p v-if="selectedCell.row" class="font-medium text-highlighted">
+              {{ selectedCell.row.clientName }} · {{ selectedCell.row.projectName }}
+            </p>
+            <p class="text-sm text-muted">
+              {{ selectedCell.row ? `${selectedCell.row.activityName} · ` : '' }}{{ selectedCell.date }}
+            </p>
+          </div>
+          <div class="divide-y divide-default overflow-hidden rounded-lg border border-default">
+            <button
+              v-for="entry in selectedCell.entries"
+              :key="entry.id"
+              type="button"
+              class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-elevated"
+              @click="openEdit(entry)"
+            >
+              <span class="min-w-0 flex-1">
+                <strong v-if="!selectedCell.row" class="block truncate text-sm">
+                  {{ entryProject(entry)?.name }} · {{ entryActivity(entry)?.name }}
+                </strong>
+                <span class="block truncate text-sm text-muted">
+                  {{ entry.note || t('features.timesheets.cellEntries.noNote') }}
+                </span>
+              </span>
+              <strong class="tabular-nums">{{ formatDuration(entry.durationMinutes) }}</strong>
+              <UIcon name="i-lucide-pencil" class="size-4 text-muted" aria-hidden="true" />
+            </button>
+          </div>
+          <div class="flex justify-end">
+            <UButton icon="i-lucide-plus" variant="soft" @click="addToSelectedCell">
+              {{ t('features.timesheets.cellEntries.addAnother') }}
+            </UButton>
+          </div>
+        </div>
       </template>
     </UModal>
 
