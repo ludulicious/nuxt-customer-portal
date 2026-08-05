@@ -71,7 +71,7 @@ await listing.load()
 </script>
 
 <template>
-  <div class="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col overflow-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+  <TimesheetsPageShell class="flex h-full min-h-0 flex-col overflow-hidden">
     <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon :name="isReview ? 'i-lucide-stamp' : 'i-lucide-building-2'" class="size-6 shrink-0" /><h1 class="text-2xl font-semibold text-highlighted">{{ t(isReview ? 'features.timesheets.approvals.title' : 'features.timesheets.suppliers.title') }}</h1></div><p class="mt-1 text-sm text-muted">{{ t(isReview ? 'features.timesheets.approvals.subtitle' : 'features.timesheets.suppliers.subtitle') }}</p></header>
     <div v-if="selected" class="min-h-0 flex-1 overflow-y-auto">
       <div class="py-5"><UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="closeDetail">{{ t(isReview ? 'features.timesheets.approvals.back' : 'features.timesheets.suppliers.back') }}</UButton></div>
@@ -91,5 +91,5 @@ await listing.load()
         <div v-else class="grid gap-3"><UCard v-for="item in listing.items.value" :key="item.id" class="cursor-pointer transition-colors hover:ring-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" role="button" tabindex="0" @click="openDetail(item)" @keydown.enter="openDetail(item)" @keydown.space.prevent="openDetail(item)"><div class="grid gap-4 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_8rem_auto] sm:items-center"><div class="min-w-0"><p class="flex items-center gap-2 font-medium"><UIcon name="i-lucide-building-2" class="size-4 shrink-0 text-muted" /><span class="truncate">{{ item.supplierName }}</span></p><p class="mt-1 flex items-center gap-2 text-sm text-muted"><UIcon name="i-lucide-user-round" class="size-4 shrink-0" /><span class="truncate">{{ item.person }}</span></p></div><div><p class="flex items-center gap-2 text-sm font-medium"><UIcon name="i-lucide-calendar-days" class="size-4 shrink-0 text-muted" />{{ weekPeriod(item.weekStartsOn) }}</p><p class="mt-1 flex items-center gap-2 text-xs text-muted"><UIcon name="i-lucide-clock-3" class="size-4 shrink-0" />{{ t('features.timesheets.approvals.totalHours', { hours: hours(item.totalMinutes) }) }}</p></div><div><UBadge :color="itemStatus(item).color" variant="subtle">{{ itemStatus(item).label }}</UBadge><p v-if="'reviewerName' in item" class="mt-2 flex items-center gap-1 text-xs text-muted"><UIcon name="i-lucide-user-check" class="size-3.5 shrink-0" />{{ item.reviewerName ?? '—' }}</p></div><UButton color="neutral" variant="ghost" trailing-icon="i-lucide-chevron-right" tabindex="-1" @click.stop="openDetail(item)">{{ isReview && 'canAct' in item && item.canAct ? t('features.timesheets.approvals.reviewTimesheet') : t('features.timesheets.approvals.viewDetails') }}</UButton></div></UCard></div>
       </TimesheetsAdminPaginatedList>
     </section>
-  </div>
+  </TimesheetsPageShell>
 </template>

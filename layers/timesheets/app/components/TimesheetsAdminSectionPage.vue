@@ -73,7 +73,7 @@ useSeoMeta({ title: sectionTitle })
 </script>
 
 <template>
-  <div class="timesheet-admin mx-auto h-full min-h-0 w-full max-w-[1440px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8" :class="hasConstrainedList ? 'flex flex-col overflow-hidden' : 'space-y-6 overflow-y-auto'">
+  <TimesheetsPageShell class="timesheet-admin h-full min-h-0" :class="hasConstrainedList ? 'flex flex-col overflow-hidden' : 'space-y-6 overflow-y-auto'">
     <header :class="hasConstrainedList ? 'mb-6 shrink-0' : ''">
       <div class="flex items-end justify-between gap-4">
         <div class="min-w-0">
@@ -101,5 +101,5 @@ useSeoMeta({ title: sectionTitle })
       :refresh="refresh"
       :class="hasConstrainedList ? 'min-h-0 flex-1' : ''"
     />
-  </div>
+  </TimesheetsPageShell>
 </template>

@@ -192,6 +192,25 @@ body {
   font-weight: 650;
 }
 
+.timesheet-mobile__day-total {
+  display: grid;
+  justify-items: end;
+  gap: 0.125rem;
+  text-align: end;
+}
+
+.timesheet-mobile__day-total > span {
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
+}
+
+.timesheet-mobile__total {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+}
+
 .timesheet-mobile__total,
 .timesheet-mobile__duration {
   font-variant-numeric: tabular-nums;
@@ -203,13 +222,14 @@ body {
 
 .timesheet-mobile__entry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   min-height: 4.75rem;
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
   border-block-end: 1px solid var(--timesheets-rule);
+  cursor: pointer;
   text-align: start;
 }
 
@@ -241,13 +261,23 @@ body {
   font-size: 0.75rem;
 }
 
-.timesheet-mobile__duration {
-  color: var(--ui-text-highlighted);
-  font-weight: 650;
+.timesheet-mobile__entry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
-.timesheet-mobile__chevron {
-  color: var(--ui-text-muted);
+.timesheet-mobile__edit-cue {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--ui-primary);
+}
+
+.timesheet-mobile__duration {
+  color: var(--ui-text-highlighted);
+  font-size: 1rem;
+  font-weight: 650;
 }
 
 .timesheet-mobile__add {

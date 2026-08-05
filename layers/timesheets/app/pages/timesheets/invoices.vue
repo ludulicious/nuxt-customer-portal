@@ -23,7 +23,7 @@ await listing.load()
 
 <template>
   <NuxtPage v-if="route.path !== '/timesheets/invoices'" />
-  <div v-else class="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col overflow-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+  <TimesheetsPageShell v-else class="flex h-full min-h-0 flex-col overflow-hidden">
     <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon name="i-lucide-receipt-text" class="size-6" /><h1 class="text-2xl font-semibold">{{ t('features.timesheets.clientInvoices.title') }}</h1></div><p class="mt-1 text-sm text-muted">{{ t('features.timesheets.clientInvoices.subtitle') }}</p></header>
     <section class="flex min-h-0 flex-1 flex-col gap-5 pt-5">
       <TimesheetsAdminListToolbar v-model:search="listing.search.value" :filters="filters" :filter-values="listing.filters" :sort-options="sortOptions" :sort-by="listing.sortBy.value" :sort-dir="listing.sortDir.value" @filter="listing.setFilter" @sort="listing.sortBy.value = $event" @toggle-direction="listing.toggleSortDir" />
@@ -41,5 +41,5 @@ await listing.load()
         </div>
       </TimesheetsAdminPaginatedList>
     </section>
-  </div>
+  </TimesheetsPageShell>
 </template>

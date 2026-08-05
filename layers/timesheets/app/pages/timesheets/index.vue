@@ -298,8 +298,8 @@ const runningDuration = computed(() => {
 </script>
 
 <template>
-  <div class="timesheet-workbench mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <TimesheetsPageShell class="timesheet-workbench space-y-5">
+    <header class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h1 class="text-2xl font-semibold text-highlighted">
           {{ t('features.timesheets.title') }}
@@ -359,11 +359,11 @@ const runningDuration = computed(() => {
       </div>
     </UCard>
 
-    <UCard class="hidden md:block" :ui="{ body: '!p-0' }">
+    <UCard class="hidden xl:block" :ui="{ body: '!p-0' }">
       <div v-if="pending" class="p-8 text-center text-muted">
         {{ t('features.timesheets.loading') }}
       </div>
-      <div v-else class="overflow-x-auto">
+      <div v-else class="overflow-x-clip">
         <div class="timesheet-grid text-sm">
           <div class="timesheet-grid__cell font-medium text-muted">
             {{ t('features.timesheets.projectActivity') }}
@@ -434,7 +434,7 @@ const runningDuration = computed(() => {
       </div>
     </UCard>
 
-    <section class="timesheet-mobile md:hidden" :aria-label="t('features.timesheets.projectActivity')">
+    <section class="timesheet-mobile xl:hidden" :aria-label="t('features.timesheets.projectActivity')">
       <div v-if="pending" class="timesheet-mobile__loading text-muted">
         {{ t('features.timesheets.loading') }}
       </div>
@@ -465,7 +465,10 @@ const runningDuration = computed(() => {
               {{ t('features.timesheets.mobile.entryCount', { count: selectedDayEntries.length }) }}
             </p>
           </div>
-          <strong class="timesheet-mobile__total">{{ formatDuration(selectedDayTotal) }}</strong>
+          <div class="timesheet-mobile__day-total">
+            <span>{{ t('features.timesheets.mobile.dayTotal') }}</span>
+            <strong class="timesheet-mobile__total">{{ formatDuration(selectedDayTotal) }}</strong>
+          </div>
         </div>
 
         <div v-if="selectedDayEntries.length" class="timesheet-mobile__entries">
@@ -483,8 +486,10 @@ const runningDuration = computed(() => {
               <strong>{{ entry.projectName }}</strong>
               <span>{{ entry.activityName }}</span>
             </span>
-            <span class="timesheet-mobile__duration">{{ formatDuration(entry.durationMinutes) }}</span>
-            <UIcon name="i-lucide-chevron-right" class="timesheet-mobile__chevron" aria-hidden="true" />
+            <span class="timesheet-mobile__entry-meta">
+              <UIcon name="i-lucide-pencil" class="timesheet-mobile__edit-cue" aria-hidden="true" />
+              <span class="timesheet-mobile__duration">{{ formatDuration(entry.durationMinutes) }}</span>
+            </span>
           </button>
         </div>
         <div v-else class="timesheet-mobile__empty">
@@ -506,16 +511,23 @@ const runningDuration = computed(() => {
       </template>
     </section>
 
-    <footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-2">
-        <UBadge :color="week?.status === 'APPROVED' ? 'success' : week?.status === 'REJECTED' ? 'error' : 'neutral'">
-          {{ t(`features.timesheets.status.${(week?.status ?? 'DRAFT').toLowerCase()}`) }}
-        </UBadge>
-        <span class="text-sm text-muted">{{ formatDuration(totalMinutes) }}</span>
+    <footer class="flex items-center gap-3">
+      <UBadge :color="week?.status === 'APPROVED' ? 'success' : week?.status === 'REJECTED' ? 'error' : 'neutral'">
+        {{ t(`features.timesheets.status.${(week?.status ?? 'DRAFT').toLowerCase()}`) }}
+      </UBadge>
+      <div class="ml-auto flex items-center gap-3">
+        <UButton v-if="editable" icon="i-lucide-send" size="sm" :disabled="!totalMinutes || !!runningEntry" @click="submit">
+          {{ t('features.timesheets.submit') }}
+        </UButton>
+        <div class="text-right">
+          <p class="text-xs font-medium text-muted">
+            {{ t('features.timesheets.weekTotal') }}
+          </p>
+          <p class="text-xl font-semibold tabular-nums text-primary">
+            {{ formatDuration(totalMinutes) }}
+          </p>
+        </div>
       </div>
-      <UButton v-if="editable" icon="i-lucide-send" :disabled="!totalMinutes || !!runningEntry" @click="submit">
-        {{ t('features.timesheets.submit') }}
-      </UButton>
     </footer>
 
     <UModal v-model:open="modalOpen" :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')">
@@ -581,5 +593,5 @@ const runningDuration = computed(() => {
         </UForm>
       </template>
     </UModal>
-  </div>
+  </TimesheetsPageShell>
 </template>
