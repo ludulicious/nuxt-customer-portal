@@ -9,6 +9,7 @@ import {
   listInvoices,
   listInvoiceableEntries,
   getOrganizationInvoiceProfile,
+  getTimesheetsSetupStatus,
   listProjects,
   listTeam
 } from '#layers/timesheets/server/utils/timesheet-repository'
@@ -30,7 +31,7 @@ export default defineEventHandler(async (event) => {
   )
   const section = String(getQuery(event).section ?? '')
   const settings = await ensureSettings(organizationId)
-  const [clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile] = await Promise.all([
+  const [clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile, setupStatus] = await Promise.all([
     section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
     listAvailableClientOrganizations(
       organizationId,
@@ -43,7 +44,8 @@ export default defineEventHandler(async (event) => {
     listApprovalQueue(organizationId),
     section === 'invoices' || !settings.invoicingEnabled ? Promise.resolve([]) : listInvoices(organizationId),
     settings.invoicingEnabled ? listInvoiceableEntries(organizationId) : Promise.resolve([]),
-    getOrganizationInvoiceProfile(organizationId)
+    getOrganizationInvoiceProfile(organizationId),
+    getTimesheetsSetupStatus(organizationId)
   ])
   return {
     settings: {
@@ -60,6 +62,7 @@ export default defineEventHandler(async (event) => {
     approvals,
     invoices,
     invoiceableEntries,
-    organizationProfile
+    organizationProfile,
+    setupStatus
   }
 })

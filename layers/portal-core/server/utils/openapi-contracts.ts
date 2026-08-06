@@ -32,6 +32,7 @@ import {
   reviewSchema,
   settingsUpdateSchema,
   tariffUpdateSchema,
+  teamMemberSettingsUpdateSchema,
   timerStartSchema,
   weekQuerySchema
 } from '../../../timesheets/server/utils/timesheet-validation'
@@ -105,6 +106,7 @@ const bodySchemas: Record<string, z.ZodType> = {
   timesheetsAdminProjectsByIdPatch: projectUpdateSchema,
   timesheetsAdminProjectsByIdDelete: projectDeleteSchema,
   timesheetsAdminTariffsPut: tariffUpdateSchema,
+  timesheetsAdminTeamMemberPut: teamMemberSettingsUpdateSchema,
   timesheetsAdminSettingsPatch: settingsUpdateSchema,
   timesheetsAdminApprovalsByIdPost: reviewSchema,
   timesheetsAdminInvoicesPost: invoiceCreateSchema,

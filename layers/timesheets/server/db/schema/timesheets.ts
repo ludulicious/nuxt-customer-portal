@@ -171,6 +171,17 @@ export const teamTariff = timesheetsSchema.table('team_tariff', {
   uniqueIndex('team_tariff_org_user_uidx').on(table.organizationId, table.userId)
 ])
 
+export const teamMemberSettings = timesheetsSchema.table('team_member_settings', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  canEnterTime: boolean('can_enter_time').default(true).notNull(),
+  ...auditColumns
+}, table => [
+  uniqueIndex('team_member_settings_org_user_uidx').on(table.organizationId, table.userId)
+])
+
 export const projectPersonTariff = timesheetsSchema.table('project_person_tariff', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull().references(() => project.id, { onDelete: 'cascade' }),

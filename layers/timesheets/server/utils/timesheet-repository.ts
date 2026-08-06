@@ -33,6 +33,7 @@ import {
   project,
   projectActivity,
   projectPersonTariff,
+  teamMemberSettings,
   teamTariff,
   timeEntry,
   timesheetClientReview,
@@ -53,6 +54,7 @@ import type {
   ProjectDto,
   ReportRowDto,
   TeamMemberDto,
+  TimesheetsSetupStatusDto,
   TimesheetBootstrapDto,
   TimesheetReportDto,
   TimeEntryDto,
@@ -72,6 +74,7 @@ import type {
 } from '#layers/timesheets/shared/types/timesheet'
 import { hasInvalidProjectActivityAssignments, type ReportQuery } from './timesheet-validation'
 import { addIsoDays, invoiceOverdueDetails, mondayFor } from '#layers/timesheets/shared/timesheet-dates'
+import { TIMESHEET_ERROR_CODES } from '#layers/timesheets/shared/timesheet-errors'
 
 const toEntryDto = (row: TimeEntryRecord): TimeEntryDto => ({
   id: row.id,
@@ -97,6 +100,25 @@ const toWeekDto = (row: WeeklyTimesheetRecord, entries: TimeEntryRecord[]): Week
   rejectionComment: row.rejectionComment,
   entries: entries.map(toEntryDto)
 })
+
+const hasDatabaseErrorCode = (error: unknown, code: string): boolean => {
+  let current = error as { code?: string, cause?: unknown } | undefined
+  while (current) {
+    if (current.code === code) return true
+    current = current.cause as { code?: string, cause?: unknown } | undefined
+  }
+  return false
+}
+
+const listTeamMemberSettings = async (organizationId: string) => {
+  try {
+    return await db.select().from(teamMemberSettings).where(eq(teamMemberSettings.organizationId, organizationId))
+  } catch (error) {
+    // Keep capability discovery backward-compatible while a deployment migration is pending.
+    if (hasDatabaseErrorCode(error, '42P01')) return []
+    throw error
+  }
+}
 
 export const ensureSettings = async (organizationId: string) => {
   const [settings] = await db.select().from(workspaceSettings)
@@ -639,16 +661,111 @@ export const deleteActivity = async (
 })
 
 export const listTeam = async (organizationId: string): Promise<TeamMemberDto[]> => {
-  const [members, tariffs] = await Promise.all([
+  const [members, tariffs, memberSettings] = await Promise.all([
     listPortalOrganizationMembers(organizationId),
-    db.select().from(teamTariff).where(eq(teamTariff.organizationId, organizationId))
+    db.select().from(teamTariff).where(eq(teamTariff.organizationId, organizationId)),
+    listTeamMemberSettings(organizationId)
   ])
   const tariffByUser = new Map(tariffs.map(item => [item.userId, item.hourlyRateMinor]))
+  const settingsByUser = new Map(memberSettings.map(item => [item.userId, item.canEnterTime]))
   return members.map(item => ({
     ...item,
     image: item.image ?? null,
-    defaultHourlyRateMinor: tariffByUser.get(item.id) ?? null
+    defaultHourlyRateMinor: tariffByUser.get(item.id) ?? null,
+    canEnterTime: settingsByUser.get(item.id) ?? true
   }))
+}
+
+export const canMemberEnterTime = async (organizationId: string, userId: string) => {
+  try {
+    const [settings] = await db.select({ canEnterTime: teamMemberSettings.canEnterTime })
+      .from(teamMemberSettings)
+      .where(and(eq(teamMemberSettings.organizationId, organizationId), eq(teamMemberSettings.userId, userId)))
+      .limit(1)
+    return settings?.canEnterTime ?? true
+  } catch (error) {
+    if (hasDatabaseErrorCode(error, '42P01')) return true
+    throw error
+  }
+}
+
+const requireMemberCanEnterTime = async (organizationId: string, userId: string) => {
+  if (await canMemberEnterTime(organizationId, userId)) return
+  throw createError({
+    statusCode: 403,
+    message: 'Time registration is disabled for this member',
+    data: { code: TIMESHEET_ERROR_CODES.entryDisabled }
+  })
+}
+
+export const updateTeamMemberSettings = async (
+  organizationId: string,
+  userId: string,
+  input: { canEnterTime: boolean, defaultHourlyRateMinor: number | null }
+) => {
+  const member = (await listPortalOrganizationMembers(organizationId)).find(item => item.id === userId)
+  if (!member) throw createError({ statusCode: 404, message: 'Team member not found' })
+  if (!input.canEnterTime) {
+    const [running] = await db.select({ id: timeEntry.id }).from(timeEntry).where(and(
+      eq(timeEntry.organizationId, organizationId),
+      eq(timeEntry.userId, userId),
+      isNotNull(timeEntry.timerStartedAt)
+    )).limit(1)
+    if (running) throw createError({
+      statusCode: 409,
+      message: 'Stop the running timer before disabling time registration',
+      data: { code: TIMESHEET_ERROR_CODES.runningTimer }
+    })
+  }
+  await db.transaction(async (tx) => {
+    await tx.insert(teamMemberSettings).values({
+      id: nanoid(), organizationId, userId, canEnterTime: input.canEnterTime
+    }).onConflictDoUpdate({
+      target: [teamMemberSettings.organizationId, teamMemberSettings.userId],
+      set: { canEnterTime: input.canEnterTime, updatedAt: new Date() }
+    })
+    if (input.defaultHourlyRateMinor === null) {
+      await tx.delete(teamTariff).where(and(eq(teamTariff.organizationId, organizationId), eq(teamTariff.userId, userId)))
+    } else {
+      await tx.insert(teamTariff).values({
+        id: nanoid(), organizationId, userId, hourlyRateMinor: input.defaultHourlyRateMinor
+      }).onConflictDoUpdate({
+        target: [teamTariff.organizationId, teamTariff.userId],
+        set: { hourlyRateMinor: input.defaultHourlyRateMinor, updatedAt: new Date() }
+      })
+    }
+  })
+}
+
+export const calculateTimesheetsSetupStatus = (
+  clients: ClientDto[],
+  projects: ProjectDto[],
+  activities: ActivityTypeDto[],
+  team: TeamMemberDto[]
+): TimesheetsSetupStatusDto => {
+  const activeActivities = activities.filter(item => item.active)
+  const activeActivityIds = new Set(activeActivities.map(item => item.id))
+  const activeProjects = projects.filter(item => item.status === 'ACTIVE')
+  const billableActivityIds = new Set(activeActivities.filter(item => item.billable).map(item => item.id))
+  const billableWorkExists = activeProjects.some(item => item.activityTypeIds.some(id => billableActivityIds.has(id)))
+  const enabledMembers = team.filter(item => item.canEnterTime)
+  const missingDefaultTariffCount = enabledMembers.filter(item => item.defaultHourlyRateMinor === null).length
+  const status = {
+    hasClient: clients.length > 0,
+    hasActiveActivity: activeActivities.length > 0,
+    hasConfiguredProject: activeProjects.some(item => item.activityTypeIds.some(id => activeActivityIds.has(id))),
+    billableWorkExists,
+    enabledMemberCount: enabledMembers.length,
+    missingDefaultTariffCount
+  }
+  return { ...status, complete: status.hasClient && status.hasActiveActivity && status.hasConfiguredProject && missingDefaultTariffCount === 0 }
+}
+
+export const getTimesheetsSetupStatus = async (organizationId: string): Promise<TimesheetsSetupStatusDto> => {
+  const [clients, projects, activities, team] = await Promise.all([
+    listClients(organizationId), listProjects(organizationId), listActivities(organizationId), listTeam(organizationId)
+  ])
+  return calculateTimesheetsSetupStatus(clients, projects, activities, team)
 }
 
 export const setTeamTariff = async (
@@ -901,7 +1018,7 @@ const resolveEntryContext = async (
     ? overrides[0]?.hourlyRateMinor ?? tariffs[0]?.hourlyRateMinor
     : 0
   if (selectedActivity.billable && rate === undefined) {
-    throw createError({ statusCode: 422, message: 'No billable tariff is configured' })
+    throw createError({ statusCode: 422, message: 'No billable tariff is configured', data: { code: TIMESHEET_ERROR_CODES.tariffRequired } })
   }
   return {
     clientOrganizationId: selectedProject.clientOrganizationId,
@@ -932,6 +1049,8 @@ export const getBootstrap = async (
     db.select().from(timeEntry).where(eq(timeEntry.weeklyTimesheetId, week.id))
       .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt))
   ])
+  const canEnterTime = team.find(item => item.id === userId)?.canEnterTime ?? true
+  const setupStatus = calculateTimesheetsSetupStatus(clients, projects, activities, team)
   return {
     settings: {
       currency: settings.currency,
@@ -943,7 +1062,9 @@ export const getBootstrap = async (
     projects,
     activities,
     team,
-    week: toWeekDto(week, entries)
+    week: toWeekDto(week, entries),
+    canEnterTime,
+    setupStatus
   }
 }
 
@@ -958,6 +1079,7 @@ export const createEntry = async (
     note?: string | null
   }
 ) => {
+  await requireMemberCanEnterTime(organizationId, userId)
   const week = await ensureWeek(organizationId, userId, input.entryDate)
   requireEditableWeek(week)
   if (input.entryDate < week.weekStartsOn || input.entryDate > addIsoDays(week.weekStartsOn, 6)) {
@@ -993,6 +1115,7 @@ export const updateEntry = async (
     note: string | null
   }>
 ) => {
+  await requireMemberCanEnterTime(organizationId, userId)
   const [current] = await db.select().from(timeEntry).where(and(
     eq(timeEntry.id, id),
     eq(timeEntry.organizationId, organizationId),
@@ -1019,6 +1142,7 @@ export const updateEntry = async (
 }
 
 export const deleteEntry = async (organizationId: string, userId: string, id: string) => {
+  await requireMemberCanEnterTime(organizationId, userId)
   const [current] = await db.select().from(timeEntry).where(and(
     eq(timeEntry.id, id),
     eq(timeEntry.organizationId, organizationId),
@@ -1037,6 +1161,7 @@ export const startTimer = async (
   userId: string,
   input: { projectId: string, activityTypeId: string, entryDate: string, note?: string | null }
 ) => {
+  await requireMemberCanEnterTime(organizationId, userId)
   const [running] = await db.select().from(timeEntry).where(and(
     eq(timeEntry.organizationId, organizationId),
     eq(timeEntry.userId, userId),
@@ -1066,6 +1191,7 @@ export const startTimer = async (
 }
 
 export const stopTimer = async (organizationId: string, userId: string) => {
+  await requireMemberCanEnterTime(organizationId, userId)
   const [running] = await db.select().from(timeEntry).where(and(
     eq(timeEntry.organizationId, organizationId),
     eq(timeEntry.userId, userId),
@@ -1083,6 +1209,7 @@ export const stopTimer = async (organizationId: string, userId: string) => {
 
 export const submitWeek = async (organizationId: string, userId: string, weekId: string) =>
   db.transaction(async (tx) => {
+    await requireMemberCanEnterTime(organizationId, userId)
     const [week] = await tx.select().from(weeklyTimesheet).where(and(
       eq(weeklyTimesheet.id, weekId),
       eq(weeklyTimesheet.organizationId, organizationId),

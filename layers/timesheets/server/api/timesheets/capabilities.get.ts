@@ -1,17 +1,18 @@
 import { eq } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '#portal/server/portal'
 import { workspaceSettings } from '#layers/timesheets/server/db/schema/timesheets'
-import { listApprovalQueue, listClientApprovals, listClientReviewerSuppliers, listClientWorkspaces } from '#layers/timesheets/server/utils/timesheet-repository'
+import { canMemberEnterTime, listApprovalQueue, listClientApprovals, listClientReviewerSuppliers, listClientWorkspaces } from '#layers/timesheets/server/utils/timesheet-repository'
 import type { TimesheetCapabilitiesDto } from '#layers/timesheets/shared/types/timesheet'
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId, role } = await requireActiveOrganizationRole(event)
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
-  const [settings, clientWorkspaces, approvals, reviewerSuppliers] = await Promise.all([
+  const [settings, clientWorkspaces, approvals, reviewerSuppliers, memberCanEnterTime] = await Promise.all([
     db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled }).from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
     listClientWorkspaces(organizationId, session.user.id, isAdmin),
     listClientApprovals(organizationId, session.user.id, isAdmin),
-    isAdmin ? listClientReviewerSuppliers(organizationId, session.user.id) : Promise.resolve([])
+    isAdmin ? listClientReviewerSuppliers(organizationId, session.user.id) : Promise.resolve([]),
+    canMemberEnterTime(organizationId, session.user.id)
   ])
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
   const invoiceWorkspaces = clientWorkspaces.filter(item => item.invoiceAccessEnabled)
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
     ? await listApprovalQueue(organizationId)
     : []
   return {
-    canEnterTime: workspaceEnabled,
+    canEnterTime: workspaceEnabled && memberCanEnterTime,
     canApproveInternalTimesheets: isAdmin && workspaceEnabled,
     canReviewClientTimesheets: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canInvoice: isAdmin && (settings[0]?.invoicingEnabled ?? false),

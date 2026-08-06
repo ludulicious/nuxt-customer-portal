@@ -23,6 +23,7 @@ import type {
   ClientInvoiceSupplierDto,
   ClientInvoiceViewerDto,
   TimesheetsDashboardDto,
+  TimesheetsSetupStatusDto,
 } from '#layers/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
@@ -36,6 +37,7 @@ export interface TimesheetsAdminBootstrap {
   invoices: InvoiceDto[]
   invoiceableEntries: InvoiceableEntryDto[]
   organizationProfile: OrganizationInvoiceProfileDto
+  setupStatus: TimesheetsSetupStatusDto
 }
 export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, invoicingEnabled: boolean, clientOf: Array<{ workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode }> }
 
@@ -43,6 +45,7 @@ export const useTimesheets = () => {
   const bootstrap = (week?: string) =>
     $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
   const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
+  const setupStatus = () => $fetch<TimesheetsSetupStatusDto>('/api/timesheets/setup-status')
 
   const createEntry = (input: {
     projectId: string
@@ -149,6 +152,8 @@ export const useTimesheets = () => {
       method: 'PUT',
       body: { userId, hourlyRateMinor }
     })
+  const updateTeamMemberSettings = (userId: string, input: { canEnterTime: boolean, defaultHourlyRateMinor: number | null }) =>
+    $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
   const updateSettings = (input: { currency?: string, timezone?: string, defaultVatRateBasisPoints?: number }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
   const reviewWeek = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
@@ -180,6 +185,7 @@ export const useTimesheets = () => {
   return {
     bootstrap,
     dashboard,
+    setupStatus,
     createEntry,
     updateEntry,
     deleteEntry,
@@ -219,6 +225,7 @@ export const useTimesheets = () => {
     getProjectDeletionEligibility,
     deleteProject,
     setTeamTariff,
+    updateTeamMemberSettings,
     updateSettings,
     reviewWeek,
     getReport,

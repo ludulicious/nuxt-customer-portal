@@ -33,6 +33,31 @@
       "submit": "Week indienen",
       "billable": "Facturabel",
       "nonBillable": "Niet-facturabel",
+      "tariffMissingShort": "tarief vereist",
+      "errors": {
+        "generic": "Er is iets misgegaan. Probeer het opnieuw.",
+        "tariffRequiredTitle": "Een factureringstarief is vereist",
+        "tariffRequired": "Facturabele tijd kan pas worden geregistreerd wanneer je standaardtarief of een projectspecifiek tarief is ingesteld.",
+        "tariffRequiredAdmin": "Stel een standaardtarief voor dit teamlid in of voeg een projectspecifieke uitzondering toe voordat je facturabele tijd registreert.",
+        "tariffRequiredMember": "Vraag een beheerder van Urenstaten om je standaardtarief of een tarief voor dit project in te stellen.",
+        "memberTariffMissingTitle": "Je kunt momenteel alleen niet-facturabele tijd registreren",
+        "memberTariffMissingDescription": "Je standaardtarief is nog niet ingesteld. Facturabele activiteiten blijven niet beschikbaar, tenzij een beheerder voor dat project een tarief heeft ingesteld.",
+        "configureRates": "Teamtarieven instellen",
+        "entryDisabledTitle": "Tijdregistratie is uitgeschakeld",
+        "entryDisabled": "Je kunt voor deze organisatie geen tijd registreren of indienen. Neem contact op met een beheerder als je toegang nodig hebt.",
+        "runningTimer": "Stop de lopende timer van dit teamlid voordat je tijdregistratie uitschakelt.",
+        "timerStartTitle": "De timer kon niet worden gestart"
+      },
+      "setup": {
+        "title": "Rond de inrichting van Urenstaten af",
+        "description": "Voltooi deze stappen voordat je team facturabele tijd gaat registreren.",
+        "waitingTitle": "Wachten tot een beheerder Urenstaten heeft ingericht",
+        "waitingDescription": "De inrichting van Urenstaten is nog niet voltooid. Een organisatiebeheerder moet de benodigde klanten, activiteiten, projecten en teamtarieven instellen.",
+        "client": "Koppel een klant",
+        "activity": "Maak een actieve activiteit",
+        "project": "Configureer een actief project",
+        "rates": "Voeg standaardtarieven toe ({count} ontbreken)"
+      },
       "navigation": {
         "myTimesheet": "Urenstaten",
         "manage": "Urenstaten beheren"
@@ -101,6 +126,8 @@
         "projects": "Projecten",
         "activities": "Activiteiten",
         "teamRates": "Teamtarieven",
+        "canEnterTime": "Kan tijd registreren",
+        "canEnterTimeFor": "Sta toe dat {name} tijd registreert",
         "reports": "Rapporten",
         "invoices": "Facturen",
         "sectionSubtitles": {

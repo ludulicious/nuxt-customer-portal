@@ -31,12 +31,14 @@ import {
   projectCreateSchema,
   projectListQuerySchema,
   reviewSchema,
-  settingsUpdateSchema
+  settingsUpdateSchema,
+  teamMemberSettingsUpdateSchema
 } from '../server/utils/timesheet-validation'
 import { invoiceOverdueDetails, mondayFor } from '../shared/timesheet-dates'
 import { isKnownEmailProviderEvent, normalizeEmailProviderEvent } from '../shared/email-delivery-status'
 import { DEFAULT_INVOICE_EMAIL_TEMPLATE, renderInvoiceEmailTemplate } from '../shared/invoice-email-template'
 import { firstInvoiceNumber, incrementInvoiceNumber } from '../shared/invoice-number'
+import { TIMESHEET_ERROR_CODES } from '../shared/timesheet-errors'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix]
@@ -84,6 +86,23 @@ test('client invoice migration keeps access and viewer assignments independent',
   assert.match(migration, /workspace_client_invoice_viewer/)
   assert.match(migration, /workspace_client_id.*ON DELETE cascade/)
   assert.match(migration, /user_id.*ON DELETE cascade/)
+})
+
+test('team member settings default to time entry enabled and remain organization scoped', () => {
+  const migration = readFileSync(new URL('../../../drizzle/0020_timesheet_team_member_settings.sql', import.meta.url), 'utf8')
+  assert.match(migration, /can_enter_time.*DEFAULT true NOT NULL/)
+  assert.match(migration, /team_member_settings_org_user_uidx.*organization_id.*user_id/)
+  assert.equal(teamMemberSettingsUpdateSchema.parse({ canEnterTime: true, defaultHourlyRateMinor: 0 }).defaultHourlyRateMinor, 0)
+  assert.equal(teamMemberSettingsUpdateSchema.parse({ canEnterTime: false, defaultHourlyRateMinor: null }).canEnterTime, false)
+  assert.equal(teamMemberSettingsUpdateSchema.safeParse({ canEnterTime: true, defaultHourlyRateMinor: -1 }).success, false)
+})
+
+test('time-entry domain error codes remain stable for localized clients', () => {
+  assert.deepEqual(TIMESHEET_ERROR_CODES, {
+    tariffRequired: 'TIMESHEET_TARIFF_REQUIRED',
+    entryDisabled: 'TIMESHEET_ENTRY_DISABLED',
+    runningTimer: 'TIMESHEET_RUNNING_TIMER'
+  })
 })
 
 test('pending review migration backfills approved review-enabled supplier weeks safely', () => {

@@ -187,6 +187,11 @@ export const tariffUpdateSchema = z.object({
   hourlyRateMinor: moneyMinor
 })
 
+export const teamMemberSettingsUpdateSchema = z.object({
+  canEnterTime: z.boolean(),
+  defaultHourlyRateMinor: moneyMinor.nullable()
+})
+
 export const settingsUpdateSchema = z.object({
   currency: z.string().length(3).transform(v => v.toUpperCase()).optional(),
   timezone: z.string().min(3).max(100).optional(),

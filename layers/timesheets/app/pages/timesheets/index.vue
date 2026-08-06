@@ -4,8 +4,9 @@ import { z } from 'zod'
 import type { TimeEntryDto } from '#layers/timesheets/shared/types/timesheet'
 
 const { t } = useI18n()
-const toast = useToast()
 const timesheets = useTimesheets()
+const mutationError = useTimesheetMutationError()
+const { isOrganizationAdmin } = useTimesheetMenu()
 
 useSeoMeta({
   title: () => t('features.timesheets.title')
@@ -44,7 +45,35 @@ const lastReusableEntryContext = computed(() => {
     : null
 })
 const runningEntry = computed(() => week.value?.entries.find(entry => entry.timerStartedAt) ?? null)
-const editable = computed(() => ['DRAFT', 'REJECTED'].includes(week.value?.status ?? ''))
+const editable = computed(() => Boolean(data.value?.canEnterTime) && ['DRAFT', 'REJECTED'].includes(week.value?.status ?? ''))
+const currentMember = computed(() => data.value?.team.find(member => member.id === week.value?.userId))
+const selectedActivity = computed(() => activities.value.find(activity => activity.id === form.activityTypeId))
+const selectedProject = computed(() => projects.value.find(project => project.id === form.projectId))
+const tariffMissing = computed(() => Boolean(
+  selectedActivity.value?.billable
+  && currentMember.value?.defaultHourlyRateMinor === null
+  && selectedProject.value?.personRates[week.value?.userId ?? ''] === undefined
+))
+const selectedProjectNeedsTariff = computed(() => Boolean(
+  selectedProject.value
+  && currentMember.value?.defaultHourlyRateMinor === null
+  && selectedProject.value.personRates[week.value?.userId ?? ''] === undefined
+  && activities.value.some(activity => activity.active && activity.billable && selectedProject.value?.activityTypeIds.includes(activity.id))
+))
+const workspaceStructureIncomplete = computed(() => data.value
+  ? !(
+      data.value.setupStatus.hasClient
+      && data.value.setupStatus.hasActiveActivity
+      && data.value.setupStatus.hasConfiguredProject
+    )
+  : false)
+const memberDefaultTariffMissing = computed(() => Boolean(
+  !isOrganizationAdmin.value
+  && data.value?.canEnterTime
+  && !workspaceStructureIncomplete.value
+  && currentMember.value?.defaultHourlyRateMinor === null
+  && data.value.setupStatus.billableWorkExists
+))
 const weekDays = computed(() => {
   if (!week.value) return []
   return Array.from({ length: 7 }, (_, index) => {
@@ -108,10 +137,16 @@ const activityOptions = computed(() => {
   const selected = projects.value.find(project => project.id === form.projectId)
   return activities.value
     .filter(activity => selected?.activityTypeIds.includes(activity.id))
-    .map(activity => ({
-      label: `${activity.name}${activity.billable ? '' : ` · ${t('features.timesheets.nonBillable')}`}`,
-      value: activity.id
-    }))
+    .map((activity) => {
+      const lacksTariff = activity.billable
+        && currentMember.value?.defaultHourlyRateMinor === null
+        && selected?.personRates[week.value?.userId ?? ''] === undefined
+      return {
+        label: `${activity.name}${activity.billable ? lacksTariff ? ` · ${t('features.timesheets.tariffMissingShort')}` : '' : ` · ${t('features.timesheets.nonBillable')}`}`,
+        value: activity.id,
+        disabled: lacksTariff
+      }
+    })
 })
 
 const projectOptions = computed(() => projects.value.map(project => ({
@@ -251,7 +286,7 @@ const saveEntry = async () => {
     modalOpen.value = false
     await refresh()
   } catch (error) {
-    toast.add({ title: t('features.timesheets.messages.saveError'), description: String(error), color: 'error' })
+    mutationError.show(error)
   } finally {
     saving.value = false
   }
@@ -259,9 +294,16 @@ const saveEntry = async () => {
 
 const removeEntry = async () => {
   if (!form.id) return
-  await timesheets.deleteEntry(form.id)
-  modalOpen.value = false
-  await refresh()
+  saving.value = true
+  try {
+    await timesheets.deleteEntry(form.id)
+    modalOpen.value = false
+    await refresh()
+  } catch (error) {
+    mutationError.show(error)
+  } finally {
+    saving.value = false
+  }
 }
 
 const changeWeek = (amount: number) => {
@@ -280,6 +322,8 @@ const startTimer = async () => {
     })
     timerModalOpen.value = false
     await refresh()
+  } catch (error) {
+    mutationError.show(error, 'features.timesheets.errors.timerStartTitle')
   } finally {
     saving.value = false
   }
@@ -299,14 +343,22 @@ const openTimer = () => {
 }
 
 const stopTimer = async () => {
-  await timesheets.stopTimer()
-  await refresh()
+  try {
+    await timesheets.stopTimer()
+    await refresh()
+  } catch (error) {
+    mutationError.show(error)
+  }
 }
 
 const submit = async () => {
   if (!week.value) return
-  await timesheets.submitWeek(week.value.id)
-  await refresh()
+  try {
+    await timesheets.submitWeek(week.value.id)
+    await refresh()
+  } catch (error) {
+    mutationError.show(error)
+  }
 }
 
 onMounted(() => {
@@ -327,7 +379,7 @@ const runningDuration = computed(() => {
 </script>
 
 <template>
-  <TimesheetsPageShell class="timesheet-workbench space-y-5">
+  <TimesheetsPageShell class="timesheet-workbench space-y-5" :setup-status="data?.setupStatus">
     <header class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h1 class="text-2xl font-semibold text-highlighted">
@@ -367,6 +419,9 @@ const runningDuration = computed(() => {
       icon="i-lucide-message-square-warning"
       :title="t('features.timesheets.status.rejected')"
       :description="week.rejectionComment ?? undefined" variant="outline" />
+
+    <UAlert v-if="data && !data.canEnterTime" color="warning" icon="i-lucide-clock-alert" :title="t('features.timesheets.errors.entryDisabledTitle')" :description="t('features.timesheets.errors.entryDisabled')" variant="outline" />
+    <UAlert v-else-if="memberDefaultTariffMissing" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.memberTariffMissingTitle')" :description="t('features.timesheets.errors.memberTariffMissingDescription')" variant="outline" />
 
     <UCard v-if="runningEntry" class="timesheet-timer">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -571,13 +626,17 @@ const runningDuration = computed(() => {
 
     <UModal v-model:open="modalOpen" :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')">
       <template #body>
-        <UForm :state="form" :schema="entrySchema" class="space-y-4" @submit="saveEntry">
+        <UAlert v-if="!isOrganizationAdmin && workspaceStructureIncomplete" color="warning" icon="i-lucide-hourglass" :title="t('features.timesheets.setup.waitingTitle')" :description="t('features.timesheets.setup.waitingDescription')" variant="outline" />
+        <UForm v-else :state="form" :schema="entrySchema" class="space-y-4" @submit="saveEntry">
           <UFormField name="projectId" :label="t('features.timesheets.fields.project')" required>
             <USelect v-model="form.projectId" :items="projectOptions" value-key="value" class="w-full" @update:model-value="form.activityTypeId = ''" />
           </UFormField>
           <UFormField name="activityTypeId" :label="t('features.timesheets.fields.activity')" required>
             <USelect v-model="form.activityTypeId" :items="activityOptions" value-key="value" class="w-full" />
           </UFormField>
+          <UAlert v-if="selectedProjectNeedsTariff" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.tariffRequiredTitle')" :description="t(isOrganizationAdmin ? 'features.timesheets.errors.tariffRequiredAdmin' : 'features.timesheets.errors.tariffRequiredMember')" variant="outline">
+            <template v-if="isOrganizationAdmin" #actions><UButton to="/admin/timesheets/rates" size="sm" color="warning">{{ t('features.timesheets.errors.configureRates') }}</UButton></template>
+          </UAlert>
           <UFormField name="entryDate" :label="t('features.timesheets.fields.date')" required>
             <UInput v-model="form.entryDate" type="date" class="w-full" />
           </UFormField>
@@ -600,7 +659,7 @@ const runningDuration = computed(() => {
               <UButton type="button" color="neutral" variant="outline" @click="modalOpen = false">
                 {{ t('features.timesheets.cancel') }}
               </UButton>
-              <UButton type="submit" :loading="saving">
+              <UButton type="submit" :loading="saving" :disabled="tariffMissing">
                 {{ t('features.timesheets.save') }}
               </UButton>
             </div>
@@ -651,13 +710,17 @@ const runningDuration = computed(() => {
 
     <UModal v-model:open="timerModalOpen" :title="t('features.timesheets.timer.start')">
       <template #body>
-        <UForm :state="form" :schema="timerSchema" class="space-y-4" @submit="startTimer">
+        <UAlert v-if="!isOrganizationAdmin && workspaceStructureIncomplete" color="warning" icon="i-lucide-hourglass" :title="t('features.timesheets.setup.waitingTitle')" :description="t('features.timesheets.setup.waitingDescription')" variant="outline" />
+        <UForm v-else :state="form" :schema="timerSchema" class="space-y-4" @submit="startTimer">
           <UFormField name="projectId" :label="t('features.timesheets.fields.project')" required>
             <USelect v-model="form.projectId" :items="projectOptions" value-key="value" class="w-full" @update:model-value="form.activityTypeId = ''" />
           </UFormField>
           <UFormField name="activityTypeId" :label="t('features.timesheets.fields.activity')" required>
             <USelect v-model="form.activityTypeId" :items="activityOptions" value-key="value" class="w-full" />
           </UFormField>
+          <UAlert v-if="selectedProjectNeedsTariff" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.tariffRequiredTitle')" :description="t(isOrganizationAdmin ? 'features.timesheets.errors.tariffRequiredAdmin' : 'features.timesheets.errors.tariffRequiredMember')" variant="outline">
+            <template v-if="isOrganizationAdmin" #actions><UButton to="/admin/timesheets/rates" size="sm" color="warning">{{ t('features.timesheets.errors.configureRates') }}</UButton></template>
+          </UAlert>
           <UFormField name="note" :label="t('features.timesheets.fields.note')">
             <UInput v-model="form.note" class="w-full" />
           </UFormField>
@@ -665,7 +728,7 @@ const runningDuration = computed(() => {
             <UButton type="button" color="neutral" variant="outline" @click="timerModalOpen = false">
               {{ t('features.timesheets.cancel') }}
             </UButton>
-            <UButton type="submit" color="success" icon="i-lucide-play" :loading="saving">
+            <UButton type="submit" color="success" icon="i-lucide-play" :loading="saving" :disabled="tariffMissing">
               {{ t('features.timesheets.timer.start') }}
             </UButton>
           </div>

@@ -20,6 +20,17 @@ export interface TeamMemberDto {
   image: string | null
   organizationRole: string
   defaultHourlyRateMinor: number | null
+  canEnterTime: boolean
+}
+
+export interface TimesheetsSetupStatusDto {
+  complete: boolean
+  hasClient: boolean
+  hasActiveActivity: boolean
+  hasConfiguredProject: boolean
+  billableWorkExists: boolean
+  enabledMemberCount: number
+  missingDefaultTariffCount: number
 }
 
 export interface ClientDto {
@@ -147,6 +158,8 @@ export interface TimesheetBootstrapDto {
   activities: ActivityTypeDto[]
   team: TeamMemberDto[]
   week: WeekDto
+  canEnterTime: boolean
+  setupStatus: TimesheetsSetupStatusDto
 }
 
 export interface TimesheetCapabilitiesDto {
