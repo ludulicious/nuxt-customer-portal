@@ -6,7 +6,7 @@ import type { PortalThemeName } from './themes/portal-theme'
 
 export default defineAppConfig({
   portal: {
-    theme: 'apex' as PortalThemeName
+    theme: 'brutal' as PortalThemeName
   },
   ui: {
     colors: {

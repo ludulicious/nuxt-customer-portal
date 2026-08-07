@@ -14,3 +14,12 @@
   --timesheets-color-running-soft: var(--color-neutral-800);
   --timesheets-color-weekend: var(--color-neutral-900);
 }
+
+html[data-portal-theme='brutal'] {
+  --timesheets-color-weekend: var(--color-paper-2);
+}
+
+html.dark[data-portal-theme='brutal'] {
+  --timesheets-color-running-soft: var(--color-paper-2);
+  --timesheets-color-weekend: var(--color-paper-2);
+}

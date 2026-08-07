@@ -396,7 +396,6 @@ html[data-portal-theme='brutal'] .main-fade-enter-active::before {
 }
 
 html[data-portal-theme='brutal']:not(.dark) :where(
-  div.fixed.inset-0:not([role='dialog']):not([aria-labelledby]):not([aria-describedby]),
   .fixed.inset-0.z-50:not([role='dialog']),
   [data-headlessui-state].fixed.inset-0:not([role='dialog']),
   [role='dialog'] ~ .fixed.inset-0

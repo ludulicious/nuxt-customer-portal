@@ -89,6 +89,17 @@ body {
   outline-offset: 2px;
 }
 
+.timesheet-grid .timesheet-row-action:disabled {
+  cursor: not-allowed;
+  background: var(--ui-bg-accented);
+  color: var(--ui-text-dimmed);
+  opacity: 1;
+}
+
+.timesheet-grid .timesheet-row-action:disabled:hover {
+  background: var(--ui-bg-accented);
+}
+
 .timesheet-mobile {
   overflow: clip;
   border: 1px solid var(--timesheets-rule);

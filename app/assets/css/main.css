@@ -373,16 +373,6 @@ body {
 /* Using primary-50 color (#f0f9ff) with 75% opacity for better visibility */
 /* Dark mode is excluded - it already has proper backdrop styling */
 
-/* Most universal selector - targets ANY fixed full-screen element that's not a dialog */
-/* Only applies in light mode (explicitly excludes dark mode) */
-html:not(.dark) div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html.light div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html:not(.dark) .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html.light .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]) {
-  background-color: rgba(240, 249, 255, 0.75) !important;
-  backdrop-filter: blur(2px);
-}
-
 /* Target overlay with z-index classes - light mode only */
 html:not(.dark) .fixed.inset-0.z-50:not([role="dialog"]),
 html.light .fixed.inset-0.z-50:not([role="dialog"]),
@@ -407,10 +397,6 @@ html.light [role="dialog"] ~ .fixed.inset-0 {
 }
 
 /* The alternate theme must override the Apex light-mode backdrop rules above. */
-html[data-portal-theme="brutal"]:not(.dark) div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html[data-portal-theme="brutal"].light div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html[data-portal-theme="brutal"]:not(.dark) .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
-html[data-portal-theme="brutal"].light .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
 html[data-portal-theme="brutal"]:not(.dark) .fixed.inset-0.z-50:not([role="dialog"]),
 html[data-portal-theme="brutal"].light .fixed.inset-0.z-50:not([role="dialog"]),
 html[data-portal-theme="brutal"]:not(.dark) [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
