@@ -66,6 +66,23 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
 
+  fonts: {
+    families: [
+      {
+        name: 'Bricolage Grotesque',
+        provider: 'google',
+        weights: [400, 700, 800, 900],
+        global: true
+      },
+      {
+        name: 'Geist',
+        provider: 'google',
+        weights: [400, 700],
+        global: true
+      }
+    ]
+  },
+
   compatibilityDate: '2025-10-24',
 
   nitro: {

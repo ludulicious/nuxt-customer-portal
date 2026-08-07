@@ -120,6 +120,7 @@ const stopImpersonating = async () => {
 
   <UHeader
     v-model:open="headerMenuOpen"
+    class="portal-header"
     :title="activeModule?.label || t('menu.module')"
     mode="slideover"
     :menu="{ side: 'right' }"
@@ -133,26 +134,26 @@ const stopImpersonating = async () => {
     <template #left>
       <div class="flex items-center gap-3">
         <!-- Logo Icon -->
-        <NuxtLink to="/" class="shrink-0">
+        <NuxtLink to="/" class="shrink-0" aria-label="ApexPro">
           <div class="relative">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <!-- Background circle -->
-              <circle cx="20" cy="20" r="20" fill="#75cbfe" />
+              <circle cx="20" cy="20" r="20" fill="var(--portal-logo-surface)" />
               <!-- Building/facility icon -->
-              <rect x="12" y="15" width="4" height="10" fill="white" rx="1" />
-              <rect x="18" y="12" width="4" height="13" fill="white" rx="1" />
-              <rect x="24" y="18" width="4" height="7" fill="white" rx="1" />
+              <rect x="12" y="15" width="4" height="10" fill="var(--portal-logo-ink)" rx="1" />
+              <rect x="18" y="12" width="4" height="13" fill="var(--portal-logo-ink)" rx="1" />
+              <rect x="24" y="18" width="4" height="7" fill="var(--portal-logo-ink)" rx="1" />
               <!-- Roof/peak -->
-              <path d="M10 15 L20 8 L30 15 L28 15 L20 10 L12 15 Z" fill="white" />
+              <path d="M10 15 L20 8 L30 15 L28 15 L20 10 L12 15 Z" fill="var(--portal-logo-ink)" />
               <!-- Door -->
-              <rect x="18" y="20" width="2" height="5" fill="#75cbfe" />
+              <rect x="18" y="20" width="2" height="5" fill="var(--portal-logo-surface)" />
             </svg>
           </div>
         </NuxtLink>
 
         <!-- ApexPro Title with Organization Name or Facility Services Subtitle -->
         <div class="hidden flex-col sm:flex">
-          <span class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+          <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
             ApexPro
           </span>
           <div
@@ -326,7 +327,7 @@ const stopImpersonating = async () => {
         </UButton>
 
         <div v-if="currentUser" class="mt-2">
-          <UserMenu />
+          <AppUserMenu />
         </div>
       </div>
     </template>

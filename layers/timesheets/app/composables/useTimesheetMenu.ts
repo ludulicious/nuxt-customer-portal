@@ -21,10 +21,10 @@ export const useTimesheetMenu = () => {
     if (isOrganizationAdmin.value) {
       items.push(
         {
-          label: t('features.timesheets.admin.approvals'),
-          to: '/admin/timesheets/approvals',
-          icon: 'i-lucide-stamp',
-          active: route.path === '/admin/timesheets/approvals'
+          label: t('features.timesheets.internalApprovals.manageTitle'),
+          to: '/admin/timesheets/internal-approvals',
+          icon: 'i-lucide-user-round-check',
+          active: route.path === '/admin/timesheets/internal-approvals'
         },
         {
           label: t('features.timesheets.admin.clients'),

@@ -76,7 +76,7 @@ const userMenuItems = computed(() => {
       :alt="currentUser.name || currentUser.email || 'User'"
       :text="userInitials"
       :size="size"
-      class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+      class="cursor-pointer transition-[box-shadow] hover:ring-2 hover:ring-primary/20"
     />
   </UDropdownMenu>
 </template>

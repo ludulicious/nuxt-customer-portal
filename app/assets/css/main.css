@@ -1,8 +1,12 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "../../../tokens.css";
+@import "./themes/brutal.css";
 
 :root {
   --font-sans: 'Bricolage Grotesque', sans-serif;
+  --portal-logo-surface: #75cbfe;
+  --portal-logo-ink: #ffffff;
 
 
   /* Primary - Sky Blue */
@@ -214,11 +218,11 @@
 
 /* Nuxt Page Transitions */
 .main-fade-enter-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .main-fade-leave-active {
-  transition: all 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  transition: opacity 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19), transform 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
 }
 
 .main-fade-enter-from {
@@ -266,7 +270,12 @@
 
 /* Smooth scroll behavior for better UX */
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: clip;
 }
 
 /* Light Mode Enhancements */
@@ -284,7 +293,7 @@ html {
 :root [class*="card"],
 :root [data-variant="subtle"],
 :root [data-variant="outline"] {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Better shadows for elevated surfaces */
@@ -343,7 +352,7 @@ html {
 :root [class*="bg-blue-600"],
 :root [class*="bg-primary-600"] {
   box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 :root button[class*="bg-primary"]:hover,
@@ -395,4 +404,19 @@ html:not(.dark) [role="dialog"] ~ .fixed.inset-0,
 html.light [role="dialog"] ~ .fixed.inset-0 {
   background-color: rgba(240, 249, 255, 0.75) !important;
   backdrop-filter: blur(2px);
+}
+
+/* The alternate theme must override the Apex light-mode backdrop rules above. */
+html[data-portal-theme="brutal"]:not(.dark) div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
+html[data-portal-theme="brutal"].light div.fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
+html[data-portal-theme="brutal"]:not(.dark) .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
+html[data-portal-theme="brutal"].light .fixed.inset-0:not([role="dialog"]):not([aria-labelledby]):not([aria-describedby]),
+html[data-portal-theme="brutal"]:not(.dark) .fixed.inset-0.z-50:not([role="dialog"]),
+html[data-portal-theme="brutal"].light .fixed.inset-0.z-50:not([role="dialog"]),
+html[data-portal-theme="brutal"]:not(.dark) [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
+html[data-portal-theme="brutal"].light [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
+html[data-portal-theme="brutal"]:not(.dark) [role="dialog"] ~ .fixed.inset-0,
+html[data-portal-theme="brutal"].light [role="dialog"] ~ .fixed.inset-0 {
+  background: var(--color-overlay) !important;
+  backdrop-filter: none !important;
 }

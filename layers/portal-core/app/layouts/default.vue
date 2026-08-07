@@ -47,7 +47,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative min-h-screen">
+  <div class="dashboard-layout relative min-h-screen">
     <!-- AppHeader - fixed at top -->
     <div class="fixed top-0 left-0 right-0 z-50">
       <div class="mx-auto w-full max-w-[1600px] px-4">

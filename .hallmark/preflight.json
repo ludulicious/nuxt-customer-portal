@@ -1,10 +1,14 @@
 {
-  "date": "2026-07-30",
-  "framework": "Nuxt 4",
-  "ui": "Nuxt UI 4",
-  "font": "Bricolage Grotesque",
-  "palette": "existing portal light/dark tokens",
-  "motion": "motion-cut",
-  "spacing": "Tailwind utility scale",
-  "preserve": ["font", "palette", "spacing", "Nuxt UI component vocabulary"]
+  "date": "2026-08-07",
+  "framework": "Nuxt 4.5.1 with Nuxt UI 4.10.0 and Tailwind CSS 4",
+  "font_stack": "Apex preserved; Brutal uses Bricolage Grotesque 800/900 with Geist 400/700 through Nuxt Fonts",
+  "palette": "Apex preserved; Brutal uses warm bone/carbon neutrals and signal red in locked OKLCH tokens",
+  "motion": "Apex preserved; Brutal uses explicit 0.75x opacity/transform transitions with reduced-motion fallbacks",
+  "spacing": "Existing Tailwind utility scale plus Brutal named spacing tokens",
+  "preserve": [
+    "existing Apex theme",
+    "route and layer structure",
+    "light/dark color mode",
+    "Nuxt UI component behavior"
+  ]
 }

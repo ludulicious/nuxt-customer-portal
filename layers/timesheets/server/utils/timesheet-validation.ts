@@ -192,6 +192,13 @@ export const teamMemberSettingsUpdateSchema = z.object({
   defaultHourlyRateMinor: moneyMinor.nullable()
 })
 
+export const internalApprovalWorkspaceUpdateSchema = z.object({ enabled: z.boolean() })
+
+export const internalApprovalMemberUpdateSchema = z.object({
+  required: z.boolean(),
+  approverUserIds: z.array(id).max(100)
+})
+
 export const settingsUpdateSchema = z.object({
   currency: z.string().length(3).transform(v => v.toUpperCase()).optional(),
   timezone: z.string().min(3).max(100).optional(),

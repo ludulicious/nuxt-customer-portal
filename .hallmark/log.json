@@ -13,5 +13,12 @@
     "theme": "portal-native",
     "enrichment": "none",
     "brief": "Harvest-style weekly timesheets and administration layer"
+  },
+  {
+    "date": "2026-08-07",
+    "macrostructure": "existing application structures",
+    "theme": "Brutal",
+    "enrichment": "none",
+    "brief": "Configurable Apex and austere industrial Brutal themes for the customer portal"
   }
 ]

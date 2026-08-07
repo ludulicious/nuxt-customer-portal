@@ -4,7 +4,7 @@ const showFooter = computed(() => route.meta?.public === true)
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto">
+  <div class="portal-layout max-w-7xl mx-auto">
     <AppHeader />
 
     <UMain class="main-content">

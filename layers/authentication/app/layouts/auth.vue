@@ -1,12 +1,12 @@
 <template>
-  <div class="h-screen flex items-center justify-center px-4">
+  <div class="auth-shell h-screen flex items-center justify-center px-4">
     <UButton
       icon="i-lucide-chevron-left"
       to="/"
       size="xl"
       color="neutral"
       variant="subtle"
-      class="absolute left-8 top-8 rounded-full z-10"
+      class="auth-back-button absolute left-8 top-8 rounded-full z-10"
     />
 
     <UPageCard

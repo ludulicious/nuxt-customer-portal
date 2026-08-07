@@ -26,6 +26,8 @@ import {
   invoiceListQuerySchema,
   invoicePaymentSchema,
   invoiceUpdateSchema,
+  internalApprovalMemberUpdateSchema,
+  internalApprovalWorkspaceUpdateSchema,
   organizationProfileUpdateSchema,
   organizationCapabilitiesUpdateSchema,
   projectCreateSchema,
@@ -101,8 +103,24 @@ test('time-entry domain error codes remain stable for localized clients', () => 
   assert.deepEqual(TIMESHEET_ERROR_CODES, {
     tariffRequired: 'TIMESHEET_TARIFF_REQUIRED',
     entryDisabled: 'TIMESHEET_ENTRY_DISABLED',
-    runningTimer: 'TIMESHEET_RUNNING_TIMER'
+    runningTimer: 'TIMESHEET_RUNNING_TIMER',
+    internalApproverRequired: 'TIMESHEET_INTERNAL_APPROVER_REQUIRED',
+    internalApprovalUnauthorized: 'TIMESHEET_INTERNAL_APPROVAL_UNAUTHORIZED',
+    internalApprovalStale: 'TIMESHEET_INTERNAL_APPROVAL_STALE',
+    internalApprovalMemberInvalid: 'TIMESHEET_INTERNAL_APPROVAL_MEMBER_INVALID',
+    internalApprovalSelfAssignment: 'TIMESHEET_INTERNAL_APPROVAL_SELF_ASSIGNMENT',
+    internalApprovalDuplicateAssignment: 'TIMESHEET_INTERNAL_APPROVAL_DUPLICATE_ASSIGNMENT'
   })
+})
+
+test('internal approval configuration is scoped, explicit, and prevents self approval', () => {
+  const migration = readFileSync(new URL('../../../drizzle/0021_configurable_internal_approvals.sql', import.meta.url), 'utf8')
+  assert.match(migration, /internal_approvals_enabled.*DEFAULT true NOT NULL/)
+  assert.match(migration, /internal_approval_required.*DEFAULT true NOT NULL/)
+  assert.match(migration, /internal_approver_assignment_not_self/)
+  assert.match(migration, /organization_id.*submitter_user_id.*approver_user_id/)
+  assert.equal(internalApprovalWorkspaceUpdateSchema.parse({ enabled: false }).enabled, false)
+  assert.deepEqual(internalApprovalMemberUpdateSchema.parse({ required: true, approverUserIds: ['reviewer'] }).approverUserIds, ['reviewer'])
 })
 
 test('pending review migration backfills approved review-enabled supplier weeks safely', () => {

@@ -144,7 +144,7 @@ await loadOrganization()
 </script>
 
 <template>
-  <div class="h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-y-auto bg-gray-50 py-8 dark:bg-gray-900">
+  <div class="h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-y-auto bg-muted py-8">
     <UContainer>
       <!-- Back Button -->
       <div v-if="showBackButton" class="mb-4">
@@ -156,7 +156,7 @@ await loadOrganization()
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-8">
         <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
-        <p class="text-gray-600 dark:text-gray-400 mt-2">
+        <p class="mt-2 text-muted">
           {{ t('admin.organization.detail.loading') }}
         </p>
       </div>

@@ -64,7 +64,7 @@ definePageMeta({
 </script>
 
 <template>
-  <div>
+  <div class="public-home">
     <div v-if="page">
       <UPageHero v-if="page.hero" :title="page.title" :description="page.description" :links="heroLinks"
         class="py-2 md:py-4 mb-0">
@@ -76,7 +76,7 @@ definePageMeta({
           <MDC :value="page.title" unwrap="p" />
         </template>
         <div class="relative flex justify-center items-center">
-          <NuxtImg src="/images/home/office.png" alt="Our fake office" class="rounded-lg" height="600" width="1200" />
+          <NuxtImg src="/images/home/office.png" alt="Our fake office" class="public-home-hero-image rounded-lg" height="600" width="1200" />
         </div>
       </UPageHero>
 

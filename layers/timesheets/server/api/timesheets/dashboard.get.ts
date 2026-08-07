@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '#portal/server/portal'
 import { workspaceSettings } from '#layers/timesheets/server/db/schema/timesheets'
-import { canMemberEnterTime, getBootstrap, listApprovalQueue, listClientApprovals, listClientInvoices, listClientReviewerSuppliers, listClientSupplierTimesheets, listClientWorkspaces, listInvoices } from '#layers/timesheets/server/utils/timesheet-repository'
+import { canMemberEnterTime, getBootstrap, hasInternalApprovalAssignment, listApprovalQueue, listClientApprovals, listClientInvoices, listClientReviewerSuppliers, listClientSupplierTimesheets, listClientWorkspaces, listInvoices } from '#layers/timesheets/server/utils/timesheet-repository'
 import type { TimesheetsDashboardDto } from '#layers/timesheets/shared/types/timesheet'
 
 export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto> => {
   const { session, organizationId, role } = await requireActiveOrganizationRole(event)
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
   const [settingsRow, clientWorkspaces, memberCanEnterTime] = await Promise.all([
-    db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled, currency: workspaceSettings.currency })
+    db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled, internalApprovalsEnabled: workspaceSettings.internalApprovalsEnabled, currency: workspaceSettings.currency })
       .from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
     listClientWorkspaces(organizationId, session.user.id, isAdmin),
     canMemberEnterTime(organizationId, session.user.id)
@@ -20,10 +20,12 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
   const canViewClientInvoices = clientWorkspaces.some(item => item.invoiceAccessEnabled && item.canViewInvoices)
   const canViewSupplierTime = clientWorkspaces.some(item => item.accessMode === 'VIEW')
+  const hasInternalApprovals = workspaceEnabled && (settings?.internalApprovalsEnabled ?? true)
+    && await hasInternalApprovalAssignment(organizationId, session.user.id)
 
   const [bootstrap, approvalQueue, clientApprovals, reviewerSuppliers, supplierTimesheets, salesInvoices, receivedInvoices] = await Promise.all([
     canEnterTime ? getBootstrap(organizationId, session.user.id) : Promise.resolve(null),
-    isAdmin && workspaceEnabled ? listApprovalQueue(organizationId) : Promise.resolve([]),
+    hasInternalApprovals ? listApprovalQueue(organizationId, session.user.id) : Promise.resolve([]),
     reviewWorkspaces.length ? listClientApprovals(organizationId, session.user.id, isAdmin) : Promise.resolve(null),
     isAdmin && reviewWorkspaces.length ? listClientReviewerSuppliers(organizationId, session.user.id) : Promise.resolve([]),
     canViewSupplierTime ? listClientSupplierTimesheets(organizationId, session.user.id, isAdmin) : Promise.resolve([]),
@@ -44,7 +46,7 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
       rejectionComment: bootstrap.week.rejectionComment,
       hasRunningTimer: bootstrap.week.entries.some(entry => Boolean(entry.timerStartedAt))
     } }),
-    ...(isAdmin && workspaceEnabled && { internalApprovals: {
+    ...(hasInternalApprovals && { internalApprovals: {
       pendingCount: pendingInternal.length,
       items: approvalQueue.slice(0, 5).map(({ id, userName, weekStartsOn, totalMinutes, submittedAt, status }) => ({ id, userName, weekStartsOn, totalMinutes, submittedAt, status }))
     } }),

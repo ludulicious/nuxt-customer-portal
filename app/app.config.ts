@@ -1,8 +1,13 @@
-/* Hallmark · component: select dropdowns · genre: modern-minimal · theme: portal-native
+/* Hallmark · component: application theme configuration · genre: editorial · theme: Apex + Brutal
  * states: default · hover · focus · active · disabled · loading · error · success
  * contrast: pass (46–50) · pre-emit critique: P5 H4 E5 S5 R5 V4
  */
+import type { PortalThemeName } from './themes/portal-theme'
+
 export default defineAppConfig({
+  portal: {
+    theme: 'apex' as PortalThemeName
+  },
   ui: {
     colors: {
       primary: 'orange',

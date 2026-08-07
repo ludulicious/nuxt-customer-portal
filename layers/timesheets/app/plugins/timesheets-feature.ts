@@ -41,27 +41,31 @@ export default defineNuxtPlugin(() => {
       : id === 'timesheets-approvals'
       ? capabilities.canApproveInternalTimesheets
       : id === 'timesheets-admin'
-      ? capabilities.canApproveInternalTimesheets || capabilities.canInvoice
+      ? capabilities.canManageTimesheets
+      : id === 'internal-approval-settings'
+      ? capabilities.canManageTimesheets
       : id === 'approval-reviewers'
       ? capabilities.canManageClientReviewers
       : ['supplier-timesheets', 'timesheets-suppliers'].includes(id)
       ? capabilities.canViewSupplierTime
       : capabilities.canEnterTime
-    const canAccessTimesheets = capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canReviewClientTimesheets || capabilities.canApproveInternalTimesheets
+    const canAccessTimesheets = capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canReviewClientTimesheets || capabilities.canApproveInternalTimesheets || capabilities.canManageTimesheets
     const canAccessInvoices = capabilities.canInvoice || capabilities.canViewClientInvoices
     const timesheetsLandingTo = capabilities.canEnterTime
       ? '/timesheets'
       : capabilities.canReviewClientTimesheets
         ? '/timesheets/approvals'
         : capabilities.canApproveInternalTimesheets
-          ? '/admin/timesheets/approvals'
-          : '/timesheets/suppliers'
+          ? '/timesheets/internal-approvals'
+          : capabilities.canViewSupplierTime
+            ? '/timesheets/suppliers'
+            : '/admin/timesheets/internal-approvals'
     const invoicesLandingTo = capabilities.canViewClientInvoices ? '/timesheets/invoices' : '/admin/timesheets/invoices'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
       navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)).map(item => ({
         ...item,
-        badge: item.id === 'timesheets-approvals' ? primaryBadge(approvalActionCount) : undefined
+        badge: item.id === 'timesheets-approvals' ? primaryBadge(capabilities.pendingInternalApprovalCount) : undefined
       })),
       modules: timesheetsFeature.modules?.filter(module => module.id === 'invoices' ? canAccessInvoices : canAccessTimesheets).map(module => ({
             ...module,
@@ -71,6 +75,8 @@ export default defineNuxtPlugin(() => {
               ...item,
               badge: item.id === 'client-approvals'
                 ? primaryBadge(capabilities.pendingClientApprovalCount)
+                : item.id === 'timesheet-approvals'
+                  ? primaryBadge(capabilities.pendingInternalApprovalCount)
                 : item.id === 'approval-reviewers'
                   ? primaryBadge(capabilities.unassignedClientReviewerSupplierCount)
                   : undefined
@@ -92,7 +98,7 @@ export default defineNuxtPlugin(() => {
               }))
     })
   }
-  const empty: TimesheetCapabilitiesDto = { canEnterTime: false, canApproveInternalTimesheets: false, canReviewClientTimesheets: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, canViewClientInvoices: false, canManageInvoiceViewers: false, pendingInternalApprovalCount: 0, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
+  const empty: TimesheetCapabilitiesDto = { canEnterTime: false, canApproveInternalTimesheets: false, hasInternalApprovalAssignments: false, canManageTimesheets: false, canReviewClientTimesheets: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, canViewClientInvoices: false, canManageInvoiceViewers: false, pendingInternalApprovalCount: 0, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
   register(empty)
   const refreshCapabilities = async () => {
     try {

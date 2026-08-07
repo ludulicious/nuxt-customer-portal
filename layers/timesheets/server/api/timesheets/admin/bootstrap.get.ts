@@ -3,7 +3,6 @@ import { timesheetsFeature } from '#layers/timesheets/shared/feature'
 import {
   ensureSettings,
   listActivities,
-  listApprovalQueue,
   listAvailableClientOrganizations,
   listClients,
   listInvoices,
@@ -41,7 +40,7 @@ export default defineEventHandler(async (event) => {
     section === 'projects' ? Promise.resolve([]) : listProjects(organizationId),
     section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
     listTeam(organizationId),
-    listApprovalQueue(organizationId),
+    Promise.resolve([]),
     section === 'invoices' || !settings.invoicingEnabled ? Promise.resolve([]) : listInvoices(organizationId),
     settings.invoicingEnabled ? listInvoiceableEntries(organizationId) : Promise.resolve([]),
     getOrganizationInvoiceProfile(organizationId),
@@ -52,7 +51,8 @@ export default defineEventHandler(async (event) => {
       currency: settings.currency,
       timezone: settings.timezone,
       defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
-      weekStartsOn: settings.weekStartsOn
+      weekStartsOn: settings.weekStartsOn,
+      internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
     clients,
     availableClientOrganizations,

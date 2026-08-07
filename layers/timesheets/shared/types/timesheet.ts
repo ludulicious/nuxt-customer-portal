@@ -11,6 +11,7 @@ export interface TimesheetSettingsDto {
   timezone: string
   defaultVatRateBasisPoints: number
   weekStartsOn: number
+  internalApprovalsEnabled: boolean
 }
 
 export interface TeamMemberDto {
@@ -21,6 +22,21 @@ export interface TeamMemberDto {
   organizationRole: string
   defaultHourlyRateMinor: number | null
   canEnterTime: boolean
+  internalApprovalRequired: boolean
+  approverUserIds: string[]
+}
+
+export interface InternalApprovalConfigurationDto {
+  enabled: boolean
+  members: TeamMemberDto[]
+}
+
+export interface InternalApprovalQueueDto {
+  settings: TimesheetSettingsDto
+  approvals: ApprovalQueueItemDto[]
+  clients: ClientDto[]
+  projects: ProjectDto[]
+  activities: ActivityTypeDto[]
 }
 
 export interface TimesheetsSetupStatusDto {
@@ -165,6 +181,8 @@ export interface TimesheetBootstrapDto {
 export interface TimesheetCapabilitiesDto {
   canEnterTime: boolean
   canApproveInternalTimesheets: boolean
+  hasInternalApprovalAssignments: boolean
+  canManageTimesheets: boolean
   canReviewClientTimesheets: boolean
   canInvoice: boolean
   canViewSupplierTime: boolean

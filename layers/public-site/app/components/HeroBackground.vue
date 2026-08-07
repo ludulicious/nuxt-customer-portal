@@ -16,13 +16,14 @@ onMounted(() => {
 
 <template>
   <div
-    class="absolute w-full -top-px transition-all text-primary shrink-0"
+    class="public-hero-background absolute w-full -top-px transition-opacity text-primary shrink-0"
     :class="[
       isLoading ? 'animate-pulse' : (appear ? '' : 'opacity-0'),
       appeared ? 'duration-400': 'duration-1000'
     ]"
   >
     <svg
+      aria-hidden="true"
       viewBox="0 0 1440 181"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

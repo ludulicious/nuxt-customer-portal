@@ -59,7 +59,7 @@ const mobileMenuItems = computed(() => [
 </script>
 
 <template>
-  <div class="h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-y-auto bg-gray-50 py-8 dark:bg-gray-900">
+  <div class="h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-y-auto bg-muted py-8">
     <UContainer>
       <div class="mb-4">
         <UDropdownMenu

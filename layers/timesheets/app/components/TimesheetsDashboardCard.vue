@@ -56,7 +56,7 @@ const icon = computed(() => ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i
     </template>
 
     <template v-else-if="section === 'internalApprovals'">
-      <div class="flex items-center justify-between"><p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p><UButton to="/admin/timesheets/approvals" variant="outline">{{ t('features.timesheets.dashboard.review') }}</UButton></div>
+      <div class="flex items-center justify-between"><p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p><UButton to="/timesheets/internal-approvals" variant="outline">{{ t('features.timesheets.dashboard.review') }}</UButton></div>
       <p v-if="!value.items.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.internalApprovals.empty') }}</p>
       <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.items" :key="item.id" class="flex items-center justify-between gap-3 py-2 text-sm"><span class="truncate"><strong>{{ item.userName }}</strong><span class="block text-muted">{{ date(item.weekStartsOn) }}</span></span><span class="shrink-0 text-right"><strong class="block tabular-nums">{{ minutes(item.totalMinutes) }}</strong><span class="text-xs text-muted">{{ t(`features.timesheets.status.${item.status.toLowerCase()}`) }}</span></span></li></ul>
     </template>

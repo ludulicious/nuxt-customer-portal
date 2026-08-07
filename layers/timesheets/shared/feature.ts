@@ -25,9 +25,9 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     },
     {
       id: 'timesheets-approvals',
-      labelKey: 'features.timesheets.approvals.title',
+      labelKey: 'features.timesheets.internalApprovals.title',
       icon: 'i-lucide-stamp',
-      to: '/timesheets/approvals',
+      to: '/timesheets/internal-approvals',
       audiences: ['authenticated'],
       order: 31
     },
@@ -43,7 +43,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       id: 'timesheets-admin',
       labelKey: 'features.timesheets.navigation.manage',
       icon: 'i-lucide-chart-no-axes-combined',
-      to: '/admin/timesheets/approvals',
+      to: '/admin/timesheets/internal-approvals',
       audiences: ['organizationAdmin', 'admin'],
       location: 'admin',
       order: 130
@@ -62,7 +62,8 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       { id: 'client-approvals', labelKey: 'features.timesheets.approvals.title', icon: 'i-lucide-stamp', to: '/timesheets/approvals', exact: true, audiences: ['authenticated'] },
       { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['organizationAdmin', 'admin'] },
       { id: 'supplier-timesheets', labelKey: 'features.timesheets.suppliers.title', icon: 'i-lucide-building-2', to: '/timesheets/suppliers', audiences: ['authenticated'] },
-      { id: 'timesheet-approvals', labelKey: 'features.timesheets.admin.approvals', icon: 'i-lucide-stamp', to: '/admin/timesheets/approvals', audiences: ['organizationAdmin', 'admin'] },
+      { id: 'timesheet-approvals', labelKey: 'features.timesheets.internalApprovals.title', icon: 'i-lucide-stamp', to: '/timesheets/internal-approvals', audiences: ['authenticated'] },
+      { id: 'internal-approval-settings', labelKey: 'features.timesheets.internalApprovals.manageTitle', icon: 'i-lucide-user-round-check', to: '/admin/timesheets/internal-approvals', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-clients', labelKey: 'features.timesheets.admin.clients', icon: 'i-lucide-building-2', to: '/admin/timesheets/clients', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['organizationAdmin', 'admin'] },
       { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['organizationAdmin', 'admin'] },

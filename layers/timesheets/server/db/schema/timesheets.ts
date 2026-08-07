@@ -47,6 +47,7 @@ export const workspaceSettings = timesheetsSchema.table('workspace_settings', {
   weekStartsOn: integer('week_starts_on').default(1).notNull(),
   workspaceEnabled: boolean('workspace_enabled').default(false).notNull(),
   invoicingEnabled: boolean('invoicing_enabled').default(false).notNull(),
+  internalApprovalsEnabled: boolean('internal_approvals_enabled').default(true).notNull(),
   ...auditColumns
 })
 
@@ -177,9 +178,25 @@ export const teamMemberSettings = timesheetsSchema.table('team_member_settings',
     .references(() => organization.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
   canEnterTime: boolean('can_enter_time').default(true).notNull(),
+  internalApprovalRequired: boolean('internal_approval_required').default(true).notNull(),
   ...auditColumns
 }, table => [
   uniqueIndex('team_member_settings_org_user_uidx').on(table.organizationId, table.userId)
+])
+
+export const internalApproverAssignment = timesheetsSchema.table('internal_approver_assignment', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  submitterUserId: text('submitter_user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  approverUserId: text('approver_user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdById: text('created_by_id').notNull().references(() => user.id, { onDelete: 'restrict' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
+}, table => [
+  uniqueIndex('internal_approver_assignment_org_submitter_approver_uidx')
+    .on(table.organizationId, table.submitterUserId, table.approverUserId),
+  index('internal_approver_assignment_approver_idx').on(table.organizationId, table.approverUserId),
+  index('internal_approver_assignment_submitter_idx').on(table.organizationId, table.submitterUserId)
 ])
 
 export const projectPersonTariff = timesheetsSchema.table('project_person_tariff', {

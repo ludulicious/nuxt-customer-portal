@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { TimesheetsAdminBootstrap } from '#layers/timesheets/app/composables/useTimesheets'
-import type { ApprovalQueueItemDto } from '#layers/timesheets/shared/types/timesheet'
+import type { ApprovalQueueItemDto, InternalApprovalQueueDto } from '#layers/timesheets/shared/types/timesheet'
 
 const props = defineProps<{
-  data: TimesheetsAdminBootstrap
+  data: InternalApprovalQueueDto
   refresh: () => Promise<unknown>
 }>()
 const { t, locale } = useI18n()

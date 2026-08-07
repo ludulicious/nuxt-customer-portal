@@ -56,8 +56,9 @@ const starLayers = computed(() => [
 </script>
 
 <template>
-  <div class="absolute pointer-events-none z-[-1] inset-y-0 inset-x-5 sm:inset-x-7 lg:inset-x-9 overflow-hidden">
+  <div class="public-stars absolute pointer-events-none z-[-1] inset-y-0 inset-x-5 sm:inset-x-7 lg:inset-x-9 overflow-hidden">
     <svg
+      aria-hidden="true"
       class="absolute inset-0 pointer-events-none"
       viewBox="0 0 1017 181"
       fill="none"
@@ -170,6 +171,12 @@ const starLayers = computed(() => [
   animation: risingStarsAnimation linear infinite;
   animation-duration: var(--star-duration);
   will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-layer {
+    animation: none;
+  }
 }
 
 @keyframes risingStarsAnimation {

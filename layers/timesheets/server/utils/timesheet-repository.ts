@@ -28,6 +28,7 @@ import {
   invoiceLine,
   invoicePayment,
   invoiceTimeEntry,
+  internalApproverAssignment,
   organizationContact,
   organizationInvoiceProfile,
   project,
@@ -71,6 +72,7 @@ import type {
   ClientInvoiceSummaryDto,
   ClientInvoiceSupplierDto,
   ClientSupplierTimesheetItemDto,
+  InternalApprovalConfigurationDto,
 } from '#layers/timesheets/shared/types/timesheet'
 import { hasInvalidProjectActivityAssignments, type ReportQuery } from './timesheet-validation'
 import { addIsoDays, invoiceOverdueDetails, mondayFor } from '#layers/timesheets/shared/timesheet-dates'
@@ -661,10 +663,11 @@ export const deleteActivity = async (
 })
 
 export const listTeam = async (organizationId: string): Promise<TeamMemberDto[]> => {
-  const [members, tariffs, memberSettings] = await Promise.all([
+  const [members, tariffs, memberSettings, assignments] = await Promise.all([
     listPortalOrganizationMembers(organizationId),
     db.select().from(teamTariff).where(eq(teamTariff.organizationId, organizationId)),
-    listTeamMemberSettings(organizationId)
+    listTeamMemberSettings(organizationId),
+    db.select().from(internalApproverAssignment).where(eq(internalApproverAssignment.organizationId, organizationId))
   ])
   const tariffByUser = new Map(tariffs.map(item => [item.userId, item.hourlyRateMinor]))
   const settingsByUser = new Map(memberSettings.map(item => [item.userId, item.canEnterTime]))
@@ -672,8 +675,104 @@ export const listTeam = async (organizationId: string): Promise<TeamMemberDto[]>
     ...item,
     image: item.image ?? null,
     defaultHourlyRateMinor: tariffByUser.get(item.id) ?? null,
-    canEnterTime: settingsByUser.get(item.id) ?? true
+    canEnterTime: settingsByUser.get(item.id) ?? true,
+    internalApprovalRequired: memberSettings.find(setting => setting.userId === item.id)?.internalApprovalRequired ?? true,
+    approverUserIds: assignments.filter(assignment => assignment.submitterUserId === item.id).map(assignment => assignment.approverUserId)
   }))
+}
+
+export const getInternalApprovalConfiguration = async (organizationId: string): Promise<InternalApprovalConfigurationDto> => {
+  const [settings, members] = await Promise.all([ensureSettings(organizationId), listTeam(organizationId)])
+  return { enabled: settings.internalApprovalsEnabled, members }
+}
+
+export const hasInternalApprovalAssignment = async (organizationId: string, approverUserId: string) => {
+  const [assignment] = await db.select({ id: internalApproverAssignment.id }).from(internalApproverAssignment)
+    .where(and(eq(internalApproverAssignment.organizationId, organizationId), eq(internalApproverAssignment.approverUserId, approverUserId)))
+    .limit(1)
+  return Boolean(assignment)
+}
+
+type TimesheetTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId: string, userId?: string) => {
+  const conditions = [
+    eq(weeklyTimesheet.organizationId, organizationId),
+    eq(weeklyTimesheet.status, 'SUBMITTED')
+  ]
+  if (userId) conditions.push(eq(weeklyTimesheet.userId, userId))
+  const pending = await tx.select().from(weeklyTimesheet).where(and(...conditions))
+  for (const week of pending) {
+    const now = new Date()
+    const [approved] = await tx.update(weeklyTimesheet).set({ status: 'APPROVED', reviewedAt: now, reviewedById: null, rejectionComment: null })
+      .where(and(eq(weeklyTimesheet.id, week.id), eq(weeklyTimesheet.status, 'SUBMITTED'))).returning({ id: weeklyTimesheet.id })
+    if (!approved) continue
+    await tx.insert(timesheetApprovalHistory).values({
+      id: nanoid(), weeklyTimesheetId: week.id, action: 'APPROVED', actorUserId: week.userId,
+      comment: 'Automatically approved because internal approval was disabled'
+    })
+    const representedClients = await tx.selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
+      .from(timeEntry).innerJoin(workspaceClient, and(
+        eq(workspaceClient.workspaceOrganizationId, organizationId),
+        eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
+        eq(workspaceClient.accessMode, 'REVIEW')
+      )).where(eq(timeEntry.weeklyTimesheetId, week.id))
+    if (representedClients.length) {
+      await tx.insert(timesheetClientReview).values(representedClients.map(item => ({
+        id: nanoid(), weeklyTimesheetId: week.id, clientOrganizationId: item.clientOrganizationId, status: 'PENDING' as const
+      }))).onConflictDoNothing()
+    }
+  }
+}
+
+export const updateInternalApprovalWorkspace = async (organizationId: string, enabled: boolean) => {
+  await ensureSettings(organizationId)
+  await db.transaction(async (tx) => {
+    await tx.update(workspaceSettings).set({ internalApprovalsEnabled: enabled })
+      .where(eq(workspaceSettings.organizationId, organizationId))
+    if (!enabled) await autoApprovePendingWeeks(tx, organizationId)
+  })
+}
+
+export const updateInternalApprovalMember = async (
+  organizationId: string,
+  actorUserId: string,
+  submitterUserId: string,
+  input: { required: boolean, approverUserIds: string[] }
+) => {
+  const members = await listPortalOrganizationMembers(organizationId)
+  if (!members.some(member => member.id === submitterUserId)) {
+    throw createError({ statusCode: 404, message: 'Team member not found', data: { code: TIMESHEET_ERROR_CODES.internalApprovalMemberInvalid } })
+  }
+  const uniqueApproverIds = [...new Set(input.approverUserIds)]
+  if (uniqueApproverIds.length !== input.approverUserIds.length) {
+    throw createError({ statusCode: 400, message: 'An approver can only be assigned once', data: { code: TIMESHEET_ERROR_CODES.internalApprovalDuplicateAssignment } })
+  }
+  if (uniqueApproverIds.includes(submitterUserId)) {
+    throw createError({ statusCode: 400, message: 'A member cannot approve their own timesheet', data: { code: TIMESHEET_ERROR_CODES.internalApprovalSelfAssignment } })
+  }
+  if (uniqueApproverIds.some(id => !members.some(member => member.id === id))) {
+    throw createError({ statusCode: 400, message: 'Every approver must belong to this organization', data: { code: TIMESHEET_ERROR_CODES.internalApprovalMemberInvalid } })
+  }
+  await db.transaction(async (tx) => {
+    await tx.insert(teamMemberSettings).values({
+      id: nanoid(), organizationId, userId: submitterUserId, canEnterTime: true,
+      internalApprovalRequired: input.required
+    }).onConflictDoUpdate({
+      target: [teamMemberSettings.organizationId, teamMemberSettings.userId],
+      set: { internalApprovalRequired: input.required, updatedAt: new Date() }
+    })
+    await tx.delete(internalApproverAssignment).where(and(
+      eq(internalApproverAssignment.organizationId, organizationId),
+      eq(internalApproverAssignment.submitterUserId, submitterUserId)
+    ))
+    if (input.required && uniqueApproverIds.length) {
+      await tx.insert(internalApproverAssignment).values(uniqueApproverIds.map(approverUserId => ({
+        id: nanoid(), organizationId, submitterUserId, approverUserId, createdById: actorUserId
+      })))
+    }
+    if (!input.required) await autoApprovePendingWeeks(tx, organizationId, submitterUserId)
+  })
 }
 
 export const canMemberEnterTime = async (organizationId: string, userId: string) => {
@@ -1056,7 +1155,8 @@ export const getBootstrap = async (
       currency: settings.currency,
       timezone: settings.timezone,
       defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
-      weekStartsOn: settings.weekStartsOn
+      weekStartsOn: settings.weekStartsOn,
+      internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
     clients,
     projects,
@@ -1223,11 +1323,27 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
     if (entries.some(entry => entry.timerStartedAt)) {
       throw createError({ statusCode: 409, message: 'Stop the running timer before submitting' })
     }
+    const [workspace, memberSetting, assignment] = await Promise.all([
+      tx.select({ enabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings)
+        .where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
+      tx.select({ required: teamMemberSettings.internalApprovalRequired }).from(teamMemberSettings)
+        .where(and(eq(teamMemberSettings.organizationId, organizationId), eq(teamMemberSettings.userId, userId))).limit(1),
+      tx.select({ id: internalApproverAssignment.id }).from(internalApproverAssignment)
+        .where(and(eq(internalApproverAssignment.organizationId, organizationId), eq(internalApproverAssignment.submitterUserId, userId))).limit(1)
+    ])
+    const requiresApproval = (workspace[0]?.enabled ?? true) && (memberSetting[0]?.required ?? true)
+    if (requiresApproval && !assignment.length) {
+      throw createError({
+        statusCode: 409,
+        message: 'No internal approver is configured for this member',
+        data: { code: TIMESHEET_ERROR_CODES.internalApproverRequired }
+      })
+    }
     const now = new Date()
     const [updated] = await tx.update(weeklyTimesheet).set({
-      status: 'SUBMITTED',
+      status: requiresApproval ? 'SUBMITTED' : 'APPROVED',
       submittedAt: now,
-      reviewedAt: null,
+      reviewedAt: requiresApproval ? null : now,
       reviewedById: null,
       rejectionComment: null
     }).where(eq(weeklyTimesheet.id, week.id)).returning()
@@ -1237,13 +1353,43 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
       action: 'SUBMITTED',
       actorUserId: userId
     })
+    if (!requiresApproval) {
+      await tx.insert(timesheetApprovalHistory).values({
+        id: nanoid(), weeklyTimesheetId: week.id, action: 'APPROVED', actorUserId: userId,
+        comment: 'Automatically approved because internal approval is disabled'
+      })
+      const representedClients = await tx.selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
+        .from(timeEntry)
+        .innerJoin(workspaceClient, and(
+          eq(workspaceClient.workspaceOrganizationId, organizationId),
+          eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
+          eq(workspaceClient.accessMode, 'REVIEW')
+        ))
+        .where(eq(timeEntry.weeklyTimesheetId, week.id))
+      if (representedClients.length) {
+        await tx.insert(timesheetClientReview).values(representedClients.map(item => ({
+          id: nanoid(), weeklyTimesheetId: week.id, clientOrganizationId: item.clientOrganizationId, status: 'PENDING' as const
+        }))).onConflictDoNothing()
+      }
+    }
     return updated
   })
 
-export const listApprovalQueue = async (organizationId: string): Promise<ApprovalQueueItemDto[]> => {
+export const listApprovalQueue = async (organizationId: string, approverUserId: string): Promise<ApprovalQueueItemDto[]> => {
+  const [workspace] = await db.select({ enabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings)
+    .where(eq(workspaceSettings.organizationId, organizationId)).limit(1)
+  if (!workspace?.enabled) return []
+  const assignments = await db.select({ submitterUserId: internalApproverAssignment.submitterUserId })
+    .from(internalApproverAssignment).where(and(
+      eq(internalApproverAssignment.organizationId, organizationId),
+      eq(internalApproverAssignment.approverUserId, approverUserId)
+    ))
+  const submitterIds = assignments.map(item => item.submitterUserId)
+  if (!submitterIds.length) return []
   const [weeks, members, settings] = await Promise.all([
     db.select().from(weeklyTimesheet).where(and(
       eq(weeklyTimesheet.organizationId, organizationId),
+      inArray(weeklyTimesheet.userId, submitterIds),
       inArray(weeklyTimesheet.status, ['SUBMITTED', 'APPROVED', 'REJECTED'])
     )).orderBy(desc(weeklyTimesheet.weekStartsOn)),
     listPortalOrganizationMembers(organizationId),
@@ -1284,16 +1430,34 @@ export const reviewWeek = async (
   action: 'APPROVE' | 'REJECT' | 'REOPEN',
   comment?: string | null
 ) => db.transaction(async (tx) => {
+  const [workspace] = await tx.select({ enabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings)
+    .where(eq(workspaceSettings.organizationId, organizationId)).limit(1)
+  if (!workspace?.enabled) throw createError({
+    statusCode: 403,
+    message: 'Internal approvals are disabled',
+    data: { code: TIMESHEET_ERROR_CODES.internalApprovalUnauthorized }
+  })
   const [week] = await tx.select().from(weeklyTimesheet).where(and(
     eq(weeklyTimesheet.id, weekId),
     eq(weeklyTimesheet.organizationId, organizationId)
   )).limit(1)
   if (!week) throw createError({ statusCode: 404, message: 'Timesheet week not found' })
+  const [assignment] = await tx.select({ id: internalApproverAssignment.id }).from(internalApproverAssignment)
+    .where(and(
+      eq(internalApproverAssignment.organizationId, organizationId),
+      eq(internalApproverAssignment.submitterUserId, week.userId),
+      eq(internalApproverAssignment.approverUserId, actorUserId)
+    )).limit(1)
+  if (!assignment) throw createError({
+    statusCode: 403,
+    message: 'You are not assigned to approve this member',
+    data: { code: TIMESHEET_ERROR_CODES.internalApprovalUnauthorized }
+  })
   if (action !== 'REOPEN' && week.status !== 'SUBMITTED') {
-    throw createError({ statusCode: 409, message: 'Only submitted weeks can be reviewed' })
+    throw createError({ statusCode: 409, message: 'Only submitted weeks can be reviewed', data: { code: TIMESHEET_ERROR_CODES.internalApprovalStale } })
   }
   if (action === 'REOPEN' && week.status !== 'APPROVED') {
-    throw createError({ statusCode: 409, message: 'Only approved weeks can be reopened' })
+    throw createError({ statusCode: 409, message: 'Only approved weeks can be reopened', data: { code: TIMESHEET_ERROR_CODES.internalApprovalStale } })
   }
   if (action === 'REOPEN') {
     const [invoicedEntry] = await tx.select({ id: invoiceTimeEntry.id }).from(invoiceTimeEntry)
@@ -1307,12 +1471,18 @@ export const reviewWeek = async (
   }
   const now = new Date()
   const nextStatus = action === 'APPROVE' ? 'APPROVED' : action === 'REJECT' ? 'REJECTED' : 'DRAFT'
+  const expectedStatus = action === 'REOPEN' ? 'APPROVED' : 'SUBMITTED'
   const [updated] = await tx.update(weeklyTimesheet).set({
     status: nextStatus,
     reviewedAt: action === 'REOPEN' ? null : now,
     reviewedById: action === 'REOPEN' ? null : actorUserId,
     rejectionComment: action === 'REJECT' ? comment : null
-  }).where(eq(weeklyTimesheet.id, week.id)).returning()
+  }).where(and(eq(weeklyTimesheet.id, week.id), eq(weeklyTimesheet.status, expectedStatus))).returning()
+  if (!updated) throw createError({
+    statusCode: 409,
+    message: 'This timesheet review has already changed',
+    data: { code: TIMESHEET_ERROR_CODES.internalApprovalStale }
+  })
   await tx.insert(timesheetApprovalHistory).values({
     id: nanoid(),
     weeklyTimesheetId: week.id,

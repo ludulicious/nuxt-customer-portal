@@ -24,10 +24,12 @@ import type {
   ClientInvoiceViewerDto,
   TimesheetsDashboardDto,
   TimesheetsSetupStatusDto,
+  InternalApprovalConfigurationDto,
+  InternalApprovalQueueDto,
 } from '#layers/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
-  settings: { currency: string, timezone: string, defaultVatRateBasisPoints: number, weekStartsOn: number }
+  settings: { currency: string, timezone: string, defaultVatRateBasisPoints: number, weekStartsOn: number, internalApprovalsEnabled: boolean }
   clients: ClientDto[]
   availableClientOrganizations: ClientOrganizationOptionDto[]
   projects: ProjectDto[]
@@ -45,6 +47,11 @@ export const useTimesheets = () => {
   const bootstrap = (week?: string) =>
     $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
   const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
+  const internalApprovalQueue = () => $fetch<InternalApprovalQueueDto>('/api/timesheets/internal-approvals')
+  const internalApprovalConfiguration = () => $fetch<InternalApprovalConfigurationDto>('/api/timesheets/admin/internal-approvals')
+  const updateInternalApprovalWorkspace = (enabled: boolean) => $fetch('/api/timesheets/admin/internal-approvals', { method: 'PATCH', body: { enabled } })
+  const updateInternalApprovalMember = (userId: string, input: { required: boolean, approverUserIds: string[] }) =>
+    $fetch(`/api/timesheets/admin/internal-approvals/${userId}`, { method: 'PUT', body: input })
   const setupStatus = () => $fetch<TimesheetsSetupStatusDto>('/api/timesheets/setup-status')
 
   const createEntry = (input: {
@@ -157,7 +164,7 @@ export const useTimesheets = () => {
   const updateSettings = (input: { currency?: string, timezone?: string, defaultVatRateBasisPoints?: number }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
   const reviewWeek = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
-    $fetch(`/api/timesheets/admin/approvals/${id}`, {
+    $fetch(`/api/timesheets/internal-approvals/${id}`, {
       method: 'POST',
       body: { action, comment }
     })
@@ -185,6 +192,10 @@ export const useTimesheets = () => {
   return {
     bootstrap,
     dashboard,
+    internalApprovalQueue,
+    internalApprovalConfiguration,
+    updateInternalApprovalWorkspace,
+    updateInternalApprovalMember,
     setupStatus,
     createEntry,
     updateEntry,
