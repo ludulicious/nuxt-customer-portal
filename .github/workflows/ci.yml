@@ -1,6 +1,11 @@
 name: ci
 
-on: push
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
 
 jobs:
   ci:
@@ -25,10 +30,24 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm run lint
 
       - name: Typecheck
         run: pnpm run typecheck
+
+      - name: Documentation checks
+        run: pnpm run test:docs
+
+      - name: Verify public contributor links
+        run: pnpm run verify:public-links
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Responsive and accessibility checks
+        run: pnpm run test:e2e

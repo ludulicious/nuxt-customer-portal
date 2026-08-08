@@ -23,12 +23,18 @@ const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
 
 const title = page.value.seo?.title || page.value.title
 const description = page.value.seo?.description || page.value.description
+const canonicalUrl = `https://portalnuxt.com${route.path}`
 
 useSeoMeta({
   title,
   ogTitle: title,
   description,
-  ogDescription: description
+  ogDescription: description,
+  ogUrl: canonicalUrl
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }]
 })
 
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
@@ -51,7 +57,10 @@ const links = computed(() => {
       :headline="headline"
     >
       <template #links>
-        <PageHeaderLinks />
+        <PageHeaderLinks
+          :github-path="page.githubPath"
+          :title="page.title"
+        />
       </template>
     </UPageHeader>
 
@@ -59,6 +68,11 @@ const links = computed(() => {
       <ContentRenderer
         v-if="page"
         :value="page"
+      />
+
+      <DocsFeedback
+        :github-path="page.githubPath"
+        :title="page.title"
       />
 
       <USeparator v-if="surround?.length" />
@@ -73,6 +87,7 @@ const links = computed(() => {
       <UContentToc
         :title="toc?.title"
         :links="page.body?.toc?.links"
+        aria-label="On this page"
       >
         <template
           v-if="toc?.bottom"
@@ -90,6 +105,7 @@ const links = computed(() => {
             <UPageLinks
               :title="toc.bottom.title"
               :links="links"
+              aria-label="Community links"
             />
           </div>
         </template>

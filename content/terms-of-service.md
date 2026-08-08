@@ -1,15 +1,15 @@
 ---
 title: Terms of Service
-description: Terms for using the PortalNuxt open source project and any hosted demo.
+description: Terms for using the Customer Portal project, documentation, and any hosted demo.
 ---
 
 Effective date: January 15, 2026
 
-These Terms of Service ("Terms") govern your use of the PortalNuxt open source project ("Project", "we", "us"), our documentation, and any hosted demo we operate. By using the Project or a hosted demo, you agree to these Terms.
+These Terms of Service ("Terms") govern your use of the Customer Portal project ("Project", "we", "us"), our documentation, and any hosted demo we operate. By using the Project or a hosted demo, you agree to these Terms.
 
-## Open Source License
+## Source-code licensing status
 
-The Project is provided under its open source license. Your use, modification, and distribution of the code are subject to the terms of that license.
+The Customer Portal product source is public, but the revision currently verified by this documentation does not contain an explicit software license. These Terms do not create or replace a source-code license. The maintainers intend to adopt an open-source license; until then, consult the repository and obtain any permission required for your use, modification, or distribution of the product code.
 
 ## Use of Hosted Demos
 
@@ -53,4 +53,4 @@ We may update these Terms from time to time. Changes will be posted on this page
 
 ## Contact Us
 
-If you have questions about these Terms, please open an issue or discussion in the project repository.
+If you have questions about these Terms, please [open a documentation issue](https://github.com/ludulicious/portalnuxt/issues/new?title=Terms%3A%20).

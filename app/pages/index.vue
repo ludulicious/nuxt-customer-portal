@@ -1,86 +1,95 @@
 <script setup lang="ts">
-const title = 'Open Source Customer Portal (Nuxt + Nuxt UI)'
-const description = 'A free and open source solution for building customer portals with Nuxt 4, Nuxt UI, and a simple single-service backend.'
+const title = 'Customer Portal — an extensible customer portal for Nuxt'
+const description = 'Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.'
 
-type TechStackItem = {
-  label: string
-  description: string
-  icon: string
-  href: string
-  /**
-   * Brand color (Simple Icons hex where available).
-   * If an icon is black (e.g. Vercel), provide a dark-mode variant too.
-   */
-  color: string | { light: string, dark: string }
-}
-
-/** Returns style for string colors. Use iconClass for light/dark variants to avoid hydration mismatch. */
-function iconStyle(item: TechStackItem) {
-  return typeof item.color === 'string' ? { color: item.color } : undefined
-}
-
-/** Returns Tailwind classes for light/dark color variants. Avoids hydration mismatch vs inline style. */
-function iconClass(item: TechStackItem) {
-  return typeof item.color === 'object' ? 'text-black dark:text-white' : ''
-}
-
-const functionalitySections = [
+const extensionModel = [
   {
-    title: 'Layouts & themes',
-    icon: 'i-lucide-layout-template',
-    items: [
-      'Sign-in and sign-up layout',
-      'Admin section layout',
-      'Customer section layout',
-      'Client-specific styling (colors, fonts, themes)'
-    ]
+    title: 'Portal core',
+    description: 'Sessions, organizations, authorization, the application shell, and shared server adapters.'
   },
   {
-    title: 'Security',
-    icon: 'i-lucide-shield-check',
-    items: [
-      'Sign in / sign up',
-      'Multiple login methods (Google, Facebook, X, GitHub, Microsoft, email/password)',
-      'Email confirmation flow (email/password)',
-      'Forgot password flow (email/password)',
-      'Two-factor authentication (authenticator app)'
-    ]
+    title: 'Feature registry',
+    description: 'Layers register navigation, module menus, dashboard widgets, and role policies without host edits.'
   },
   {
-    title: 'Admin section',
-    icon: 'i-lucide-settings',
-    items: [
-      'Client management (list, create, update, delete)',
-      'User management (list, create, update, delete)',
-      'Role & permission management',
-      'Custom fields for clients and users'
-    ]
-  },
-  {
-    title: 'Customer section',
-    icon: 'i-lucide-user',
-    items: [
-      'Dashboard',
-      'Orders list',
-      'Invoices list',
-      'Pay invoices (Stripe, Polar.sh, and more)',
-      'Client-specific pages and data (extensible per customer)'
-    ]
+    title: 'Business layers',
+    description: 'Each feature owns its UI, API, translations, tests, and PostgreSQL schema.'
   }
 ]
 
-const techStack: TechStackItem[] = [
-  { label: 'Nuxt 4', description: 'Frontend + backend in one project', icon: 'i-simple-icons-nuxtdotjs', href: 'https://nuxt.com/', color: '#00DC82' },
-  { label: 'Nuxt UI', description: 'Tailwind CSS + Headless UI', icon: 'i-simple-icons-tailwindcss', href: 'https://ui.nuxt.com/', color: '#06B6D4' },
-  { label: 'TypeScript', description: 'Typed end-to-end', icon: 'i-simple-icons-typescript', href: 'https://www.typescriptlang.org/', color: '#3178C6' },
-  { label: 'PostgreSQL', description: 'Primary database', icon: 'i-simple-icons-postgresql', href: 'https://www.postgresql.org/', color: '#4169E1' },
-  // Neon isn't in our installed Simple Icons set; keep a clean fallback icon but still tint it.
-  { label: 'Drizzle ORM', description: 'Type-safe ORM', icon: 'i-simple-icons-drizzle', href: 'https://orm.drizzle.team/', color: '#C5F74F' },
-  // No Simple Icon found in this repo for better-auth; fallback icon tinted to match the site's cyan accents.
-  { label: 'better-auth', description: 'Authentication', icon: 'i-lucide-shield-check', href: 'https://www.better-auth.com/', color: '#00D8FF' },
-  { label: 'Docker', description: 'Containerized deployments', icon: 'i-simple-icons-docker', href: 'https://www.docker.com/', color: '#2496ED' },
-  { label: 'Vercel', description: 'Edge hosting & deployments', icon: 'i-simple-icons-vercel', href: 'https://vercel.com/', color: { light: '#000000', dark: '#FFFFFF' } },
-  { label: 'Neon', description: 'Hosted Postgres option', icon: 'i-lucide-database', href: 'https://neon.com/', color: '#00E599' },
+const workflowStages = [
+  {
+    number: '01',
+    title: 'Configure',
+    description: 'Set clients, projects, activities, rates, suppliers, and approval rules.',
+    to: '/guides/timesheet-setup'
+  },
+  {
+    number: '02',
+    title: 'Record',
+    description: 'Enter a working week, use timers, submit time, and correct rejected entries.',
+    to: '/guides/time-entry'
+  },
+  {
+    number: '03',
+    title: 'Approve',
+    description: 'Move weeks through internal review, client approval, and disputes.',
+    to: '/guides/approvals'
+  },
+  {
+    number: '04',
+    title: 'Invoice',
+    description: 'Create drafts from approved time, deliver PDFs, send reminders, and register payments.',
+    to: '/guides/invoicing'
+  }
+]
+
+const ownershipRows = [
+  {
+    term: 'Portal core',
+    description: 'Owns the stable shell: authentication, organization context, authorization helpers, shared adapters, and the feature contract.'
+  },
+  {
+    term: 'Registry',
+    description: 'Combines installed feature definitions into navigation, module menus, dashboard widgets, and role-aware capabilities.'
+  },
+  {
+    term: 'Feature layer',
+    description: 'Owns one coherent business capability, including routes, types, policies, translations, migrations, and tests.'
+  }
+]
+
+const contributorPaths = [
+  {
+    number: '01',
+    title: 'Improve the documentation',
+    description: 'Correct behavior, add an example, or make a workflow easier to follow.',
+    to: '/contributing/documentation'
+  },
+  {
+    number: '02',
+    title: 'Create a feature layer',
+    description: 'Build a portable module against the portal-core contracts.',
+    to: '/contributing/create-a-layer'
+  },
+  {
+    number: '03',
+    title: 'Propose a module',
+    description: 'Shape a reusable capability with maintainers before investing in implementation.',
+    to: '/contributing/propose-a-module'
+  }
+]
+
+const techStack = [
+  { label: 'Nuxt 4', description: 'Frontend and backend', icon: 'i-simple-icons-nuxtdotjs', href: 'https://nuxt.com/' },
+  { label: 'Nuxt UI', description: 'Tailwind CSS and Reka UI', icon: 'i-simple-icons-tailwindcss', href: 'https://ui.nuxt.com/' },
+  { label: 'TypeScript', description: 'Typed end to end', icon: 'i-simple-icons-typescript', href: 'https://www.typescriptlang.org/' },
+  { label: 'PostgreSQL', description: 'Primary database', icon: 'i-simple-icons-postgresql', href: 'https://www.postgresql.org/' },
+  { label: 'Drizzle ORM', description: 'Type-safe persistence', icon: 'i-simple-icons-drizzle', href: 'https://orm.drizzle.team/' },
+  { label: 'better-auth', description: 'Authentication', icon: 'i-simple-icons-betterauth', href: 'https://www.better-auth.com/' },
+  { label: 'Docker', description: 'Container deployments', icon: 'i-simple-icons-docker', href: 'https://www.docker.com/' },
+  { label: 'Nuxt i18n', description: 'Layer-owned translations', icon: 'i-simple-icons-i18next', href: 'https://i18n.nuxtjs.org/' },
+  { label: 'VueUse', description: 'Composition utilities', icon: 'i-simple-icons-vuedotjs', href: 'https://vueuse.org/' }
 ]
 
 useSeoMeta({
@@ -89,196 +98,193 @@ useSeoMeta({
   ogTitle: title,
   description,
   ogDescription: description,
-  ogImage: '/logo-no-background.svg',
-  twitterImage: '/logo-no-background.svg'
+  ogUrl: 'https://portalnuxt.com'
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://portalnuxt.com' }]
+})
+
+defineOgImage('DocsSatori', {
+  headline: 'Composable Nuxt customer portal'
 })
 </script>
 
 <template>
-  <div>
-    <UPageHero orientation="horizontal" :ui="{
-      root: 'relative isolate overflow-hidden border-b border-default bg-gradient-to-b from-primary/5 via-transparent to-transparent',
-      container: 'py-14 sm:py-20 lg:py-24 gap-10 sm:gap-14 lg:gap-16'
-    }" :description="description">
-      <template #top>
-        <StarsBg />
-      </template>
-
-      <template #headline>
-        <div class="flex flex-wrap items-center gap-2">
-          <UBadge color="primary" variant="subtle" class="gap-1">
-            <UIcon name="i-lucide-sparkles" class="size-3.5" />
-            Free & Open Source
-          </UBadge>
-          <UBadge color="neutral" variant="subtle" class="gap-1">
-            <UIcon name="i-lucide-server" class="size-3.5" />
-            Single service
-          </UBadge>
-          <UBadge color="neutral" variant="subtle" class="gap-1">
-            <UIcon name="i-lucide-database" class="size-3.5" />
-            PostgreSQL
-          </UBadge>
-        </div>
-      </template>
-
-      <template #title>
-        <span>A modern </span>
-        <span class="text-primary">Customer Portal</span>
-        <span> built with Nuxt, ready to extend</span>
-      </template>
-
-      <template #links>
-        <UButton to="/getting-started" size="xl" trailing-icon="i-lucide-arrow-right">
-          Get started
-        </UButton>
-
-        <UButton to="https://demo.portalnuxt.com" target="_blank" size="xl" color="primary" variant="outline">
-          Try it out
-        </UButton>
-
-        <UButton to="https://github.com/ludulicious/customer-portal" target="_blank" icon="i-simple-icons-github"
-          size="xl" color="neutral" variant="outline">
-          View on GitHub
-        </UButton>
-      </template>
-
-      <UCard class="rounded-xl shadow-2xl ring ring-default/50 bg-elevated/60 backdrop-blur">
-        <div class="space-y-5">
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <img src="/logo.svg" alt="Project logo" class="size-6">
-              <div class="font-medium">
-                Portal blueprint
-              </div>
-            </div>
-            <UBadge color="neutral" variant="subtle">
-              Nuxt 4 + Nuxt UI
-            </UBadge>
-          </div>
-
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div class="rounded-lg border border-default bg-default/30 p-4">
-              <div class="flex items-center gap-2 font-medium">
-                <UIcon name="i-lucide-log-in" class="size-4 text-primary" />
-                Auth & sessions
-              </div>
-              <p class="mt-1 text-sm text-muted">
-                OAuth providers, email/password, confirmations, resets, and 2FA.
-              </p>
-            </div>
-            <div class="rounded-lg border border-default bg-default/30 p-4">
-              <div class="flex items-center gap-2 font-medium">
-                <UIcon name="i-lucide-users" class="size-4 text-primary" />
-                Multi-tenant structure
-              </div>
-              <p class="mt-1 text-sm text-muted">
-                Clear separation between admin and customer experiences.
-              </p>
-            </div>
-            <div class="rounded-lg border border-default bg-default/30 p-4">
-              <div class="flex items-center gap-2 font-medium">
-                <UIcon name="i-lucide-receipt" class="size-4 text-primary" />
-                Billing flows
-              </div>
-              <p class="mt-1 text-sm text-muted">
-                Invoices, payments, and provider integrations like Stripe.
-              </p>
-            </div>
-            <div class="rounded-lg border border-default bg-default/30 p-4">
-              <div class="flex items-center gap-2 font-medium">
-                <UIcon name="i-lucide-plug" class="size-4 text-primary" />
-                Extensible data
-              </div>
-              <p class="mt-1 text-sm text-muted">
-                Custom fields and client-specific pages as your needs evolve.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="text-xs text-muted">
-              Built with
-            </span>
-            <div class="flex flex-wrap items-center gap-2">
-              <span v-for="item in techStack.slice(0, 6)" :key="item.label"
-                class="inline-flex items-center gap-1.5 rounded-full border border-default bg-default/30 px-2 py-1 text-xs">
-                <UIcon :name="item.icon" class="size-3.5" :class="iconClass(item)" :style="iconStyle(item)" />
-                <span class="text-muted">
-                  {{ item.label }}
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </UCard>
-    </UPageHero>
-    <UContainer class="py-2 sm:py-4">
-      <div class="space-y-12">
-        <section class="space-y-6">
-          <div class="space-y-2">
-            <h2 class="text-xl sm:text-2xl font-semibold">
-              What is included?
-            </h2>
-            <p class="text-muted max-w-3xl">
-              The portal is structured around clear layouts, secure authentication flows, an admin area, and a
-              customer
-              area.
-            </p>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UCard v-for="section in functionalitySections" :key="section.title">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <UIcon :name="section.icon" class="size-5 text-primary" />
-                  <span class="font-medium">
-                    {{ section.title }}
-                  </span>
-                </div>
-              </template>
-
-              <ul class="list-disc ps-5 space-y-1 text-sm text-muted">
-                <li v-for="item in section.items" :key="item">
-                  {{ item }}
-                </li>
-              </ul>
-            </UCard>
-          </div>
-        </section>
-
-        <USeparator />
-
-        <section class="space-y-6">
-          <div class="space-y-2">
-            <h2 class="text-xl sm:text-2xl font-semibold">
-              Tech stack
-            </h2>
-            <p class="text-muted max-w-3xl">
-              Kept intentionally simple: one service and one database to deploy.
-            </p>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <UCard v-for="item in techStack" :key="item.label" as="a" :href="item.href" target="_blank"
+  <div class="marketing-home">
+    <UContainer class="marketing-hero">
+      <div class="marketing-hero-grid">
+        <div class="marketing-hero-copy">
+          <p class="marketing-kicker">
+            Public development preview
+          </p>
+          <h1 class="marketing-display">
+            Build your portal, layer by layer.
+          </h1>
+          <p>
+            Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.
+          </p>
+          <div class="marketing-actions">
+            <UButton
+              to="/getting-started"
+              size="xl"
+              trailing-icon="i-lucide-arrow-right"
+              class="marketing-action"
+              data-testid="hero-get-started"
+            >
+              Get started
+            </UButton>
+            <UButton
+              to="https://demo.portalnuxt.com"
+              target="_blank"
               rel="noopener noreferrer"
-              class="transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-              <div class="flex items-start gap-3">
-                <div class="shrink-0 rounded-md border border-default bg-elevated p-2">
-                  <UIcon :name="item.icon" class="size-5" :class="iconClass(item)" :style="iconStyle(item)" />
-                </div>
-                <div class="space-y-1">
-                  <div class="font-medium">
-                    {{ item.label }}
-                  </div>
-                  <div class="text-sm text-muted">
-                    {{ item.description }}
-                  </div>
-                </div>
-              </div>
-            </UCard>
+              size="xl"
+              color="neutral"
+              variant="outline"
+              class="marketing-action"
+              data-testid="hero-demo"
+            >
+              Try the demo
+            </UButton>
+            <UButton
+              to="https://github.com/ludulicious/customer-portal"
+              target="_blank"
+              rel="noopener noreferrer"
+              icon="i-simple-icons-github"
+              size="xl"
+              color="neutral"
+              variant="ghost"
+              class="marketing-action"
+              data-testid="hero-github"
+            >
+              GitHub
+            </UButton>
           </div>
+          <div class="licensing-status" role="note" aria-label="Licensing status">
+            <UIcon name="i-lucide-info" class="size-4 shrink-0" aria-hidden="true" />
+            <p>
+              The product source is public. An explicit open-source license is pending.
+              <NuxtLink to="/reference/compatibility-and-releases">Read project status</NuxtLink>.
+            </p>
+          </div>
+        </div>
+
+        <section class="extension-map" aria-labelledby="extension-model-title">
+          <header class="extension-map-header">
+            <span id="extension-model-title">The extension model</span>
+            <span>Nuxt 4</span>
+          </header>
+          <ol>
+            <li v-for="(item, index) in extensionModel" :key="item.title">
+              <span class="extension-map-index">0{{ index + 1 }}</span>
+              <div>
+                <h2>{{ item.title }}</h2>
+                <p>{{ item.description }}</p>
+              </div>
+            </li>
+          </ol>
         </section>
       </div>
     </UContainer>
+
+    <section class="workflow-band" aria-labelledby="workflow-title">
+      <UContainer>
+        <div class="workflow-intro">
+          <h2 id="workflow-title" class="marketing-display">
+            A working week, end to end.
+          </h2>
+          <p>
+            Timesheets and invoices are used in real Customer Portal deployments. The module covers the complete path from workspace configuration to a paid invoice—not a disconnected feature demo.
+          </p>
+        </div>
+        <ol class="workflow-sequence">
+          <li v-for="stage in workflowStages" :key="stage.number">
+            <NuxtLink :to="stage.to" class="workflow-stage">
+              <span class="workflow-stage-number">{{ stage.number }}</span>
+              <h3>{{ stage.title }}</h3>
+              <p>{{ stage.description }}</p>
+              <span class="workflow-stage-arrow" aria-hidden="true">→</span>
+            </NuxtLink>
+          </li>
+        </ol>
+      </UContainer>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="platform-title">
+      <UContainer class="platform-grid">
+        <header class="section-heading">
+          <h2 id="platform-title" class="marketing-display">
+            Core stays stable. Features own their work.
+          </h2>
+          <p>
+            The host composes capabilities. It does not need to know their implementation details.
+          </p>
+        </header>
+        <div>
+          <dl class="ownership-list">
+            <div v-for="row in ownershipRows" :key="row.term">
+              <dt>{{ row.term }}</dt>
+              <dd>{{ row.description }}</dd>
+            </div>
+          </dl>
+          <div class="platform-links">
+            <NuxtLink to="/architecture/layers" class="marketing-link">
+              Understand feature layers <span aria-hidden="true">→</span>
+            </NuxtLink>
+            <NuxtLink to="/reference/feature-contract" class="marketing-link">
+              Read the feature contract <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <section class="contributor-section" aria-labelledby="contributor-title">
+      <UContainer class="contributor-grid">
+        <div class="contributor-copy">
+          <h2 id="contributor-title" class="marketing-display">
+            Help shape the portal.
+          </h2>
+          <p>
+            You do not need to start with a large pull request. A precise documentation correction, a failing authorization test, or a focused layer proposal can move the project forward.
+          </p>
+          <NuxtLink to="/contributing" class="marketing-link">
+            Contribution guide <span aria-hidden="true">→</span>
+          </NuxtLink>
+        </div>
+        <ol class="contributor-paths">
+          <li v-for="path in contributorPaths" :key="path.number">
+            <NuxtLink :to="path.to" class="contributor-path">
+              <span>{{ path.number }}</span>
+              <span>
+                <strong>{{ path.title }}</strong>
+                <small>{{ path.description }}</small>
+              </span>
+              <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </li>
+        </ol>
+      </UContainer>
+    </section>
+
+    <section class="technology-colophon" aria-labelledby="technology-title">
+      <UContainer>
+        <header class="technology-header">
+          <h2 id="technology-title">Technology</h2>
+          <p>One Nuxt service and one PostgreSQL database.</p>
+        </header>
+        <ul class="technology-list">
+          <li v-for="item in techStack" :key="item.label">
+            <a :href="item.href" target="_blank" rel="noopener noreferrer">
+              <UIcon :name="item.icon" class="size-5" />
+              <span>
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.description }}</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </UContainer>
+    </section>
   </div>
 </template>

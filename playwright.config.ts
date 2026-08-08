@@ -1,19 +1,21 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
-import type { ConfigOptions } from '@nuxt/test-utils/playwright'
 
-export default defineConfig<ConfigOptions>({
-  testDir: './tests',
-  fullyParallel: true,
+export default defineConfig({
+  testDir: './test/e2e',
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  workers: 1,
+  reporter: process.env.CI ? 'github' : 'list',
   use: {
+    baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
-    nuxt: {
-      rootDir: fileURLToPath(new URL('.', import.meta.url)),
-    },
+  },
+  webServer: {
+    command: 'PORT=4173 HOST=127.0.0.1 node .output/server/index.mjs',
+    url: 'http://127.0.0.1:4173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
   projects: [
     {

@@ -1,3 +1,5 @@
+import { documentationDefaults } from './shared/documentation'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
@@ -13,6 +15,21 @@ export default defineNuxtConfig({
     '@nuxt/scripts'
   ],
 
+  site: {
+    url: 'https://portalnuxt.com',
+    name: 'Customer Portal'
+  },
+
+  runtimeConfig: {
+    public: {
+      docsRepositoryUrl: documentationDefaults.docsRepositoryUrl,
+      docsRepositoryBranch: documentationDefaults.docsRepositoryBranch,
+      docsFeedbackRepositoryUrl: documentationDefaults.feedbackRepositoryUrl,
+      productRepositoryUrl: documentationDefaults.productRepositoryUrl,
+      productSourceCommit: documentationDefaults.productSourceCommit
+    }
+  },
+
   devtools: {
     enabled: true
   },
@@ -22,6 +39,13 @@ export default defineNuxtConfig({
   content: {
     build: {
       markdown: {
+        highlight: {
+          theme: {
+            default: 'github-light-high-contrast',
+            light: 'github-light-high-contrast',
+            dark: 'github-dark-high-contrast'
+          }
+        },
         toc: {
           searchDepth: 1
         }
@@ -34,7 +58,9 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       routes: [
-        '/'
+        '/',
+        '/robots.txt',
+        '/sitemap.xml'
       ],
       crawlLinks: true,
       autoSubfolderIndex: false
@@ -51,7 +77,19 @@ export default defineNuxtConfig({
   },
 
   icon: {
-    provider: 'iconify'
+    provider: 'none',
+    clientBundle: {
+      scan: true,
+      icons: [
+        'lucide:terminal',
+        'vscode-icons:file-type-dotenv',
+        'vscode-icons:file-type-typescript',
+        'vscode-icons:file-type-json',
+        'vscode-icons:file-type-node',
+        'vscode-icons:file-type-nuxt',
+        'vscode-icons:file-type-vue'
+      ]
+    }
   },
 
   colorMode: {
@@ -59,12 +97,12 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: 'https://docs-template.nuxt.dev/',
-    title: 'Nuxt Docs Template',
-    description: 'A template for building documentation with Nuxt UI and Nuxt Content.',
+    domain: 'https://portalnuxt.com',
+    title: 'Customer Portal documentation',
+    description: `Build, extend, and contribute to the publicly developed Customer Portal for Nuxt. Verified against source revision ${documentationDefaults.productSourceCommit}.`,
     full: {
-      title: 'Nuxt Docs Template - Full Documentation',
-      description: 'This is the full documentation for the Nuxt Docs Template.'
+      title: 'Customer Portal — full documentation',
+      description: `Architecture, setup, operations, feature-layer development, modules, and contribution guides for Customer Portal, verified against source revision ${documentationDefaults.productSourceCommit}.`
     },
     sections: [
       {
@@ -75,16 +113,51 @@ export default defineNuxtConfig({
         ]
       },
       {
-        title: 'Essentials',
+        title: 'Architecture',
         contentCollection: 'docs',
         contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/essentials%' }
+          { field: 'path', operator: 'LIKE', value: '/architecture%' }
+        ]
+      },
+      {
+        title: 'Modules',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/modules%' }
+        ]
+      },
+      {
+        title: 'Reference',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/reference%' }
+        ]
+      },
+      {
+        title: 'Operations',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/operations%' }
+        ]
+      },
+      {
+        title: 'User Guides',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/guides%' }
+        ]
+      },
+      {
+        title: 'Contributing',
+        contentCollection: 'docs',
+        contentFilters: [
+          { field: 'path', operator: 'LIKE', value: '/contributing%' }
         ]
       }
     ]
   },
 
   mcp: {
-    name: 'Docs template'
+    name: 'Customer Portal documentation'
   }
 })

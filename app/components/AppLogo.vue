@@ -1,9 +1,9 @@
 <template>
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 2600 400"
+    viewBox="0 0 2850 400"
     role="img"
-    aria-label="PortalNuxt"
+    aria-label="Customer Portal"
     preserveAspectRatio="xMidYMid meet"
   >
     <defs>
@@ -34,11 +34,11 @@
       y="310"
       fill="currentColor"
       font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Noto Sans', sans-serif"
-      font-size="340"
+      font-size="300"
       font-weight="600"
       letter-spacing="-4"
     >
-      PortalNuxt
+      Customer Portal
     </text>
   </svg>
 </template>

@@ -13,7 +13,7 @@ export default defineAppConfig({
     }
   },
   seo: {
-    siteName: 'PortalNuxt Documentation'
+    siteName: 'Customer Portal'
   },
   header: {
     title: '',
@@ -27,15 +27,18 @@ export default defineAppConfig({
     colorMode: true,
     links: [{
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/ludulicious/cust',
+      'to': 'https://github.com/ludulicious/customer-portal',
       'target': '_blank',
-      'aria-label': 'GitHub'
+      'aria-label': 'Customer Portal on GitHub'
     }]
   },
   footer: {
-    credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
+    credits: `Customer Portal • public development • © ${new Date().getFullYear()}`,
     colorMode: false,
     links: [{
+      label: 'Contribute',
+      to: '/contributing'
+    }, {
       label: 'Privacy Policy',
       to: '/privacy-policy'
     }, {
@@ -50,13 +53,12 @@ export default defineAppConfig({
       links: [{
         icon: 'i-lucide-star',
         label: 'Star on GitHub',
-        to: 'https://github.com/ludulicious/portalnuxt',
+        to: 'https://github.com/ludulicious/customer-portal',
         target: '_blank'
       }, {
-        icon: 'i-lucide-book-open',
-        label: 'Nuxt UI docs',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank'
+        icon: 'i-lucide-blocks',
+        label: 'Create a feature layer',
+        to: '/contributing/create-a-layer'
       }]
     }
   }

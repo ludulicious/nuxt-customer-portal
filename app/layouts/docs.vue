@@ -11,6 +11,7 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
         <UPageAside>
           <UContentNavigation
             highlight
+            aria-label="Documentation"
             :navigation="navigation"
           />
         </UPageAside>
