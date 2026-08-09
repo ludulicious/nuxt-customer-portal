@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Customer Portal documentation
+    url: https://portalnuxt.com
+    about: Read setup, architecture, module, operations, user, and contribution documentation.
+  - name: Documentation feedback
+    url: https://github.com/ludulicious/portalnuxt/issues/new?template=documentation.yml
+    about: Report unclear, incomplete, outdated, or incorrect documentation in the documentation repository.
+  - name: Private security report
+    url: https://github.com/ludulicious/customer-portal/security
+    about: Do not disclose authentication, authorization, tenancy, invoice, or timesheet vulnerabilities publicly.

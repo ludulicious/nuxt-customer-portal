@@ -1,0 +1,58 @@
+name: Reusable layer proposal
+description: Propose a portable business capability as a new Customer Portal feature layer.
+title: "Module proposal: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the module proposal and layer architecture guides before submitting. A layer should own one coherent capability and remain removable from the host application.
+  - type: input
+    id: proposal_guide
+    attributes:
+      label: Proposal guide
+      description: Confirm that you reviewed the module proposal guide.
+      value: https://portalnuxt.com/contributing/propose-a-module
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Shared business problem
+      description: Who has this problem, and why is it useful across more than one Customer Portal installation?
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Proposed layer boundary
+      description: State what the layer owns, what remains in portal core, and what is explicitly out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: Routes, navigation, and policy actions
+      description: Outline pages, API families, menu or dashboard contributions, audiences, roles, and capability actions.
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Data ownership and tenancy
+      description: Describe the PostgreSQL schema, organization ownership, cross-organization behavior, retention, and deletion rules.
+    validations:
+      required: true
+  - type: textarea
+    id: portability
+    attributes:
+      label: Portability plan
+      description: Explain how the layer can be enabled, disabled, removed, and tested in a clean Customer Portal checkout.
+    validations:
+      required: true
+  - type: textarea
+    id: milestone
+    attributes:
+      label: First reviewable milestone
+      description: Define the smallest end-to-end slice that proves the boundary.
+    validations:
+      required: true

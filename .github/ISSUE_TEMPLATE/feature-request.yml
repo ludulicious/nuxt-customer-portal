@@ -1,0 +1,43 @@
+name: Feature request
+description: Describe a user problem that may fit an existing Customer Portal layer.
+title: "Feature: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the user and the problem without prescribing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Explain what success looks like and which current workflow would change.
+    validations:
+      required: true
+  - type: input
+    id: layer
+    attributes:
+      label: Likely layer
+      description: Name the existing layer that should own this behavior, or state that you are unsure.
+      placeholder: timesheets, service-requests, account-organizations, or unsure
+    validations:
+      required: true
+  - type: textarea
+    id: roles
+    attributes:
+      label: Roles, capabilities, and organizations
+      description: Identify who can see or perform the behavior and whether it crosses organization boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds or smaller solutions.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Add sanitized examples, screenshots, or related issues. Do not include customer data.

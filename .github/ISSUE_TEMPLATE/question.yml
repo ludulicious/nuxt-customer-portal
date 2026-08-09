@@ -1,0 +1,41 @@
+name: Implementation question
+description: Ask a focused setup, configuration, architecture, or module question.
+title: "Question: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the documentation and search existing issues first. Community support has no guaranteed response time. Never include secrets or real customer data.
+  - type: input
+    id: documentation
+    attributes:
+      label: Documentation consulted
+      description: Link the pages you already checked.
+      placeholder: https://portalnuxt.com/...
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Customer Portal revision
+      description: Paste the full output of `git rev-parse HEAD` when the question concerns a checkout.
+      placeholder: 40-character commit SHA
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to achieve?
+      description: Describe the desired outcome and the affected layer or workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: Include a minimal sanitized example and the result, error, or point of confusion.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Relevant environment details
+      description: Include Node.js, pnpm, PostgreSQL, deployment, and browser details only when relevant.
