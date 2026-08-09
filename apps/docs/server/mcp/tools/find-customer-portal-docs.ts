@@ -23,7 +23,7 @@ export default defineMcpTool({
   ],
   handler: ({ query, limit }) => ({
     pages: findDocumentation(query, limit),
-    completeDocumentation: 'https://portalnuxt.com/llms-full.txt',
+    completeDocumentation: 'https://nuxt-customer-portal.com/llms-full.txt',
     verifiedProductSource: {
       repository: documentationDefaults.productRepositoryUrl,
       commit: documentationDefaults.productSourceCommit,

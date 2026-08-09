@@ -24,9 +24,9 @@ The query builder provides a standardized way to:
 ### Simple Example
 
 ```typescript
-import { buildDrizzleQuery, BaseQuerySchema } from '~~/server/utils/query-builder'
-import { db } from '~~/server/utils/db'
-import { user as userTable } from '~~/server/db/schema/auth-schema'
+import { buildDrizzleQuery, BaseQuerySchema } from '@nuxt-customer-portal/core/server/utils/query-builder'
+import { db } from '@nuxt-customer-portal/core/server/utils/db'
+import { user as userTable } from '@nuxt-customer-portal/core/schema'
 import { getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
@@ -361,7 +361,7 @@ const FilterOperatorSchema: z.ZodEnum<[
 3. **Handle undefined values**: Check for `undefined` before applying `limit` and `offset`
 4. **Use table directly**: Prefer passing the table object over creating a custom resolver when possible
 5. **Combine filters wisely**: Multiple filters are combined with AND - use `in` operator for OR-like behavior
-6. **Type safety**: Use TypeScript types from `#types` for `QueryInput` and filter types
+6. **Type safety**: Import `QueryInput` and filter types from the documented core package export
 
 ## Common Patterns
 
@@ -411,7 +411,7 @@ If a field is not being filtered, check:
 ### Type Errors
 
 If you encounter TypeScript errors:
-1. Ensure you're importing types from `#types`
+1. Ensure you are importing types from a documented `@nuxt-customer-portal/core/*` export
 2. Use `as QueryInput` when parsing query parameters
 3. Check that your table type matches what Drizzle expects
 
@@ -427,4 +427,3 @@ If filters aren't working:
 
 - [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
 - Example implementation: `server/api/admin/users-query.get.ts`
-

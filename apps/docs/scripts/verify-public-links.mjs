@@ -113,24 +113,24 @@ if (missingSourcePaths.length) {
 console.log(`✓ product source map: ${documentedSourcePaths.length} pinned files`)
 
 const repositoryLayers = [...repositoryFiles]
-  .map(path => path.match(/^layers\/([^/]+)\/nuxt\.config\.ts$/)?.[1])
+  .map(path => path.match(/^packages\/([^/]+)\/package\.json$/)?.[1])
   .filter(Boolean)
   .sort()
 const documentedLayers = productInventory.layers.map(layer => layer.id).sort()
 
 if (JSON.stringify(repositoryLayers) !== JSON.stringify(documentedLayers)) {
   throw new Error([
-    'Documented product layer inventory does not match the pinned repository tree.',
+    'Documented public package inventory does not match the pinned repository tree.',
     `Repository: ${repositoryLayers.join(', ')}`,
     `Documented: ${documentedLayers.join(', ')}`
   ].join('\n'))
 }
 
-console.log(`✓ product layer inventory: ${documentedLayers.length} documented layers`)
+console.log(`✓ product package inventory: ${documentedLayers.length} documented packages`)
 
 for (const layer of productInventory.layers) {
-  const pagePrefix = `layers/${layer.id}/app/pages/`
-  const apiPrefix = `layers/${layer.id}/server/api/`
+  const pagePrefix = `packages/${layer.id}/app/pages/`
+  const apiPrefix = `packages/${layer.id}/server/api/`
   const pageCount = [...repositoryFiles].filter(path => path.startsWith(pagePrefix) && path.endsWith('.vue')).length
   const apiHandlerCount = [...repositoryFiles].filter(path => path.startsWith(apiPrefix) && path.endsWith('.ts')).length
 
@@ -157,7 +157,10 @@ if (productInventory.license.status === 'pending' && productLicenseFiles.length)
 if (productInventory.license.status === 'licensed' && !productLicenseFiles.length) {
   throw new Error('Product is documented as licensed but no root license file exists')
 }
-console.log(`✓ product licensing status: ${productInventory.license.status}`)
+if (productInventory.license.status === 'licensed' && productInventory.license.spdxId !== 'MIT') {
+  throw new Error(`Expected the documented SPDX identifier to be MIT, received ${productInventory.license.spdxId}`)
+}
+console.log(`✓ product licensing status: ${productInventory.license.status} (${productInventory.license.spdxId})`)
 
 function tarString(buffer, start, length) {
   return buffer.subarray(start, start + length).toString('utf8').replace(/\0.*$/, '').trim()

@@ -7,9 +7,9 @@ Effective date: January 15, 2026
 
 These Terms of Service ("Terms") govern your use of the Customer Portal project ("Project", "we", "us"), our documentation, and any hosted demo we operate. By using the Project or a hosted demo, you agree to these Terms.
 
-## Source-code licensing status
+## Source-code license
 
-The Customer Portal product source is public, but the revision currently verified by this documentation does not contain an explicit software license. These Terms do not create or replace a source-code license. The maintainers intend to adopt an open-source license; until then, consult the repository and obtain any permission required for your use, modification, or distribution of the product code.
+Nuxt Customer Portal is provided under the MIT License in the repository root. These hosted-service terms do not replace or restrict the permissions granted by that software license.
 
 ## Use of Hosted Demos
 
@@ -53,4 +53,4 @@ We may update these Terms from time to time. Changes will be posted on this page
 
 ## Contact Us
 
-If you have questions about these Terms, please [open a documentation issue](https://github.com/ludulicious/portalnuxt/issues/new?title=Terms%3A%20).
+If you have questions about these Terms, please [open a documentation issue](https://github.com/ludulicious/customer-portal/issues/new?title=Terms%3A%20).

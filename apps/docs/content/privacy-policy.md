@@ -23,7 +23,7 @@ We use the information we collect to:
 
 ## Self-hosted use
 
-If you operate an authorized self-hosted instance, you control its data collection and are responsible for your own privacy practices. The product repository's current licensing status is described under [Compatibility and releases](/reference/compatibility-and-releases).
+If you operate a self-hosted instance, you control its data collection and are responsible for your own privacy practices. The Project is open source under the MIT License; licensing does not transfer responsibility for a host's privacy obligations.
 
 ## Sharing of Information
 
@@ -51,4 +51,4 @@ We may update this policy from time to time. Changes will be posted on this page
 
 ## Contact Us
 
-If you have questions about this policy, please [open a documentation issue](https://github.com/ludulicious/portalnuxt/issues/new?title=Privacy%20policy%3A%20).
+If you have questions about this policy, please [open a documentation issue](https://github.com/ludulicious/customer-portal/issues/new?title=Privacy%20policy%3A%20).

@@ -16,7 +16,7 @@ Modals are implemented as separate, reusable components that:
 
 ```html
 <script setup lang="ts">
-import type { YourDataType } from '#types'
+import type { YourDataType } from '@your-scope/your-feature/types'
 
 // Props - data needed by the modal
 const props = defineProps<{
@@ -205,7 +205,7 @@ const handleSuccess = async () => {
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { AdminUserResponse } from '#types'
+import type { AdminUserResponse } from '@nuxt-customer-portal/core/shared/types/index'
 import { authClient } from '~/utils/auth-client'
 
 const props = defineProps<{
@@ -382,4 +382,3 @@ const handleBanSuccess = async () => {
 ### Component not found
 - Ensure component file follows naming convention
 - Check Nuxt auto-import is working (restart dev server if needed)
-

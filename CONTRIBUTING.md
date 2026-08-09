@@ -1,81 +1,64 @@
-# Contributing to Customer Portal
+# Contributing to Nuxt Customer Portal
 
-Customer Portal is designed to grow through focused fixes, documentation improvements, tests, and reusable Nuxt feature layers. Start with the rendered [contribution guide](https://portalnuxt.com/contributing), which documents the current architecture and links its claims to a verified product revision.
+Nuxt Customer Portal is an MIT-licensed monorepo of reusable Nuxt layers, demo hosts, a migration kit, and its documentation site. Start with the [contribution guide](https://nuxt-customer-portal.com/contributing).
 
 ## Before contributing
 
 1. Search existing [issues](https://github.com/ludulicious/customer-portal/issues) and pull requests.
-2. Open the issue form that matches the work. Discuss substantial behavior or a new layer before implementing it.
+2. Discuss a new package, migration provider, or substantial contract change before implementing it.
 3. Keep one issue and pull request focused on one problem.
-4. Never include customer data, credentials, session cookies, database exports, invoices, or timesheet records in a report or test fixture.
+4. Never include customer data, credentials, cookies, database exports, invoices, or timesheets in fixtures or reports.
 
-The product source does not yet have an explicit software license. Review the [current licensing status](https://portalnuxt.com/reference/compatibility-and-releases); maintainers should clarify contribution licensing before merging substantive third-party code.
+Contributions are accepted under the repository [MIT license](LICENSE).
 
 ## Local setup
 
-Create a project from the public template or clone the repository, then install the pinned package manager dependencies:
-
 ```bash
 pnpm install --frozen-lockfile
-cp .env.example .env
+cp apps/demo-apex/.env.example apps/demo-apex/.env
+pnpm dev:apex
 ```
 
-Configure PostgreSQL and the required authentication values by following the [installation guide](https://portalnuxt.com/getting-started/installation). Apply migrations before starting Nuxt:
-
-```bash
-pnpm exec drizzle-kit migrate
-pnpm dev
-```
-
-Use synthetic local organizations and records. Do not develop against a production database.
+Use a local PostgreSQL database and synthetic records. Run `pnpm --filter @nuxt-customer-portal/demo-apex portal doctor` to inspect the selected providers before applying migrations.
 
 ## Architecture rules
 
-- Put reusable business capabilities in a self-contained directory immediately below `layers/`.
-- Keep portal-wide authentication, organization, feature-registry, navigation, and shell contracts in `portal-core`.
-- Register navigation, modules, dashboard widgets, policies, and capabilities through the feature contract instead of editing the host shell.
-- Authorize every server operation independently. UI visibility is not authorization.
-- Derive tenant scope from the authenticated active organization; never trust a browser-supplied organization identifier when the session provides it.
-- Keep feature-owned tables and enums in the feature's PostgreSQL schema and include a reviewed root migration.
-- Keep English and Dutch locale key trees identical and localize every production-facing string.
-- Avoid host aliases and host-specific imports in layer runtime code. A reusable layer must survive a clean-checkout portability test.
+- Put reusable platform and business capabilities in `packages/<id>` and keep host branding in `apps/*`.
+- Keep `@nuxt-customer-portal/core` visually headless. Shared shell primitives and fallback layouts belong to `ui`.
+- Import cross-package contracts only through documented package exports such as `@nuxt-customer-portal/core/feature` and `@nuxt-customer-portal/core/server`.
+- Do not add host aliases, physical cross-package imports, or dependencies from platform packages to optional features.
+- Register navigation, dashboard widgets, policies, and surfaces through `PortalFeatureDefinition`.
+- Authorize every server operation and derive tenant scope from the authenticated active organization.
+- Give each provider an immutable migration stream and a `portal-manifest` export. Never edit a released migration.
+- Keep English and Dutch locale trees aligned and localize production-facing text.
+- Declare every runtime import in the owning package; keep Nuxt and framework packages as compatible peers and development dependencies.
 
-Read [Layers](docs/LAYERS.md), [Create a feature layer](https://portalnuxt.com/contributing/create-a-layer), and [Tenancy and security](https://portalnuxt.com/architecture/tenancy-and-security) before changing a feature boundary.
+Read [Layers](docs/LAYERS.md), [Create a feature layer](https://nuxt-customer-portal.com/contributing/create-a-layer), and [Database migrations](https://nuxt-customer-portal.com/architecture/database-migrations) before changing a package boundary.
 
 ## Verification
 
-Run the complete project gates before requesting review:
-
 ```bash
-pnpm test:features
-pnpm validate:feature-locales
+pnpm test
 pnpm lint
 pnpm typecheck
 pnpm build
+pnpm pack:check
+pnpm test:e2e:demos
 ```
 
-Add focused tests for changed policy, locale, route, and schema behavior. Protected endpoints should cover unauthenticated, unauthorized, allowed, and cross-organization cases. Apply schema changes to both an empty database and representative pre-change data.
+The clean-consumer checks install only generated tarballs, with no workspace links:
 
-For a reusable layer, also build the application without that layer and in a clean Customer Portal checkout. Removing a feature must not leave imports, navigation, translations, migrations, or server dependencies behind.
+```bash
+pnpm pack:consumer:pnpm
+pnpm pack:consumer:npm
+pnpm pack:consumer:yarn
+pnpm pack:consumer:bun
+```
 
-## Documentation changes
+Add focused tests for changed policies, routes, schemas, migration ordering, and failure behavior. Optional packages must still build when other optional features are absent.
 
-Product documentation lives in the separate [portalnuxt repository](https://github.com/ludulicious/portalnuxt). If a product change affects setup, configuration, architecture, permissions, routes, operations, or user workflows, update the documentation in the same release cycle and link the documentation pull request from the product pull request.
+## Documentation and pull requests
 
-Small code comments and layer-local README files remain useful when they explain constraints close to the implementation; they do not replace the public guide.
+Documentation lives in `apps/docs` in this repository. Update it in the same pull request when setup, configuration, architecture, migrations, permissions, routes, or workflows change.
 
-## Pull requests
-
-Open a draft pull request early when the boundary needs review. Describe:
-
-- the user problem and affected layer;
-- authorization and tenant-isolation impact;
-- schema and migration impact;
-- English and Dutch UI impact;
-- documentation impact;
-- verification performed;
-- screenshots for visible changes.
-
-Respond to review with code, tests, documentation, or reproducible evidence. Maintainers may ask to split a change when infrastructure, product behavior, and unrelated cleanup are combined.
-
-Security reports follow [SECURITY.md](SECURITY.md), not the public issue or pull-request workflow.
+Describe the user problem, affected packages, authorization and tenant impact, schema and migration impact, English and Dutch UI impact, documentation changes, and verification performed. Include screenshots for visible changes. Report vulnerabilities through [SECURITY.md](SECURITY.md), never through a public issue.

@@ -7,11 +7,11 @@
       "defaultBranch": "master",
       "issues": true,
       "discussions": false,
-      "template": true,
+      "template": false,
       "archived": false
     },
     "documentation": {
-      "url": "https://github.com/ludulicious/portalnuxt",
+      "url": "https://github.com/ludulicious/customer-portal",
       "public": true,
       "defaultBranch": "master",
       "issues": true,

@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   ],
 
   site: {
-    url: 'https://portalnuxt.com',
+    url: 'https://nuxt-customer-portal.com',
     name: 'Customer Portal'
   },
 
@@ -105,7 +105,7 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: 'https://portalnuxt.com',
+    domain: 'https://nuxt-customer-portal.com',
     title: 'Customer Portal documentation',
     description: `Build, extend, and contribute to the publicly developed Customer Portal for Nuxt. Verified against source revision ${documentationDefaults.productSourceCommit}.`,
     full: {

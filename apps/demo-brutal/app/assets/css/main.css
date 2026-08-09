@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+:root { --ui-radius: 0; --ui-header-height: 5rem; font-family: "Arial Narrow", "Helvetica Neue", sans-serif; }
+body { background: #ece9df; color: #111; }
+.brutal-shell { min-height: 100dvh; display: grid; grid-template: 5rem 1fr / minmax(15rem, 20vw) 1fr; }
+.brutal-header { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(15rem, 20vw) 1fr auto; align-items: stretch; background: #f3ff3b; border-bottom: 3px solid #111; }
+.brutal-wordmark, .brutal-account, .brutal-modules a { padding: .75rem 1rem; font-weight: 900; }
+.brutal-wordmark { line-height: .85; border-right: 3px solid #111; }
+.brutal-modules { display: flex; overflow-x: auto; }
+.brutal-modules a { display: grid; place-items: center; border-right: 2px solid #111; }
+.brutal-modules a:hover, .brutal-modules a.router-link-active { background: #111; color: #f3ff3b; }
+.brutal-account { display: flex; align-items: center; gap: .75rem; border-left: 3px solid #111; }
+.brutal-context { padding: 2rem 1rem; border-right: 3px solid #111; background: #ff6b3d; }
+.brutal-context > p, .brutal-kicker { font-size: .72rem; font-weight: 900; letter-spacing: .16em; }
+.brutal-context h2 { margin: .5rem 0 2rem; font-size: clamp(2rem, 4vw, 4rem); line-height: .85; text-transform: uppercase; }
+.brutal-main { min-width: 0; overflow: auto; }
+.brutal-home { min-height: calc(100dvh - 5rem); padding: clamp(2rem, 7vw, 7rem); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2rem; }
+.brutal-home h1, .brutal-error h1 { font-size: clamp(4rem, 13vw, 11rem); font-weight: 950; line-height: .78; letter-spacing: -.07em; }
+.brutal-home > p:not(.brutal-kicker) { max-width: 42rem; font-size: clamp(1.15rem, 2vw, 1.75rem); font-weight: 700; }
+.brutal-error { min-height: 100dvh; padding: 3rem; background: #f3ff3b; }
+@media (max-width: 64rem) { .brutal-shell { display: block; } .brutal-header { position: sticky; top: 0; z-index: 40; grid-template-columns: auto 1fr; } .brutal-modules { grid-column: 1 / -1; border-top: 2px solid #111; } .brutal-account { border-left: 0; } .brutal-context { border-right: 0; border-bottom: 3px solid #111; } }

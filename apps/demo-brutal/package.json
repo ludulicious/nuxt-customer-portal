@@ -1,0 +1,14 @@
+{
+  "name": "@nuxt-customer-portal/demo-brutal",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "nuxt build", "dev": "nuxt dev --port 3052", "preview": "nuxt preview", "postinstall": "nuxt prepare", "lint": "eslint .", "typecheck": "nuxt typecheck" },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.121", "@nuxt/ui": "^4.10.0",
+    "@nuxt-customer-portal/kit": "workspace:*", "@nuxt-customer-portal/preset": "workspace:*",
+    "@nuxt-customer-portal/service-requests": "workspace:*", "@nuxt-customer-portal/timesheets": "workspace:*",
+    "@nuxtjs/i18n": "^10.6.0", "@pinia/nuxt": "^1.0.1", "@vueuse/nuxt": "^14.4.0", "nuxt": "^4.5.1"
+  },
+  "devDependencies": { "@nuxt/eslint": "^1.16.0", "eslint": "^10.8.0", "typescript": "^6.0.3", "vue-tsc": "^3.3.9" }
+}

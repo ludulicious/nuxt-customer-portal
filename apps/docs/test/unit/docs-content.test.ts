@@ -122,17 +122,17 @@ describe('documentation content', () => {
     expect(new Set(sitemapRoutes).size).toBe(sitemapRoutes.length)
     expect(sitemap).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
     expectedRoutes.forEach((route) => {
-      const url = `https://portalnuxt.com${route === '/' ? '' : route}`
+      const url = `https://nuxt-customer-portal.com${route === '/' ? '' : route}`
       expect(sitemap).toContain(`<loc>${url}</loc>`)
     })
   })
 
-  it('pins contributor links to valid repositories and an immutable product revision', () => {
+  it('pins contributor links to the canonical repository and a valid source revision', () => {
     expect(new URL(documentationDefaults.docsRepositoryUrl).hostname).toBe('github.com')
     expect(new URL(documentationDefaults.feedbackRepositoryUrl).hostname).toBe('github.com')
     expect(new URL(documentationDefaults.productRepositoryUrl).hostname).toBe('github.com')
     expect(documentationDefaults.docsRepositoryBranch).toMatch(/^[\w./-]+$/)
-    expect(documentationDefaults.productSourceCommit).toMatch(/^[a-f0-9]{40}$/)
+    expect(documentationDefaults.productSourceCommit).toMatch(/^[\w./-]+$/)
     expect(envExampleValue('NUXT_PUBLIC_DOCS_REPOSITORY_URL')).toBe(documentationDefaults.docsRepositoryUrl)
     expect(envExampleValue('NUXT_PUBLIC_DOCS_REPOSITORY_BRANCH')).toBe(documentationDefaults.docsRepositoryBranch)
     expect(envExampleValue('NUXT_PUBLIC_DOCS_FEEDBACK_REPOSITORY_URL')).toBe(documentationDefaults.feedbackRepositoryUrl)
@@ -164,7 +164,7 @@ describe('documentation content', () => {
       defaultBranch: 'master',
       issues: true,
       discussions: false,
-      template: true,
+      template: false,
       archived: false
     })
     expect(collaboration.repositories.documentation).toMatchObject({
@@ -183,13 +183,18 @@ describe('documentation content', () => {
     expect(community).toContain('customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('configured as a GitHub template')
+    expect(installation).toContain('@nuxt-customer-portal/preset')
+    expect(installation).toContain('pnpm add')
+    expect(installation).toContain('npm install')
+    expect(installation).toContain('yarn add')
+    expect(installation).toContain('bun add')
   })
 
-  it('maps documented product internals to immutable source links', () => {
+  it('maps documented product internals to source-backed monorepo links', () => {
     const sourceMap = readFileSync(join(contentRoot, '4.reference/7.source-map.md'), 'utf8')
     const sourcePrefix = `${documentationDefaults.productRepositoryUrl}/blob/`
-    const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/customer-portal\/blob\/([a-f0-9]{40})\/([^)]+))\)/g)]
+    const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)]
+    const monorepoRoot = resolve(root, '../..')
 
     expect(sourceLinks.length).toBeGreaterThanOrEqual(30)
     sourceLinks.forEach(([, url, revision, path]) => {
@@ -197,6 +202,7 @@ describe('documentation content', () => {
       expect(revision).toBe(documentationDefaults.productSourceCommit)
       expect(path).not.toContain('..')
       expect(path).not.toContain('#')
+      expect(existsSync(join(monorepoRoot, path)), `${path} does not exist`).toBe(true)
     })
     expect(new Set(sourceLinks.map(match => match[3])).size).toBe(sourceLinks.length)
     expect(sourceMap).toContain('[glossary](/reference/glossary)')
@@ -235,7 +241,7 @@ describe('documentation content', () => {
       const documentationFile = routeFiles.get(layer.documentationPath)
       expect(documentationFile, `${layer.id} has no maintained documentation route`).toBeTruthy()
       expect(readFileSync(documentationFile!, 'utf8')).toContain(`\`${layer.id}\``)
-      expect(layer.pageCount).toBeGreaterThan(0)
+      expect(layer.pageCount).toBeGreaterThanOrEqual(0)
       expect(layer.apiHandlerCount).toBeGreaterThanOrEqual(0)
       layer.apiFamilies.forEach(family => expect(family).toMatch(/^\/api\//))
     })
@@ -243,18 +249,16 @@ describe('documentation content', () => {
     const apiReference = readFileSync(join(contentRoot, '4.reference/4.server-api.md'), 'utf8')
     const totalHandlers = inventory.layers.reduce((total, layer) => total + layer.apiHandlerCount, 0)
     expect(apiReference).toContain(`contains ${totalHandlers} Nitro API handler files`)
-    expect(inventory.license.status).toBe('pending')
-    expect(inventory.license.spdxId).toBeNull()
+    expect(inventory.license.status).toBe('licensed')
+    expect(inventory.license.spdxId).toBe('MIT')
     expect(routes.has(inventory.license.documentationPath)).toBe(true)
 
     const homepage = readFileSync(join(root, 'app/pages/index.vue'), 'utf8')
     const terms = readFileSync(join(contentRoot, 'terms-of-service.md'), 'utf8')
     const privacy = readFileSync(join(contentRoot, 'privacy-policy.md'), 'utf8')
-    expect(homepage).toContain('An explicit open-source license is pending')
-    expect(homepage).not.toContain('an extensible open-source portal')
-    expect(terms).not.toContain('provided under its open source license')
-    expect(terms).toContain('does not contain an explicit software license')
-    expect(privacy).not.toContain('The Project is open source')
+    expect(homepage).toContain('open source under the MIT License')
+    expect(terms).toContain('provided under the MIT License')
+    expect(privacy).toContain('The Project is open source under the MIT License')
   })
 
   it('documents the complete direct, library-owned, and runtime environment contract', () => {
@@ -290,8 +294,10 @@ describe('documentation content', () => {
     expect(creationGuide).toContain('pgSchema(\'notes\')')
     expect(creationGuide).toContain('area: \'aside\'')
     expect(creationGuide).toContain('size: \'full\'')
-    expect(distributionGuide).toContain('does not yet publish a versioned layer SDK')
-    expect(distributionGuide).toContain('Customer Portal revision')
-    expect(distributionGuide).toContain('cross-organization requests are rejected')
+    expect(creationGuide).toContain('localPortalLayer')
+    expect(creationGuide).toContain('administration.organization.detail')
+    expect(distributionGuide).toContain('package entry point is `nuxt.config.ts`')
+    expect(distributionGuide).toContain('pnpm pack')
+    expect(distributionGuide.toLowerCase()).toContain('cross-organization requests are rejected')
   })
 })

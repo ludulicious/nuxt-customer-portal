@@ -9,4 +9,4 @@ If private vulnerability reporting is unavailable, contact the repository owner 
 
 Include the affected commit, impact, prerequisites, reproduction steps, and a suggested mitigation if known. Use synthetic accounts and records. Do not test against organizations, systems, or data you do not own or have explicit permission to assess.
 
-The project does not currently publish versioned security-support windows. Pin deployed commits and review the [compatibility and release documentation](https://portalnuxt.com/reference/compatibility-and-releases) before upgrading.
+The project does not currently publish versioned security-support windows. Pin deployed commits and review the [compatibility and release documentation](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before upgrading.

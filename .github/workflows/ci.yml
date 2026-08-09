@@ -2,54 +2,63 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: customer-portal-ci-${{ github.ref }}
+  group: nuxt-customer-portal-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
+  PUBLIC_URL: http://127.0.0.1:3000
+  BETTER_AUTH_URL: http://127.0.0.1:3000
+  BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
+  PORTAL_REGISTRATION_MODE: open
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
-      PUBLIC_URL: http://localhost:3000
-      BETTER_AUTH_URL: http://localhost:3000
-      BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
-      PORTAL_REGISTRATION_MODE: open
+    timeout-minutes: 30
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.19.0
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm pack:check
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e:demos
+      - run: pnpm test:e2e:docs
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test feature contracts
-        run: pnpm test:features
-
-      - name: Validate business-feature locales
-        run: pnpm validate:feature-locales
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Build
-        run: pnpm build
+  consumers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        manager: [pnpm, npm, yarn, bun]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - if: matrix.manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - if: matrix.manager == 'yarn'
+        run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: node --import tsx scripts/verify-packages.ts --consumers --manager=${{ matrix.manager }}

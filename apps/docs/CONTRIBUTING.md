@@ -2,7 +2,7 @@
 
 This repository contains the marketing and documentation site for [Customer Portal](https://github.com/ludulicious/customer-portal).
 
-Start with the rendered [contribution guide](https://portalnuxt.com/contributing). Documentation changes should follow the [writing guide](https://portalnuxt.com/contributing/documentation); product behavior must be verified against the current Customer Portal source before it is described here.
+Start with the rendered [contribution guide](https://nuxt-customer-portal.com/contributing). Documentation changes should follow the [writing guide](https://nuxt-customer-portal.com/contributing/documentation); product behavior must be verified against the current Customer Portal source before it is described here.
 
 ## Local workflow
 

@@ -10,7 +10,7 @@ export function useDocumentationLinks(options: DocumentationLinkOptions) {
   const site = useSiteConfig()
   const config = useRuntimeConfig()
 
-  const siteUrl = computed(() => (site.url || 'https://portalnuxt.com').replace(/\/$/, ''))
+  const siteUrl = computed(() => (site.url || 'https://nuxt-customer-portal.com').replace(/\/$/, ''))
   const pageUrl = computed(() => `${siteUrl.value}${route.path}`)
   const markdownPath = computed(() => `${siteUrl.value}/raw${route.path}.md`)
   const editPageUrl = computed(() => {

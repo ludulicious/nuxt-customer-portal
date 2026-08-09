@@ -4,12 +4,12 @@ const description = 'Start with authentication, organizations, administration, a
 
 const extensionModel = [
   {
-    title: 'Portal core',
-    description: 'Sessions, organizations, authorization, the application shell, and shared server adapters.'
+    title: 'Headless core',
+    description: 'Sessions, organizations, authorization, database access, and shared server adapters.'
   },
   {
     title: 'Feature registry',
-    description: 'Layers register navigation, module menus, dashboard widgets, and role policies without host edits.'
+    description: 'Layers register navigation, module menus, surfaces, dashboard widgets, and role policies without host edits.'
   },
   {
     title: 'Business layers',
@@ -46,8 +46,8 @@ const workflowStages = [
 
 const ownershipRows = [
   {
-    term: 'Portal core',
-    description: 'Owns the stable shell: authentication, organization context, authorization helpers, shared adapters, and the feature contract.'
+    term: 'Core',
+    description: 'Owns headless authentication, organization context, authorization helpers, shared adapters, and the feature contract.'
   },
   {
     term: 'Registry',
@@ -69,7 +69,7 @@ const contributorPaths = [
   {
     number: '02',
     title: 'Create a feature layer',
-    description: 'Build a portable module against the portal-core contracts.',
+    description: 'Build a portable module against the public core contracts.',
     to: '/contributing/create-a-layer'
   },
   {
@@ -98,11 +98,11 @@ useSeoMeta({
   ogTitle: title,
   description,
   ogDescription: description,
-  ogUrl: 'https://portalnuxt.com'
+  ogUrl: 'https://nuxt-customer-portal.com'
 })
 
 useHead({
-  link: [{ rel: 'canonical', href: 'https://portalnuxt.com' }]
+  link: [{ rel: 'canonical', href: 'https://nuxt-customer-portal.com' }]
 })
 
 defineOgImage('DocsSatori', {
@@ -137,7 +137,7 @@ defineOgImage('DocsSatori', {
               Get started
             </UButton>
             <UButton
-              to="https://demo.portalnuxt.com"
+              to="https://demo.nuxt-customer-portal.com"
               target="_blank"
               rel="noopener noreferrer"
               size="xl"
@@ -162,11 +162,11 @@ defineOgImage('DocsSatori', {
               GitHub
             </UButton>
           </div>
-          <div class="licensing-status" role="note" aria-label="Licensing status">
-            <UIcon name="i-lucide-info" class="size-4 shrink-0" aria-hidden="true" />
+          <div class="licensing-status" role="note" aria-label="Open-source license">
+            <UIcon name="i-lucide-scale" class="size-4 shrink-0" aria-hidden="true" />
             <p>
-              The product source is public. An explicit open-source license is pending.
-              <NuxtLink to="/reference/compatibility-and-releases">Read project status</NuxtLink>.
+              Nuxt Customer Portal is open source under the MIT License.
+              <NuxtLink to="/reference/compatibility-and-releases">Read compatibility and release status</NuxtLink>.
             </p>
           </div>
         </div>

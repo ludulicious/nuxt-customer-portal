@@ -1,0 +1,68 @@
+import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
+import { timesheetsFeature } from '@nuxt-customer-portal/timesheets/shared/feature'
+import {
+  ensureSettings,
+  listActivities,
+  listAvailableClientOrganizations,
+  listClients,
+  listInvoices,
+  listInvoiceableEntries,
+  getOrganizationInvoiceProfile,
+  getTimesheetsSetupStatus,
+  listProjects,
+  listTeam
+} from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Timesheets'],
+operationId: 'timesheetsAdminBootstrapGet',
+    summary: 'Get timesheets administration data',
+    description: 'Get timesheets administration data. Scoped to the active organization and the applicable Timesheets permission.'
+  }
+})
+
+export default defineEventHandler(async (event) => {
+  const { organizationId, session } = await requireFeatureAccess(
+    event,
+    timesheetsFeature.policy,
+    'manage'
+  )
+  const section = String(getQuery(event).section ?? '')
+  const settings = await ensureSettings(organizationId)
+  const [clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile, setupStatus] = await Promise.all([
+    section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
+    listAvailableClientOrganizations(
+      organizationId,
+      session.user.id,
+      session.user.role === 'admin'
+    ),
+    section === 'projects' ? Promise.resolve([]) : listProjects(organizationId),
+    section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
+    listTeam(organizationId),
+    Promise.resolve([]),
+    section === 'invoices' || !settings.invoicingEnabled ? Promise.resolve([]) : listInvoices(organizationId),
+    settings.invoicingEnabled ? listInvoiceableEntries(organizationId) : Promise.resolve([]),
+    getOrganizationInvoiceProfile(organizationId),
+    getTimesheetsSetupStatus(organizationId)
+  ])
+  return {
+    settings: {
+      currency: settings.currency,
+      timezone: settings.timezone,
+      defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
+      weekStartsOn: settings.weekStartsOn,
+      internalApprovalsEnabled: settings.internalApprovalsEnabled
+    },
+    clients,
+    availableClientOrganizations,
+    projects,
+    activities,
+    team,
+    approvals,
+    invoices,
+    invoiceableEntries,
+    organizationProfile,
+    setupStatus
+  }
+})

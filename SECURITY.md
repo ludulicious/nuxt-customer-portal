@@ -20,10 +20,10 @@ Never test against organizations, systems, or data that you do not own or have e
 
 Reports involving authentication, authorization, active-organization isolation, system-administrator access, feature policies, file or document access, invoices, approvals, and time entries are in scope. A visible menu item without permission is worth reporting when it exposes data or an executable action; visual inconsistencies without security impact can use the bug form.
 
-Vulnerabilities specific to the documentation site or its deployment belong to the [portalnuxt repository](https://github.com/ludulicious/portalnuxt/security).
+Vulnerabilities specific to the documentation site or its deployment use the same repository's [private security reporting](https://github.com/ludulicious/customer-portal/security).
 
 ## Supported versions and disclosure
 
-Customer Portal is in active development and does not yet publish versioned releases or security-support windows. Pin deployed commits and review the [compatibility and release policy](https://portalnuxt.com/reference/compatibility-and-releases) before upgrading.
+The packages are currently `0.1.0-alpha.0` and do not yet have security-support windows. Pin exact prerelease versions and review the [compatibility and release policy](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before upgrading.
 
 The project does not currently promise an acknowledgement or remediation time. Please allow maintainers a reasonable opportunity to investigate and coordinate a fix before any public disclosure.

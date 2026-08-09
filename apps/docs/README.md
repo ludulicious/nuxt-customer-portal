@@ -1,6 +1,6 @@
 # Customer Portal website
 
-The marketing and documentation site for [Customer Portal](https://github.com/ludulicious/customer-portal), an extensible customer portal built with Nuxt. The product source is public and is intended for an open-source release, but its explicit license is still pending; see [Compatibility and releases](https://portalnuxt.com/reference/compatibility-and-releases).
+The documentation application for [Nuxt Customer Portal](https://github.com/ludulicious/customer-portal), an MIT-licensed collection of reusable Nuxt layers. It is maintained in the canonical monorepo under `apps/docs` and served from [nuxt-customer-portal.com](https://nuxt-customer-portal.com).
 
 The site covers:
 

@@ -1,0 +1,21 @@
+{
+  "name": "@nuxt-customer-portal/ui",
+  "version": "0.1.0-alpha.0",
+  "license": "MIT",
+  "homepage": "https://nuxt-customer-portal.com",
+  "repository": { "type": "git", "url": "git+https://github.com/ludulicious/customer-portal.git" },
+  "type": "module",
+  "main": "./nuxt.config.ts",
+  "files": ["LICENSE", "app", "nuxt.config.ts", "portal.manifest.mjs", "README.md"],
+  "exports": { ".": "./nuxt.config.ts", "./portal-manifest": "./portal.manifest.mjs" },
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@nuxt-customer-portal/core": "workspace:^",
+    "@nuxt/ui": "^4.10.0",
+    "@nuxtjs/i18n": "^10.6.0",
+    "@pinia/nuxt": "^1.0.1",
+    "pinia": "^4.0.2"
+  },
+  "peerDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" },
+  "devDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" }
+}

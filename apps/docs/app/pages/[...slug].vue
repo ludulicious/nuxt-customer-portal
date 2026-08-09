@@ -23,7 +23,7 @@ const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
 
 const title = page.value.seo?.title || page.value.title
 const description = page.value.seo?.description || page.value.description
-const canonicalUrl = `https://portalnuxt.com${route.path}`
+const canonicalUrl = `https://nuxt-customer-portal.com${route.path}`
 
 useSeoMeta({
   title,

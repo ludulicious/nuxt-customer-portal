@@ -1,109 +1,75 @@
-# Customer Portal
+# Nuxt Customer Portal
 
-A modular Nuxt 4 customer portal with authentication, organizations, PostgreSQL, and independently owned feature layers. The production-oriented timesheets layer includes approvals, reporting, invoicing, and document workflows.
+MIT-licensed Nuxt 4 layers for authentication, tenant organizations, administration, Service Requests, Timesheets, and invoicing. The repository is the canonical pnpm monorepo for public packages, two structurally distinct demos, migration tooling, and documentation.
 
-- [Documentation](https://portalnuxt.com)
-- [Installation guide](https://portalnuxt.com/getting-started/installation)
-- [Architecture](https://portalnuxt.com/architecture/overview)
-- [Modules](https://portalnuxt.com/modules)
-- [Contributing](https://portalnuxt.com/contributing)
+- [Documentation](https://nuxt-customer-portal.com)
+- [Installation](https://nuxt-customer-portal.com/getting-started/installation)
+- [Architecture](https://nuxt-customer-portal.com/architecture/overview)
+- [Package compatibility](https://nuxt-customer-portal.com/reference/compatibility-and-releases)
 
-> The source is public, but this repository does not yet contain an explicit software license. Review the [current licensing status](https://portalnuxt.com/reference/compatibility-and-releases) before using, modifying, or distributing the code.
+## Packages
 
-## Architecture documentation
+| Package | Purpose |
+| --- | --- |
+| `@nuxt-customer-portal/core` | Headless auth/session, tenancy, authorization, registry, database, and contracts |
+| `@nuxt-customer-portal/ui` | Neutral fallback layouts, dashboard, navigation, modals, and notifications |
+| `@nuxt-customer-portal/authentication` | Authentication routes and forms |
+| `@nuxt-customer-portal/organizations` | Profile, organizations, membership, and invitations |
+| `@nuxt-customer-portal/administration` | System administration |
+| `@nuxt-customer-portal/service-requests` | Optional Service Requests feature |
+| `@nuxt-customer-portal/timesheets` | Optional time, approval, reporting, and invoicing feature |
+| `@nuxt-customer-portal/preset` | Core, UI, authentication, organizations, and administration |
+| `@nuxt-customer-portal/kit` | Portal configuration, diagnostics, and migration CLI |
 
-- [Portal feature layers](docs/LAYERS.md): create, register, enable, disable, test, and remove reusable feature layers.
-- [Service-request layer](layers/service-requests/README.md): reference implementation and feature-specific lifecycle notes.
-- [Timesheets and invoices](https://portalnuxt.com/modules/timesheets-invoices): production module boundaries, roles, workflows, and limitations.
+All public packages are linked at `0.1.0-alpha.0`. This milestone produces and verifies tarballs but does not publish them.
 
-## Quick start (scaffold from GitHub template)
-
-Use Nuxt’s initializer (powered by `unjs/giget`) to create a new project from this repository:
-
-```bash
-npx nuxi init -t github:ludulicious/customer-portal my-customer-portal
-```
-
-If you prefer the `create-nuxt` wrapper:
-
-```bash
-npm create nuxt@latest -- -t github:ludulicious/customer-portal my-customer-portal
-```
-
-Customer Portal does not currently publish versioned releases. For a reproducible evaluation, pin a commit and record it with your deployment.
+## Consumer setup
 
 ```bash
-npx nuxi init -t github:ludulicious/customer-portal#<commit> my-customer-portal
+pnpm add @nuxt-customer-portal/preset @nuxt-customer-portal/kit
+pnpm add @nuxt-customer-portal/service-requests @nuxt-customer-portal/timesheets
 ```
 
-## Setup
+```ts
+// portal.config.ts
+import { definePortalConfig } from '@nuxt-customer-portal/kit'
 
-Install dependencies:
+export default definePortalConfig({
+  layers: [
+    '@nuxt-customer-portal/preset',
+    '@nuxt-customer-portal/service-requests',
+    '@nuxt-customer-portal/timesheets'
+  ]
+})
+```
+
+```ts
+// nuxt.config.ts
+import portal from './portal.config'
+
+export default defineNuxtConfig({ extends: portal.nuxtLayers })
+```
+
+Validate and migrate the configured providers:
+
+```bash
+npx nuxt-customer-portal doctor
+npx nuxt-customer-portal db status
+npx nuxt-customer-portal db migrate
+```
+
+## Repository development
 
 ```bash
 pnpm install
-```
-
-Create your local env file from the example:
-
-```bash
-# macOS / Linux
-cp .env.example .env
-
-# Windows (cmd)
-copy .env.example .env
-```
-
-At minimum, configure `DATABASE_URL`, `PUBLIC_URL`, `BETTER_AUTH_URL`, and a stable, high-entropy `BETTER_AUTH_SECRET`. Optional email and OAuth providers can remain disabled until they are configured. See the [configuration reference](https://portalnuxt.com/reference/configuration) for the complete environment contract.
-
-Apply the database migrations:
-
-```bash
-pnpm exec drizzle-kit migrate
-```
-
-## Development
-
-Start the dev server:
-
-```bash
-pnpm dev
-```
-
-By default this repo runs on `http://localhost:3051` (see `nuxt.config.ts` → `devServer.port`).
-
-## Production
-
-Build:
-
-```bash
+pnpm test
+pnpm typecheck
 pnpm build
+pnpm pack:check
 ```
 
-Preview:
+Run `pnpm dev:apex`, `pnpm dev:brutal`, or `pnpm dev:docs`. Apex uses a conventional header/sidebar shell; Brutal uses an independent editorial command-bar/two-pane shell. Public pages and branding belong to demo or consumer hosts, not reusable packages.
 
-```bash
-pnpm preview
-```
+The unchanged combined migration history is under `legacy/drizzle`. Use `db adopt-legacy` to verify and map a recognized installation before stamping package baselines.
 
-## Docker
-
-Build the image:
-
-```bash
-docker build -t customer-portal .
-```
-
-Run with a production-configured environment file:
-
-```bash
-docker run --rm -p 3000:3000 --env-file .env customer-portal
-```
-
-Set `PUBLIC_URL` and `BETTER_AUTH_URL` in that file to the externally reachable deployment URL, and keep the authentication secret out of the image. Follow the [deployment guide](https://portalnuxt.com/getting-started/deployment) before exposing an instance publicly.
-
-## Contributing and support
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Use the structured [issue forms](https://github.com/ludulicious/customer-portal/issues/new/choose) for bugs, questions, feature requests, and reusable layer proposals.
-
-Do not disclose vulnerabilities in a public issue. Follow [SECURITY.md](SECURITY.md) for private reporting guidance.
+Copyright © 2026 Nuxt Customer Portal contributors. Distributed under the [MIT License](LICENSE).

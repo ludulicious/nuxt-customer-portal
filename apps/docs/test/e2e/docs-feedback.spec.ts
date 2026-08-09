@@ -13,8 +13,8 @@ test('offers actionable, source-pinned documentation feedback', async ({ page })
 
   const reportUrl = new URL(reportHref!)
   expect(`${reportUrl.origin}${reportUrl.pathname}`).toBe(`${documentationDefaults.feedbackRepositoryUrl}/issues/new`)
-  expect(reportUrl.searchParams.get('title')).toBe('Docs: Feature layers')
-  expect(reportUrl.searchParams.get('body')).toContain('https://portalnuxt.com/architecture/layers')
+  expect(reportUrl.searchParams.get('title')).toBe('Docs: Nuxt layers')
+  expect(reportUrl.searchParams.get('body')).toContain('https://nuxt-customer-portal.com/architecture/layers')
   expect(reportUrl.searchParams.get('body')).toContain(documentationDefaults.productSourceCommit)
 
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
@@ -34,7 +34,7 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   await page.goto('/contributing/create-a-layer')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Create a feature layer' })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Define the feature contract' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Define the feature' })).toBeVisible()
   await expect(page.getByText('PortalFeatureDefinition<NoteAction>', { exact: false }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: 'Distribute a feature layer' }).last()).toHaveAttribute(
     'href',
@@ -44,12 +44,8 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   await page.goto('/contributing/distribute-a-layer')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Distribute a feature layer' })).toBeVisible()
-  await expect(page.getByText('does not yet publish a versioned layer SDK', { exact: false })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Choose the contribution shape' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'current Nuxt layer documentation' })).toHaveAttribute(
-    'href',
-    'https://nuxt.com/docs/4.x/getting-started/layers'
-  )
+  await expect(page.getByText('Official layers use Nuxt\'s npm-layer model', { exact: false })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Package contract' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
     'href',
     `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/content/7.contributing/3.distribute-a-layer.md`
@@ -63,9 +59,9 @@ test('product source map connects contributor terms to immutable implementations
   await page.goto('/reference/source-map')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Product source map' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'shared/types/feature.ts' }).first()).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'packages/core/shared/types/feature.ts' }).first()).toHaveAttribute(
     'href',
-    `${documentationDefaults.productRepositoryUrl}/blob/${documentationDefaults.productSourceCommit}/layers/portal-core/shared/types/feature.ts`
+    `${documentationDefaults.productRepositoryUrl}/blob/${documentationDefaults.productSourceCommit}/packages/core/shared/types/feature.ts`
   )
   await expect(page.getByRole('link', { name: 'glossary' }).last()).toHaveAttribute('href', '/reference/glossary')
 
@@ -95,7 +91,7 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
 
   await expect(page.getByRole('heading', { level: 1, name: 'Platform layers' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Decide where a change belongs' })).toBeVisible()
-  for (const layer of ['portal-core', 'authentication', 'account-organizations', 'administration', 'public-site']) {
+  for (const layer of ['core', 'ui', 'authentication', 'organizations', 'administration', 'preset', 'kit']) {
     await expect(page.getByText(layer, { exact: true }).first()).toBeVisible()
   }
   await expect(page.getByRole('link', { name: 'Create a feature layer' }).last()).toHaveAttribute(
@@ -122,11 +118,11 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
   expect(accessibility.violations).toEqual([])
 })
 
-test('configuration journey exposes the implicit production auth secret', async ({ page }) => {
+test('configuration journey exposes the required production auth secret', async ({ page }) => {
   await page.goto('/reference/configuration')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Configuration reference' })).toBeVisible()
-  await expect(page.getByText('does not yet list BETTER_AUTH_SECRET', { exact: false })).toBeVisible()
+  await expect(page.getByText('Generate BETTER_AUTH_SECRET with', { exact: false })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Runtime variables' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Better Auth secret reference' })).toHaveAttribute(
     'href',
