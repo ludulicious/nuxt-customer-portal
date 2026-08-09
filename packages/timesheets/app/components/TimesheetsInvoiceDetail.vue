@@ -153,6 +153,22 @@ const downloadInvoice = () => {
   const base = isClient.value ? '/api/timesheets/client/invoices' : '/api/timesheets/admin/invoices'
   window.open(`${base}/${props.invoice.id}/pdf?locale=${encodeURIComponent(locale.value)}&download=1`, '_blank', 'noopener,noreferrer')
 }
+const togglePayment = () => {
+  paymentOpen.value = !paymentOpen.value
+}
+const mobileMenuItems = computed(() => {
+  const items = []
+  if (!isClient.value && props.invoice.isOverdue) items.push({ label: t('features.timesheets.admin.sendReminder'), icon: 'i-lucide-bell-ring', onSelect: () => openEmail('reminder') })
+  if (!isClient.value && props.invoice.status === 'DRAFT') items.push({ label: t('features.timesheets.admin.issueAndSend'), icon: 'i-lucide-send', onSelect: () => openEmail('issue') })
+  if (!isClient.value && props.invoice.status === 'ISSUED' && !props.invoice.isOverdue) items.push({ label: t('features.timesheets.admin.resendInvoice'), icon: 'i-lucide-mail', onSelect: () => openEmail('resend') })
+  if (!isClient.value && props.invoice.status === 'ISSUED') items.push({ label: t('features.timesheets.admin.registerPayment'), icon: 'i-lucide-circle-dollar-sign', onSelect: togglePayment })
+  items.push(
+    { label: t('features.timesheets.admin.print'), icon: 'i-lucide-printer', onSelect: printInvoice },
+    { label: t('features.timesheets.clientInvoices.download'), icon: 'i-lucide-download', onSelect: downloadInvoice }
+  )
+  if (!isClient.value) items.push(...menuItems.value)
+  return items
+})
 const attachmentUrl = (attachmentId: string) => isClient.value
   ? `/api/timesheets/client/invoices/${props.invoice.id}/attachments/${attachmentId}`
   : `/api/timesheets/admin/invoices/${props.invoice.id}/attachments/${attachmentId}`
@@ -180,18 +196,18 @@ onMounted(() => {
   <div class="invoice-detail space-y-6">
     <header class="invoice-detail-header">
       <div class="min-w-0">
-        <UButton :to="isClient ? '/timesheets/invoices' : '/admin/timesheets/invoices'" variant="link" color="neutral" icon="i-lucide-arrow-left" class="mb-2 px-0">{{ t('features.timesheets.admin.backToInvoices') }}</UButton>
-        <div class="flex flex-wrap items-center gap-3"><h1 class="text-2xl font-semibold text-highlighted">{{ t('features.timesheets.admin.invoiceTitle', { number: invoice.number }) }}</h1><UBadge :color="statusColor" variant="subtle">{{ t(`features.timesheets.admin.invoiceStatus.${invoice.status.toLowerCase()}`) }}</UBadge><UBadge v-if="invoice.isOverdue" color="warning" variant="subtle">{{ t('features.timesheets.admin.overdueDays', { count: invoice.daysOverdue }) }}</UBadge></div>
-        <p v-if="!isClient && invoice.history?.[0]" class="invoice-latest-activity mt-1 text-sm text-muted">{{ t('features.timesheets.admin.latestActivity') }}: {{ historyText(invoice.history[0]) }} · {{ invoice.history[0].actorName }} · {{ dateTime(invoice.history[0].createdAt) }}</p>
+        <UButton :to="isClient ? '/timesheets/invoices' : '/admin/timesheets/invoices'" variant="link" color="neutral" icon="i-lucide-arrow-left" class="invoice-back-link mb-2 px-0">{{ t('features.timesheets.admin.backToInvoices') }}</UButton>
+        <div class="invoice-title-line"><h1 class="text-2xl font-semibold text-highlighted">{{ t('features.timesheets.admin.invoiceTitle', { number: invoice.number }) }}</h1><div class="invoice-status-badges"><UBadge :color="statusColor" variant="subtle">{{ t(`features.timesheets.admin.invoiceStatus.${invoice.status.toLowerCase()}`) }}</UBadge><UBadge v-if="invoice.isOverdue" color="warning" variant="subtle">{{ t('features.timesheets.admin.overdueDays', { count: invoice.daysOverdue }) }}</UBadge></div></div>
       </div>
       <div class="invoice-detail-actions print:hidden">
-        <UButton v-if="!isClient && invoice.isOverdue" color="warning" icon="i-lucide-bell-ring" @click="openEmail('reminder')">{{ t('features.timesheets.admin.sendReminder') }}</UButton>
-        <UButton v-if="!isClient && invoice.status === 'DRAFT'" icon="i-lucide-send" :loading="busy" @click="openEmail('issue')">{{ t('features.timesheets.admin.issueAndSend') }}</UButton>
-        <UButton v-if="!isClient && invoice.status === 'ISSUED' && !invoice.isOverdue" icon="i-lucide-mail" variant="outline" :loading="busy" @click="openEmail('resend')">{{ t('features.timesheets.admin.resendInvoice') }}</UButton>
-        <UButton v-if="!isClient && invoice.status === 'ISSUED'" color="success" variant="outline" icon="i-lucide-circle-dollar-sign" @click="paymentOpen = !paymentOpen">{{ t('features.timesheets.admin.registerPayment') }}</UButton>
-        <UButton color="neutral" variant="outline" icon="i-lucide-printer" @click="printInvoice">{{ t('features.timesheets.admin.print') }}</UButton>
-        <UButton color="neutral" variant="outline" icon="i-lucide-download" @click="downloadInvoice">{{ t('features.timesheets.clientInvoices.download') }}</UButton>
-        <UDropdownMenu v-if="!isClient && ['DRAFT', 'ISSUED', 'VOID'].includes(invoice.status)" :items="menuItems" :content="{ align: 'end' }"><UButton color="neutral" variant="ghost" icon="i-lucide-ellipsis-vertical" :aria-label="t('features.timesheets.admin.moreActions')" /></UDropdownMenu>
+        <UDropdownMenu class="invoice-actions-compact" :items="mobileMenuItems" :content="{ align: 'end' }"><UButton color="neutral" variant="outline" icon="i-lucide-ellipsis-vertical" :aria-label="t('features.timesheets.admin.moreActions')" /></UDropdownMenu>
+        <UButton v-if="!isClient && invoice.isOverdue" class="invoice-actions-wide" color="warning" icon="i-lucide-bell-ring" @click="openEmail('reminder')">{{ t('features.timesheets.admin.sendReminder') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'DRAFT'" class="invoice-actions-wide" icon="i-lucide-send" :loading="busy" @click="openEmail('issue')">{{ t('features.timesheets.admin.issueAndSend') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'ISSUED' && !invoice.isOverdue" class="invoice-actions-wide" icon="i-lucide-mail" variant="outline" :loading="busy" @click="openEmail('resend')">{{ t('features.timesheets.admin.resendInvoice') }}</UButton>
+        <UButton v-if="!isClient && invoice.status === 'ISSUED'" class="invoice-actions-wide" color="success" variant="outline" icon="i-lucide-circle-dollar-sign" @click="togglePayment">{{ t('features.timesheets.admin.registerPayment') }}</UButton>
+        <UButton class="invoice-actions-wide" color="neutral" variant="outline" icon="i-lucide-printer" @click="printInvoice">{{ t('features.timesheets.admin.print') }}</UButton>
+        <UButton class="invoice-actions-wide" color="neutral" variant="outline" icon="i-lucide-download" @click="downloadInvoice">{{ t('features.timesheets.clientInvoices.download') }}</UButton>
+        <UDropdownMenu v-if="!isClient && ['DRAFT', 'ISSUED', 'VOID'].includes(invoice.status)" class="invoice-actions-wide" :items="menuItems" :content="{ align: 'end' }"><UButton color="neutral" variant="ghost" icon="i-lucide-ellipsis-vertical" :aria-label="t('features.timesheets.admin.moreActions')" /></UDropdownMenu>
       </div>
     </header>
 
@@ -268,10 +284,16 @@ onMounted(() => {
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4
  * Hallmark · macrostructure: Long Document · tone: professional · anchor hue: existing-primary
  */
-.invoice-detail-header { display: flex; flex-direction: column; gap: 1rem; }
+.invoice-detail { container-type: inline-size; }
+.invoice-back-link { min-height: auto; border: 0; border-radius: 0; background: transparent; box-shadow: none; letter-spacing: normal; text-transform: none; }
+.invoice-back-link:hover { background: transparent; box-shadow: none; text-decoration: underline; text-underline-offset: 0.2em; }
+.invoice-detail-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 1rem; }
 .invoice-detail h1 { min-width: 0; overflow-wrap: anywhere; }
-.invoice-detail-actions { display: flex; width: 100%; flex-wrap: wrap; gap: 0.5rem; }
-.invoice-latest-activity { display: none; }
+.invoice-title-line { display: grid; gap: 0.6rem; }
+.invoice-status-badges { display: flex; min-width: 0; flex-wrap: wrap; gap: 0.5rem; }
+.invoice-detail-actions { display: flex; width: auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+.invoice-actions-compact { display: inline-flex; }
+.invoice-actions-wide { display: none; }
 .invoice-paper { padding: clamp(1.25rem, 4vw, 3rem); overflow: clip; border: 1px solid var(--timesheets-rule); border-radius: var(--timesheets-radius); background: var(--ui-bg); }
 .invoice-paper-heading, .invoice-parties { display: grid; gap: 2rem; }
 .invoice-wordmark { font-size: 1.25rem; font-weight: 700; color: var(--ui-primary); }
@@ -298,8 +320,8 @@ onMounted(() => {
 .invoice-history-event { display: flex; min-width: 0; align-items: flex-start; gap: 0.75rem; }
 .invoice-history-dot { width: 0.5rem; height: 0.5rem; flex: none; margin-block-start: 0.45rem; border-radius: 50%; background: var(--ui-primary); }
 .invoice-history-time { padding-inline-start: 1.25rem; font-size: 0.875rem; color: var(--ui-text-muted); }
-@media (min-width: 48rem) { .invoice-paper-heading, .invoice-parties { grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.65fr); } .invoice-parties > :last-child { align-self: end; } }
-@media (min-width: 80rem) { .invoice-detail-header { flex-direction: row; align-items: flex-end; justify-content: space-between; } .invoice-detail-header > :first-child { flex: 1; } .invoice-detail-actions { width: max-content; flex-wrap: nowrap; justify-content: flex-end; } .invoice-latest-activity { display: block; max-width: 34rem; } }
+@media (min-width: 48rem) { .invoice-title-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; } .invoice-paper-heading, .invoice-parties { grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.65fr); } .invoice-parties > :last-child { align-self: end; } }
+@container (min-width: 80rem) { .invoice-detail-header { display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; } .invoice-detail-header > :first-child { flex: 1; } .invoice-detail-actions { width: max-content; flex-wrap: nowrap; justify-content: flex-end; } .invoice-actions-compact { display: none; } .invoice-actions-wide { display: inline-flex; } }
 @media (min-width: 40rem) { .invoice-history-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } .invoice-history-time { padding-inline-start: 0; text-align: end; } }
 @media print { .invoice-paper { border: 0; box-shadow: none; } }
 </style>

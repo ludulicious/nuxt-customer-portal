@@ -38,6 +38,6 @@ useAutoPagination({ sentinel: nextSentinel, scrollContainer, canLoadMore: () => 
 
 <style scoped>
 .timesheets-list-scroll {
-  padding: 2px 8px 16px 2px;
+  padding: 2px 2px 16px;
 }
 </style>

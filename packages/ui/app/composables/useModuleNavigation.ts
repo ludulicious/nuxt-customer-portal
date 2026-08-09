@@ -29,6 +29,22 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
     .sort((left, right) => right.matchLength - left.matchLength)[0]?.module ?? modules.value[0])
 
   const activeModuleId = computed(() => activeModule.value?.id ?? '')
+  const moduleNavigationGroups = computed(() => modules.value.map(module => ({
+    ...module,
+    menuItems: (module.menuItems ?? [])
+      .filter(item => hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value))
+      .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
+      .map(item => ({
+        label: t(item.labelKey),
+        icon: item.icon,
+        to: item.to,
+        exact: item.exact,
+        badge: item.badge,
+        onSelect: () => {
+          if (sidebarOpen) sidebarOpen.value = false
+        }
+      }))
+  })))
   const activeModuleMenuItems = computed<NavigationMenuItem[]>(() => (activeModule.value?.menuItems ?? [])
     .filter(item => hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value))
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
@@ -43,5 +59,5 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
       }
     })))
 
-  return { modules, activeModuleId, activeModule, activeModuleMenuItems }
+  return { modules, moduleNavigationGroups, activeModuleId, activeModule, activeModuleMenuItems }
 }

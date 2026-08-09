@@ -228,13 +228,13 @@ await listing.load()
     <TimesheetsAdminPaginatedList v-if="!formOpen && listing.items.value.length" class="min-h-0 flex-1" :pagination="listing.pagination.value" :pending="listing.pending.value" :loading-next="listing.loadingNextPage.value" :loading-previous="listing.loadingPreviousPage.value" :has-next="listing.hasNextPage.value" :has-previous="listing.hasPreviousPage.value" @next="listing.loadNext" @previous="listing.loadPrevious" @page="listing.goToPage">
       <div class="grid gap-3">
     <UCard v-for="invoice in listing.items.value" :key="invoice.id" :class="invoice.isOverdue ? 'ring-1 ring-warning/60' : ''" class="transition-colors hover:ring-1 hover:ring-primary/50">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="grid grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-3">
         <NuxtLink :to="`/admin/timesheets/invoices/${invoice.id}`" class="group min-w-0 flex-1 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-          <div class="flex flex-wrap items-center gap-2"><p class="font-semibold">{{ invoice.number }} · {{ invoice.recipientName }}</p><UBadge :color="statusColor(invoice.status)" variant="subtle">{{ t(`features.timesheets.admin.invoiceStatus.${invoice.status.toLowerCase()}`) }}</UBadge><UBadge v-if="invoice.isOverdue" color="warning" variant="subtle">{{ t('features.timesheets.admin.overdueDays', { count: invoice.daysOverdue }) }}</UBadge></div>
-          <p class="mt-1 text-sm text-muted">{{ t('features.timesheets.admin.dueDate') }} {{ invoice.dueDate }} · {{ money(invoice.totalMinor, invoice.currency) }} · {{ t('features.timesheets.admin.outstanding') }} {{ money(invoice.outstandingMinor, invoice.currency) }}</p>
+          <div class="flex flex-wrap items-center gap-2"><p class="min-w-0 break-words font-semibold">{{ invoice.number }} · {{ invoice.recipientName }}</p><UBadge :color="statusColor(invoice.status)" variant="subtle">{{ t(`features.timesheets.admin.invoiceStatus.${invoice.status.toLowerCase()}`) }}</UBadge><UBadge v-if="invoice.isOverdue" color="warning" variant="subtle">{{ t('features.timesheets.admin.overdueDays', { count: invoice.daysOverdue }) }}</UBadge></div>
+          <p class="mt-1 whitespace-normal break-words text-sm text-muted">{{ t('features.timesheets.admin.dueDate') }} {{ invoice.dueDate }} · {{ money(invoice.totalMinor, invoice.currency) }} · {{ t('features.timesheets.admin.outstanding') }} {{ money(invoice.outstandingMinor, invoice.currency) }}</p>
           <p v-if="invoice.isOverdue" class="mt-1 text-xs text-warning">{{ t('features.timesheets.admin.reminderSummary', { count: invoice.reminderCount, date: invoice.lastReminderSentAt ? dateTime(invoice.lastReminderSentAt) : t('features.timesheets.admin.never') }) }}</p>
         </NuxtLink>
-        <NuxtLink :to="`/admin/timesheets/invoices/${invoice.id}`" :aria-label="t('features.timesheets.admin.openInvoice', { number: invoice.number })" class="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-primary"><UIcon name="i-lucide-chevron-right" class="size-5 text-muted" /></NuxtLink>
+        <NuxtLink :to="`/admin/timesheets/invoices/${invoice.id}`" :aria-label="t('features.timesheets.admin.openInvoice', { number: invoice.number })" class="grid size-11 shrink-0 place-items-center justify-self-end rounded focus-visible:outline-2 focus-visible:outline-primary"><UIcon name="i-lucide-chevron-right" class="size-5 text-muted" /></NuxtLink>
       </div>
     </UCard>
       </div>

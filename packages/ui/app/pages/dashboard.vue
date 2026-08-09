@@ -21,7 +21,7 @@ useSeoMeta({ title: () => t('dashboard.seo.title'), description: () => t('dashbo
 <template>
   <UDashboardPanel id="dashboard" class="min-h-0 overflow-hidden" style="height: calc(100dvh - var(--ui-header-height));" :ui="{ body: 'flex flex-col flex-1 min-h-0 overflow-y-auto p-4 sm:p-6' }">
     <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }" :toggle="false">
         <template #leading>
           <UIcon name="i-lucide-layout-dashboard" class="size-6 shrink-0" />
           <span class="text-lg font-semibold">{{ t('dashboard.title') }}</span>

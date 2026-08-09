@@ -246,7 +246,7 @@ const stopImpersonating = async () => {
           square
           @click="searchOpen = true"
         />
-        <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" />
+        <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
         <UColorModeButton />
 
         <!-- User Avatar Dropdown (only show when user is logged in) -->
@@ -276,7 +276,7 @@ const stopImpersonating = async () => {
             class="min-h-11 justify-start"
             @click="searchOpen = true"
           />
-          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-32" />
+          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-32" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
           <UColorModeButton size="md" class="min-h-11 min-w-11" />
         </div>
       </div>

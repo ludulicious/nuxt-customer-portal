@@ -23,7 +23,7 @@ const visibleSetupStatus = computed(() => props.setupStatus ?? loadedSetupStatus
   <component
     :is="as"
     data-timesheets-page-shell
-    class="mx-auto w-full px-0 pt-2 pb-5 md:px-6 md:py-6 lg:px-8 lg:py-8"
+    class="mx-auto w-full px-4 pt-4 pb-5 sm:px-5 md:px-6 md:py-6 lg:px-8 lg:py-8"
     :class="width === 'narrow' ? 'max-w-6xl' : 'max-w-[1440px]'"
   >
     <TimesheetsSetupChecklist v-if="isOrganizationAdmin && visibleSetupStatus && !visibleSetupStatus.complete" :status="visibleSetupStatus" class="mb-5" />
