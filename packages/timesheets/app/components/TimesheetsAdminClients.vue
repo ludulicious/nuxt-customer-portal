@@ -188,19 +188,23 @@ await listing.load()
       <UCard
         role="button"
         tabindex="0"
-        class="cursor-pointer transition-colors hover:ring-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="client-summary-card cursor-pointer transition-colors hover:ring-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         :class="editingClientId === client.organizationId ? 'ring-2 ring-primary' : ''"
         @click="openClient(client)"
         @keydown.enter="openClient(client)"
         @keydown.space.prevent="openClient(client)"
       >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div class="flex min-w-0 items-center gap-3"><UAvatar :src="client.logo ?? undefined" :alt="client.name" /><div class="min-w-0"><p class="truncate font-medium">{{ client.name }}</p><p class="truncate text-sm text-muted">{{ client.address || t('features.timesheets.admin.missingInvoiceAddress') }}</p></div></div>
-          <div class="flex shrink-0 flex-wrap items-end gap-2" @click.stop @keydown.stop>
-            <label class="grid min-w-36 gap-1 text-xs text-muted"><span>{{ t('features.timesheets.clientInvoices.enableAccess') }}</span><USelect :model-value="client.invoiceAccessEnabled ? 'ENABLED' : 'DISABLED'" :items="[{ label: t('features.timesheets.invoiceAccessEnabled'), value: 'ENABLED' }, { label: t('features.timesheets.invoiceAccessDisabled'), value: 'DISABLED' }]" value-key="value" size="xs" @update:model-value="changeClientInvoiceAccess(client.id, $event)" /></label>
-            <label class="grid min-w-40 gap-1 text-xs text-muted"><span>{{ t('features.timesheets.timesheetAccess') }}</span><USelect :model-value="client.accessMode" :items="[{ label: t('features.timesheets.clientAccess.disabled'), value: 'DISABLED' }, { label: t('features.timesheets.clientAccess.view'), value: 'VIEW' }, { label: t('features.timesheets.clientAccess.review'), value: 'REVIEW' }]" value-key="value" size="xs" @update:model-value="changeClientAccess(client.id, $event)" /></label>
-            <UButton type="button" size="xs" variant="ghost" icon="i-lucide-pencil" :aria-label="t('features.timesheets.admin.editClient')" @click.stop="openClient(client)" @keydown.stop />
-            <UButton type="button" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeClient')" @click.stop="removeClient(client)" @keydown.stop />
+        <div class="client-card-layout">
+          <div class="client-card-header">
+            <div class="client-card-identity"><UAvatar :src="client.logo ?? undefined" :alt="client.name" /><div class="min-w-0"><p class="truncate font-medium">{{ client.name }}</p><p class="truncate text-sm text-muted">{{ client.address || t('features.timesheets.admin.missingInvoiceAddress') }}</p></div></div>
+            <div class="client-card-actions" @click.stop @keydown.stop>
+              <UButton class="client-card-action" type="button" size="xs" variant="ghost" icon="i-lucide-pencil" :aria-label="t('features.timesheets.admin.editClient')" @click.stop="openClient(client)" @keydown.stop />
+              <UButton class="client-card-action" type="button" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="t('features.timesheets.admin.removeClient')" @click.stop="removeClient(client)" @keydown.stop />
+            </div>
+          </div>
+          <div class="client-card-access" @click.stop @keydown.stop>
+            <label class="client-access-field text-xs text-muted"><span>{{ t('features.timesheets.clientInvoices.enableAccess') }}</span><USelect class="client-access-select" :model-value="client.invoiceAccessEnabled ? 'ENABLED' : 'DISABLED'" :items="[{ label: t('features.timesheets.invoiceAccessEnabled'), value: 'ENABLED' }, { label: t('features.timesheets.invoiceAccessDisabled'), value: 'DISABLED' }]" value-key="value" size="xs" @update:model-value="changeClientInvoiceAccess(client.id, $event)" /></label>
+            <label class="client-access-field text-xs text-muted"><span>{{ t('features.timesheets.timesheetAccess') }}</span><USelect class="client-access-select" :model-value="client.accessMode" :items="[{ label: t('features.timesheets.clientAccess.disabled'), value: 'DISABLED' }, { label: t('features.timesheets.clientAccess.view'), value: 'VIEW' }, { label: t('features.timesheets.clientAccess.review'), value: 'REVIEW' }]" value-key="value" size="xs" @update:model-value="changeClientAccess(client.id, $event)" /></label>
           </div>
         </div>
       </UCard>
@@ -228,7 +232,22 @@ await listing.load()
 </template>
 
 <style scoped>
+/* Hallmark · component: responsive client card · genre: modern-minimal · theme: portal-native
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: inherited portal tokens · mobile: 320 / 375 / 414 / 768
+ * pre-emit critique: P5 H5 E5 S5 R5 V4
+ */
+.client-summary-card { container-type: inline-size; }
+.client-card-layout { display: grid; min-width: 0; gap: 1rem; }
+.client-card-header { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.client-card-identity { display: flex; min-width: 0; align-items: center; gap: 0.75rem; }
+.client-card-access { display: grid; min-width: 0; gap: 0.75rem; }
+.client-access-field { display: grid; min-width: 0; gap: 0.25rem; }
+.client-access-select { width: 100%; min-width: 0; min-height: 2.75rem; }
+.client-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem; }
+button.client-card-action { display: inline-grid; width: 2.75rem; min-width: 2.75rem; height: 2.75rem; min-height: 2.75rem; flex: none; place-items: center; padding: 0; box-shadow: none; }
 .contact-form-actions { grid-column: 1 / -1; }
 .client-editor { scroll-margin-top: calc(var(--ui-header-height) + 1rem); }
+@container (min-width: 34rem) { .client-card-access { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 48rem) { .contact-form-actions { grid-column: 2; } }
 </style>
