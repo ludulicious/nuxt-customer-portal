@@ -443,7 +443,7 @@ onUnmounted(() => {
         </template>
       </UDashboardNavbar>
 
-      <UDashboardToolbar>
+      <UDashboardToolbar class="py-2">
         <template #left>
           <div class="flex items-center gap-2 w-full">
             <UInput
