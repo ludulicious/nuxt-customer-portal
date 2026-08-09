@@ -1,21 +1,323 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
-:root { --ui-radius: 0; --ui-header-height: 5rem; font-family: "Arial Narrow", "Helvetica Neue", sans-serif; }
-body { background: #ece9df; color: #111; }
-.brutal-shell { min-height: 100dvh; display: grid; grid-template: 5rem 1fr / minmax(15rem, 20vw) 1fr; }
-.brutal-header { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(15rem, 20vw) 1fr auto; align-items: stretch; background: #f3ff3b; border-bottom: 3px solid #111; }
-.brutal-wordmark, .brutal-account, .brutal-modules a { padding: .75rem 1rem; font-weight: 900; }
-.brutal-wordmark { line-height: .85; border-right: 3px solid #111; }
-.brutal-modules { display: flex; overflow-x: auto; }
-.brutal-modules a { display: grid; place-items: center; border-right: 2px solid #111; }
-.brutal-modules a:hover, .brutal-modules a.router-link-active { background: #111; color: #f3ff3b; }
-.brutal-account { display: flex; align-items: center; gap: .75rem; border-left: 3px solid #111; }
-.brutal-context { padding: 2rem 1rem; border-right: 3px solid #111; background: #ff6b3d; }
-.brutal-context > p, .brutal-kicker { font-size: .72rem; font-weight: 900; letter-spacing: .16em; }
-.brutal-context h2 { margin: .5rem 0 2rem; font-size: clamp(2rem, 4vw, 4rem); line-height: .85; text-transform: uppercase; }
-.brutal-main { min-width: 0; overflow: auto; }
-.brutal-home { min-height: calc(100dvh - 5rem); padding: clamp(2rem, 7vw, 7rem); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2rem; }
-.brutal-home h1, .brutal-error h1 { font-size: clamp(4rem, 13vw, 11rem); font-weight: 950; line-height: .78; letter-spacing: -.07em; }
-.brutal-home > p:not(.brutal-kicker) { max-width: 42rem; font-size: clamp(1.15rem, 2vw, 1.75rem); font-weight: 700; }
-.brutal-error { min-height: 100dvh; padding: 3rem; background: #f3ff3b; }
-@media (max-width: 64rem) { .brutal-shell { display: block; } .brutal-header { position: sticky; top: 0; z-index: 40; grid-template-columns: auto 1fr; } .brutal-modules { grid-column: 1 / -1; border-top: 2px solid #111; } .brutal-account { border-left: 0; } .brutal-context { border-right: 0; border-bottom: 3px solid #111; } }
+
+/* ApexPro Brutal visual language, composed into the demo's command-bar shell. */
+:root {
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, sans-serif;
+  --font-body: 'Geist', ui-sans-serif, sans-serif;
+  --font-sans: var(--font-body);
+  --color-paper: oklch(96.5% 0.015 85);
+  --color-paper-2: oklch(92.5% 0.018 85);
+  --color-paper-3: oklch(87% 0.018 80);
+  --color-ink: oklch(18% 0.015 25);
+  --color-ink-2: oklch(27% 0.015 28);
+  --color-muted: oklch(45% 0.018 50);
+  --color-rule: oklch(22% 0.015 25);
+  --color-rule-muted: oklch(62% 0.015 50);
+  --color-accent: oklch(48% 0.22 28);
+  --color-accent-ink: var(--color-paper);
+  --color-focus: oklch(48% 0.22 28);
+  --color-overlay: oklch(18% 0.015 25 / 0.72);
+  --rule-hairline: 1px;
+  --rule-heavy: 2px;
+  --radius-flat: 0.125rem;
+  --radius-raised: 0.25rem;
+  --shadow-hard: 0.25rem 0.25rem 0 var(--color-rule);
+  --shadow-hard-small: 0.125rem 0.125rem 0 var(--color-rule);
+  --ui-primary: var(--color-accent);
+  --ui-text-dimmed: var(--color-muted);
+  --ui-text-muted: var(--color-muted);
+  --ui-text-toned: var(--color-ink-2);
+  --ui-text: var(--color-ink);
+  --ui-text-highlighted: var(--color-ink);
+  --ui-text-inverted: var(--color-accent-ink);
+  --ui-bg: var(--color-paper);
+  --ui-bg-muted: var(--color-paper-2);
+  --ui-bg-elevated: var(--color-paper-2);
+  --ui-bg-accented: var(--color-paper-3);
+  --ui-bg-inverted: var(--color-ink);
+  --ui-border: var(--color-rule-muted);
+  --ui-border-muted: var(--color-rule-muted);
+  --ui-border-accented: var(--color-rule);
+  --ui-border-inverted: var(--color-ink);
+  --ui-radius: var(--radius-flat);
+  --ui-header-height: 4.5rem;
+  --ui-shadow-sm: none;
+  --ui-shadow: none;
+  --ui-shadow-md: var(--shadow-hard-small);
+  --ui-shadow-lg: var(--shadow-hard);
+  --ui-shadow-xl: var(--shadow-hard);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+html.dark {
+  --color-paper: oklch(14.5% 0.014 25);
+  --color-paper-2: oklch(19.5% 0.016 25);
+  --color-paper-3: oklch(24% 0.016 28);
+  --color-ink: oklch(94% 0.016 85);
+  --color-ink-2: oklch(86% 0.016 80);
+  --color-muted: oklch(72% 0.014 70);
+  --color-rule: oklch(78% 0.015 80);
+  --color-rule-muted: oklch(55% 0.015 70);
+  --color-accent: oklch(72% 0.16 28);
+  --color-accent-ink: var(--color-paper);
+  --color-focus: oklch(72% 0.16 28);
+}
+
+body {
+  overflow-x: clip;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+:where(h1, h2, h3, .brutal-wordmark) {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.brutal-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template: var(--ui-header-height) 1fr / clamp(15rem, 20vw, 19rem) 1fr;
+  background: var(--color-paper);
+}
+
+.brutal-header {
+  position: relative;
+  z-index: 40;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: clamp(15rem, 20vw, 19rem) minmax(0, 1fr) auto;
+  align-items: stretch;
+  border-bottom: var(--rule-heavy) solid var(--color-rule);
+  background: var(--color-paper);
+}
+
+.brutal-wordmark,
+.brutal-account,
+.brutal-modules a {
+  min-height: 2.75rem;
+  padding: .65rem 1rem;
+  font-weight: 800;
+}
+
+.brutal-wordmark {
+  display: flex;
+  align-items: center;
+  border-right: var(--rule-heavy) solid var(--color-rule);
+  font-size: 1.05rem;
+  line-height: .9;
+  text-transform: uppercase;
+}
+
+.brutal-wordmark::before {
+  width: .75rem;
+  height: .75rem;
+  margin-right: .75rem;
+  background: var(--color-accent);
+  box-shadow: var(--shadow-hard-small);
+  content: '';
+}
+
+.brutal-modules {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.brutal-modules a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-right: var(--rule-hairline) solid var(--color-rule-muted);
+  font-family: var(--font-display);
+  font-size: .8rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.brutal-modules a:hover,
+.brutal-modules a.router-link-active {
+  background: var(--color-paper-2);
+  color: var(--color-accent);
+}
+
+.brutal-modules a.router-link-active::after {
+  position: absolute;
+  right: .75rem;
+  bottom: 0;
+  left: .75rem;
+  height: var(--rule-heavy);
+  background: var(--color-accent);
+  content: '';
+}
+
+.brutal-account {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  border-left: var(--rule-heavy) solid var(--color-rule);
+  font-size: .8rem;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.brutal-context {
+  min-width: 0;
+  padding: 1.75rem 1rem;
+  border-right: var(--rule-heavy) solid var(--color-rule);
+  background: var(--color-paper-2);
+}
+
+.brutal-context > p,
+.brutal-kicker {
+  color: var(--color-accent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.brutal-context h2 {
+  margin: .5rem 0 2rem;
+  font-size: clamp(2rem, 3vw, 3.25rem);
+  line-height: .9;
+  text-transform: uppercase;
+}
+
+.brutal-context nav a {
+  border-radius: 0;
+  font-weight: 700;
+}
+
+.brutal-main {
+  min-width: 0;
+  overflow: auto;
+  background: var(--color-paper);
+}
+
+.brutal-home {
+  min-height: calc(100dvh - var(--ui-header-height));
+  padding: clamp(2rem, 7vw, 7rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.brutal-home h1,
+.brutal-error h1 {
+  max-width: 11ch;
+  font-size: clamp(3.5rem, 10vw, 9rem);
+  font-weight: 800;
+  line-height: .82;
+  letter-spacing: -.06em;
+}
+
+.brutal-home > p:not(.brutal-kicker) {
+  max-width: 42rem;
+  color: var(--color-ink-2);
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-weight: 600;
+}
+
+.brutal-error {
+  min-height: 100dvh;
+  padding: 3rem;
+  background: var(--color-paper);
+}
+
+.brutal-button {
+  min-height: 2.75rem;
+  border: var(--rule-hairline) solid currentColor;
+  border-radius: var(--radius-flat);
+  box-shadow: var(--shadow-hard-small);
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.brutal-card,
+.brutal-auth-form,
+.brutal-dashboard-panel {
+  border: var(--rule-heavy) solid var(--color-rule);
+  border-radius: var(--radius-flat);
+  background: var(--color-paper);
+  box-shadow: none;
+}
+
+.brutal-input {
+  min-height: 2.75rem;
+  border: var(--rule-hairline) solid var(--color-rule);
+  border-radius: var(--radius-flat);
+  background: var(--color-paper);
+}
+
+.brutal-badge {
+  border: var(--rule-hairline) solid currentColor;
+  border-radius: var(--radius-flat);
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.brutal-table-head {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.brutal-table-heading {
+  color: inherit;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.brutal-table-row {
+  border-bottom: var(--rule-hairline) solid var(--color-rule-muted);
+}
+
+.brutal-overlay-surface,
+.brutal-toast,
+.brutal-tooltip {
+  border: var(--rule-heavy) solid var(--color-rule);
+  border-radius: var(--radius-flat);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-hard);
+}
+
+.brutal-menu-item[data-highlighted]:not([data-disabled]) {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+@media (max-width: 64rem) {
+  .brutal-shell { display: block; }
+  .brutal-header { position: sticky; top: 0; grid-template-columns: auto 1fr; }
+  .brutal-modules { grid-column: 1 / -1; border-top: var(--rule-hairline) solid var(--color-rule); }
+  .brutal-account { border-left: 0; }
+  .brutal-context { border-right: 0; border-bottom: var(--rule-heavy) solid var(--color-rule); }
+}
+
+@media (max-width: 40rem) {
+  .brutal-account > span { display: none; }
+  .brutal-wordmark { border-right: 0; }
+  .brutal-modules a { flex: 1 0 auto; min-height: 2.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 150ms !important; transition-duration: 150ms !important; }
+}
