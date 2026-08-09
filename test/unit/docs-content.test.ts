@@ -176,7 +176,13 @@ describe('documentation content', () => {
       archived: false
     })
     expect(community).toContain('GitHub Discussions are not currently enabled')
-    expect(community).toContain('customer-portal/issues/new?title=Question%3A%20')
+    expect(community).toContain('customer-portal/issues/new?template=bug-report.yml')
+    expect(community).toContain('customer-portal/issues/new?template=question.yml')
+    expect(community).toContain('customer-portal/issues/new?template=feature-request.yml')
+    expect(community).toContain('customer-portal/issues/new?template=module-proposal.yml')
+    expect(community).toContain('customer-portal/blob/master/CONTRIBUTING.md')
+    expect(community).toContain('customer-portal/blob/master/SUPPORT.md')
+    expect(community).toContain('customer-portal/blob/master/SECURITY.md')
     expect(installation).toContain('configured as a GitHub template')
   })
 

@@ -41,7 +41,7 @@ Locally preview production build:
 pnpm preview
 ```
 
-The site is prerendered and can be deployed to any platform supported by Nuxt/Nitro.
+The production build uses the Nitro Node server. Marketing and documentation pages are prerendered for fast delivery, while raw Markdown, `llms.txt`, sitemap, robots, social images, and MCP endpoints remain available through the same deployment. Use a Nuxt/Nitro-compatible Node host rather than publishing only the generated static directory.
 
 ## Source verification
 

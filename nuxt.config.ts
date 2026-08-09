@@ -57,6 +57,7 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
+      concurrency: 1,
       routes: [
         '/',
         '/robots.txt',
@@ -64,6 +65,13 @@ export default defineNuxtConfig({
       ],
       crawlLinks: true,
       autoSubfolderIndex: false
+    }
+  },
+
+  ogImage: {
+    buildCache: true,
+    security: {
+      renderTimeout: 30_000
     }
   },
 

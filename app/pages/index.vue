@@ -106,7 +106,9 @@ useHead({
 })
 
 defineOgImage('DocsSatori', {
-  headline: 'Composable Nuxt customer portal'
+  headline: 'Composable Nuxt customer portal',
+  pageTitle: title,
+  pageDescription: description
 })
 </script>
 

@@ -16,6 +16,19 @@ test.describe('marketing homepage', () => {
     await expect(page.getByRole('link', { name: 'Create a feature layer' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Improve the documentation' })).toBeVisible()
 
+    await page.getByRole('button', { name: 'Search…' }).click()
+    const searchDialog = page.getByRole('dialog', { name: 'Search documentation' })
+    await expect(searchDialog).toBeVisible()
+    await expect(page.getByText('Search Customer Portal documentation or navigate to a section.')).toBeVisible()
+    await expect(searchDialog.getByRole('listbox', { name: 'Documentation search results' })).toBeVisible()
+    await page.waitForTimeout(250)
+
+    const searchAccessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+    expect(searchAccessibility.violations).toEqual([])
+
+    await page.getByRole('button', { name: 'Close' }).click()
+    await expect(searchDialog).toBeHidden()
+
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations).toEqual([])
 

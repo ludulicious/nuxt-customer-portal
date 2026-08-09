@@ -40,7 +40,9 @@ useHead({
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
 
 defineOgImage('DocsSatori', {
-  headline: headline.value
+  headline: headline.value,
+  pageTitle: title,
+  pageDescription: description
 })
 
 const links = computed(() => {

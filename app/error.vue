@@ -33,7 +33,7 @@ provide('navigation', navigation)
     <AppFooter />
 
     <ClientOnly>
-      <LazyUContentSearch
+      <LazyAccessibleContentSearch
         :files="files"
         :navigation="navigation"
       />
