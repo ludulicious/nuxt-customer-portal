@@ -114,6 +114,14 @@
   --color-accent-950: #450a0a;
 }
 
+/* Keep the ApexPro identity on one line inside the dense desktop module bar. */
+html[data-portal-theme='apex'] .portal-header .portal-wordmark {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+}
+
 /* Light Mode - Enhanced Vibrant Theme */
 :root {
   /* Primary colors - more vibrant */

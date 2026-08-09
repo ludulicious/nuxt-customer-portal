@@ -1,11 +1,19 @@
 <script setup lang="ts">
 const props = defineProps<{ component: string }>()
-const resolvedComponent = computed(() => resolveComponent(props.component))
+// Component resolution depends on the active Vue instance. Resolve during setup;
+// deferring it through a computed getter runs outside that context during render
+// and turns registered Nuxt components into empty custom elements.
+const resolvedComponent = resolveComponent(props.component)
+const componentMissing = typeof resolvedComponent === 'string'
 </script>
 
 <template>
   <NuxtErrorBoundary>
-    <component :is="resolvedComponent" />
+    <component v-if="!componentMissing" :is="resolvedComponent" />
+    <UCard v-else>
+      <p class="font-medium">{{ $t('dashboard.error.title') }}</p>
+      <p class="mt-1 text-sm text-muted">{{ $t('dashboard.error.description') }}</p>
+    </UCard>
     <template #error="{ clearError }">
       <UCard>
         <div class="flex items-center justify-between gap-4">
