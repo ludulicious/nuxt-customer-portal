@@ -4,7 +4,7 @@ Nuxt Customer Portal is an MIT-licensed monorepo of reusable Nuxt layers, demo h
 
 ## Before contributing
 
-1. Search existing [issues](https://github.com/ludulicious/customer-portal/issues) and pull requests.
+1. Search existing [issues](https://github.com/ludulicious/nuxt-customer-portal/issues) and pull requests.
 2. Discuss a new package, migration provider, or substantial contract change before implementing it.
 3. Keep one issue and pull request focused on one problem.
 4. Never include customer data, credentials, cookies, database exports, invoices, or timesheets in fixtures or reports.

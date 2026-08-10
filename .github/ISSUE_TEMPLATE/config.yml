@@ -7,5 +7,5 @@ contact_links:
     url: https://github.com/ludulicious/portalnuxt/issues/new?template=documentation.yml
     about: Report unclear, incomplete, outdated, or incorrect documentation in the documentation repository.
   - name: Private security report
-    url: https://github.com/ludulicious/customer-portal/security
+    url: https://github.com/ludulicious/nuxt-customer-portal/security
     about: Do not disclose authentication, authorization, tenancy, invoice, or timesheet vulnerabilities publicly.

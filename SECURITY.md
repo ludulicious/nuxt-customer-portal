@@ -4,7 +4,7 @@ Do not report a suspected vulnerability through a public issue, pull request, do
 
 ## Reporting a vulnerability
 
-Use private vulnerability reporting from the repository's [Security tab](https://github.com/ludulicious/customer-portal/security) when GitHub offers the **Report a vulnerability** action. If that action is unavailable, contact the repository owner through GitHub without including exploit details publicly, then agree on a private channel.
+Use private vulnerability reporting from the repository's [Security tab](https://github.com/ludulicious/nuxt-customer-portal/security) when GitHub offers the **Report a vulnerability** action. If that action is unavailable, contact the repository owner through GitHub without including exploit details publicly, then agree on a private channel.
 
 Include:
 
@@ -20,7 +20,7 @@ Never test against organizations, systems, or data that you do not own or have e
 
 Reports involving authentication, authorization, active-organization isolation, system-administrator access, feature policies, file or document access, invoices, approvals, and time entries are in scope. A visible menu item without permission is worth reporting when it exposes data or an executable action; visual inconsistencies without security impact can use the bug form.
 
-Vulnerabilities specific to the documentation site or its deployment use the same repository's [private security reporting](https://github.com/ludulicious/customer-portal/security).
+Vulnerabilities specific to the documentation site or its deployment use the same repository's [private security reporting](https://github.com/ludulicious/nuxt-customer-portal/security).
 
 ## Supported versions and disclosure
 

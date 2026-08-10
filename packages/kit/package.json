@@ -3,7 +3,7 @@
   "version": "0.1.0-alpha.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
-  "repository": { "type": "git", "url": "git+https://github.com/ludulicious/customer-portal.git" },
+  "repository": { "type": "git", "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git" },
   "type": "module",
   "main": "./src/runtime.mjs",
   "types": "./src/runtime.d.ts",
