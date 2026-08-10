@@ -53,4 +53,4 @@ We may update these Terms from time to time. Changes will be posted on this page
 
 ## Contact Us
 
-If you have questions about these Terms, please [open a documentation issue](https://github.com/ludulicious/customer-portal/issues/new?title=Terms%3A%20).
+If you have questions about these Terms, please [open a documentation issue](https://github.com/ludulicious/nuxt-customer-portal/issues/new?title=Terms%3A%20).

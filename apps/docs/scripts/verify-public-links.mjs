@@ -21,7 +21,7 @@ const productRepository = configuration.NUXT_PUBLIC_PRODUCT_REPOSITORY_URL
 const productCommit = configuration.NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT
 const githubHeaders = {
   'accept': 'application/vnd.github+json',
-  'user-agent': 'portalnuxt-public-link-check',
+  'user-agent': 'nuxt-customer-portal-public-link-check',
   ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {})
 }
 
@@ -35,7 +35,7 @@ const checks = [
 for (const [label, url] of checks) {
   if (!url) throw new Error(`Missing URL for ${label}`)
   const response = await fetch(url, {
-    headers: { 'user-agent': 'portalnuxt-public-link-check' },
+    headers: { 'user-agent': 'nuxt-customer-portal-public-link-check' },
     redirect: 'follow',
     signal: AbortSignal.timeout(15_000)
   })

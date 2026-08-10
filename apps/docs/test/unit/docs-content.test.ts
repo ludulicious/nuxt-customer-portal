@@ -176,13 +176,13 @@ describe('documentation content', () => {
       archived: false
     })
     expect(community).toContain('GitHub Discussions are not currently enabled')
-    expect(community).toContain('customer-portal/issues/new?template=bug-report.yml')
-    expect(community).toContain('customer-portal/issues/new?template=question.yml')
-    expect(community).toContain('customer-portal/issues/new?template=feature-request.yml')
-    expect(community).toContain('customer-portal/issues/new?template=module-proposal.yml')
-    expect(community).toContain('customer-portal/blob/master/CONTRIBUTING.md')
-    expect(community).toContain('customer-portal/blob/master/SUPPORT.md')
-    expect(community).toContain('customer-portal/blob/master/SECURITY.md')
+    expect(community).toContain('nuxt-customer-portal/issues/new?template=bug-report.yml')
+    expect(community).toContain('nuxt-customer-portal/issues/new?template=question.yml')
+    expect(community).toContain('nuxt-customer-portal/issues/new?template=feature-request.yml')
+    expect(community).toContain('nuxt-customer-portal/issues/new?template=module-proposal.yml')
+    expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
+    expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
+    expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
     expect(installation).toContain('@nuxt-customer-portal/preset')
     expect(installation).toContain('pnpm add')
     expect(installation).toContain('npm install')
@@ -193,7 +193,7 @@ describe('documentation content', () => {
   it('maps documented product internals to source-backed monorepo links', () => {
     const sourceMap = readFileSync(join(contentRoot, '4.reference/7.source-map.md'), 'utf8')
     const sourcePrefix = `${documentationDefaults.productRepositoryUrl}/blob/`
-    const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)]
+    const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/nuxt-customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)]
     const monorepoRoot = resolve(root, '../..')
 
     expect(sourceLinks.length).toBeGreaterThanOrEqual(30)

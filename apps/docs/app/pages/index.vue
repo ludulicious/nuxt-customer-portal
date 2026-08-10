@@ -149,7 +149,7 @@ defineOgImage('DocsSatori', {
               Try the demo
             </UButton>
             <UButton
-              to="https://github.com/ludulicious/customer-portal"
+              to="https://github.com/ludulicious/nuxt-customer-portal"
               target="_blank"
               rel="noopener noreferrer"
               icon="i-simple-icons-github"

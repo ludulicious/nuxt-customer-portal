@@ -2,7 +2,7 @@
   "documentationPath": "/contributing/community",
   "repositories": {
     "product": {
-      "url": "https://github.com/ludulicious/customer-portal",
+      "url": "https://github.com/ludulicious/nuxt-customer-portal",
       "public": true,
       "defaultBranch": "master",
       "issues": true,
@@ -11,7 +11,7 @@
       "archived": false
     },
     "documentation": {
-      "url": "https://github.com/ludulicious/customer-portal",
+      "url": "https://github.com/ludulicious/nuxt-customer-portal",
       "public": true,
       "defaultBranch": "master",
       "issues": true,
