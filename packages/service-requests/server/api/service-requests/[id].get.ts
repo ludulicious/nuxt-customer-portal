@@ -1,6 +1,7 @@
-import { hasFeatureAccess, requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
+import { hasFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
 import { serviceRequestFeature } from '@nuxt-customer-portal/service-requests/shared/feature'
 import { findServiceRequest, toServiceRequestDto } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
+import { canAccessScopedRequest, requireServiceRequestScope } from '@nuxt-customer-portal/service-requests/server/utils/service-request-scope'
 
 defineRouteMeta({
   openAPI: {
@@ -12,17 +13,17 @@ operationId: 'serviceRequestsByIdGet',
 })
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'read')
+  const scope = await requireServiceRequestScope(event, 'read')
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, message: 'Request id is required' })
 
   const row = await findServiceRequest(id)
-  if (!row || row.organizationId !== organizationId) {
+  if (!row || !canAccessScopedRequest(row, scope)) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
 
   const dto = toServiceRequestDto(row)
-  if (!await hasFeatureAccess(session, organizationId, serviceRequestFeature.policy, 'manage')) {
+  if (!await hasFeatureAccess(scope.session, scope.organizationId, serviceRequestFeature.policy, 'manage')) {
     dto.internalNotes = null
   }
   return dto

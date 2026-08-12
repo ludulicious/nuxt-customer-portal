@@ -2,7 +2,6 @@ import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
 import { timesheetsFeature } from '@nuxt-customer-portal/timesheets/shared/feature'
 import { linkClient } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 import { clientCreateSchema } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-validation'
-import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 
 defineRouteMeta({
   openAPI: {
@@ -20,25 +19,13 @@ export default defineEventHandler(async (event) => {
     'manage'
   )
   const input = clientCreateSchema.parse(await readBody(event))
-  let clientOrganizationId: string
   if (input.mode === 'create') {
-    const created = await auth.api.createOrganization({
-      body: {
-        name: input.name,
-        slug: input.slug,
-        userId: session.user.id,
-        keepCurrentActiveOrganization: true
-      }
-    })
-    if (!created) throw createError({ statusCode: 500, message: 'Failed to create client organization' })
-    clientOrganizationId = created.id
-  } else {
-    clientOrganizationId = input.organizationId
+    throw createError({ statusCode: 410, message: 'Create clients in the Clients module before linking them to Timesheets' })
   }
   return linkClient(
     organizationId,
     session.user.id,
     session.user.role === 'admin',
-    clientOrganizationId
+    input.organizationId
   )
 })

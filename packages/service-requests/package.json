@@ -20,6 +20,7 @@
   "publishConfig": { "access": "public" },
   "dependencies": {
     "@nuxt-customer-portal/core": "workspace:^",
+    "@nuxt-customer-portal/clients": "workspace:^",
     "@nuxtjs/i18n": "^10.6.0",
     "@types/pg": "8.15.5",
     "drizzle-orm": "^0.45.2",

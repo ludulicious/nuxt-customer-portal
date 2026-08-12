@@ -82,6 +82,8 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-10-24',
 
+  runtimeConfig: { public: { clients: portal.clients } },
+
   nitro: {
     experimental: {
       openAPI: true

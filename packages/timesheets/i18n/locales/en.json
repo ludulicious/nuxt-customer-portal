@@ -376,6 +376,7 @@
         "projectRates": "Project-specific rates",
         "saveOverrides": "Save overrides",
         "workspaceSettings": "Workspace settings",
+        "clientSettings": "Timesheets client settings",
         "currency": "Currency",
         "timezone": "Timezone",
         "createProject": "Create project",

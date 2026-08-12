@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const createServiceRequestSchema = z.object({
+  clientOrganizationId: z.string().min(1).max(128).optional(),
   title: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
@@ -21,6 +22,7 @@ export const adminUpdateServiceRequestSchema = updateServiceRequestSchema.extend
 })
 
 export const filterServiceRequestSchema = z.object({
+  clientOrganizationId: z.string().min(1).max(128).optional(),
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   category: z.string().optional(),

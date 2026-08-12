@@ -45,7 +45,8 @@
         "category": "Filter op categorie"
       },
       "fields": {
-        "title": "Titel",
+      "title": "Titel",
+      "client": "Klant",
         "description": "Beschrijving",
         "priority": "Prioriteit",
         "category": "Categorie",

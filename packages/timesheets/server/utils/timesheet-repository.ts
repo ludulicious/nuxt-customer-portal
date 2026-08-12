@@ -17,6 +17,8 @@ import {
   listPortalOrganizationsForUser,
   listPortalOrganizationMembers
 } from '@nuxt-customer-portal/core/server/portal'
+import { getClient as getSharedClient, listSelectableClients, requireClientModuleEnabled, updateClient as updateSharedClient } from '@nuxt-customer-portal/clients/server/utils/client-repository'
+import { clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 import { firstInvoiceNumber, hasNumericInvoiceSequence, incrementInvoiceNumber } from '@nuxt-customer-portal/timesheets/shared/invoice-number'
 import {
@@ -181,24 +183,8 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
   const links = await db.select().from(workspaceClient)
     .where(eq(workspaceClient.workspaceOrganizationId, organizationId))
   if (!links.length) return []
-  const clientIds = links.map(link => link.clientOrganizationId)
-  const [organizations, profiles, contacts] = await Promise.all([
-    getPortalOrganizationsByIds(clientIds),
-    db.select().from(organizationInvoiceProfile).where(inArray(organizationInvoiceProfile.organizationId, clientIds)),
-    db.select().from(organizationContact).where(inArray(organizationContact.organizationId, clientIds)).orderBy(asc(organizationContact.name))
-  ])
-  const byId = new Map(organizations.map(item => [item.id, item]))
-  const profileById = new Map(profiles.map(item => [item.organizationId, item]))
-  const officialName = (metadata: string | null) => {
-    try {
-      const value = metadata ? JSON.parse(metadata) as Record<string, unknown> : {}
-      return typeof value.officialCompanyName === 'string' && value.officialCompanyName.trim()
-        ? value.officialCompanyName.trim()
-        : null
-    } catch {
-      return null
-    }
-  }
+  const sharedClients = (await Promise.all(links.map(link => getSharedClient(link.clientOrganizationId)))).filter(Boolean)
+  const byId = new Map(sharedClients.map(item => [item!.organizationId, item!]))
   return links.flatMap((link) => {
     const client = byId.get(link.clientOrganizationId)
     return client
@@ -206,17 +192,17 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
           id: link.id,
           organizationId: client.id,
           name: client.name,
-          officialName: officialName(client.metadata),
+          officialName: client.officialName,
           slug: client.slug,
           logo: client.logo,
-          address: profileById.get(client.id)?.address ?? '',
-          registrationNumber: profileById.get(client.id)?.registrationNumber ?? null,
-          vatNumber: profileById.get(client.id)?.vatNumber ?? null,
-          invoiceEmail: profileById.get(client.id)?.invoiceEmail ?? null,
-          preferredLocale: profileById.get(client.id)?.preferredLocale ?? 'nl',
+          address: client.address,
+          registrationNumber: client.registrationNumber,
+          vatNumber: client.vatNumber,
+          invoiceEmail: client.invoiceEmail,
+          preferredLocale: client.preferredLocale,
           accessMode: link.accessMode,
           invoiceAccessEnabled: link.invoiceAccessEnabled,
-          contacts: contacts.filter(contact => contact.organizationId === client.id).map(contact => ({
+          contacts: client.members.map(contact => ({
             id: contact.id, userId: contact.userId, name: contact.name, email: contact.email,
             phone: contact.phone, jobTitle: contact.jobTitle
           }))
@@ -252,6 +238,13 @@ export const updateOrganizationInvoiceProfile = async (organizationId: string, t
 }) => {
   if (targetOrganizationId !== organizationId && !(await listClients(organizationId)).some(client => client.organizationId === targetOrganizationId)) {
     throw createError({ statusCode: 404, message: 'Organization is not available in this workspace' })
+  }
+  if (targetOrganizationId !== organizationId) {
+    await updateSharedClient(targetOrganizationId, {
+      address: input.address, registrationNumber: input.registrationNumber, vatNumber: input.vatNumber,
+      invoiceEmail: input.invoiceEmail, preferredLocale: input.preferredLocale
+    })
+    return getSharedClient(targetOrganizationId)
   }
   const [profile] = await db.insert(organizationInvoiceProfile).values({ organizationId: targetOrganizationId, ...input })
     .onConflictDoUpdate({ target: organizationInvoiceProfile.organizationId, set: { ...input, updatedAt: new Date() } }).returning()
@@ -314,25 +307,22 @@ export const deleteOrganizationContact = async (workspaceOrganizationId: string,
 
 export const listAvailableClientOrganizations = async (
   organizationId: string,
-  userId: string,
-  hasSystemAccess: boolean
+  _userId: string,
+  _hasSystemAccess: boolean
 ) => {
-  const [accessible, clients] = await Promise.all([
-    listPortalOrganizationsForUser(userId, hasSystemAccess),
-    listClients(organizationId)
-  ])
+  const [accessible, clients] = await Promise.all([listSelectableClients('timesheets'), listClients(organizationId)])
   const linkedIds = new Set(clients.map(client => client.organizationId))
   return accessible.filter(item => !linkedIds.has(item.id))
 }
 
 export const linkClient = async (
   organizationId: string,
-  userId: string,
-  hasSystemAccess: boolean,
+  _userId: string,
+  _hasSystemAccess: boolean,
   clientOrganizationId: string
 ) => {
-  const client = (await listPortalOrganizationsForUser(userId, hasSystemAccess))
-    .find(item => item.id === clientOrganizationId)
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
+  const client = await getSharedClient(clientOrganizationId)
   if (!client) throw createError({ statusCode: 404, message: 'Client organization not found' })
   const [link] = await db.insert(workspaceClient).values({
     id: nanoid(),
@@ -341,6 +331,14 @@ export const linkClient = async (
   }).onConflictDoNothing().returning()
   if (!link) throw createError({ statusCode: 409, message: 'Client is already linked' })
   return link
+}
+
+export const ensureTimesheetClientSettings = async (organizationId: string, clientOrganizationId: string) => {
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
+  const [existing] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.workspaceOrganizationId, organizationId), eq(workspaceClient.clientOrganizationId, clientOrganizationId))).limit(1)
+  if (existing) return existing
+  const [created] = await db.insert(workspaceClient).values({ id: nanoid(), workspaceOrganizationId: organizationId, clientOrganizationId }).returning()
+  return created
 }
 
 export const updateClientAccess = async (organizationId: string, id: string, accessMode: ClientAccessMode) => {
@@ -930,10 +928,7 @@ export const createProject = async (
     activityTypeIds: string[]
   }
 ) => {
-  const clients = await listClients(organizationId)
-  if (!clients.some(client => client.organizationId === input.clientOrganizationId)) {
-    throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
-  }
+  await ensureTimesheetClientSettings(organizationId, input.clientOrganizationId)
   const validActivities = await listActivities(organizationId)
   if (hasInvalidProjectActivityAssignments(input.activityTypeIds, validActivities)) {
     throw createError({ statusCode: 400, message: 'Invalid activity type assignment' })
@@ -970,10 +965,7 @@ export const updateProject = async (
 ) => {
   const { activityTypeIds, personRates, ...projectValues } = input
   if (typeof projectValues.clientOrganizationId === 'string') {
-    const clients = await listClients(organizationId)
-    if (!clients.some(client => client.organizationId === projectValues.clientOrganizationId)) {
-      throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
-    }
+    await ensureTimesheetClientSettings(organizationId, projectValues.clientOrganizationId)
   }
   return db.transaction(async (tx) => {
     const projectFilter = and(
@@ -1971,26 +1963,20 @@ export const updateInvoice = async (organizationId: string, actorUserId: string,
     current.clientOrganizationId
       ? tx.select({
           name: organization.name,
-          metadata: organization.metadata,
-          address: organizationInvoiceProfile.address,
-          preferredLocale: organizationInvoiceProfile.preferredLocale
+          officialName: clientProfile.officialName,
+          address: clientProfile.address,
+          preferredLocale: clientProfile.preferredLocale
         }).from(organization)
-          .leftJoin(organizationInvoiceProfile, eq(organizationInvoiceProfile.organizationId, organization.id))
+          .leftJoin(clientProfile, eq(clientProfile.organizationId, organization.id))
           .where(eq(organization.id, current.clientOrganizationId)).limit(1)
       : Promise.resolve([])
   ])
   if (!sender) throw createError({ statusCode: 404, message: 'Organization not found' })
   if (current.clientOrganizationId && !recipient) throw createError({ statusCode: 409, message: 'Client organization is no longer available' })
 
-  let officialRecipientName = ''
-  try {
-    const metadata = recipient?.metadata ? JSON.parse(recipient.metadata) as Record<string, unknown> : {}
-    if (typeof metadata.officialCompanyName === 'string') officialRecipientName = metadata.officialCompanyName.trim()
-  } catch { /* Use the regular organization name for legacy metadata. */ }
-
   const recipientSnapshot = recipient
     ? {
-        recipientName: officialRecipientName || recipient.name.trim() || current.recipientName,
+        recipientName: recipient.officialName?.trim() || recipient.name.trim() || current.recipientName,
         recipientAddress: recipient.address?.trim() || current.recipientAddress,
         recipientLocale: recipient.preferredLocale || current.recipientLocale
       }

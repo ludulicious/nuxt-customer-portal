@@ -8,6 +8,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { activeOrganizationType } = usePortalSession()
 
 const emit = defineEmits<{
   submit: [data: ServiceRequestCreateInput]
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 const editMode = computed(() => !!props.initialData?.id)
 
 const state = reactive({
+  clientOrganizationId: props.initialData?.clientOrganizationId || '',
   title: props.initialData?.title || '',
   description: props.initialData?.description || '',
   priority: props.initialData?.priority || 'MEDIUM',
@@ -27,6 +29,7 @@ watch(
   () => props.initialData,
   (data) => {
     state.title = data?.title || ''
+    state.clientOrganizationId = data?.clientOrganizationId || ''
     state.description = data?.description || ''
     state.priority = data?.priority || 'MEDIUM'
     state.category = data?.category || ''
@@ -34,6 +37,7 @@ watch(
 )
 
 const schema = z.object({
+  clientOrganizationId: activeOrganizationType.value === 'OWNER' ? z.string().min(1) : z.string().optional(),
   title: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
@@ -51,6 +55,13 @@ const handleSubmit = () => {
   <UForm :state="state" :schema="schema" class="w-full" @submit="handleSubmit">
     <!-- Wrap in real DOM nodes so spacing is guaranteed -->
     <div class="space-y-6">
+      <ClientsClientPicker
+        v-if="activeOrganizationType === 'OWNER'"
+        v-model="state.clientOrganizationId"
+        module-id="service-requests"
+        :label="t('features.serviceRequests.fields.client')"
+        required
+      />
       <div>
         <UFormField :label="t('features.serviceRequests.fields.title')" name="title" required>
           <UInput

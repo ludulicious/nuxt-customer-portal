@@ -44,7 +44,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       labelKey: 'features.timesheets.navigation.manage',
       icon: 'i-lucide-chart-no-axes-combined',
       to: '/admin/timesheets/internal-approvals',
-      audiences: ['organizationAdmin', 'admin'],
+      audiences: ['ownerAdmin'],
       location: 'admin',
       order: 130
     }
@@ -60,16 +60,15 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     menuItems: [
       { id: 'my-timesheet', labelKey: 'features.timesheets.navigation.myTimesheet', icon: 'i-lucide-clock-3', to: '/timesheets', audiences: ['authenticated'] },
       { id: 'client-approvals', labelKey: 'features.timesheets.approvals.title', icon: 'i-lucide-stamp', to: '/timesheets/approvals', exact: true, audiences: ['authenticated'] },
-      { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['organizationAdmin', 'admin'] },
+      { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['clientAdmin'] },
       { id: 'supplier-timesheets', labelKey: 'features.timesheets.suppliers.title', icon: 'i-lucide-building-2', to: '/timesheets/suppliers', audiences: ['authenticated'] },
       { id: 'timesheet-approvals', labelKey: 'features.timesheets.internalApprovals.title', icon: 'i-lucide-stamp', to: '/timesheets/internal-approvals', audiences: ['authenticated'] },
-      { id: 'internal-approval-settings', labelKey: 'features.timesheets.internalApprovals.manageTitle', icon: 'i-lucide-user-round-check', to: '/admin/timesheets/internal-approvals', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-clients', labelKey: 'features.timesheets.admin.clients', icon: 'i-lucide-building-2', to: '/admin/timesheets/clients', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-rates', labelKey: 'features.timesheets.admin.teamRates', icon: 'i-lucide-badge-euro', to: '/admin/timesheets/rates', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-settings', labelKey: 'features.timesheets.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/timesheets/settings', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-reports', labelKey: 'features.timesheets.admin.reports', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/timesheets/reports', audiences: ['organizationAdmin', 'admin'] }
+      { id: 'internal-approval-settings', labelKey: 'features.timesheets.internalApprovals.manageTitle', icon: 'i-lucide-user-round-check', to: '/admin/timesheets/internal-approvals', audiences: ['ownerAdmin'] },
+      { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['ownerAdmin'] },
+      { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['ownerAdmin'] },
+      { id: 'timesheet-rates', labelKey: 'features.timesheets.admin.teamRates', icon: 'i-lucide-badge-euro', to: '/admin/timesheets/rates', audiences: ['ownerAdmin'] },
+      { id: 'timesheet-settings', labelKey: 'features.timesheets.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/timesheets/settings', audiences: ['ownerAdmin'] },
+      { id: 'timesheet-reports', labelKey: 'features.timesheets.admin.reports', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/timesheets/reports', audiences: ['ownerAdmin'] }
     ]
   }, {
     id: 'invoices',
@@ -81,8 +80,8 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     order: 31,
     menuItems: [
       { id: 'client-invoices', labelKey: 'features.timesheets.receivedInvoices', icon: 'i-lucide-inbox', to: '/timesheets/invoices', exact: true, audiences: ['authenticated'] },
-      { id: 'invoice-viewers', labelKey: 'features.timesheets.clientInvoices.viewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/invoices/viewers', audiences: ['organizationAdmin', 'admin'] },
-      { id: 'timesheet-invoices', labelKey: 'features.timesheets.salesInvoices', icon: 'i-lucide-send', to: '/admin/timesheets/invoices', audiences: ['organizationAdmin', 'admin'] }
+      { id: 'invoice-viewers', labelKey: 'features.timesheets.clientInvoices.viewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/invoices/viewers', audiences: ['clientAdmin'] },
+      { id: 'timesheet-invoices', labelKey: 'features.timesheets.salesInvoices', icon: 'i-lucide-send', to: '/admin/timesheets/invoices', audiences: ['ownerAdmin'] }
     ]
   }],
   dashboardWidgets: [
@@ -93,15 +92,9 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     { id: 'timesheets-sales-invoices', component: 'TimesheetsDashboardSalesInvoices', area: 'main', size: 'half', order: 30 },
     { id: 'timesheets-received-invoices', component: 'TimesheetsDashboardReceivedInvoices', area: 'main', size: 'half', order: 40 }
   ],
-  surfaces: [{
-    id: 'timesheets-organization-capabilities',
-    surface: 'administration.organization.detail',
-    component: 'TimesheetsAdministrationOrganizationPanel',
-    order: 20
-  }],
+  clientIntegration: { moduleId: 'timesheets', labelKey: 'features.timesheets.navigation.myTimesheet', detailComponent: 'TimesheetsClientSettingsPanel' },
   policy: {
-    owner: timesheetActions,
-    admin: timesheetActions,
-    member: ['read', 'create', 'update', 'submit']
+    OWNER: { owner: timesheetActions, admin: timesheetActions, member: ['read', 'create', 'update', 'submit'] },
+    CLIENT: { owner: ['read', 'approve', 'manage'], admin: ['read', 'approve', 'manage'], member: ['read'] }
   }
 }

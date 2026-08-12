@@ -57,9 +57,9 @@ test('query validation normalizes both new and legacy pagination', () => {
 })
 
 test('service-request policy keeps management out of the member role', () => {
-  assert.equal(serviceRequestFeature.policy.owner.includes('manage'), true)
-  assert.equal(serviceRequestFeature.policy.admin.includes('manage'), true)
-  assert.equal(serviceRequestFeature.policy.member.includes('manage'), false)
+  assert.equal(serviceRequestFeature.policy.OWNER.owner.includes('manage'), true)
+  assert.equal(serviceRequestFeature.policy.OWNER.admin.includes('manage'), true)
+  assert.equal(serviceRequestFeature.policy.CLIENT.member.includes('manage'), false)
 })
 
 test('service-request dashboard separates manager attention from the general overview', () => {

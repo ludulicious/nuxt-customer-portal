@@ -2,13 +2,14 @@ import { serviceRequestFeature } from '@nuxt-customer-portal/service-requests/sh
 
 export default defineNuxtPlugin(() => {
   const { registerFeature } = usePortalFeatures()
-  const { activeOrganizationRole, isSystemAdmin } = usePortalSession()
+  const { activeOrganizationRole, activeOrganizationType } = usePortalSession()
   const register = () => {
-    const canManage = isSystemAdmin.value || activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin'
+    const canManage = activeOrganizationType.value === 'OWNER'
+      && (activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin')
     registerFeature({
       ...serviceRequestFeature,
       dashboardWidgets: serviceRequestFeature.dashboardWidgets?.filter(widget => widget.id !== 'service-requests-attention' || canManage)
     })
   }
-  watch([activeOrganizationRole, isSystemAdmin], register, { immediate: true })
+  watch([activeOrganizationRole, activeOrganizationType], register, { immediate: true })
 })

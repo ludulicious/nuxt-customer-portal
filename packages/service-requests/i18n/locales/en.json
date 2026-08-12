@@ -45,7 +45,8 @@
         "category": "Filter by category"
       },
       "fields": {
-        "title": "Title",
+      "title": "Title",
+      "client": "Client",
         "description": "Description",
         "priority": "Priority",
         "category": "Category",

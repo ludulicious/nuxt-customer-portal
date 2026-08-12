@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
-import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
-import { serviceRequestFeature } from '@nuxt-customer-portal/service-requests/shared/feature'
+import { requireClientModuleEnabled } from '@nuxt-customer-portal/clients/server/utils/client-repository'
+import { requireServiceRequestScope } from '@nuxt-customer-portal/service-requests/server/utils/service-request-scope'
 import { createServiceRequestSchema } from '@nuxt-customer-portal/service-requests/server/utils/service-request-validation'
 import { createServiceRequest, toServiceRequestDto } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
 
@@ -14,13 +14,17 @@ operationId: 'serviceRequestsPost',
 })
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'create')
+  const scope = await requireServiceRequestScope(event, 'create')
   const data = createServiceRequestSchema.parse(await readBody(event))
+  const clientOrganizationId = scope.clientOrganizationId ?? data.clientOrganizationId
+  if (!clientOrganizationId) throw createError({ statusCode: 400, message: 'Client is required' })
+  await requireClientModuleEnabled(clientOrganizationId, 'service-requests')
   const row = await createServiceRequest({
     id: nanoid(),
     ...data,
-    organizationId,
-    createdById: session.user.id
+    organizationId: scope.ownerOrganizationId,
+    clientOrganizationId,
+    createdById: scope.session.user.id
   })
   if (!row) throw createError({ statusCode: 500, message: 'Failed to create request' })
   return toServiceRequestDto(row)

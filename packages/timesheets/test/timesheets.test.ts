@@ -53,9 +53,9 @@ test('English and Dutch expose identical feature locale keys', () => {
 })
 
 test('feature policy reserves management and approval for admins', () => {
-  assert.equal(timesheetsFeature.policy.member.includes('manage'), false)
-  assert.equal(timesheetsFeature.policy.member.includes('approve'), false)
-  assert.equal(timesheetsFeature.policy.member.includes('submit'), true)
+  assert.equal(timesheetsFeature.policy.OWNER.member.includes('manage'), false)
+  assert.equal(timesheetsFeature.policy.OWNER.member.includes('approve'), false)
+  assert.equal(timesheetsFeature.policy.OWNER.member.includes('submit'), true)
 })
 
 test('dashboard contributions have stable ids and cover each timesheet capability', () => {

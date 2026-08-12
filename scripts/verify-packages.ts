@@ -9,7 +9,7 @@ const packageDirectories = [
   'ui',
   'authentication',
   'organizations',
-  'administration',
+  'clients',
   'service-requests',
   'timesheets',
   'preset',

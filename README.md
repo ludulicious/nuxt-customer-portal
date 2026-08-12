@@ -1,6 +1,6 @@
 # Nuxt Customer Portal
 
-MIT-licensed Nuxt 4 layers for authentication, tenant organizations, administration, Service Requests, Timesheets, and invoicing. The repository is the canonical pnpm monorepo for public packages, two structurally distinct demos, migration tooling, and documentation.
+MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, Service Requests, Timesheets, and invoicing. The repository is the canonical pnpm monorepo for public packages, two structurally distinct demos, migration tooling, and documentation.
 
 - [Documentation](https://nuxt-customer-portal.com)
 - [Installation](https://nuxt-customer-portal.com/getting-started/installation)
@@ -15,10 +15,10 @@ MIT-licensed Nuxt 4 layers for authentication, tenant organizations, administrat
 | `@nuxt-customer-portal/ui` | Neutral fallback layouts, dashboard, navigation, modals, and notifications |
 | `@nuxt-customer-portal/authentication` | Authentication routes and forms |
 | `@nuxt-customer-portal/organizations` | Profile, organizations, membership, and invitations |
-| `@nuxt-customer-portal/administration` | System administration |
+| `@nuxt-customer-portal/clients` | Shared client profiles, memberships, and module activation |
 | `@nuxt-customer-portal/service-requests` | Optional Service Requests feature |
 | `@nuxt-customer-portal/timesheets` | Optional time, approval, reporting, and invoicing feature |
-| `@nuxt-customer-portal/preset` | Core, UI, authentication, organizations, and administration |
+| `@nuxt-customer-portal/preset` | Core, UI, authentication, owner organizations, and clients |
 | `@nuxt-customer-portal/kit` | Portal configuration, diagnostics, and migration CLI |
 
 All public packages are linked at `0.1.0-alpha.0`. This milestone produces and verifies tarballs but does not publish them.

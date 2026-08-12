@@ -1,4 +1,5 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
+import { hashPassword } from 'better-auth/crypto'
 import { createRequire } from 'node:module'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
@@ -25,12 +26,126 @@ export const localPortalLayer = (input) => ({
   dependsOn: [...(input.dependsOn ?? [])]
 })
 
-export const definePortalConfig = ({ layers }) => {
+export const definePortalConfig = ({ layers, clients }) => {
   if (!Array.isArray(layers) || !layers.length) throw new Error('Portal config must contain at least one layer')
   return {
     layers,
+    clients: { defaultModules: [...(clients?.defaultModules ?? [])] },
     nuxtLayers: layers.map(layer => typeof layer === 'string' ? layer : layer.source)
   }
+}
+
+export const migrateGenericClients = async (config, options = {}) => {
+  const owner = assertString(options.owner, '--owner')
+  return withPool(options.databaseUrl, async (pool) => {
+    const client = await pool.connect()
+    try {
+      const selected = await client.query('SELECT id, name, slug FROM organization WHERE id = $1 OR slug = $1', [owner])
+      if (selected.rowCount !== 1) throw new Error(`Expected exactly one organization for --owner ${owner}, found ${selected.rowCount}`)
+      const ownerOrganization = selected.rows[0]
+      const linked = await client.query(`SELECT o.id, o.name, o.slug
+        FROM timesheets.workspace_client wc JOIN organization o ON o.id = wc.client_organization_id
+        WHERE wc.workspace_organization_id = $1 AND o.id <> $1 ORDER BY o.name`, [ownerOrganization.id])
+      const allOthers = await client.query('SELECT id, name, slug FROM organization WHERE id <> $1 ORDER BY name', [ownerOrganization.id])
+      const secondaryWorkspaces = await client.query(`SELECT workspace_organization_id AS "organizationId", count(*)::int AS "clientLinks"
+        FROM timesheets.workspace_client WHERE workspace_organization_id <> $1
+        GROUP BY workspace_organization_id ORDER BY workspace_organization_id`, [ownerOrganization.id])
+      const linkedIds = new Set(linked.rows.map(row => row.id))
+      const archived = allOthers.rows.filter(row => !linkedIds.has(row.id))
+      const contacts = await client.query(`SELECT count(*)::int AS total,
+        count(*) FILTER (WHERE oc.user_id IS NOT NULL AND m.id IS NOT NULL)::int AS linked
+        FROM timesheets.organization_contact oc
+        LEFT JOIN member m ON m.user_id = oc.user_id AND m.organization_id = oc.organization_id`)
+      const legacyRequests = await client.query(`SELECT to_regclass('service_requests.legacy_service_request') AS table_name`)
+      const requests = legacyRequests.rows[0]?.table_name
+        ? await client.query('SELECT count(*)::int AS total FROM service_requests.legacy_service_request')
+        : await client.query('SELECT count(*)::int AS total FROM service_requests.service_request')
+      const defaultModules = [...new Set(config.clients?.defaultModules ?? [])]
+      const report = {
+        dryRun: !options.apply,
+        owner: ownerOrganization,
+        activeClients: linked.rows,
+        archivedUnclassifiedOrganizations: archived,
+        skippedContacts: (contacts.rows[0]?.total ?? 0) - (contacts.rows[0]?.linked ?? 0),
+        excludedSecondaryWorkspaceData: secondaryWorkspaces.rows,
+        excludedServiceRequests: requests.rows[0]?.total ?? 0,
+        inferredModules: linked.rows.map(row => ({ organizationId: row.id, moduleId: 'timesheets' })),
+        defaultModules,
+        blockingIntegrityErrors: []
+      }
+      if (!options.apply) return report
+      if (!options.backupConfirmed) throw new Error('Applying this migration requires --backup-confirmed')
+      await client.query('SELECT pg_advisory_lock(hashtext($1))', [`${lockName}:generic-clients`])
+      await client.query('BEGIN')
+      try {
+        await client.query(`UPDATE organization SET organization_type = CASE WHEN id = $1 THEN 'OWNER' ELSE 'CLIENT' END`, [ownerOrganization.id])
+        await client.query(`INSERT INTO clients.client_profile
+          (organization_id, official_name, address, registration_number, vat_number, invoice_email, preferred_locale, archived_at)
+          SELECT o.id, o.name, COALESCE(p.address, ''), p.registration_number, p.vat_number, p.invoice_email,
+            COALESCE(p.preferred_locale, 'nl'), CASE WHEN wc.id IS NULL THEN now() ELSE NULL END
+          FROM organization o
+          LEFT JOIN timesheets.organization_invoice_profile p ON p.organization_id = o.id
+          LEFT JOIN timesheets.workspace_client wc ON wc.client_organization_id = o.id AND wc.workspace_organization_id = $1
+          WHERE o.id <> $1
+          ON CONFLICT (organization_id) DO NOTHING`, [ownerOrganization.id])
+        const activations = new Set(['timesheets', ...defaultModules])
+        for (const row of linked.rows) {
+          for (const moduleId of activations) {
+            await client.query(`INSERT INTO clients.client_module (id, organization_id, module_id, enabled)
+              VALUES (gen_random_uuid()::text, $1, $2, true)
+              ON CONFLICT (organization_id, module_id) DO UPDATE SET enabled = true, updated_at = now()`, [row.id, moduleId])
+          }
+        }
+        await client.query('TRUNCATE service_requests.service_request')
+        await client.query('COMMIT')
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        await client.query('SELECT pg_advisory_unlock(hashtext($1))', [`${lockName}:generic-clients`]).catch(() => {})
+      }
+      return { ...report, dryRun: false }
+    } finally {
+      client.release()
+    }
+  })
+}
+
+export const seedPortalOwner = async (options = {}) => {
+  const name = assertString(options.organizationName, '--organization-name')
+  const slug = assertString(options.organizationSlug, '--organization-slug')
+  const userName = assertString(options.userName, '--user-name')
+  const email = assertString(options.userEmail, '--user-email').toLowerCase()
+  const password = assertString(options.userPassword, '--user-password')
+  return withPool(options.databaseUrl, async (pool) => {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const existingOwner = await client.query(`SELECT id, slug FROM organization WHERE organization_type = 'OWNER' LIMIT 1`)
+      if (existingOwner.rowCount && existingOwner.rows[0].slug !== slug) throw new Error(`An OWNER organization already exists with slug ${existingOwner.rows[0].slug}`)
+      const organizationId = existingOwner.rows[0]?.id ?? randomUUID()
+      await client.query(`INSERT INTO organization (id, name, slug, organization_type, created_at)
+        VALUES ($1, $2, $3, 'OWNER', now()) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name`, [organizationId, name, slug])
+      const existingUser = await client.query('SELECT id FROM "user" WHERE lower(email) = $1', [email])
+      const userId = existingUser.rows[0]?.id ?? randomUUID()
+      if (!existingUser.rowCount) {
+        const passwordHash = await hashPassword(password)
+        await client.query(`INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at) VALUES ($1, $2, $3, true, now(), now())`, [userId, userName, email])
+        await client.query(`INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
+          VALUES ($1, $2, 'credential', $2, $3, now(), now())`, [randomUUID(), userId, passwordHash])
+      }
+      await client.query(`INSERT INTO member (id, organization_id, user_id, role, created_at)
+        SELECT $1, $2, $3, 'owner', now()
+        WHERE NOT EXISTS (SELECT 1 FROM member WHERE organization_id = $2 AND user_id = $3)`, [randomUUID(), organizationId, userId])
+      await client.query('COMMIT')
+      return { organizationId, userId, email, createdUser: !existingUser.rowCount }
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  })
 }
 
 const packageManifest = async (source, cwd) => {
@@ -85,7 +200,12 @@ export const resolvePortalManifests = async (config, cwd = process.cwd()) => {
     }
   }
   assertCompatiblePortalVersions(manifests)
-  return sortPortalManifests(manifests)
+  const sorted = sortPortalManifests(manifests)
+  const supportedClientModules = new Set(sorted.map(item => item.clientModuleId).filter(Boolean))
+  for (const moduleId of config.clients?.defaultModules ?? []) {
+    if (!supportedClientModules.has(moduleId)) throw new Error(`Configured default client module is not installed or client-aware: ${moduleId}`)
+  }
+  return sorted
 }
 
 export const sortPortalManifests = (manifests) => {
@@ -204,7 +324,7 @@ export const migratePortalDatabase = async (config, options = {}) => {
         const applied = new Map(rows.map(row => [row.name, row]))
         for (const file of files) {
           const existing = applied.get(file.name)
-          if (existing?.checksum !== file.checksum) throw new Error(`Checksum mismatch: ${manifest.id}/${file.name}`)
+          if (existing && existing.checksum !== file.checksum) throw new Error(`Checksum mismatch: ${manifest.id}/${file.name}`)
           if (existing) continue
           await client.query('BEGIN')
           try {
@@ -246,12 +366,25 @@ export const adoptLegacyMigrations = async (config, options = {}) => {
     const client = await pool.connect()
     try {
       await verifyLegacyDatabase(client)
-      const mapping = manifests.map(manifest => ({ id: manifest.id, files: migrationFiles(manifest).map(file => file.name) }))
+      // The recognized 22-entry legacy journal predates provider-owned migration
+      // streams. It represents only the original baselines of these providers.
+      // New providers and follow-up migrations must remain pending and execute
+      // normally after adoption.
+      const legacyProviderIds = new Set(['core', 'service-requests', 'timesheets'])
+      const mapping = manifests
+        .filter(manifest => legacyProviderIds.has(manifest.id))
+        .map(manifest => ({
+          id: manifest.id,
+          files: migrationFiles(manifest).filter(file => file.name === '0000_baseline.sql').map(file => file.name)
+        }))
       if (!options.apply) return { dryRun: true, mapping }
       await client.query('SELECT pg_advisory_lock(hashtext($1))', [lockName])
       try {
-        for (const manifest of manifests) {
-          const files = migrationFiles(manifest)
+        for (const { id, files: adoptedNames } of mapping) {
+          const manifest = manifests.find(item => item.id === id)
+          if (!manifest) throw new Error(`Legacy provider manifest is missing: ${id}`)
+          const adoptedNameSet = new Set(adoptedNames)
+          const files = migrationFiles(manifest).filter(file => adoptedNameSet.has(file.name))
           const { table, rows } = await appliedMigrations(client, manifest)
           if (rows.length) throw new Error(`Provider ${manifest.id} already has an adoption journal`)
           await client.query('BEGIN')

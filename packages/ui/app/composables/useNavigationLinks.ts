@@ -5,22 +5,27 @@ const hasAudience = (
   audiences: PortalAudience[],
   isAuthenticated: boolean,
   isAdmin: boolean,
-  organizationRole: string | null
+  organizationRole: string | null,
+  organizationType: 'OWNER' | 'CLIENT' | null
 ) => audiences.some((audience) => {
   if (audience === 'public') return true
   if (audience === 'authenticated') return isAuthenticated
   if (audience === 'admin') return isAdmin
-  return organizationRole === 'owner' || organizationRole === 'admin' || isAdmin
+  if (audience === 'ownerAuthenticated') return organizationType === 'OWNER' && Boolean(organizationRole)
+  if (audience === 'ownerAdmin') return organizationType === 'OWNER' && (organizationRole === 'owner' || organizationRole === 'admin')
+  if (audience === 'clientAuthenticated') return organizationType === 'CLIENT' && Boolean(organizationRole)
+  if (audience === 'clientAdmin') return organizationType === 'CLIENT' && (organizationRole === 'owner' || organizationRole === 'admin')
+  return organizationType === 'OWNER' && (organizationRole === 'owner' || organizationRole === 'admin')
 })
 
 export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { navigation } = usePortalFeatures()
-  const { isAuthenticated, isSystemAdmin, activeOrganizationRole } = usePortalSession()
+  const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType } = usePortalSession()
 
   const visibleItems = computed(() => navigation.value.filter(item =>
-    hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value)
+    hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value, activeOrganizationType.value)
     && (route.path === '/' || !item.audiences.every(audience => audience === 'public'))))
 
   const links = computed<NavigationMenuItem[][]>(() => [visibleItems.value.map(item => ({

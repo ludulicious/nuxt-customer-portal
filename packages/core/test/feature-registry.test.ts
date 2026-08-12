@@ -30,10 +30,10 @@ test('dashboard contributions sort deterministically by area, order, and stable 
   assert.deepEqual(widgets.map(widget => widget.id), ['z', 'b', 'a', 'aside'])
 })
 
-test('feature policy honors organization roles and system-admin bypass', () => {
+test('feature policy honors organization roles without a system-admin bypass', () => {
   assert.equal(isPortalActionAllowed(feature.policy, 'member', 'read'), true)
   assert.equal(isPortalActionAllowed(feature.policy, 'member', 'manage'), false)
-  assert.equal(isPortalActionAllowed(feature.policy, null, 'manage', true), true)
+  assert.equal(isPortalActionAllowed(feature.policy, null, 'manage'), false)
 })
 
 test('active organization supports both Better Auth session shapes', () => {
@@ -48,10 +48,10 @@ test('active organization supports both Better Auth session shapes', () => {
   }), 'top-level-organization')
 })
 
-test('organization email credentials are restricted to owners and system administrators', () => {
+test('organization email credentials are restricted to OWNER organization owners', () => {
   assert.equal(canManageOrganizationEmailCredential('owner'), true)
   assert.equal(canManageOrganizationEmailCredential('admin'), false)
   assert.equal(canManageOrganizationEmailCredential('member'), false)
   assert.equal(canManageOrganizationEmailCredential(null), false)
-  assert.equal(canManageOrganizationEmailCredential(null, true), true)
+  assert.equal(canManageOrganizationEmailCredential('owner', 'CLIENT'), false)
 })

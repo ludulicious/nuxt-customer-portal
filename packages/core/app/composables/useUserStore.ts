@@ -13,6 +13,7 @@ interface PermissionsResponse {
   role: string
   organizationRole: string | null
   activeOrganization: Organization | null
+  organizationType: 'OWNER' | 'CLIENT' | null
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -108,7 +109,7 @@ export const useUserStore = defineStore('user', () => {
     return permissions.value[`${subject}.${action}`] ?? false
   }
 
-  const isAdmin = computed(() => role.value === 'admin')
+  const isAdmin = computed(() => false)
 
   const userInitials = computed(() => {
     const user = currentUser.value
@@ -158,6 +159,7 @@ export const useUserStore = defineStore('user', () => {
   const activeOrganizationRole = computed(() => {
     return activeOrganizationRoleValue.value
   })
+  const activeOrganizationType = computed(() => activeOrganization.value?.organizationType ?? null)
 
   const loggedInUsingEmail = computed(() => {
     const user = currentUser.value
@@ -413,6 +415,7 @@ export const useUserStore = defineStore('user', () => {
     activeOrganizationId,
     activeOrganization,
     activeOrganizationRole,
+    activeOrganizationType,
     myOrganizations,
     loadingOrganization,
     refreshOrganizations,

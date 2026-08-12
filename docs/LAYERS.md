@@ -47,7 +47,7 @@ Do not use host aliases, physical cross-package paths, or imports from platform 
 
 - `core` is visually headless and owns auth infrastructure, tenancy, authorization, database access, registry, contracts, and generic OpenAPI merging.
 - `ui` owns neutral shell primitives, fallback layouts, menus, modals, dashboards, and surface rendering.
-- `authentication`, `organizations`, and `administration` form the rest of the preset.
+- `authentication`, `organizations`, and `clients` form the rest of the preset.
 - `service-requests` and `timesheets` are optional business packages.
 - `kit` owns config resolution, diagnostics, provider ordering, migrations, and legacy adoption.
 

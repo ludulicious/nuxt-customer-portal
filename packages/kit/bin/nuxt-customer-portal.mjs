@@ -6,6 +6,8 @@ import { createJiti } from 'jiti'
 import {
   adoptLegacyMigrations,
   inspectPortalMigrations,
+  migrateGenericClients,
+  seedPortalOwner,
   migratePortalDatabase,
   resolvePortalManifests
 } from '../src/runtime.mjs'
@@ -35,6 +37,21 @@ try {
     print({ applied: await migratePortalDatabase(config, { cwd }) })
   } else if (args[0] === 'db' && args[1] === 'adopt-legacy') {
     print(await adoptLegacyMigrations(config, { cwd, apply: args.includes('--apply') }))
+  } else if (args[0] === 'clients' && args[1] === 'migrate') {
+    const owner = args[args.indexOf('--owner') + 1]
+    if (!owner || owner.startsWith('--')) throw new Error('clients migrate requires --owner <organization-id-or-slug>')
+    print(await migrateGenericClients(config, {
+      cwd,
+      owner,
+      apply: args.includes('--apply'),
+      backupConfirmed: args.includes('--backup-confirmed')
+    }))
+  } else if (args[0] === 'owner' && args[1] === 'seed') {
+    const value = flag => args[args.indexOf(flag) + 1]
+    print(await seedPortalOwner({
+      organizationName: value('--organization-name'), organizationSlug: value('--organization-slug'),
+      userName: value('--user-name'), userEmail: value('--user-email'), userPassword: value('--user-password')
+    }))
   } else if (args[0] === 'db' && args[1] === 'generate') {
     const provider = args[args.indexOf('--provider') + 1]
     if (!provider || provider.startsWith('--')) throw new Error('db generate requires --provider <id>')
@@ -51,7 +68,9 @@ try {
   nuxt-customer-portal db status
   nuxt-customer-portal db migrate
   nuxt-customer-portal db generate --provider <id>
-  nuxt-customer-portal db adopt-legacy [--apply]`)
+  nuxt-customer-portal db adopt-legacy [--apply]
+  nuxt-customer-portal owner seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
+  nuxt-customer-portal clients migrate --owner <id-or-slug> [--apply --backup-confirmed]`)
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)

@@ -1,5 +1,4 @@
-import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
-import { serviceRequestFeature } from '@nuxt-customer-portal/service-requests/shared/feature'
+import { requireServiceRequestScope } from '@nuxt-customer-portal/service-requests/server/utils/service-request-scope'
 import { filterServiceRequestSchema } from '@nuxt-customer-portal/service-requests/server/utils/service-request-validation'
 import { listServiceRequests } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
 
@@ -13,7 +12,7 @@ operationId: 'serviceRequestsGet',
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(event, serviceRequestFeature.policy, 'list')
+  const scope = await requireServiceRequestScope(event, 'list')
   const filters = filterServiceRequestSchema.parse(getQuery(event))
-  return listServiceRequests(organizationId, filters)
+  return listServiceRequests(scope.ownerOrganizationId, filters, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
 })

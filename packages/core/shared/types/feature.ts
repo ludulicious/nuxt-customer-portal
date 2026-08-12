@@ -1,5 +1,6 @@
-export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin'
+export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin' | 'ownerAuthenticated' | 'ownerAdmin' | 'clientAuthenticated' | 'clientAdmin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
+export type PortalOrganizationType = 'OWNER' | 'CLIENT'
 
 export interface PortalBadge {
   label: string | number
@@ -53,10 +54,22 @@ export interface PortalModuleContribution {
   menuItems?: readonly PortalModuleMenuItem[]
 }
 
-export interface PortalFeaturePolicy<Action extends string = string> {
+export interface PortalRolePolicy<Action extends string = string> {
   owner: readonly Action[]
   admin: readonly Action[]
   member: readonly Action[]
+}
+
+export type PortalFeaturePolicy<Action extends string = string> = PortalRolePolicy<Action> | {
+  OWNER: PortalRolePolicy<Action>
+  CLIENT: PortalRolePolicy<Action>
+}
+
+export interface PortalClientIntegration {
+  moduleId: string
+  labelKey: string
+  descriptionKey?: string
+  detailComponent?: string
 }
 
 export interface PortalSurfaceContribution {
@@ -72,5 +85,6 @@ export interface PortalFeatureDefinition<Action extends string = string> {
   modules?: readonly PortalModuleContribution[]
   dashboardWidgets?: readonly PortalDashboardWidget[]
   surfaces?: readonly PortalSurfaceContribution[]
+  clientIntegration?: PortalClientIntegration
   policy: PortalFeaturePolicy<Action>
 }

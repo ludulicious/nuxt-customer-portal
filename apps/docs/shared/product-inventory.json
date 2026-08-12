@@ -38,12 +38,12 @@
       "apiFamilies": ["/api/organizations/**", "/api/profile"]
     },
     {
-      "id": "administration",
+      "id": "clients",
       "kind": "platform",
       "documentationPath": "/modules/platform-layers",
-      "pageCount": 4,
-      "apiHandlerCount": 14,
-      "apiFamilies": ["/api/admin/**"]
+      "pageCount": 1,
+      "apiHandlerCount": 12,
+      "apiFamilies": ["/api/clients/**"]
     },
     {
       "id": "service-requests",
@@ -58,7 +58,7 @@
       "kind": "business",
       "documentationPath": "/modules/timesheets-invoices",
       "pageCount": 20,
-      "apiHandlerCount": 76,
+      "apiHandlerCount": 78,
       "apiFamilies": ["/api/timesheets/**"]
     },
     {

@@ -376,6 +376,7 @@
         "projectRates": "Projectspecifieke tarieven",
         "saveOverrides": "Afwijkingen opslaan",
         "workspaceSettings": "Werkruimte-instellingen",
+        "clientSettings": "Urenstaten-instellingen voor klant",
         "currency": "Valuta",
         "timezone": "Tijdzone",
         "createProject": "Project maken",

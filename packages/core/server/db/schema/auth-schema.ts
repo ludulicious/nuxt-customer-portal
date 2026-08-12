@@ -2,7 +2,8 @@
 /* eslint-disable @stylistic/semi */
 /* eslint-disable semi */
 /* eslint-disable @stylistic/quotes */
-import { pgTable, text, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, timestamp, boolean, check, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -90,8 +91,11 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   createdAt: timestamp("created_at").notNull(),
   metadata: text("metadata"),
+  organizationType: text("organization_type").notNull(),
 }, (table) => [
-  index("organization_slug_idx").on(table.slug)
+  index("organization_slug_idx").on(table.slug),
+  check("organization_type_check", sql`${table.organizationType} IN ('OWNER', 'CLIENT')`),
+  uniqueIndex("organization_single_owner_uidx").on(table.organizationType).where(sql`${table.organizationType} = 'OWNER'`)
 ]);
 
 export const member = pgTable("member", {
@@ -103,6 +107,8 @@ export const member = pgTable("member", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   role: text("role").default("member").notNull(),
+  phone: text("phone"),
+  jobTitle: text("job_title"),
   createdAt: timestamp("created_at").notNull(),
 }, (table) => [
   index("member_organization_id_idx").on(table.organizationId),

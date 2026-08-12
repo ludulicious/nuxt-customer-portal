@@ -19,6 +19,8 @@ export interface ServiceRequestDto {
   priority: ServiceRequestPriority
   category: string | null
   organizationId: string
+  clientOrganizationId: string
+  clientName?: string
   createdById: string
   assignedToId: string | null
   attachments: readonly ServiceRequestAttachment[]
@@ -71,6 +73,7 @@ export interface ServiceRequestDashboardDto {
 }
 
 export interface ServiceRequestFilters {
+  clientOrganizationId?: string
   status?: ServiceRequestStatus
   priority?: ServiceRequestPriority
   category?: string
@@ -87,6 +90,7 @@ export type ServiceRequest = ServiceRequestDto
 export type ServiceRequestWithRelations = ServiceRequestWithRelationsDto
 
 export interface ServiceRequestCreateInput {
+  clientOrganizationId?: string
   title: string
   description: string
   priority?: ServiceRequestPriority

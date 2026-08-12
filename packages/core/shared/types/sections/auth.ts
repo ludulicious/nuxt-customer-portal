@@ -6,7 +6,9 @@ import type { User } from './database'
 /**
  * User role type - possible values for user.role
  */
-export type UserRole = 'user' | 'admin'
+export type UserRole = 'user'
+
+export type OrganizationType = 'OWNER' | 'CLIENT'
 
 /**
  * Member role type - possible values for organization member roles
