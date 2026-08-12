@@ -3,6 +3,12 @@
     "clients": {
       "title": "Clients",
       "description": "Manage client companies, members, profiles, and module access.",
+      "backToClients": "Back to clients",
+      "openClient": "Open {name}",
+      "loading": "Loading client",
+      "notFound": "Client not found",
+      "profile": "Client details",
+      "lifecycle": "Status and deletion",
       "new": "New client",
       "create": "Create client",
       "createFirst": "Create your first client",

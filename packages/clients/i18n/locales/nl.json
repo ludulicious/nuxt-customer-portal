@@ -3,6 +3,12 @@
     "clients": {
       "title": "Klanten",
       "description": "Beheer klantbedrijven, leden, profielen en moduletoegang.",
+      "backToClients": "Terug naar klanten",
+      "openClient": "Open {name}",
+      "loading": "Klant laden",
+      "notFound": "Klant niet gevonden",
+      "profile": "Klantgegevens",
+      "lifecycle": "Status en verwijderen",
       "new": "Nieuwe klant",
       "create": "Klant aanmaken",
       "createFirst": "Maak je eerste klant aan",
