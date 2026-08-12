@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import type { UserRole } from '@nuxt-customer-portal/core/shared/types/index'
 
@@ -8,21 +10,26 @@ const { t } = useI18n()
 const toast = useToast()
 const creating = ref(false)
 const state = reactive({ name: '', email: '', password: '', role: 'user' as UserRole })
+const schema = computed(() => z.object({
+  name: z.string().trim().min(1, t('admin.user.create.nameRequired')).max(255, t('admin.user.create.nameMaxLength')),
+  email: z.email(t('admin.user.create.emailInvalid')).transform(value => value.trim().toLowerCase()),
+  password: z.string().min(8, t('admin.user.create.passwordMinLength')),
+  role: z.enum(['user', 'admin'])
+}))
+type CreateUserSchema = z.output<typeof schema.value>
 const roles = computed(() => [
   { label: t('admin.user.roles.user'), value: 'user' },
   { label: t('admin.user.roles.admin'), value: 'admin' }
 ])
-const valid = computed(() => state.name.trim() && state.email.includes('@') && state.password.length >= 8)
 
-const createUser = async () => {
-  if (!valid.value) return
+const createUser = async (event: FormSubmitEvent<CreateUserSchema>) => {
   try {
     creating.value = true
     const { error } = await authClient.admin.createUser({
-      name: state.name.trim(),
-      email: state.email.trim().toLowerCase(),
-      password: state.password,
-      role: state.role
+      name: event.data.name,
+      email: event.data.email,
+      password: event.data.password,
+      role: event.data.role
     })
     if (error) throw error
     toast.add({ title: t('common.success'), description: t('admin.user.create.success'), color: 'success' })
@@ -41,17 +48,17 @@ const createUser = async () => {
 <template>
   <UModal v-model:open="open" :title="t('admin.user.create.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('admin.user.create.name')" required><UInput v-model="state.name" class="w-full" /></UFormField>
-        <UFormField :label="t('admin.user.create.email')" required><UInput v-model="state.email" type="email" class="w-full" /></UFormField>
-        <UFormField :label="t('admin.user.create.password')" :hint="t('admin.user.create.passwordHint')" required><UInput v-model="state.password" type="password" class="w-full" /></UFormField>
-        <UFormField :label="t('admin.user.list.role')" required><USelect v-model="state.role" :items="roles" class="w-full" /></UFormField>
-      </div>
+      <UForm id="admin-create-user-form" :state="state" :schema="schema" class="space-y-4" @submit="createUser">
+        <UFormField name="name" :label="t('admin.user.create.name')" required><UInput v-model="state.name" class="w-full" /></UFormField>
+        <UFormField name="email" :label="t('admin.user.create.email')" required><UInput v-model="state.email" type="email" class="w-full" /></UFormField>
+        <UFormField name="password" :label="t('admin.user.create.password')" :hint="t('admin.user.create.passwordHint')" required><UInput v-model="state.password" type="password" class="w-full" /></UFormField>
+        <UFormField name="role" :label="t('admin.user.list.role')" required><USelect v-model="state.role" :items="roles" value-key="value" class="w-full" /></UFormField>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex justify-end gap-3">
         <UButton variant="outline" :disabled="creating" @click="open = false">{{ t('common.cancel') }}</UButton>
-        <UButton :loading="creating" :disabled="!valid" @click="createUser">{{ t('admin.user.create.confirm') }}</UButton>
+        <UButton type="submit" form="admin-create-user-form" :loading="creating">{{ t('admin.user.create.confirm') }}</UButton>
       </div>
     </template>
   </UModal>
