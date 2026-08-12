@@ -31,7 +31,7 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
   const activeModule = computed(() => modules.value
     .map(module => ({ module, matchLength: Math.max(0, ...module.routePrefixes.filter(prefix => route.path.startsWith(prefix)).map(prefix => prefix.length)) }))
     .filter(item => item.matchLength > 0)
-    .sort((left, right) => right.matchLength - left.matchLength)[0]?.module ?? modules.value[0])
+    .sort((left, right) => right.matchLength - left.matchLength)[0]?.module)
 
   const activeModuleId = computed(() => activeModule.value?.id ?? '')
   const moduleNavigationGroups = computed(() => modules.value.map(module => ({

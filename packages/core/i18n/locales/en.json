@@ -28,6 +28,7 @@
   "menu": {
     "mobileNavigation": "Module navigation",
     "activeModuleNavigation": "Active module menu",
+    "moduleNavigation": "Modules and pages",
     "moduleMenuDescription": "Pages in this module",
     "search": "Search",
     "switchOrganization": "Switch organization",

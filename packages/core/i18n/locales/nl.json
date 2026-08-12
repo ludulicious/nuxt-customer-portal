@@ -28,6 +28,7 @@
   "menu": {
     "mobileNavigation": "Modulenavigatie",
     "activeModuleNavigation": "Menu van actieve module",
+    "moduleNavigation": "Modules en pagina's",
     "moduleMenuDescription": "Pagina's in deze module",
     "search": "Zoeken",
     "switchOrganization": "Van organisatie wisselen",
