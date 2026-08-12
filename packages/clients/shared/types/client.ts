@@ -11,6 +11,14 @@ export interface ClientMemberDto {
   jobTitle: string | null
 }
 
+export interface ClientInvitationDto {
+  id: string
+  email: string
+  role: string
+  status: string
+  expiresAt: string
+}
+
 export interface GenericClientDto {
   id: string
   organizationId: string
@@ -26,6 +34,7 @@ export interface GenericClientDto {
   archivedAt: string | null
   modules: ClientModuleState[]
   members: ClientMemberDto[]
+  invitations: ClientInvitationDto[]
 }
 
 export interface ClientListResponse {

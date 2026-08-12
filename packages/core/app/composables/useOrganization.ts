@@ -47,6 +47,13 @@ export const useOrganization = () => {
     })
   }
 
+  const removeMember = async (memberIdOrEmail: string, organizationId: string) => {
+    return await authClient.organization.removeMember({
+      memberIdOrEmail,
+      organizationId
+    })
+  }
+
   const inviteMember = async (email: string, organizationId: string, role: MemberRole = 'member', resend = false) => {
     return await authClient.organization.inviteMember({
       email,
@@ -92,6 +99,7 @@ export const useOrganization = () => {
     updateAdminOrganization,
     getActiveMember,
     listMembers,
+    removeMember,
     inviteMember,
     listInvitations,
     resendInvitation,

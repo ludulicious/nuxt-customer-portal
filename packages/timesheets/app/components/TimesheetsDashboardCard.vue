@@ -63,14 +63,14 @@ const icon = computed(() => ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i
 
     <template v-else-if="section === 'clientApprovals'">
       <div class="flex items-center justify-between"><p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p><UButton to="/timesheets/approvals" variant="outline">{{ t('features.timesheets.dashboard.review') }}</UButton></div>
-      <UAlert v-if="value.unassignedSupplierCount" class="mt-4" color="warning" variant="subtle" icon="i-lucide-user-round-x" :description="t('features.timesheets.dashboard.clientApprovals.unassigned', { count: value.unassignedSupplierCount })" />
+      <UAlert v-if="value.unassignedSupplierCount" class="mt-4" color="warning" variant="subtle" icon="i-lucide-user-round-x" :description="t('features.timesheets.dashboard.clientApprovals.unassigned', value.unassignedSupplierCount)" />
       <p v-if="!value.items.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.clientApprovals.empty') }}</p>
       <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.items" :key="item.id" class="flex justify-between gap-3 py-2 text-sm"><span class="truncate"><strong>{{ item.person }}</strong><span class="block text-muted">{{ item.supplierName }}</span></span><span class="shrink-0 text-muted">{{ minutes(item.totalMinutes) }}</span></li></ul>
     </template>
 
     <template v-else-if="section === 'salesInvoices'">
       <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-3xl font-semibold tabular-nums">{{ money(value.outstandingMinor, value.currency) }}</p><p class="text-sm text-muted">{{ t('features.timesheets.dashboard.outstanding') }}</p></div><UButton to="/admin/timesheets/invoices" variant="outline">{{ t('features.timesheets.dashboard.manage') }}</UButton></div>
-      <div class="mt-4 flex flex-wrap gap-2"><UBadge color="neutral" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.drafts', { count: value.draftCount }) }}</UBadge><UBadge color="primary" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.issued', { count: value.issuedCount }) }}</UBadge><UBadge v-if="value.overdueCount" color="error" variant="subtle">{{ t('features.timesheets.dashboard.overdue', { count: value.overdueCount }) }}</UBadge></div>
+      <div class="mt-4 flex flex-wrap gap-2"><UBadge color="neutral" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.drafts', value.draftCount) }}</UBadge><UBadge color="primary" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.issued', { count: value.issuedCount }) }}</UBadge><UBadge v-if="value.overdueCount" color="error" variant="subtle">{{ t('features.timesheets.dashboard.overdue', { count: value.overdueCount }) }}</UBadge></div>
       <p v-if="!value.recent.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.salesInvoices.empty') }}</p>
       <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.recent.slice(0, 3)" :key="item.id" class="flex justify-between gap-3 py-2 text-sm"><span class="truncate font-medium">{{ item.recipientName }} · {{ item.number }}</span><span :class="item.isOverdue ? 'text-error' : 'text-muted'">{{ money(item.outstandingMinor, value.currency) }}</span></li></ul>
     </template>

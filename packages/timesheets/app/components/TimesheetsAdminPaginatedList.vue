@@ -30,7 +30,7 @@ useAutoPagination({ sentinel: nextSentinel, scrollContainer, canLoadMore: () => 
       <div v-if="loadingNext" class="space-y-2 pt-3"><USkeleton v-for="index in 2" :key="index" class="h-24 w-full" /></div>
     </div>
     <footer class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default px-1 pt-3 text-sm text-muted">
-      <span>{{ $t('features.timesheets.admin.list.totalRecords', { count: pagination.total }) }}</span>
+      <span>{{ $t('features.timesheets.admin.list.totalRecords', pagination.total) }}</span>
       <UPagination v-if="pagination.pageCount > 1" :page="pagination.page" :total="pagination.total" :items-per-page="pagination.pageSize" :disabled="pending" @update:page="emit('page', $event)" />
     </footer>
   </div>

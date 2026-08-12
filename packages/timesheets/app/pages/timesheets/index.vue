@@ -555,7 +555,7 @@ const runningDuration = computed(() => {
               {{ weekDays.find(day => day.value === selectedDay)?.label }} {{ weekDays.find(day => day.value === selectedDay)?.day }}
             </p>
             <p class="text-sm text-muted">
-              {{ t('features.timesheets.mobile.entryCount', { count: selectedDayEntries.length }) }}
+              {{ t('features.timesheets.mobile.entryCount', selectedDayEntries.length) }}
             </p>
           </div>
           <div class="timesheet-mobile__day-total">

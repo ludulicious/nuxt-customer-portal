@@ -215,7 +215,7 @@ onMounted(() => {
 
     <UAlert v-if="!isClient && invoice.isOverdue" class="print:hidden" color="warning" icon="i-lucide-triangle-alert" :title="t('features.timesheets.admin.overdueAlertTitle', { count: invoice.daysOverdue })" variant="outline" >
       <template #description>
-        <div class="space-y-2"><p>{{ t('features.timesheets.admin.overdueAlertDescription', { dueDate: date(invoice.dueDate), amount: money(invoice.outstandingMinor) }) }}</p><p>{{ t('features.timesheets.admin.reminderSummary', { count: invoice.reminderCount, date: invoice.lastReminderSentAt ? dateTime(invoice.lastReminderSentAt) : t('features.timesheets.admin.never') }) }}</p></div>
+        <div class="space-y-2"><p>{{ t('features.timesheets.admin.overdueAlertDescription', { dueDate: date(invoice.dueDate), amount: money(invoice.outstandingMinor) }) }}</p><p>{{ t('features.timesheets.admin.reminderSummary', { count: invoice.reminderCount ?? 0, date: invoice.lastReminderSentAt ? dateTime(invoice.lastReminderSentAt) : t('features.timesheets.admin.never') }) }}</p></div>
       </template>
     </UAlert>
 

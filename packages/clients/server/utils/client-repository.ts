@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
-import { member, organization, user } from '@nuxt-customer-portal/core/schema'
+import { invitation, member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { clientModule, clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
 import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
 import type { ClientCreateInput, GenericClientListQuery, ClientUpdateInput } from './client-validation'
@@ -41,12 +41,20 @@ interface ClientRow {
 const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> => {
   if (!rows.length) return []
   const ids = rows.map(row => row.organizationId as string)
-  const [modules, members] = await Promise.all([
+  const [modules, members, invitations] = await Promise.all([
     db.select().from(clientModule).where(inArray(clientModule.organizationId, ids)),
     db.select({
       id: member.id, organizationId: member.organizationId, userId: member.userId, role: member.role,
       phone: member.phone, jobTitle: member.jobTitle, name: user.name, email: user.email, image: user.image
-    }).from(member).innerJoin(user, eq(user.id, member.userId)).where(inArray(member.organizationId, ids)).orderBy(asc(user.name), asc(user.email))
+    }).from(member).innerJoin(user, eq(user.id, member.userId)).where(inArray(member.organizationId, ids)).orderBy(asc(user.name), asc(user.email)),
+    db.select({
+      id: invitation.id,
+      organizationId: invitation.organizationId,
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt
+    }).from(invitation).where(and(inArray(invitation.organizationId, ids), eq(invitation.status, 'pending'))).orderBy(asc(invitation.email))
   ])
   return rows.map(row => ({
     id: row.organizationId,
@@ -65,6 +73,13 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
     members: members.filter(item => item.organizationId === row.organizationId).map(item => ({
       id: item.id, userId: item.userId, name: item.name, email: item.email, image: item.image,
       role: item.role, phone: item.phone, jobTitle: item.jobTitle
+    })),
+    invitations: invitations.filter(item => item.organizationId === row.organizationId).map(item => ({
+      id: item.id,
+      email: item.email,
+      role: item.role || 'member',
+      status: item.status,
+      expiresAt: item.expiresAt.toISOString()
     }))
   }))
 }

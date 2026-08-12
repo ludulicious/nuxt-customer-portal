@@ -29,7 +29,7 @@ const officialCompanyName = computed(() => {
   <UCard>
     <template #header>
       <div class="flex items-center justify-between gap-4">
-        <h2 class="text-xl font-semibold">{{ t('admin.organization.detail.title') }}</h2>
+        <h2 class="text-xl font-semibold">{{ t('organization.details.title') }}</h2>
         <UButton
           v-if="canEdit && !editing"
           icon="i-lucide-pencil"
@@ -50,7 +50,7 @@ const officialCompanyName = computed(() => {
         class="mb-4 max-h-20 max-w-56 object-contain object-left"
       >
       <div>
-        <span class="text-sm text-muted">{{ t('admin.organization.detail.name') }}</span>
+        <span class="text-sm text-muted">{{ t('organization.details.name') }}</span>
         <div class="flex items-center gap-2">
           <p class="font-semibold">{{ organization.name }}</p>
           <UBadge v-if="role" :color="role === 'owner' ? 'primary' : role === 'admin' ? 'info' : 'neutral'" variant="soft">
@@ -59,7 +59,7 @@ const officialCompanyName = computed(() => {
         </div>
       </div>
       <div>
-        <span class="text-sm text-muted">{{ t('admin.organization.detail.slug') }}</span>
+        <span class="text-sm text-muted">{{ t('organization.details.slug') }}</span>
         <p class="font-mono text-sm">{{ organization.slug }}</p>
       </div>
       <div>
@@ -67,7 +67,7 @@ const officialCompanyName = computed(() => {
         <p>{{ officialCompanyName }}</p>
       </div>
       <div>
-        <span class="text-sm text-muted">{{ t('admin.organization.detail.created') }}</span>
+        <span class="text-sm text-muted">{{ t('organization.details.created') }}</span>
         <p>{{ new Date(organization.createdAt).toLocaleDateString() }}</p>
       </div>
     </div>
