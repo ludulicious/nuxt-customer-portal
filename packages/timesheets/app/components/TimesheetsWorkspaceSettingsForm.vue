@@ -13,24 +13,16 @@ const timesheets = useTimesheets()
 const busy = ref(false)
 const draft = reactive({
   currency: 'EUR',
-  timezone: 'Europe/Amsterdam',
-  defaultVatRateBasisPoints: 2100
+  timezone: 'Europe/Amsterdam'
 })
-const percentageFormat: Intl.NumberFormatOptions = {
-  style: 'percent',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-}
 const schema = computed(() => z.object({
   currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
-  timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100),
-  defaultVatRateBasisPoints: z.number().int().min(0).max(10_000)
+  timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
 }))
 
 watch(() => props.settings, (settings) => {
   draft.currency = settings.currency
   draft.timezone = settings.timezone
-  draft.defaultVatRateBasisPoints = settings.defaultVatRateBasisPoints
 }, { immediate: true })
 
 const save = async () => {
@@ -59,20 +51,6 @@ const save = async () => {
       </UFormField>
       <UFormField name="timezone" :label="t('features.timesheets.admin.timezone')" required>
         <UInput v-model="draft.timezone" class="w-full" />
-      </UFormField>
-      <UFormField name="defaultVatRateBasisPoints" :label="t('features.timesheets.admin.defaultVatRate')" required>
-        <UInputNumber
-          :model-value="draft.defaultVatRateBasisPoints / 10_000"
-          :min="0"
-          :max="1"
-          :step="0.0001"
-          :format-options="percentageFormat"
-          :increment="false"
-          :decrement="false"
-          :ui="{ base: 'text-right' }"
-          class="w-full"
-          @update:model-value="draft.defaultVatRateBasisPoints = Math.round(Number($event ?? 0) * 10_000)"
-        />
       </UFormField>
       <UButton type="submit" block icon="i-lucide-save" :loading="busy">
         {{ t('features.timesheets.save') }}

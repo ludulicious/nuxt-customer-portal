@@ -16,13 +16,7 @@ export default defineNuxtPlugin(() => {
   const register = (capabilities: TimesheetCapabilitiesDto) => {
     const approvalActionCount = capabilities.pendingInternalApprovalCount + capabilities.pendingClientApprovalCount
       + (capabilities.canManageClientReviewers ? capabilities.unassignedClientReviewerSupplierCount : 0)
-    const keep = (id: string) => id === 'client-invoices'
-      ? capabilities.canViewClientInvoices
-      : id === 'invoice-viewers'
-      ? capabilities.canManageInvoiceViewers
-      : id === 'timesheet-invoices'
-      ? capabilities.canInvoice
-      : id === 'client-approvals'
+    const keep = (id: string) => id === 'client-approvals'
       ? capabilities.canReviewClientTimesheets
       : id === 'timesheets-approvals'
       ? capabilities.canApproveInternalTimesheets
@@ -36,7 +30,6 @@ export default defineNuxtPlugin(() => {
       ? capabilities.canViewSupplierTime
       : capabilities.canEnterTime
     const canAccessTimesheets = capabilities.canEnterTime || capabilities.canViewSupplierTime || capabilities.canReviewClientTimesheets || capabilities.canApproveInternalTimesheets || capabilities.canManageTimesheets
-    const canAccessInvoices = capabilities.canInvoice || capabilities.canViewClientInvoices
     const timesheetsLandingTo = capabilities.canEnterTime
       ? '/timesheets'
       : capabilities.canReviewClientTimesheets
@@ -46,16 +39,15 @@ export default defineNuxtPlugin(() => {
           : capabilities.canViewSupplierTime
             ? '/timesheets/suppliers'
             : '/admin/timesheets/internal-approvals'
-    const invoicesLandingTo = capabilities.canViewClientInvoices ? '/timesheets/invoices' : '/admin/timesheets/invoices'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
       navigation: timesheetsFeature.navigation?.filter(item => keep(item.id)).map(item => ({
         ...item,
         badge: item.id === 'timesheets-approvals' ? primaryBadge(capabilities.pendingInternalApprovalCount) : undefined
       })),
-      modules: timesheetsFeature.modules?.filter(module => module.id === 'invoices' ? canAccessInvoices : canAccessTimesheets).map(module => ({
+      modules: timesheetsFeature.modules?.filter(() => canAccessTimesheets).map(module => ({
             ...module,
-            to: module.id === 'invoices' ? invoicesLandingTo : timesheetsLandingTo,
+            to: timesheetsLandingTo,
             badge: module.id === 'timesheets' ? primaryBadge(approvalActionCount) : undefined,
             menuItems: module.menuItems?.filter(item => keep(item.id)).map(item => ({
               ...item,
@@ -74,14 +66,10 @@ export default defineNuxtPlugin(() => {
           ? capabilities.canApproveInternalTimesheets
           : widget.id === 'timesheets-client-approvals'
             ? capabilities.canReviewClientTimesheets
-            : widget.id === 'timesheets-supplier-timesheets'
-              ? capabilities.canViewSupplierTime
-            : widget.id === 'timesheets-sales-invoices'
-              ? capabilities.canInvoice
-              : capabilities.canViewClientInvoices)
+            : capabilities.canViewSupplierTime)
     })
   }
-  const empty: TimesheetCapabilitiesDto = { canEnterTime: false, canApproveInternalTimesheets: false, hasInternalApprovalAssignments: false, canManageTimesheets: false, canReviewClientTimesheets: false, canInvoice: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, canViewClientInvoices: false, canManageInvoiceViewers: false, pendingInternalApprovalCount: 0, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
+  const empty: TimesheetCapabilitiesDto = { canEnterTime: false, canApproveInternalTimesheets: false, hasInternalApprovalAssignments: false, canManageTimesheets: false, canReviewClientTimesheets: false, canViewSupplierTime: false, canAccessApprovals: false, canManageClientReviewers: false, pendingInternalApprovalCount: 0, pendingClientApprovalCount: 0, unassignedClientReviewerSupplierCount: 0 }
   register(empty)
   const refreshCapabilities = async () => {
     try {

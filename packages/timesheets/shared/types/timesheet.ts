@@ -9,7 +9,6 @@ export interface TimesheetsListResponse<T> { items: T[], pagination: TimesheetsL
 export interface TimesheetSettingsDto {
   currency: string
   timezone: string
-  defaultVatRateBasisPoints: number
   weekStartsOn: number
   internalApprovalsEnabled: boolean
 }
@@ -56,23 +55,14 @@ export interface ClientDto {
   officialName: string | null
   slug: string
   logo: string | null
-  address: string
-  registrationNumber: string | null
-  vatNumber: string | null
-  invoiceEmail: string | null
-  preferredLocale: string
-  contacts: OrganizationContactDto[]
   accessMode: ClientAccessMode
-  invoiceAccessEnabled: boolean
 }
 
-export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, invoiceAccessEnabled: boolean, canReview: boolean, canViewInvoices: boolean, canManageReviewers: boolean }
+export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, canReview: boolean, canManageReviewers: boolean }
 export interface ClientReviewerDto { id: string, name: string, email: string, role: string, assigned: boolean, fixedAccess: boolean }
-export interface ClientInvoiceViewerDto { id: string, name: string, email: string, role: string, assigned: boolean, fixedAccess: boolean }
-export interface ClientInvoiceSupplierDto extends ClientWorkspaceDto { viewerCount: number }
 export interface ClientTimesheetEntryDto { id: string, date: string, project: string, person: string, activity: string, minutes: number, note: string | null }
 export interface ClientTimesheetHistoryDto { id: string, action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT', actorName: string, comment: string | null, createdAt: string }
-export interface ClientTimesheetSliceDto { weeklyTimesheetId: string, weekStartsOn: string, person: string, status: ClientReviewStatus, billingStatus: 'AWAITING_INVOICE' | 'PARTIALLY_INVOICED' | 'INVOICED', version: number, comment: string | null, reviewedAt: string | null, entries: ClientTimesheetEntryDto[], history: ClientTimesheetHistoryDto[] }
+export interface ClientTimesheetSliceDto { weeklyTimesheetId: string, weekStartsOn: string, person: string, status: ClientReviewStatus, version: number, comment: string | null, reviewedAt: string | null, entries: ClientTimesheetEntryDto[], history: ClientTimesheetHistoryDto[] }
 export interface ClientTimesheetsDto { workspace: ClientWorkspaceDto, slices: ClientTimesheetSliceDto[] }
 export interface ClientApprovalItemDto {
   id: string
@@ -110,8 +100,6 @@ export interface ClientReviewerSupplierDto extends ClientWorkspaceDto {
 }
 export interface ClientApprovalSupplierOptionDto { id: string, name: string }
 
-export interface OrganizationContactDto { id: string, userId: string | null, name: string, email: string, phone: string | null, jobTitle: string | null }
-export interface OrganizationInvoiceProfileDto { organizationId: string, name: string, logo: string | null, address: string, registrationNumber: string | null, vatNumber: string | null, iban: string | null, bic: string | null, invoiceEmail: string | null, invoiceEmailTemplate: string | null, preferredLocale: string }
 
 export interface ClientOrganizationOptionDto {
   id: string
@@ -184,12 +172,9 @@ export interface TimesheetCapabilitiesDto {
   hasInternalApprovalAssignments: boolean
   canManageTimesheets: boolean
   canReviewClientTimesheets: boolean
-  canInvoice: boolean
   canViewSupplierTime: boolean
   canAccessApprovals: boolean
   canManageClientReviewers: boolean
-  canViewClientInvoices: boolean
-  canManageInvoiceViewers: boolean
   pendingInternalApprovalCount: number
   pendingClientApprovalCount: number
   unassignedClientReviewerSupplierCount: number
@@ -199,9 +184,7 @@ export interface TimesheetsDashboardDto {
   myWeek?: { weekStartsOn: string, status: TimesheetStatus, totalMinutes: number, rejectionComment: string | null, hasRunningTimer: boolean }
   internalApprovals?: { pendingCount: number, items: Array<Pick<ApprovalQueueItemDto, 'id' | 'userName' | 'weekStartsOn' | 'totalMinutes' | 'submittedAt' | 'status'>> }
   clientApprovals?: { pendingCount: number, unassignedSupplierCount: number, items: Array<Pick<ClientApprovalItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>> }
-  supplierTimesheets?: { items: Array<Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes' | 'billingStatus'>> }
-  salesInvoices?: { currency: string, draftCount: number, issuedCount: number, overdueCount: number, outstandingMinor: number, recent: Array<Pick<InvoiceDto, 'id' | 'number' | 'recipientName' | 'status' | 'dueDate' | 'outstandingMinor' | 'isOverdue'>> }
-  receivedInvoices?: { currency: string | null, overdueCount: number, outstandingMinor: number, recent: ClientInvoiceSummaryDto[] }
+  supplierTimesheets?: { items: Array<Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>> }
 }
 
 export interface ApprovalQueueItemDto {
@@ -245,67 +228,3 @@ export interface TimesheetReportDto {
     currency: string
   }
 }
-
-export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'VOID'
-export type InvoiceSummaryMode = 'PERSON_ACTIVITY' | 'PERSON' | 'ACTIVITY' | 'PROJECT' | 'DETAILED'
-export interface InvoiceLineDto { id: string, description: string, quantityMilli: number, unit: string, unitPriceMinor: number, vatRateBasisPoints: number, amountMinor: number }
-export interface InvoicePaymentDto { id: string, paidOn: string, amountMinor: number, reference: string | null, note: string | null }
-export type InvoiceHistoryAction = 'CREATED' | 'EDITED' | 'ISSUED' | 'VOIDED' | 'UNVOIDED' | 'PAYMENT_REGISTERED' | 'ATTACHMENT_ADDED' | 'ATTACHMENT_REMOVED' | 'EMAIL_SENT' | 'REMINDER_SENT'
-export interface InvoiceHistoryDto { id: string, action: InvoiceHistoryAction, actorName: string, amountMinor: number | null, attachmentName: string | null, createdAt: string }
-export interface InvoiceAttachmentDto { id: string, fileName: string, contentType: string, size: number, uploadedByName: string, createdAt: string }
-export type InvoiceEmailDeliveryStatus = 'PENDING' | 'SENT' | 'FAILED'
-export type InvoiceEmailPurpose = 'INVOICE' | 'REMINDER'
-export interface InvoiceEmailDeliveryDto { id: string, purpose: InvoiceEmailPurpose, status: InvoiceEmailDeliveryStatus, recipientEmail: string, ccEmails: string[], locale: string, subject: string, actorName: string, providerMessageId: string | null, providerLastEvent: string | null, providerStatusCheckedAt: string | null, errorMessage: string | null, createdAt: string, sentAt: string | null }
-export interface InvoiceEmailStatusRefreshDto { deliveries: InvoiceEmailDeliveryDto[], failures: Array<{ deliveryId: string, code: 'PROVIDER_NOT_CONFIGURED' | 'PROVIDER_LOOKUP_FAILED' }> }
-export interface InvoiceDto {
-  id: string
-  number: string
-  status: InvoiceStatus
-  currency: string
-  issueDate: string
-  dueDate: string
-  subject: string | null
-  notes: string | null
-  clientOrganizationId: string | null
-  senderName: string
-  senderLogo: string | null
-  senderAddress: string
-  senderRegistration: string | null
-  senderVatNumber: string | null
-  senderIban: string | null
-  senderBic: string | null
-  recipientName: string
-  recipientAddress: string
-  recipientContactName: string | null
-  recipientEmail: string | null
-  recipientLocale: string
-  lines: InvoiceLineDto[]
-  payments: InvoicePaymentDto[]
-  subtotalMinor: number
-  vatMinor: number
-  totalMinor: number
-  paidMinor: number
-  outstandingMinor: number
-  isOverdue: boolean
-  daysOverdue: number
-  reminderCount: number
-  lastReminderSentAt: string | null
-  createdAt: string
-  updatedAt: string
-  issuedAt: string | null
-  history?: InvoiceHistoryDto[]
-  attachments?: InvoiceAttachmentDto[]
-  emailDeliveries?: InvoiceEmailDeliveryDto[]
-}
-export type ClientInvoiceSummaryDto = Pick<InvoiceDto, 'id' | 'number' | 'status' | 'currency' | 'issueDate' | 'dueDate' | 'subject' | 'totalMinor' | 'outstandingMinor' | 'isOverdue' | 'daysOverdue'> & { supplierName: string, workspaceClientId: string }
-export type ClientInvoiceDto = Omit<InvoiceDto, 'payments' | 'reminderCount' | 'lastReminderSentAt' | 'history' | 'emailDeliveries'> & {
-  supplierName: string
-  workspaceClientId: string
-  payments?: never
-  reminderCount?: never
-  lastReminderSentAt?: never
-  history?: never
-  emailDeliveries?: never
-}
-export interface InvoiceEmailPreviewDto { to: string, cc: string[], locale: string, subject: string, body: string, senderEmail: string, senderDomain: string, emailProviderConfigured: boolean, senderDomainVerified: boolean, attachments: Array<{ fileName: string, size: number }>, totalAttachmentSize: number, maximumAttachmentSize: number }
-export interface InvoiceableEntryDto extends ReportRowDto { weeklyTimesheetId: string }

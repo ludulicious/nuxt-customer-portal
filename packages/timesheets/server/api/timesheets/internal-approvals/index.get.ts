@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
     settings: {
       currency: settings.currency,
       timezone: settings.timezone,
-      defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },

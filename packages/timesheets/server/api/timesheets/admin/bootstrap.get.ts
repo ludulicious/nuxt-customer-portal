@@ -5,9 +5,6 @@ import {
   listActivities,
   listAvailableClientOrganizations,
   listClients,
-  listInvoices,
-  listInvoiceableEntries,
-  getOrganizationInvoiceProfile,
   getTimesheetsSetupStatus,
   listProjects,
   listTeam
@@ -30,7 +27,7 @@ export default defineEventHandler(async (event) => {
   )
   const section = String(getQuery(event).section ?? '')
   const settings = await ensureSettings(organizationId)
-  const [clients, availableClientOrganizations, projects, activities, team, approvals, invoices, invoiceableEntries, organizationProfile, setupStatus] = await Promise.all([
+  const [clients, availableClientOrganizations, projects, activities, team, approvals, setupStatus] = await Promise.all([
     section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
     listAvailableClientOrganizations(
       organizationId,
@@ -41,16 +38,12 @@ export default defineEventHandler(async (event) => {
     section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
     listTeam(organizationId),
     Promise.resolve([]),
-    section === 'invoices' || !settings.invoicingEnabled ? Promise.resolve([]) : listInvoices(organizationId),
-    settings.invoicingEnabled ? listInvoiceableEntries(organizationId) : Promise.resolve([]),
-    getOrganizationInvoiceProfile(organizationId),
     getTimesheetsSetupStatus(organizationId)
   ])
   return {
     settings: {
       currency: settings.currency,
       timezone: settings.timezone,
-      defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
@@ -60,9 +53,6 @@ export default defineEventHandler(async (event) => {
     activities,
     team,
     approvals,
-    invoices,
-    invoiceableEntries,
-    organizationProfile,
     setupStatus
   }
 })

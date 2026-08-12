@@ -56,10 +56,26 @@
     {
       "id": "timesheets",
       "kind": "business",
-      "documentationPath": "/modules/timesheets-invoices",
-      "pageCount": 20,
-      "apiHandlerCount": 78,
+      "documentationPath": "/modules/timesheets",
+      "pageCount": 16,
+      "apiHandlerCount": 51,
       "apiFamilies": ["/api/timesheets/**"]
+    },
+    {
+      "id": "invoices",
+      "kind": "business",
+      "documentationPath": "/modules/invoices",
+      "pageCount": 6,
+      "apiHandlerCount": 31,
+      "apiFamilies": ["/api/invoices/**"]
+    },
+    {
+      "id": "invoice-timesheets",
+      "kind": "business",
+      "documentationPath": "/modules/invoices",
+      "pageCount": 0,
+      "apiHandlerCount": 2,
+      "apiFamilies": ["/api/invoice-timesheets/**"]
     },
     {
       "id": "preset",

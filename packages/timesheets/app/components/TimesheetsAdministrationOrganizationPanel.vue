@@ -25,10 +25,5 @@ await load()
       v-model="capabilities"
       :organization-id="organizationId"
     />
-    <OrganizationEmailProviderSettings
-      v-if="capabilities.invoicingEnabled"
-      class="mt-6"
-      :organization-id="organizationId"
-    />
   </template>
 </template>

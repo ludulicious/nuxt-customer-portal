@@ -12,6 +12,8 @@ export default definePortalConfig({
   layers: [
     '@nuxt-customer-portal/preset',
     '@nuxt-customer-portal/timesheets',
+    '@nuxt-customer-portal/invoices',
+    '@nuxt-customer-portal/invoice-timesheets',
     localPortalLayer({
       id: 'acme-billing',
       source: './layers/acme-billing',
@@ -48,7 +50,7 @@ Do not use host aliases, physical cross-package paths, or imports from platform 
 - `core` is visually headless and owns auth infrastructure, tenancy, authorization, database access, registry, contracts, and generic OpenAPI merging.
 - `ui` owns neutral shell primitives, fallback layouts, menus, modals, dashboards, and surface rendering.
 - `authentication`, `organizations`, and `clients` form the rest of the preset.
-- `service-requests` and `timesheets` are optional business packages.
+- `service-requests`, `timesheets`, and `invoices` are optional business packages. `invoice-timesheets` is an optional integration depending on the latter two.
 - `kit` owns config resolution, diagnostics, provider ordering, migrations, and legacy adoption.
 
 ## Feature package checklist

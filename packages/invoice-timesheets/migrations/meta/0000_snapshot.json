@@ -1,0 +1,132 @@
+{
+  "id": "457e372c-5ffc-4b6c-b67d-2fe9313eca44",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "invoice_timesheets.invoice_time_entry": {
+      "name": "invoice_time_entry",
+      "schema": "invoice_timesheets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "invoice_id": {
+          "name": "invoice_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invoice_line_id": {
+          "name": "invoice_line_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_entry_id": {
+          "name": "time_entry_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "invoice_time_entry_invoice_idx": {
+          "name": "invoice_time_entry_invoice_idx",
+          "columns": [
+            {
+              "expression": "invoice_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invoice_time_entry_active_entry_uidx": {
+          "name": "invoice_time_entry_active_entry_uidx",
+          "columns": [
+            {
+              "expression": "time_entry_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "invoice_time_entry_invoice_id_invoice_id_fk": {
+          "name": "invoice_time_entry_invoice_id_invoice_id_fk",
+          "tableFrom": "invoice_time_entry",
+          "tableTo": "invoice",
+          "schemaTo": "invoices",
+          "columnsFrom": [
+            "invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invoice_time_entry_invoice_line_id_invoice_line_id_fk": {
+          "name": "invoice_time_entry_invoice_line_id_invoice_line_id_fk",
+          "tableFrom": "invoice_time_entry",
+          "tableTo": "invoice_line",
+          "schemaTo": "invoices",
+          "columnsFrom": [
+            "invoice_line_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invoice_time_entry_time_entry_id_time_entry_id_fk": {
+          "name": "invoice_time_entry_time_entry_id_time_entry_id_fk",
+          "tableFrom": "invoice_time_entry",
+          "tableTo": "time_entry",
+          "schemaTo": "timesheets",
+          "columnsFrom": [
+            "time_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "invoice_timesheets": "invoice_timesheets"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

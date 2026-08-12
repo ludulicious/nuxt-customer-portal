@@ -5,7 +5,7 @@ import { timesheetsFeature } from '@nuxt-customer-portal/timesheets/shared/featu
 import { workspaceClient } from '@nuxt-customer-portal/timesheets/server/db/schema/timesheets'
 import { ensureTimesheetClientSettings } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 
-const schema = z.object({ accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']), invoiceAccessEnabled: z.boolean() })
+const schema = z.object({ accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']) })
 
 export default defineEventHandler(async (event) => {
   const { organizationId, organizationType } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')

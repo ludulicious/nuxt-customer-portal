@@ -10,5 +10,5 @@ export default defineEventHandler(async (event) => {
   const clientOrganizationId = getRouterParam(event, 'clientId')!
   await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const [settings] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.workspaceOrganizationId, organizationId), eq(workspaceClient.clientOrganizationId, clientOrganizationId))).limit(1)
-  return settings ?? { clientOrganizationId, accessMode: 'DISABLED', invoiceAccessEnabled: false }
+  return settings ?? { clientOrganizationId, accessMode: 'DISABLED' }
 })

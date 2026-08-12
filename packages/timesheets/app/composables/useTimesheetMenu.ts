@@ -45,12 +45,6 @@ export const useTimesheetMenu = () => {
           active: route.path === '/admin/timesheets/activities'
         },
         {
-          label: t('features.timesheets.admin.invoices'),
-          to: '/admin/timesheets/invoices',
-          icon: 'i-lucide-receipt-text',
-          active: route.path === '/admin/timesheets/invoices'
-        },
-        {
           label: t('features.timesheets.admin.teamRates'),
           to: '/admin/timesheets/rates',
           icon: 'i-lucide-badge-euro',

@@ -6,7 +6,7 @@ test('orders OpenAPI paths by module menu and operation lifecycle', () => {
   const document = orderOpenApiDocument({
     paths: {
       '/api/timesheets/admin/activities/{id}': { delete: {}, patch: {} },
-      '/api/timesheets/admin/invoices': { post: {}, get: {} },
+      '/api/invoices/admin': { post: {}, get: {} },
       '/api/timesheets/admin/clients': { post: {}, get: {} },
       '/api/service-requests/admin': { get: {} },
       '/api/timesheets/admin/activities': { post: {}, get: {} },
@@ -19,10 +19,10 @@ test('orders OpenAPI paths by module menu and operation lifecycle', () => {
     '/api/organizations/{id}',
     '/api/service-requests',
     '/api/service-requests/admin',
+    '/api/invoices/admin',
     '/api/timesheets/admin/clients',
     '/api/timesheets/admin/activities',
-    '/api/timesheets/admin/activities/{id}',
-    '/api/timesheets/admin/invoices'
+    '/api/timesheets/admin/activities/{id}'
   ])
   assert.deepEqual(Object.keys(document.paths?.['/api/timesheets/admin/activities'] ?? {}), ['get', 'post'])
   assert.deepEqual(Object.keys(document.paths?.['/api/timesheets/admin/activities/{id}'] ?? {}), ['patch', 'delete'])

@@ -18,7 +18,6 @@ const timesheetsSectionRank = (path: string): number => {
   if (path.includes('/api/timesheets/admin/clients') || path.includes('/api/timesheets/admin/organizations')) return 200
   if (path.includes('/api/timesheets/admin/projects')) return 300
   if (path.includes('/api/timesheets/admin/activities')) return 400
-  if (path.includes('/api/timesheets/admin/invoices')) return 500
   if (path.includes('/api/timesheets/admin/tariffs')) return 600
   if (path.includes('/api/timesheets/admin/settings') || path.includes('/api/timesheets/admin/email-domain')) return 700
   if (path.includes('/api/timesheets/admin/report')) return 800
@@ -42,8 +41,10 @@ const invoiceActionRank = (path: string): number => {
 const pathRank = (path: string): number => {
   if (path.startsWith('/api/auth')) return 500
   if (path.startsWith('/api/timesheets')) {
-    return 2000 + timesheetsSectionRank(path) * 100 + invoiceActionRank(path)
+    return 2000 + timesheetsSectionRank(path) * 100
   }
+  if (path.startsWith('/api/invoices')) return 3000 + invoiceActionRank(path)
+  if (path.startsWith('/api/invoice-timesheets')) return 3100
   if (path.startsWith('/api/service-requests/admin')) return 1100
   if (path.startsWith('/api/service-requests')) return 1000
   if (path.startsWith('/api/')) return 0

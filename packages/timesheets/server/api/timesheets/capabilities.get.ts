@@ -8,14 +8,13 @@ export default defineEventHandler(async (event) => {
   const { session, organizationId, organizationType, role } = await requireActiveOrganizationRole(event)
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
   const [settings, clientWorkspaces, approvals, reviewerSuppliers, memberCanEnterTime] = await Promise.all([
-    db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled, internalApprovalsEnabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
+    db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, internalApprovalsEnabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
     listClientWorkspaces(organizationId, session.user.id, isAdmin),
     listClientApprovals(organizationId, session.user.id, isAdmin),
     isAdmin ? listClientReviewerSuppliers(organizationId, session.user.id) : Promise.resolve([]),
     canMemberEnterTime(organizationId, session.user.id)
   ])
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
-  const invoiceWorkspaces = clientWorkspaces.filter(item => item.invoiceAccessEnabled)
   const workspaceEnabled = settings[0]?.workspaceEnabled ?? false
   const internalApprovals = workspaceEnabled && (settings[0]?.internalApprovalsEnabled ?? true)
     ? await listApprovalQueue(organizationId, session.user.id)
@@ -28,12 +27,9 @@ export default defineEventHandler(async (event) => {
     hasInternalApprovalAssignments,
     canManageTimesheets: isAdmin && workspaceEnabled,
     canReviewClientTimesheets: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
-    canInvoice: isAdmin && (settings[0]?.invoicingEnabled ?? false),
     canViewSupplierTime: organizationType === 'CLIENT' && clientWorkspaces.some(item => item.accessMode === 'VIEW'),
     canAccessApprovals: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canManageClientReviewers: isAdmin && reviewWorkspaces.length > 0,
-    canViewClientInvoices: invoiceWorkspaces.some(item => item.canViewInvoices),
-    canManageInvoiceViewers: isAdmin && invoiceWorkspaces.length > 0,
     pendingInternalApprovalCount: internalApprovals.filter(item => item.status === 'SUBMITTED').length,
     pendingClientApprovalCount: approvals.pendingCount,
     unassignedClientReviewerSupplierCount: reviewerSuppliers.filter(item => item.reviewerCount === 0).length
