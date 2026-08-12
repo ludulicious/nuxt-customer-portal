@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { canManageOrganizationEmailCredential, isPortalActionAllowed, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
+import { canManageOrganizationEmailCredential, canViewOrganizationDirectory, isPortalActionAllowed, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
 import { getActiveOrganizationId } from '../shared/portal-session'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
 
@@ -54,4 +54,11 @@ test('organization email credentials are restricted to OWNER organization owners
   assert.equal(canManageOrganizationEmailCredential('member'), false)
   assert.equal(canManageOrganizationEmailCredential(null), false)
   assert.equal(canManageOrganizationEmailCredential('owner', 'CLIENT'), false)
+})
+
+test('organization member and invitation directories are restricted to owners and admins', () => {
+  assert.equal(canViewOrganizationDirectory('owner'), true)
+  assert.equal(canViewOrganizationDirectory('admin'), true)
+  assert.equal(canViewOrganizationDirectory('member'), false)
+  assert.equal(canViewOrganizationDirectory(null), false)
 })

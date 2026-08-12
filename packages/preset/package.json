@@ -10,6 +10,7 @@
   "exports": { ".": "./nuxt.config.ts", "./portal-manifest": "./portal.manifest.mjs" },
   "publishConfig": { "access": "public" },
   "dependencies": {
+    "@nuxt-customer-portal/administration": "workspace:^",
     "@nuxt-customer-portal/clients": "workspace:^",
     "@nuxt-customer-portal/authentication": "workspace:^",
     "@nuxt-customer-portal/core": "workspace:^",

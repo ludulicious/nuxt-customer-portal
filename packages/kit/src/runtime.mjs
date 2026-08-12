@@ -148,6 +148,32 @@ export const seedPortalOwner = async (options = {}) => {
   })
 }
 
+/**
+ * Grants the global platform-admin role to an existing user. Organization
+ * membership and organization roles are intentionally left untouched.
+ */
+export const assignPortalSystemAdmin = async (options = {}) => {
+  const email = assertString(options.email, '--email').trim().toLowerCase()
+  return withPool(options.databaseUrl, async (pool) => {
+    const client = await pool.connect()
+    try {
+      const result = await client.query(
+        `UPDATE "user"
+          SET role = 'admin', updated_at = now()
+          WHERE lower(email) = $1
+          RETURNING id, name, email, role`,
+        [email]
+      )
+      if (result.rowCount !== 1) {
+        throw new Error(`Expected exactly one existing user for --email ${email}, found ${result.rowCount}`)
+      }
+      return result.rows[0]
+    } finally {
+      client.release()
+    }
+  })
+}
+
 const packageManifest = async (source, cwd) => {
   const consumerRequire = createRequire(resolve(cwd, 'package.json'))
   let manifestPath

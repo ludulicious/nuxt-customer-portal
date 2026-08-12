@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '@nuxt-customer-portal/core/shared/types/index'
+import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError, MemberRole } from '@nuxt-customer-portal/core/shared/types/index'
+import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
+import { canViewOrganizationDirectory as canViewDirectory } from '@nuxt-customer-portal/core/shared/feature-registry'
 
 const userStore = useUserStore()
-const { myOrganizations, activeOrganizationId } = storeToRefs(userStore)
+const { activeOrganizationId } = storeToRefs(userStore)
 const { hasPermission } = userStore
 
 const { t } = useI18n()
@@ -18,22 +20,15 @@ const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showEditModal = ref(false)
 const invoicingEnabled = ref(false)
-
-// Type for organization with role
-type OrganizationWithRole = Organization & { role?: string | null }
-
-// Get user's role in this organization
-const userOrganizationRole = computed(() => {
-  if (!myOrganizations.value || !organization.value) return null
-  const org = myOrganizations.value.find(org => org.id === organization.value?.id) as OrganizationWithRole | undefined
-  return org?.role || null
-})
+const userOrganizationRole = ref<MemberRole | null>(null)
+const canViewOrganizationDirectory = computed(() => canViewDirectory(userOrganizationRole.value))
 
 // Load organization details
 const loadOrganization = async () => {
   if (!activeOrganizationId.value) {
     loading.value = false
     organization.value = null
+    userOrganizationRole.value = null
     members.value = []
     invitations.value = []
     return
@@ -41,11 +36,17 @@ const loadOrganization = async () => {
   try {
     loading.value = true
     error.value = ''
+    userOrganizationRole.value = null
+    const { data: roleData, error: roleError } = await authClient.organization.getActiveMemberRole({
+      query: { organizationId: activeOrganizationId.value }
+    })
+    if (roleError) throw roleError
+    userOrganizationRole.value = (roleData?.role as MemberRole | undefined) ?? null
     organization.value = await $fetch<Organization>(`/api/organizations/${activeOrganizationId.value}`)
     const capabilities = await $fetch<{ canInvoice: boolean }>('/api/timesheets/capabilities')
     invoicingEnabled.value = capabilities.canInvoice
 
-    if (organization.value) {
+    if (organization.value && canViewOrganizationDirectory.value) {
       await loadMembers()
       await loadInvitations()
     }
@@ -101,6 +102,7 @@ watch(activeOrganizationId, (id) => {
   } else {
     loading.value = false
     organization.value = null
+    userOrganizationRole.value = null
     members.value = []
     invitations.value = []
   }
@@ -131,8 +133,8 @@ watch(activeOrganizationId, (id) => {
 
       <OrganizationEmailProviderSettings v-if="organization.organizationType === 'OWNER' && invoicingEnabled && userOrganizationRole === 'owner'" />
 
-      <OrganizationMembersCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :members="members" :loading="loading" :can-manage="userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" @refresh="loadMembers" />
-      <OrganizationInvitationsCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :invitations="invitations" :loading="loading" :can-manage="userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" @refresh="loadInvitations" />
+      <OrganizationMembersCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :members="members" :loading="loading" :can-manage="true" @refresh="loadMembers" />
+      <OrganizationInvitationsCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :invitations="invitations" :loading="loading" :can-manage="true" @refresh="loadInvitations" />
     </div>
   </div>
 </template>

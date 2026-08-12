@@ -17,6 +17,7 @@ export type {
 // Auth-related types
 export type {
   UserRole,
+  OrganizationType,
   MemberRole,
   InvitationStatus,
   SessionUser,

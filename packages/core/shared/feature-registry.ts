@@ -36,3 +36,7 @@ export const canManageOrganizationEmailCredential = (
   role: PortalOrganizationRole | null,
   organizationType: PortalOrganizationType = 'OWNER'
 ): boolean => organizationType === 'OWNER' && role === 'owner'
+
+export const canViewOrganizationDirectory = (
+  role: PortalOrganizationRole | string | null | undefined
+): boolean => role === 'owner' || role === 'admin'

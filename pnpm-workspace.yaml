@@ -1,7 +1,6 @@
 packages:
   - apps/*
   - packages/*
-  - '!packages/administration'
 
 ignoredBuiltDependencies:
   - '@parcel/watcher'

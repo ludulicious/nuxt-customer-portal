@@ -2,7 +2,7 @@ import { defineEventHandler, createError, getRouterParam, readBody } from 'h3'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
 import { user as userTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
-import { eq } from 'drizzle-orm'
+import { count, eq } from 'drizzle-orm'
 import type { SessionUser, UpdateUserRoleRequest, UpdateUserRoleResponse } from '@nuxt-customer-portal/core/shared/types/index'
 
 defineRouteMeta({
@@ -36,6 +36,30 @@ export default defineEventHandler(async (event): Promise<UpdateUserRoleResponse>
 
   if (!role || !['user', 'admin'].includes(role)) {
     throw createError({ statusCode: 400, message: 'Invalid role. Must be "user" or "admin"' })
+  }
+
+  const [target] = await db
+    .select({ role: userTable.role })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1)
+
+  if (!target) {
+    throw createError({ statusCode: 404, message: 'User not found' })
+  }
+
+  if (userId === user.id && role !== 'admin') {
+    throw createError({ statusCode: 400, message: 'You cannot remove your own system administrator role' })
+  }
+
+  if (target.role === 'admin' && role !== 'admin') {
+    const [result] = await db
+      .select({ total: count() })
+      .from(userTable)
+      .where(eq(userTable.role, 'admin'))
+    if ((result?.total ?? 0) <= 1) {
+      throw createError({ statusCode: 400, message: 'The last system administrator cannot be demoted' })
+    }
   }
 
   // Update user role

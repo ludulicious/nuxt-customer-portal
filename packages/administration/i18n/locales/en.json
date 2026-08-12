@@ -167,6 +167,16 @@
         "success": "Role updated successfully",
         "error": "Failed to update role"
       },
+      "create": {
+        "title": "Create User",
+        "name": "Name",
+        "email": "Email",
+        "password": "Temporary password",
+        "passwordHint": "At least 8 characters",
+        "confirm": "Create User",
+        "success": "User created successfully",
+        "error": "Failed to create user"
+      },
       "verification": {
         "pending": "Pending",
         "verified": "Verified"
@@ -234,13 +244,19 @@
       },
       "update": {
         "title": "Update User",
-        "description": "Update user information",
+        "description": "Update the user's name. Profile pictures are managed by users themselves.",
         "name": "Name",
-        "image": "Profile Image URL",
-        "imagePlaceholder": "https://example.com/avatar.jpg",
         "confirm": "Update User",
         "success": "User updated successfully",
         "error": "Failed to update user"
+      },
+      "delete": {
+        "title": "Delete User",
+        "description": "Delete {name} and all account data?",
+        "warning": "This action cannot be undone.",
+        "confirm": "Delete User",
+        "success": "User deleted successfully",
+        "error": "Failed to delete user"
       },
       "actions": {
         "ban": "Ban User",
@@ -248,7 +264,8 @@
         "impersonate": "Impersonate",
         "sessions": "View Sessions",
         "changePassword": "Change Password",
-        "update": "Update User"
+        "update": "Update User",
+        "delete": "Delete User"
       },
       "status": {
         "banned": "Banned",

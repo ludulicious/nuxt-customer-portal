@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
     body: {
       name,
       slug,
+      organizationType: 'CLIENT',
       userId: user.id,
       keepCurrentActiveOrganization: true
     }

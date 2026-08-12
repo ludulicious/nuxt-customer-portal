@@ -1,5 +1,5 @@
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
-import type { MemberRole, Organization } from '@nuxt-customer-portal/core/shared/types/index'
+import type { MemberRole, Organization, OrganizationType } from '@nuxt-customer-portal/core/shared/types/index'
 
 export const useOrganization = () => {
   // Get current user's organization
@@ -26,7 +26,7 @@ export const useOrganization = () => {
     return data
   }
 
-  const createOrganization = async (data: { name: string, slug: string, keepCurrentActiveOrganization?: boolean }) => {
+  const createOrganization = async (data: { name: string, slug: string, organizationType: OrganizationType, keepCurrentActiveOrganization?: boolean }) => {
     return await authClient.organization.create(data)
   }
 

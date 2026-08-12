@@ -66,8 +66,9 @@ onUnmounted(() => {
 await loadUsers()
 
 const canCreate = ref(true)
+const showCreateModal = ref(false)
 const startCreate = () => {
-  console.log('startCreate')
+  showCreateModal.value = true
 }
 const showFiltersModal = ref(false)
 const showSortModal = ref(false)
@@ -205,5 +206,6 @@ const toggleSortDir = () => {
         </div>
       </template>
     </UDashboardPanel>
+    <AdminCreateUserModal v-model:open="showCreateModal" @success="loadUsers" />
   </div>
 </template>

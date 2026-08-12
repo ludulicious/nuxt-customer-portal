@@ -44,3 +44,4 @@ export function migratePortalDatabase(config: PortalConfig, options?: { cwd?: st
 export function adoptLegacyMigrations(config: PortalConfig, options?: { cwd?: string, databaseUrl?: string, apply?: boolean }): Promise<unknown>
 export function migrateGenericClients(config: PortalConfig, options: { owner: string, cwd?: string, databaseUrl?: string, apply?: boolean, backupConfirmed?: boolean }): Promise<unknown>
 export function seedPortalOwner(options: { organizationName: string, organizationSlug: string, userName: string, userEmail: string, userPassword: string, databaseUrl?: string }): Promise<unknown>
+export function assignPortalSystemAdmin(options: { email: string, databaseUrl?: string }): Promise<{ id: string, name: string, email: string, role: 'admin' }>

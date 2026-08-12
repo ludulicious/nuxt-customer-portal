@@ -1,13 +1,15 @@
 import { betterAuth } from 'better-auth'
-import { APIError } from 'better-auth/api'
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
-import { customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
+import { admin as adminPlugin, customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
 import { db } from './db'
 import { and, eq, gt, or } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
 import { nanoid } from 'nanoid'
+import { ac, user, admin as adminRole } from '../../shared/permissions'
+import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -41,6 +43,29 @@ export const auth = betterAuth({
     usePlural: false,
     // Tables are singular (e.g., "user"), so no need for usePlural
   }),
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') return
+
+      const session = await getSessionFromCtx(ctx)
+      if (!session) return
+      const organizationId = ctx.query?.organizationId || session.session.activeOrganizationId
+      if (!organizationId) return
+
+      const [membership] = await db
+        .select({ role: organizationMemberTable.role })
+        .from(organizationMemberTable)
+        .where(and(
+          eq(organizationMemberTable.userId, session.user.id),
+          eq(organizationMemberTable.organizationId, String(organizationId))
+        ))
+        .limit(1)
+
+      if (!canViewOrganizationDirectory(membership?.role)) {
+        throw new APIError('FORBIDDEN', { message: 'Organization owner or administrator access required' })
+      }
+    })
+  },
   emailAndPassword: {
     enabled: true,
     disableSignUp: registrationMode === 'disabled',
@@ -61,6 +86,17 @@ export const auth = betterAuth({
           to: user.email,
           ...emailContent
         })
+      },
+      beforeDelete: async (user) => {
+        const [record] = await db
+          .select({ role: userTable.role })
+          .from(userTable)
+          .where(eq(userTable.id, user.id))
+          .limit(1)
+
+        if (record?.role === 'admin') {
+          throw new APIError('BAD_REQUEST', { message: 'System administrator accounts cannot be deleted' })
+        }
       },
     }
   },
@@ -138,6 +174,22 @@ export const auth = betterAuth({
         })
       },
       organizationHooks: {
+        afterCreateOrganization: async ({ organization: createdOrganization, member, user: creator }) => {
+          const [creatorRecord] = await db
+            .select({ role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, creator.id))
+            .limit(1)
+
+          // A system admin manages organizations globally and does not need an
+          // artificial membership in every organization they create.
+          if (creatorRecord?.role === 'admin' && member) {
+            await db
+              .delete(organizationMemberTable)
+              .where(eq(organizationMemberTable.id, member.id))
+            console.log(`Removed system admin ${creator.email} as member from ${createdOrganization.name}`)
+          }
+        },
         afterAcceptInvitation: async ({ invitation: _invitation, member, user, organization }) => {
           // Ensure the user gets the correct role when accepting invitation
           // Better Auth handles this automatically, but we log it for debugging
@@ -160,6 +212,14 @@ export const auth = betterAuth({
           ...emailContent
         })
       }
+    }),
+    adminPlugin({
+      ac,
+      roles: {
+        user,
+        admin: adminRole
+      },
+      defaultRole: 'user'
     }),
     customSession(async (sessionData) => {
       // Destructure user and session from the input object

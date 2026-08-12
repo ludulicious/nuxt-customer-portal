@@ -43,9 +43,9 @@ export const getOrganizationRolePermissions = (orgRole: MemberRole | null | unde
     permissions['member'] = ['read', 'list', 'create', 'update', 'delete', 'update-name']
     permissions['invitation'] = ['list', 'create', 'cancel', 'resend']
   } else if (orgRole === 'member') {
-    // Members can read organization and list/read members but not manage them
+    // Members can see the organization they belong to, but the member and
+    // invitation directories are administrative data.
     permissions['organization'] = ['read']
-    permissions['member'] = ['read', 'list']
   }
 
   return permissions

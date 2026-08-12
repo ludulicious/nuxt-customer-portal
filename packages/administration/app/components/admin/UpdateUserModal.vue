@@ -17,40 +17,29 @@ const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
 
-// Update form schema
 const updateSchema = computed(() => z.object({
-  name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength')).optional(),
-  image: z.union([
-    z.string().url(t('profile.validation.imageInvalidUrl')),
-    z.literal('').transform(() => null)
-  ]).optional()
-}).refine(
-  (data) => data.name !== undefined || data.image !== undefined,
-  {
-    message: t('profile.validation.atLeastOneField')
-  }
-))
+  name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength'))
+}))
 
 type UpdateSchema = z.output<typeof updateSchema.value>
 type UpdateFormInput = z.input<typeof updateSchema.value>
 
-// Update form state
-const updateForm = reactive<Partial<UpdateFormInput>>({
-  name: '',
-  image: ''
+const updateForm = reactive<UpdateFormInput>({
+  name: ''
 })
+
+watch([open, () => props.user], ([isOpen, user]) => {
+  if (isOpen && user) updateForm.name = user.name || ''
+}, { immediate: true })
 
 const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
   if (!props.user) return
 
   try {
-    const updateData: Record<string, unknown> = {}
-    if (event.data.name) updateData.name = event.data.name.trim()
-    if (event.data.image !== undefined) updateData.image = event.data.image || null
-
     const { error: updateError } = await authClient.admin.updateUser({
       userId: props.user.id,
-      data: updateData
+      // Profile images are user-managed and never writable from Administration.
+      data: { name: event.data.name.trim() }
     })
 
     if (updateError) {
@@ -88,14 +77,6 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
           <UInput
             v-model="updateForm.name"
             :placeholder="t('admin.user.update.name')"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField name="image" :label="t('admin.user.update.image')">
-          <UInput
-            v-model="updateForm.image"
-            :placeholder="t('admin.user.update.imagePlaceholder')"
             class="w-full"
           />
         </UFormField>
