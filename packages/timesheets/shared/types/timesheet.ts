@@ -67,8 +67,8 @@ export interface ClientDto {
 }
 
 export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, invoiceAccessEnabled: boolean, canReview: boolean, canViewInvoices: boolean, canManageReviewers: boolean }
-export interface ClientReviewerDto { id: string, name: string, email: string, assigned: boolean }
-export interface ClientInvoiceViewerDto { id: string, name: string, email: string, assigned: boolean }
+export interface ClientReviewerDto { id: string, name: string, email: string, role: string, assigned: boolean, fixedAccess: boolean }
+export interface ClientInvoiceViewerDto { id: string, name: string, email: string, role: string, assigned: boolean, fixedAccess: boolean }
 export interface ClientInvoiceSupplierDto extends ClientWorkspaceDto { viewerCount: number }
 export interface ClientTimesheetEntryDto { id: string, date: string, project: string, person: string, activity: string, minutes: number, note: string | null }
 export interface ClientTimesheetHistoryDto { id: string, action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT', actorName: string, comment: string | null, createdAt: string }

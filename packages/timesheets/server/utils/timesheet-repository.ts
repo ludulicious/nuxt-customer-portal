@@ -382,19 +382,32 @@ export const listClientInvoiceViewers = async (workspaceClientId: string, client
   if (!link) throw createError({ statusCode: 404, message: 'Client invoice workspace not found' })
   const [members, assigned] = await Promise.all([listPortalOrganizationMembers(clientOrganizationId), db.select().from(workspaceClientInvoiceViewer).where(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId))])
   const assignedIds = new Set(assigned.map(item => item.userId))
-  return members.map(item => ({ id: item.id, name: item.name, email: item.email, assigned: assignedIds.has(item.id) }))
+  return members.map((item) => {
+    const fixedAccess = item.organizationRole === 'owner' || item.organizationRole === 'admin'
+    return { id: item.id, name: item.name, email: item.email, role: item.organizationRole, assigned: fixedAccess || assignedIds.has(item.id), fixedAccess }
+  })
 }
 
 export const listClientInvoiceSuppliers = async (clientOrganizationId: string, userId: string, isAdmin: boolean): Promise<ClientInvoiceSupplierDto[]> => {
   const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, isAdmin)).filter(item => item.invoiceAccessEnabled && (isAdmin || item.canViewInvoices))
   if (!workspaces.length) return []
-  const viewers = await db.select().from(workspaceClientInvoiceViewer).where(inArray(workspaceClientInvoiceViewer.workspaceClientId, workspaces.map(item => item.id)))
-  return workspaces.map(item => ({ ...item, viewerCount: viewers.filter(viewer => viewer.workspaceClientId === item.id).length }))
+  const [viewers, members] = await Promise.all([
+    db.select().from(workspaceClientInvoiceViewer).where(inArray(workspaceClientInvoiceViewer.workspaceClientId, workspaces.map(item => item.id))),
+    listPortalOrganizationMembers(clientOrganizationId)
+  ])
+  const fixedIds = new Set(members.filter(item => item.organizationRole === 'owner' || item.organizationRole === 'admin').map(item => item.id))
+  return workspaces.map((item) => {
+    const viewerIds = new Set(viewers.filter(viewer => viewer.workspaceClientId === item.id).map(viewer => viewer.userId))
+    fixedIds.forEach(id => viewerIds.add(id))
+    return { ...item, viewerCount: viewerIds.size }
+  })
 }
 
 export const setClientInvoiceViewer = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, userId: string, assigned: boolean) => {
   const eligible = await listClientInvoiceViewers(workspaceClientId, clientOrganizationId)
-  if (!eligible.some(item => item.id === userId)) throw createError({ statusCode: 400, message: 'Invoice viewer must be a current client member' })
+  const selected = eligible.find(item => item.id === userId)
+  if (!selected) throw createError({ statusCode: 400, message: 'Invoice viewer must be a current client member' })
+  if (selected.fixedAccess) throw createError({ statusCode: 400, message: 'Organization owners and admins always have invoice access' })
   if (!assigned) {
     await db.delete(workspaceClientInvoiceViewer).where(and(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId), eq(workspaceClientInvoiceViewer.userId, userId)))
     return { assigned: false }
@@ -408,29 +421,40 @@ export const listClientReviewers = async (workspaceClientId: string, clientOrgan
   if (!link || link.accessMode === 'DISABLED') throw createError({ statusCode: 404, message: 'Client workspace not found' })
   const [members, assigned] = await Promise.all([listPortalOrganizationMembers(clientOrganizationId), db.select().from(workspaceClientReviewer).where(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId))])
   const assignedIds = new Set(assigned.map(item => item.userId))
-  return members.map(item => ({ id: item.id, name: item.name, email: item.email, assigned: assignedIds.has(item.id) }))
+  return members.map((item) => {
+    const fixedAccess = item.organizationRole === 'owner' || item.organizationRole === 'admin'
+    return { id: item.id, name: item.name, email: item.email, role: item.organizationRole, assigned: fixedAccess || assignedIds.has(item.id), fixedAccess }
+  })
 }
 
 export const listClientReviewerSuppliers = async (clientOrganizationId: string, userId: string): Promise<ClientReviewerSupplierDto[]> => {
   const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, true)).filter(item => item.accessMode === 'REVIEW')
   if (!workspaces.length) return []
-  const [reviewers, pending] = await Promise.all([
+  const [reviewers, pending, members] = await Promise.all([
     db.select().from(workspaceClientReviewer).where(inArray(workspaceClientReviewer.workspaceClientId, workspaces.map(item => item.id))),
     db.select({ supplierOrganizationId: weeklyTimesheet.organizationId })
       .from(timesheetClientReview)
       .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
-      .where(and(eq(timesheetClientReview.clientOrganizationId, clientOrganizationId), eq(timesheetClientReview.status, 'PENDING')))
+      .where(and(eq(timesheetClientReview.clientOrganizationId, clientOrganizationId), eq(timesheetClientReview.status, 'PENDING'))),
+    listPortalOrganizationMembers(clientOrganizationId)
   ])
-  return workspaces.map(workspace => ({
-    ...workspace,
-    reviewerCount: reviewers.filter(item => item.workspaceClientId === workspace.id).length,
-    pendingCount: pending.filter(item => item.supplierOrganizationId === workspace.workspaceOrganizationId).length
-  }))
+  const fixedIds = new Set(members.filter(item => item.organizationRole === 'owner' || item.organizationRole === 'admin').map(item => item.id))
+  return workspaces.map((workspace) => {
+    const reviewerIds = new Set(reviewers.filter(item => item.workspaceClientId === workspace.id).map(item => item.userId))
+    fixedIds.forEach(id => reviewerIds.add(id))
+    return {
+      ...workspace,
+      reviewerCount: reviewerIds.size,
+      pendingCount: pending.filter(item => item.supplierOrganizationId === workspace.workspaceOrganizationId).length
+    }
+  })
 }
 
 export const setClientReviewer = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, userId: string, assigned: boolean) => {
   const eligible = await listClientReviewers(workspaceClientId, clientOrganizationId)
-  if (!eligible.some(item => item.id === userId)) throw createError({ statusCode: 400, message: 'Reviewer must be a current client member' })
+  const selected = eligible.find(item => item.id === userId)
+  if (!selected) throw createError({ statusCode: 400, message: 'Reviewer must be a current client member' })
+  if (selected.fixedAccess) throw createError({ statusCode: 400, message: 'Organization owners and admins can always review timesheets' })
   if (!assigned) {
     await db.delete(workspaceClientReviewer).where(and(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId), eq(workspaceClientReviewer.userId, userId)))
     return { assigned: false }
