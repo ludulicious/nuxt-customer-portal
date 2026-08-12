@@ -5,6 +5,7 @@ import { usePaginatedResource } from '@nuxt-customer-portal/core/app/composables
 export const useTimesheetsAdminList = <Item>(options: {
   endpoint: string
   filterKeys?: string[]
+  defaultFilters?: Record<string, string>
   defaultSort: string
   defaultSortDir?: 'asc' | 'desc'
 }) => {
@@ -16,7 +17,7 @@ export const useTimesheetsAdminList = <Item>(options: {
   const sortBy = ref(String(route.query.sortBy ?? options.defaultSort))
   const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'desc' ? 'desc' : defaultSortDir)
   const currentPage = ref(Math.max(1, Number(route.query.page) || 1))
-  const filters = reactive<Record<string, string | undefined>>(Object.fromEntries((options.filterKeys ?? []).map(key => [key, route.query[key] ? String(route.query[key]) : undefined])))
+  const filters = reactive<Record<string, string | undefined>>(Object.fromEntries((options.filterKeys ?? []).map(key => [key, route.query[key] ? String(route.query[key]) : options.defaultFilters?.[key]])))
   const resource = usePaginatedResource<Item, Record<string, string | undefined>>({
     pageSize,
     getKey: item => (item as { id: string }).id,
@@ -28,7 +29,13 @@ export const useTimesheetsAdminList = <Item>(options: {
     ...(sortBy.value !== options.defaultSort ? { sortBy: sortBy.value } : {}),
     ...(sortDir.value !== defaultSortDir ? { sortDir: sortDir.value } : {})
   })
-  const syncRoute = (page = currentPage.value) => router.replace({ path: route.path, query: { ...query(), ...(page > 1 ? { page: String(page) } : {}) } })
+  const routeQuery = () => ({
+    ...(search.value.trim() ? { search: search.value.trim() } : {}),
+    ...Object.fromEntries(Object.entries(filters).filter(([key, value]) => value && value !== options.defaultFilters?.[key])),
+    ...(sortBy.value !== options.defaultSort ? { sortBy: sortBy.value } : {}),
+    ...(sortDir.value !== defaultSortDir ? { sortDir: sortDir.value } : {})
+  })
+  const syncRoute = (page = currentPage.value) => router.replace({ path: route.path, query: { ...routeQuery(), ...(page > 1 ? { page: String(page) } : {}) } })
   const load = async (page = currentPage.value) => {
     const result = await resource.loadPage(query(), { page, pageSize })
     if (result) currentPage.value = result.pagination.page

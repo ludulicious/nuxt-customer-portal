@@ -908,10 +908,7 @@ export const setTeamTariff = async (
   return row
 }
 
-export const listProjects = async (organizationId: string): Promise<ProjectDto[]> => {
-  const projects = await db.select().from(project)
-    .where(eq(project.organizationId, organizationId))
-    .orderBy(desc(project.status), asc(project.name))
+const hydrateProjects = async (organizationId: string, projects: Array<typeof project.$inferSelect>): Promise<ProjectDto[]> => {
   if (!projects.length) return []
   const ids = projects.map(item => item.id)
   const [clients, assignments, rates] = await Promise.all([
@@ -937,6 +934,21 @@ export const listProjects = async (organizationId: string): Promise<ProjectDto[]
         .map(rate => [rate.userId, rate.hourlyRateMinor])
     )
   }))
+}
+
+export const listProjects = async (organizationId: string): Promise<ProjectDto[]> => {
+  const projects = await db.select().from(project)
+    .where(eq(project.organizationId, organizationId))
+    .orderBy(desc(project.status), asc(project.name))
+  return hydrateProjects(organizationId, projects)
+}
+
+export const getProject = async (organizationId: string, id: string): Promise<ProjectDto | null> => {
+  const projects = await db.select().from(project).where(and(
+    eq(project.id, id),
+    eq(project.organizationId, organizationId)
+  )).limit(1)
+  return (await hydrateProjects(organizationId, projects))[0] ?? null
 }
 
 export const createProject = async (

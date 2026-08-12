@@ -14,6 +14,7 @@ const listBase = {
 export const projectListQuerySchema = z.object({
   ...listBase,
   clientOrganizationId: id.optional(),
+  status: z.enum(['ALL', 'ACTIVE', 'ARCHIVED']).optional(),
   sortBy: z.enum(['name', 'clientName', 'startsOn']).default('name')
 })
 export const clientListQuerySchema = z.object({

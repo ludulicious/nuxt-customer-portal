@@ -82,6 +82,26 @@ test('client navigation separates approvals, invoices, their settings, and view-
   assert.equal(items.find(item => item.id === 'invoice-viewers')?.to, '/timesheets/invoices/viewers')
 })
 
+test('project cards use a dedicated detail route and preserve collection state', () => {
+  const list = readFileSync(new URL('../app/components/TimesheetsAdminProjects.vue', import.meta.url), 'utf8')
+  const parentPage = readFileSync(new URL('../app/pages/admin/timesheets/projects.vue', import.meta.url), 'utf8')
+  const detailPage = readFileSync(new URL('../app/pages/admin/timesheets/projects/[id].vue', import.meta.url), 'utf8')
+  const detailComponent = readFileSync(new URL('../app/components/TimesheetsProjectDetail.vue', import.meta.url), 'utf8')
+  const detailEndpoint = readFileSync(new URL('../server/api/timesheets/admin/projects/[id].get.ts', import.meta.url), 'utf8')
+
+  assert.match(list, /path: `\/admin\/timesheets\/projects\/\$\{project\.id\}`/)
+  assert.match(list, /query: \{ returnTo: returnPath\.value \}/)
+  assert.match(list, /@scroll="listScrollTop = \$event"/)
+  assert.match(list, /<NuxtLink :to="projectDetailTo\(project\)"/)
+  assert.doesNotMatch(list, /editingId/)
+  assert.match(parentPage, /<NuxtPage v-if="route\.params\.id"/)
+  assert.match(detailPage, /features\.timesheets\.admin\.backToProjects/)
+  assert.match(detailPage, /value\.startsWith\('\/admin\/timesheets\/projects\?'/)
+  assert.match(detailComponent, /<TimesheetsProjectForm v-if="editing"/)
+  assert.match(detailComponent, /features\.timesheets\.admin\.projectRates/)
+  assert.match(detailEndpoint, /requireFeatureAccess\(event, timesheetsFeature\.policy, 'manage'\)/)
+})
+
 test('client invoice migration keeps access and viewer assignments independent', () => {
   const migration = readFileSync(new URL('../../../legacy/drizzle/0019_client_invoice_access.sql', import.meta.url), 'utf8')
   assert.match(migration, /invoice_access_enabled.*DEFAULT false NOT NULL/)
@@ -133,6 +153,9 @@ test('pending review migration backfills approved review-enabled supplier weeks 
 test('admin list queries share bounded pagination and entity-specific filters', () => {
   assert.deepEqual(projectListQuerySchema.parse({}), { page: 1, pageSize: 20, sortDir: 'asc', sortBy: 'name' })
   assert.equal(projectListQuerySchema.parse({ clientOrganizationId: 'client', sortBy: 'clientName' }).clientOrganizationId, 'client')
+  assert.equal(projectListQuerySchema.parse({ status: 'ARCHIVED' }).status, 'ARCHIVED')
+  assert.equal(projectListQuerySchema.parse({ status: 'ALL' }).status, 'ALL')
+  assert.equal(projectListQuerySchema.safeParse({ status: 'DRAFT' }).success, false)
   assert.equal(clientListQuerySchema.parse({ configured: 'incomplete' }).configured, 'incomplete')
   assert.equal(activityListQuerySchema.parse({ active: 'false', billable: 'true' }).active, 'false')
   assert.deepEqual(invoiceListQuerySchema.parse({ status: 'ISSUED' }), { page: 1, pageSize: 20, sortDir: 'desc', sortBy: 'issueDate', status: 'ISSUED' })

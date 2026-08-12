@@ -142,7 +142,8 @@ export const useTimesheets = () => {
     budgetMinutes?: number | null
     budgetMinor?: number | null
     activityTypeIds: string[]
-  }) => $fetch('/api/timesheets/admin/projects', { method: 'POST', body: input })
+  }) => $fetch<{ id: string }>('/api/timesheets/admin/projects', { method: 'POST', body: input })
+  const getProject = (id: string) => $fetch<ProjectDto>(`/api/timesheets/admin/projects/${id}`)
   const updateProject = (id: string, input: Record<string, unknown>) =>
     $fetch(`/api/timesheets/admin/projects/${id}`, { method: 'PATCH', body: input })
   const getProjectDeletionEligibility = (id: string) =>
@@ -232,6 +233,7 @@ export const useTimesheets = () => {
     getActivityDeletionEligibility,
     deleteActivity,
     createProject,
+    getProject,
     updateProject,
     getProjectDeletionEligibility,
     deleteProject,

@@ -5,7 +5,7 @@ const slug = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$
 
 export const genericClientListQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
-  status: z.enum(['active', 'archived']).optional(),
+  status: z.enum(['all', 'active', 'archived']).optional(),
   moduleId: z.string().trim().max(100).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),

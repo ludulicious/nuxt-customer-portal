@@ -9,7 +9,7 @@ const api = useClients()
 const runtimeConfig = useRuntimeConfig()
 const defaultModules = ((runtimeConfig.public.clients as { defaultModules?: string[] } | undefined)?.defaultModules ?? [])
 const search = ref(String(route.query.search ?? ''))
-const status = ref(route.query.status === 'archived' ? 'archived' : route.query.status === 'active' ? 'active' : 'all')
+const status = ref(route.query.status === 'archived' ? 'archived' : route.query.status === 'all' ? 'all' : 'active')
 const sortBy = ref(['name', 'createdAt', 'status'].includes(String(route.query.sortBy)) ? String(route.query.sortBy) : 'name')
 const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'desc' ? 'desc' : 'asc')
 const page = ref(Math.max(1, Number(route.query.page) || 1))
@@ -24,10 +24,14 @@ const clients = computed(() => result.value?.items ?? [])
 
 const routeQuery = () => ({
   ...(search.value.trim() ? { search: search.value.trim() } : {}),
-  ...(status.value !== 'all' ? { status: status.value } : {}),
+  ...(status.value !== 'active' ? { status: status.value } : {}),
   ...(sortBy.value !== 'name' ? { sortBy: sortBy.value } : {}),
   ...(sortDir.value !== 'asc' ? { sortDir: sortDir.value } : {}),
   ...(page.value > 1 ? { page: String(page.value) } : {})
+})
+const requestQuery = () => ({
+  ...routeQuery(),
+  status: status.value === 'all' ? undefined : status.value
 })
 
 const listReturnPath = computed(() => {
@@ -47,7 +51,7 @@ const clientDetailTo = (client: GenericClientDto) => ({
 const load = async () => {
   pending.value = true
   try {
-    result.value = await api.list({ ...routeQuery(), page: page.value, pageSize: 20 })
+    result.value = await api.list({ ...requestQuery(), page: page.value, pageSize: 20 })
   } finally {
     pending.value = false
   }

@@ -14,9 +14,10 @@ const paginate = <T>(items: T[], page: number, pageSize: number): TimesheetsList
 
 export const listProjectsPage = async (organizationId: string, query: ProjectListQuery) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
-  const rows = (await listProjects(organizationId)).filter(item => item.status === 'ACTIVE')
+  const rows = (await listProjects(organizationId))
     .filter(item => !search || [item.name, item.code, item.clientName].some(value => includes(value, search)))
     .filter(item => !query.clientOrganizationId || item.clientOrganizationId === query.clientOrganizationId)
+    .filter(item => !query.status || query.status === 'ALL' || item.status === query.status)
     .sort((a, b) => direction(query.sortBy === 'clientName' ? compareText(a.clientName, b.clientName) : query.sortBy === 'startsOn' ? compareText(a.startsOn, b.startsOn) : compareText(a.name, b.name), query.sortDir) || compareText(a.id, b.id))
   return paginate<ProjectDto>(rows, query.page, query.pageSize)
 }
