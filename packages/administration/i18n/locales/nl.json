@@ -136,6 +136,8 @@
         "totalCount": "{count} totaal",
         "viewOrganization": "{name} bekijken",
         "view": "Bekijken",
+        "provider": "Aanbieder",
+        "client": "Klant",
         "name": "Naam",
         "slug": "Slug",
         "created": "Aangemaakt"

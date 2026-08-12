@@ -136,6 +136,8 @@
         "totalCount": "{count} total",
         "viewOrganization": "View {name}",
         "view": "View",
+        "provider": "Provider",
+        "client": "Client",
         "name": "Name",
         "slug": "Slug",
         "created": "Created"
