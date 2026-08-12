@@ -53,9 +53,9 @@ test('English and Dutch expose identical feature locale keys', () => {
 })
 
 test('feature policy reserves management and approval for admins', () => {
-  assert.equal(timesheetsFeature.policy.OWNER.member.includes('manage'), false)
-  assert.equal(timesheetsFeature.policy.OWNER.member.includes('approve'), false)
-  assert.equal(timesheetsFeature.policy.OWNER.member.includes('submit'), true)
+  assert.equal(timesheetsFeature.policy.PROVIDER.member.includes('manage'), false)
+  assert.equal(timesheetsFeature.policy.PROVIDER.member.includes('approve'), false)
+  assert.equal(timesheetsFeature.policy.PROVIDER.member.includes('submit'), true)
 })
 
 test('dashboard contributions have stable ids and cover each timesheet capability', () => {
@@ -68,6 +68,18 @@ test('dashboard contributions have stable ids and cover each timesheet capabilit
     'timesheets-received-invoices'
   ])
   assert.equal(timesheetsFeature.dashboardWidgets?.every(widget => Boolean(widget.area && widget.size)), true)
+})
+
+test('supplier timesheets are restricted to client organizations', () => {
+  const capabilities = readFileSync(new URL('../server/api/timesheets/capabilities.get.ts', import.meta.url), 'utf8')
+  const dashboard = readFileSync(new URL('../server/api/timesheets/dashboard.get.ts', import.meta.url), 'utf8')
+  const listEndpoint = readFileSync(new URL('../server/api/timesheets/client/supplier-timesheets.get.ts', import.meta.url), 'utf8')
+  const optionsEndpoint = readFileSync(new URL('../server/api/timesheets/client/supplier-options.get.ts', import.meta.url), 'utf8')
+
+  assert.match(capabilities, /organizationType === 'CLIENT' && clientWorkspaces\.some/)
+  assert.match(dashboard, /organizationType === 'CLIENT' && clientWorkspaces\.some/)
+  assert.match(listEndpoint, /organizationType !== 'CLIENT'.*statusCode: 403/)
+  assert.match(optionsEndpoint, /organizationType !== 'CLIENT'.*statusCode: 403/)
 })
 
 test('client navigation separates approvals, invoices, their settings, and view-only supplier time', () => {

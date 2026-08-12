@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const row = await createServiceRequest({
     id: nanoid(),
     ...data,
-    organizationId: scope.ownerOrganizationId,
+    organizationId: scope.providerOrganizationId,
     clientOrganizationId,
     createdById: scope.session.user.id
   })

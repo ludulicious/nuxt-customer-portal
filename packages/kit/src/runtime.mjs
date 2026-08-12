@@ -36,20 +36,20 @@ export const definePortalConfig = ({ layers, clients }) => {
 }
 
 export const migrateGenericClients = async (config, options = {}) => {
-  const owner = assertString(options.owner, '--owner')
+  const provider = assertString(options.provider, '--provider')
   return withPool(options.databaseUrl, async (pool) => {
     const client = await pool.connect()
     try {
-      const selected = await client.query('SELECT id, name, slug FROM organization WHERE id = $1 OR slug = $1', [owner])
-      if (selected.rowCount !== 1) throw new Error(`Expected exactly one organization for --owner ${owner}, found ${selected.rowCount}`)
-      const ownerOrganization = selected.rows[0]
+      const selected = await client.query('SELECT id, name, slug FROM organization WHERE id = $1 OR slug = $1', [provider])
+      if (selected.rowCount !== 1) throw new Error(`Expected exactly one organization for --provider ${provider}, found ${selected.rowCount}`)
+      const providerOrganization = selected.rows[0]
       const linked = await client.query(`SELECT o.id, o.name, o.slug
         FROM timesheets.workspace_client wc JOIN organization o ON o.id = wc.client_organization_id
-        WHERE wc.workspace_organization_id = $1 AND o.id <> $1 ORDER BY o.name`, [ownerOrganization.id])
-      const allOthers = await client.query('SELECT id, name, slug FROM organization WHERE id <> $1 ORDER BY name', [ownerOrganization.id])
+        WHERE wc.workspace_organization_id = $1 AND o.id <> $1 ORDER BY o.name`, [providerOrganization.id])
+      const allOthers = await client.query('SELECT id, name, slug FROM organization WHERE id <> $1 ORDER BY name', [providerOrganization.id])
       const secondaryWorkspaces = await client.query(`SELECT workspace_organization_id AS "organizationId", count(*)::int AS "clientLinks"
         FROM timesheets.workspace_client WHERE workspace_organization_id <> $1
-        GROUP BY workspace_organization_id ORDER BY workspace_organization_id`, [ownerOrganization.id])
+        GROUP BY workspace_organization_id ORDER BY workspace_organization_id`, [providerOrganization.id])
       const linkedIds = new Set(linked.rows.map(row => row.id))
       const archived = allOthers.rows.filter(row => !linkedIds.has(row.id))
       const contacts = await client.query(`SELECT count(*)::int AS total,
@@ -63,7 +63,7 @@ export const migrateGenericClients = async (config, options = {}) => {
       const defaultModules = [...new Set(config.clients?.defaultModules ?? [])]
       const report = {
         dryRun: !options.apply,
-        owner: ownerOrganization,
+        provider: providerOrganization,
         activeClients: linked.rows,
         archivedUnclassifiedOrganizations: archived,
         skippedContacts: (contacts.rows[0]?.total ?? 0) - (contacts.rows[0]?.linked ?? 0),
@@ -78,7 +78,7 @@ export const migrateGenericClients = async (config, options = {}) => {
       await client.query('SELECT pg_advisory_lock(hashtext($1))', [`${lockName}:generic-clients`])
       await client.query('BEGIN')
       try {
-        await client.query(`UPDATE organization SET organization_type = CASE WHEN id = $1 THEN 'OWNER' ELSE 'CLIENT' END`, [ownerOrganization.id])
+        await client.query(`UPDATE organization SET organization_type = CASE WHEN id = $1 THEN 'PROVIDER' ELSE 'CLIENT' END`, [providerOrganization.id])
         await client.query(`INSERT INTO clients.client_profile
           (organization_id, official_name, address, registration_number, vat_number, invoice_email, preferred_locale, archived_at)
           SELECT o.id, o.name, COALESCE(p.address, ''), p.registration_number, p.vat_number, p.invoice_email,
@@ -87,7 +87,7 @@ export const migrateGenericClients = async (config, options = {}) => {
           LEFT JOIN timesheets.organization_invoice_profile p ON p.organization_id = o.id
           LEFT JOIN timesheets.workspace_client wc ON wc.client_organization_id = o.id AND wc.workspace_organization_id = $1
           WHERE o.id <> $1
-          ON CONFLICT (organization_id) DO NOTHING`, [ownerOrganization.id])
+          ON CONFLICT (organization_id) DO NOTHING`, [providerOrganization.id])
         const activations = new Set(['timesheets', ...defaultModules])
         for (const row of linked.rows) {
           for (const moduleId of activations) {
@@ -111,7 +111,7 @@ export const migrateGenericClients = async (config, options = {}) => {
   })
 }
 
-export const seedPortalOwner = async (options = {}) => {
+export const seedPortalProvider = async (options = {}) => {
   const name = assertString(options.organizationName, '--organization-name')
   const slug = assertString(options.organizationSlug, '--organization-slug')
   const userName = assertString(options.userName, '--user-name')
@@ -121,11 +121,11 @@ export const seedPortalOwner = async (options = {}) => {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      const existingOwner = await client.query(`SELECT id, slug FROM organization WHERE organization_type = 'OWNER' LIMIT 1`)
-      if (existingOwner.rowCount && existingOwner.rows[0].slug !== slug) throw new Error(`An OWNER organization already exists with slug ${existingOwner.rows[0].slug}`)
-      const organizationId = existingOwner.rows[0]?.id ?? randomUUID()
+      const existingProvider = await client.query(`SELECT id, slug FROM organization WHERE organization_type = 'PROVIDER' LIMIT 1`)
+      if (existingProvider.rowCount && existingProvider.rows[0].slug !== slug) throw new Error(`A PROVIDER organization already exists with slug ${existingProvider.rows[0].slug}`)
+      const organizationId = existingProvider.rows[0]?.id ?? randomUUID()
       await client.query(`INSERT INTO organization (id, name, slug, organization_type, created_at)
-        VALUES ($1, $2, $3, 'OWNER', now()) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name`, [organizationId, name, slug])
+        VALUES ($1, $2, $3, 'PROVIDER', now()) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name`, [organizationId, name, slug])
       const existingUser = await client.query('SELECT id FROM "user" WHERE lower(email) = $1', [email])
       const userId = existingUser.rows[0]?.id ?? randomUUID()
       if (!existingUser.rowCount) {

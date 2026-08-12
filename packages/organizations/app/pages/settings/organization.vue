@@ -131,7 +131,7 @@ watch(activeOrganizationId, (id) => {
         </template>
       </OrganizationDetailsCard>
 
-      <OrganizationEmailProviderSettings v-if="organization.organizationType === 'OWNER' && invoicingEnabled && userOrganizationRole === 'owner'" />
+      <OrganizationEmailProviderSettings v-if="organization.organizationType === 'PROVIDER' && invoicingEnabled && userOrganizationRole === 'owner'" />
 
       <OrganizationMembersCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :members="members" :loading="loading" :can-manage="true" @refresh="loadMembers" />
       <OrganizationInvitationsCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :invitations="invitations" :loading="loading" :can-manage="true" @refresh="loadInvitations" />

@@ -5,7 +5,7 @@ import { canMemberEnterTime, hasInternalApprovalAssignment, listApprovalQueue, l
 import type { TimesheetCapabilitiesDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId, role } = await requireActiveOrganizationRole(event)
+  const { session, organizationId, organizationType, role } = await requireActiveOrganizationRole(event)
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
   const [settings, clientWorkspaces, approvals, reviewerSuppliers, memberCanEnterTime] = await Promise.all([
     db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled, internalApprovalsEnabled: workspaceSettings.internalApprovalsEnabled }).from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     canManageTimesheets: isAdmin && workspaceEnabled,
     canReviewClientTimesheets: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canInvoice: isAdmin && (settings[0]?.invoicingEnabled ?? false),
-    canViewSupplierTime: clientWorkspaces.some(item => item.accessMode === 'VIEW'),
+    canViewSupplierTime: organizationType === 'CLIENT' && clientWorkspaces.some(item => item.accessMode === 'VIEW'),
     canAccessApprovals: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canManageClientReviewers: isAdmin && reviewWorkspaces.length > 0,
     canViewClientInvoices: invoiceWorkspaces.some(item => item.canViewInvoices),

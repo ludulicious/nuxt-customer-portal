@@ -165,9 +165,8 @@ Transform the customer portal from a self-service organization model to a B2B ad
 2. Create admin organization detail page with NuxtUI components and responsive design
 3. Create admin organization creation page with NuxtUI form components
 4. Update signup flow to handle invitation acceptance with NuxtUI alerts
-5. Create owner organization management UI with NuxtUI components and responsive tables
+5. Create provider organization management UI with NuxtUI components and responsive tables
 6. Create API endpoints for invitation resend and delete (admin and owner)
 7. Configure invitation email template with signup link
 8. Update organization composable with invitation management methods
-
 

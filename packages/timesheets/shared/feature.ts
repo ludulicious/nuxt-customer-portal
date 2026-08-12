@@ -44,7 +44,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       labelKey: 'features.timesheets.navigation.manage',
       icon: 'i-lucide-chart-no-axes-combined',
       to: '/admin/timesheets/internal-approvals',
-      audiences: ['ownerAdmin'],
+      audiences: ['providerAdmin'],
       location: 'admin',
       order: 130
     }
@@ -63,12 +63,12 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       { id: 'approval-reviewers', labelKey: 'features.timesheets.approvals.reviewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/approvals/reviewers', audiences: ['clientAdmin'] },
       { id: 'supplier-timesheets', labelKey: 'features.timesheets.suppliers.title', icon: 'i-lucide-building-2', to: '/timesheets/suppliers', audiences: ['authenticated'] },
       { id: 'timesheet-approvals', labelKey: 'features.timesheets.internalApprovals.title', icon: 'i-lucide-stamp', to: '/timesheets/internal-approvals', audiences: ['authenticated'] },
-      { id: 'internal-approval-settings', labelKey: 'features.timesheets.internalApprovals.manageTitle', icon: 'i-lucide-user-round-check', to: '/admin/timesheets/internal-approvals', audiences: ['ownerAdmin'] },
-      { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['ownerAdmin'] },
-      { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['ownerAdmin'] },
-      { id: 'timesheet-rates', labelKey: 'features.timesheets.admin.teamRates', icon: 'i-lucide-badge-euro', to: '/admin/timesheets/rates', audiences: ['ownerAdmin'] },
-      { id: 'timesheet-settings', labelKey: 'features.timesheets.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/timesheets/settings', audiences: ['ownerAdmin'] },
-      { id: 'timesheet-reports', labelKey: 'features.timesheets.admin.reports', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/timesheets/reports', audiences: ['ownerAdmin'] }
+      { id: 'internal-approval-settings', labelKey: 'features.timesheets.internalApprovals.manageTitle', icon: 'i-lucide-user-round-check', to: '/admin/timesheets/internal-approvals', audiences: ['providerAdmin'] },
+      { id: 'timesheet-projects', labelKey: 'features.timesheets.admin.projects', icon: 'i-lucide-folder-kanban', to: '/admin/timesheets/projects', audiences: ['providerAdmin'] },
+      { id: 'timesheet-activities', labelKey: 'features.timesheets.admin.activities', icon: 'i-lucide-tags', to: '/admin/timesheets/activities', audiences: ['providerAdmin'] },
+      { id: 'timesheet-rates', labelKey: 'features.timesheets.admin.teamRates', icon: 'i-lucide-badge-euro', to: '/admin/timesheets/rates', audiences: ['providerAdmin'] },
+      { id: 'timesheet-settings', labelKey: 'features.timesheets.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/timesheets/settings', audiences: ['providerAdmin'] },
+      { id: 'timesheet-reports', labelKey: 'features.timesheets.admin.reports', icon: 'i-lucide-chart-no-axes-combined', to: '/admin/timesheets/reports', audiences: ['providerAdmin'] }
     ]
   }, {
     id: 'invoices',
@@ -81,7 +81,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     menuItems: [
       { id: 'client-invoices', labelKey: 'features.timesheets.receivedInvoices', icon: 'i-lucide-inbox', to: '/timesheets/invoices', exact: true, audiences: ['authenticated'] },
       { id: 'invoice-viewers', labelKey: 'features.timesheets.clientInvoices.viewersTitle', icon: 'i-lucide-users-round', to: '/timesheets/invoices/viewers', audiences: ['clientAdmin'] },
-      { id: 'timesheet-invoices', labelKey: 'features.timesheets.salesInvoices', icon: 'i-lucide-send', to: '/admin/timesheets/invoices', audiences: ['ownerAdmin'] }
+      { id: 'timesheet-invoices', labelKey: 'features.timesheets.salesInvoices', icon: 'i-lucide-send', to: '/admin/timesheets/invoices', audiences: ['providerAdmin'] }
     ]
   }],
   dashboardWidgets: [
@@ -94,7 +94,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
   ],
   clientIntegration: { moduleId: 'timesheets', labelKey: 'features.timesheets.navigation.myTimesheet', detailComponent: 'TimesheetsClientSettingsPanel' },
   policy: {
-    OWNER: { owner: timesheetActions, admin: timesheetActions, member: ['read', 'create', 'update', 'submit'] },
+    PROVIDER: { owner: timesheetActions, admin: timesheetActions, member: ['read', 'create', 'update', 'submit'] },
     CLIENT: { owner: ['read', 'approve', 'manage'], admin: ['read', 'approve', 'manage'], member: ['read'] }
   }
 }

@@ -4,7 +4,7 @@ export default defineNuxtPlugin(() => {
   const { registerFeature } = usePortalFeatures()
   const { activeOrganizationRole, activeOrganizationType } = usePortalSession()
   const register = () => {
-    const canManage = activeOrganizationType.value === 'OWNER'
+    const canManage = activeOrganizationType.value === 'PROVIDER'
       && (activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin')
     registerFeature({
       ...serviceRequestFeature,

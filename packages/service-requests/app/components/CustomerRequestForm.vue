@@ -37,7 +37,7 @@ watch(
 )
 
 const schema = z.object({
-  clientOrganizationId: activeOrganizationType.value === 'OWNER' ? z.string().min(1) : z.string().optional(),
+  clientOrganizationId: activeOrganizationType.value === 'PROVIDER' ? z.string().min(1) : z.string().optional(),
   title: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
@@ -56,7 +56,7 @@ const handleSubmit = () => {
     <!-- Wrap in real DOM nodes so spacing is guaranteed -->
     <div class="space-y-6">
       <ClientsClientPicker
-        v-if="activeOrganizationType === 'OWNER'"
+        v-if="activeOrganizationType === 'PROVIDER'"
         v-model="state.clientOrganizationId"
         module-id="service-requests"
         :label="t('features.serviceRequests.fields.client')"

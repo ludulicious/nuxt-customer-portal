@@ -10,7 +10,7 @@ export const useServiceRequestAccess = () => {
     serviceRequestFeature.policy,
     activeOrganizationRole.value as PortalOrganizationRole | null,
     action,
-    activeOrganizationType.value ?? 'OWNER'
+    activeOrganizationType.value ?? 'PROVIDER'
   )
 
   return { can }

@@ -14,5 +14,5 @@ operationId: 'serviceRequestsAdminGet',
 export default defineEventHandler(async (event) => {
   const scope = await requireServiceRequestScope(event, 'manage')
   const filters = filterServiceRequestSchema.parse(getQuery(event))
-  return listServiceRequests(scope.ownerOrganizationId, filters)
+  return listServiceRequests(scope.providerOrganizationId, filters)
 })

@@ -57,8 +57,8 @@ test('query validation normalizes both new and legacy pagination', () => {
 })
 
 test('service-request policy keeps management out of the member role', () => {
-  assert.equal(serviceRequestFeature.policy.OWNER.owner.includes('manage'), true)
-  assert.equal(serviceRequestFeature.policy.OWNER.admin.includes('manage'), true)
+  assert.equal(serviceRequestFeature.policy.PROVIDER.owner.includes('manage'), true)
+  assert.equal(serviceRequestFeature.policy.PROVIDER.admin.includes('manage'), true)
   assert.equal(serviceRequestFeature.policy.CLIENT.member.includes('manage'), false)
 })
 

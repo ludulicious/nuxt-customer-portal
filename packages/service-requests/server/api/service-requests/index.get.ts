@@ -14,5 +14,5 @@ operationId: 'serviceRequestsGet',
 export default defineEventHandler(async (event) => {
   const scope = await requireServiceRequestScope(event, 'list')
   const filters = filterServiceRequestSchema.parse(getQuery(event))
-  return listServiceRequests(scope.ownerOrganizationId, filters, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
+  return listServiceRequests(scope.providerOrganizationId, filters, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
 })

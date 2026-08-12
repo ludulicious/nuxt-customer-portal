@@ -1,6 +1,6 @@
-export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin' | 'ownerAuthenticated' | 'ownerAdmin' | 'clientAuthenticated' | 'clientAdmin'
+export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin' | 'providerAuthenticated' | 'providerAdmin' | 'clientAuthenticated' | 'clientAdmin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
-export type PortalOrganizationType = 'OWNER' | 'CLIENT'
+export type PortalOrganizationType = 'PROVIDER' | 'CLIENT'
 
 export interface PortalBadge {
   label: string | number
@@ -61,7 +61,7 @@ export interface PortalRolePolicy<Action extends string = string> {
 }
 
 export type PortalFeaturePolicy<Action extends string = string> = PortalRolePolicy<Action> | {
-  OWNER: PortalRolePolicy<Action>
+  PROVIDER: PortalRolePolicy<Action>
   CLIENT: PortalRolePolicy<Action>
 }
 

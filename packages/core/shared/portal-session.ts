@@ -11,7 +11,7 @@ export interface PortalSession {
   activeOrganizationId?: string | null
 }
 
-export type PortalOrganizationType = 'OWNER' | 'CLIENT'
+export type PortalOrganizationType = 'PROVIDER' | 'CLIENT'
 
 export const getActiveOrganizationId = (session: PortalSession): string | null =>
   session.session?.activeOrganizationId ?? session.activeOrganizationId ?? null

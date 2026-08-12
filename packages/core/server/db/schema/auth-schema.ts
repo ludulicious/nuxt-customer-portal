@@ -94,8 +94,8 @@ export const organization = pgTable("organization", {
   organizationType: text("organization_type").notNull(),
 }, (table) => [
   index("organization_slug_idx").on(table.slug),
-  check("organization_type_check", sql`${table.organizationType} IN ('OWNER', 'CLIENT')`),
-  uniqueIndex("organization_single_owner_uidx").on(table.organizationType).where(sql`${table.organizationType} = 'OWNER'`)
+  check("organization_type_check", sql`${table.organizationType} IN ('PROVIDER', 'CLIENT')`),
+  uniqueIndex("organization_single_provider_uidx").on(table.organizationType).where(sql`${table.organizationType} = 'PROVIDER'`)
 ]);
 
 export const member = pgTable("member", {

@@ -19,7 +19,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       labelKey: 'features.serviceRequests.navigation.manageRequests',
       icon: 'i-lucide-list-checks',
       to: '/admin/requests',
-      audiences: ['ownerAdmin'],
+      audiences: ['providerAdmin'],
       location: 'admin',
       order: 120
     }
@@ -35,7 +35,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
     menuItems: [
       { id: 'requests', labelKey: 'features.serviceRequests.navigation.myRequests', icon: 'i-lucide-inbox', to: '/requests', audiences: ['authenticated'] },
       { id: 'new-request', labelKey: 'features.serviceRequests.navigation.newRequest', icon: 'i-lucide-plus', to: '/requests/new', audiences: ['authenticated'] },
-      { id: 'manage-requests', labelKey: 'features.serviceRequests.navigation.manageRequests', icon: 'i-lucide-list-checks', to: '/admin/requests', audiences: ['ownerAdmin'] }
+      { id: 'manage-requests', labelKey: 'features.serviceRequests.navigation.manageRequests', icon: 'i-lucide-list-checks', to: '/admin/requests', audiences: ['providerAdmin'] }
     ]
   }],
   dashboardWidgets: [
@@ -56,7 +56,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
   ],
   clientIntegration: { moduleId: 'service-requests', labelKey: 'features.serviceRequests.navigation.myRequests' },
   policy: {
-    OWNER: { owner: serviceRequestActions, admin: serviceRequestActions, member: ['create', 'read', 'update', 'list'] },
+    PROVIDER: { owner: serviceRequestActions, admin: serviceRequestActions, member: ['create', 'read', 'update', 'list'] },
     CLIENT: { owner: ['create', 'read', 'update', 'list'], admin: ['create', 'read', 'update', 'list'], member: ['create', 'read', 'update', 'list'] }
   }
 }

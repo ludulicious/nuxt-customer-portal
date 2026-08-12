@@ -26,16 +26,16 @@ export const isPortalActionAllowed = <Action extends string>(
   policy: PortalFeaturePolicy<Action>,
   role: PortalOrganizationRole | null,
   action: Action,
-  organizationType: PortalOrganizationType = 'OWNER'
+  organizationType: PortalOrganizationType = 'PROVIDER'
 ): boolean => {
-  const contextual = ('OWNER' in policy ? policy[organizationType] : policy) as PortalRolePolicy<Action>
+  const contextual = ('PROVIDER' in policy ? policy[organizationType] : policy) as PortalRolePolicy<Action>
   return Boolean(role && contextual[role].includes(action))
 }
 
 export const canManageOrganizationEmailCredential = (
   role: PortalOrganizationRole | null,
-  organizationType: PortalOrganizationType = 'OWNER'
-): boolean => organizationType === 'OWNER' && role === 'owner'
+  organizationType: PortalOrganizationType = 'PROVIDER'
+): boolean => organizationType === 'PROVIDER' && role === 'owner'
 
 export const canViewOrganizationDirectory = (
   role: PortalOrganizationRole | string | null | undefined

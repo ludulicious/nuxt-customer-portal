@@ -8,10 +8,10 @@ This is the next implementation milestone. Complete this refactor before buildin
 
 Refactor the current Customer Portal so that:
 
-- every installation contains exactly one `OWNER` organization;
+- every installation contains exactly one `PROVIDER` organization;
 - every other organization has the exclusive type `CLIENT`;
 - organizations remain Better Auth organizations with ordinary memberships and active-organization switching;
-- a user may belong to the OWNER and one or more CLIENT organizations;
+- a user may belong to the PROVIDER and one or more CLIENT organizations;
 - a new `@nuxt-customer-portal/clients` package owns the shared client domain;
 - Timesheets, Service Requests, and future modules reuse the same clients;
 - the global system-administrator bypass and `@nuxt-customer-portal/administration` package are removed.
@@ -20,7 +20,7 @@ Refactor the current Customer Portal so that:
 
 `organizationType` is a global, exclusive classification:
 
-- `OWNER`: the single organization that owns and operates the portal workspace;
+- `PROVIDER`: the single organization that owns and operates the portal workspace;
 - `CLIENT`: a customer company that cannot operate an owner workspace.
 
 There is no owner-client relationship table because a Customer Portal installation has exactly one owner. A CLIENT organization may be enabled for several feature modules through generic client-module activation records.
@@ -32,38 +32,38 @@ Users may hold memberships in organizations of both types. The active Better Aut
 - Extend Better Auth's organization schema with a required custom database field:
 
   ```ts
-  organizationType: 'OWNER' | 'CLIENT'
+  organizationType: 'PROVIDER' | 'CLIENT'
   ```
 
 - Add a database check constraint for the two allowed values.
-- Add a partial unique index that permits at most one `OWNER` organization.
+- Add a partial unique index that permits at most one `PROVIDER` organization.
 - Extend Better Auth members with organization-specific contact fields such as phone and job title. Name and email remain user fields.
 - Disable ordinary user-created organizations.
 - Remove automatic organization creation after ordinary signup.
-- Add an idempotent CLI/seed operation that creates exactly one OWNER organization and its first owner user.
+- Add an idempotent CLI/seed operation that creates exactly one PROVIDER organization and its first owner user.
 - Remove global `user.role = admin`, its authorization bypass, and tenant-wide system-administrator behavior.
 - Include `organizationType` and the active membership role in the server session projection.
-- Replace role-only feature policies with organization-type-aware policies. Policies must distinguish OWNER actions from CLIENT actions even when both memberships use role names such as `owner`, `admin`, and `member`.
-- Provide server guards for OWNER context, CLIENT context, client-module activation, and client selection.
-- Keep the organization switcher because a user may have both OWNER and CLIENT memberships.
+- Replace role-only feature policies with organization-type-aware policies. Policies must distinguish PROVIDER actions from CLIENT actions even when both memberships use role names such as `owner`, `admin`, and `member`.
+- Provide server guards for PROVIDER context, CLIENT context, client-module activation, and client selection.
+- Keep the organization switcher because a user may have both PROVIDER and CLIENT memberships.
 
 ## Organizations package
 
-Keep `@nuxt-customer-portal/organizations` and limit it to OWNER responsibilities:
+Keep `@nuxt-customer-portal/organizations` and limit it to PROVIDER responsibilities:
 
-- OWNER organization profile and settings;
-- OWNER members and invitations;
+- PROVIDER organization profile and settings;
+- PROVIDER members and invitations;
 - user profile and security settings;
-- OWNER email-provider settings;
+- PROVIDER email-provider settings;
 - organization switching and active-organization presentation.
 
-OWNER-only APIs and pages must reject active CLIENT organizations. Creation and management of CLIENT organizations move to the Clients package.
+PROVIDER-only APIs and pages must reject active CLIENT organizations. Creation and management of CLIENT organizations move to the Clients package.
 
 ## Remove Administration
 
 - Retire `@nuxt-customer-portal/administration`.
 - Remove it from the preset, package verification, demos, documentation, and navigation.
-- Move any remaining OWNER team/settings behavior into Organizations.
+- Move any remaining PROVIDER team/settings behavior into Organizations.
 - Move CLIENT organization, profile, member, and invitation management into Clients.
 - Do not retain a global organization/user administration bypass.
 
@@ -77,7 +77,7 @@ Add `@nuxt-customer-portal/clients` to the default preset. It owns everything sp
 - contact/member administration;
 - module activations;
 - reusable client selectors and server-side validation;
-- OWNER-side Clients navigation and detail pages;
+- PROVIDER-side Clients navigation and detail pages;
 - CLIENT-side profile and member settings.
 
 ### Database schema
@@ -104,14 +104,14 @@ Only `organizationType` belongs on the Better Auth organization row. Client-spec
 
 ### Creation and membership
 
-- OWNER `owner` and `admin` roles may create CLIENT organizations.
+- PROVIDER `owner` and `admin` roles may create CLIENT organizations.
 - Client creation requires company data but does not require an initial member.
-- Creating a client must not leave the creating OWNER user as a member of the new CLIENT organization.
-- OWNER owner/admin may invite and manage members of any CLIENT organization.
+- Creating a client must not leave the creating PROVIDER user as a member of the new CLIENT organization.
+- PROVIDER owner/admin may invite and manage members of any CLIENT organization.
 - CLIENT owner/admin may manage members of their own active CLIENT organization.
 - Every contact is a Better Auth user/member; remove the separate nullable-contact concept.
 - Store organization-specific phone and job-title data on the member extension.
-- OWNER owner/admin and CLIENT owner/admin may edit the client business profile. Record the editing actor for auditability.
+- PROVIDER owner/admin and CLIENT owner/admin may edit the client business profile. Record the editing actor for auditability.
 
 ### Archival and deletion
 
@@ -123,7 +123,7 @@ Only `organizationType` belongs on the Better Auth organization row. Client-spec
 
 ### Navigation and UI
 
-Expose a top-level Clients module only when the active organization is `OWNER` and the member role is `owner` or `admin`.
+Expose a top-level Clients module only when the active organization is `PROVIDER` and the member role is `owner` or `admin`.
 
 Provide:
 
@@ -135,7 +135,7 @@ Provide:
 - modules section;
 - extension surfaces for module-specific client configuration.
 
-CLIENT members do not see the OWNER Clients module. CLIENT owner/admin manages their own profile and members through CLIENT-scoped settings.
+CLIENT members do not see the PROVIDER Clients module. CLIENT owner/admin manages their own profile and members through CLIENT-scoped settings.
 
 ## Client-aware feature contract
 
@@ -163,7 +163,7 @@ Disabling a module for a client:
 - blocks new records for that client;
 - removes CLIENT-member access to the module;
 - preserves all historical feature records;
-- keeps historical data readable by authorized OWNER staff.
+- keeps historical data readable by authorized PROVIDER staff.
 
 Both navigation and server authorization must verify organization type, membership role, client state, and module activation.
 
@@ -190,38 +190,38 @@ Feature packages must not query Better Auth organization tables directly to redi
 - Preserve Timesheets-only settings such as review access and invoice-viewer access in the Timesheets schema.
 - Require a valid, active, Timesheets-enabled CLIENT organization for every project.
 - Require every time entry to resolve to the project's client; do not accept an unrelated client ID from the request.
-- Continue scoping OWNER-side Timesheets data to the single OWNER organization.
+- Continue scoping PROVIDER-side Timesheets data to the single PROVIDER organization.
 - Keep reviewers and invoice viewers as Timesheets-owned assignments referencing members of the selected CLIENT organization.
 - Move client recipient/company fields to `client_profile`.
-- Keep OWNER invoice sender configuration, banking data, and sender email templates outside the client profile.
+- Keep PROVIDER invoice sender configuration, banking data, and sender email templates outside the client profile.
 - Expose Timesheets client settings through a contribution on the generic client detail page.
 - Remove the Timesheets-specific Clients administration menu and endpoints.
-- When Timesheets is disabled for a client, reject new projects, time entries, reviews, and CLIENT-side invoice access while preserving OWNER-readable history.
+- When Timesheets is disabled for a client, reject new projects, time entries, reviews, and CLIENT-side invoice access while preserving PROVIDER-readable history.
 
 ## Service Requests refactor
 
 - Add Clients as a package and migration dependency.
-- Require every Service Request to reference both the OWNER organization and one active, Service Requests-enabled CLIENT organization.
-- In OWNER context, require the creator to select a client.
+- Require every Service Request to reference both the PROVIDER organization and one active, Service Requests-enabled CLIENT organization.
+- In PROVIDER context, require the creator to select a client.
 - In CLIENT context, derive the client from the active organization and reject request-body attempts to override it.
-- Allow OWNER members according to the Service Requests feature policy.
+- Allow PROVIDER members according to the Service Requests feature policy.
 - Allow CLIENT owner/admin to see all requests belonging to their client.
 - Allow ordinary CLIENT members to see only requests they created.
-- Add client filtering and identity to OWNER request administration, lists, details, and dashboard projections.
-- When Service Requests is disabled for a client, block new requests and CLIENT access while preserving OWNER-readable history.
+- Add client filtering and identity to PROVIDER request administration, lists, details, and dashboard projections.
+- When Service Requests is disabled for a client, block new requests and CLIENT access while preserving PROVIDER-readable history.
 
 ## One-time migration
 
 Add a dry-run-first migration command requiring:
 
 ```text
---owner <organization-id-or-slug>
+--provider <organization-id-or-slug>
 ```
 
 The migration must:
 
 1. Validate that the selected organization exists.
-2. Mark the selected organization `OWNER`.
+2. Mark the selected organization `PROVIDER`.
 3. Convert organizations linked as Timesheets clients of that owner to active `CLIENT` organizations.
 4. Convert every remaining organization to an archived CLIENT organization and report it.
 5. Exclude data owned by previous secondary Timesheets workspaces and report those exclusions.
@@ -239,7 +239,7 @@ The command must remain read-only unless an explicit apply option is supplied. R
 
 The migration report must list:
 
-- chosen OWNER;
+- chosen PROVIDER;
 - active converted clients;
 - archived unclassified organizations;
 - skipped contacts;
@@ -250,7 +250,7 @@ The migration report must list:
 
 ## Implementation order
 
-1. Core organization type, member fields, context-aware policies, and OWNER seed flow.
+1. Core organization type, member fields, context-aware policies, and PROVIDER seed flow.
 2. New Clients package, default-preset integration, APIs, and Clients UI.
 3. Organizations cleanup and Administration removal.
 4. Timesheets conversion to generic Clients.
@@ -262,13 +262,13 @@ The migration report must list:
 
 ## Acceptance tests
 
-- The database rejects invalid organization types and a second OWNER.
+- The database rejects invalid organization types and a second PROVIDER.
 - Ordinary signup cannot create another organization.
-- OWNER seed/bootstrap is idempotent.
-- CLIENT admins cannot access OWNER administration APIs or navigation.
-- Users with mixed OWNER and CLIENT memberships receive the correct UI and permissions after switching organizations.
-- Creating a client does not accidentally add the creating OWNER user as a CLIENT member.
-- OWNER admins and CLIENT admins can manage only the intended client profiles and memberships.
+- PROVIDER seed/bootstrap is idempotent.
+- CLIENT admins cannot access PROVIDER administration APIs or navigation.
+- Users with mixed PROVIDER and CLIENT memberships receive the correct UI and permissions after switching organizations.
+- Creating a client does not accidentally add the creating PROVIDER user as a CLIENT member.
+- PROVIDER admins and CLIENT admins can manage only the intended client profiles and memberships.
 - Configured default modules and manual activation behave consistently.
 - Module disablement blocks new work and CLIENT access without deleting history.
 - Archived clients disappear from selectors but retain historical references.
@@ -282,8 +282,8 @@ The migration report must list:
 ## Assumptions
 
 - PostgreSQL remains the database provider.
-- Exactly one OWNER exists per Customer Portal database.
-- OWNER and CLIENT are mutually exclusive organization types.
+- Exactly one PROVIDER exists per Customer Portal database.
+- PROVIDER and CLIENT are mutually exclusive organization types.
 - CLIENT organizations may never operate their own owner workspace in the same database.
 - A CLIENT may be active in multiple feature modules.
 - Timesheets and Service Requests always require a client.

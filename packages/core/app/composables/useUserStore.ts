@@ -13,7 +13,7 @@ interface PermissionsResponse {
   role: string
   organizationRole: string | null
   activeOrganization: Organization | null
-  organizationType: 'OWNER' | 'CLIENT' | null
+  organizationType: 'PROVIDER' | 'CLIENT' | null
 }
 
 export const useUserStore = defineStore('user', () => {

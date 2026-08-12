@@ -24,7 +24,7 @@ export interface Organization {
   logo?: string
   createdAt: Date
   metadata?: string
-  organizationType: 'OWNER' | 'CLIENT'
+  organizationType: 'PROVIDER' | 'CLIENT'
 }
 
 export interface Member {

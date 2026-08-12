@@ -5,7 +5,7 @@ import { canMemberEnterTime, getBootstrap, hasInternalApprovalAssignment, listAp
 import type { TimesheetsDashboardDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto> => {
-  const { session, organizationId, role } = await requireActiveOrganizationRole(event)
+  const { session, organizationId, organizationType, role } = await requireActiveOrganizationRole(event)
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
   const [settingsRow, clientWorkspaces, memberCanEnterTime] = await Promise.all([
     db.select({ workspaceEnabled: workspaceSettings.workspaceEnabled, invoicingEnabled: workspaceSettings.invoicingEnabled, internalApprovalsEnabled: workspaceSettings.internalApprovalsEnabled, currency: workspaceSettings.currency })
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
   const canInvoice = isAdmin && (settings?.invoicingEnabled ?? false)
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
   const canViewClientInvoices = clientWorkspaces.some(item => item.invoiceAccessEnabled && item.canViewInvoices)
-  const canViewSupplierTime = clientWorkspaces.some(item => item.accessMode === 'VIEW')
+  const canViewSupplierTime = organizationType === 'CLIENT' && clientWorkspaces.some(item => item.accessMode === 'VIEW')
   const hasInternalApprovals = workspaceEnabled && (settings?.internalApprovalsEnabled ?? true)
     && await hasInternalApprovalAssignment(organizationId, session.user.id)
 

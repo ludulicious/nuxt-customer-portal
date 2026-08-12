@@ -6,16 +6,16 @@ const hasAudience = (
   isAuthenticated: boolean,
   isAdmin: boolean,
   organizationRole: string | null,
-  organizationType: 'OWNER' | 'CLIENT' | null
+  organizationType: 'PROVIDER' | 'CLIENT' | null
 ) => audiences.some((audience) => {
   if (audience === 'public') return true
   if (audience === 'authenticated') return isAuthenticated
   if (audience === 'admin') return isAdmin
-  if (audience === 'ownerAuthenticated') return organizationType === 'OWNER' && Boolean(organizationRole)
-  if (audience === 'ownerAdmin') return organizationType === 'OWNER' && (organizationRole === 'owner' || organizationRole === 'admin')
+  if (audience === 'providerAuthenticated') return organizationType === 'PROVIDER' && Boolean(organizationRole)
+  if (audience === 'providerAdmin') return organizationType === 'PROVIDER' && (organizationRole === 'owner' || organizationRole === 'admin')
   if (audience === 'clientAuthenticated') return organizationType === 'CLIENT' && Boolean(organizationRole)
   if (audience === 'clientAdmin') return organizationType === 'CLIENT' && (organizationRole === 'owner' || organizationRole === 'admin')
-  return organizationType === 'OWNER' && (organizationRole === 'owner' || organizationRole === 'admin')
+  return organizationType === 'PROVIDER' && (organizationRole === 'owner' || organizationRole === 'admin')
 })
 
 export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {

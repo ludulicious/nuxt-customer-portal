@@ -8,7 +8,7 @@ import {
   assignPortalSystemAdmin,
   inspectPortalMigrations,
   migrateGenericClients,
-  seedPortalOwner,
+  seedPortalProvider,
   migratePortalDatabase,
   resolvePortalManifests
 } from '../src/runtime.mjs'
@@ -39,17 +39,17 @@ try {
   } else if (args[0] === 'db' && args[1] === 'adopt-legacy') {
     print(await adoptLegacyMigrations(config, { cwd, apply: args.includes('--apply') }))
   } else if (args[0] === 'clients' && args[1] === 'migrate') {
-    const owner = args[args.indexOf('--owner') + 1]
-    if (!owner || owner.startsWith('--')) throw new Error('clients migrate requires --owner <organization-id-or-slug>')
+    const provider = args[args.indexOf('--provider') + 1]
+    if (!provider || provider.startsWith('--')) throw new Error('clients migrate requires --provider <organization-id-or-slug>')
     print(await migrateGenericClients(config, {
       cwd,
-      owner,
+      provider,
       apply: args.includes('--apply'),
       backupConfirmed: args.includes('--backup-confirmed')
     }))
-  } else if (args[0] === 'owner' && args[1] === 'seed') {
+  } else if (args[0] === 'provider' && args[1] === 'seed') {
     const value = flag => args[args.indexOf(flag) + 1]
-    print(await seedPortalOwner({
+    print(await seedPortalProvider({
       organizationName: value('--organization-name'), organizationSlug: value('--organization-slug'),
       userName: value('--user-name'), userEmail: value('--user-email'), userPassword: value('--user-password')
     }))
@@ -75,8 +75,8 @@ try {
   nuxt-customer-portal db generate --provider <id>
   nuxt-customer-portal db adopt-legacy [--apply]
   nuxt-customer-portal admin grant --email <existing-user-email>
-  nuxt-customer-portal owner seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
-  nuxt-customer-portal clients migrate --owner <id-or-slug> [--apply --backup-confirmed]`)
+  nuxt-customer-portal provider seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
+  nuxt-customer-portal clients migrate --provider <id-or-slug> [--apply --backup-confirmed]`)
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)

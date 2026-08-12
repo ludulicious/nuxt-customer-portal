@@ -11,7 +11,7 @@ Build `apps/saas` as a private production host that provides both:
 - the central signup, tenant, domain, subscription, and lifecycle control plane;
 - the Customer Portal runtime for tenant subdomains and verified custom domains.
 
-All tenants run the same application release, but each tenant receives a separate PostgreSQL database. Each tenant database contains exactly one `OWNER` organization and that owner's `CLIENT` organizations.
+All tenants run the same application release, but each tenant receives a separate PostgreSQL database. Each tenant database contains exactly one `PROVIDER` organization and that provider's `CLIENT` organizations.
 
 ## Application architecture
 
@@ -62,12 +62,12 @@ Do not store tenant users, clients, timesheets, requests, invoices, or other ten
 3. Reserve `slug.platform.tld` atomically.
 4. Provision the tenant PostgreSQL database through a provider adapter.
 5. Run all configured Customer Portal package migrations.
-6. Seed exactly one `OWNER` organization and the first Better Auth owner user.
+6. Seed exactly one `PROVIDER` organization and the first Better Auth owner user.
 7. Mark the tenant active and register its standard subdomain.
 8. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
 9. Exchange the handoff code for a tenant-local session.
 
-Provisioning must be idempotent and resumable after partial failures. Retrying a failed step must not create a second database, owner organization, user, or domain binding.
+Provisioning must be idempotent and resumable after partial failures. Retrying a failed step must not create a second database, provider organization, user, or domain binding.
 
 ## Provider adapters
 
@@ -111,7 +111,7 @@ Initially support email/password and email OTP. Dynamic custom domains make prov
 
 ## Tenant administration and lifecycle
 
-- Only members with `organizationType = OWNER` and Better Auth role `owner` may manage custom domains, subscription settings, and tenant termination.
+- Only members with `organizationType = PROVIDER` and Better Auth role `owner` may manage custom domains, subscription settings, and tenant termination.
 - These sensitive actions call a narrow, server-only control-plane service. Tenant feature code does not receive general control-plane database access.
 - Authenticate platform operators through a host-provided authorization adapter.
 - Platform operators may inspect provisioning, versions, domains, and health, but do not automatically receive access to tenant business data.
@@ -149,8 +149,7 @@ These contracts should remain provider-neutral. Concrete SaaS provisioning, doma
 - PostgreSQL remains the only database provider.
 - The first shared deployment targets approximately 10-100 tenants.
 - One runtime release serves all shared tenants.
-- Every tenant database contains exactly one `OWNER` organization.
+- Every tenant database contains exactly one `PROVIDER` organization.
 - Clients and all business data remain tenant-local.
 - Cross-tenant reporting and central tenant-data access are out of scope.
 - Dedicated deployment per tenant is not part of the first SaaS implementation.
-
