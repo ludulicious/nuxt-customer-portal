@@ -13,6 +13,7 @@ export default defineContentConfig({
         exclude: ['index.md']
       },
       schema: z.object({
+        rawbody: z.string(),
         githubPath: z.string().optional(),
         links: z.array(z.object({
           label: z.string(),

@@ -19,7 +19,7 @@ test('offers actionable, source-pinned documentation feedback', async ({ page })
 
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
     'href',
-    `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/content/2.architecture/2.layers.md`
+    `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/apps/docs/content/2.architecture/2.layers.md`
   )
   await expect(page.getByRole('link', { name: documentationDefaults.productSourceCommit.slice(0, 7) })).toHaveAttribute(
     'href',
@@ -28,6 +28,20 @@ test('offers actionable, source-pinned documentation feedback', async ({ page })
 
   const accessibility = await new AxeBuilder({ page }).analyze()
   expect(accessibility.violations).toEqual([])
+})
+
+test('serves the repository-authored Markdown source', async ({ request }) => {
+  const response = await request.get('/raw/modules/overview.md')
+  const source = await response.text()
+  const llmsIndex = await request.get('/llms.txt')
+
+  expect(response.ok()).toBe(true)
+  expect(response.headers()['content-type']).toContain('text/markdown')
+  expect(source).toContain('githubPath: apps/docs/content/3.modules/1.overview.md')
+  expect(source).toContain('| Package | Responsibility |')
+  expect(source).not.toContain('<table>')
+  expect(llmsIndex.ok()).toBe(true)
+  expect(await llmsIndex.text()).toContain('https://nuxt-customer-portal.com/raw/modules/overview.md')
 })
 
 test('feature-layer contributor journey reaches an honest distribution contract', async ({ page }) => {
@@ -48,7 +62,7 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   await expect(page.getByRole('heading', { level: 2, name: 'Package contract' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
     'href',
-    `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/content/7.contributing/3.distribute-a-layer.md`
+    `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/apps/docs/content/7.contributing/3.distribute-a-layer.md`
   )
 
   const accessibility = await new AxeBuilder({ page }).analyze()

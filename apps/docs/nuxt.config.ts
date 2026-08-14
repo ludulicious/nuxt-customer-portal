@@ -108,6 +108,7 @@ export default defineNuxtConfig({
     domain: 'https://nuxt-customer-portal.com',
     title: 'Customer Portal documentation',
     description: `Build, extend, and contribute to the publicly developed Customer Portal for Nuxt. Verified against source revision ${documentationDefaults.productSourceCommit}.`,
+    contentRawMarkdown: false,
     full: {
       title: 'Customer Portal — full documentation',
       description: `Architecture, setup, operations, feature-layer development, modules, and contribution guides for Customer Portal, verified against source revision ${documentationDefaults.productSourceCommit}.`

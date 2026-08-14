@@ -6,6 +6,7 @@ import { sitemapRoutes, renderSitemap } from '../../server/utils/sitemap'
 import { documentationDefaults } from '../../shared/documentation'
 
 const root = resolve(import.meta.dirname, '../..')
+const repositoryRoot = resolve(root, '../..')
 const contentRoot = join(root, 'content')
 const documentedSections = [
   '1.getting-started',
@@ -62,13 +63,13 @@ describe('documentation content', () => {
   it('has contributor-facing metadata tied to a real source file', () => {
     const failures = activeFiles.flatMap((file) => {
       const source = readFileSync(file, 'utf8')
-      const sourcePath = relative(root, file).split(sep).join('/')
+      const sourcePath = relative(repositoryRoot, file).split(sep).join('/')
       const problems: string[] = []
 
       if (!frontmatterValue(source, 'title')) problems.push('missing title')
       if (!frontmatterValue(source, 'description')) problems.push('missing description')
       if (frontmatterValue(source, 'githubPath') !== sourcePath) problems.push('githubPath does not match source')
-      if (!existsSync(join(root, sourcePath))) problems.push('githubPath does not exist')
+      if (!existsSync(join(repositoryRoot, sourcePath))) problems.push('githubPath does not exist')
 
       return problems.map(problem => `${sourcePath}: ${problem}`)
     })
@@ -194,7 +195,6 @@ describe('documentation content', () => {
     const sourceMap = readFileSync(join(contentRoot, '4.reference/7.source-map.md'), 'utf8')
     const sourcePrefix = `${documentationDefaults.productRepositoryUrl}/blob/`
     const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/nuxt-customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)]
-    const monorepoRoot = resolve(root, '../..')
 
     expect(sourceLinks.length).toBeGreaterThanOrEqual(30)
     sourceLinks.forEach(([, url, revision, path]) => {
@@ -202,7 +202,7 @@ describe('documentation content', () => {
       expect(revision).toBe(documentationDefaults.productSourceCommit)
       expect(path).not.toContain('..')
       expect(path).not.toContain('#')
-      expect(existsSync(join(monorepoRoot, path)), `${path} does not exist`).toBe(true)
+      expect(existsSync(join(repositoryRoot, path)), `${path} does not exist`).toBe(true)
     })
     expect(new Set(sourceLinks.map(match => match[3])).size).toBe(sourceLinks.length)
     expect(sourceMap).toContain('[glossary](/reference/glossary)')
