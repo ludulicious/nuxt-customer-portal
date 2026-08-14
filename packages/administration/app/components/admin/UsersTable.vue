@@ -30,6 +30,7 @@ const showImpersonateModal = ref(false)
 const showSessionsModal = ref(false)
 const showPasswordModal = ref(false)
 const showUpdateModal = ref(false)
+const showDeleteModal = ref(false)
 const showEditRoleModal = ref(false)
 
 const roles = computed<SelectItem[]>(() => [
@@ -87,7 +88,7 @@ const updateUserRole = async (userId: string) => {
   }
 }
 
-type UserModal = 'ban' | 'unban' | 'impersonate' | 'sessions' | 'password' | 'update'
+type UserModal = 'ban' | 'unban' | 'impersonate' | 'sessions' | 'password' | 'update' | 'delete'
 
 const selectUser = (user: AdminUserResponse, modal: UserModal) => {
   selectedUser.value = user
@@ -97,6 +98,7 @@ const selectUser = (user: AdminUserResponse, modal: UserModal) => {
   if (modal === 'sessions') showSessionsModal.value = true
   if (modal === 'password') showPasswordModal.value = true
   if (modal === 'update') showUpdateModal.value = true
+  if (modal === 'delete') showDeleteModal.value = true
 }
 
 const openBanModal = (user: AdminUserResponse) => {
@@ -156,6 +158,7 @@ const openBanModal = (user: AdminUserResponse) => {
           { label: t('admin.user.actions.sessions'), icon: 'i-lucide-monitor', onSelect: () => selectUser(row.original, 'sessions') },
           { label: t('admin.user.actions.changePassword'), icon: 'i-lucide-key', onSelect: () => selectUser(row.original, 'password') },
           { label: t('admin.user.actions.update'), icon: 'i-lucide-edit', onSelect: () => selectUser(row.original, 'update') },
+          ...(row.original.role !== 'admin' && currentUser?.id !== row.original.id ? [{ label: t('admin.user.actions.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => selectUser(row.original, 'delete') }] : []),
           ...(removableUserIds?.includes(row.original.id) ? [{ label: t('admin.organization.detail.members.remove'), icon: 'i-lucide-user-minus', color: 'error' as const, onSelect: () => emit('remove', row.original) }] : [])
         ]]" :content="{ align: 'end' }">
           <UButton variant="ghost" size="sm" icon="i-lucide-more-vertical" />
@@ -169,6 +172,7 @@ const openBanModal = (user: AdminUserResponse) => {
     <AdminSessionsModal v-if="showSessionsModal" v-model:open="showSessionsModal" :user="selectedUser" />
     <AdminPasswordModal v-if="showPasswordModal" v-model:open="showPasswordModal" :user="selectedUser" />
     <AdminUpdateUserModal v-if="showUpdateModal" v-model:open="showUpdateModal" :user="selectedUser" @success="emit('refresh')" />
+    <AdminDeleteUserModal v-if="showDeleteModal" v-model:open="showDeleteModal" :user="selectedUser" @success="emit('refresh')" />
 
     <UModal v-model:open="showEditRoleModal" :title="t('admin.user.list.role')" :ui="{ footer: 'justify-end' }">
       <template #body>

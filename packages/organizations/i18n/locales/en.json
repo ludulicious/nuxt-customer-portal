@@ -3,7 +3,6 @@
     "title": "Settings",
     "profile": "Profile",
     "organization": "Organization",
-    "notifications": "Notifications",
     "security": "Security",
     "documentation": "Documentation"
   },
@@ -49,6 +48,12 @@
     "description": "Manage your organizations and switch between them"
   },
   "organization": {
+    "details": {
+      "title": "Organization details",
+      "name": "Name",
+      "slug": "Slug",
+      "created": "Created"
+    },
     "emailProvider": {
       "title": "Email provider",
       "description": "Configure this organization's Resend account for invoices, reminders, and other transactional email.",
@@ -119,6 +124,18 @@
       "email": "Email",
       "name": "Name",
       "role": "Role",
+      "remove": "Remove member",
+      "removeSuccess": "Member removed successfully",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "confirmRemove": {
+        "title": "Remove member?",
+        "message": "Are you sure you want to remove {name} from this organization?",
+        "confirm": "Remove"
+      },
       "invitations": {
         "title": "Invitations",
         "empty": "No pending invitations",
@@ -156,7 +173,8 @@
         "loadFailed": "Failed to load organization data",
         "sendInvitationFailed": "Failed to send invitation",
         "resendFailed": "Failed to resend invitation",
-        "cancelFailed": "Failed to cancel invitation"
+        "cancelFailed": "Failed to cancel invitation",
+        "removeFailed": "Failed to remove member"
       },
       "confirm": {
         "cancelInvitation": "Are you sure you want to cancel this invitation?"

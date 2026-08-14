@@ -76,10 +76,11 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
         <UFormField name="role" :label="t('organization.members.invitations.roleLabel')" required>
           <USelect
             v-model="form.role"
-            :options="[
+            :items="[
               { label: t('organization.members.invitations.roleMember'), value: 'member' },
               { label: t('organization.members.invitations.roleAdmin'), value: 'admin' }
             ]"
+            value-key="value"
             size="lg"
             class="w-full"
           />

@@ -8,6 +8,8 @@ import type { User } from './database'
  */
 export type UserRole = 'user' | 'admin'
 
+export type OrganizationType = 'PROVIDER' | 'CLIENT'
+
 /**
  * Member role type - possible values for organization member roles
  */

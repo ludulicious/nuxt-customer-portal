@@ -9,14 +9,16 @@ const packageDirectories = [
   'ui',
   'authentication',
   'organizations',
-  'administration',
+  'clients',
   'service-requests',
   'timesheets',
+  'invoices',
+  'invoice-timesheets',
   'preset',
   'kit'
 ]
 const layerPackages = new Set(packageDirectories.filter(name => name !== 'kit'))
-const migrationPackages = new Set(['core', 'service-requests', 'timesheets'])
+const migrationPackages = new Set(['core', 'service-requests', 'timesheets', 'invoices', 'invoice-timesheets'])
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'nuxt-customer-portal-pack-'))
 const tarballDirectory = join(temporaryRoot, 'tarballs')
 mkdirSync(tarballDirectory)
@@ -149,7 +151,7 @@ try {
     if (manager === 'pnpm') {
       writeFileSync(join(fixture, 'pnpm-workspace.yaml'), "packages:\n  - '.'\nminimumReleaseAge: 1440\n")
     }
-    writeFileSync(join(fixture, 'portal.config.mjs'), `import { definePortalConfig } from '@nuxt-customer-portal/kit'\nexport default definePortalConfig({ layers: ['@nuxt-customer-portal/preset', '@nuxt-customer-portal/service-requests', '@nuxt-customer-portal/timesheets'] })\n`)
+    writeFileSync(join(fixture, 'portal.config.mjs'), `import { definePortalConfig } from '@nuxt-customer-portal/kit'\nexport default definePortalConfig({ layers: ['@nuxt-customer-portal/preset', '@nuxt-customer-portal/service-requests', '@nuxt-customer-portal/timesheets', '@nuxt-customer-portal/invoices', '@nuxt-customer-portal/invoice-timesheets'] })\n`)
     writeFileSync(join(fixture, 'nuxt.config.ts'), `import portal from './portal.config.mjs'\nexport default defineNuxtConfig({ extends: portal.nuxtLayers })\n`)
     writeFileSync(join(fixture, 'tsconfig.json'), JSON.stringify({ extends: './.nuxt/tsconfig.json' }, null, 2))
     writeFileSync(join(fixture, 'app', 'app.vue'), '<template><NuxtPage /></template>\n')

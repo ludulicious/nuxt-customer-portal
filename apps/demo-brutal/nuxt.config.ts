@@ -17,5 +17,5 @@ export default defineNuxtConfig({
     locales: [{ code: 'en', iso: 'en-US', name: 'English', file: 'en.json' }, { code: 'nl', iso: 'nl-NL', name: 'Nederlands', file: 'nl.json' }],
     defaultLocale: 'en', strategy: 'no_prefix', langDir: 'locales'
   },
-  runtimeConfig: { portalEmail: { brandName: 'Brutal Works' }, public: { portalAuth: { termsUrl: '/' } } }
+  runtimeConfig: { portalEmail: { brandName: 'Brutal Works' }, public: { portalAuth: { termsUrl: '/' }, clients: portal.clients } }
 })

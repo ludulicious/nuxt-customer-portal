@@ -27,12 +27,17 @@ export const usePortalFeatures = () => {
   const contributionsFor = (surface: string) => computed(() => surfaces.value
     .filter(contribution => contribution.surface === surface))
 
+  const clientIntegrations = computed(() => features.value
+    .flatMap(feature => feature.clientIntegration ? [feature.clientIntegration] : [])
+    .sort((left, right) => left.moduleId.localeCompare(right.moduleId)))
+
   return {
     features: readonly(features),
     navigation,
     modules,
     dashboardWidgets,
     surfaces,
+    clientIntegrations,
     contributionsFor,
     registerFeature
   }

@@ -145,7 +145,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
             </UFormField>
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            {{ t('admin.user.ban.never') }} - Leave all fields empty
+            {{ t('admin.user.ban.neverHint') }}
           </p>
         </div>
 

@@ -4,7 +4,6 @@
     "title": "Instellingen",
     "profile": "Profiel",
     "organization": "Organisatie",
-    "notifications": "Notificaties",
     "security": "Beveiliging"
   },
   "security": {
@@ -49,6 +48,12 @@
     "description": "Beheer je organisaties en wissel tussen hen"
   },
   "organization": {
+    "details": {
+      "title": "Organisatiegegevens",
+      "name": "Naam",
+      "slug": "Slug",
+      "created": "Aangemaakt"
+    },
     "emailProvider": {
       "title": "E-mailprovider",
       "description": "Configureer het Resend-account van deze organisatie voor facturen, herinneringen en andere transactionele e-mail.",
@@ -119,6 +124,18 @@
       "email": "E-mail",
       "name": "Naam",
       "role": "Rol",
+      "remove": "Lid verwijderen",
+      "removeSuccess": "Lid succesvol verwijderd",
+      "roles": {
+        "owner": "Eigenaar",
+        "admin": "Beheerder",
+        "member": "Lid"
+      },
+      "confirmRemove": {
+        "title": "Lid verwijderen?",
+        "message": "Weet je zeker dat je {name} uit deze organisatie wilt verwijderen?",
+        "confirm": "Verwijderen"
+      },
       "invitations": {
         "title": "Uitnodigingen",
         "empty": "Geen openstaande uitnodigingen",
@@ -156,7 +173,8 @@
         "loadFailed": "Organisatiegegevens laden mislukt",
         "sendInvitationFailed": "Uitnodiging verzenden mislukt",
         "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
-        "cancelFailed": "Uitnodiging annuleren mislukt"
+        "cancelFailed": "Uitnodiging annuleren mislukt",
+        "removeFailed": "Lid verwijderen mislukt"
       },
       "confirm": {
         "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"

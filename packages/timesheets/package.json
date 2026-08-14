@@ -20,6 +20,7 @@
   "publishConfig": { "access": "public" },
   "dependencies": {
     "@nuxt-customer-portal/core": "workspace:^",
+    "@nuxt-customer-portal/clients": "workspace:^",
     "@nuxt-customer-portal/organizations": "workspace:^",
     "@nuxt-customer-portal/ui": "workspace:^",
     "@nuxtjs/i18n": "^10.6.0",

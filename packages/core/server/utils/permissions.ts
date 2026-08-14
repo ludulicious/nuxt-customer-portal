@@ -1,7 +1,7 @@
 import { db } from './db'
 import { member as memberTable, organization as organizationTable } from '../db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
-import { user as userRole, admin as adminRole } from '../../shared/permissions'
+import { user as userRole } from '../../shared/permissions'
 import type { MemberRole, Organization } from '@nuxt-customer-portal/core/shared/types/index'
 
 // Type for role statements structure
@@ -43,9 +43,9 @@ export const getOrganizationRolePermissions = (orgRole: MemberRole | null | unde
     permissions['member'] = ['read', 'list', 'create', 'update', 'delete', 'update-name']
     permissions['invitation'] = ['list', 'create', 'cancel', 'resend']
   } else if (orgRole === 'member') {
-    // Members can read organization and list/read members but not manage them
+    // Members can see the organization they belong to, but the member and
+    // invitation directories are administrative data.
     permissions['organization'] = ['read']
-    permissions['member'] = ['read', 'list']
   }
 
   return permissions
@@ -56,11 +56,10 @@ export const getOrganizationRolePermissions = (orgRole: MemberRole | null | unde
  */
 export const getUserPermissions = async (
   userId: string,
-  systemRole: string | null | undefined,
+  _systemRole: string | null | undefined,
   organizationId: string | null | undefined
 ): Promise<{ permissions: RoleStatements, orgRole: MemberRole | null, organization: Organization | null }> => {
-  const currentRole = systemRole || 'user'
-  let roleDefinition: unknown = currentRole === 'admin' ? adminRole : userRole
+  let roleDefinition: unknown = userRole
   let orgRole: MemberRole | null = null
   let organization: Organization | null = null
 
@@ -80,12 +79,7 @@ export const getUserPermissions = async (
 
       if (member) {
         orgRole = member.role as MemberRole
-        // For "user" role, use organization role permissions instead of user role
-        if (currentRole === 'user') {
-          const orgPermissions = getOrganizationRolePermissions(orgRole)
-          roleDefinition = orgPermissions
-        }
-        // For "admin" role, they get all organization permissions regardless of their org role
+        roleDefinition = getOrganizationRolePermissions(orgRole)
       }
 
       // Get organization details
@@ -102,17 +96,6 @@ export const getUserPermissions = async (
       console.error('Error fetching organization role or details:', error)
       // Fall back to default role if there's an error
     }
-  }
-
-  // For system admins with an active organization, grant all organization permissions
-  if (currentRole === 'admin') {
-    const adminStatements = getRoleStatements(adminRole)
-    const adminPermissions: RoleStatements = { ...adminStatements }
-    // Add all organization-related permissions for admins
-    adminPermissions['organization'] = ['read', 'update', 'delete']
-    adminPermissions['member'] = ['read', 'list', 'create', 'update', 'delete', 'update-name']
-    adminPermissions['invitation'] = ['create', 'cancel', 'resend', 'list']
-    roleDefinition = adminPermissions
   }
 
   const roleStatements = getRoleStatements(roleDefinition)
@@ -212,13 +195,8 @@ export const getUserOrganizationRole = async (
 export const isOrganizationMember = async (
   userId: string,
   organizationId: string,
-  systemRole?: string | null
+  _systemRole?: string | null
 ): Promise<boolean> => {
-  // System admins have access to all organizations
-  if (systemRole === 'admin') {
-    return true
-  }
-
   const role = await getUserOrganizationRole(userId, organizationId)
   return role !== null
 }

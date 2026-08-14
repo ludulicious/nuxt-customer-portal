@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { assertCompatiblePortalVersions, definePortalConfig, localPortalLayer, sortPortalManifests } from '../src/runtime.mjs'
 
@@ -47,4 +48,17 @@ test('manifest resolution rejects mixed official package versions', () => {
     { id: 'core', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/core', dependsOn: [] },
     { id: 'local', version: '9.0.0', source: './layers/local', dependsOn: ['core'] }
   ]))
+})
+
+test('provider terminology is used by client migration and provider seeding', async () => {
+  const [runtime, cli] = await Promise.all([
+    readFile(new URL('../src/runtime.mjs', import.meta.url), 'utf8'),
+    readFile(new URL('../bin/nuxt-customer-portal.mjs', import.meta.url), 'utf8')
+  ])
+
+  assert.match(runtime, /options\.provider, '--provider'/)
+  assert.match(runtime, /seedPortalProvider/)
+  assert.match(cli, /provider seed/)
+  assert.match(cli, /clients migrate --provider/)
+  assert.doesNotMatch(cli, /owner seed|clients migrate --owner/)
 })

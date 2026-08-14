@@ -5,7 +5,10 @@ import { spawnSync } from 'node:child_process'
 import { createJiti } from 'jiti'
 import {
   adoptLegacyMigrations,
+  assignPortalSystemAdmin,
   inspectPortalMigrations,
+  migrateGenericClients,
+  seedPortalProvider,
   migratePortalDatabase,
   resolvePortalManifests
 } from '../src/runtime.mjs'
@@ -35,6 +38,25 @@ try {
     print({ applied: await migratePortalDatabase(config, { cwd }) })
   } else if (args[0] === 'db' && args[1] === 'adopt-legacy') {
     print(await adoptLegacyMigrations(config, { cwd, apply: args.includes('--apply') }))
+  } else if (args[0] === 'clients' && args[1] === 'migrate') {
+    const provider = args[args.indexOf('--provider') + 1]
+    if (!provider || provider.startsWith('--')) throw new Error('clients migrate requires --provider <organization-id-or-slug>')
+    print(await migrateGenericClients(config, {
+      cwd,
+      provider,
+      apply: args.includes('--apply'),
+      backupConfirmed: args.includes('--backup-confirmed')
+    }))
+  } else if (args[0] === 'provider' && args[1] === 'seed') {
+    const value = flag => args[args.indexOf(flag) + 1]
+    print(await seedPortalProvider({
+      organizationName: value('--organization-name'), organizationSlug: value('--organization-slug'),
+      userName: value('--user-name'), userEmail: value('--user-email'), userPassword: value('--user-password')
+    }))
+  } else if (args[0] === 'admin' && args[1] === 'grant') {
+    const email = args[args.indexOf('--email') + 1]
+    if (!email || email.startsWith('--')) throw new Error('admin grant requires --email <existing-user-email>')
+    print(await assignPortalSystemAdmin({ email }))
   } else if (args[0] === 'db' && args[1] === 'generate') {
     const provider = args[args.indexOf('--provider') + 1]
     if (!provider || provider.startsWith('--')) throw new Error('db generate requires --provider <id>')
@@ -51,7 +73,10 @@ try {
   nuxt-customer-portal db status
   nuxt-customer-portal db migrate
   nuxt-customer-portal db generate --provider <id>
-  nuxt-customer-portal db adopt-legacy [--apply]`)
+  nuxt-customer-portal db adopt-legacy [--apply]
+  nuxt-customer-portal admin grant --email <existing-user-email>
+  nuxt-customer-portal provider seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
+  nuxt-customer-portal clients migrate --provider <id-or-slug> [--apply --backup-confirmed]`)
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)

@@ -95,6 +95,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
         <thead>
           <tr class="border-b text-left">
             <th class="p-3">{{ t('features.serviceRequests.fields.title') }}</th>
+            <th class="p-3">{{ t('features.serviceRequests.fields.client') }}</th>
             <th class="p-3">{{ t('features.serviceRequests.fields.status') }}</th>
             <th class="p-3">{{ t('features.serviceRequests.fields.priority') }}</th>
             <th class="p-3">{{ t('features.serviceRequests.fields.assignedTo') }}</th>
@@ -106,6 +107,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
             <td class="p-3">
               <button class="hover:underline" @click="$emit('select', request.id)">{{ request.title }}</button>
             </td>
+            <td class="p-3">{{ request.clientName || request.clientOrganizationId }}</td>
             <td class="p-3"><StatusBadge :status="request.status" /></td>
             <td class="p-3"><UBadge :color="getPriorityColor(request.priority)">{{ request.priority }}</UBadge></td>
             <td class="p-3">{{ request.assignedToId || '—' }}</td>

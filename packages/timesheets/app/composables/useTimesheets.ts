@@ -8,20 +8,12 @@ import type {
   TimesheetBootstrapDto,
   TimesheetReportDto,
   TimeEntryDto,
-  InvoiceDto,
-  InvoiceableEntryDto,
-  OrganizationInvoiceProfileDto,
-  InvoiceEmailPreviewDto,
-  InvoiceEmailStatusRefreshDto,
   ClientAccessMode,
   ClientTimesheetsDto,
   ClientWorkspaceDto,
   ClientReviewerDto,
   ClientReviewerSupplierDto,
   ClientApprovalSupplierOptionDto,
-  ClientInvoiceDto,
-  ClientInvoiceSupplierDto,
-  ClientInvoiceViewerDto,
   TimesheetsDashboardDto,
   TimesheetsSetupStatusDto,
   InternalApprovalConfigurationDto,
@@ -29,19 +21,16 @@ import type {
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
-  settings: { currency: string, timezone: string, defaultVatRateBasisPoints: number, weekStartsOn: number, internalApprovalsEnabled: boolean }
+  settings: { currency: string, timezone: string, weekStartsOn: number, internalApprovalsEnabled: boolean }
   clients: ClientDto[]
   availableClientOrganizations: ClientOrganizationOptionDto[]
   projects: ProjectDto[]
   activities: ActivityTypeDto[]
   team: TeamMemberDto[]
   approvals: ApprovalQueueItemDto[]
-  invoices: InvoiceDto[]
-  invoiceableEntries: InvoiceableEntryDto[]
-  organizationProfile: OrganizationInvoiceProfileDto
   setupStatus: TimesheetsSetupStatusDto
 }
-export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, invoicingEnabled: boolean, clientOf: Array<{ workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode }> }
+export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, clientOf: Array<{ workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode }> }
 
 export const useTimesheets = () => {
   const bootstrap = (week?: string) =>
@@ -99,9 +88,8 @@ export const useTimesheets = () => {
       body: { clientName }
     })
   const updateClientAccess = (id: string, accessMode: ClientAccessMode) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { accessMode } })
-  const updateClientInvoiceAccess = (id: string, invoiceAccessEnabled: boolean) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { invoiceAccessEnabled } })
   const getOrganizationTimesheetCapabilities = (organizationId: string) => $fetch<OrganizationTimesheetCapabilities>(`/api/timesheets/admin/organization-capabilities/${organizationId}`)
-  const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean, invoicingEnabled: boolean }) => $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
+  const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean }) => $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
   const clientWorkspaces = () => $fetch<ClientWorkspaceDto[]>('/api/timesheets/client/workspaces')
   const clientApprovalSuppliers = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/approval-suppliers')
   const clientSupplierOptions = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/supplier-options')
@@ -110,18 +98,6 @@ export const useTimesheets = () => {
   const reviewClientSlice = (workspaceClientId: string, weekId: string, input: { action: 'APPROVE' | 'DISPUTE', expectedVersion: number, comment?: string | null }) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
   const clientReviewers = (workspaceClientId: string) => $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
   const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviewers`, { method: 'PUT', body: { userId, assigned } })
-  const clientInvoiceSuppliers = () => $fetch<ClientInvoiceSupplierDto[]>('/api/timesheets/client/invoice-suppliers')
-  const clientInvoiceViewers = (workspaceClientId: string) => $fetch<ClientInvoiceViewerDto[]>(`/api/timesheets/client/${workspaceClientId}/invoice-viewers`)
-  const setClientInvoiceViewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/invoice-viewers`, { method: 'PUT', body: { userId, assigned } })
-  const getClientInvoice = (id: string) => $fetch<ClientInvoiceDto>(`/api/timesheets/client/invoices/${id}`)
-  const updateOrganizationProfile = (organizationId: string, input: Record<string, unknown>) =>
-    $fetch(`/api/timesheets/admin/organizations/${organizationId}/profile`, { method: 'PATCH', body: input })
-  const createContact = (organizationId: string, input: Record<string, unknown>) =>
-    $fetch(`/api/timesheets/admin/organizations/${organizationId}/contacts`, { method: 'POST', body: input })
-  const updateContact = (organizationId: string, id: string, input: Record<string, unknown>) =>
-    $fetch(`/api/timesheets/admin/organizations/${organizationId}/contacts/${id}`, { method: 'PATCH', body: input })
-  const deleteContact = (organizationId: string, id: string) =>
-    $fetch(`/api/timesheets/admin/organizations/${organizationId}/contacts/${id}`, { method: 'DELETE' as never })
   const createActivity = (input: { name: string, billable: boolean }) =>
     $fetch('/api/timesheets/admin/activities', { method: 'POST', body: input })
   const updateActivity = (id: string, input: Partial<{ name: string, billable: boolean, active: boolean }>) =>
@@ -142,7 +118,8 @@ export const useTimesheets = () => {
     budgetMinutes?: number | null
     budgetMinor?: number | null
     activityTypeIds: string[]
-  }) => $fetch('/api/timesheets/admin/projects', { method: 'POST', body: input })
+  }) => $fetch<{ id: string }>('/api/timesheets/admin/projects', { method: 'POST', body: input })
+  const getProject = (id: string) => $fetch<ProjectDto>(`/api/timesheets/admin/projects/${id}`)
   const updateProject = (id: string, input: Record<string, unknown>) =>
     $fetch(`/api/timesheets/admin/projects/${id}`, { method: 'PATCH', body: input })
   const getProjectDeletionEligibility = (id: string) =>
@@ -161,7 +138,7 @@ export const useTimesheets = () => {
     })
   const updateTeamMemberSettings = (userId: string, input: { canEnterTime: boolean, defaultHourlyRateMinor: number | null }) =>
     $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
-  const updateSettings = (input: { currency?: string, timezone?: string, defaultVatRateBasisPoints?: number }) =>
+  const updateSettings = (input: { currency?: string, timezone?: string }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
   const reviewWeek = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
     $fetch(`/api/timesheets/internal-approvals/${id}`, {
@@ -170,24 +147,6 @@ export const useTimesheets = () => {
     })
   const getReport = (query: Record<string, string | undefined>) =>
     $fetch<TimesheetReportDto>('/api/timesheets/admin/report', { query })
-  const createInvoice = (input: Record<string, unknown>) => $fetch('/api/timesheets/admin/invoices', { method: 'POST', body: input })
-  const getNextInvoiceNumber = () => $fetch<{ number: string }>('/api/timesheets/admin/invoices/next-number')
-  const getInvoice = (id: string) => $fetch<InvoiceDto>(`/api/timesheets/admin/invoices/${id}`)
-  const updateInvoice = (id: string, input: { number: string, issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH' as never, body: input })
-  const changeInvoiceStatus = (id: string, action: 'VOID' | 'UNVOID') => $fetch(`/api/timesheets/admin/invoices/${id}`, { method: 'PATCH' as never, body: { action } })
-  const getInvoiceEmailPreview = (id: string, locale?: string) => $fetch<InvoiceEmailPreviewDto>(`/api/timesheets/admin/invoices/${id}/email-preview`, { query: { locale } })
-  const issueAndSendInvoice = (id: string, input: Record<string, unknown>) => $fetch(`/api/timesheets/admin/invoices/${id}/issue`, { method: 'POST', body: input })
-  const resendInvoice = (id: string, input: Record<string, unknown>) => $fetch(`/api/timesheets/admin/invoices/${id}/email`, { method: 'POST', body: input })
-  const getInvoiceReminderPreview = (id: string, locale?: string) => $fetch<InvoiceEmailPreviewDto>(`/api/timesheets/admin/invoices/${id}/reminder-preview`, { query: { locale } })
-  const sendInvoiceReminder = (id: string, input: Record<string, unknown>) => $fetch(`/api/timesheets/admin/invoices/${id}/reminder`, { method: 'POST', body: input })
-  const refreshInvoiceEmailStatuses = (id: string, forceRefresh = false) => $fetch<InvoiceEmailStatusRefreshDto>(`/api/timesheets/admin/invoices/${id}/email-status`, { method: 'POST', query: forceRefresh ? { refresh: '1' } : undefined })
-  const registerInvoicePayment = (id: string, input: { paidOn: string, amountMinor: number, reference?: string | null, note?: string | null }) => $fetch(`/api/timesheets/admin/invoices/${id}/payments`, { method: 'POST', body: input })
-  const addInvoiceAttachment = (id: string, file: File) => {
-    const body = new FormData()
-    body.append('file', file)
-    return $fetch(`/api/timesheets/admin/invoices/${id}/attachments`, { method: 'POST', body })
-  }
-  const deleteInvoiceAttachment = (id: string, attachmentId: string) => $fetch(`/api/timesheets/admin/invoices/${id}/attachments/${attachmentId}`, { method: 'DELETE' as never })
 
   return {
     bootstrap,
@@ -208,7 +167,6 @@ export const useTimesheets = () => {
     getClientDeletionEligibility,
     deleteClient,
     updateClientAccess,
-    updateClientInvoiceAccess,
     getOrganizationTimesheetCapabilities,
     updateOrganizationTimesheetCapabilities,
     clientWorkspaces,
@@ -219,19 +177,12 @@ export const useTimesheets = () => {
     reviewClientSlice,
     clientReviewers,
     setClientReviewer,
-    clientInvoiceSuppliers,
-    clientInvoiceViewers,
-    setClientInvoiceViewer,
-    getClientInvoice,
-    updateOrganizationProfile,
-    createContact,
-    updateContact,
-    deleteContact,
     createActivity,
     updateActivity,
     getActivityDeletionEligibility,
     deleteActivity,
     createProject,
+    getProject,
     updateProject,
     getProjectDeletionEligibility,
     deleteProject,
@@ -240,19 +191,5 @@ export const useTimesheets = () => {
     updateSettings,
     reviewWeek,
     getReport,
-    createInvoice,
-    getNextInvoiceNumber,
-    getInvoice,
-    updateInvoice,
-    changeInvoiceStatus,
-    getInvoiceEmailPreview,
-    issueAndSendInvoice,
-    resendInvoice,
-    getInvoiceReminderPreview,
-    sendInvoiceReminder,
-    refreshInvoiceEmailStatuses,
-    registerInvoicePayment,
-    addInvoiceAttachment,
-    deleteInvoiceAttachment
   }
 }

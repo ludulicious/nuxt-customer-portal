@@ -2,7 +2,8 @@
 /* eslint-disable @stylistic/semi */
 /* eslint-disable semi */
 /* eslint-disable @stylistic/quotes */
-import { pgTable, text, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, timestamp, boolean, check, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -15,7 +16,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  role: text("role"),
+  role: text("role").default("user").notNull(),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
@@ -90,8 +91,11 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   createdAt: timestamp("created_at").notNull(),
   metadata: text("metadata"),
+  organizationType: text("organization_type").notNull(),
 }, (table) => [
-  index("organization_slug_idx").on(table.slug)
+  index("organization_slug_idx").on(table.slug),
+  check("organization_type_check", sql`${table.organizationType} IN ('PROVIDER', 'CLIENT')`),
+  uniqueIndex("organization_single_provider_uidx").on(table.organizationType).where(sql`${table.organizationType} = 'PROVIDER'`)
 ]);
 
 export const member = pgTable("member", {
@@ -103,6 +107,8 @@ export const member = pgTable("member", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   role: text("role").default("member").notNull(),
+  phone: text("phone"),
+  jobTitle: text("job_title"),
   createdAt: timestamp("created_at").notNull(),
 }, (table) => [
   index("member_organization_id_idx").on(table.organizationId),
@@ -134,6 +140,7 @@ export const invitation = pgTable("invitation", {
   inviterId: text("inviter_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("invitation_organization_id_idx").on(table.organizationId),
   index("invitation_inviter_id_idx").on(table.inviterId),

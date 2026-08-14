@@ -4,9 +4,13 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 withDefaults(defineProps<{
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'xs'
+  inline?: boolean
 }>(), {
-  size: 'sm'
+  size: 'sm',
+  inline: false
 })
+
+const emit = defineEmits<{ navigate: [] }>()
 
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -14,6 +18,13 @@ const { currentUser, userInitials } = storeToRefs(userStore)
 
 // Logic preserved from AppHeader
 const isOrgAdmin = ref(false)
+
+const signOut = async () => {
+  await authClient.signOut()
+  userStore.clearUserData()
+  emit('navigate')
+  await navigateTo('/')
+}
 
 const userMenuItems = computed(() => {
   const menuItems: DropdownMenuItem[][] = [
@@ -56,12 +67,7 @@ const userMenuItems = computed(() => {
     {
       label: t('menu.logout'),
       icon: 'i-lucide-log-out',
-      onSelect: async () => {
-        await authClient.signOut()
-        // Explicitly clear user data to ensure immediate state update
-        userStore.clearUserData()
-        await navigateTo('/')
-      }
+      onSelect: signOut
     }
   ])
 
@@ -70,7 +76,41 @@ const userMenuItems = computed(() => {
 </script>
 
 <template>
-  <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
+  <div v-if="currentUser && inline" class="space-y-2">
+    <div class="flex min-w-0 items-center gap-3 px-3 py-2">
+      <UAvatar
+        :src="currentUser.image ?? undefined"
+        :alt="currentUser.name || currentUser.email || 'User'"
+        :text="userInitials"
+        :size="size"
+        class="shrink-0"
+      />
+      <div class="min-w-0">
+        <div class="truncate text-sm font-semibold text-highlighted">{{ currentUser.name || currentUser.email }}</div>
+        <div v-if="currentUser.name" class="truncate text-xs text-muted">{{ currentUser.email }}</div>
+      </div>
+    </div>
+    <UButton
+      :label="t('menu.settings.title')"
+      icon="i-lucide-cog"
+      to="/settings"
+      color="neutral"
+      variant="ghost"
+      block
+      class="min-h-11 justify-start"
+      @click="emit('navigate')"
+    />
+    <UButton
+      :label="t('menu.logout')"
+      icon="i-lucide-log-out"
+      color="neutral"
+      variant="ghost"
+      block
+      class="min-h-11 justify-start"
+      @click="signOut"
+    />
+  </div>
+  <UDropdownMenu v-else-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
     <UAvatar
       :src="currentUser.image ?? undefined"
       :alt="currentUser.name || currentUser.email || 'User'"

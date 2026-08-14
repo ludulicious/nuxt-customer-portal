@@ -13,6 +13,7 @@ interface PermissionsResponse {
   role: string
   organizationRole: string | null
   activeOrganization: Organization | null
+  organizationType: 'PROVIDER' | 'CLIENT' | null
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -108,6 +109,8 @@ export const useUserStore = defineStore('user', () => {
     return permissions.value[`${subject}.${action}`] ?? false
   }
 
+  // This is the global platform role. It is deliberately independent from
+  // activeOrganizationRole, so organization owners do not become system admins.
   const isAdmin = computed(() => role.value === 'admin')
 
   const userInitials = computed(() => {
@@ -158,6 +161,7 @@ export const useUserStore = defineStore('user', () => {
   const activeOrganizationRole = computed(() => {
     return activeOrganizationRoleValue.value
   })
+  const activeOrganizationType = computed(() => activeOrganization.value?.organizationType ?? null)
 
   const loggedInUsingEmail = computed(() => {
     const user = currentUser.value
@@ -331,24 +335,15 @@ export const useUserStore = defineStore('user', () => {
       return
     }
 
-    // Fetch role for each organization
+    // Fetch only the current user's role. Listing the full member directory is
+    // restricted to organization owners and admins.
     const roles: Record<string, string> = {}
     for (const org of organizations) {
       try {
-        // Temporarily set active organization to get the role
-        // Note: We'll use listMembers to find the user's role instead
-        const members = await authClient.organization.listMembers({
+        const { data } = await authClient.organization.getActiveMemberRole({
           query: { organizationId: org.id }
         })
-
-        if (members?.data) {
-          const memberList = Array.isArray(members.data) ? members.data : (members.data as { members?: Array<{ userId: string, role: string | string[] }> })?.members || []
-          const userMember = memberList.find((m) => m.userId === currentUser.value?.id)
-          if (userMember) {
-            const role = Array.isArray(userMember.role) ? userMember.role[0] : userMember.role
-            roles[org.id] = role || 'member'
-          }
-        }
+        if (data?.role) roles[org.id] = data.role
       } catch (error) {
         console.error(`Error fetching role for organization ${org.id}:`, error)
       }
@@ -413,6 +408,7 @@ export const useUserStore = defineStore('user', () => {
     activeOrganizationId,
     activeOrganization,
     activeOrganizationRole,
+    activeOrganizationType,
     myOrganizations,
     loadingOrganization,
     refreshOrganizations,

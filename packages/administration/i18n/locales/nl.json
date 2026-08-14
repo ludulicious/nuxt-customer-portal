@@ -136,6 +136,8 @@
         "totalCount": "{count} totaal",
         "viewOrganization": "{name} bekijken",
         "view": "Bekijken",
+        "provider": "Aanbieder",
+        "client": "Klant",
         "name": "Naam",
         "slug": "Slug",
         "created": "Aangemaakt"
@@ -148,9 +150,20 @@
       },
       "list": {
         "title": "Gebruikers",
+        "description": "Beheer portaalgebruikers, toegang en accountbeveiliging.",
         "createButton": "Gebruiker aanmaken",
+        "newUser": "Nieuwe gebruiker",
+        "createFirstUser": "Maak je eerste gebruiker aan",
         "loading": "Gebruikers laden...",
         "empty": "Geen gebruikers gevonden",
+        "emptyDescription": "Maak een gebruiker aan om portaaltoegang te beheren.",
+        "emptyFiltered": "Geen gebruikers gevonden voor de huidige zoekopdracht of filters.",
+        "searchPlaceholder": "Gebruikers zoeken...",
+        "allRoles": "Alle rollen",
+        "allStatuses": "Alle statussen",
+        "resultCount": "{count} gebruiker | {count} gebruikers",
+        "totalCount": "{count} totaal",
+        "viewUser": "{name} bekijken",
         "actions": "Acties",
         "created": "Aangemaakt",
         "email": "E-mail",
@@ -160,12 +173,39 @@
         "role": "Rol",
         "verified": "Geverifieerd"
       },
+      "detail": {
+        "title": "Gebruikersdetails",
+        "back": "Terug naar gebruikers",
+        "loading": "Gebruiker laden...",
+        "loadFailed": "Gebruiker laden mislukt",
+        "accountDetails": "Accountgegevens",
+        "updated": "Laatst bijgewerkt",
+        "banReason": "Blokkeringsreden",
+        "banExpires": "Blokkering verloopt",
+        "systemRole": "Systeemrol",
+        "ownRoleHint": "Je kunt je eigen systeemrol niet wijzigen.",
+        "management": "Accountbeheer"
+      },
       "updateRole": {
         "title": "Rol Wijzigen",
         "description": "Wijzig de rol voor deze gebruiker",
         "confirm": "Rol Wijzigen",
         "success": "Rol succesvol gewijzigd",
         "error": "Rol wijzigen mislukt"
+      },
+      "create": {
+        "title": "Gebruiker Aanmaken",
+        "name": "Naam",
+        "email": "E-mail",
+        "password": "Tijdelijk wachtwoord",
+        "passwordHint": "Minimaal 8 tekens",
+        "nameRequired": "Vul een naam in.",
+        "nameMaxLength": "Gebruik maximaal 255 tekens.",
+        "emailInvalid": "Vul een geldig e-mailadres in.",
+        "passwordMinLength": "Gebruik minimaal 8 tekens.",
+        "confirm": "Gebruiker Aanmaken",
+        "success": "Gebruiker succesvol aangemaakt",
+        "error": "Gebruiker aanmaken mislukt"
       },
       "ban": {
         "title": "Gebruiker Blokkeren",
@@ -177,6 +217,7 @@
         "expiresInHours": "Uren",
         "expiresInMinutes": "Minuten",
         "never": "Nooit",
+        "neverHint": "Laat alle duurvelden leeg voor een permanente blokkering.",
         "confirm": "Gebruiker Blokkeren",
         "success": "Gebruiker succesvol geblokkeerd",
         "error": "Gebruiker blokkeren mislukt",
@@ -230,13 +271,19 @@
       },
       "update": {
         "title": "Gebruiker Bijwerken",
-        "description": "Gebruikersinformatie bijwerken",
+        "description": "Werk de naam van de gebruiker bij. Profielfoto's worden door gebruikers zelf beheerd.",
         "name": "Naam",
-        "image": "Profielfoto URL",
-        "imagePlaceholder": "https://voorbeeld.nl/avatar.jpg",
         "confirm": "Gebruiker Bijwerken",
         "success": "Gebruiker succesvol bijgewerkt",
         "error": "Gebruiker bijwerken mislukt"
+      },
+      "delete": {
+        "title": "Gebruiker Verwijderen",
+        "description": "{name} en alle accountgegevens verwijderen?",
+        "warning": "Deze actie kan niet ongedaan worden gemaakt.",
+        "confirm": "Gebruiker Verwijderen",
+        "success": "Gebruiker succesvol verwijderd",
+        "error": "Gebruiker verwijderen mislukt"
       },
       "actions": {
         "ban": "Gebruiker Blokkeren",
@@ -244,7 +291,8 @@
         "impersonate": "Impersoneren",
         "sessions": "Sessies Bekijken",
         "changePassword": "Wachtwoord Wijzigen",
-        "update": "Gebruiker Bijwerken"
+        "update": "Gebruiker Bijwerken",
+        "delete": "Gebruiker Verwijderen"
       },
       "status": {
         "banned": "Geblokkeerd",

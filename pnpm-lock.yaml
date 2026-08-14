@@ -35,6 +35,12 @@ importers:
       '@iconify-json/simple-icons':
         specifier: ^1.2.93
         version: 1.2.93
+      '@nuxt-customer-portal/invoice-timesheets':
+        specifier: workspace:*
+        version: link:../../packages/invoice-timesheets
+      '@nuxt-customer-portal/invoices':
+        specifier: workspace:*
+        version: link:../../packages/invoices
       '@nuxt-customer-portal/kit':
         specifier: workspace:*
         version: link:../../packages/kit
@@ -93,6 +99,12 @@ importers:
       '@iconify-json/lucide':
         specifier: ^1.2.121
         version: 1.2.121
+      '@nuxt-customer-portal/invoice-timesheets':
+        specifier: workspace:*
+        version: link:../../packages/invoice-timesheets
+      '@nuxt-customer-portal/invoices':
+        specifier: workspace:*
+        version: link:../../packages/invoices
       '@nuxt-customer-portal/kit':
         specifier: workspace:*
         version: link:../../packages/kit
@@ -290,6 +302,40 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1(556de6bc0016c5e6175d2531b340cfea)
 
+  packages/clients:
+    dependencies:
+      '@nuxt-customer-portal/core':
+        specifier: workspace:^
+        version: link:../core
+      '@nuxt-customer-portal/ui':
+        specifier: workspace:^
+        version: link:../ui
+      '@nuxtjs/i18n':
+        specifier: ^10.6.0
+        version: 10.6.0(@vue/compiler-dom@3.5.40)(db0@0.3.4(better-sqlite3@12.11.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)))(esbuild@0.28.1)(eslint@10.8.0(jiti@2.7.0))(ioredis@5.11.1)(magicast@0.5.4)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.1)(rollup@4.62.4)(typescript@6.0.3)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.16
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      nuxt:
+        specifier: ^4.5.1
+        version: 4.5.1(2daf7e3328c253f5330eb70ecd1910c6)
+      vue:
+        specifier: ^3.5.0
+        version: 3.5.40(typescript@6.0.3)
+
   packages/core:
     dependencies:
       '@internationalized/date':
@@ -348,8 +394,91 @@ importers:
         specifier: ^3.5.0
         version: 3.5.40(typescript@6.0.3)
 
+  packages/invoice-timesheets:
+    dependencies:
+      '@nuxt-customer-portal/core':
+        specifier: workspace:^
+        version: link:../core
+      '@nuxt-customer-portal/invoices':
+        specifier: workspace:^
+        version: link:../invoices
+      '@nuxt-customer-portal/timesheets':
+        specifier: workspace:^
+        version: link:../timesheets
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.16
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      nuxt:
+        specifier: ^4.5.1
+        version: 4.5.1(2daf7e3328c253f5330eb70ecd1910c6)
+      vue:
+        specifier: ^3.5.0
+        version: 3.5.40(typescript@6.0.3)
+
+  packages/invoices:
+    dependencies:
+      '@nuxt-customer-portal/clients':
+        specifier: workspace:^
+        version: link:../clients
+      '@nuxt-customer-portal/core':
+        specifier: workspace:^
+        version: link:../core
+      '@nuxt-customer-portal/organizations':
+        specifier: workspace:^
+        version: link:../organizations
+      '@nuxt-customer-portal/ui':
+        specifier: workspace:^
+        version: link:../ui
+      '@nuxtjs/i18n':
+        specifier: ^10.6.0
+        version: 10.6.0(@vue/compiler-dom@3.5.40)(db0@0.3.4(better-sqlite3@12.11.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)))(esbuild@0.28.1)(eslint@10.8.0(jiti@2.7.0))(ioredis@5.11.1)(magicast@0.5.4)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.1)(rollup@4.62.4)(typescript@6.0.3)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.16
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+      resend:
+        specifier: ^6.18.1
+        version: 6.18.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      nuxt:
+        specifier: ^4.5.1
+        version: 4.5.1(2daf7e3328c253f5330eb70ecd1910c6)
+      vue:
+        specifier: ^3.5.0
+        version: 3.5.40(typescript@6.0.3)
+
   packages/kit:
     dependencies:
+      better-auth:
+        specifier: 1.6.25
+        version: 1.6.25(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(better-sqlite3@12.11.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0))(pg@8.22.0)(prisma@5.22.0)(vitest@4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.1.2)(happy-dom@20.11.2)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.5)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
       jiti:
         specifier: ^2.6.1
         version: 2.7.0
@@ -400,6 +529,9 @@ importers:
       '@nuxt-customer-portal/authentication':
         specifier: workspace:^
         version: link:../authentication
+      '@nuxt-customer-portal/clients':
+        specifier: workspace:^
+        version: link:../clients
       '@nuxt-customer-portal/core':
         specifier: workspace:^
         version: link:../core
@@ -416,6 +548,9 @@ importers:
 
   packages/service-requests:
     dependencies:
+      '@nuxt-customer-portal/clients':
+        specifier: workspace:^
+        version: link:../clients
       '@nuxt-customer-portal/core':
         specifier: workspace:^
         version: link:../core
@@ -444,6 +579,9 @@ importers:
 
   packages/timesheets:
     dependencies:
+      '@nuxt-customer-portal/clients':
+        specifier: workspace:^
+        version: link:../clients
       '@nuxt-customer-portal/core':
         specifier: workspace:^
         version: link:../core

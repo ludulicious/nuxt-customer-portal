@@ -41,6 +41,9 @@ export const serviceRequest = serviceRequestsSchema.table('service_request', {
   organizationId: text('organization_id')
     .notNull()
     .references(() => organization.id, { onDelete: 'cascade' }),
+  clientOrganizationId: text('client_organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'restrict' }),
   createdById: text('created_by_id')
     .notNull()
     .references(() => user.id, { onDelete: 'restrict' }),
@@ -61,6 +64,7 @@ export const serviceRequest = serviceRequestsSchema.table('service_request', {
   closedAt: timestamp('closed_at', { mode: 'date' })
 }, (table) => [
   index('service_request_organization_id_idx').on(table.organizationId),
+  index('service_request_client_organization_id_idx').on(table.clientOrganizationId),
   index('service_request_created_by_id_idx').on(table.createdById),
   index('service_request_assigned_to_id_idx').on(table.assignedToId),
   index('service_request_status_idx').on(table.status),

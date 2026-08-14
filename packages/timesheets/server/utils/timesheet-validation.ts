@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { hasNumericInvoiceSequence } from '../../shared/invoice-number'
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 const id = z.string().min(1).max(128)
@@ -14,6 +13,7 @@ const listBase = {
 export const projectListQuerySchema = z.object({
   ...listBase,
   clientOrganizationId: id.optional(),
+  status: z.enum(['ALL', 'ACTIVE', 'ARCHIVED']).optional(),
   sortBy: z.enum(['name', 'clientName', 'startsOn']).default('name')
 })
 export const clientListQuerySchema = z.object({
@@ -27,22 +27,6 @@ export const activityListQuerySchema = z.object({
   billable: z.enum(['true', 'false']).optional(),
   sortBy: z.enum(['name', 'active', 'billable']).default('name')
 })
-export const invoiceListQuerySchema = z.object({
-  ...listBase,
-  status: z.enum(['DRAFT', 'ISSUED', 'PAID', 'VOID']).optional(),
-  clientOrganizationId: id.optional(),
-  overdue: z.enum(['true', 'false']).optional(),
-  sortBy: z.enum(['issueDate', 'dueDate', 'number', 'totalMinor']).default('issueDate'),
-  sortDir: z.enum(['asc', 'desc']).default('desc')
-})
-export const clientInvoiceListQuerySchema = z.object({
-  ...listBase,
-  status: z.enum(['ISSUED', 'PAID']).optional(),
-  workspaceClientId: id.optional(),
-  overdue: z.enum(['true', 'false']).optional(),
-  sortBy: z.enum(['issueDate', 'dueDate', 'number', 'totalMinor']).default('issueDate'),
-  sortDir: z.enum(['asc', 'desc']).default('desc')
-})
 export const clientApprovalListQuerySchema = z.object({
   ...listBase,
   workspaceClientId: id.optional(),
@@ -53,7 +37,6 @@ export const clientApprovalListQuerySchema = z.object({
 export const clientSupplierTimesheetListQuerySchema = z.object({
   ...listBase,
   workspaceClientId: id.optional(),
-  billingStatus: z.enum(['AWAITING_INVOICE', 'PARTIALLY_INVOICED', 'INVOICED']).optional(),
   sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'totalMinutes']).default('weekStartsOn'),
   sortDir: z.enum(['asc', 'desc']).default('desc')
 })
@@ -61,8 +44,6 @@ export const clientSupplierTimesheetListQuerySchema = z.object({
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>
 export type ClientListQuery = z.infer<typeof clientListQuerySchema>
 export type ActivityListQuery = z.infer<typeof activityListQuerySchema>
-export type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
-export type ClientInvoiceListQuery = z.infer<typeof clientInvoiceListQuerySchema>
 export type ClientApprovalListQuery = z.infer<typeof clientApprovalListQuerySchema>
 export type ClientSupplierTimesheetListQuery = z.infer<typeof clientSupplierTimesheetListQuerySchema>
 
@@ -101,12 +82,9 @@ export const clientCreateSchema = z.discriminatedUnion('mode', [
 
 export const clientDeleteSchema = z.object({ clientName: z.string().min(1).max(160) })
 export const clientAccessUpdateSchema = z.object({ accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']) })
-export const clientInvoiceAccessUpdateSchema = z.object({ invoiceAccessEnabled: z.boolean() })
-export const clientInvoiceViewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
 export const organizationCapabilitiesUpdateSchema = z.object({
-  workspaceEnabled: z.boolean(),
-  invoicingEnabled: z.boolean()
-}).refine(value => value.workspaceEnabled || !value.invoicingEnabled, { path: ['invoicingEnabled'], message: 'Invoicing requires a Timesheets workspace' })
+  workspaceEnabled: z.boolean()
+})
 export const clientReviewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
 export const clientReviewSchema = z.object({
   action: z.enum(['APPROVE', 'DISPUTE']),
@@ -115,19 +93,6 @@ export const clientReviewSchema = z.object({
 }).superRefine((value, context) => {
   if (value.action === 'DISPUTE' && !value.comment) context.addIssue({ code: 'custom', path: ['comment'], message: 'A dispute comment is required' })
 })
-
-export const organizationProfileUpdateSchema = z.object({
-  address: z.string().trim().max(1000), registrationNumber: z.string().trim().max(200).nullable().optional(),
-  vatNumber: z.string().trim().max(100).nullable().optional(), iban: z.string().trim().max(100).nullable().optional(),
-  bic: z.string().trim().max(100).nullable().optional(), invoiceEmail: z.string().email().max(320).nullable().optional(),
-  invoiceEmailTemplate: z.string().trim().max(50_000).refine(value => !value || value.includes('{{body}}'), 'The template must contain {{body}}').nullable().optional(),
-  preferredLocale: z.enum(['nl', 'en']).default('nl')
-})
-export const contactCreateSchema = z.object({
-  userId: id.nullable().optional(), name: z.string().trim().min(1).max(200), email: z.string().trim().toLowerCase().email().max(320),
-  phone: z.string().trim().max(80).nullable().optional(), jobTitle: z.string().trim().max(160).nullable().optional()
-})
-export const contactUpdateSchema = contactCreateSchema.partial().refine(value => Object.keys(value).length > 0, 'At least one field is required')
 
 export const activityCreateSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -201,8 +166,7 @@ export const internalApprovalMemberUpdateSchema = z.object({
 
 export const settingsUpdateSchema = z.object({
   currency: z.string().length(3).transform(v => v.toUpperCase()).optional(),
-  timezone: z.string().min(3).max(100).optional(),
-  defaultVatRateBasisPoints: z.number().int().min(0).max(10_000).optional()
+  timezone: z.string().min(3).max(100).optional()
 })
 
 export const reviewSchema = z.object({
@@ -226,32 +190,3 @@ export const reportQuerySchema = z.object({
 })
 
 export type ReportQuery = z.infer<typeof reportQuerySchema>
-
-const invoiceLineSchema = z.object({
-  description: z.string().trim().min(1).max(500), quantityMilli: z.number().int().positive().max(100_000_000),
-  unit: z.string().trim().min(1).max(30).default('hour'), unitPriceMinor: moneyMinor,
-  vatRateBasisPoints: z.number().int().min(0).max(10_000).default(2100), timeEntryIds: z.array(id).optional()
-})
-const invoiceNumber = z.string().trim().min(1).max(60)
-  .refine(hasNumericInvoiceSequence, 'Invoice number must end with a numeric sequence')
-export const invoiceCreateSchema = z.object({
-  clientOrganizationId: id, contactId: id.nullable().optional(), number: invoiceNumber, currency: z.string().length(3),
-  issueDate: isoDate, dueDate: isoDate, subject: z.string().trim().max(500).nullable().optional(), notes: z.string().trim().max(5000).nullable().optional(),
-  lines: z.array(invoiceLineSchema).min(1).max(500)
-}).refine(v => v.dueDate >= v.issueDate, { path: ['dueDate'], message: 'Due date must not precede invoice date' })
-export const invoiceIssueSchema = z.object({ action: z.enum(['ISSUE', 'VOID', 'UNVOID']) })
-export const invoiceUpdateSchema = z.object({
-  number: invoiceNumber,
-  issueDate: isoDate,
-  dueDate: isoDate,
-  subject: z.string().trim().max(500).nullable().optional(),
-  notes: z.string().trim().max(5000).nullable().optional()
-}).refine(value => value.dueDate >= value.issueDate, { path: ['dueDate'], message: 'Due date must not precede invoice date' })
-export const invoicePaymentSchema = z.object({ paidOn: isoDate, amountMinor: moneyMinor.positive(), reference: z.string().trim().max(200).nullable().optional(), note: z.string().trim().max(1000).nullable().optional() })
-export const invoiceEmailDeliverySchema = z.object({
-  to: z.string().trim().toLowerCase().email().max(320),
-  cc: z.array(z.string().trim().toLowerCase().email().max(320)).max(20).default([]),
-  locale: z.enum(['nl', 'en']),
-  subject: z.string().trim().min(1).max(500),
-  body: z.string().trim().min(1).max(10_000)
-}).transform(value => ({ ...value, cc: [...new Set(value.cc.filter(email => email !== value.to))] }))

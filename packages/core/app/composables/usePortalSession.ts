@@ -3,6 +3,7 @@ export const usePortalSession = () => {
   const {
     activeOrganizationId,
     activeOrganizationRole,
+    activeOrganizationType,
     currentUser,
     isAdmin,
     isAuthenticated
@@ -11,6 +12,7 @@ export const usePortalSession = () => {
   return {
     activeOrganizationId: readonly(activeOrganizationId),
     activeOrganizationRole: readonly(activeOrganizationRole),
+    activeOrganizationType: readonly(activeOrganizationType),
     currentUser: readonly(currentUser),
     isSystemAdmin: readonly(isAdmin),
     isAuthenticated: readonly(isAuthenticated)

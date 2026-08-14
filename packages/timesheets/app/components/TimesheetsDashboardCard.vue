@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{ section: 'myWeek' | 'internalApprovals' | 'clientApprovals' | 'salesInvoices' | 'receivedInvoices' }>()
+const props = defineProps<{ section: 'myWeek' | 'internalApprovals' | 'clientApprovals' }>()
 const { t, locale } = useI18n()
 const { data, pending, error, refresh } = await useTimesheetsDashboard()
 interface DashboardCardValue {
@@ -11,21 +11,12 @@ interface DashboardCardValue {
   pendingCount: number
   unassignedSupplierCount: number
   items: Array<{ id: string, userName: string, weekStartsOn: string, totalMinutes: number, person: string, supplierName: string, status: string }>
-  currency: string | null
-  draftCount: number
-  issuedCount: number
-  overdueCount: number
-  outstandingMinor: number
-  recent: Array<{ id: string, number: string, supplierName: string, recipientName: string, status: string, currency: string, outstandingMinor: number, isOverdue: boolean }>
 }
 const value = computed(() => data.value?.[props.section] as unknown as DashboardCardValue | undefined)
 const minutes = (amount: number) => `${Math.floor(amount / 60)}:${String(amount % 60).padStart(2, '0')}`
-const money = (amount: number, currency: string | null | undefined) => currency
-  ? new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(amount / 100)
-  : new Intl.NumberFormat(locale.value).format(amount / 100)
 const date = (input: string) => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${input}T00:00:00`))
 const title = computed(() => t(`features.timesheets.dashboard.${props.section}.title`))
-const icon = computed(() => ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i-lucide-stamp', clientApprovals: 'i-lucide-building-2', salesInvoices: 'i-lucide-send', receivedInvoices: 'i-lucide-inbox' })[props.section])
+const icon = computed(() => ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i-lucide-stamp', clientApprovals: 'i-lucide-building-2' })[props.section])
 </script>
 
 <template>
@@ -63,23 +54,10 @@ const icon = computed(() => ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i
 
     <template v-else-if="section === 'clientApprovals'">
       <div class="flex items-center justify-between"><p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p><UButton to="/timesheets/approvals" variant="outline">{{ t('features.timesheets.dashboard.review') }}</UButton></div>
-      <UAlert v-if="value.unassignedSupplierCount" class="mt-4" color="warning" variant="subtle" icon="i-lucide-user-round-x" :description="t('features.timesheets.dashboard.clientApprovals.unassigned', { count: value.unassignedSupplierCount })" />
+      <UAlert v-if="value.unassignedSupplierCount" class="mt-4" color="warning" variant="subtle" icon="i-lucide-user-round-x" :description="t('features.timesheets.dashboard.clientApprovals.noReviewer')" />
       <p v-if="!value.items.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.clientApprovals.empty') }}</p>
       <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.items" :key="item.id" class="flex justify-between gap-3 py-2 text-sm"><span class="truncate"><strong>{{ item.person }}</strong><span class="block text-muted">{{ item.supplierName }}</span></span><span class="shrink-0 text-muted">{{ minutes(item.totalMinutes) }}</span></li></ul>
     </template>
 
-    <template v-else-if="section === 'salesInvoices'">
-      <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-3xl font-semibold tabular-nums">{{ money(value.outstandingMinor, value.currency) }}</p><p class="text-sm text-muted">{{ t('features.timesheets.dashboard.outstanding') }}</p></div><UButton to="/admin/timesheets/invoices" variant="outline">{{ t('features.timesheets.dashboard.manage') }}</UButton></div>
-      <div class="mt-4 flex flex-wrap gap-2"><UBadge color="neutral" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.drafts', { count: value.draftCount }) }}</UBadge><UBadge color="primary" variant="subtle">{{ t('features.timesheets.dashboard.salesInvoices.issued', { count: value.issuedCount }) }}</UBadge><UBadge v-if="value.overdueCount" color="error" variant="subtle">{{ t('features.timesheets.dashboard.overdue', { count: value.overdueCount }) }}</UBadge></div>
-      <p v-if="!value.recent.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.salesInvoices.empty') }}</p>
-      <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.recent.slice(0, 3)" :key="item.id" class="flex justify-between gap-3 py-2 text-sm"><span class="truncate font-medium">{{ item.recipientName }} · {{ item.number }}</span><span :class="item.isOverdue ? 'text-error' : 'text-muted'">{{ money(item.outstandingMinor, value.currency) }}</span></li></ul>
-    </template>
-
-    <template v-else>
-      <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-3xl font-semibold tabular-nums">{{ money(value.outstandingMinor, value.currency) }}</p><p class="text-sm text-muted">{{ t('features.timesheets.dashboard.outstanding') }}</p></div><UButton to="/timesheets/invoices" variant="outline">{{ t('features.timesheets.dashboard.open') }}</UButton></div>
-      <UBadge v-if="value.overdueCount" class="mt-4" color="error" variant="subtle">{{ t('features.timesheets.dashboard.overdue', { count: value.overdueCount }) }}</UBadge>
-      <p v-if="!value.recent.length" class="mt-4 text-sm text-muted">{{ t('features.timesheets.dashboard.receivedInvoices.empty') }}</p>
-      <ul v-else class="mt-4 divide-y divide-default"><li v-for="item in value.recent.slice(0, 3)" :key="item.id" class="flex justify-between gap-3 py-2 text-sm"><span class="truncate font-medium">{{ item.supplierName }} · {{ item.number }}</span><span :class="item.isOverdue ? 'text-error' : 'text-muted'">{{ money(item.outstandingMinor, item.currency) }}</span></li></ul>
-    </template>
   </UCard>
 </template>

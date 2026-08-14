@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { TimesheetsListPagination } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
-const props = defineProps<{ pagination: TimesheetsListPagination, pending: boolean, loadingNext: boolean, loadingPrevious: boolean, hasNext: boolean, hasPrevious: boolean }>()
-const emit = defineEmits<{ next: [], previous: [], page: [page: number] }>()
+const props = defineProps<{ pagination: TimesheetsListPagination, pending: boolean, loadingNext: boolean, loadingPrevious: boolean, hasNext: boolean, hasPrevious: boolean, initialScrollTop?: number }>()
+const emit = defineEmits<{ next: [], previous: [], page: [page: number], scroll: [scrollTop: number] }>()
 const scrollContainer = ref<HTMLElement | null>(null)
 const previousSentinel = ref<HTMLElement | null>(null)
 const nextSentinel = ref<HTMLElement | null>(null)
@@ -18,11 +18,16 @@ watch(() => props.loadingPrevious, async (loading, wasLoading) => {
 })
 useAutoPagination({ sentinel: previousSentinel, scrollContainer, canLoadMore: () => props.hasPrevious, loading: () => props.pending, loadMore: loadPrevious, rootMargin: '240px 0px 0px 0px' })
 useAutoPagination({ sentinel: nextSentinel, scrollContainer, canLoadMore: () => props.hasNext, loading: () => props.pending, loadMore: () => emit('next') })
+onMounted(async () => {
+  if (!props.initialScrollTop) return
+  await nextTick()
+  if (scrollContainer.value) scrollContainer.value.scrollTop = props.initialScrollTop
+})
 </script>
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <div ref="scrollContainer" class="timesheets-list-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+    <div ref="scrollContainer" class="timesheets-list-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden" @scroll="emit('scroll', scrollContainer?.scrollTop ?? 0)">
       <div v-if="hasPrevious" ref="previousSentinel" class="h-px" aria-hidden="true" />
       <div v-if="loadingPrevious" class="space-y-2 pb-3"><USkeleton v-for="index in 2" :key="index" class="h-24 w-full" /></div>
       <slot />
@@ -30,7 +35,7 @@ useAutoPagination({ sentinel: nextSentinel, scrollContainer, canLoadMore: () => 
       <div v-if="loadingNext" class="space-y-2 pt-3"><USkeleton v-for="index in 2" :key="index" class="h-24 w-full" /></div>
     </div>
     <footer class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default px-1 pt-3 text-sm text-muted">
-      <span>{{ $t('features.timesheets.admin.list.totalRecords', { count: pagination.total }) }}</span>
+      <span>{{ $t('features.timesheets.admin.list.totalRecords', pagination.total) }}</span>
       <UPagination v-if="pagination.pageCount > 1" :page="pagination.page" :total="pagination.total" :items-per-page="pagination.pageSize" :disabled="pending" @update:page="emit('page', $event)" />
     </footer>
   </div>

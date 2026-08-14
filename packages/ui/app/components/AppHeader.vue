@@ -32,7 +32,16 @@ const sidebarOpen = ref(false)
 // Get navigation links for search groups
 const { searchGroups } = useNavigationLinks(sidebarOpen)
 
-const { modules, activeModuleId, activeModule, activeModuleMenuItems } = useModuleNavigation()
+const { modules, moduleNavigationGroups, activeModuleId, activeModule } = useModuleNavigation(headerMenuOpen)
+const expandedMobileModuleId = ref('')
+
+watch(activeModuleId, (moduleId) => {
+  expandedMobileModuleId.value = moduleId
+}, { immediate: true })
+
+const toggleMobileModule = (moduleId: string) => {
+  expandedMobileModuleId.value = expandedMobileModuleId.value === moduleId ? '' : moduleId
+}
 
 const moduleItems = computed(() => {
   return modules.value.map(module => ({
@@ -40,15 +49,6 @@ const moduleItems = computed(() => {
     active: module.id === activeModuleId.value
   }))
 })
-
-const moduleSwitchItems = computed(() => [
-  modules.value.map(module => ({
-    label: module.label,
-    icon: module.icon,
-    badge: module.badge,
-    to: module.to
-  }))
-])
 
 const moduleBadgeProps = (badge: NonNullable<(typeof modules.value)[number]['badge']>) =>
   typeof badge === 'object' ? badge : { label: badge }
@@ -219,24 +219,6 @@ const stopImpersonating = async () => {
     </nav>
 
     <template #right>
-      <UDropdownMenu
-        v-if="showNavigation && activeModule && !headerMenuOpen"
-        class="min-w-0 lg:hidden"
-        :items="moduleSwitchItems"
-        :content="{ align: 'end', collisionPadding: 12 }"
-      >
-        <UButton
-          :label="activeModule.label"
-          :icon="activeModule.icon"
-          trailing-icon="i-lucide-chevrons-up-down"
-          color="neutral"
-          variant="ghost"
-          size="md"
-          class="min-h-11 max-w-56 justify-center px-2 font-semibold [&>span]:truncate"
-          :aria-label="t('menu.selectModule')"
-        />
-      </UDropdownMenu>
-
       <div class="hidden lg:flex items-center gap-3 ml-auto">
         <UButton
           icon="i-lucide-search"
@@ -281,29 +263,49 @@ const stopImpersonating = async () => {
         </div>
       </div>
 
-      <nav v-if="showNavigation && activeModule" :aria-label="t('menu.activeModuleNavigation')" class="p-5 pt-4">
-        <div class="flex min-w-0 items-center gap-3 pb-5">
-          <span class="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-            <UIcon v-if="activeModule.icon" :name="activeModule.icon" class="size-5" />
-          </span>
-          <div class="min-w-0">
-            <div class="truncate text-base font-bold text-highlighted">
-              {{ activeModule.label }}
-            </div>
-            <div class="text-sm text-muted">
-              {{ t('menu.moduleMenuDescription') }}
-            </div>
-          </div>
-        </div>
-        <UNavigationMenu
-          :items="activeModuleMenuItems"
-          orientation="vertical"
-          class="w-full"
-          :ui="{
-            list: 'gap-1',
-            link: 'min-h-11 rounded-md px-3 text-base font-medium'
-          }"
-        />
+      <nav v-if="showNavigation" :aria-label="t('menu.moduleNavigation')" class="space-y-5 p-5 pt-4">
+        <section v-for="module in moduleNavigationGroups" :key="module.id" class="space-y-1">
+          <button
+            v-if="module.menuItems.length"
+            type="button"
+            class="flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-base font-bold text-highlighted transition-colors hover:bg-elevated"
+            :class="module.id === activeModuleId ? 'bg-primary/10 text-primary' : ''"
+            :aria-expanded="expandedMobileModuleId === module.id"
+            :aria-controls="`mobile-module-${module.id}`"
+            @click="toggleMobileModule(module.id)"
+          >
+            <UIcon v-if="module.icon" :name="module.icon" class="size-5 shrink-0" />
+            <span class="min-w-0 flex-1 truncate">{{ module.label }}</span>
+            <UBadge v-if="module.badge" v-bind="moduleBadgeProps(module.badge)" />
+            <UIcon
+              name="i-lucide-chevron-down"
+              class="size-4 shrink-0 transition-transform"
+              :class="expandedMobileModuleId === module.id ? 'rotate-180' : ''"
+            />
+          </button>
+          <NuxtLink
+            v-else
+            :to="module.to"
+            class="flex min-h-11 items-center gap-3 rounded-md px-3 text-base font-bold text-highlighted transition-colors hover:bg-elevated"
+            :class="module.id === activeModuleId ? 'bg-primary/10 text-primary' : ''"
+            @click="headerMenuOpen = false"
+          >
+            <UIcon v-if="module.icon" :name="module.icon" class="size-5 shrink-0" />
+            <span class="min-w-0 flex-1 truncate">{{ module.label }}</span>
+            <UBadge v-if="module.badge" v-bind="moduleBadgeProps(module.badge)" />
+          </NuxtLink>
+          <UNavigationMenu
+            v-if="module.menuItems.length && expandedMobileModuleId === module.id"
+            :id="`mobile-module-${module.id}`"
+            :items="module.menuItems"
+            orientation="vertical"
+            class="w-full pl-5"
+            :ui="{
+              list: 'gap-1 border-l border-default pl-3',
+              link: 'min-h-10 rounded-md px-3 text-sm font-medium'
+            }"
+          />
+        </section>
       </nav>
 
       <div class="mt-auto border-t border-default p-4">
@@ -330,8 +332,8 @@ const stopImpersonating = async () => {
           {{ activeOrganization.name }}
         </UButton>
 
-        <div v-if="currentUser" class="mt-2">
-          <AppUserMenu />
+        <div v-if="currentUser" class="mt-2 border-t border-default pt-2">
+          <AppUserMenu inline size="md" @navigate="headerMenuOpen = false" />
         </div>
       </div>
     </template>

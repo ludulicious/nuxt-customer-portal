@@ -1,7 +1,9 @@
 import type {
   PortalFeatureDefinition,
   PortalFeaturePolicy,
-  PortalOrganizationRole
+  PortalOrganizationRole,
+  PortalOrganizationType,
+  PortalRolePolicy
 } from './types/feature'
 
 export const upsertPortalFeature = (
@@ -24,10 +26,17 @@ export const isPortalActionAllowed = <Action extends string>(
   policy: PortalFeaturePolicy<Action>,
   role: PortalOrganizationRole | null,
   action: Action,
-  isSystemAdmin = false
-): boolean => isSystemAdmin || Boolean(role && policy[role].includes(action))
+  organizationType: PortalOrganizationType = 'PROVIDER'
+): boolean => {
+  const contextual = ('PROVIDER' in policy ? policy[organizationType] : policy) as PortalRolePolicy<Action>
+  return Boolean(role && contextual[role].includes(action))
+}
 
 export const canManageOrganizationEmailCredential = (
   role: PortalOrganizationRole | null,
-  isSystemAdmin = false
-): boolean => isSystemAdmin || role === 'owner'
+  organizationType: PortalOrganizationType = 'PROVIDER'
+): boolean => organizationType === 'PROVIDER' && role === 'owner'
+
+export const canViewOrganizationDirectory = (
+  role: PortalOrganizationRole | string | null | undefined
+): boolean => role === 'owner' || role === 'admin'

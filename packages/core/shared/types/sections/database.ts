@@ -24,6 +24,7 @@ export interface Organization {
   logo?: string
   createdAt: Date
   metadata?: string
+  organizationType: 'PROVIDER' | 'CLIENT'
 }
 
 export interface Member {
@@ -31,6 +32,8 @@ export interface Member {
   organizationId: string
   userId: string
   role: string
+  phone?: string | null
+  jobTitle?: string | null
   createdAt: Date
 }
 

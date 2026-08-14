@@ -1,8 +1,8 @@
-import { requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
 import { getServiceRequestDashboard } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
+import { requireServiceRequestScope } from '@nuxt-customer-portal/service-requests/server/utils/service-request-scope'
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId, role } = await requireActiveOrganizationRole(event)
-  const canManage = role === 'owner' || role === 'admin' || session.user.role === 'admin'
-  return getServiceRequestDashboard(organizationId, canManage)
+  const scope = await requireServiceRequestScope(event, 'read')
+  const canManage = scope.organizationType === 'PROVIDER' && (scope.role === 'owner' || scope.role === 'admin')
+  return getServiceRequestDashboard(scope.providerOrganizationId, canManage, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
 })

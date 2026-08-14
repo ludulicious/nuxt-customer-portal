@@ -1,0 +1,332 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: portal-native · enrichment: none · contrast: pass (40–41) · mobile: pass (34, 49–57) */
+@import "../../tokens.css";
+
+html,
+body {
+  overflow-x: clip;
+}
+
+.invoice-workbench {
+  min-width: 0;
+}
+
+.invoice-workbench button,
+.invoice-workbench a,
+.invoice-admin button,
+.invoice-admin a {
+  white-space: nowrap;
+}
+
+.invoice-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2.2fr) repeat(7, minmax(3.5rem, 0.65fr)) minmax(4rem, 0.65fr);
+  min-width: 47rem;
+}
+
+.invoice-grid__cell {
+  min-width: 0;
+  padding: var(--invoices-space-cell);
+  border-right: 1px solid var(--invoices-rule);
+  border-bottom: 1px solid var(--invoices-rule);
+}
+
+.invoice-grid__cell--weekend {
+  background: var(--invoices-color-weekend);
+}
+
+.invoice-grid__identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  overflow-wrap: anywhere;
+}
+
+.invoice-grid__client,
+.invoice-grid__project,
+.invoice-grid__activity {
+  display: block;
+  min-width: 0;
+  white-space: normal;
+}
+
+.invoice-grid__client {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.invoice-grid__project {
+  color: var(--ui-text-highlighted);
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.invoice-grid__activity {
+  color: var(--ui-primary);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.invoice-timer {
+  border-inline-start: 3px solid var(--invoices-color-running);
+  background: var(--invoices-color-running-soft);
+}
+
+.invoice-row-action {
+  transition:
+    opacity var(--invoices-duration-fast) var(--invoices-ease-out),
+    transform var(--invoices-duration-fast) var(--invoices-ease-out);
+}
+
+.invoice-row-action:active {
+  transform: translateY(1px);
+}
+
+.invoice-row-action:focus-visible {
+  outline: 3px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+.invoice-grid .invoice-row-action:disabled {
+  cursor: not-allowed;
+  background: var(--ui-bg-accented);
+  color: var(--ui-text-dimmed);
+  opacity: 1;
+}
+
+.invoice-grid .invoice-row-action:disabled:hover {
+  background: var(--ui-bg-accented);
+}
+
+.invoice-mobile {
+  overflow: clip;
+  border: 1px solid var(--invoices-rule);
+  border-radius: var(--invoices-radius);
+  background: var(--ui-bg);
+}
+
+.invoice-mobile__loading,
+.invoice-mobile__empty {
+  display: grid;
+  min-height: 9rem;
+  place-items: center;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.invoice-mobile__empty {
+  align-content: center;
+  gap: 0.5rem;
+  color: var(--ui-text-muted);
+}
+
+.invoice-mobile__empty span {
+  max-width: 18rem;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+}
+
+.invoice-mobile__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-block-end: 1px solid var(--invoices-rule);
+}
+
+.invoice-mobile__day {
+  display: grid;
+  min-width: 0;
+  min-height: 5.25rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.125rem;
+  border-inline-end: 1px solid var(--invoices-rule);
+  color: var(--ui-text-muted);
+  transition: background-color var(--invoices-duration-fast) var(--invoices-ease-out);
+}
+
+.invoice-mobile__day:last-child {
+  border-inline-end: 0;
+}
+
+.invoice-mobile__day span,
+.invoice-mobile__day small {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.625rem;
+  line-height: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-mobile__day strong {
+  color: var(--ui-text-highlighted);
+  font-size: 0.875rem;
+}
+
+.invoice-mobile__day--weekend {
+  background: var(--invoices-color-weekend);
+}
+
+.invoice-mobile__day--active {
+  background: var(--ui-primary);
+  color: var(--ui-bg);
+}
+
+.invoice-mobile__day--active strong {
+  color: var(--ui-bg);
+}
+
+.invoice-mobile__day:focus-visible,
+.invoice-mobile__entry:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid var(--ui-primary);
+  outline-offset: -3px;
+}
+
+.invoice-mobile__summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-block-end: 1px solid var(--invoices-rule);
+}
+
+.invoice-mobile__date,
+.invoice-mobile__total {
+  color: var(--ui-text-highlighted);
+  font-weight: 650;
+}
+
+.invoice-mobile__day-total {
+  display: grid;
+  justify-items: end;
+  gap: 0.125rem;
+  text-align: end;
+}
+
+.invoice-mobile__day-total > span {
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
+}
+
+.invoice-mobile__total {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+}
+
+.invoice-mobile__total,
+.invoice-mobile__duration {
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-mobile__entries {
+  display: grid;
+}
+
+.invoice-mobile__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 4.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-block-end: 1px solid var(--invoices-rule);
+  cursor: pointer;
+  text-align: start;
+}
+
+.invoice-mobile__entry-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.invoice-mobile__entry-copy small,
+.invoice-mobile__entry-copy strong,
+.invoice-mobile__entry-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-mobile__entry-copy small {
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+}
+
+.invoice-mobile__entry-copy strong {
+  color: var(--ui-text-highlighted);
+  font-size: 0.875rem;
+}
+
+.invoice-mobile__entry-copy span {
+  color: var(--ui-primary);
+  font-size: 0.75rem;
+}
+
+.invoice-mobile__entry-copy .invoice-mobile__entry-note {
+  margin-block-start: 0.125rem;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+}
+
+.invoice-mobile__entry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.invoice-mobile__edit-cue {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--ui-primary);
+}
+
+.invoice-mobile__duration {
+  color: var(--ui-text-highlighted);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.invoice-mobile__add {
+  margin: 0.75rem;
+  width: calc(100% - 1.5rem);
+}
+
+.invoice-mobile button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .invoice-mobile__day:hover,
+  .invoice-mobile__entry:hover {
+    background: var(--ui-bg-elevated);
+  }
+
+  .invoice-mobile__day--active:hover {
+    background: var(--ui-primary);
+  }
+}
+
+@media (pointer: coarse) {
+  .invoice-mobile button {
+    min-height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invoice-row-action,
+  .invoice-mobile__day {
+    transition-duration: 0ms;
+  }
+}

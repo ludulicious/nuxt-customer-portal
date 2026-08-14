@@ -1,5 +1,21 @@
 [
   {
+    "date": "2026-08-12",
+    "macrostructure": "Workbench",
+    "theme": "existing portal system",
+    "enrichment": "none",
+    "brief": "Portal-native system user list and user detail administration",
+    "scope": "app"
+  },
+  {
+    "date": "2026-08-12",
+    "macrostructure": "Workbench",
+    "theme": "existing portal system",
+    "enrichment": "none",
+    "brief": "Compact portal-native system administration organization list",
+    "scope": "single-page"
+  },
+  {
     "date": "2026-08-01",
     "macrostructure": "Workbench",
     "theme": "existing portal system",

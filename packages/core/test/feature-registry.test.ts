@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { canManageOrganizationEmailCredential, isPortalActionAllowed, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
+import { canManageOrganizationEmailCredential, canViewOrganizationDirectory, isPortalActionAllowed, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
 import { getActiveOrganizationId } from '../shared/portal-session'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
 
@@ -30,10 +31,10 @@ test('dashboard contributions sort deterministically by area, order, and stable 
   assert.deepEqual(widgets.map(widget => widget.id), ['z', 'b', 'a', 'aside'])
 })
 
-test('feature policy honors organization roles and system-admin bypass', () => {
+test('feature policy honors organization roles without a system-admin bypass', () => {
   assert.equal(isPortalActionAllowed(feature.policy, 'member', 'read'), true)
   assert.equal(isPortalActionAllowed(feature.policy, 'member', 'manage'), false)
-  assert.equal(isPortalActionAllowed(feature.policy, null, 'manage', true), true)
+  assert.equal(isPortalActionAllowed(feature.policy, null, 'manage'), false)
 })
 
 test('active organization supports both Better Auth session shapes', () => {
@@ -48,10 +49,30 @@ test('active organization supports both Better Auth session shapes', () => {
   }), 'top-level-organization')
 })
 
-test('organization email credentials are restricted to owners and system administrators', () => {
+test('organization email credentials are restricted to PROVIDER organization owners', () => {
   assert.equal(canManageOrganizationEmailCredential('owner'), true)
   assert.equal(canManageOrganizationEmailCredential('admin'), false)
   assert.equal(canManageOrganizationEmailCredential('member'), false)
   assert.equal(canManageOrganizationEmailCredential(null), false)
-  assert.equal(canManageOrganizationEmailCredential(null, true), true)
+  assert.equal(canManageOrganizationEmailCredential('owner', 'CLIENT'), false)
+})
+
+test('organization member and invitation directories are restricted to owners and admins', () => {
+  assert.equal(canViewOrganizationDirectory('owner'), true)
+  assert.equal(canViewOrganizationDirectory('admin'), true)
+  assert.equal(canViewOrganizationDirectory('member'), false)
+  assert.equal(canViewOrganizationDirectory(null), false)
+})
+
+test('provider organization migration preserves the immutable owner-type migration', async () => {
+  const [legacy, provider] = await Promise.all([
+    readFile(new URL('../migrations/0001_organization_types.sql', import.meta.url), 'utf8'),
+    readFile(new URL('../migrations/0004_provider_organization_type.sql', import.meta.url), 'utf8')
+  ])
+
+  assert.match(legacy, /'OWNER', 'CLIENT'/)
+  assert.match(provider, /SET "organization_type" = 'PROVIDER'/)
+  assert.match(provider, /WHERE "organization_type" = 'OWNER'/)
+  assert.match(provider, /CHECK \("organization_type" IN \('PROVIDER', 'CLIENT'\)\)/)
+  assert.match(provider, /organization_single_provider_uidx/)
 })

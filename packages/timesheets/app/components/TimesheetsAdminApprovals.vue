@@ -150,7 +150,7 @@ const reject = () => run(async () => {
           <span class="flex items-center gap-2">
             <UIcon name="i-lucide-list-checks" class="size-4 text-primary" />
             {{ t('features.timesheets.admin.reviewDetails') }}
-            <span class="font-normal text-muted">{{ t('features.timesheets.admin.entryCount', { count: item.entries.length }) }}</span>
+            <span class="font-normal text-muted">{{ t('features.timesheets.admin.entryCount', item.entries.length) }}</span>
           </span>
           <UIcon name="i-lucide-chevron-down" class="size-4 text-muted transition-transform group-open:rotate-180" />
         </summary>

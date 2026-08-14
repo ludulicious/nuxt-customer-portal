@@ -17,20 +17,12 @@ import {
   listPortalOrganizationsForUser,
   listPortalOrganizationMembers
 } from '@nuxt-customer-portal/core/server/portal'
+import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
+import { getClient as getSharedClient, listSelectableClients, requireClientModuleEnabled } from '@nuxt-customer-portal/clients/server/utils/client-repository'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
-import { firstInvoiceNumber, hasNumericInvoiceSequence, incrementInvoiceNumber } from '@nuxt-customer-portal/timesheets/shared/invoice-number'
 import {
   activityType,
-  invoice,
-  invoiceAttachment,
-  invoiceEmailDelivery,
-  invoiceHistory,
-  invoiceLine,
-  invoicePayment,
-  invoiceTimeEntry,
   internalApproverAssignment,
-  organizationContact,
-  organizationInvoiceProfile,
   project,
   projectActivity,
   projectPersonTariff,
@@ -42,7 +34,6 @@ import {
   timesheetApprovalHistory,
   weeklyTimesheet,
   workspaceClient,
-  workspaceClientInvoiceViewer,
   workspaceClientReviewer,
   workspaceSettings,
   type TimeEntryRecord,
@@ -60,22 +51,17 @@ import type {
   TimesheetReportDto,
   TimeEntryDto,
   WeekDto,
-  InvoiceDto,
-  InvoiceableEntryDto,
   ClientAccessMode,
   ClientTimesheetsDto,
   ClientWorkspaceDto,
   ClientReviewerDto,
   ClientApprovalsDto,
   ClientReviewerSupplierDto,
-  ClientInvoiceDto,
-  ClientInvoiceSummaryDto,
-  ClientInvoiceSupplierDto,
   ClientSupplierTimesheetItemDto,
   InternalApprovalConfigurationDto,
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 import { hasInvalidProjectActivityAssignments, type ReportQuery } from './timesheet-validation'
-import { addIsoDays, invoiceOverdueDetails, mondayFor } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
+import { addIsoDays, mondayFor } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { TIMESHEET_ERROR_CODES } from '@nuxt-customer-portal/timesheets/shared/timesheet-errors'
 
 const toEntryDto = (row: TimeEntryRecord): TimeEntryDto => ({
@@ -135,12 +121,6 @@ export const requireTimesheetWorkspace = async (organizationId: string) => {
   if (!settings?.workspaceEnabled) throw createError({ statusCode: 403, message: 'Timesheet entry is not enabled for this organization' })
 }
 
-export const requireInvoicingEnabled = async (organizationId: string) => {
-  const [settings] = await db.select({ invoicingEnabled: workspaceSettings.invoicingEnabled }).from(workspaceSettings)
-    .where(eq(workspaceSettings.organizationId, organizationId)).limit(1)
-  if (!settings?.invoicingEnabled) throw createError({ statusCode: 403, message: 'Invoicing is not enabled for this organization' })
-}
-
 export const getOrganizationTimesheetCapabilities = async (organizationId: string) => {
   const [settings, clientLinks] = await Promise.all([
     db.select().from(workspaceSettings).where(eq(workspaceSettings.organizationId, organizationId)).limit(1),
@@ -148,11 +128,10 @@ export const getOrganizationTimesheetCapabilities = async (organizationId: strin
       .from(workspaceClient).innerJoin(organization, eq(organization.id, workspaceClient.workspaceOrganizationId))
       .where(eq(workspaceClient.clientOrganizationId, organizationId)).orderBy(asc(organization.name))
   ])
-  return { workspaceEnabled: settings[0]?.workspaceEnabled ?? false, invoicingEnabled: settings[0]?.invoicingEnabled ?? false, clientOf: clientLinks }
+  return { workspaceEnabled: settings[0]?.workspaceEnabled ?? false, clientOf: clientLinks }
 }
 
-export const updateOrganizationTimesheetCapabilities = async (organizationId: string, input: { workspaceEnabled: boolean, invoicingEnabled: boolean }) => {
-  if (input.invoicingEnabled && !input.workspaceEnabled) throw createError({ statusCode: 400, message: 'Invoicing requires a Timesheets workspace' })
+export const updateOrganizationTimesheetCapabilities = async (organizationId: string, input: { workspaceEnabled: boolean }) => {
   const [settings] = await db.insert(workspaceSettings).values({ organizationId, ...input }).onConflictDoUpdate({
     target: workspaceSettings.organizationId,
     set: { ...input, updatedAt: new Date() }
@@ -181,24 +160,8 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
   const links = await db.select().from(workspaceClient)
     .where(eq(workspaceClient.workspaceOrganizationId, organizationId))
   if (!links.length) return []
-  const clientIds = links.map(link => link.clientOrganizationId)
-  const [organizations, profiles, contacts] = await Promise.all([
-    getPortalOrganizationsByIds(clientIds),
-    db.select().from(organizationInvoiceProfile).where(inArray(organizationInvoiceProfile.organizationId, clientIds)),
-    db.select().from(organizationContact).where(inArray(organizationContact.organizationId, clientIds)).orderBy(asc(organizationContact.name))
-  ])
-  const byId = new Map(organizations.map(item => [item.id, item]))
-  const profileById = new Map(profiles.map(item => [item.organizationId, item]))
-  const officialName = (metadata: string | null) => {
-    try {
-      const value = metadata ? JSON.parse(metadata) as Record<string, unknown> : {}
-      return typeof value.officialCompanyName === 'string' && value.officialCompanyName.trim()
-        ? value.officialCompanyName.trim()
-        : null
-    } catch {
-      return null
-    }
-  }
+  const sharedClients = (await Promise.all(links.map(link => getSharedClient(link.clientOrganizationId)))).filter(Boolean)
+  const byId = new Map(sharedClients.map(item => [item!.organizationId, item!]))
   return links.flatMap((link) => {
     const client = byId.get(link.clientOrganizationId)
     return client
@@ -206,133 +169,33 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
           id: link.id,
           organizationId: client.id,
           name: client.name,
-          officialName: officialName(client.metadata),
+          officialName: client.officialName,
           slug: client.slug,
           logo: client.logo,
-          address: profileById.get(client.id)?.address ?? '',
-          registrationNumber: profileById.get(client.id)?.registrationNumber ?? null,
-          vatNumber: profileById.get(client.id)?.vatNumber ?? null,
-          invoiceEmail: profileById.get(client.id)?.invoiceEmail ?? null,
-          preferredLocale: profileById.get(client.id)?.preferredLocale ?? 'nl',
-          accessMode: link.accessMode,
-          invoiceAccessEnabled: link.invoiceAccessEnabled,
-          contacts: contacts.filter(contact => contact.organizationId === client.id).map(contact => ({
-            id: contact.id, userId: contact.userId, name: contact.name, email: contact.email,
-            phone: contact.phone, jobTitle: contact.jobTitle
-          }))
+          accessMode: link.accessMode
         }]
       : []
   }).sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export const getOrganizationInvoiceProfile = async (organizationId: string) => {
-  const [organization] = await getPortalOrganizationsByIds([organizationId])
-  if (!organization) throw createError({ statusCode: 404, message: 'Organization not found' })
-  const [profile] = await db.select().from(organizationInvoiceProfile)
-    .where(eq(organizationInvoiceProfile.organizationId, organizationId)).limit(1)
-  let officialCompanyName = organization.name
-  try {
-    const metadata = organization.metadata ? JSON.parse(organization.metadata) as Record<string, unknown> : {}
-    if (typeof metadata.officialCompanyName === 'string' && metadata.officialCompanyName.trim()) officialCompanyName = metadata.officialCompanyName
-  } catch { /* Retain the organization name for legacy metadata. */ }
-  return { organizationId, name: officialCompanyName, logo: organization.logo, address: profile?.address ?? '', registrationNumber: profile?.registrationNumber ?? null,
-    vatNumber: profile?.vatNumber ?? null, iban: profile?.iban ?? null, bic: profile?.bic ?? null, invoiceEmail: profile?.invoiceEmail ?? null,
-    invoiceEmailTemplate: profile?.invoiceEmailTemplate ?? null, preferredLocale: profile?.preferredLocale ?? 'nl' }
-}
-
-export const updateOrganizationInvoiceProfile = async (organizationId: string, targetOrganizationId: string, input: {
-  address: string
-  registrationNumber?: string | null
-  vatNumber?: string | null
-  iban?: string | null
-  bic?: string | null
-  invoiceEmail?: string | null
-  invoiceEmailTemplate?: string | null
-  preferredLocale?: 'nl' | 'en'
-}) => {
-  if (targetOrganizationId !== organizationId && !(await listClients(organizationId)).some(client => client.organizationId === targetOrganizationId)) {
-    throw createError({ statusCode: 404, message: 'Organization is not available in this workspace' })
-  }
-  const [profile] = await db.insert(organizationInvoiceProfile).values({ organizationId: targetOrganizationId, ...input })
-    .onConflictDoUpdate({ target: organizationInvoiceProfile.organizationId, set: { ...input, updatedAt: new Date() } }).returning()
-  return profile
-}
-
-export const createOrganizationContact = async (workspaceOrganizationId: string, clientOrganizationId: string, input: {
-  userId?: string | null
-  name: string
-  email: string
-  phone?: string | null
-  jobTitle?: string | null
-}) => {
-  if (!(await listClients(workspaceOrganizationId)).some(client => client.organizationId === clientOrganizationId)) throw createError({ statusCode: 404, message: 'Client not found' })
-  const [duplicate] = await db.select({ id: organizationContact.id }).from(organizationContact).where(and(
-    eq(organizationContact.organizationId, clientOrganizationId),
-    sql`lower(${organizationContact.email}) = lower(${input.email})`
-  )).limit(1)
-  if (duplicate) throw createError({ statusCode: 409, message: 'A contact with this email address already exists' })
-  try {
-    const [created] = await db.insert(organizationContact).values({ id: nanoid(), organizationId: clientOrganizationId, ...input }).returning()
-    return created
-  } catch (error) {
-    const databaseError = error as { code?: string, cause?: { code?: string } }
-    if (databaseError.code === '23505' || databaseError.cause?.code === '23505') {
-      throw createError({ statusCode: 409, message: 'A contact with this email address already exists' })
-    }
-    throw error
-  }
-}
-
-export const updateOrganizationContact = async (workspaceOrganizationId: string, clientOrganizationId: string, id: string, input: Record<string, unknown>) => {
-  if (!(await listClients(workspaceOrganizationId)).some(client => client.organizationId === clientOrganizationId)) throw createError({ statusCode: 404, message: 'Client not found' })
-  if (typeof input.email === 'string') {
-    const [duplicate] = await db.select({ id: organizationContact.id }).from(organizationContact).where(and(
-      eq(organizationContact.organizationId, clientOrganizationId),
-      sql`lower(${organizationContact.email}) = lower(${input.email})`
-    )).limit(1)
-    if (duplicate && duplicate.id !== id) throw createError({ statusCode: 409, message: 'A contact with this email address already exists' })
-  }
-  try {
-    const [updated] = await db.update(organizationContact).set({ ...input, updatedAt: new Date() }).where(and(eq(organizationContact.id, id), eq(organizationContact.organizationId, clientOrganizationId))).returning()
-    if (!updated) throw createError({ statusCode: 404, message: 'Contact not found' })
-    return updated
-  } catch (error) {
-    const databaseError = error as { code?: string, cause?: { code?: string } }
-    if (databaseError.code === '23505' || databaseError.cause?.code === '23505') {
-      throw createError({ statusCode: 409, message: 'A contact with this email address already exists' })
-    }
-    throw error
-  }
-}
-
-export const deleteOrganizationContact = async (workspaceOrganizationId: string, clientOrganizationId: string, id: string) => {
-  if (!(await listClients(workspaceOrganizationId)).some(client => client.organizationId === clientOrganizationId)) throw createError({ statusCode: 404, message: 'Client not found' })
-  const [deleted] = await db.delete(organizationContact).where(and(eq(organizationContact.id, id), eq(organizationContact.organizationId, clientOrganizationId))).returning()
-  if (!deleted) throw createError({ statusCode: 404, message: 'Contact not found' })
-  return { deleted: true }
-}
-
 export const listAvailableClientOrganizations = async (
   organizationId: string,
-  userId: string,
-  hasSystemAccess: boolean
+  _userId: string,
+  _hasSystemAccess: boolean
 ) => {
-  const [accessible, clients] = await Promise.all([
-    listPortalOrganizationsForUser(userId, hasSystemAccess),
-    listClients(organizationId)
-  ])
+  const [accessible, clients] = await Promise.all([listSelectableClients('timesheets'), listClients(organizationId)])
   const linkedIds = new Set(clients.map(client => client.organizationId))
   return accessible.filter(item => !linkedIds.has(item.id))
 }
 
 export const linkClient = async (
   organizationId: string,
-  userId: string,
-  hasSystemAccess: boolean,
+  _userId: string,
+  _hasSystemAccess: boolean,
   clientOrganizationId: string
 ) => {
-  const client = (await listPortalOrganizationsForUser(userId, hasSystemAccess))
-    .find(item => item.id === clientOrganizationId)
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
+  const client = await getSharedClient(clientOrganizationId)
   if (!client) throw createError({ statusCode: 404, message: 'Client organization not found' })
   const [link] = await db.insert(workspaceClient).values({
     id: nanoid(),
@@ -343,16 +206,16 @@ export const linkClient = async (
   return link
 }
 
-export const updateClientAccess = async (organizationId: string, id: string, accessMode: ClientAccessMode) => {
-  const [updated] = await db.update(workspaceClient).set({ accessMode, updatedAt: new Date() }).where(and(
-    eq(workspaceClient.id, id), eq(workspaceClient.workspaceOrganizationId, organizationId)
-  )).returning()
-  if (!updated) throw createError({ statusCode: 404, message: 'Client not found' })
-  return updated
+export const ensureTimesheetClientSettings = async (organizationId: string, clientOrganizationId: string) => {
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
+  const [existing] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.workspaceOrganizationId, organizationId), eq(workspaceClient.clientOrganizationId, clientOrganizationId))).limit(1)
+  if (existing) return existing
+  const [created] = await db.insert(workspaceClient).values({ id: nanoid(), workspaceOrganizationId: organizationId, clientOrganizationId }).returning()
+  return created
 }
 
-export const updateClientInvoiceAccess = async (organizationId: string, id: string, invoiceAccessEnabled: boolean) => {
-  const [updated] = await db.update(workspaceClient).set({ invoiceAccessEnabled, updatedAt: new Date() }).where(and(
+export const updateClientAccess = async (organizationId: string, id: string, accessMode: ClientAccessMode) => {
+  const [updated] = await db.update(workspaceClient).set({ accessMode, updatedAt: new Date() }).where(and(
     eq(workspaceClient.id, id), eq(workspaceClient.workspaceOrganizationId, organizationId)
   )).returning()
   if (!updated) throw createError({ statusCode: 404, message: 'Client not found' })
@@ -362,7 +225,7 @@ export const updateClientInvoiceAccess = async (organizationId: string, id: stri
 export const listClientWorkspaces = async (clientOrganizationId: string, userId: string, canManageReviewers: boolean): Promise<ClientWorkspaceDto[]> => {
   const links = await db.select({ link: workspaceClient, workspaceName: organization.name })
     .from(workspaceClient).innerJoin(organization, eq(organization.id, workspaceClient.workspaceOrganizationId))
-    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), or(inArray(workspaceClient.accessMode, ['VIEW', 'REVIEW']), eq(workspaceClient.invoiceAccessEnabled, true))))
+    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), inArray(workspaceClient.accessMode, ['VIEW', 'REVIEW'])))
     .orderBy(asc(organization.name))
   const reviews = links.length
     ? await db.select().from(workspaceClientReviewer).where(and(
@@ -370,39 +233,7 @@ export const listClientWorkspaces = async (clientOrganizationId: string, userId:
       ))
     : []
   const reviewerLinks = new Set(reviews.map(item => item.workspaceClientId))
-  const invoiceAssignments = links.length
-    ? await db.select().from(workspaceClientInvoiceViewer).where(and(
-        inArray(workspaceClientInvoiceViewer.workspaceClientId, links.map(item => item.link.id)), eq(workspaceClientInvoiceViewer.userId, userId)
-      ))
-    : []
-  const invoiceViewerLinks = new Set(invoiceAssignments.map(item => item.workspaceClientId))
-  return links.map(({ link, workspaceName }) => ({ id: link.id, workspaceOrganizationId: link.workspaceOrganizationId, workspaceName, accessMode: link.accessMode, invoiceAccessEnabled: link.invoiceAccessEnabled, canReview: link.accessMode === 'REVIEW' && reviewerLinks.has(link.id), canViewInvoices: link.invoiceAccessEnabled && (canManageReviewers || invoiceViewerLinks.has(link.id)), canManageReviewers }))
-}
-
-export const listClientInvoiceViewers = async (workspaceClientId: string, clientOrganizationId: string): Promise<ClientReviewerDto[]> => {
-  const [link] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.id, workspaceClientId), eq(workspaceClient.clientOrganizationId, clientOrganizationId), eq(workspaceClient.invoiceAccessEnabled, true))).limit(1)
-  if (!link) throw createError({ statusCode: 404, message: 'Client invoice workspace not found' })
-  const [members, assigned] = await Promise.all([listPortalOrganizationMembers(clientOrganizationId), db.select().from(workspaceClientInvoiceViewer).where(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId))])
-  const assignedIds = new Set(assigned.map(item => item.userId))
-  return members.map(item => ({ id: item.id, name: item.name, email: item.email, assigned: assignedIds.has(item.id) }))
-}
-
-export const listClientInvoiceSuppliers = async (clientOrganizationId: string, userId: string, isAdmin: boolean): Promise<ClientInvoiceSupplierDto[]> => {
-  const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, isAdmin)).filter(item => item.invoiceAccessEnabled && (isAdmin || item.canViewInvoices))
-  if (!workspaces.length) return []
-  const viewers = await db.select().from(workspaceClientInvoiceViewer).where(inArray(workspaceClientInvoiceViewer.workspaceClientId, workspaces.map(item => item.id)))
-  return workspaces.map(item => ({ ...item, viewerCount: viewers.filter(viewer => viewer.workspaceClientId === item.id).length }))
-}
-
-export const setClientInvoiceViewer = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, userId: string, assigned: boolean) => {
-  const eligible = await listClientInvoiceViewers(workspaceClientId, clientOrganizationId)
-  if (!eligible.some(item => item.id === userId)) throw createError({ statusCode: 400, message: 'Invoice viewer must be a current client member' })
-  if (!assigned) {
-    await db.delete(workspaceClientInvoiceViewer).where(and(eq(workspaceClientInvoiceViewer.workspaceClientId, workspaceClientId), eq(workspaceClientInvoiceViewer.userId, userId)))
-    return { assigned: false }
-  }
-  await db.insert(workspaceClientInvoiceViewer).values({ id: nanoid(), workspaceClientId, userId, createdById: actorUserId }).onConflictDoNothing()
-  return { assigned: true }
+  return links.map(({ link, workspaceName }) => ({ id: link.id, workspaceOrganizationId: link.workspaceOrganizationId, workspaceName, accessMode: link.accessMode, canReview: link.accessMode === 'REVIEW' && reviewerLinks.has(link.id), canManageReviewers }))
 }
 
 export const listClientReviewers = async (workspaceClientId: string, clientOrganizationId: string): Promise<ClientReviewerDto[]> => {
@@ -410,29 +241,40 @@ export const listClientReviewers = async (workspaceClientId: string, clientOrgan
   if (!link || link.accessMode === 'DISABLED') throw createError({ statusCode: 404, message: 'Client workspace not found' })
   const [members, assigned] = await Promise.all([listPortalOrganizationMembers(clientOrganizationId), db.select().from(workspaceClientReviewer).where(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId))])
   const assignedIds = new Set(assigned.map(item => item.userId))
-  return members.map(item => ({ id: item.id, name: item.name, email: item.email, assigned: assignedIds.has(item.id) }))
+  return members.map((item) => {
+    const fixedAccess = item.organizationRole === 'owner' || item.organizationRole === 'admin'
+    return { id: item.id, name: item.name, email: item.email, role: item.organizationRole, assigned: fixedAccess || assignedIds.has(item.id), fixedAccess }
+  })
 }
 
 export const listClientReviewerSuppliers = async (clientOrganizationId: string, userId: string): Promise<ClientReviewerSupplierDto[]> => {
   const workspaces = (await listClientWorkspaces(clientOrganizationId, userId, true)).filter(item => item.accessMode === 'REVIEW')
   if (!workspaces.length) return []
-  const [reviewers, pending] = await Promise.all([
+  const [reviewers, pending, members] = await Promise.all([
     db.select().from(workspaceClientReviewer).where(inArray(workspaceClientReviewer.workspaceClientId, workspaces.map(item => item.id))),
     db.select({ supplierOrganizationId: weeklyTimesheet.organizationId })
       .from(timesheetClientReview)
       .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
-      .where(and(eq(timesheetClientReview.clientOrganizationId, clientOrganizationId), eq(timesheetClientReview.status, 'PENDING')))
+      .where(and(eq(timesheetClientReview.clientOrganizationId, clientOrganizationId), eq(timesheetClientReview.status, 'PENDING'))),
+    listPortalOrganizationMembers(clientOrganizationId)
   ])
-  return workspaces.map(workspace => ({
-    ...workspace,
-    reviewerCount: reviewers.filter(item => item.workspaceClientId === workspace.id).length,
-    pendingCount: pending.filter(item => item.supplierOrganizationId === workspace.workspaceOrganizationId).length
-  }))
+  const fixedIds = new Set(members.filter(item => item.organizationRole === 'owner' || item.organizationRole === 'admin').map(item => item.id))
+  return workspaces.map((workspace) => {
+    const reviewerIds = new Set(reviewers.filter(item => item.workspaceClientId === workspace.id).map(item => item.userId))
+    fixedIds.forEach(id => reviewerIds.add(id))
+    return {
+      ...workspace,
+      reviewerCount: reviewerIds.size,
+      pendingCount: pending.filter(item => item.supplierOrganizationId === workspace.workspaceOrganizationId).length
+    }
+  })
 }
 
 export const setClientReviewer = async (workspaceClientId: string, clientOrganizationId: string, actorUserId: string, userId: string, assigned: boolean) => {
   const eligible = await listClientReviewers(workspaceClientId, clientOrganizationId)
-  if (!eligible.some(item => item.id === userId)) throw createError({ statusCode: 400, message: 'Reviewer must be a current client member' })
+  const selected = eligible.find(item => item.id === userId)
+  if (!selected) throw createError({ statusCode: 400, message: 'Reviewer must be a current client member' })
+  if (selected.fixedAccess) throw createError({ statusCode: 400, message: 'Organization owners and admins can always review timesheets' })
   if (!assigned) {
     await db.delete(workspaceClientReviewer).where(and(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId), eq(workspaceClientReviewer.userId, userId)))
     return { assigned: false }
@@ -886,10 +728,7 @@ export const setTeamTariff = async (
   return row
 }
 
-export const listProjects = async (organizationId: string): Promise<ProjectDto[]> => {
-  const projects = await db.select().from(project)
-    .where(eq(project.organizationId, organizationId))
-    .orderBy(desc(project.status), asc(project.name))
+const hydrateProjects = async (organizationId: string, projects: Array<typeof project.$inferSelect>): Promise<ProjectDto[]> => {
   if (!projects.length) return []
   const ids = projects.map(item => item.id)
   const [clients, assignments, rates] = await Promise.all([
@@ -917,6 +756,21 @@ export const listProjects = async (organizationId: string): Promise<ProjectDto[]
   }))
 }
 
+export const listProjects = async (organizationId: string): Promise<ProjectDto[]> => {
+  const projects = await db.select().from(project)
+    .where(eq(project.organizationId, organizationId))
+    .orderBy(desc(project.status), asc(project.name))
+  return hydrateProjects(organizationId, projects)
+}
+
+export const getProject = async (organizationId: string, id: string): Promise<ProjectDto | null> => {
+  const projects = await db.select().from(project).where(and(
+    eq(project.id, id),
+    eq(project.organizationId, organizationId)
+  )).limit(1)
+  return (await hydrateProjects(organizationId, projects))[0] ?? null
+}
+
 export const createProject = async (
   organizationId: string,
   input: {
@@ -930,10 +784,7 @@ export const createProject = async (
     activityTypeIds: string[]
   }
 ) => {
-  const clients = await listClients(organizationId)
-  if (!clients.some(client => client.organizationId === input.clientOrganizationId)) {
-    throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
-  }
+  await ensureTimesheetClientSettings(organizationId, input.clientOrganizationId)
   const validActivities = await listActivities(organizationId)
   if (hasInvalidProjectActivityAssignments(input.activityTypeIds, validActivities)) {
     throw createError({ statusCode: 400, message: 'Invalid activity type assignment' })
@@ -970,10 +821,7 @@ export const updateProject = async (
 ) => {
   const { activityTypeIds, personRates, ...projectValues } = input
   if (typeof projectValues.clientOrganizationId === 'string') {
-    const clients = await listClients(organizationId)
-    if (!clients.some(client => client.organizationId === projectValues.clientOrganizationId)) {
-      throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
-    }
+    await ensureTimesheetClientSettings(organizationId, projectValues.clientOrganizationId)
   }
   return db.transaction(async (tx) => {
     const projectFilter = and(
@@ -1154,7 +1002,6 @@ export const getBootstrap = async (
     settings: {
       currency: settings.currency,
       timezone: settings.timezone,
-      defaultVatRateBasisPoints: settings.defaultVatRateBasisPoints,
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
@@ -1460,14 +1307,8 @@ export const reviewWeek = async (
     throw createError({ statusCode: 409, message: 'Only approved weeks can be reopened', data: { code: TIMESHEET_ERROR_CODES.internalApprovalStale } })
   }
   if (action === 'REOPEN') {
-    const [invoicedEntry] = await tx.select({ id: invoiceTimeEntry.id }).from(invoiceTimeEntry)
-      .innerJoin(timeEntry, eq(timeEntry.id, invoiceTimeEntry.timeEntryId))
-      .innerJoin(invoice, eq(invoice.id, invoiceTimeEntry.invoiceId))
-      .where(and(
-        eq(timeEntry.weeklyTimesheetId, week.id),
-        inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID'])
-      )).limit(1)
-    if (invoicedEntry) throw createError({ statusCode: 409, message: 'Invoiced timesheets cannot be reopened' })
+    const entries = await tx.select({ id: timeEntry.id }).from(timeEntry).where(eq(timeEntry.weeklyTimesheetId, week.id))
+    await assertTimeEntriesReopenable(organizationId, entries.map(entry => entry.id))
   }
   const now = new Date()
   const nextStatus = action === 'APPROVE' ? 'APPROVED' : action === 'REJECT' ? 'REJECTED' : 'DRAFT'
@@ -1582,189 +1423,12 @@ export const getReport = async (
 
 export const updateSettings = async (
   organizationId: string,
-  input: Partial<{ currency: string, timezone: string, defaultVatRateBasisPoints: number }>
+  input: Partial<{ currency: string, timezone: string }>
 ) => {
   await ensureSettings(organizationId)
   const [updated] = await db.update(workspaceSettings).set(input)
     .where(eq(workspaceSettings.organizationId, organizationId)).returning()
   return updated
-}
-
-const invoiceTotals = (lines: Array<{ quantityMilli: number, unitPriceMinor: number, vatRateBasisPoints: number }>, payments: Array<{ amountMinor: number }>) => {
-  const subtotalMinor = lines.reduce((sum, line) => sum + Math.round(line.quantityMilli * line.unitPriceMinor / 1000), 0)
-  const vatMinor = lines.reduce((sum, line) => {
-    const amount = Math.round(line.quantityMilli * line.unitPriceMinor / 1000)
-    return sum + Math.round(amount * line.vatRateBasisPoints / 10_000)
-  }, 0)
-  const totalMinor = subtotalMinor + vatMinor
-  const paidMinor = payments.reduce((sum, payment) => sum + payment.amountMinor, 0)
-  return { subtotalMinor, vatMinor, totalMinor, paidMinor, outstandingMinor: Math.max(0, totalMinor - paidMinor) }
-}
-
-export const listInvoices = async (organizationId: string): Promise<InvoiceDto[]> => {
-  const [invoices, settings] = await Promise.all([
-    db.select().from(invoice).where(eq(invoice.organizationId, organizationId)).orderBy(desc(invoice.issueDate), desc(invoice.createdAt)),
-    ensureSettings(organizationId)
-  ])
-  if (!settings.invoicingEnabled) throw createError({ statusCode: 403, message: 'Invoicing is not enabled for this organization' })
-  if (!invoices.length) return []
-  const ids = invoices.map(item => item.id)
-  const [lines, payments, deliveries] = await Promise.all([
-    db.select().from(invoiceLine).where(inArray(invoiceLine.invoiceId, ids)).orderBy(asc(invoiceLine.position)),
-    db.select().from(invoicePayment).where(inArray(invoicePayment.invoiceId, ids)).orderBy(desc(invoicePayment.paidOn)),
-    db.select().from(invoiceEmailDelivery).where(and(
-      inArray(invoiceEmailDelivery.invoiceId, ids),
-      eq(invoiceEmailDelivery.purpose, 'REMINDER'),
-      eq(invoiceEmailDelivery.status, 'SENT')
-    )).orderBy(desc(invoiceEmailDelivery.sentAt))
-  ])
-  return invoices.map((item) => {
-    const selectedLines = lines.filter(line => line.invoiceId === item.id)
-    const selectedPayments = payments.filter(payment => payment.invoiceId === item.id)
-    const totals = invoiceTotals(selectedLines, selectedPayments)
-    const reminders = deliveries.filter(delivery => delivery.invoiceId === item.id)
-    return {
-      ...item,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-      issuedAt: item.issuedAt?.toISOString() ?? null,
-      lines: selectedLines.map(line => ({ ...line, amountMinor: Math.round(line.quantityMilli * line.unitPriceMinor / 1000) })),
-      payments: selectedPayments.map(payment => ({ id: payment.id, paidOn: payment.paidOn, amountMinor: payment.amountMinor, reference: payment.reference, note: payment.note })),
-      ...totals,
-      ...invoiceOverdueDetails(item.dueDate, item.status, totals.outstandingMinor, settings.timezone),
-      reminderCount: reminders.length,
-      lastReminderSentAt: reminders[0]?.sentAt?.toISOString() ?? null
-    }
-  })
-}
-
-export const getInvoice = async (organizationId: string, id: string): Promise<InvoiceDto> => {
-  const selected = (await listInvoices(organizationId)).find(item => item.id === id)
-  if (!selected) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  const [historyRows, attachmentRows, deliveryRows] = await Promise.all([
-    db.select({ history: invoiceHistory, actorName: user.name }).from(invoiceHistory)
-      .innerJoin(user, eq(user.id, invoiceHistory.actorUserId))
-      .where(eq(invoiceHistory.invoiceId, id)).orderBy(desc(invoiceHistory.createdAt)),
-    db.select({ attachment: invoiceAttachment, uploaderName: user.name }).from(invoiceAttachment)
-      .innerJoin(user, eq(user.id, invoiceAttachment.uploadedById))
-      .where(eq(invoiceAttachment.invoiceId, id)).orderBy(desc(invoiceAttachment.createdAt)),
-    db.select({ delivery: invoiceEmailDelivery, actorName: user.name }).from(invoiceEmailDelivery)
-      .innerJoin(user, eq(user.id, invoiceEmailDelivery.actorUserId))
-      .where(eq(invoiceEmailDelivery.invoiceId, id)).orderBy(desc(invoiceEmailDelivery.createdAt))
-  ])
-  return {
-    ...selected,
-    history: historyRows.map(({ history, actorName }) => ({
-      id: history.id,
-      action: history.action as NonNullable<InvoiceDto['history']>[number]['action'],
-      actorName,
-      amountMinor: history.amountMinor,
-      attachmentName: history.attachmentName,
-      createdAt: history.createdAt.toISOString()
-    })),
-    attachments: attachmentRows.map(({ attachment, uploaderName }) => ({
-      id: attachment.id,
-      fileName: attachment.fileName,
-      contentType: attachment.contentType,
-      size: attachment.size,
-      uploadedByName: uploaderName,
-      createdAt: attachment.createdAt.toISOString()
-    })),
-    emailDeliveries: deliveryRows.map(({ delivery, actorName }) => ({
-      id: delivery.id, purpose: delivery.purpose, status: delivery.status, recipientEmail: delivery.recipientEmail,
-      ccEmails: JSON.parse(delivery.ccEmails) as string[], locale: delivery.locale, subject: delivery.subject,
-      actorName, providerMessageId: delivery.providerMessageId, errorMessage: delivery.errorMessage,
-      providerLastEvent: delivery.providerLastEvent,
-      providerStatusCheckedAt: delivery.providerStatusCheckedAt?.toISOString() ?? null,
-      createdAt: delivery.createdAt.toISOString(), sentAt: delivery.sentAt?.toISOString() ?? null
-    }))
-  }
-}
-
-const requireClientInvoiceAccess = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, invoiceId?: string) => {
-  const links = await db.select().from(workspaceClient)
-    .where(and(eq(workspaceClient.clientOrganizationId, clientOrganizationId), eq(workspaceClient.invoiceAccessEnabled, true)))
-  const assignments = links.length && !isAdmin
-    ? await db.select().from(workspaceClientInvoiceViewer).where(and(
-        inArray(workspaceClientInvoiceViewer.workspaceClientId, links.map(link => link.id)),
-        eq(workspaceClientInvoiceViewer.userId, actorUserId)
-      ))
-    : []
-  const assignedIds = new Set(assignments.map(item => item.workspaceClientId))
-  const accessible = links.filter(link => isAdmin || assignedIds.has(link.id))
-  if (invoiceId) {
-    if (!accessible.length) throw createError({ statusCode: 404, message: 'Invoice not found' })
-    const [match] = await db.select({ workspaceOrganizationId: invoice.organizationId }).from(invoice).where(and(
-      eq(invoice.id, invoiceId), eq(invoice.clientOrganizationId, clientOrganizationId), inArray(invoice.status, ['ISSUED', 'PAID']),
-      inArray(invoice.organizationId, accessible.map(link => link.workspaceOrganizationId))
-    )).limit(1)
-    const link = match && accessible.find(item => item.workspaceOrganizationId === match.workspaceOrganizationId)
-    if (!link) throw createError({ statusCode: 404, message: 'Invoice not found' })
-    return link
-  }
-  return accessible
-}
-
-const toClientInvoice = (source: InvoiceDto, workspaceName: string, workspaceClientId: string): ClientInvoiceDto => {
-  const { payments: _payments, reminderCount: _reminderCount, lastReminderSentAt: _lastReminderSentAt, history: _history, emailDeliveries: _emailDeliveries, ...safe } = source
-  return { ...safe, supplierName: workspaceName, workspaceClientId }
-}
-
-export const listClientInvoices = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean): Promise<ClientInvoiceSummaryDto[]> => {
-  const links = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin)
-  if (!Array.isArray(links)) throw createError({ statusCode: 500, message: 'Invoice access resolution failed' })
-  if (!links.length) return []
-  const organizations = await getPortalOrganizationsByIds(links.map(link => link.workspaceOrganizationId))
-  const names = new Map(organizations.map(item => [item.id, item.name]))
-  const results = await Promise.all(links.map(async (link) => (await listInvoices(link.workspaceOrganizationId))
-    .filter(item => item.clientOrganizationId === clientOrganizationId && ['ISSUED', 'PAID'].includes(item.status))
-    .map(item => ({
-      id: item.id, number: item.number, status: item.status, currency: item.currency, issueDate: item.issueDate,
-      dueDate: item.dueDate, subject: item.subject, totalMinor: item.totalMinor, outstandingMinor: item.outstandingMinor,
-      isOverdue: item.isOverdue, daysOverdue: item.daysOverdue, supplierName: names.get(link.workspaceOrganizationId) ?? item.senderName,
-      workspaceClientId: link.id
-    }))))
-  return results.flat()
-}
-
-export const getClientInvoice = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, id: string): Promise<ClientInvoiceDto> => {
-  const link = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin, id)
-  if (Array.isArray(link)) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  const [workspace] = await getPortalOrganizationsByIds([link.workspaceOrganizationId])
-  const selected = await getInvoice(link.workspaceOrganizationId, id)
-  return toClientInvoice(selected, workspace?.name ?? selected.senderName, link.id)
-}
-
-export const getClientInvoiceAttachment = async (clientOrganizationId: string, actorUserId: string, isAdmin: boolean, invoiceId: string, attachmentId: string) => {
-  const selected = await getClientInvoice(clientOrganizationId, actorUserId, isAdmin, invoiceId)
-  if (!selected.attachments?.some(item => item.id === attachmentId)) throw createError({ statusCode: 404, message: 'Attachment not found' })
-  const link = await requireClientInvoiceAccess(clientOrganizationId, actorUserId, isAdmin, invoiceId)
-  if (Array.isArray(link)) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  return getInvoiceAttachment(link.workspaceOrganizationId, invoiceId, attachmentId)
-}
-
-export const listInvoiceableEntries = async (organizationId: string): Promise<InvoiceableEntryDto[]> => {
-  const [report, weeks, linked, disputes] = await Promise.all([
-    getReport(organizationId, { status: 'APPROVED', billable: true }),
-    db.select({ id: weeklyTimesheet.id }).from(weeklyTimesheet).where(and(eq(weeklyTimesheet.organizationId, organizationId), eq(weeklyTimesheet.status, 'APPROVED'))),
-    db.select({ timeEntryId: invoiceTimeEntry.timeEntryId }).from(invoiceTimeEntry)
-      .innerJoin(invoice, eq(invoice.id, invoiceTimeEntry.invoiceId))
-      .where(and(eq(invoice.organizationId, organizationId), inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID']))),
-    db.select({ weeklyTimesheetId: timesheetClientReview.weeklyTimesheetId, clientOrganizationId: timesheetClientReview.clientOrganizationId })
-      .from(timesheetClientReview).innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
-      .where(and(eq(weeklyTimesheet.organizationId, organizationId), eq(timesheetClientReview.status, 'DISPUTED')))
-  ])
-  const billed = new Set(linked.map(item => item.timeEntryId))
-  const weekIds = new Set(weeks.map(item => item.id))
-  if (!weekIds.size) return []
-  const entries = await db.select({ id: timeEntry.id, weeklyTimesheetId: timeEntry.weeklyTimesheetId, clientOrganizationId: timeEntry.clientOrganizationId }).from(timeEntry)
-    .where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.weeklyTimesheetId, [...weekIds])))
-  const entryContext = new Map(entries.map(item => [item.id, item]))
-  const disputed = new Set(disputes.map(item => `${item.weeklyTimesheetId}:${item.clientOrganizationId}`))
-  return report.rows.filter((row) => {
-    const entry = entryContext.get(row.entryId)
-    return entry && !billed.has(row.entryId) && !disputed.has(`${entry.weeklyTimesheetId}:${entry.clientOrganizationId}`)
-  }).map(row => ({ ...row, weeklyTimesheetId: entryContext.get(row.entryId)!.weeklyTimesheetId }))
 }
 
 export const getClientTimesheets = async (workspaceClientId: string, clientOrganizationId: string, userId: string, canManageReviewers: boolean): Promise<ClientTimesheetsDto> => {
@@ -1782,13 +1446,6 @@ export const getClientTimesheets = async (workspaceClientId: string, clientOrgan
     .where(and(eq(timeEntry.organizationId, workspace.workspaceOrganizationId), eq(timeEntry.clientOrganizationId, clientOrganizationId), eq(weeklyTimesheet.status, 'APPROVED')))
     .orderBy(desc(weeklyTimesheet.weekStartsOn), asc(timeEntry.entryDate), asc(timeEntry.createdAt))
   const weekIds = [...new Set(entries.map(item => item.week.id))]
-  const entryIds = entries.map(item => item.entry.id)
-  const invoicedEntries = entryIds.length
-    ? await db.select({ timeEntryId: invoiceTimeEntry.timeEntryId }).from(invoiceTimeEntry)
-        .innerJoin(invoice, eq(invoice.id, invoiceTimeEntry.invoiceId))
-        .where(and(inArray(invoiceTimeEntry.timeEntryId, entryIds), inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID'])))
-    : []
-  const invoicedEntryIds = new Set(invoicedEntries.map(item => item.timeEntryId))
   const reviews = weekIds.length
     ? await db.select().from(timesheetClientReview).where(and(
         inArray(timesheetClientReview.weeklyTimesheetId, weekIds), eq(timesheetClientReview.clientOrganizationId, clientOrganizationId)
@@ -1808,11 +1465,9 @@ export const getClientTimesheets = async (workspaceClientId: string, clientOrgan
   const slices = weekIds.map((weekId) => {
     const rows = entries.filter(item => item.week.id === weekId)
     const review = reviewByWeek.get(weekId)
-    const invoicedCount = rows.filter(item => invoicedEntryIds.has(item.entry.id)).length
     return {
       weeklyTimesheetId: weekId, weekStartsOn: rows[0]!.week.weekStartsOn, person: rows[0]!.personName,
       status: review?.status ?? 'PENDING' as const,
-      billingStatus: invoicedCount === 0 ? 'AWAITING_INVOICE' as const : invoicedCount === rows.length ? 'INVOICED' as const : 'PARTIALLY_INVOICED' as const,
       version: review?.version ?? 0, comment: review?.comment ?? null,
       reviewedAt: review?.reviewedAt?.toISOString() ?? null,
       entries: rows.map(({ entry, projectName, activityName, personName }) => ({ id: entry.id, date: entry.entryDate, project: projectName, person: personName, activity: activityName, minutes: entry.durationMinutes, note: entry.note })),
@@ -1861,184 +1516,6 @@ export const reviewClientTimesheet = async (workspaceClientId: string, clientOrg
   if (!updated) throw createError({ statusCode: 409, message: 'Client review changed; refresh and try again' })
   await tx.insert(timesheetClientReviewHistory).values({ id: nanoid(), weeklyTimesheetId: weekId, clientOrganizationId, action: action === 'APPROVE' ? 'APPROVED' : 'DISPUTED', actorUserId, comment: comment ?? null, createdAt: now })
   return updated
-})
-
-export const getNextInvoiceNumber = async (organizationId: string): Promise<string> => {
-  await requireInvoicingEnabled(organizationId)
-  const existing = await db.select({ number: invoice.number }).from(invoice)
-    .where(eq(invoice.organizationId, organizationId))
-    .orderBy(desc(invoice.createdAt))
-  if (!existing.length) return firstInvoiceNumber()
-  const used = new Set(existing.map(item => item.number))
-  const latestSequential = existing.find(item => hasNumericInvoiceSequence(item.number))
-  let candidate = latestSequential ? incrementInvoiceNumber(latestSequential.number) : firstInvoiceNumber()
-  while (used.has(candidate)) candidate = incrementInvoiceNumber(candidate)
-  return candidate
-}
-
-export const createInvoice = async (organizationId: string, actorUserId: string, input: {
-  clientOrganizationId: string
-  contactId?: string | null
-  number: string
-  currency: string
-  issueDate: string
-  dueDate: string
-  subject?: string | null
-  notes?: string | null
-  lines: Array<{
-    description: string
-    quantityMilli: number
-    unit: string
-    unitPriceMinor: number
-    vatRateBasisPoints: number
-    timeEntryIds?: string[]
-  }>
-}) => db.transaction(async (tx) => {
-  const [duplicate] = await tx.select({ id: invoice.id }).from(invoice)
-    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.number, input.number))).limit(1)
-  if (duplicate) throw createError({ statusCode: 409, message: 'Invoice number already exists' })
-  const clients = await listClients(organizationId)
-  const client = clients.find(item => item.organizationId === input.clientOrganizationId)
-  if (!client) throw createError({ statusCode: 400, message: 'Client is not linked to this workspace' })
-  const sender = await getOrganizationInvoiceProfile(organizationId)
-  if (![sender.address, sender.registrationNumber, sender.vatNumber, sender.iban, sender.bic, sender.invoiceEmail].every(value => value?.trim())) {
-    throw createError({ statusCode: 409, message: 'Sender invoice details must be completed before creating an invoice' })
-  }
-  const contact = input.contactId ? client.contacts.find(item => item.id === input.contactId) : undefined
-  if (input.contactId && !contact) throw createError({ statusCode: 400, message: 'Contact does not belong to this client' })
-  const sourceIds = input.lines.flatMap(line => line.timeEntryIds ?? [])
-  if (new Set(sourceIds).size !== sourceIds.length) throw createError({ statusCode: 400, message: 'A time entry can only occur once on an invoice' })
-  if (sourceIds.length) {
-    const [entries, existing] = await Promise.all([
-      tx.select({ entry: timeEntry, weekStatus: weeklyTimesheet.status }).from(timeEntry).innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timeEntry.weeklyTimesheetId)).where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, sourceIds))),
-      tx.select({ id: invoiceTimeEntry.timeEntryId }).from(invoiceTimeEntry)
-        .innerJoin(invoice, eq(invoice.id, invoiceTimeEntry.invoiceId))
-        .where(and(inArray(invoiceTimeEntry.timeEntryId, sourceIds), inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID'])))
-    ])
-    if (entries.length !== sourceIds.length || entries.some(row => row.weekStatus !== 'APPROVED' || !row.entry.billableSnapshot || row.entry.currencySnapshot !== input.currency) || existing.length) {
-      throw createError({ statusCode: 409, message: 'One or more time entries are unavailable for invoicing' })
-    }
-    const byId = new Map(entries.map(row => [row.entry.id, row.entry]))
-    for (const line of input.lines.filter(line => line.timeEntryIds?.length)) {
-      const sources = line.timeEntryIds!.map(id => byId.get(id)!)
-      if (new Set(sources.map(entry => entry.hourlyRateMinorSnapshot)).size !== 1
-        || line.unitPriceMinor !== sources[0]!.hourlyRateMinorSnapshot
-        || line.quantityMilli !== Math.round(sources.reduce((sum, entry) => sum + entry.durationMinutes, 0) * 1000 / 60)) {
-        throw createError({ statusCode: 400, message: 'Timesheet invoice line totals do not match their source entries' })
-      }
-    }
-  }
-  const invoiceId = nanoid()
-  const { lines, contactId: _contactId, ...values } = input
-  const snapshots = { senderName: sender.name, senderLogo: sender.logo, senderAddress: sender.address, senderRegistration: sender.registrationNumber,
-    senderVatNumber: sender.vatNumber, senderIban: sender.iban, senderBic: sender.bic, recipientName: client.officialName || client.name,
-    recipientAddress: client.address, recipientContactName: contact?.name ?? null, recipientEmail: contact?.email ?? client.invoiceEmail,
-    recipientLocale: client.preferredLocale }
-  const [created] = await tx.insert(invoice).values({ id: invoiceId, organizationId, createdById: actorUserId, ...values, ...snapshots }).returning()
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId, action: 'CREATED', actorUserId })
-  for (const [position, line] of lines.entries()) {
-    const lineId = nanoid()
-    const { timeEntryIds = [], ...lineValues } = line
-    await tx.insert(invoiceLine).values({ id: lineId, invoiceId, position, ...lineValues })
-    if (timeEntryIds.length) await tx.insert(invoiceTimeEntry).values(timeEntryIds.map(timeEntryId => ({ id: nanoid(), invoiceId, invoiceLineId: lineId, timeEntryId })))
-  }
-  return created
-})
-
-export const changeInvoiceStatus = async (organizationId: string, actorUserId: string, id: string, action: 'ISSUE' | 'VOID' | 'UNVOID') => db.transaction(async (tx) => {
-  const [current] = await tx.select().from(invoice).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).limit(1)
-  if (!current) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  if (action === 'ISSUE' && current.status !== 'DRAFT') throw createError({ statusCode: 409, message: 'Only draft invoices can be issued' })
-  if (action === 'VOID' && !['DRAFT', 'ISSUED'].includes(current.status)) throw createError({ statusCode: 409, message: 'This invoice cannot be voided' })
-  if (action === 'UNVOID' && current.status !== 'VOID') throw createError({ statusCode: 409, message: 'Only voided invoices can be unvoided' })
-  const status = action === 'ISSUE' ? 'ISSUED' : action === 'VOID' ? 'VOID' : current.issuedAt ? 'ISSUED' : 'DRAFT'
-  const [updated] = await tx.update(invoice).set({ status, issuedAt: action === 'ISSUE' ? new Date() : current.issuedAt }).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).returning()
-  const historyAction = action === 'ISSUE' ? 'ISSUED' : action === 'VOID' ? 'VOIDED' : 'UNVOIDED'
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: historyAction, actorUserId })
-  return updated
-})
-
-export const updateInvoice = async (organizationId: string, actorUserId: string, id: string, input: { number: string, issueDate: string, dueDate: string, subject?: string | null, notes?: string | null }) => db.transaction(async (tx) => {
-  const [current] = await tx.select().from(invoice).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).limit(1)
-  if (!current) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  if (current.status !== 'DRAFT') throw createError({ statusCode: 409, message: 'Only draft invoices can be edited' })
-  const [duplicate] = await tx.select({ id: invoice.id }).from(invoice)
-    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.number, input.number))).limit(1)
-  if (duplicate && duplicate.id !== id) throw createError({ statusCode: 409, message: 'Invoice number already exists' })
-  const [[sender], [recipient]] = await Promise.all([
-    tx.select({ logo: organization.logo }).from(organization)
-      .where(eq(organization.id, organizationId)).limit(1),
-    current.clientOrganizationId
-      ? tx.select({
-          name: organization.name,
-          metadata: organization.metadata,
-          address: organizationInvoiceProfile.address,
-          preferredLocale: organizationInvoiceProfile.preferredLocale
-        }).from(organization)
-          .leftJoin(organizationInvoiceProfile, eq(organizationInvoiceProfile.organizationId, organization.id))
-          .where(eq(organization.id, current.clientOrganizationId)).limit(1)
-      : Promise.resolve([])
-  ])
-  if (!sender) throw createError({ statusCode: 404, message: 'Organization not found' })
-  if (current.clientOrganizationId && !recipient) throw createError({ statusCode: 409, message: 'Client organization is no longer available' })
-
-  let officialRecipientName = ''
-  try {
-    const metadata = recipient?.metadata ? JSON.parse(recipient.metadata) as Record<string, unknown> : {}
-    if (typeof metadata.officialCompanyName === 'string') officialRecipientName = metadata.officialCompanyName.trim()
-  } catch { /* Use the regular organization name for legacy metadata. */ }
-
-  const recipientSnapshot = recipient
-    ? {
-        recipientName: officialRecipientName || recipient.name.trim() || current.recipientName,
-        recipientAddress: recipient.address?.trim() || current.recipientAddress,
-        recipientLocale: recipient.preferredLocale || current.recipientLocale
-      }
-    : {}
-  const [updated] = await tx.update(invoice).set({ ...input, senderLogo: sender.logo, ...recipientSnapshot }).where(eq(invoice.id, id)).returning()
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
-  return updated
-})
-
-export const registerInvoicePayment = async (organizationId: string, actorUserId: string, id: string, input: { paidOn: string, amountMinor: number, reference?: string | null, note?: string | null }) => db.transaction(async (tx) => {
-  const [current] = await tx.select().from(invoice).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).limit(1)
-  if (!current) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  if (!['ISSUED', 'PAID'].includes(current.status)) throw createError({ statusCode: 409, message: 'Payments can only be registered for issued invoices' })
-  const lines = await tx.select().from(invoiceLine).where(eq(invoiceLine.invoiceId, id))
-  const payments = await tx.select().from(invoicePayment).where(eq(invoicePayment.invoiceId, id))
-  const totals = invoiceTotals(lines, payments)
-  if (input.amountMinor > totals.outstandingMinor) throw createError({ statusCode: 400, message: 'Payment exceeds the outstanding amount' })
-  const [created] = await tx.insert(invoicePayment).values({ id: nanoid(), invoiceId: id, createdById: actorUserId, ...input }).returning()
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'PAYMENT_REGISTERED', actorUserId, amountMinor: input.amountMinor })
-  if (input.amountMinor === totals.outstandingMinor) await tx.update(invoice).set({ status: 'PAID' }).where(eq(invoice.id, id))
-  return created
-})
-
-export const addInvoiceAttachment = async (organizationId: string, actorUserId: string, id: string, file: { fileName: string, contentType: string, data: Uint8Array }) => db.transaction(async (tx) => {
-  const [current] = await tx.select({ id: invoice.id }).from(invoice).where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId))).limit(1)
-  if (!current) throw createError({ statusCode: 404, message: 'Invoice not found' })
-  if (!file.data.length || file.data.length > 10 * 1024 * 1024) throw createError({ statusCode: 400, message: 'Attachment must be between 1 byte and 10 MB' })
-  const attachmentId = nanoid()
-  const [created] = await tx.insert(invoiceAttachment).values({ id: attachmentId, invoiceId: id, fileName: file.fileName, contentType: file.contentType, size: file.data.length, contentBase64: Buffer.from(file.data).toString('base64'), uploadedById: actorUserId }).returning()
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'ATTACHMENT_ADDED', actorUserId, attachmentName: file.fileName })
-  return created
-})
-
-export const getInvoiceAttachment = async (organizationId: string, invoiceId: string, attachmentId: string) => {
-  const [row] = await db.select({ attachment: invoiceAttachment }).from(invoiceAttachment)
-    .innerJoin(invoice, eq(invoice.id, invoiceAttachment.invoiceId))
-    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.id, invoiceId), eq(invoiceAttachment.id, attachmentId))).limit(1)
-  if (!row) throw createError({ statusCode: 404, message: 'Attachment not found' })
-  return row.attachment
-}
-
-export const deleteInvoiceAttachment = async (organizationId: string, actorUserId: string, invoiceId: string, attachmentId: string) => db.transaction(async (tx) => {
-  const [row] = await tx.select({ attachment: invoiceAttachment }).from(invoiceAttachment)
-    .innerJoin(invoice, eq(invoice.id, invoiceAttachment.invoiceId))
-    .where(and(eq(invoice.organizationId, organizationId), eq(invoice.id, invoiceId), eq(invoiceAttachment.id, attachmentId))).limit(1)
-  if (!row) throw createError({ statusCode: 404, message: 'Attachment not found' })
-  await tx.delete(invoiceAttachment).where(eq(invoiceAttachment.id, attachmentId))
-  await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId, action: 'ATTACHMENT_REMOVED', actorUserId, attachmentName: row.attachment.fileName })
 })
 
 export const reportToCsv = (report: TimesheetReportDto) => {

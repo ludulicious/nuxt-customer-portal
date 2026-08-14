@@ -1,0 +1,25 @@
+:root {
+  --invoices-color-running: var(--color-success-600);
+  --invoices-color-running-soft: var(--color-success-50);
+  --invoices-color-weekend: var(--color-neutral-50);
+  --invoices-rule: var(--ui-border);
+  --invoices-radius: var(--ui-radius);
+  --invoices-space-cell: 0.75rem;
+  --invoices-duration-fast: 120ms;
+  --invoices-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark {
+  --invoices-color-running: var(--color-success-400);
+  --invoices-color-running-soft: var(--color-neutral-800);
+  --invoices-color-weekend: var(--color-neutral-900);
+}
+
+html[data-portal-theme='brutal'] {
+  --invoices-color-weekend: var(--color-paper-2);
+}
+
+html.dark[data-portal-theme='brutal'] {
+  --invoices-color-running-soft: var(--color-paper-2);
+  --invoices-color-weekend: var(--color-paper-2);
+}

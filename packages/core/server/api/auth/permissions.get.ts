@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
     permissions,
     role: currentRole,
     organizationRole: orgRole || null,
-    activeOrganization: activeOrganization
+    activeOrganization: activeOrganization,
+    organizationType: activeOrganization?.organizationType ?? null
   }
 })
