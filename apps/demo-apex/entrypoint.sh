@@ -1,12 +1,17 @@
 #!/bin/sh
-set -e
+set -eu
 
-# Run package and host migrations
-echo "Running Drizzle migrations..."
-if ! npx nuxt-customer-portal db migrate; then
-  echo "Migration failed!"
-  exit 1
-fi
-# Execute the command passed as arguments to this script (which is the CMD from Dockerfile)
+echo "Checking portal configuration..."
+npx --no-install nuxt-customer-portal doctor
+
+echo "Migration status before startup..."
+npx --no-install nuxt-customer-portal db status
+
+echo "Applying portal migrations..."
+npx --no-install nuxt-customer-portal db migrate
+
+echo "Migration status after startup..."
+npx --no-install nuxt-customer-portal db status
+
 echo "Starting Nuxt server..."
 exec "$@"
