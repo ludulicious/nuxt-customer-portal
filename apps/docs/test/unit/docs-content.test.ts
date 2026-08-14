@@ -233,9 +233,13 @@ describe('documentation content', () => {
     }
     const routeFiles = new Map(activeFiles.map(file => [publicRoute(file), file]))
     const layerIds = inventory.layers.map(layer => layer.id)
+    const moduleOverview = readFileSync(join(contentRoot, '3.modules/1.overview.md'), 'utf8')
 
     expect(new Set(layerIds).size).toBe(layerIds.length)
     expect(new Set(inventory.layers.map(layer => layer.kind))).toEqual(new Set(['foundation', 'platform', 'business']))
+    inventory.layers
+      .filter(layer => layer.kind === 'business')
+      .forEach(layer => expect(moduleOverview).toContain(`\`${layer.id}\``))
 
     inventory.layers.forEach((layer) => {
       const documentationFile = routeFiles.get(layer.documentationPath)

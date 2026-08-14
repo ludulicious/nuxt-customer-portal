@@ -10,6 +10,7 @@ const packageDirectories = [
   'authentication',
   'organizations',
   'clients',
+  'administration',
   'service-requests',
   'timesheets',
   'invoices',

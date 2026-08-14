@@ -91,7 +91,7 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
 
   await expect(page.getByRole('heading', { level: 1, name: 'Platform layers' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Decide where a change belongs' })).toBeVisible()
-  for (const layer of ['core', 'ui', 'authentication', 'organizations', 'administration', 'preset', 'kit']) {
+  for (const layer of ['core', 'ui', 'authentication', 'organizations', 'clients', 'preset', 'kit']) {
     await expect(page.getByText(layer, { exact: true }).first()).toBeVisible()
   }
   await expect(page.getByRole('link', { name: 'Create a feature layer' }).last()).toHaveAttribute(
@@ -104,8 +104,8 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
 
   await page.goto('/reference/server-api')
   await expect(page.getByRole('heading', { level: 2, name: 'Current product surface' })).toBeVisible()
-  await expect(page.getByText('contains 111 Nitro API handler files', { exact: false })).toBeVisible()
-  await expect(page.getByRole('row', { name: /timesheets 76/ })).toBeVisible()
+  await expect(page.getByText('contains 117 Nitro API handler files', { exact: false })).toBeVisible()
+  await expect(page.getByRole('row', { name: /timesheets 51/ })).toBeVisible()
 
   await page.setViewportSize({ width: 375, height: 812 })
   const apiReferenceWidth = await page.evaluate(() => ({

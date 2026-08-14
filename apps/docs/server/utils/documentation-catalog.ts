@@ -17,7 +17,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   { path: '/architecture/core-contracts', title: 'Portal-core contracts', description: 'Navigation, modules, dashboard widgets, audiences, and policies exposed to feature layers.' },
   { path: '/architecture/tenancy-and-security', title: 'Tenancy and security', description: 'How Customer Portal scopes data, separates roles, and protects feature APIs.' },
   { path: '/architecture/database-migrations', title: 'Database migrations', description: 'Apply package-owned PostgreSQL migration providers safely and adopt the recognized legacy history.' },
-  { path: '/modules/overview', title: 'Module overview', description: 'The foundation and optional business packages shipped with Nuxt Customer Portal.' },
+  { path: '/modules/overview', title: 'Module overview', description: 'The foundation, optional business, and integration packages shipped with Nuxt Customer Portal.' },
   { path: '/modules/timesheets', title: 'Timesheets', description: 'Time entry, internal and client approvals, supplier collaboration, and reporting.' },
   { path: '/modules/invoices', title: 'Invoices', description: 'Standalone sales and received invoices with PDF, email, payment, and access workflows.' },
   { path: '/modules/service-requests', title: 'Service requests', description: 'A compact reference feature showing the complete Customer Portal layer lifecycle.' },
