@@ -19,6 +19,7 @@ const cellEntriesOpen = ref(false)
 const timerModalOpen = ref(false)
 const saving = ref(false)
 const now = ref(Date.now())
+const currentDate = computed(() => format(new Date(now.value), 'yyyy-MM-dd'))
 let timerInterval: number | undefined
 
 const { data, pending, refresh } = await useAsyncData(
@@ -97,8 +98,7 @@ const selectedDayTotal = computed(() => totalForDate(selectedDay.value))
 
 watch(weekDays, (days) => {
   if (!days.length || days.some(day => day.value === selectedDay.value)) return
-  const today = format(new Date(), 'yyyy-MM-dd')
-  selectedDay.value = days.find(day => day.value === today)?.value ?? days[0]!.value
+  selectedDay.value = days.find(day => day.value === currentDate.value)?.value ?? days[0]!.value
 }, { immediate: true })
 
 const form = reactive({
@@ -456,7 +456,11 @@ const runningDuration = computed(() => {
             v-for="(day, index) in weekDays"
             :key="day.value"
             class="timesheet-grid__cell text-center"
-            :class="{ 'timesheet-grid__cell--weekend': index > 4 }"
+            :class="{
+              'timesheet-grid__cell--today': day.value === currentDate,
+              'timesheet-grid__cell--weekend': index > 4
+            }"
+            :aria-current="day.value === currentDate ? 'date' : undefined"
           >
             <span class="block text-xs text-muted">{{ day.label }}</span>
             <span class="font-semibold">{{ day.day }}</span>

@@ -35,6 +35,15 @@ body {
   background: var(--timesheets-color-weekend);
 }
 
+.timesheet-grid__cell--today {
+  background: var(--ui-primary);
+  color: var(--ui-bg);
+}
+
+.timesheet-grid__cell--today .text-muted {
+  color: var(--ui-bg);
+}
+
 .timesheet-grid__identity {
   display: flex;
   flex-direction: column;
