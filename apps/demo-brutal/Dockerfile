@@ -20,8 +20,11 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
-COPY apps/demo-brutal/entrypoint.sh .
-RUN chmod +x ./entrypoint.sh
+# The filtered Nuxt build and portal CLI both run from the demo package.
+WORKDIR /app/apps/demo-brutal
+
+COPY apps/demo-brutal/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 3000
 ENTRYPOINT ["/app/entrypoint.sh"]

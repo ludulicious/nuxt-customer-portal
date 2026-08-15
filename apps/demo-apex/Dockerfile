@@ -26,9 +26,13 @@ RUN pnpm rebuild
 RUN pnpm --filter @nuxt-customer-portal/demo-apex build
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
+ENV PORT=3000
+
+# The filtered Nuxt build and portal CLI both run from the demo package.
+WORKDIR /app/apps/demo-apex
 
 # Copy and set up entrypoint script
-COPY apps/demo-apex/entrypoint.sh .
+COPY apps/demo-apex/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 3000
