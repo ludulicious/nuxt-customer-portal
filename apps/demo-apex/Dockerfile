@@ -11,7 +11,7 @@ FROM base AS builder
 # Install pnpm and build tools for native modules
 ENV PNPM_VERSION=10.19.0
 RUN npm i -g pnpm@$PNPM_VERSION
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
+RUN apt-get update && apt-get install -y --no-install-recommends curl python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
 # Install the complete workspace so workspace:* dependencies resolve locally.
