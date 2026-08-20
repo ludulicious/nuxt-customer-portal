@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 import en from '../i18n/locales/en.json' with { type: 'json' }
 import nl from '../i18n/locales/nl.json' with { type: 'json' }
@@ -26,6 +26,17 @@ test('Timesheets source contains no invoice routes, APIs, or schema exports', ()
   }
   const schema = readFileSync(new URL('../server/db/schema/timesheets.ts', import.meta.url), 'utf8')
   assert.doesNotMatch(schema, /export const invoice|invoiceAccessEnabled|invoicingEnabled|organizationInvoice/)
+})
+
+test('client management uses the canonical Clients module', () => {
+  const checklist = readFileSync(new URL('../app/components/TimesheetsSetupChecklist.vue', import.meta.url), 'utf8')
+  const projectForm = readFileSync(new URL('../app/components/TimesheetsProjectForm.vue', import.meta.url), 'utf8')
+  const menu = readFileSync(new URL('../app/composables/useTimesheetMenu.ts', import.meta.url), 'utf8')
+
+  assert.match(checklist, /key: 'client', to: '\/clients'/)
+  assert.match(projectForm, /to="\/clients"/)
+  assert.doesNotMatch(`${checklist}\n${projectForm}\n${menu}`, /\/admin\/timesheets\/clients/)
+  assert.equal(existsSync(new URL('../app/pages/admin/timesheets/clients.vue', import.meta.url)), false)
 })
 
 test('workspace and access validation is invoice-independent', () => {

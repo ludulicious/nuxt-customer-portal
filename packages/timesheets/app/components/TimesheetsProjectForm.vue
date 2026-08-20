@@ -77,7 +77,7 @@ const createActivity = async () => {
         </UFormField>
         <p v-if="!data.clients.length" class="mt-2 text-sm text-muted">
           {{ t('features.timesheets.admin.createClientFirst') }}
-          <ULink to="/admin/timesheets/clients" class="text-primary">{{ t('features.timesheets.admin.manageClients') }}</ULink>
+          <ULink to="/clients" class="text-primary">{{ t('features.timesheets.admin.manageClients') }}</ULink>
         </p>
       </div>
       <UFormField name="name" :label="t('features.timesheets.fields.project')" required>

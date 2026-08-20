@@ -2,13 +2,12 @@
 import type { Component } from 'vue'
 import TimesheetsAdminActivities from './TimesheetsAdminActivities.vue'
 import TimesheetsAdminApprovals from './TimesheetsAdminApprovals.vue'
-import TimesheetsAdminClients from './TimesheetsAdminClients.vue'
 import TimesheetsAdminProjects from './TimesheetsAdminProjects.vue'
 import TimesheetsAdminRates from './TimesheetsAdminRates.vue'
 import TimesheetsAdminReports from './TimesheetsAdminReports.vue'
 import TimesheetsAdminSettings from './TimesheetsAdminSettings.vue'
 
-type AdminSection = 'approvals' | 'clients' | 'projects' | 'activities' | 'rates' | 'settings' | 'reports'
+type AdminSection = 'approvals' | 'projects' | 'activities' | 'rates' | 'settings' | 'reports'
 type CrudSectionView = {
   canCreate: boolean
   openCreate: () => void
@@ -19,7 +18,6 @@ type CrudSectionView = {
 const props = defineProps<{ section: AdminSection }>()
 const sectionComponents = {
   approvals: TimesheetsAdminApprovals,
-  clients: TimesheetsAdminClients,
   projects: TimesheetsAdminProjects,
   activities: TimesheetsAdminActivities,
   rates: TimesheetsAdminRates,
@@ -28,7 +26,6 @@ const sectionComponents = {
 } satisfies Record<AdminSection, Component>
 const sectionTitleKeys = {
   approvals: 'approvals',
-  clients: 'clients',
   projects: 'projects',
   activities: 'activities',
   rates: 'teamRates',
@@ -36,10 +33,10 @@ const sectionTitleKeys = {
   reports: 'reports'
 } satisfies Record<AdminSection, string>
 const sectionIcons: Partial<Record<AdminSection, string>> = {
-  clients: 'i-lucide-building-2', projects: 'i-lucide-folder-kanban', activities: 'i-lucide-tags'
+  projects: 'i-lucide-folder-kanban', activities: 'i-lucide-tags'
 }
 const createLabelKeys: Partial<Record<AdminSection, string>> = {
-  clients: 'newClient', projects: 'newProject', activities: 'newActivity'
+  projects: 'newProject', activities: 'newActivity'
 }
 const { t } = useI18n()
 const timesheets = useTimesheets()
@@ -49,7 +46,7 @@ const sectionComponent = computed(() => sectionComponents[props.section])
 const titleKey = computed(() => sectionTitleKeys[props.section])
 const sectionTitle = computed(() => t(`features.timesheets.admin.${titleKey.value}`))
 const sectionSubtitle = computed(() => t(`features.timesheets.admin.sectionSubtitles.${props.section}`))
-const hasConstrainedList = computed(() => ['clients', 'projects', 'activities'].includes(props.section))
+const hasConstrainedList = computed(() => ['projects', 'activities'].includes(props.section))
 const createLabel = computed(() => createLabelKeys[props.section] ? t(`features.timesheets.admin.${createLabelKeys[props.section]}`) : '')
 const { data, pending, refresh } = await useAsyncData(
   `timesheets-admin-${props.section}`,

@@ -4,7 +4,7 @@ import type { TimesheetsSetupStatusDto } from '@nuxt-customer-portal/timesheets/
 const props = defineProps<{ status: TimesheetsSetupStatusDto }>()
 const { t } = useI18n()
 const items = computed(() => [
-  { complete: props.status.hasClient, key: 'client', to: '/admin/timesheets/clients' },
+  { complete: props.status.hasClient, key: 'client', to: '/clients' },
   { complete: props.status.hasActiveActivity, key: 'activity', to: '/admin/timesheets/activities' },
   { complete: props.status.hasConfiguredProject, key: 'project', to: '/admin/timesheets/projects' },
   {

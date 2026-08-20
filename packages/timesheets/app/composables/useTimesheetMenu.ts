@@ -27,12 +27,6 @@ export const useTimesheetMenu = () => {
           active: route.path === '/admin/timesheets/internal-approvals'
         },
         {
-          label: t('features.timesheets.admin.clients'),
-          to: '/admin/timesheets/clients',
-          icon: 'i-lucide-building-2',
-          active: route.path === '/admin/timesheets/clients'
-        },
-        {
           label: t('features.timesheets.admin.projects'),
           to: '/admin/timesheets/projects',
           icon: 'i-lucide-folder-kanban',
