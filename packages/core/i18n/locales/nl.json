@@ -58,6 +58,9 @@
       "title": "Dashboard"
     }
   },
+  "footer": {
+    "copyright": "Alle rechten voorbehouden."
+  },
   "nav": {
     "admin": "Beheer",
     "blog": "Blog",

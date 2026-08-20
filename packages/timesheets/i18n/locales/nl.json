@@ -2,6 +2,11 @@
   "features": {
     "timesheets": {
       "title": "Urenstaten",
+      "roles": {
+        "owner": "Eigenaar",
+        "admin": "Beheerder",
+        "member": "Lid"
+      },
       "subtitle": "Registreer je werk zolang de details nog vers zijn.",
       "loading": "Urenstaat laden…",
       "previousWeek": "Vorige week",
@@ -219,6 +224,14 @@
         "projects": "Projecten",
         "activities": "Activiteiten",
         "teamRates": "Teamtarieven",
+        "sectionSubtitles": {
+          "approvals": "Beoordeel ingediende urenstaten die op goedkeuring wachten.",
+          "projects": "Beheer klantprojecten, activiteiten, budgetten en tarieven.",
+          "activities": "Beheer de activiteiten die je team kan gebruiken bij het registreren van tijd.",
+          "rates": "Beheer uurtarieven en wie tijd kan registreren.",
+          "settings": "Configureer de urenregistratiewerkruimte en de standaardinstellingen.",
+          "reports": "Bekijk geregistreerde tijd en teamprestaties."
+        },
         "canEnterTime": "Kan tijd registreren",
         "canEnterTimeFor": "Sta toe dat {name} tijd registreert",
         "reports": "Rapporten",

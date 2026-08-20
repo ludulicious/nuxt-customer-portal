@@ -2,6 +2,11 @@
   "features": {
     "timesheets": {
       "title": "Timesheets",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
       "subtitle": "Record your work while the details are still fresh.",
       "loading": "Loading timesheet…",
       "previousWeek": "Previous week",
@@ -219,6 +224,14 @@
         "projects": "Projects",
         "activities": "Activities",
         "teamRates": "Team rates",
+        "sectionSubtitles": {
+          "approvals": "Review submitted timesheets that are waiting for approval.",
+          "projects": "Manage client projects, activities, budgets, and rates.",
+          "activities": "Manage the activities your team can use when registering time.",
+          "rates": "Manage hourly rates and who can register time.",
+          "settings": "Configure the Timesheets workspace and its defaults.",
+          "reports": "Review recorded time and team performance."
+        },
         "canEnterTime": "Can register time",
         "canEnterTimeFor": "Allow {name} to register time",
         "reports": "Reports",

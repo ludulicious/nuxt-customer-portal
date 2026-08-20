@@ -11,6 +11,22 @@ const objectKeys = (value: unknown, prefix = ''): string[] => !value || typeof v
 
 test('English and Dutch expose identical feature locale keys', () => assert.deepEqual(objectKeys(en).sort(), objectKeys(nl).sort()))
 
+test('every Timesheets admin section has a translated subtitle', () => {
+  const sections = ['approvals', 'projects', 'activities', 'rates', 'settings', 'reports'] as const
+  for (const section of sections) {
+    assert.ok(en.features.timesheets.admin.sectionSubtitles[section])
+    assert.ok(nl.features.timesheets.admin.sectionSubtitles[section])
+  }
+})
+
+test('every organization role shown by Timesheets has a translation', () => {
+  const roles = ['owner', 'admin', 'member'] as const
+  for (const role of roles) {
+    assert.ok(en.features.timesheets.roles[role])
+    assert.ok(nl.features.timesheets.roles[role])
+  }
+})
+
 test('Timesheets owns only Timesheets navigation and dashboards', () => {
   const serialized = JSON.stringify(timesheetsFeature)
   assert.doesNotMatch(serialized, /invoice/i)

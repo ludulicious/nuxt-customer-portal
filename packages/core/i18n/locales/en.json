@@ -58,6 +58,9 @@
       "title": "Dashboard"
     }
   },
+  "footer": {
+    "copyright": "All rights reserved."
+  },
   "nav": {
     "admin": "Admin",
     "blog": "Blog",
