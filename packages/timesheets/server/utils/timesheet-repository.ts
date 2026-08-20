@@ -8,13 +8,11 @@ import {
   inArray,
   isNotNull,
   lte,
-  or,
   sql
 } from 'drizzle-orm'
 import {
   db,
   getPortalOrganizationsByIds,
-  listPortalOrganizationsForUser,
   listPortalOrganizationMembers
 } from '@nuxt-customer-portal/core/server/portal'
 import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
@@ -109,16 +107,17 @@ const listTeamMemberSettings = async (organizationId: string) => {
 }
 
 export const ensureSettings = async (organizationId: string) => {
-  const [settings] = await db.select().from(workspaceSettings)
+  const [settings] = await db.select({ settings: workspaceSettings, organizationType: organization.organizationType })
+    .from(workspaceSettings)
+    .innerJoin(organization, eq(organization.id, workspaceSettings.organizationId))
     .where(eq(workspaceSettings.organizationId, organizationId)).limit(1)
-  if (!settings?.workspaceEnabled) throw createError({ statusCode: 403, message: 'Timesheets workspace is not enabled' })
-  return settings
+  if (settings?.organizationType !== 'PROVIDER') throw createError({ statusCode: 403, message: 'Timesheets workspaces are only available to provider organizations' })
+  if (!settings.settings.workspaceEnabled) throw createError({ statusCode: 403, message: 'Timesheets workspace is not enabled' })
+  return settings.settings
 }
 
 export const requireTimesheetWorkspace = async (organizationId: string) => {
-  const [settings] = await db.select({ organizationId: workspaceSettings.organizationId, workspaceEnabled: workspaceSettings.workspaceEnabled }).from(workspaceSettings)
-    .where(eq(workspaceSettings.organizationId, organizationId)).limit(1)
-  if (!settings?.workspaceEnabled) throw createError({ statusCode: 403, message: 'Timesheet entry is not enabled for this organization' })
+  await ensureSettings(organizationId)
 }
 
 export const getOrganizationTimesheetCapabilities = async (organizationId: string) => {

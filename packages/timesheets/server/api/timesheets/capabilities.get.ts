@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     canMemberEnterTime(organizationId, session.user.id)
   ])
   const reviewWorkspaces = clientWorkspaces.filter(item => item.accessMode === 'REVIEW')
-  const workspaceEnabled = settings[0]?.workspaceEnabled ?? false
+  const workspaceEnabled = organizationType === 'PROVIDER' && (settings[0]?.workspaceEnabled ?? false)
   const internalApprovals = workspaceEnabled && (settings[0]?.internalApprovalsEnabled ?? true)
     ? await listApprovalQueue(organizationId, session.user.id)
     : []
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     canEnterTime: workspaceEnabled && memberCanEnterTime,
     canApproveInternalTimesheets: hasInternalApprovalAssignments,
     hasInternalApprovalAssignments,
-    canManageTimesheets: isAdmin && workspaceEnabled,
+    canManageTimesheets: organizationType === 'PROVIDER' && isAdmin && workspaceEnabled,
     canReviewClientTimesheets: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),
     canViewSupplierTime: organizationType === 'CLIENT' && clientWorkspaces.some(item => item.accessMode === 'VIEW'),
     canAccessApprovals: reviewWorkspaces.length > 0 && (isAdmin || reviewWorkspaces.some(item => item.canReview) || approvals.items.length > 0),

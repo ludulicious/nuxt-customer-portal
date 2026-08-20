@@ -27,6 +27,21 @@ test('every organization role shown by Timesheets has a translation', () => {
   }
 })
 
+test('provider workspace capabilities cannot leak into client organizations', () => {
+  const capabilities = readFileSync(new URL('../server/api/timesheets/capabilities.get.ts', import.meta.url), 'utf8')
+  const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')
+  const pageShell = readFileSync(new URL('../app/components/TimesheetsPageShell.vue', import.meta.url), 'utf8')
+  const timesheetPage = readFileSync(new URL('../app/pages/timesheets/index.vue', import.meta.url), 'utf8')
+  const capabilityUpdate = readFileSync(new URL('../server/api/timesheets/admin/organization-capabilities/[organizationId].patch.ts', import.meta.url), 'utf8')
+
+  assert.match(capabilities, /organizationType === 'PROVIDER'.*workspaceEnabled/)
+  assert.match(repository, /organizationType !== 'PROVIDER'/)
+  assert.match(pageShell, /activeOrganizationType === 'PROVIDER'/)
+  assert.match(timesheetPage, /if \(capabilities\.canEnterTime\) return/)
+  assert.match(timesheetPage, /capabilities\.canReviewClientTimesheets[\s\S]*\/timesheets\/approvals/)
+  assert.match(capabilityUpdate, /organizationType !== 'PROVIDER' && input\.workspaceEnabled/)
+})
+
 test('Timesheets owns only Timesheets navigation and dashboards', () => {
   const serialized = JSON.stringify(timesheetsFeature)
   assert.doesNotMatch(serialized, /invoice/i)

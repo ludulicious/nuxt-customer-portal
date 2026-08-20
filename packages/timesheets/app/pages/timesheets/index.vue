@@ -3,6 +3,25 @@ import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
 import type { TimeEntryDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
+defineOptions({ name: 'TimesheetsWorkbenchPage' })
+
+definePageMeta({
+  middleware: async () => {
+    const capabilities = await $fetch<{ canEnterTime: boolean, canReviewClientTimesheets: boolean, canApproveInternalTimesheets: boolean, canViewSupplierTime: boolean }>('/api/timesheets/capabilities')
+    if (capabilities.canEnterTime) return
+    return navigateTo(
+      capabilities.canReviewClientTimesheets
+        ? '/timesheets/approvals'
+        : capabilities.canApproveInternalTimesheets
+          ? '/timesheets/internal-approvals'
+          : capabilities.canViewSupplierTime
+            ? '/timesheets/suppliers'
+            : '/dashboard',
+      { replace: true }
+    )
+  }
+})
+
 const { t } = useI18n()
 const timesheets = useTimesheets()
 const mutationError = useTimesheetMutationError()
