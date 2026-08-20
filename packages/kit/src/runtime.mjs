@@ -178,6 +178,8 @@ export const seedPortalProvider = async (options = {}) => {
   const userName = assertString(options.userName, '--user-name')
   const email = assertString(options.userEmail, '--user-email').toLowerCase()
   const password = assertString(options.userPassword, '--user-password')
+  const memberRole = options.memberRole ?? 'owner'
+  if (!['owner', 'admin'].includes(memberRole)) throw new Error('memberRole must be owner or admin')
   return withPool(options.databaseUrl, async (pool) => {
     const client = await pool.connect()
     try {
@@ -196,8 +198,8 @@ export const seedPortalProvider = async (options = {}) => {
           VALUES ($1, $2, 'credential', $2, $3, now(), now())`, [randomUUID(), userId, passwordHash])
       }
       await client.query(`INSERT INTO member (id, organization_id, user_id, role, created_at)
-        SELECT $1, $2, $3, 'owner', now()
-        WHERE NOT EXISTS (SELECT 1 FROM member WHERE organization_id = $2 AND user_id = $3)`, [randomUUID(), organizationId, userId])
+        SELECT $1, $2, $3, $4, now()
+        WHERE NOT EXISTS (SELECT 1 FROM member WHERE organization_id = $2 AND user_id = $3)`, [randomUUID(), organizationId, userId, memberRole])
       await client.query('COMMIT')
       return { organizationId, userId, email, createdUser: !existingUser.rowCount }
     } catch (error) {

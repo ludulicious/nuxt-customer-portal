@@ -50,8 +50,8 @@ const moduleItems = computed(() => {
   }))
 })
 
-const moduleBadgeProps = (badge: NonNullable<(typeof modules.value)[number]['badge']>) =>
-  typeof badge === 'object' ? badge : { label: badge }
+const moduleBadgeProps = (badge: (typeof modules.value)[number]['badge']) =>
+  badge === undefined ? {} : typeof badge === 'object' ? badge : { label: badge }
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)

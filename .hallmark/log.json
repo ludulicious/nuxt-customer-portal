@@ -1,5 +1,12 @@
 [
   {
+    "date": "2026-08-20",
+    "macrostructure": "Split Narrative",
+    "theme": "existing portal system",
+    "enrichment": "generated architectural workspace illustration",
+    "brief": "Customer-facing SaaS homepage for prospective and returning portal users"
+  },
+  {
     "date": "2026-08-12",
     "macrostructure": "Workbench",
     "theme": "existing portal system",

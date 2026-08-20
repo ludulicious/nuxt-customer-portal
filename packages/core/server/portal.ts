@@ -11,6 +11,8 @@ import { getUserOrganizationRole } from '@nuxt-customer-portal/core/server/utils
 
 export { db }
 export type { PortalSession } from '@nuxt-customer-portal/core/shared/portal-session'
+export { enterPortalRequestContext, getPortalRequestContext, runWithPortalRequestContext } from './utils/request-context'
+export type { PortalRequestContext } from './utils/request-context'
 
 export const getSession = async (event: H3Event): Promise<PortalSession | null> => {
   const session = await auth.api.getSession({ headers: event.headers })

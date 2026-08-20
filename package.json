@@ -7,6 +7,7 @@
     "build": "pnpm -r --if-present build",
     "dev:apex": "pnpm --filter @nuxt-customer-portal/demo-apex dev",
     "dev:brutal": "pnpm --filter @nuxt-customer-portal/demo-brutal dev",
+    "dev:saas": "pnpm --filter @nuxt-customer-portal/saas dev",
     "dev:docs": "pnpm --filter @nuxt-customer-portal/docs dev",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
@@ -34,6 +35,7 @@
   },
   "pnpm": {
     "overrides": {
+      "h3": "1.15.11",
       "nuxt-site-config>h3": "1.15.4"
     }
   },

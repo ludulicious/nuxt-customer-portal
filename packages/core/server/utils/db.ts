@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
+import { createRequestAwareDatabase } from './runtime-db'
 
 // Declare globals to avoid multiple instances in development
 declare global {
@@ -10,9 +11,11 @@ export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 })
 
-export const db = globalThis.portalDatabase || drizzle(pool)
+const fallbackDatabase = globalThis.portalDatabase || drizzle(pool)
+
+export const db = createRequestAwareDatabase(fallbackDatabase)
 
 // If in development, assign the instances to the global variables
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.portalDatabase = db
+  globalThis.portalDatabase = fallbackDatabase
 }

@@ -24,7 +24,7 @@ All tenants run the same application release, but each tenant receives a separat
   - tenant ID and immutable slug;
   - canonical and alias domains;
   - tenant lifecycle status;
-  - database secret reference;
+  - database and tenant-auth secret references;
   - tenant schema and application version.
 - Extend Core during the SaaS phase with injectable, request-scoped database and authentication providers.
 - Existing dedicated Customer Portal hosts use a fixed database provider. `apps/saas` uses hostname-based tenant resolution.
@@ -37,14 +37,14 @@ The central control-plane database stores only platform-level data:
 
 - tenant ID, immutable slug, and lifecycle status;
 - standard subdomain, custom domains, verification status, and canonical-domain selection;
-- database secret reference and provisioning metadata;
+- database and tenant-auth secret references and provisioning metadata;
 - schema/application version and health information;
 - primary owner contact details;
 - subscription status and external billing identifiers;
 - creation, suspension, restoration, and deletion audit timestamps.
 - platform onboarding records, including requested company information, selected modules, requested owner email, and provisioning progress.
 
-Database credentials belong in a host secret manager. The control-plane database stores references to those secrets, not connection strings.
+Database credentials and tenant-specific Better Auth secrets belong in a host secret manager. The control-plane database stores references to those secrets, not their values. Every tenant receives a unique generated Better Auth secret; tenant authentication secrets are never shared with the platform or another tenant.
 
 The control-plane database and authentication data are not tenant data. Platform authentication is used for platform-domain onboarding, operator access, and post-onboarding account management; tenant authentication remains local to each tenant database.
 
@@ -68,12 +68,13 @@ Onboarding is a platform-domain workflow and is separate from tenant authenticat
 2. Collect the company information, immutable tenant slug, selected modules, and first tenant admin username/password.
 3. Reserve `slug.platform.tld` atomically.
 4. Provision or register the tenant PostgreSQL database through a provider adapter.
-5. Run all configured Customer Portal package migrations.
-6. Seed exactly one `PROVIDER` organization and the first Better Auth tenant user with the `admin` role.
-7. Configure the selected module activations for the tenant.
-8. Mark the tenant active and register its standard subdomain.
-9. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
-10. Exchange the handoff code for a tenant-local session.
+5. Generate and store a unique tenant Better Auth secret.
+6. Run all configured Customer Portal package migrations.
+7. Seed exactly one `PROVIDER` organization and the first Better Auth tenant user with the `admin` role.
+8. Configure the selected module activations for the tenant.
+9. Mark the tenant active and register its standard subdomain.
+10. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
+11. Exchange the handoff code for a tenant-local session.
 
 Provisioning must be idempotent and resumable after partial failures. Retrying a failed step must not create a second database, provider organization, user, or domain binding.
 
@@ -120,7 +121,7 @@ Feature code must never import a global database singleton in the SaaS runtime.
 - Use host-only cookies; do not share sessions across tenant domains.
 - Keep tenant identities and sessions tenant-local. There is no shared tenant login directory or tenant switcher; platform users authenticate separately on the platform domain.
 
-Initially support email/password and email OTP. Dynamic custom domains make provider callback URLs difficult to manage, so social login remains disabled until a central OAuth broker is designed.
+The platform domain may support centrally configured social login because it has stable callback URLs. Tenant portals initially support email/password and email OTP only. A later phase may allow each tenant to configure its own social-login providers and callback domains; tenant OAuth credentials must remain tenant-specific secrets and must not be shared with the platform or other tenants.
 
 ## Tenant administration and lifecycle
 

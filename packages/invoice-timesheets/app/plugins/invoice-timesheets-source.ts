@@ -1,4 +1,6 @@
 export default defineNuxtPlugin(() => {
+  if (import.meta.server) return
+
   useInvoiceSources().register({
     id: 'timesheets', labelKey: 'features.invoices.admin.approvedTime', descriptionKey: 'features.invoices.admin.approvedTimeDescription',
     load: query => $fetch('/api/invoice-timesheets/sources', { query }),
