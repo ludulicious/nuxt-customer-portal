@@ -156,6 +156,7 @@
         "noDataFound": "No users found",
         "notAvailable": "N/A",
         "role": "Role",
+        "status": "Status",
         "verified": "Verified"
       },
       "detail": {

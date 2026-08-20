@@ -26,6 +26,9 @@ const sortDir = ref<'asc' | 'desc'>(
 const listScrollTop = ref(0)
 const listContainerRef = ref<HTMLElement | null>(null)
 const scrollRestored = ref(false)
+const showSort = ref(false)
+const breakpoints = useBreakpoints({ mobile: 768 })
+const isMobile = breakpoints.smaller('mobile')
 
 const sortOptions = computed(() => [
   { label: t('admin.organization.list.name'), value: 'name' as const },
@@ -189,20 +192,14 @@ watch([loading, listContainerRef], () => {
         </div>
       </header>
 
-      <div class="grid grid-cols-1 gap-2 border-b border-default pb-4 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
-        <UInput
-          v-model="searchQuery"
-          :placeholder="t('admin.organization.list.searchPlaceholder')"
-          icon="i-lucide-search"
-          :loading="loading"
-          class="w-full"
-          clearable
-        />
+      <div class="border-b border-default pb-4">
         <div class="flex items-center gap-2">
+          <UInput v-model="searchQuery" :placeholder="t('admin.organization.list.searchPlaceholder')" icon="i-lucide-search" :loading="loading" class="min-w-0 flex-1 md:max-w-xs" clearable />
+          <template v-if="!isMobile">
           <UDropdownMenu
             :items="sortDropdownItems"
             :content="{ align: 'end', collisionPadding: 12 }"
-            class="min-w-0 flex-1"
+            class="ml-auto w-48"
           >
             <UButton
               icon="i-lucide-arrow-down-up"
@@ -219,7 +216,10 @@ watch([loading, listContainerRef], () => {
             :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
             @click="toggleSortDir"
           />
+          </template>
+          <UButton v-else variant="outline" icon="i-lucide-arrow-down-up" :aria-label="t('common.sort')" @click="showSort = true" />
         </div>
+        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" @click="toggleSortDir">{{ t('common.direction') }}</UButton></div></template></UModal>
       </div>
 
       <UAlert v-if="error" color="error" :title="error" variant="outline" />

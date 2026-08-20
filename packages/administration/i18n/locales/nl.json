@@ -156,6 +156,7 @@
         "noDataFound": "Geen gebruikers gevonden",
         "notAvailable": "N.v.t.",
         "role": "Rol",
+        "status": "Status",
         "verified": "Geverifieerd"
       },
       "detail": {

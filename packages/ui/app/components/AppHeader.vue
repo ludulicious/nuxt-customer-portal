@@ -266,7 +266,7 @@ const stopImpersonating = async () => {
       <nav v-if="showNavigation" :aria-label="t('menu.moduleNavigation')" class="space-y-5 p-5 pt-4">
         <section v-for="module in moduleNavigationGroups" :key="module.id" class="space-y-1">
           <button
-            v-if="module.menuItems.length"
+            v-if="module.menuItems.length > 1"
             type="button"
             class="flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-base font-bold text-highlighted transition-colors hover:bg-elevated"
             :class="module.id === activeModuleId ? 'bg-primary/10 text-primary' : ''"
@@ -285,17 +285,17 @@ const stopImpersonating = async () => {
           </button>
           <NuxtLink
             v-else
-            :to="module.to"
+            :to="module.menuItems[0]?.to ?? module.to"
             class="flex min-h-11 items-center gap-3 rounded-md px-3 text-base font-bold text-highlighted transition-colors hover:bg-elevated"
             :class="module.id === activeModuleId ? 'bg-primary/10 text-primary' : ''"
             @click="headerMenuOpen = false"
           >
-            <UIcon v-if="module.icon" :name="module.icon" class="size-5 shrink-0" />
-            <span class="min-w-0 flex-1 truncate">{{ module.label }}</span>
-            <UBadge v-if="module.badge" v-bind="moduleBadgeProps(module.badge)" />
+            <UIcon v-if="module.menuItems[0]?.icon ?? module.icon" :name="module.menuItems[0]?.icon ?? module.icon" class="size-5 shrink-0" />
+            <span class="min-w-0 flex-1 truncate">{{ module.menuItems[0]?.label ?? module.label }}</span>
+            <UBadge v-if="module.menuItems[0]?.badge ?? module.badge" v-bind="moduleBadgeProps(module.menuItems[0]?.badge ?? module.badge)" />
           </NuxtLink>
           <UNavigationMenu
-            v-if="module.menuItems.length && expandedMobileModuleId === module.id"
+            v-if="module.menuItems.length > 1 && expandedMobileModuleId === module.id"
             :id="`mobile-module-${module.id}`"
             :items="module.menuItems"
             orientation="vertical"
@@ -320,17 +320,29 @@ const stopImpersonating = async () => {
         >
           <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         </UButton>
-        <UButton
-          v-else-if="isAuthenticated && activeOrganization"
-          variant="ghost"
-          size="md"
-          icon="i-lucide-building-2"
-          block
-          class="min-h-11 justify-start text-muted hover:text-highlighted"
-          @click="showOrgSwitcherModal = true"
-        >
-          {{ activeOrganization.name }}
-        </UButton>
+        <div v-else-if="isAuthenticated && activeOrganization" class="flex items-center gap-1">
+          <UButton
+            variant="ghost"
+            size="md"
+            icon="i-lucide-building-2"
+            class="min-h-11 min-w-0 flex-1 justify-start text-muted hover:text-highlighted"
+            @click="showOrgSwitcherModal = true"
+          >
+            <span class="truncate">{{ activeOrganization.name }}</span>
+          </UButton>
+          <UButton
+            v-if="hasMultipleOrganizations"
+            :aria-label="t('menu.switchOrganization')"
+            :title="t('menu.switchOrganization')"
+            icon="i-lucide-arrow-left-right"
+            color="neutral"
+            variant="ghost"
+            size="md"
+            square
+            class="min-h-11 min-w-11 shrink-0 text-muted hover:text-highlighted"
+            @click="showOrgSwitcherModal = true"
+          />
+        </div>
 
         <div v-if="currentUser" class="mt-2 border-t border-default pt-2">
           <AppUserMenu inline size="md" @navigate="headerMenuOpen = false" />

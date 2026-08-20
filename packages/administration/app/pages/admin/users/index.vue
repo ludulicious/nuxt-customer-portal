@@ -29,6 +29,10 @@ const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'desc' ? 'desc' : 'a
 const listContainerRef = ref<HTMLElement | null>(null)
 const listScrollTop = ref(0)
 const scrollRestored = ref(false)
+const showFilters = ref(false)
+const showSort = ref(false)
+const breakpoints = useBreakpoints({ mobile: 768 })
+const isMobile = breakpoints.smaller('mobile')
 
 const roleOptions = computed(() => [
   { label: t('admin.user.list.allRoles'), value: 'all' },
@@ -154,18 +158,22 @@ await loadUsers()
         </div>
       </header>
 
-      <div class="grid gap-2 border-b border-default pb-4 md:grid-cols-[minmax(14rem,1fr)_10rem_10rem_11rem_auto]">
-        <UInput v-model="searchQuery" icon="i-lucide-search" :placeholder="t('admin.user.list.searchPlaceholder')" :loading="loading" clearable />
-        <USelect v-model="roleFilter" :items="roleOptions" value-key="value" />
-        <USelect v-model="statusFilter" :items="statusOptions" value-key="value" />
-        <USelect v-model="sortBy" :items="sortOptions" value-key="value" />
-        <UButton
-          color="neutral"
-          variant="outline"
-          :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-          :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
-          @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
-        />
+      <div class="border-b border-default pb-4">
+        <div class="flex items-center gap-2">
+          <UInput v-model="searchQuery" class="min-w-0 flex-1 md:max-w-xs" icon="i-lucide-search" :placeholder="t('admin.user.list.searchPlaceholder')" :loading="loading" clearable />
+          <template v-if="!isMobile">
+            <USelect v-model="roleFilter" :items="roleOptions" value-key="value" class="w-40" />
+            <USelect v-model="statusFilter" :items="statusOptions" value-key="value" class="w-40" />
+            <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-44" />
+            <UButton color="neutral" variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'" />
+          </template>
+          <template v-else>
+            <UButton variant="outline" icon="i-lucide-filter" :aria-label="t('common.filters')" @click="showFilters = true" />
+            <UButton variant="outline" icon="i-lucide-arrow-down-up" :aria-label="t('common.sort')" @click="showSort = true" />
+          </template>
+        </div>
+        <UModal v-model:open="showFilters" :title="t('common.filters')"><template #body><div class="space-y-4"><UFormField :label="t('admin.user.list.role')"><USelect v-model="roleFilter" :items="roleOptions" value-key="value" class="w-full" /></UFormField><UFormField :label="t('admin.user.list.status')"><USelect v-model="statusFilter" :items="statusOptions" value-key="value" class="w-full" /></UFormField></div></template></UModal>
+        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">{{ t('common.direction') }}</UButton></div></template></UModal>
       </div>
 
       <UAlert v-if="error" color="error" :title="error" variant="outline" />
