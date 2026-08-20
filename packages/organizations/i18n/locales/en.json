@@ -3,8 +3,7 @@
     "title": "Settings",
     "profile": "Profile",
     "organization": "Organization",
-    "security": "Security",
-    "documentation": "Documentation"
+    "security": "Security"
   },
   "security": {
     "password": {
@@ -37,7 +36,6 @@
         "passwordPlaceholder": "Enter your password",
         "deleteButton": "Delete Account",
         "cancelButton": "Cancel",
-        "success": "Account deleted successfully",
         "error": "Failed to delete account",
         "emailVerificationSent": "Verification email sent. Please check your email to complete account deletion."
       }
@@ -82,7 +80,6 @@
       "removeDescription": "Invoices and reminders cannot be sent until a new organization key is configured."
     },
     "settings": {
-      "editTitle": "Edit organization",
       "editButton": "Edit organization",
       "updateSuccess": "Organization updated successfully",
       "nameLabel": "Organization Name",
@@ -121,8 +118,6 @@
       "loading": "Loading organization data...",
       "title": "Members",
       "empty": "No members yet",
-      "email": "Email",
-      "name": "Name",
       "role": "Role",
       "remove": "Remove member",
       "removeSuccess": "Member removed successfully",
@@ -139,9 +134,7 @@
       "invitations": {
         "title": "Invitations",
         "empty": "No pending invitations",
-        "status": "Status",
         "expires": "Expires",
-        "actions": "Actions",
         "resend": "Resend",
         "delete": "Delete",
         "inviteButton": "Invite Member",
@@ -154,23 +147,10 @@
         "sendButton": "Send Invitation",
         "sendSuccess": "Invitation sent successfully",
         "cancel": "Cancel",
-        "confirmResend": {
-          "title": "Resend Invitation",
-          "message": "Are you sure you want to resend the invitation to {email} as {role}?",
-          "confirm": "Resend"
-        },
-        "confirmDelete": {
-          "title": "Delete Invitation",
-          "message": "Are you sure you want to delete this invitation? This action cannot be undone.",
-          "confirm": "Delete"
-        },
         "resendSuccess": "Invitation resent successfully",
         "deleteSuccess": "Invitation deleted successfully"
       },
       "errors": {
-        "noActiveOrganization": "No active organization found",
-        "onlyOwnerCanManage": "Only organization owners can manage members",
-        "loadFailed": "Failed to load organization data",
         "sendInvitationFailed": "Failed to send invitation",
         "resendFailed": "Failed to resend invitation",
         "cancelFailed": "Failed to cancel invitation",
@@ -201,7 +181,6 @@
       "namePlaceholder": "Enter your name",
       "profilePicture": "Profile Picture",
       "profilePictureDescription": "JPG, GIF or PNG. 1MB Max.",
-      "profilePicturePlaceholder": "https://example.com/avatar.jpg",
       "chooseAvatar": "Choose"
     },
     "messages": {

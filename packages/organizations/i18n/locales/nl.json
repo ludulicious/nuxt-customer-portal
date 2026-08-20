@@ -1,6 +1,5 @@
 {
   "settings": {
-    "documentation": "Documentatie",
     "title": "Instellingen",
     "profile": "Profiel",
     "organization": "Organisatie",
@@ -37,7 +36,6 @@
         "passwordPlaceholder": "Voer uw wachtwoord in",
         "deleteButton": "Account verwijderen",
         "cancelButton": "Annuleren",
-        "success": "Account succesvol verwijderd",
         "error": "Account verwijderen mislukt",
         "emailVerificationSent": "Verificatie-e-mail verzonden. Controleer uw e-mail om de accountverwijdering te voltooien."
       }
@@ -82,7 +80,6 @@
       "removeDescription": "Facturen en herinneringen kunnen niet worden verzonden totdat een nieuwe organisatiesleutel is geconfigureerd."
     },
     "settings": {
-      "editTitle": "Organisatie bewerken",
       "editButton": "Organisatie bewerken",
       "updateSuccess": "Organisatie succesvol bijgewerkt",
       "nameLabel": "Organisatienaam",
@@ -121,8 +118,6 @@
       "loading": "Organisatiegegevens laden...",
       "title": "Leden",
       "empty": "Nog geen leden",
-      "email": "E-mail",
-      "name": "Naam",
       "role": "Rol",
       "remove": "Lid verwijderen",
       "removeSuccess": "Lid succesvol verwijderd",
@@ -139,9 +134,7 @@
       "invitations": {
         "title": "Uitnodigingen",
         "empty": "Geen openstaande uitnodigingen",
-        "status": "Status",
         "expires": "Verloopt",
-        "actions": "Acties",
         "resend": "Opnieuw Verzenden",
         "delete": "Verwijderen",
         "inviteButton": "Lid Uitnodigen",
@@ -154,23 +147,10 @@
         "sendButton": "Uitnodiging Verzenden",
         "sendSuccess": "Uitnodiging succesvol verzonden",
         "cancel": "Annuleren",
-        "confirmResend": {
-          "title": "Uitnodiging Opnieuw Verzenden",
-          "message": "Weet je zeker dat je de uitnodiging naar {email} als {role} wilt opnieuw verzenden?",
-          "confirm": "Opnieuw Verzenden"
-        },
-        "confirmDelete": {
-          "title": "Uitnodiging Verwijderen",
-          "message": "Weet je zeker dat je deze uitnodiging wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-          "confirm": "Verwijderen"
-        },
         "resendSuccess": "Uitnodiging succesvol opnieuw verzonden",
         "deleteSuccess": "Uitnodiging succesvol verwijderd"
       },
       "errors": {
-        "noActiveOrganization": "Geen actieve organisatie gevonden",
-        "onlyOwnerCanManage": "Alleen organisatie-eigenaren kunnen leden beheren",
-        "loadFailed": "Organisatiegegevens laden mislukt",
         "sendInvitationFailed": "Uitnodiging verzenden mislukt",
         "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
         "cancelFailed": "Uitnodiging annuleren mislukt",
@@ -201,7 +181,6 @@
       "namePlaceholder": "Voer je naam in",
       "profilePicture": "Profielfoto",
       "profilePictureDescription": "JPG, GIF of PNG. Max. 1MB.",
-      "profilePicturePlaceholder": "https://voorbeeld.nl/avatar.jpg",
       "chooseAvatar": "Kiezen"
     },
     "messages": {

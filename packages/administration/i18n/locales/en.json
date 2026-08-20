@@ -11,12 +11,6 @@
       "cannotChangeOwnRole": "You cannot change your own role"
     },
     "organization": {
-      "title": "Organization Details",
-      "manage": {
-        "title": "Manage Organizations",
-        "back": "Back",
-        "name": "Organization Name"
-      },
       "create": {
         "title": "Create Organization",
         "back": "Back",
@@ -46,10 +40,6 @@
         "created": "Created",
         "members": {
           "title": "Members",
-          "empty": "No members yet",
-          "email": "Email",
-          "name": "Name",
-          "role": "Role",
           "remove": "Remove from organization",
           "removeSuccess": "Member removed from the organization",
           "removeFailed": "Failed to remove the member",
@@ -116,9 +106,6 @@
           "sendInvitationFailed": "Failed to send invitation",
           "resendFailed": "Failed to resend invitation",
           "cancelFailed": "Failed to cancel invitation"
-        },
-        "confirm": {
-          "cancelInvitation": "Are you sure you want to cancel this invitation?"
         }
       },
       "list": {
@@ -139,7 +126,6 @@
         "provider": "Provider",
         "client": "Client",
         "name": "Name",
-        "slug": "Slug",
         "created": "Created"
       }
     },
@@ -151,7 +137,6 @@
       "list": {
         "title": "Users",
         "description": "Manage portal users, access and account security.",
-        "createButton": "Create User",
         "newUser": "New user",
         "createFirstUser": "Create your first user",
         "loading": "Loading users...",
@@ -187,7 +172,6 @@
         "management": "Account management"
       },
       "updateRole": {
-        "title": "Update Role",
         "description": "Update the role for this user",
         "confirm": "Update Role",
         "success": "Role updated successfully",

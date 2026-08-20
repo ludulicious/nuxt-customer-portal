@@ -2,7 +2,6 @@
   "features": {
     "serviceRequests": {
       "title": "Serviceaanvragen",
-      "subTitle": "Bekijk en beheer alle serviceaanvragen",
       "create": "Aanvraag maken",
       "edit": "Aanvraag bewerken",
       "delete": "Aanvraag verwijderen",
@@ -11,17 +10,25 @@
         "manageRequests": "Serviceaanvragen beheren",
         "newRequest": "Nieuwe aanvraag"
       },
-      "widget": {
-        "title": "Recente serviceaanvragen",
-        "viewAll": "Alles bekijken",
-        "empty": "Geen recente aanvragen",
-        "create": "Aanvraag maken"
-      },
       "dashboard": {
-        "error": "Serviceaanvragen konden niet worden geladen.", "retry": "Opnieuw proberen", "new": "Nieuwe aanvraag", "viewAll": "Alles bekijken", "manage": "Aanvragen beheren",
-        "active": "{count} actief", "resolved": "{count} opgelost", "urgent": "{count} urgent", "unassigned": "{count} niet toegewezen", "longOpen": "{count} langer dan 7 dagen open",
-        "overview": { "title": "Serviceaanvragen", "empty": "Nog geen serviceaanvragen." },
-        "attention": { "title": "Aanvragen die aandacht vragen", "empty": "Geen aanvragen vragen momenteel aandacht." }
+        "error": "Serviceaanvragen konden niet worden geladen.",
+        "retry": "Opnieuw proberen",
+        "new": "Nieuwe aanvraag",
+        "viewAll": "Alles bekijken",
+        "manage": "Aanvragen beheren",
+        "active": "{count} actief",
+        "resolved": "{count} opgelost",
+        "urgent": "{count} urgent",
+        "unassigned": "{count} niet toegewezen",
+        "longOpen": "{count} langer dan 7 dagen open",
+        "overview": {
+          "title": "Serviceaanvragen",
+          "empty": "Nog geen serviceaanvragen."
+        },
+        "attention": {
+          "title": "Aanvragen die aandacht vragen",
+          "empty": "Geen aanvragen vragen momenteel aandacht."
+        }
       },
       "status": {
         "open": "Open",
@@ -45,8 +52,8 @@
         "category": "Filter op categorie"
       },
       "fields": {
-      "title": "Titel",
-      "client": "Klant",
+        "title": "Titel",
+        "client": "Klant",
         "description": "Beschrijving",
         "priority": "Prioriteit",
         "category": "Categorie",
@@ -54,7 +61,6 @@
         "createdBy": "Aangemaakt door",
         "assignedTo": "Toegewezen aan",
         "createdAt": "Aangemaakt op",
-        "updatedAt": "Bijgewerkt op",
         "resolvedAt": "Opgelost op",
         "internalNotes": "Interne notities"
       },

@@ -11,10 +11,8 @@
     "direction": "Direction",
     "edit": "Edit",
     "error": "An error occurred",
-    "learnMore": "Learn more",
     "loaded": "Loaded",
     "loading": "Loading...",
-    "readMore": "Read more",
     "reset": "Reset",
     "save": "Save",
     "sort": "Sort",
@@ -26,29 +24,13 @@
     "view": "View"
   },
   "menu": {
-    "mobileNavigation": "Module navigation",
-    "activeModuleNavigation": "Active module menu",
     "moduleNavigation": "Modules and pages",
-    "moduleMenuDescription": "Pages in this module",
     "search": "Search",
     "switchOrganization": "Switch organization",
     "module": "Module",
-    "selectModule": "Select a module",
     "dashboard": "Dashboard",
-    "inbox": "Inbox",
-    "customers": "Customers",
-    "helpSupport": "Help & Support",
-    "feedback": "Feedback",
-    "home": "Home",
-    "documentation": "API documentation",
-    "profile": "Profile",
-    "theme": "Theme",
     "settings": {
-      "title": "Settings",
-      "profile": "Profile",
-      "organization": "Organization",
-      "notifications": "Notifications",
-      "security": "Security"
+      "title": "Settings"
     },
     "logout": "Log Out"
   },
@@ -57,20 +39,28 @@
     "greeting": "Welcome back, {name}",
     "introduction": "Start with the work that needs your attention.",
     "notifications": "Notifications",
-    "areas": { "attention": "Needs attention", "main": "Your work", "aside": "Recent activity" },
-    "empty": { "title": "You're all caught up", "description": "There is no dashboard work available for this organization." },
-    "error": { "title": "This dashboard item is unavailable", "description": "The rest of your dashboard is still available.", "retry": "Try again" },
-    "seo": { "description": "View work requiring your attention.", "title": "Dashboard" }
+    "areas": {
+      "attention": "Needs attention",
+      "main": "Your work",
+      "aside": "Recent activity"
+    },
+    "empty": {
+      "title": "You're all caught up",
+      "description": "There is no dashboard work available for this organization."
+    },
+    "error": {
+      "title": "This dashboard item is unavailable",
+      "description": "The rest of your dashboard is still available.",
+      "retry": "Try again"
+    },
+    "seo": {
+      "description": "View work requiring your attention.",
+      "title": "Dashboard"
+    }
   },
   "nav": {
     "admin": "Admin",
     "blog": "Blog",
-    "contact": "Contact",
-    "dashboard": "Dashboard",
-    "language": "Language",
-    "myOrganization": "My Organisation",
-    "organization": "Organization",
-    "portfolio": "Portfolio",
-    "profile": "Profile"
+    "contact": "Contact"
   }
 }

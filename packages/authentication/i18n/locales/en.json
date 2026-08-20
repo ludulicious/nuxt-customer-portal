@@ -14,13 +14,10 @@
       "emailPlaceholder": "Enter your email address",
       "newPassword": "New Password",
       "newPasswordPlaceholder": "Enter your new password",
-      "otp": "Verification Code",
-      "otpPlaceholder": "000000"
+      "otp": "Verification Code"
     },
     "messages": {
       "codeSent": "Verification code sent to your email!",
-      "invalidCode": "Invalid verification code",
-      "passwordReset": "Password reset successfully! Redirecting to login...",
       "resendError": "Failed to resend code",
       "resendIn": "Resend in {seconds}s",
       "resetError": "Failed to reset password",
@@ -29,20 +26,15 @@
     "step2Description": "Enter the 6-digit code sent to {email} and your new password.",
     "title": "Reset Your Password",
     "validation": {
-      "confirmPasswordRequired": "Please confirm your password",
-      "emailRequired": "Email address is required",
       "invalidEmail": "Please enter a valid email address",
       "otpLength": "Please enter a 6-digit code",
-      "otpRequired": "Verification code is required",
       "passwordMinLength": "Password must be at least 8 characters",
-      "passwordRequired": "Password is required",
       "passwordsMatch": "Passwords must match"
     }
   },
   "login": {
     "description": "Don't have an account?",
     "errors": {
-      "emailNotVerified": "Email not verified",
       "githubError": "Could not initiate GitHub login.",
       "googleError": "Could not initiate Google login.",
       "invalidCredentials": "Invalid email or password.",
@@ -59,13 +51,10 @@
     "forgotPassword": "Forgot password?",
     "providers": {
       "github": "GitHub",
-      "githubDescription": "Login with GitHub",
-      "google": "Google",
-      "googleDescription": "Login with Google"
+      "google": "Google"
     },
     "signupLink": "Sign up",
     "submitButton": "Sign in",
-    "success": "Login is succesful, loading next page....",
     "termsLink": "Terms of Service",
     "title": "Welcome back",
     "validation": {
@@ -76,15 +65,7 @@
   "signup": {
     "description": "Already have an account?",
     "invitation": {
-      "title": "You've been invited to join {organizationName}",
-      "description": "You'll be added as a {role} after creating your account.",
-      "accepting": "Accepting invitation as {role}...",
-      "accepted": {
-        "title": "Invitation Accepted",
-        "description": "You have been successfully added to the organization."
-      },
       "loggedIn": {
-        "accepting": "Accepting invitation...",
         "success": "Successfully joined {organizationName} as {role}",
         "emailMismatch": "This invitation was sent to a different email address. Please log out and use the email address the invitation was sent to.",
         "error": "Failed to accept invitation: {error}"
@@ -106,9 +87,7 @@
     "loginLink": "Login",
     "providers": {
       "github": "GitHub",
-      "githubDescription": "Login with GitHub",
-      "google": "Google",
-      "googleDescription": "Login with Google"
+      "google": "Google"
     },
     "submitButton": "Create account",
     "termsLink": "Terms of Service",
@@ -120,7 +99,6 @@
     }
   },
   "verify": {
-    "backToLogin": "Back to Login",
     "codePlaceholder": "000000",
     "codeSent": "Verification code sent!",
     "enterCode": "Verification Code",
@@ -132,7 +110,6 @@
     "resendIn": "Resend in {seconds}s",
     "subtitle": "Enter the 6-digit code sent to {email}",
     "success": "Email verified successfully!",
-    "title": "Verify Your Email",
-    "verifyButton": "Verify Email"
+    "title": "Verify Your Email"
   }
 }

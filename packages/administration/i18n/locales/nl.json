@@ -11,12 +11,6 @@
       "cannotChangeOwnRole": "Je kunt je eigen rol niet wijzigen"
     },
     "organization": {
-      "title": "Organisatie details",
-      "manage": {
-        "title": "Organisaties beheren",
-        "back": "Terug",
-        "name": "Organisatienaam"
-      },
       "create": {
         "title": "Organisatie Aanmaken",
         "back": "Terug",
@@ -46,10 +40,6 @@
         "created": "Aangemaakt:",
         "members": {
           "title": "Leden",
-          "empty": "Nog geen leden",
-          "email": "E-mail",
-          "name": "Naam",
-          "role": "Rol",
           "remove": "Uit organisatie verwijderen",
           "removeSuccess": "Lid uit de organisatie verwijderd",
           "removeFailed": "Lid verwijderen mislukt",
@@ -116,9 +106,6 @@
           "sendInvitationFailed": "Uitnodiging verzenden mislukt",
           "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
           "cancelFailed": "Uitnodiging annuleren mislukt"
-        },
-        "confirm": {
-          "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"
         }
       },
       "list": {
@@ -139,7 +126,6 @@
         "provider": "Aanbieder",
         "client": "Klant",
         "name": "Naam",
-        "slug": "Slug",
         "created": "Aangemaakt"
       }
     },
@@ -151,7 +137,6 @@
       "list": {
         "title": "Gebruikers",
         "description": "Beheer portaalgebruikers, toegang en accountbeveiliging.",
-        "createButton": "Gebruiker aanmaken",
         "newUser": "Nieuwe gebruiker",
         "createFirstUser": "Maak je eerste gebruiker aan",
         "loading": "Gebruikers laden...",
@@ -187,7 +172,6 @@
         "management": "Accountbeheer"
       },
       "updateRole": {
-        "title": "Rol Wijzigen",
         "description": "Wijzig de rol voor deze gebruiker",
         "confirm": "Rol Wijzigen",
         "success": "Rol succesvol gewijzigd",

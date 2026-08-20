@@ -15,9 +15,9 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
     order: 31,
     menuItems: [
       { id: 'received-invoices', labelKey: 'features.invoices.receivedInvoices', icon: 'i-lucide-inbox', to: '/invoices', exact: true, audiences: ['authenticated'] },
-      { id: 'invoice-viewers', labelKey: 'features.invoices.viewersTitle', icon: 'i-lucide-users-round', to: '/invoices/viewers', audiences: ['clientAdmin'] },
+      { id: 'invoice-viewers', labelKey: 'features.invoices.clientInvoices.viewersTitle', icon: 'i-lucide-users-round', to: '/invoices/viewers', audiences: ['clientAdmin'] },
       { id: 'sales-invoices', labelKey: 'features.invoices.salesInvoices', icon: 'i-lucide-send', to: '/admin/invoices', exact: true, audiences: ['providerAdmin'] },
-      { id: 'invoice-settings', labelKey: 'features.invoices.settings', icon: 'i-lucide-settings-2', to: '/admin/invoices/settings', audiences: ['providerAdmin'] }
+      { id: 'invoice-settings', labelKey: 'features.invoices.admin.workspaceSettings', icon: 'i-lucide-settings-2', to: '/admin/invoices/settings', audiences: ['providerAdmin'] }
     ]
   }],
   dashboardWidgets: [

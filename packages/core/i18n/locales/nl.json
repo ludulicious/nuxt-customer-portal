@@ -10,10 +10,8 @@
     "direction": "Richting",
     "edit": "Bewerken",
     "error": "Er is een fout opgetreden",
-    "learnMore": "Meer informatie",
     "loaded": "Geladen",
     "loading": "Laden...",
-    "readMore": "Lees meer",
     "reset": "Resetten",
     "confirm": "Bevestigen",
     "save": "Opslaan",
@@ -26,29 +24,13 @@
     "view": "Bekijken"
   },
   "menu": {
-    "mobileNavigation": "Modulenavigatie",
-    "activeModuleNavigation": "Menu van actieve module",
     "moduleNavigation": "Modules en pagina's",
-    "moduleMenuDescription": "Pagina's in deze module",
     "search": "Zoeken",
     "switchOrganization": "Van organisatie wisselen",
     "module": "Module",
-    "selectModule": "Selecteer een module",
     "dashboard": "Dashboard",
-    "inbox": "Inbox",
-    "customers": "Customers",
-    "helpSupport": "Help & Support",
-    "feedback": "Feedback",
-    "home": "Home",
-    "documentation": "API-documentatie",
-    "profile": "Profiel",
-    "theme": "Thema",
     "settings": {
-      "title": "Instellingen",
-      "profile": "Profiel",
-      "organization": "Organisatie",
-      "notifications": "Notificaties",
-      "security": "Beveiliging"
+      "title": "Instellingen"
     },
     "logout": "Uitloggen"
   },
@@ -57,20 +39,28 @@
     "greeting": "Welkom terug, {name}",
     "introduction": "Begin met het werk dat jouw aandacht nodig heeft.",
     "notifications": "Meldingen",
-    "areas": { "attention": "Heeft aandacht nodig", "main": "Jouw werk", "aside": "Recente activiteit" },
-    "empty": { "title": "Je bent helemaal bij", "description": "Er is geen dashboardwerk beschikbaar voor deze organisatie." },
-    "error": { "title": "Dit dashboarditem is niet beschikbaar", "description": "De rest van je dashboard blijft beschikbaar.", "retry": "Opnieuw proberen" },
-    "seo": { "description": "Bekijk het werk dat jouw aandacht nodig heeft.", "title": "Dashboard" }
+    "areas": {
+      "attention": "Heeft aandacht nodig",
+      "main": "Jouw werk",
+      "aside": "Recente activiteit"
+    },
+    "empty": {
+      "title": "Je bent helemaal bij",
+      "description": "Er is geen dashboardwerk beschikbaar voor deze organisatie."
+    },
+    "error": {
+      "title": "Dit dashboarditem is niet beschikbaar",
+      "description": "De rest van je dashboard blijft beschikbaar.",
+      "retry": "Opnieuw proberen"
+    },
+    "seo": {
+      "description": "Bekijk het werk dat jouw aandacht nodig heeft.",
+      "title": "Dashboard"
+    }
   },
   "nav": {
     "admin": "Beheer",
     "blog": "Blog",
-    "contact": "Contact",
-    "dashboard": "Dashboard",
-    "language": "Taal",
-    "myOrganization": "Mijn Organisatie",
-    "organization": "Organisatie",
-    "portfolio": "Portfolio",
-    "profile": "Profiel"
+    "contact": "Contact"
   }
 }
