@@ -426,7 +426,7 @@ onUnmounted(() => {
             <UButton
               icon="i-lucide-plus"
               color="primary"
-              class="flex-1 sm:flex-none"
+              class="rounded-full sm:rounded-md"
               :title="t('features.serviceRequests.create')"
               :disabled="!canCreate"
               @click="openCreateDrawer"
@@ -667,7 +667,7 @@ onUnmounted(() => {
       </UModal>
     </template>
     <template #body>
-      <div ref="listContainerRef" class="request-list-scroll flex-1 min-h-0 overflow-y-auto py-2 pr-2">
+      <div ref="listContainerRef" class="-mx-1 flex-1 min-h-0 overflow-y-auto px-1 py-2">
         <div>
           <UAlert
             v-if="loadError"
@@ -680,7 +680,7 @@ onUnmounted(() => {
             v-if="list.length === 0 && !pending"
             icon="i-lucide-ticket"
             :description="t('features.serviceRequests.messages.empty')"
-            class="request-card ring-inset"
+            class="ring-inset"
           />
 
           <div
@@ -698,38 +698,34 @@ onUnmounted(() => {
             <UCard
               v-for="request in list"
               :key="request.id"
-              class="request-card cursor-pointer ring-inset hover:bg-gray-50 dark:hover:bg-gray-900"
-              @click="navigateTo(getDetailTo(request))"
+              :ui="{ body: 'p-0 sm:p-0' }"
+              class="ring-inset transition-colors hover:ring-1 hover:ring-primary/50"
             >
-              <div class="flex justify-between items-start">
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-semibold">{{ request.title }}</h3>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                    {{ request.description }}
-                  </p>
-                  <div class="flex gap-2 mt-2 text-xs text-gray-500">
+              <NuxtLink
+                :to="getDetailTo(request)"
+                class="group grid min-h-24 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="truncate font-semibold text-highlighted">{{ request.title }}</h3>
+                    <UBadge :color="getStatusColor(request.status)" variant="subtle">
+                      {{ getStatusBadgeText(request.status) }}
+                    </UBadge>
+                    <UBadge :color="getPriorityColor(request.priority)" variant="subtle">
+                      {{ getPriorityBadgeText(request.priority) }}
+                    </UBadge>
+                  </div>
+                  <p class="mt-1 line-clamp-2 text-sm text-muted">{{ request.description }}</p>
+                  <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
                     <span>{{ formatDate(request.createdAt) }}</span>
-                    <span v-if="request.category">• {{ request.category }}</span>
+                    <span v-if="request.category" aria-hidden="true">·</span>
+                    <span v-if="request.category">{{ request.category }}</span>
                   </div>
                 </div>
-                <div class="flex flex-col items-end gap-2 shrink-0">
-                  <UButton
-                    :to="getDetailTo(request)"
-                    variant="outline"
-                    size="sm"
-                    class="shrink-0"
-                    @click.stop
-                  >
-                    {{ t('common.view') }}
-                  </UButton>
-                  <UBadge :color="getStatusColor(request.status)" variant="solid" size="md">
-                    {{ getStatusBadgeText(request.status) }}
-                  </UBadge>
-                  <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="md">
-                    {{ getPriorityBadgeText(request.priority) }}
-                  </UBadge>
-                </div>
-              </div>
+                <span aria-hidden="true" class="grid size-11 place-items-center rounded-md text-muted group-hover:text-highlighted">
+                  <UIcon name="i-lucide-chevron-right" class="size-5" />
+                </span>
+              </NuxtLink>
             </UCard>
           </div>
 
@@ -833,20 +829,6 @@ onUnmounted(() => {
 
 .end-of-list-bounce {
   animation: end-of-list-bounce 650ms ease-out both;
-}
-
-.request-list-scroll {
-  width: calc(100% + 1rem);
-}
-
-.request-card {
-  margin-right: 0.5rem;
-}
-
-@media (min-width: 40rem) {
-  .request-list-scroll {
-    width: calc(100% + 1.5rem);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

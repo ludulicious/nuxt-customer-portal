@@ -70,7 +70,7 @@ await listing.load()
 
 <template>
   <TimesheetsPageShell class="flex h-full min-h-0 flex-col overflow-hidden">
-    <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon :name="isReview ? 'i-lucide-stamp' : 'i-lucide-building-2'" class="size-6 shrink-0" /><h1 class="text-2xl font-semibold text-highlighted">{{ t(isReview ? 'features.timesheets.approvals.title' : 'features.timesheets.suppliers.title') }}</h1></div><p class="mt-1 text-sm text-muted">{{ t(isReview ? 'features.timesheets.approvals.subtitle' : 'features.timesheets.suppliers.subtitle') }}</p></header>
+    <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon :name="isReview ? 'i-lucide-stamp' : 'i-lucide-building-2'" class="size-6 shrink-0" /><h1 class="text-2xl font-semibold text-highlighted">{{ t(isReview ? 'features.timesheets.approvals.title' : 'features.timesheets.suppliers.title') }}</h1></div><p class="mt-1 hidden text-sm text-muted sm:block">{{ t(isReview ? 'features.timesheets.approvals.subtitle' : 'features.timesheets.suppliers.subtitle') }}</p></header>
     <div v-if="selected" class="min-h-0 flex-1 overflow-y-auto">
       <div class="py-5"><UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="closeDetail">{{ t(isReview ? 'features.timesheets.approvals.back' : 'features.timesheets.suppliers.back') }}</UButton></div>
       <article class="overflow-hidden rounded-lg border border-default bg-default">

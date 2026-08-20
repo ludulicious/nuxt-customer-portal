@@ -38,7 +38,7 @@ useSeoMeta({ title: () => t('features.timesheets.internalApprovals.manageTitle')
   <TimesheetsPageShell class="h-full min-h-0 space-y-6 overflow-y-auto">
     <header>
       <div class="flex items-center gap-2"><UIcon name="i-lucide-user-round-check" class="size-6" /><h1 class="text-2xl font-semibold text-highlighted">{{ t('features.timesheets.internalApprovals.manageTitle') }}</h1></div>
-      <p class="mt-1 text-sm text-muted">{{ t('features.timesheets.internalApprovals.manageSubtitle') }}</p>
+      <p class="mt-1 hidden text-sm text-muted sm:block">{{ t('features.timesheets.internalApprovals.manageSubtitle') }}</p>
     </header>
     <div v-if="pending && !data" class="flex justify-center py-12 text-muted"><UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" /></div>
     <template v-else-if="data">

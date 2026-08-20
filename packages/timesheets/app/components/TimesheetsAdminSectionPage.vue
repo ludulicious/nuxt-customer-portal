@@ -75,11 +75,12 @@ useSeoMeta({ title: sectionTitle })
       <div class="flex items-end justify-between gap-4">
         <div class="min-w-0">
           <div class="flex items-center gap-2"><UIcon v-if="sectionIcons[section]" :name="sectionIcons[section]" class="size-6 shrink-0" /><h1 class="text-2xl font-semibold text-highlighted">{{ sectionTitle }}</h1></div>
-          <p class="mt-1 text-sm text-muted">{{ sectionSubtitle }}</p>
+          <p class="mt-1 hidden text-sm text-muted sm:block">{{ sectionSubtitle }}</p>
         </div>
         <div v-if="hasConstrainedList" class="flex shrink-0 items-center gap-1">
-          <UButton v-if="sectionViewRef?.showCreate" icon="i-lucide-plus" size="sm" variant="outline" class="h-8" :disabled="!sectionViewRef.canCreate" @click="openCreate">
-            <span class="hidden sm:inline">{{ createLabel }}</span>
+          <UButton v-if="sectionViewRef?.showCreate" class="rounded-full sm:hidden" icon="i-lucide-plus" :aria-label="createLabel" :disabled="!sectionViewRef.canCreate" @click="openCreate" />
+          <UButton v-if="sectionViewRef?.showCreate" icon="i-lucide-plus" size="sm" variant="outline" class="hidden h-8 sm:inline-flex" :disabled="!sectionViewRef.canCreate" @click="openCreate">
+            {{ createLabel }}
           </UButton>
           <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="refreshing" :aria-label="t('features.timesheets.admin.refresh')" @click="refreshSection" />
         </div>

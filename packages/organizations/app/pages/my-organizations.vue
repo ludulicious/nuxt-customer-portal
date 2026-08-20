@@ -53,7 +53,7 @@ const handleSetActive = async (organizationId: string) => {
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
           {{ $t('myOrganizations.title') }}
         </h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+        <p class="mt-2 hidden text-sm text-gray-600 dark:text-gray-400 sm:block">
           {{ $t('myOrganizations.description') }}
         </p>
       </div>

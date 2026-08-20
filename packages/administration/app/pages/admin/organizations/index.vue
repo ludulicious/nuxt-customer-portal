@@ -149,26 +149,33 @@ watch([loading, listContainerRef], () => {
   >
     <div class="min-h-0 flex-1 overflow-y-auto">
       <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
-      <header class="flex flex-col gap-3 border-b border-default pb-4 sm:flex-row sm:items-end sm:justify-between">
+      <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
         <div class="flex min-w-0 gap-3">
           <UIcon name="i-lucide-building-2" class="mt-1 size-6 shrink-0 text-primary" />
           <div class="min-w-0">
             <h1 class="text-2xl font-semibold text-highlighted">
               {{ t('admin.organization.list.title') }}
             </h1>
-            <p class="text-sm text-muted">
+            <p class="hidden text-sm text-muted sm:block">
               {{ t('admin.organization.list.description') }}
             </p>
           </div>
         </div>
-        <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+        <div class="flex shrink-0 items-center gap-1">
           <UButton
+            class="rounded-full sm:hidden"
+            icon="i-lucide-plus"
+            :aria-label="t('admin.organization.list.newOrganization')"
+            to="/admin/organizations/create"
+          />
+          <UButton
+            class="hidden sm:inline-flex"
             icon="i-lucide-plus"
             size="sm"
             variant="outline"
             to="/admin/organizations/create"
           >
-            <span class="hidden sm:inline">{{ t('admin.organization.list.newOrganization') }}</span>
+            {{ t('admin.organization.list.newOrganization') }}
           </UButton>
           <UButton
             icon="i-lucide-refresh-cw"

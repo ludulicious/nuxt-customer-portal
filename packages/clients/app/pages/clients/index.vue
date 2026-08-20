@@ -114,16 +114,17 @@ onMounted(() => { void restoreScroll() })
   <div class="flex h-full min-h-0 flex-col">
     <div ref="listContainer" class="min-h-0 flex-1 overflow-y-auto" @scroll="listScrollTop = listContainer?.scrollTop ?? 0">
       <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
-      <header class="flex flex-col gap-3 border-b border-default pb-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="flex gap-3">
-          <UIcon name="i-lucide-building-2" class="mt-1 size-6 text-primary" />
-          <div>
+      <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
+        <div class="flex min-w-0 gap-3">
+          <UIcon name="i-lucide-building-2" class="mt-1 size-6 shrink-0 text-primary" />
+          <div class="min-w-0">
             <h1 class="text-2xl font-semibold">{{ t('features.clients.title') }}</h1>
-            <p class="text-sm text-muted">{{ t('features.clients.description') }}</p>
+            <p class="hidden text-sm text-muted sm:block">{{ t('features.clients.description') }}</p>
           </div>
         </div>
-        <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
-          <UButton v-if="clients.length && !formOpen" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
+        <div class="flex shrink-0 items-center gap-1">
+          <UButton v-if="clients.length && !formOpen" class="rounded-full sm:hidden" icon="i-lucide-plus" :aria-label="t('features.clients.new')" @click="formOpen = true" />
+          <UButton v-if="clients.length && !formOpen" class="hidden sm:inline-flex" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
             {{ t('features.clients.new') }}
           </UButton>
           <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="pending" :aria-label="t('common.refresh')" @click="load" />

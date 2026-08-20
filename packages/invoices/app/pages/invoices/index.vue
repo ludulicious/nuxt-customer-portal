@@ -24,7 +24,7 @@ await listing.load()
 <template>
   <NuxtPage v-if="route.path !== '/invoices'" />
   <InvoicesPageShell v-else class="flex h-full min-h-0 flex-col overflow-hidden">
-    <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon name="i-lucide-receipt-text" class="size-6" /><h1 class="text-2xl font-semibold">{{ t('features.invoices.clientInvoices.title') }}</h1></div><p class="mt-1 text-sm text-muted">{{ t('features.invoices.clientInvoices.subtitle') }}</p></header>
+    <header class="shrink-0 border-b border-default pb-5"><div class="flex items-center gap-2"><UIcon name="i-lucide-receipt-text" class="size-6" /><h1 class="text-2xl font-semibold">{{ t('features.invoices.clientInvoices.title') }}</h1></div><p class="mt-1 hidden text-sm text-muted sm:block">{{ t('features.invoices.clientInvoices.subtitle') }}</p></header>
     <section class="flex min-h-0 flex-1 flex-col gap-5 pt-5">
       <InvoicesAdminListToolbar v-model:search="listing.search.value" :filters="filters" :filter-values="listing.filters" :sort-options="sortOptions" :sort-by="listing.sortBy.value" :sort-dir="listing.sortDir.value" @filter="listing.setFilter" @sort="listing.sortBy.value = $event" @toggle-direction="listing.toggleSortDir" />
       <InvoicesAdminPaginatedList class="min-h-0 flex-1" :pagination="listing.pagination.value" :pending="listing.pending.value" :loading-next="listing.loadingNextPage.value" :loading-previous="listing.loadingPreviousPage.value" :has-next="listing.hasNextPage.value" :has-previous="listing.hasPreviousPage.value" @next="listing.loadNext" @previous="listing.loadPrevious" @page="listing.goToPage">
