@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   ssr: true,
   compatibilityDate: '2025-10-24',
   devServer: {
+    host: 'platform.localhost',
     port: 3053
   },
   css: ['~/assets/css/main.css'],

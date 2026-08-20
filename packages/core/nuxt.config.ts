@@ -29,7 +29,7 @@ export default defineNuxtConfig({
         registrationMode,
         githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),
         googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED),
-        termsUrl: process.env.PORTAL_TERMS_URL || '/'
+        termsUrl: process.env.PORTAL_TERMS_URL || '/terms-of-service'
       }
     }
   },

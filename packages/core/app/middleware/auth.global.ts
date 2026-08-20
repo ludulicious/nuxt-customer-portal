@@ -3,9 +3,11 @@ import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 export default defineNuxtRouteMiddleware(async (to) => {
   if (to.meta.public === true) return
   try {
-    const { data: session } = await authClient.useSession(useFetch)
+    const { data: session } = await authClient.getSession({
+      fetchOptions: import.meta.server ? { headers: useRequestHeaders(['cookie']) } : undefined
+    })
 
-    if (!session.value) {
+    if (!session) {
       console.log('No active session found, redirecting to login')
       // No active session, redirect the user to the login page
       // Preserve the original intended path via a redirect query parameter

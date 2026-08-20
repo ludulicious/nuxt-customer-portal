@@ -7,9 +7,11 @@ import { isPlatformAdminEmail } from './platform-admin'
 
 const githubEnabled = process.env.PORTAL_GITHUB_ENABLED === 'true'
 const googleEnabled = process.env.PORTAL_GOOGLE_ENABLED === 'true'
+const platformBaseURL = process.env.BETTER_AUTH_URL || `https://${process.env.SAAS_PLATFORM_HOST || 'platform.localhost'}`
 
 export const platformAuth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || `https://${process.env.SAAS_PLATFORM_HOST || 'platform.localhost'}`,
+  baseURL: platformBaseURL,
+  trustedOrigins: [platformBaseURL],
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(getPlatformDatabase(), {
     provider: 'pg',

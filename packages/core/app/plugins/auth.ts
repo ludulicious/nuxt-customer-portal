@@ -7,22 +7,26 @@ export default defineNuxtPlugin({
     const userStore = useUserStore()
     // const organizationStore = useOrganization()
     try {
-      const sessionData = await authClient.getSession()
+      const sessionData = await authClient.getSession({
+        fetchOptions: import.meta.server ? { headers: useRequestHeaders(['cookie']) } : undefined
+      })
       await userStore.setSession(sessionData?.data as unknown as AuthSessionResponse)
     } catch (error) {
       console.log('getSession error:', error)
     }
 
-    const { data: session } = await authClient.useSession(useFetch)
+    if (import.meta.client) {
+      const session = authClient.useSession()
 
-    // Also watch for session changes to handle OTP verification and logout
-    watch(
-      () => session.value,
-      async (newSession) => {
-        const sessionData = newSession as unknown as AuthSessionResponse | null
-        await userStore.setSession(sessionData)
-      },
-      { deep: true }
-    )
+      // Also watch for session changes to handle OTP verification and logout
+      watch(
+        () => session.value,
+        async (newSession) => {
+          const sessionData = newSession as unknown as AuthSessionResponse | null
+          await userStore.setSession(sessionData)
+        },
+        { deep: true }
+      )
+    }
   },
 })

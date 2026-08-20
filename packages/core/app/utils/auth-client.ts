@@ -2,10 +2,10 @@ import { createAuthClient } from 'better-auth/vue' // Use the Vue-specific impor
 import { adminClient, emailOTPClient, organizationClient } from 'better-auth/client/plugins'
 import { ac, user, admin as adminRole } from '@nuxt-customer-portal/core/shared/permissions'
 
-const baseURL = process.env.BETTER_AUTH_URL
+const baseURL = import.meta.client ? window.location.origin : process.env.BETTER_AUTH_URL
 
 export const authClient = createAuthClient({
-  baseURL: baseURL,
+  baseURL,
   plugins: [
     adminClient({
       ac,

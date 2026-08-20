@@ -14,5 +14,20 @@ const { t } = useI18n()
         © {{ new Date().getFullYear() }}. {{ t('footer.copyright') }}
       </p>
     </template>
+
+    <template #right>
+      <UButton
+        :label="t('footer.privacy')"
+        to="/privacy-policy"
+        color="neutral"
+        variant="ghost"
+      />
+      <UButton
+        :label="t('footer.terms')"
+        to="/terms-of-service"
+        color="neutral"
+        variant="ghost"
+      />
+    </template>
   </UFooter>
 </template>

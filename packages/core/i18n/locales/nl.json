@@ -59,7 +59,9 @@
     }
   },
   "footer": {
-    "copyright": "Alle rechten voorbehouden."
+    "copyright": "Alle rechten voorbehouden.",
+    "privacy": "Privacybeleid",
+    "terms": "Servicevoorwaarden"
   },
   "nav": {
     "admin": "Beheer",

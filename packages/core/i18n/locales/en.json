@@ -59,7 +59,9 @@
     }
   },
   "footer": {
-    "copyright": "All rights reserved."
+    "copyright": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   },
   "nav": {
     "admin": "Admin",

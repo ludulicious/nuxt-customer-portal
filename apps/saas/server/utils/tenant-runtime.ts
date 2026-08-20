@@ -77,10 +77,8 @@ export const establishSaasRequestContext = async (hostname: string) => {
   const config = useRuntimeConfig()
   const platformHost = String(config.public.platformHost || process.env.SAAS_PLATFORM_HOST || 'platform.localhost').toLowerCase()
   const platformDomain = String(config.public.platformDomain || process.env.SAAS_PLATFORM_DOMAIN || platformHost).toLowerCase()
-  const localPlatformHost = process.env.NODE_ENV !== 'production'
-    && ['localhost', '127.0.0.1', '::1'].includes(hostname)
 
-  if (hostname === platformHost || hostname === platformDomain || localPlatformHost) {
+  if (hostname === platformHost || hostname === platformDomain) {
     const context: PortalRequestContext = { database: getPlatformDatabase(), mode: 'platform' }
     enterPortalRequestContext(context)
     return context
