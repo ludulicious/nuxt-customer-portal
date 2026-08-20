@@ -6,9 +6,9 @@ This document preserves the intended future SaaS architecture. It is not the nex
 
 ## Summary
 
-Build `apps/saas` as a private production host that provides both:
+Build `apps/saas` as a private production host that provides:
 
-- the central signup, tenant, domain, subscription, and lifecycle control plane;
+- the platform-domain control plane, with its own database and authentication;
 - the Customer Portal runtime for tenant subdomains and verified custom domains.
 
 All tenants run the same application release, but each tenant receives a separate PostgreSQL database. Each tenant database contains exactly one `PROVIDER` organization and that provider's `CLIENT` organizations.
@@ -17,6 +17,8 @@ All tenants run the same application release, but each tenant receives a separat
 
 - Add a private `apps/saas` application; do not publish it as an npm package.
 - Consume the public Customer Portal preset and feature packages.
+- The platform domain and control plane may be served by the same `apps/saas` runtime as tenant domains. Platform routes and tenant routes must remain explicitly separated by host and request context.
+- The platform has its own PostgreSQL database and its own Better Auth installation. Platform users, onboarding records, platform sessions, and control-plane records never live in tenant databases.
 - Resolve every portal request by normalized hostname before initializing authentication or feature repositories.
 - Resolve the hostname through a central control-plane database to obtain:
   - tenant ID and immutable slug;
@@ -40,8 +42,11 @@ The central control-plane database stores only platform-level data:
 - primary owner contact details;
 - subscription status and external billing identifiers;
 - creation, suspension, restoration, and deletion audit timestamps.
+- platform onboarding records, including requested company information, selected modules, requested owner email, and provisioning progress.
 
 Database credentials belong in a host secret manager. The control-plane database stores references to those secrets, not connection strings.
+
+The control-plane database and authentication data are not tenant data. Platform authentication is used for platform-domain onboarding, operator access, and post-onboarding account management; tenant authentication remains local to each tenant database.
 
 Use the following lifecycle states:
 
@@ -57,29 +62,37 @@ Do not store tenant users, clients, timesheets, requests, invoices, or other ten
 
 ## Self-service onboarding
 
-1. Collect the owner company name, immutable tenant slug, and owner email on the platform domain.
-2. Verify the email address before provisioning infrastructure.
+Onboarding is a platform-domain workflow and is separate from tenant authentication. It collects the company information, immutable tenant slug, selected modules, and the credentials for the first tenant user, who receives the tenant `admin` role.
+
+1. Authenticate or verify the onboarding identity through platform authentication.
+2. Collect the company information, immutable tenant slug, selected modules, and first tenant admin username/password.
 3. Reserve `slug.platform.tld` atomically.
-4. Provision the tenant PostgreSQL database through a provider adapter.
+4. Provision or register the tenant PostgreSQL database through a provider adapter.
 5. Run all configured Customer Portal package migrations.
-6. Seed exactly one `PROVIDER` organization and the first Better Auth owner user.
-7. Mark the tenant active and register its standard subdomain.
-8. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
-9. Exchange the handoff code for a tenant-local session.
+6. Seed exactly one `PROVIDER` organization and the first Better Auth tenant user with the `admin` role.
+7. Configure the selected module activations for the tenant.
+8. Mark the tenant active and register its standard subdomain.
+9. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
+10. Exchange the handoff code for a tenant-local session.
 
 Provisioning must be idempotent and resumable after partial failures. Retrying a failed step must not create a second database, provider organization, user, or domain binding.
+
+The first tenant admin password must be transferred only through the provisioning workflow and must not be stored in the control-plane database, onboarding journal, logs, or handoff code. If the platform stores a temporary credential, it must be encrypted, single-use, and deleted immediately after successful tenant-user creation.
 
 ## Provider adapters
 
 `apps/saas` should define or implement adapters for:
 
 - database provisioning, migration, suspension, restoration, and deletion;
+- tenant database registration for bring-your-own-database deployments;
 - secret storage and secret-reference resolution;
 - custom-domain registration, DNS instructions, validation, and certificate provisioning;
 - billing-plan and subscription-state synchronization;
 - platform-operator authentication and authorization.
 
 Billing integration in the first version stores plan, status, and external customer/subscription IDs. Checkout and provider-specific billing workflows remain outside the Customer Portal packages.
+
+The default database flow provisions a dedicated PostgreSQL database. A BYOD flow accepts a provider-approved PostgreSQL connection, such as a Neon database URL, validates connectivity and permissions, stores only a secret reference, and applies the same migration and health checks. Raw BYOD connection strings must never be persisted in control-plane records or logs.
 
 ## Tenant request lifecycle
 
@@ -105,14 +118,15 @@ Feature code must never import a global database singleton in the SaaS runtime.
 - Retain the standard subdomain as the recovery fallback.
 - If monitoring detects that a custom canonical domain is no longer valid, fall back to the standard subdomain.
 - Use host-only cookies; do not share sessions across tenant domains.
-- Keep identities and sessions tenant-local. There is no central user account, login directory, or tenant switcher.
+- Keep tenant identities and sessions tenant-local. There is no shared tenant login directory or tenant switcher; platform users authenticate separately on the platform domain.
 
 Initially support email/password and email OTP. Dynamic custom domains make provider callback URLs difficult to manage, so social login remains disabled until a central OAuth broker is designed.
 
 ## Tenant administration and lifecycle
 
-- Only members with `organizationType = PROVIDER` and Better Auth role `owner` may manage custom domains, subscription settings, and tenant termination.
-- These sensitive actions call a narrow, server-only control-plane service. Tenant feature code does not receive general control-plane database access.
+- Tenant-domain users cannot manage custom domains, subscription settings, onboarding, or tenant termination.
+- These actions are available exclusively on the platform domain through platform authentication and a narrow, server-only control-plane service.
+- Tenant feature code does not receive general control-plane database access.
 - Authenticate platform operators through a host-provided authorization adapter.
 - Platform operators may inspect provisioning, versions, domains, and health, but do not automatically receive access to tenant business data.
 - Suspended or cancelled tenants become `READ_ONLY` first.
@@ -132,6 +146,7 @@ The SaaS implementation will require public Core contracts for:
 - running the same portal packages in fixed-database and tenant-resolved modes.
 
 These contracts should remain provider-neutral. Concrete SaaS provisioning, domain, secret, and billing integrations stay private to `apps/saas`.
+The platform control plane and its Better Auth integration are host-owned by `apps/saas`; they are not part of the public Customer Portal preset.
 
 ## Verification
 
@@ -140,6 +155,8 @@ These contracts should remain provider-neutral. Concrete SaaS provisioning, doma
 - Test canonical redirects and ensure authentication cookies are never created on aliases.
 - Test database-pool limits, idle eviction, application shutdown, and unavailable tenant databases.
 - Test duplicate slugs, expired verification, failed provisioning, failed migrations, and idempotent retry.
+- Test platform authentication boundaries, onboarding credential handling, selected module activation, and tenant-admin creation.
+- Test BYOD database registration, connectivity failure, insufficient permissions, secret rotation, and removal.
 - Test custom-domain validation, certificate failure, invalidated primary domains, and fallback to the standard subdomain.
 - Test `READ_ONLY`, restoration within 30 days, and audited deletion after the retention period.
 - Run the same package contract and feature suites against fixed-database and hostname-resolved database providers.
@@ -150,6 +167,9 @@ These contracts should remain provider-neutral. Concrete SaaS provisioning, doma
 - The first shared deployment targets approximately 10-100 tenants.
 - One runtime release serves all shared tenants.
 - Every tenant database contains exactly one `PROVIDER` organization.
+- The platform has a separate database and authentication system from every tenant.
 - Clients and all business data remain tenant-local.
+- Platform-domain administration is the only location for onboarding, domain, subscription, and tenant lifecycle management.
+- Tenants may use either a provisioned PostgreSQL database or an approved bring-your-own PostgreSQL database.
 - Cross-tenant reporting and central tenant-data access are out of scope.
 - Dedicated deployment per tenant is not part of the first SaaS implementation.
