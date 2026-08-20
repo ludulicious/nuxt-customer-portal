@@ -43,6 +43,20 @@ export const migrateGenericClients = async (config, options = {}) => {
       const selected = await client.query('SELECT id, name, slug FROM organization WHERE id = $1 OR slug = $1', [provider])
       if (selected.rowCount !== 1) throw new Error(`Expected exactly one organization for --provider ${provider}, found ${selected.rowCount}`)
       const providerOrganization = selected.rows[0]
+      // Check the one-time journal before inspecting legacy tables. A successful
+      // run may have removed those tables, so a retry must be able to skip cleanly.
+      if (options.apply && options.once) {
+        const migrationJournal = await client.query(`SELECT to_regclass('${migrationSchema}.one_time_migration') AS table_name`)
+        if (migrationJournal.rows[0]?.table_name) {
+          const applied = await client.query(`SELECT provider_id, applied_at FROM ${quoteIdentifier(migrationSchema)}."one_time_migration" WHERE migration_key = $1`, ['generic-clients-v1'])
+          if (applied.rowCount) {
+            if (applied.rows[0].provider_id !== providerOrganization.id) {
+              throw new Error(`Generic Clients migration was already applied for provider ${applied.rows[0].provider_id}`)
+            }
+            return { dryRun: false, skipped: true, alreadyApplied: applied.rows[0] }
+          }
+        }
+      }
       const linked = await client.query(`SELECT o.id, o.name, o.slug
         FROM timesheets.workspace_client wc JOIN organization o ON o.id = wc.client_organization_id
         WHERE wc.workspace_organization_id = $1 AND o.id <> $1 ORDER BY o.name`, [providerOrganization.id])
@@ -59,10 +73,17 @@ export const migrateGenericClients = async (config, options = {}) => {
           FROM timesheets.organization_contact oc
           LEFT JOIN member m ON m.user_id = oc.user_id AND m.organization_id = oc.organization_id`)
         : { rows: [{ total: 0, linked: 0 }] }
-      const legacyRequests = await client.query(`SELECT to_regclass('service_requests.legacy_service_request') AS table_name`)
-      const requests = legacyRequests.rows[0]?.table_name
+      const legacyInvoiceProfiles = await client.query(`SELECT to_regclass('timesheets.organization_invoice_profile') AS table_name`)
+      const serviceRequestTables = await client.query(`SELECT
+        to_regclass('service_requests.legacy_service_request') AS legacy_table,
+        to_regclass('service_requests.service_request') AS current_table`)
+      const legacyServiceRequestTable = serviceRequestTables.rows[0]?.legacy_table
+      const currentServiceRequestTable = serviceRequestTables.rows[0]?.current_table
+      const requests = legacyServiceRequestTable
         ? await client.query('SELECT count(*)::int AS total FROM service_requests.legacy_service_request')
-        : await client.query('SELECT count(*)::int AS total FROM service_requests.service_request')
+        : currentServiceRequestTable
+          ? await client.query('SELECT count(*)::int AS total FROM service_requests.service_request')
+          : { rows: [{ total: 0 }] }
       const defaultModules = [...new Set(config.clients?.defaultModules ?? [])]
       const report = {
         dryRun: !options.apply,
@@ -90,6 +111,10 @@ export const migrateGenericClients = async (config, options = {}) => {
           )`)
           const applied = await client.query(`SELECT provider_id, applied_at FROM ${quoteIdentifier(migrationSchema)}."one_time_migration" WHERE migration_key = $1`, ['generic-clients-v1'])
           if (applied.rowCount) {
+            if (applied.rows[0].provider_id !== providerOrganization.id) {
+              await client.query('ROLLBACK')
+              throw new Error(`Generic Clients migration was already applied for provider ${applied.rows[0].provider_id}`)
+            }
             await client.query('ROLLBACK')
             return { ...report, dryRun: false, skipped: true, alreadyApplied: applied.rows[0] }
           }
@@ -97,13 +122,26 @@ export const migrateGenericClients = async (config, options = {}) => {
         await client.query(`UPDATE organization SET organization_type = CASE WHEN id = $1 THEN 'PROVIDER' ELSE 'CLIENT' END`, [providerOrganization.id])
         await client.query(`INSERT INTO clients.client_profile
           (organization_id, official_name, address, registration_number, vat_number, invoice_email, preferred_locale, archived_at)
-          SELECT o.id, o.name, COALESCE(p.address, ''), p.registration_number, p.vat_number, p.invoice_email,
-            COALESCE(p.preferred_locale, 'nl'), CASE WHEN wc.id IS NULL THEN now() ELSE NULL END
+          SELECT o.id, o.name, ${legacyInvoiceProfiles.rows[0]?.table_name ? "COALESCE(p.address, ''), p.registration_number, p.vat_number, p.invoice_email, COALESCE(p.preferred_locale, 'nl')" : "'', NULL, NULL, NULL, 'nl'"},
+            CASE WHEN wc.id IS NULL THEN now() ELSE NULL END
           FROM organization o
-          LEFT JOIN timesheets.organization_invoice_profile p ON p.organization_id = o.id
+          ${legacyInvoiceProfiles.rows[0]?.table_name ? 'LEFT JOIN timesheets.organization_invoice_profile p ON p.organization_id = o.id' : ''}
           LEFT JOIN timesheets.workspace_client wc ON wc.client_organization_id = o.id AND wc.workspace_organization_id = $1
           WHERE o.id <> $1
           ON CONFLICT (organization_id) DO NOTHING`, [providerOrganization.id])
+        if (legacyContacts.rows[0]?.table_name) {
+          await client.query(`WITH ranked_contacts AS (
+            SELECT DISTINCT ON (oc.organization_id, oc.user_id)
+              oc.organization_id, oc.user_id, oc.phone, oc.job_title
+            FROM timesheets.organization_contact oc
+            WHERE oc.user_id IS NOT NULL
+            ORDER BY oc.organization_id, oc.user_id, oc.updated_at DESC, oc.id DESC
+          )
+          UPDATE member m
+          SET phone = COALESCE(rc.phone, m.phone), job_title = COALESCE(rc.job_title, m.job_title)
+          FROM ranked_contacts rc
+          WHERE m.organization_id = rc.organization_id AND m.user_id = rc.user_id`)
+        }
         const activations = new Set(['timesheets', ...defaultModules])
         for (const row of linked.rows) {
           for (const moduleId of activations) {
@@ -112,7 +150,11 @@ export const migrateGenericClients = async (config, options = {}) => {
               ON CONFLICT (organization_id, module_id) DO UPDATE SET enabled = true, updated_at = now()`, [row.id, moduleId])
           }
         }
-        await client.query('TRUNCATE service_requests.service_request')
+        // The required-client migration already snapshots and clears legacy
+        // requests. Preserve current-format requests if no legacy snapshot exists.
+        if (currentServiceRequestTable && legacyServiceRequestTable) {
+          await client.query('TRUNCATE service_requests.service_request')
+        }
         if (options.once) {
           await client.query(`INSERT INTO ${quoteIdentifier(migrationSchema)}."one_time_migration" (migration_key, provider_id) VALUES ($1, $2)`, ['generic-clients-v1', providerOrganization.id])
         }
