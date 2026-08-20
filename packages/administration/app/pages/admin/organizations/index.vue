@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'AdminOrganizationsPage' })
+
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
@@ -194,28 +196,29 @@ watch([loading, listContainerRef], () => {
 
       <div class="border-b border-default pb-4">
         <div class="flex items-center gap-2">
-          <UInput v-model="searchQuery" :placeholder="t('admin.organization.list.searchPlaceholder')" icon="i-lucide-search" :loading="loading" class="min-w-0 flex-1 md:max-w-xs" clearable />
+          <UInput v-model="searchQuery" :placeholder="t('admin.organization.list.searchPlaceholder')" icon="i-lucide-search" :loading="loading" class="min-w-0 flex-1" clearable />
           <template v-if="!isMobile">
-          <UDropdownMenu
-            :items="sortDropdownItems"
-            :content="{ align: 'end', collisionPadding: 12 }"
-            class="ml-auto w-48"
-          >
+            <div class="w-48 shrink-0">
+              <UDropdownMenu
+                :items="sortDropdownItems"
+                :content="{ align: 'end', collisionPadding: 12 }"
+              >
+                <UButton
+                  icon="i-lucide-arrow-down-up"
+                  variant="outline"
+                  class="w-full justify-between"
+                >
+                  <span class="truncate">{{ currentSortLabel }}</span>
+                  <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
+                </UButton>
+              </UDropdownMenu>
+            </div>
             <UButton
-              icon="i-lucide-arrow-down-up"
+              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
               variant="outline"
-              class="w-full justify-between"
-            >
-              <span class="truncate">{{ currentSortLabel }}</span>
-              <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
-            </UButton>
-          </UDropdownMenu>
-          <UButton
-            :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-            variant="outline"
-            :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
-            @click="toggleSortDir"
-          />
+              :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
+              @click="toggleSortDir"
+            />
           </template>
           <UButton v-else variant="outline" icon="i-lucide-arrow-down-up" :aria-label="t('common.sort')" @click="showSort = true" />
         </div>
@@ -286,7 +289,6 @@ watch([loading, listContainerRef], () => {
         <USkeleton v-for="i in 4" :key="i" class="h-20 w-full rounded-lg" />
         <span class="sr-only">{{ t('admin.organization.list.loading') }}</span>
       </div>
-
       </div>
     </div>
     <footer class="flex min-h-12 shrink-0 items-center justify-between border-t border-default px-4 pt-3 text-sm text-muted sm:px-6 lg:px-8">
