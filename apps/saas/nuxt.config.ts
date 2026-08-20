@@ -15,9 +15,9 @@ export default defineNuxtConfig({
       icons: [
         'lucide:arrow-down', 'lucide:arrow-up', 'lucide:building-2', 'lucide:check',
         'lucide:chevron-down', 'lucide:chevron-right', 'lucide:clock-3', 'lucide:edit',
-        'lucide:filter', 'lucide:inbox', 'lucide:layout-dashboard', 'lucide:list-checks',
+        'lucide:circle', 'lucide:circle-check', 'lucide:filter', 'lucide:inbox', 'lucide:layout-dashboard', 'lucide:list-checks',
         'lucide:loader-2', 'lucide:loader-circle', 'lucide:menu', 'lucide:moon',
-        'lucide:plus', 'lucide:plus-circle', 'lucide:refresh-cw', 'lucide:search',
+        'lucide:life-buoy', 'lucide:plus', 'lucide:plus-circle', 'lucide:receipt', 'lucide:refresh-cw', 'lucide:search',
         'lucide:search-x', 'lucide:settings', 'lucide:shield-check', 'lucide:ticket',
         'lucide:users', 'lucide:x', 'simple-icons:github', 'simple-icons:google'
       ]

@@ -23,10 +23,14 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const route = useRoute()
   const { navigation } = usePortalFeatures()
   const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType } = usePortalSession()
+  const { hasWorkspace } = usePlatformWorkspaceState()
 
-  const visibleItems = computed(() => navigation.value.filter(item =>
-    hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value, activeOrganizationType.value)
-    && (route.path === '/' || !item.audiences.every(audience => audience === 'public'))))
+  const visibleItems = computed(() => {
+    if (!hasWorkspace.value) return []
+    return navigation.value.filter(item =>
+      hasAudience(item.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value, activeOrganizationType.value)
+      && (route.path === '/' || !item.audiences.every(audience => audience === 'public')))
+  })
 
   const links = computed<NavigationMenuItem[][]>(() => [visibleItems.value.map(item => ({
     id: item.id,

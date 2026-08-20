@@ -276,6 +276,9 @@ importers:
       '@nuxt-customer-portal/preset':
         specifier: workspace:*
         version: link:../../packages/preset
+      '@nuxt-customer-portal/service-requests':
+        specifier: workspace:*
+        version: link:../../packages/service-requests
       '@nuxt-customer-portal/timesheets':
         specifier: workspace:*
         version: link:../../packages/timesheets

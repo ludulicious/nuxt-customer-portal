@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "set -a; . ../../.env; . ./.env; set +a; nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "platform:migrate": "node scripts/migrate-platform.mjs",
@@ -19,6 +19,7 @@
     "@nuxt-customer-portal/invoices": "workspace:*",
     "@nuxt-customer-portal/kit": "workspace:*",
     "@nuxt-customer-portal/preset": "workspace:*",
+    "@nuxt-customer-portal/service-requests": "workspace:*",
     "@nuxt-customer-portal/timesheets": "workspace:*",
     "@nuxt/ui": "^4.10.0",
     "@nuxtjs/i18n": "^10.6.0",

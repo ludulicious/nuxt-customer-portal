@@ -9,7 +9,7 @@ import { getControlPlanePool } from '../../utils/workspace-runtime'
 const onboardingSchema = z.object({
   companyName: z.string().trim().min(2).max(160),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/),
-  modules: z.array(z.enum(['timesheets', 'invoices'])).min(1),
+  modules: z.array(z.enum(['timesheets', 'invoices', 'service-requests'])).min(1),
   adminName: z.string().trim().min(2).max(120),
   adminEmail: z.email(),
   adminPassword: z.string().min(12).max(256),

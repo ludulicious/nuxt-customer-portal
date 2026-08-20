@@ -7,6 +7,8 @@ const showFooter = computed(() => route.meta?.public === true)
 
 const { links } = useNavigationLinks(open)
 const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
+const { isPlatformHost, hasWorkspace } = usePlatformWorkspaceState()
+const showAppNavigation = computed(() => !isPlatformHost.value || hasWorkspace.value)
 const { currentSession } = storeToRefs(useUserStore())
 const isImpersonating = computed(() => Boolean(currentSession.value?.impersonatedBy))
 
@@ -51,7 +53,7 @@ onMounted(async () => {
     <!-- AppHeader - fixed at top -->
     <div class="fixed top-0 left-0 right-0 z-50">
       <div class="mx-auto w-full max-w-[1600px] px-4">
-        <AppHeader />
+        <AppHeader :show-navigation="showAppNavigation" />
       </div>
     </div>
 
@@ -60,6 +62,7 @@ onMounted(async () => {
       class="px-4 mx-auto max-w-[1600px]! w-full!"
     >
       <UDashboardSidebar
+        v-if="showAppNavigation"
         id="default"
         v-model:open="open"
         collapsible

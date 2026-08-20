@@ -23,9 +23,10 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
   const route = useRoute()
   const { modules: registeredModules } = usePortalFeatures()
   const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType } = usePortalSession()
+  const { hasWorkspace } = usePlatformWorkspaceState()
 
   const modules = computed(() => registeredModules.value
-    .filter(module => hasAudience(module.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value, activeOrganizationType.value))
+    .filter(module => hasWorkspace.value && hasAudience(module.audiences, isAuthenticated.value, isSystemAdmin.value, activeOrganizationRole.value, activeOrganizationType.value))
     .map(module => ({ ...module, label: t(module.labelKey) })))
 
   const activeModule = computed(() => modules.value

@@ -8,6 +8,11 @@ export const requirePlatformSession = async (event: { headers: Headers }) => {
   }
   const session = await platformAuth.api.getSession({ headers: event.headers })
   if (!session?.user) throw createError({ statusCode: 401, statusMessage: 'Platform authentication required' })
+  return session
+}
+
+export const requirePlatformAdmin = async (event: { headers: Headers }) => {
+  const session = await requirePlatformSession(event)
   if (!isPlatformAdminEmail(session.user.email)) {
     throw createError({ statusCode: 403, statusMessage: 'Platform administrator access required' })
   }

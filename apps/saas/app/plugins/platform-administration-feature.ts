@@ -2,12 +2,12 @@ import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/
 
 const platformAdministrationFeature: PortalFeatureDefinition = {
   id: 'platform-administration',
-  navigation: [{ id: 'platform-workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', audiences: ['admin'], order: 100 }],
+  navigation: [{ id: 'platform-workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', audiences: ['authenticated'], order: 100 }],
   modules: [{
-    id: 'workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', routePrefixes: ['/platform'], audiences: ['admin'], order: 100,
+    id: 'workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', routePrefixes: ['/platform'], audiences: ['authenticated'], order: 100,
     menuItems: [
-      { id: 'platform-workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', audiences: ['admin'] },
-      { id: 'platform-onboarding', labelKey: 'platform.menu.onboarding', icon: 'i-lucide-plus-circle', to: '/platform/onboarding', audiences: ['admin'] }
+      { id: 'platform-workspaces', labelKey: 'platform.menu.workspaces', icon: 'i-lucide-building-2', to: '/platform/workspaces', audiences: ['authenticated'] },
+      { id: 'platform-onboarding', labelKey: 'platform.menu.onboarding', icon: 'i-lucide-plus-circle', to: '/platform/onboarding', audiences: ['authenticated'] }
     ]
   }],
   policy: { owner: [], admin: [], member: [] }

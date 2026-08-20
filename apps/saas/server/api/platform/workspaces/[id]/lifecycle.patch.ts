@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { canTransitionWorkspace, isWorkspaceLifecycleState } from '../../../../utils/lifecycle'
-import { requirePlatformSession } from '../../../../utils/platform-access'
+import { requirePlatformAdmin } from '../../../../utils/platform-access'
 import { getControlPlanePool } from '../../../../utils/workspace-runtime'
 
 export default defineEventHandler(async (event) => {
-  const session = await requirePlatformSession(event)
+  const session = await requirePlatformAdmin(event)
   const workspaceId = getRouterParam(event, 'id')
   const body = await readBody<{ status?: string }>(event)
   if (!workspaceId || !body.status || !isWorkspaceLifecycleState(body.status)) {

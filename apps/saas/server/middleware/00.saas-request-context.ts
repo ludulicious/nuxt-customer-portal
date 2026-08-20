@@ -22,6 +22,7 @@ export default defineEventHandler(async (event) => {
   const moduleRoutes: Record<string, string[]> = {
     timesheets: ['/timesheets', '/admin/timesheets', '/api/timesheets'],
     invoices: ['/invoices', '/admin/invoices', '/api/invoices', '/api/invoice-timesheets'],
+    'service-requests': ['/requests', '/admin/requests', '/api/service-requests'],
   }
   const disabledModule = Object.entries(moduleRoutes).find(([module, prefixes]) =>
     !context.workspace?.enabledModules?.includes(module) && prefixes.some(prefix => pathname.startsWith(prefix))
