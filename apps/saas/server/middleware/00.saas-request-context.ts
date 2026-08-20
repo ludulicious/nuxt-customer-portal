@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   if (context.mode === 'tenant' && (pathname.startsWith('/platform') || pathname.startsWith('/api/platform'))) {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
-  const platformPaths = ['/', '/dashboard', '/platform', '/login', '/signup', '/forgot-password', '/verify-email', '/api/auth', '/api/platform', '/api/health']
+  const platformPaths = ['/', '/dashboard', '/platform', '/settings', '/login', '/signup', '/forgot-password', '/verify-email', '/api/auth', '/api/platform', '/api/health']
   if (context.mode === 'platform' && !platformPaths.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }

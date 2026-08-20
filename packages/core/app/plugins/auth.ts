@@ -22,7 +22,7 @@ export default defineNuxtPlugin({
       watch(
         () => session.value,
         async (newSession) => {
-          const sessionData = newSession as unknown as AuthSessionResponse | null
+          const sessionData = newSession.data as unknown as AuthSessionResponse | null
           await userStore.setSession(sessionData)
         },
         { deep: true }

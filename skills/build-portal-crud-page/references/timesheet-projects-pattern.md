@@ -18,6 +18,8 @@
 
 The section header owns the compact create action when entities exist. An empty collection shows a shared first-use empty state with an entity icon, explanatory copy, and a large `Create your first …` action. That action opens the same create form used by populated pages; cancelling returns to the empty state. Entity cards own edit, delete, status, summary, and entity-specific secondary controls. The complete card is a keyboard-accessible edit trigger. Nested controls stop click and keyboard propagation so their actions override the card trigger. Forms and destructive confirmations appear inline in the list, immediately after the affected entity.
 
+The header also owns a neutral ghost refresh icon button. Refresh shows its loading state and re-fetches the current data while preserving the route query and list scroll position. On larger screens the create action is a small outlined plus-and-label button; below the mobile breakpoint it becomes a rounded icon-only plus button with an accessible label. Hide the explanatory subtitle on mobile so the title, icon, create action, and refresh action remain readable.
+
 The page header shows the entity icon beside its title and retains the explanatory subtitle. Below it, shared responsive collection controls provide search, entity-specific filters, sort field, and sort direction for projects, clients, activities, and invoices.
 
 List ordering uses CSS `order`:
@@ -41,6 +43,8 @@ Support direct numbered navigation and automatic boundary loading. Accumulate ad
 Before prepending an earlier page, capture the scroll container's height and scroll position. After insertion and `nextTick()`, add the height delta to `scrollTop` so the same content remains visually anchored. Keep the route's `page` query aligned with explicit page navigation even when the client retains adjacent pages in memory.
 
 Make bootstrap requests section-aware. The visible paginated entity collection comes from its list endpoint only; bootstrap returns shared/supporting collections needed by that section's forms and controls, not a second copy of the visible list. Ensure create/edit flows still receive relations such as clients or activities where required.
+
+Keep the record counter outside the scrolling list in a fixed footer. Use entity-specific localized singular/plural copy (for example, `1 Invoice`/`2 Invoices` and `1 Entry`/`2 Entries`); client-side filtered lists may show the filtered count plus the unfiltered total during search, while paginated lists use the server-reported total. The footer may wrap on narrow screens and should remain visible with the page controls.
 
 ## Form model
 
@@ -77,11 +81,12 @@ Simple deletes still require explicit confirmation. The row trash icon opens the
 ## Visual conventions
 
 - Container: centered, `max-w-[1440px]`, responsive padding.
-- Header: stacked on mobile, aligned to bottom edge on larger screens.
+- Header: title and entity icon remain visible on mobile; explanatory subtitle is hidden below the mobile breakpoint, with the create action rendered as a rounded icon-only plus button and refresh as a neutral ghost icon button. Larger screens use the labeled outlined create button.
 - Header identity: restrained entity icon beside the title with the subtitle preserved.
 - Collection controls: shared responsive search/filter/sort controls that wrap cleanly on narrow screens.
+- Mobile controls: keep search flexible and replace inline filters/sort with compact icon buttons that open modal controls; prevent horizontal overflow.
 - List: full-width grid with `gap-3`.
-- Cards: clickable and keyboard accessible; primary information left; compact actions and status right; selected editor card visibly outlined.
+- Cards: clickable and keyboard accessible; primary information left; compact actions and status right; selected editor card visibly outlined; long content wraps safely and trailing actions keep roughly 44px touch targets.
 - Edit icon: neutral ghost pencil, size `xs`.
 - Delete icon: error ghost trash, size `xs`.
 - Create: small outlined plus button.
@@ -89,4 +94,5 @@ Simple deletes still require explicit confirmation. The row trash icon opens the
 - Delete panel: error border/header, eligibility icon and text, exact-name input, neutral cancel plus destructive confirmation.
 - Forms: `space-y-4`, full-width inputs, close icon in edit header, regular right-aligned Cancel and Save/Create actions.
 - Page shell: `h-full min-h-0 overflow-y-auto` when hosted inside the dashboard group.
+- Page shell: split into a `min-h-0 flex-1 overflow-y-auto` list region and a shrink-0 bordered footer for the counter/pagination, with responsive `p-4 sm:p-6 lg:p-8` content padding and horizontal overflow clipped.
 - Pagination: accessible numbered controls plus automatic previous/next boundary loading, with translated loading, count, and empty-filtered-result states.

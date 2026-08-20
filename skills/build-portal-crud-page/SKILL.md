@@ -21,6 +21,7 @@ Use the timesheet projects page as the interaction baseline, then adapt the patt
 ### Layout
 
 - Keep the page header responsive with an entity icon beside the title, the subtitle retained below it, and a small outlined `New …` button on the right.
+- Keep the list shell split into a scrollable content region and a non-scrolling footer. Put the record counter (and numbered pagination when applicable) in that footer so it remains visible while the cards scroll; give the footer a top border, compact minimum height, responsive horizontal padding, and wrapping behavior for narrow widths.
 - Use one full-width, single-column card list with `gap-3`.
 - When the list is empty, render a reusable first-use empty state with an entity icon, concise title and description, and a large `Create your first …` action. Open the existing create form only after that action; cancelling returns to the empty state.
 - When entities exist, keep the create form closed until requested and retain the compact outlined `New …` header action.
@@ -42,6 +43,7 @@ Use the timesheet projects page as the interaction baseline, then adapt the patt
 - Make section bootstrap loading section-aware: load only collections required by the visible section and its forms. Do not fetch a visible paginated collection again as part of a broad bootstrap payload.
 - Preserve create/edit/delete panels and selection across safe page accumulation, but close or reset transient state when its entity disappears after a query-state change.
 - Add English and Dutch copy for search placeholders, filter choices, sort labels, pagination labels, result counts, empty filtered results, and loading/error states.
+- Make the counter entity-specific and localized, using the correct singular/plural form (for example, `1 Invoice`/`2 Invoices` or `1 Entry`/`2 Entries`) rather than a generic “records” label. For client-side filtered lists, show the filtered count and, when a search is active, the unfiltered total as a secondary count. For server-paginated lists, use the API total rather than the number of accumulated items.
 
 ### Routes and components
 
@@ -61,6 +63,7 @@ Use the timesheet projects page as the interaction baseline, then adapt the patt
 - Keep edit/delete buttons inside the card. Add `@click.stop` and `@keydown.stop` so their actions override the card interaction.
 - Stop propagation from every other nested interactive region, including switches, expandable details, inputs, and secondary actions. A status toggle or disclosure must not open or close the editor.
 - Use a plus icon and outlined button for create.
+- Place the create and refresh actions in the page/section header. Render create as a compact outlined `New …` button with a plus icon on larger screens, and as a rounded icon-only plus button with an accessible label below the mobile breakpoint. Keep refresh as a neutral ghost icon button with an accessible label and loading state; refreshing must re-fetch the current list/bootstrap state without resetting the user's query or scroll state.
 - Put regular-sized Cancel and Save/Create buttons in a right-aligned action row. Use an outlined neutral Cancel and a primary submit action.
 - Add a close icon button to the edit-form header. Make Close, Cancel, and Escape reset and close the same editor state.
 - Use a destructive color and trash icon only for the final delete action.
@@ -71,6 +74,13 @@ Use the timesheet projects page as the interaction baseline, then adapt the patt
 - Keep lightweight domain actions such as active/inactive switches on the entity card when useful.
 - After inserting or moving an ordered edit form, await `nextTick()`. If the complete form fits below the application header, smoothly center it; otherwise smoothly align it to the top. Apply a header-aware scroll margin, then focus the first enabled field with `preventScroll: true`.
 - Guard viewport and DOM access with `import.meta.client`.
+
+### Narrow-screen styling
+
+- Hide explanatory header subtitles below the mobile breakpoint when they compete with the title and actions; keep the title and entity icon visible.
+- On mobile, replace inline filters and sort controls with compact filter and sort icon buttons that open full-width modal controls. Keep search flexible so it does not force horizontal overflow.
+- Use responsive card grids that allow long names, statuses, dates, and amounts to wrap or break safely. Keep primary content readable, preserve a minimum touch target of about 44px for links and icon buttons, and keep secondary chevrons/actions aligned at the trailing edge.
+- Keep list containers `min-h-0`, vertically scrollable, and horizontally clipped. Use responsive page padding such as `p-4 sm:p-6 lg:p-8`; do not let the fixed counter/pagination footer scroll away with the cards.
 
 ### Form validation
 
@@ -114,13 +124,14 @@ Use the timesheet projects page as the interaction baseline, then adapt the patt
 4. Run `git diff --check`.
 5. Inspect the final diff for accidental changes to existing work.
 6. If the app can run locally, verify card click, keyboard activation, edit, Close, Cancel, Escape, quick status changes, blocked delete, successful delete, narrow viewport layout, editor placement, first-field focus, and translated labels.
-7. For first-use states, load each empty route cleanly and verify the empty-state CTA appears before its form. Then activate the CTA, verify the form, cancel, and verify the empty state returns. When hot reload has preserved prior component state, reload the route before diagnosing initial-state behavior.
-8. Submit each form empty and with malformed values; verify localized inline errors appear on the correct fields and no request is sent. Exercise uniqueness conflicts through both the client-side check and a server-side 409 response.
-9. Click every trash action and verify no mutation occurs before explicit confirmation. Verify cancel preserves the record and the final destructive action deletes it.
-10. Exercise every nested card control and verify it does not trigger the card editor. Confirm the edit and delete buttons remain independently clickable.
-11. Verify search, each filter, every sort option, both sort directions, and page survive reload and browser Back/Forward through URL queries. Confirm query changes reset to page 1 without duplicate requests or watcher loops.
-12. Verify the API scopes list and count queries to the organization, returns 20-item pages with deterministic ordering, and cannot expose another organization's records.
-13. Exercise numbered pagination and automatic previous/next loading. Confirm later pages append without duplicates, earlier pages prepend without a visible scroll jump, and rapid/repeated boundary triggers do not insert a page twice.
-14. Inspect network requests for each section and confirm the visible paginated collection is fetched once rather than duplicated by bootstrap. Verify forms still receive every supporting collection they require.
+7. Verify the header New action is text-plus-icon on larger screens and icon-only with an accessible label on mobile, that refresh shows loading and preserves query/scroll state, and that the localized counter remains visible below the independently scrolling list with correct singular/plural counts.
+8. For first-use states, load each empty route cleanly and verify the empty-state CTA appears before its form. Then activate the CTA, verify the form, cancel, and verify the empty state returns. When hot reload has preserved prior component state, reload the route before diagnosing initial-state behavior.
+9. Submit each form empty and with malformed values; verify localized inline errors appear on the correct fields and no request is sent. Exercise uniqueness conflicts through both the client-side check and a server-side 409 response.
+10. Click every trash action and verify no mutation occurs before explicit confirmation. Verify cancel preserves the record and the final destructive action deletes it.
+11. Exercise every nested card control and verify it does not trigger the card editor. Confirm the edit and delete buttons remain independently clickable.
+12. Verify search, each filter, every sort option, both sort directions, and page survive reload and browser Back/Forward through URL queries. Confirm query changes reset to page 1 without duplicate requests or watcher loops.
+13. Verify the API scopes list and count queries to the organization, returns 20-item pages with deterministic ordering, and cannot expose another organization's records.
+14. Exercise numbered pagination and automatic previous/next loading. Confirm later pages append without duplicates, earlier pages prepend without a visible scroll jump, and rapid/repeated boundary triggers do not insert a page twice.
+15. Inspect network requests for each section and confirm the visible paginated collection is fetched once rather than duplicated by bootstrap. Verify forms still receive every supporting collection they require.
 
 If an existing page lacks a backend capability required for complete CRUD, implement the capability across validation, repository, handler, composable, UI, and translations rather than producing a visual-only imitation.

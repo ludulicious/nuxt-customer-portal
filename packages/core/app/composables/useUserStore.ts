@@ -179,7 +179,7 @@ export const useUserStore = defineStore('user', () => {
 
     // console.log('Fetching user permissions from API for user:', currentUser.value.id)
     try {
-      const data = await $fetch<PermissionsResponse>('/api/auth/permissions')
+      const data = await useRequestFetch()<PermissionsResponse>('/api/auth/permissions')
       if (data) {
         permissions.value = data.permissions
         role.value = data.role
@@ -222,8 +222,8 @@ export const useUserStore = defineStore('user', () => {
         while (retries > 0) {
           sessionResponse = await authClient.getSession()
           // Check if the session has been updated with the new organizationId
-          const sessionData = sessionResponse?.data as unknown as AuthSessionResponse & { activeOrganizationId?: string }
-          if (sessionData && sessionData.activeOrganizationId === organizationId) {
+          const sessionData = sessionResponse?.data as unknown as AuthSessionResponse
+          if (sessionData?.session.activeOrganizationId === organizationId) {
             break
           }
           console.log('ActiverOganizationId not yet set in Session data, retrying (retries left: ${retries -1})...')
@@ -254,8 +254,7 @@ export const useUserStore = defineStore('user', () => {
   const setSession = async (data: AuthSessionResponse | null) => {
     if (data) {
       try {
-        const { user, ...session } = data
-        currentSession.value = session
+        currentSession.value = data.session
         currentUser.value = data.user as AuthUser
 
         if (currentUser.value) {

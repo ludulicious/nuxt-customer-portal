@@ -1,1 +1,8 @@
-{}
+{
+  "platform": {
+    "menu": {
+      "tenants": "Tenants",
+      "onboarding": "Create tenant"
+    }
+  }
+}
