@@ -57,8 +57,11 @@ test('provider terminology is used by client migration and provider seeding', as
   ])
 
   assert.match(runtime, /options\.provider, '--provider'/)
+  assert.match(runtime, /to_regclass\('timesheets\.organization_contact'\)/)
+  assert.match(runtime, /options\.once/)
   assert.match(runtime, /seedPortalProvider/)
   assert.match(cli, /provider seed/)
   assert.match(cli, /clients migrate --provider/)
+  assert.match(cli, /--once/)
   assert.doesNotMatch(cli, /owner seed|clients migrate --owner/)
 })

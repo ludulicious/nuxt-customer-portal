@@ -305,7 +305,11 @@ export const useUserStore = defineStore('user', () => {
     ) {
       hasAttemptedAutoSet.value = true
       try {
-        const firstOrg = organizations[0]
+        // A provider user may also belong to one or more client organizations.
+        // Prefer the provider workspace as the initial context so provider-only
+        // modules (Clients, administration, and sales invoices) are available
+        // after a session without an active organization is restored.
+        const firstOrg = organizations.find(org => org.organizationType === 'PROVIDER') ?? organizations[0]
         if (firstOrg?.id) {
           console.log('Auto-setting first organization as active:', firstOrg.id)
           await setActiveOrganizationId(firstOrg.id)

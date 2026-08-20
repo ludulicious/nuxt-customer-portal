@@ -45,7 +45,8 @@ try {
       cwd,
       provider,
       apply: args.includes('--apply'),
-      backupConfirmed: args.includes('--backup-confirmed')
+      backupConfirmed: args.includes('--backup-confirmed'),
+      once: args.includes('--once')
     }))
   } else if (args[0] === 'provider' && args[1] === 'seed') {
     const value = flag => args[args.indexOf(flag) + 1]
@@ -76,7 +77,7 @@ try {
   nuxt-customer-portal db adopt-legacy [--apply]
   nuxt-customer-portal admin grant --email <existing-user-email>
   nuxt-customer-portal provider seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
-  nuxt-customer-portal clients migrate --provider <id-or-slug> [--apply --backup-confirmed]`)
+  nuxt-customer-portal clients migrate --provider <id-or-slug> [--apply --backup-confirmed --once]`)
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)

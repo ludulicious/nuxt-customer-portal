@@ -52,10 +52,13 @@ export const migrateGenericClients = async (config, options = {}) => {
         GROUP BY workspace_organization_id ORDER BY workspace_organization_id`, [providerOrganization.id])
       const linkedIds = new Set(linked.rows.map(row => row.id))
       const archived = allOthers.rows.filter(row => !linkedIds.has(row.id))
-      const contacts = await client.query(`SELECT count(*)::int AS total,
-        count(*) FILTER (WHERE oc.user_id IS NOT NULL AND m.id IS NOT NULL)::int AS linked
-        FROM timesheets.organization_contact oc
-        LEFT JOIN member m ON m.user_id = oc.user_id AND m.organization_id = oc.organization_id`)
+      const legacyContacts = await client.query(`SELECT to_regclass('timesheets.organization_contact') AS table_name`)
+      const contacts = legacyContacts.rows[0]?.table_name
+        ? await client.query(`SELECT count(*)::int AS total,
+          count(*) FILTER (WHERE oc.user_id IS NOT NULL AND m.id IS NOT NULL)::int AS linked
+          FROM timesheets.organization_contact oc
+          LEFT JOIN member m ON m.user_id = oc.user_id AND m.organization_id = oc.organization_id`)
+        : { rows: [{ total: 0, linked: 0 }] }
       const legacyRequests = await client.query(`SELECT to_regclass('service_requests.legacy_service_request') AS table_name`)
       const requests = legacyRequests.rows[0]?.table_name
         ? await client.query('SELECT count(*)::int AS total FROM service_requests.legacy_service_request')
@@ -78,6 +81,19 @@ export const migrateGenericClients = async (config, options = {}) => {
       await client.query('SELECT pg_advisory_lock(hashtext($1))', [`${lockName}:generic-clients`])
       await client.query('BEGIN')
       try {
+        if (options.once) {
+          await client.query(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(migrationSchema)}`)
+          await client.query(`CREATE TABLE IF NOT EXISTS ${quoteIdentifier(migrationSchema)}."one_time_migration" (
+            migration_key text PRIMARY KEY,
+            provider_id text NOT NULL,
+            applied_at timestamptz DEFAULT now() NOT NULL
+          )`)
+          const applied = await client.query(`SELECT provider_id, applied_at FROM ${quoteIdentifier(migrationSchema)}."one_time_migration" WHERE migration_key = $1`, ['generic-clients-v1'])
+          if (applied.rowCount) {
+            await client.query('ROLLBACK')
+            return { ...report, dryRun: false, skipped: true, alreadyApplied: applied.rows[0] }
+          }
+        }
         await client.query(`UPDATE organization SET organization_type = CASE WHEN id = $1 THEN 'PROVIDER' ELSE 'CLIENT' END`, [providerOrganization.id])
         await client.query(`INSERT INTO clients.client_profile
           (organization_id, official_name, address, registration_number, vat_number, invoice_email, preferred_locale, archived_at)
@@ -97,6 +113,9 @@ export const migrateGenericClients = async (config, options = {}) => {
           }
         }
         await client.query('TRUNCATE service_requests.service_request')
+        if (options.once) {
+          await client.query(`INSERT INTO ${quoteIdentifier(migrationSchema)}."one_time_migration" (migration_key, provider_id) VALUES ($1, $2)`, ['generic-clients-v1', providerOrganization.id])
+        }
         await client.query('COMMIT')
       } catch (error) {
         await client.query('ROLLBACK')
