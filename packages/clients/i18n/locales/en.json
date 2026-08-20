@@ -57,7 +57,7 @@
       "direction": "Toggle sort direction",
       "emptyTitle": "No clients yet",
       "emptyDescription": "Create a client before linking projects, time, invoices, or service requests.",
-      "resultCount": "{count} client | {count} clients",
+      "resultCount": "{count} Client | {count} Clients",
       "validation": {
         "name": "Enter at least two characters.",
         "slug": "Use lowercase letters, numbers, and single hyphens only.",

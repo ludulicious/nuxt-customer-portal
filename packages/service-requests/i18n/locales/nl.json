@@ -2,6 +2,7 @@
   "features": {
     "serviceRequests": {
       "title": "Serviceaanvragen",
+      "resultCount": "{count} serviceaanvraag | {count} serviceaanvragen",
       "create": "Aanvraag maken",
       "edit": "Aanvraag bewerken",
       "delete": "Aanvraag verwijderen",

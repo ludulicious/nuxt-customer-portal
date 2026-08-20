@@ -761,7 +761,7 @@ onUnmounted(() => {
 
       <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between gap-4">
         <span>
-          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ pagination.total }}</span>
+          {{ t('features.serviceRequests.resultCount', { count: pagination.total }) }}
         </span>
         <UPagination
           v-if="pagination.pageCount > 1"

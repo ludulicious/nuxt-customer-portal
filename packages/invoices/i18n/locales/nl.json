@@ -255,7 +255,7 @@
           "filters": "Filters",
           "sort": "Sorteren",
           "direction": "Sorteerrichting wijzigen",
-          "totalRecords": "Totaal record: {count} | Totaal records: {count}",
+          "totalRecords": "{count} factuur | {count} facturen",
           "allClients": "Alle klanten",
           "clientFilter": "Filter op klant",
           "statusFilter": "Filter op status",

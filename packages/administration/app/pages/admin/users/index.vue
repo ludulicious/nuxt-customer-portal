@@ -132,10 +132,11 @@ await loadUsers()
 <template>
   <div
     ref="listContainerRef"
-    class="h-full min-h-0 overflow-y-auto"
+    class="flex h-full min-h-0 flex-col overflow-hidden"
     @scroll="listScrollTop = listContainerRef?.scrollTop ?? 0"
   >
-    <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
+    <div class="min-h-0 flex-1 overflow-y-auto">
+      <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
       <header class="flex flex-col gap-3 border-b border-default pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="flex min-w-0 gap-3">
           <UIcon name="i-lucide-users" class="mt-1 size-6 shrink-0 text-primary" />
@@ -213,11 +214,12 @@ await loadUsers()
         <span class="sr-only">{{ t('admin.user.list.loading') }}</span>
       </div>
 
-      <div class="flex items-center justify-between border-t border-default pt-3 text-sm text-muted">
-        <span>{{ t('admin.user.list.resultCount', { count: visibleUsers.length }) }}</span>
-        <span v-if="visibleUsers.length !== users.length">{{ t('admin.user.list.totalCount', { count: users.length }) }}</span>
       </div>
     </div>
+    <footer class="flex min-h-12 shrink-0 items-center justify-between border-t border-default px-4 pt-3 text-sm text-muted sm:px-6 lg:px-8">
+      <span>{{ t('admin.user.list.resultCount', { count: visibleUsers.length }) }}</span>
+      <span v-if="visibleUsers.length !== users.length">{{ t('admin.user.list.totalCount', { count: users.length }) }}</span>
+    </footer>
 
     <AdminCreateUserModal v-model:open="showCreateModal" @success="loadUsers" />
   </div>

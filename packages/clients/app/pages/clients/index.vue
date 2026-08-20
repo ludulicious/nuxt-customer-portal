@@ -111,8 +111,9 @@ onMounted(() => { void restoreScroll() })
 </script>
 
 <template>
-  <div ref="listContainer" class="h-full min-h-0 overflow-y-auto" @scroll="listScrollTop = listContainer?.scrollTop ?? 0">
-    <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
+  <div class="flex h-full min-h-0 flex-col">
+    <div ref="listContainer" class="min-h-0 flex-1 overflow-y-auto" @scroll="listScrollTop = listContainer?.scrollTop ?? 0">
+      <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
       <header class="flex flex-col gap-3 border-b border-default pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="flex gap-3">
           <UIcon name="i-lucide-building-2" class="mt-1 size-6 text-primary" />
@@ -166,10 +167,11 @@ onMounted(() => { void restoreScroll() })
         </UCard>
       </div>
 
-      <div v-if="result && result.pagination.totalPages > 1" class="flex items-center justify-between gap-3">
-        <p class="text-sm text-muted">{{ t('features.clients.resultCount', result.pagination.totalItems) }}</p>
-        <UPagination :page="page" :total="result.pagination.totalItems" :items-per-page="20" @update:page="goToPage" />
       </div>
     </div>
+    <footer v-if="result" class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default px-4 pt-3 text-sm text-muted sm:px-6 lg:px-8">
+      <span>{{ t('features.clients.resultCount', result.pagination.totalItems) }}</span>
+      <UPagination v-if="result.pagination.totalPages > 1" :page="page" :total="result.pagination.totalItems" :items-per-page="20" @update:page="goToPage" />
+    </footer>
   </div>
 </template>

@@ -302,7 +302,7 @@
           "filters": "Filters",
           "sort": "Sorteren",
           "direction": "Sorteerrichting wijzigen",
-          "totalRecords": "Totaal record: {count} | Totaal records: {count}",
+          "totalRecords": "{count} registratie | {count} registraties",
           "allClients": "Alle klanten",
           "clientFilter": "Filter op klant",
           "projectStatusFilter": "Filter op projectstatus",

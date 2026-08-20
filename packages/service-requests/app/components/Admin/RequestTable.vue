@@ -121,9 +121,11 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
       </table>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="pagination.pageCount > 1" class="flex justify-center mt-4">
+    <!-- Result count and pagination -->
+    <div class="flex items-center justify-between gap-3 border-t border-default pt-3 text-sm text-muted">
+      <span>{{ t('features.serviceRequests.resultCount', { count: pagination.total }) }}</span>
       <UPagination
+        v-if="pagination.pageCount > 1"
         v-model="currentPage"
         :total="pagination.total"
         :page-size="pagination.pageSize"

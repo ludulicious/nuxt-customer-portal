@@ -280,7 +280,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
 
       <div class="shrink-0 border-t border-default px-4 pt-5 py-2 text-sm text-muted flex items-center justify-between">
         <span>
-          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ organizations.length }}</span>
+          {{ t('admin.organization.list.totalCount', { count: organizations.length }) }}
         </span>
         <span>
           {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ filteredAndSortedOrganizations.length }}</span>

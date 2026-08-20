@@ -302,7 +302,7 @@
           "filters": "Filters",
           "sort": "Sort",
           "direction": "Change sort direction",
-          "totalRecords": "Total record: {count} | Total records: {count}",
+          "totalRecords": "{count} Entry | {count} Entries",
           "allClients": "All clients",
           "clientFilter": "Filter by client",
           "projectStatusFilter": "Filter by project status",

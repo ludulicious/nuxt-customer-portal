@@ -2,6 +2,7 @@
   "features": {
     "serviceRequests": {
       "title": "Service Requests",
+      "resultCount": "{count} Service Request | {count} Service Requests",
       "create": "Create Request",
       "edit": "Edit Request",
       "delete": "Delete Request",
