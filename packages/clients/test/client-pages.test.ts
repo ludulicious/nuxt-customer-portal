@@ -20,6 +20,8 @@ test('client cards open a dedicated detail route and preserve collection state',
   assert.match(list, /<NuxtLink :to="clientDetailTo\(client\)"/)
   assert.match(list, /t\('features\.clients\.resultCount', result\.pagination\.totalItems\)/)
   assert.match(list, /<UPagination v-if="result\.pagination\.totalPages > 1"/)
+  assert.match(list, /i-lucide-refresh-cw/)
+  assert.match(list, /:aria-label="t\('common\.refresh'\)"/)
   assert.doesNotMatch(list, /editingId/)
   assert.match(detailPage, /features\.clients\.backToClients/)
   assert.match(detailPage, /value\.startsWith\('\/clients\?'\)/)

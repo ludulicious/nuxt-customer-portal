@@ -7,7 +7,7 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
 </script>
 
 <template>
-  <section class="invoice-admin flex h-full min-h-0 flex-col overflow-hidden">
+  <section class="invoice-admin flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
     <header class="mb-6 flex shrink-0 items-end justify-between gap-4">
       <div><h1 class="text-2xl font-semibold">{{ t('features.invoices.salesInvoices') }}</h1><p class="mt-1 text-sm text-muted">{{ t('features.invoices.admin.sectionSubtitles.invoices') }}</p></div>
       <div class="flex gap-1"><UButton v-if="child?.showCreate" icon="i-lucide-plus" size="sm" variant="outline" :disabled="!child.canCreate" @click="child.openCreate()">{{ t('features.invoices.admin.newInvoice') }}</UButton><UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" @click="() => refresh()" /></div>

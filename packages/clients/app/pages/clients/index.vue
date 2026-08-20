@@ -122,9 +122,12 @@ onMounted(() => { void restoreScroll() })
             <p class="text-sm text-muted">{{ t('features.clients.description') }}</p>
           </div>
         </div>
-        <UButton v-if="clients.length && !formOpen" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
-          {{ t('features.clients.new') }}
-        </UButton>
+        <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+          <UButton v-if="clients.length && !formOpen" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
+            {{ t('features.clients.new') }}
+          </UButton>
+          <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="pending" :aria-label="t('common.refresh')" @click="load" />
+        </div>
       </header>
 
       <div class="grid gap-2 border-b border-default pb-4 sm:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
