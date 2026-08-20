@@ -4,7 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 export interface PortalRequestContext {
   database: NodePgDatabase<Record<string, unknown>>
   auth?: object
-  tenant?: {
+  workspace?: {
     id: string
     slug: string
     lifecycleStatus: string
@@ -12,7 +12,7 @@ export interface PortalRequestContext {
     enabledModules?: string[]
     authSecret?: string
   }
-  mode: 'fixed' | 'platform' | 'tenant'
+  mode: 'fixed' | 'platform' | 'workspace'
 }
 
 const storage = new AsyncLocalStorage<PortalRequestContext>()

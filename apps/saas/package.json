@@ -19,7 +19,6 @@
     "@nuxt-customer-portal/invoices": "workspace:*",
     "@nuxt-customer-portal/kit": "workspace:*",
     "@nuxt-customer-portal/preset": "workspace:*",
-    "@nuxt-customer-portal/service-requests": "workspace:*",
     "@nuxt-customer-portal/timesheets": "workspace:*",
     "@nuxt/ui": "^4.10.0",
     "@nuxtjs/i18n": "^10.6.0",

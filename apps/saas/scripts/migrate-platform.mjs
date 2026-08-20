@@ -14,8 +14,8 @@ const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 await migratePortalDatabase({
-  layers: ['@nuxt-customer-portal/core'],
-  nuxtLayers: ['@nuxt-customer-portal/core'],
+  layers: ['@nuxt-customer-portal/core', '@nuxt-customer-portal/ui', '@nuxt-customer-portal/clients'],
+  nuxtLayers: ['@nuxt-customer-portal/core', '@nuxt-customer-portal/ui', '@nuxt-customer-portal/clients'],
   clients: { defaultModules: [] }
 }, { cwd: root, databaseUrl })
 

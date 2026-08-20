@@ -165,7 +165,7 @@ await loadUsers()
             <USelect v-model="roleFilter" :items="roleOptions" value-key="value" class="w-40" />
             <USelect v-model="statusFilter" :items="statusOptions" value-key="value" class="w-40" />
             <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-44" />
-            <UButton color="neutral" variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'" />
+            <UButton color="neutral" variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'" />
           </template>
           <template v-else>
             <UButton variant="outline" icon="i-lucide-filter" :aria-label="t('common.filters')" @click="showFilters = true" />
@@ -173,7 +173,7 @@ await loadUsers()
           </template>
         </div>
         <UModal v-model:open="showFilters" :title="t('common.filters')"><template #body><div class="space-y-4"><UFormField :label="t('admin.user.list.role')"><USelect v-model="roleFilter" :items="roleOptions" value-key="value" class="w-full" /></UFormField><UFormField :label="t('admin.user.list.status')"><USelect v-model="statusFilter" :items="statusOptions" value-key="value" class="w-full" /></UFormField></div></template></UModal>
-        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">{{ t('common.direction') }}</UButton></div></template></UModal>
+        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">{{ t('common.direction') }}</UButton></div></template></UModal>
       </div>
 
       <UAlert v-if="error" color="error" :title="error" variant="outline" />

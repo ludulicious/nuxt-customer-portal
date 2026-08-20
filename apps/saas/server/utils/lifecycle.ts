@@ -1,7 +1,7 @@
-export const tenantLifecycleStates = ['PENDING_EMAIL', 'PROVISIONING', 'ACTIVE', 'READ_ONLY', 'DELETION_SCHEDULED', 'ERROR', 'DELETED'] as const
-export type TenantLifecycleState = typeof tenantLifecycleStates[number]
+export const workspaceLifecycleStates = ['PENDING_EMAIL', 'PROVISIONING', 'ACTIVE', 'READ_ONLY', 'DELETION_SCHEDULED', 'ERROR', 'DELETED'] as const
+export type WorkspaceLifecycleState = typeof workspaceLifecycleStates[number]
 
-const transitions: Record<TenantLifecycleState, TenantLifecycleState[]> = {
+const transitions: Record<WorkspaceLifecycleState, WorkspaceLifecycleState[]> = {
   PENDING_EMAIL: ['PROVISIONING', 'DELETED'],
   PROVISIONING: ['ACTIVE', 'ERROR'],
   ACTIVE: ['READ_ONLY', 'ERROR'],
@@ -11,8 +11,8 @@ const transitions: Record<TenantLifecycleState, TenantLifecycleState[]> = {
   DELETED: []
 }
 
-export const isTenantLifecycleState = (value: string): value is TenantLifecycleState =>
-  tenantLifecycleStates.includes(value as TenantLifecycleState)
+export const isWorkspaceLifecycleState = (value: string): value is WorkspaceLifecycleState =>
+  workspaceLifecycleStates.includes(value as WorkspaceLifecycleState)
 
-export const canTransitionTenant = (from: TenantLifecycleState, to: TenantLifecycleState) =>
+export const canTransitionWorkspace = (from: WorkspaceLifecycleState, to: WorkspaceLifecycleState) =>
   transitions[from].includes(to)

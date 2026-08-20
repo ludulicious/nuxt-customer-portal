@@ -10,11 +10,11 @@ test('request-aware providers remain isolated across concurrent requests', async
 
   const identify = (name: string, delay: number) => runWithPortalRequestContext({
     database,
-    mode: 'tenant',
+    mode: 'workspace',
     auth: { name, identify: fixed.identify }
   }, async () => {
     await new Promise(resolve => setTimeout(resolve, delay))
-    assert.equal(getPortalRequestContext()?.mode, 'tenant')
+    assert.equal(getPortalRequestContext()?.mode, 'workspace')
     return auth.identify()
   })
 

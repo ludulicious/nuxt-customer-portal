@@ -10,6 +10,19 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
+  icon: {
+    clientBundle: {
+      icons: [
+        'lucide:arrow-down', 'lucide:arrow-up', 'lucide:building-2', 'lucide:check',
+        'lucide:chevron-down', 'lucide:chevron-right', 'lucide:clock-3', 'lucide:edit',
+        'lucide:filter', 'lucide:inbox', 'lucide:layout-dashboard', 'lucide:list-checks',
+        'lucide:loader-2', 'lucide:loader-circle', 'lucide:menu', 'lucide:moon',
+        'lucide:plus', 'lucide:plus-circle', 'lucide:refresh-cw', 'lucide:search',
+        'lucide:search-x', 'lucide:settings', 'lucide:shield-check', 'lucide:ticket',
+        'lucide:users', 'lucide:x', 'simple-icons:github', 'simple-icons:google'
+      ]
+    }
+  },
   runtimeConfig: {
     public: {
       platformHost: process.env.SAAS_PLATFORM_HOST || 'platform.localhost',

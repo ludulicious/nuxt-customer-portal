@@ -7,6 +7,8 @@ const router = useRouter()
 const toast = useToast()
 const api = useClients()
 const runtimeConfig = useRuntimeConfig()
+const requestUrl = useRequestURL()
+const isPlatformHost = computed(() => [runtimeConfig.public.platformHost, runtimeConfig.public.platformDomain].filter(Boolean).includes(requestUrl.hostname))
 const defaultModules = ((runtimeConfig.public.clients as { defaultModules?: string[] } | undefined)?.defaultModules ?? [])
 const search = ref(String(route.query.search ?? ''))
 const status = ref(route.query.status === 'archived' ? 'archived' : route.query.status === 'all' ? 'all' : 'active')
@@ -137,8 +139,8 @@ onMounted(() => { void restoreScroll() })
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-1">
-          <UButton v-if="clients.length && !formOpen" class="rounded-full sm:hidden" icon="i-lucide-plus" :aria-label="t('features.clients.new')" @click="formOpen = true" />
-          <UButton v-if="clients.length && !formOpen" class="hidden sm:inline-flex" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
+          <UButton v-if="!isPlatformHost && clients.length && !formOpen" class="rounded-full sm:hidden" icon="i-lucide-plus" :aria-label="t('features.clients.new')" @click="formOpen = true" />
+          <UButton v-if="!isPlatformHost && clients.length && !formOpen" class="hidden sm:inline-flex" size="sm" variant="outline" icon="i-lucide-plus" @click="formOpen = true">
             {{ t('features.clients.new') }}
           </UButton>
           <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="pending" :aria-label="t('common.refresh')" @click="load" />
@@ -151,7 +153,7 @@ onMounted(() => { void restoreScroll() })
           <template v-if="!isMobile">
             <USelect v-model="status" :items="statusOptions" value-key="value" class="w-44" />
             <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-44" />
-            <UButton color="neutral" variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" :aria-label="t('features.clients.direction')" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'" />
+            <UButton color="neutral" variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" :aria-label="t('features.clients.direction')" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'" />
           </template>
           <template v-else>
             <UButton variant="outline" icon="i-lucide-filter" :aria-label="t('common.filters')" @click="showFilters = true" />
@@ -159,7 +161,7 @@ onMounted(() => { void restoreScroll() })
           </template>
         </div>
         <UModal v-model:open="showFilters" :title="t('common.filters')"><template #body><UFormField :label="t('features.clients.sortStatus')"><USelect v-model="status" :items="statusOptions" value-key="value" class="w-full" /></UFormField></template></UModal>
-        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">{{ t('features.clients.direction') }}</UButton></div></template></UModal>
+        <UModal v-model:open="showSort" :title="t('common.sort')"><template #body><div class="space-y-4"><UFormField :label="t('common.sortBy')"><USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /></UFormField><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">{{ t('features.clients.direction') }}</UButton></div></template></UModal>
       </div>
 
       <ClientsClientForm v-if="formOpen" :busy="busy" @submit="save" @cancel="formOpen = false" />
@@ -171,7 +173,7 @@ onMounted(() => { void restoreScroll() })
             <h2 class="font-semibold">{{ t('features.clients.emptyTitle') }}</h2>
             <p class="text-sm text-muted">{{ t('features.clients.emptyDescription') }}</p>
           </div>
-          <UButton icon="i-lucide-plus" @click="formOpen = true">{{ t('features.clients.createFirst') }}</UButton>
+          <UButton v-if="!isPlatformHost" icon="i-lucide-plus" @click="formOpen = true">{{ t('features.clients.createFirst') }}</UButton>
         </div>
       </UCard>
 

@@ -30,7 +30,7 @@ export const requireSession = async (event: H3Event): Promise<PortalSession> => 
 export const requireActiveOrganization = (session: PortalSession): string => {
   // Better Auth has returned both shapes across versions/configurations.
   // Keep the layer adapter compatible with either so feature APIs do not
-  // lose their tenant context during a layer or auth upgrade.
+  // lose their workspace context during a layer or auth upgrade.
   const organizationId = getActiveOrganizationId(session)
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No active organization' })

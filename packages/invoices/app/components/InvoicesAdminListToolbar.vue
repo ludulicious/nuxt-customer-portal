@@ -26,7 +26,7 @@ const selectedSort = computed(() => props.sortOptions.find(option => option.valu
         <UDropdownMenu :items="[sortOptions.map(option => ({ label: option.label, icon: sortBy === option.value ? 'i-lucide-check' : undefined, onSelect: () => emit('sort', option.value) }))]" :content="{ align: 'end' }">
           <UButton variant="outline" icon="i-lucide-arrow-down-up" class="ml-auto w-44 justify-between"><span class="truncate">{{ selectedSort }}</span><UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" /></UButton>
         </UDropdownMenu>
-        <UButton variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" :aria-label="t('features.invoices.admin.list.direction')" @click="emit('toggleDirection')" />
+        <UButton variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" :aria-label="t('features.invoices.admin.list.direction')" @click="emit('toggleDirection')" />
       </template>
       <template v-else>
         <UButton variant="outline" icon="i-lucide-filter" :aria-label="t('features.invoices.admin.list.filters')" @click="showFilters = true" />
@@ -34,6 +34,6 @@ const selectedSort = computed(() => props.sortOptions.find(option => option.valu
       </template>
     </div>
     <UModal v-model:open="showFilters" :title="t('features.invoices.admin.list.filters')"><template #body><div class="space-y-4"><UFormField v-for="filter in filters" :key="filter.key" :label="filter.placeholder"><USelect :model-value="filterValues[filter.key]" :items="filter.items" value-key="value" class="w-full" @update:model-value="emit('filter', filter.key, $event)" /></UFormField></div></template></UModal>
-    <UModal v-model:open="showSort" :title="t('features.invoices.admin.list.sort')"><template #body><div class="space-y-4"><USelect :model-value="sortBy" :items="sortOptions" value-key="value" class="w-full" @update:model-value="emit('sort', $event)" /><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'" @click="emit('toggleDirection')">{{ t('features.invoices.admin.list.direction') }}</UButton></div></template></UModal>
+    <UModal v-model:open="showSort" :title="t('features.invoices.admin.list.sort')"><template #body><div class="space-y-4"><USelect :model-value="sortBy" :items="sortOptions" value-key="value" class="w-full" @update:model-value="emit('sort', $event)" /><UButton block variant="outline" :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" @click="emit('toggleDirection')">{{ t('features.invoices.admin.list.direction') }}</UButton></div></template></UModal>
   </div>
 </template>

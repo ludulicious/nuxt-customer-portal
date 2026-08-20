@@ -2,7 +2,7 @@
 
 Portal core is the stable boundary between the host application and reusable feature layers.
 
-Feature layers register a `PortalFeatureDefinition` containing navigation, dashboard widgets, surfaces, and an organization-role policy. Client code consumes authentication and active-organization state through `usePortalSession`; server handlers import database, session, tenant, and authorization adapters from `@nuxt-customer-portal/core/server`.
+Feature layers register a `PortalFeatureDefinition` containing navigation, dashboard widgets, surfaces, and an organization-role policy. Client code consumes authentication and active-organization state through `usePortalSession`; server handlers import database, session, workspace, and authorization adapters from `@nuxt-customer-portal/core/server`.
 
 Feature layers must not import host paths through `~/` or `~~/`. Drizzle schema files are the exception to alias-based imports because Drizzle Kit does not resolve Nuxt aliases; local schemas reference portal core’s physical schema while the host composes all schemas into one migration stream.
 

@@ -541,7 +541,7 @@ onUnmounted(() => {
             </UDropdownMenu>
             <UButton
               v-if="!isMobile"
-              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
+              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'"
               variant="outline"
               :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
               @click="toggleSortDir"

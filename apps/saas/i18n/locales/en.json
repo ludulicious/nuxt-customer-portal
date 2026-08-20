@@ -1,8 +1,32 @@
 {
   "platform": {
     "menu": {
-      "tenants": "Tenants",
-      "onboarding": "Create tenant"
+      "workspaces": "Workspaces",
+      "onboarding": "Create workspace"
+    },
+    "onboarding": {
+      "eyebrow": "Platform onboarding", "title": "Create your workspace", "description": "Provision a client workspace, its first administrator, and the modules it can use.", "formTitle": "Workspace details", "companyName": "Company name", "slug": "Workspace slug", "adminName": "First workspace admin name", "adminEmail": "First workspace admin email", "adminPassword": "First workspace admin password", "modules": "Modules", "database": "Database", "managedDatabase": "Managed database", "byodDatabase": "Bring your own PostgreSQL database", "databaseUrl": "PostgreSQL URL", "cancel": "Cancel", "create": "Create workspace", "success": "Workspace created", "successDescription": "Continue at https://{domain}", "error": "Onboarding failed",
+      "module": { "timesheets": "Timesheets", "invoices": "Invoices" },
+      "validation": { "companyName": "Enter a company name.", "slug": "Use lowercase letters, numbers, and hyphens.", "adminName": "Enter an administrator name.", "adminEmail": "Enter a valid administrator email.", "adminPassword": "Use at least 8 characters.", "modules": "Select at least one module.", "databaseUrl": "Enter a PostgreSQL URL." }
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "description": "Manage workspaces and their platform lifecycle.",
+      "new": "New workspace",
+      "search": "Search workspaces...",
+      "toggleSort": "Toggle sort direction",
+      "loadFailed": "Could not load workspaces",
+      "loadFailedDescription": "Sign in to the platform and try again.",
+      "empty": "No workspaces yet",
+      "emptyFiltered": "No workspaces match the current filters.",
+      "emptyDescription": "Create a workspace to provision its client modules.",
+      "createFirst": "Create your first workspace",
+      "allLoaded": "All workspaces loaded",
+      "resultCount": "{count} workspace | {count} workspaces",
+      "filters": { "allStatuses": "All statuses" },
+      "sort": { "createdAt": "Created", "slug": "Slug", "status": "Status" },
+      "status": { "PENDING_EMAIL": "Pending email", "PROVISIONING": "Provisioning", "ACTIVE": "Active", "READ_ONLY": "Read-only", "DELETION_SCHEDULED": "Deletion scheduled", "ERROR": "Error" },
+      "actions": { "readOnly": "Make read-only", "restore": "Restore", "scheduleDeletion": "Schedule deletion" }
     }
   }
 }

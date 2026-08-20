@@ -1,8 +1,32 @@
 {
   "platform": {
     "menu": {
-      "tenants": "Tenants",
-      "onboarding": "Tenant aanmaken"
+      "workspaces": "Workspaces",
+      "onboarding": "Workspace aanmaken"
+    },
+    "onboarding": {
+      "eyebrow": "Platform onboarding", "title": "Maak je werkruimte aan", "description": "Richt een client-werkruimte in met de eerste beheerder en beschikbare modules.", "formTitle": "Workspacegegevens", "companyName": "Bedrijfsnaam", "slug": "Werkruimte-slug", "adminName": "Naam eerste workspacebeheerder", "adminEmail": "E-mail eerste workspacebeheerder", "adminPassword": "Wachtwoord eerste workspacebeheerder", "modules": "Modules", "database": "Database", "managedDatabase": "Beheerde database", "byodDatabase": "Eigen PostgreSQL-database gebruiken", "databaseUrl": "PostgreSQL-URL", "cancel": "Annuleren", "create": "Werkruimte aanmaken", "success": "Werkruimte aangemaakt", "successDescription": "Ga verder via https://{domain}", "error": "Onboarding mislukt",
+      "module": { "timesheets": "Urenregistratie", "invoices": "Facturen" },
+      "validation": { "companyName": "Vul een bedrijfsnaam in.", "slug": "Gebruik kleine letters, cijfers en koppeltekens.", "adminName": "Vul de naam van een beheerder in.", "adminEmail": "Vul een geldig e-mailadres in.", "adminPassword": "Gebruik minimaal 8 tekens.", "modules": "Selecteer minimaal één module.", "databaseUrl": "Vul een PostgreSQL-URL in." }
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "description": "Beheer workspaces en hun platformlevenscyclus.",
+      "new": "Nieuwe workspace",
+      "search": "Workspaces zoeken...",
+      "toggleSort": "Sorteerrichting wijzigen",
+      "loadFailed": "Workspaces laden mislukt",
+      "loadFailedDescription": "Meld je aan bij het platform en probeer het opnieuw.",
+      "empty": "Nog geen workspaces",
+      "emptyFiltered": "Geen workspaces gevonden met deze filters.",
+      "emptyDescription": "Maak een workspace aan om de clientmodules in te richten.",
+      "createFirst": "Maak je eerste workspace aan",
+      "allLoaded": "Alle workspaces geladen",
+      "resultCount": "{count} workspace | {count} workspaces",
+      "filters": { "allStatuses": "Alle statussen" },
+      "sort": { "createdAt": "Aangemaakt", "slug": "Slug", "status": "Status" },
+      "status": { "PENDING_EMAIL": "In afwachting", "PROVISIONING": "Provisioning", "ACTIVE": "Actief", "READ_ONLY": "Alleen lezen", "DELETION_SCHEDULED": "Verwijdering gepland", "ERROR": "Fout" },
+      "actions": { "readOnly": "Alleen lezen", "restore": "Herstellen", "scheduleDeletion": "Verwijdering plannen" }
     }
   }
 }

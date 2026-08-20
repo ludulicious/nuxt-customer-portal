@@ -9,7 +9,7 @@ definePageMeta({ public: true, layout: 'portal' })
         <p class="saas-home__eyebrow">Customer Portal SaaS</p>
         <h1>Bring customer work into one place.</h1>
         <p class="saas-home__lead">
-          Give your team and customers a shared place for timesheets, invoices, and service requests—without stitching together separate tools.
+          Give your team and customers a shared place for timesheets and invoices—without stitching together separate tools.
         </p>
         <div class="saas-home__actions">
           <UButton to="/signup" size="xl">Create your portal</UButton>
@@ -45,7 +45,7 @@ definePageMeta({ public: true, layout: 'portal' })
         </article>
         <article class="saas-home__model-item">
           <span>02</span>
-          <div><h3>Keep your workspace private</h3><p>Your organization has its own database and authentication boundary instead of sharing customer records with other tenants.</p></div>
+          <div><h3>Keep your workspace private</h3><p>Your organization has its own database and authentication boundary instead of sharing customer records with other workspaces.</p></div>
         </article>
         <article class="saas-home__model-item">
           <span>03</span>
@@ -62,7 +62,6 @@ definePageMeta({ public: true, layout: 'portal' })
       <div class="saas-home__module-list">
         <article class="saas-home__module"><h3>Timesheets</h3><p>Record hours, review submitted weeks, and keep projects and clients connected to the work.</p></article>
         <article class="saas-home__module"><h3>Invoices</h3><p>Move from approved work to clear invoices using your organization’s own sender details and numbering.</p></article>
-        <article class="saas-home__module"><h3>Service requests</h3><p>Give customers a straightforward place to submit requests, follow progress, and stay informed.</p></article>
       </div>
     </section>
 

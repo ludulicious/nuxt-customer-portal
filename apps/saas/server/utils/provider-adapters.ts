@@ -11,12 +11,12 @@ const providerHeaders = () => {
   return { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }
 }
 
-const secretPath = (kind: 'database' | 'auth', tenantId: string) =>
-  `${kind === 'database' ? 'tenant-databases' : 'tenant-auth-secrets'}/${encodeURIComponent(tenantId)}`
+const secretPath = (kind: 'database' | 'auth', workspaceId: string) =>
+  `${kind === 'database' ? 'workspace-databases' : 'workspace-auth-secrets'}/${encodeURIComponent(workspaceId)}`
 
-const storeTenantSecret = async (kind: 'database' | 'auth', tenantId: string, value: string): Promise<StoredSecret> => {
+const storeWorkspaceSecret = async (kind: 'database' | 'auth', workspaceId: string, value: string): Promise<StoredSecret> => {
   const endpoint = requiredEndpoint('Secret storage', process.env.SAAS_SECRET_STORE_ENDPOINT)
-  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, tenantId)}`, {
+  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, workspaceId)}`, {
     method: 'PUT',
     headers: providerHeaders(),
     body: JSON.stringify({ value })
@@ -25,39 +25,39 @@ const storeTenantSecret = async (kind: 'database' | 'auth', tenantId: string, va
   return await response.json() as StoredSecret
 }
 
-const deleteTenantSecret = async (kind: 'database' | 'auth', tenantId: string) => {
+const deleteWorkspaceSecret = async (kind: 'database' | 'auth', workspaceId: string) => {
   const endpoint = process.env.SAAS_SECRET_STORE_ENDPOINT
   if (!endpoint) return
-  await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, tenantId)}`, {
+  await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, workspaceId)}`, {
     method: 'DELETE',
     headers: providerHeaders()
   }).catch(() => undefined)
 }
 
-const resolveTenantSecret = async (kind: 'database' | 'auth', tenantId: string) => {
+const resolveWorkspaceSecret = async (kind: 'database' | 'auth', workspaceId: string) => {
   const endpoint = requiredEndpoint('Secret storage', process.env.SAAS_SECRET_STORE_ENDPOINT)
-  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, tenantId)}`, { headers: providerHeaders() })
-  if (!response.ok) throw createError({ statusCode: 503, statusMessage: 'Tenant secret is unavailable' })
+  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${secretPath(kind, workspaceId)}`, { headers: providerHeaders() })
+  if (!response.ok) throw createError({ statusCode: 503, statusMessage: 'Workspace secret is unavailable' })
   const secret = await response.json() as { value?: string }
-  if (!secret.value) throw createError({ statusCode: 503, statusMessage: 'Tenant secret is invalid' })
+  if (!secret.value) throw createError({ statusCode: 503, statusMessage: 'Workspace secret is invalid' })
   return secret.value
 }
 
-export const storeTenantDatabaseSecret = (tenantId: string, databaseUrl: string) => storeTenantSecret('database', tenantId, databaseUrl)
-export const storeTenantAuthSecret = (tenantId: string, authSecret: string) => storeTenantSecret('auth', tenantId, authSecret)
+export const storeWorkspaceDatabaseSecret = (workspaceId: string, databaseUrl: string) => storeWorkspaceSecret('database', workspaceId, databaseUrl)
+export const storeWorkspaceAuthSecret = (workspaceId: string, authSecret: string) => storeWorkspaceSecret('auth', workspaceId, authSecret)
 
-export const deleteTenantDatabaseSecret = (tenantId: string) => deleteTenantSecret('database', tenantId)
-export const deleteTenantAuthSecret = (tenantId: string) => deleteTenantSecret('auth', tenantId)
+export const deleteWorkspaceDatabaseSecret = (workspaceId: string) => deleteWorkspaceSecret('database', workspaceId)
+export const deleteWorkspaceAuthSecret = (workspaceId: string) => deleteWorkspaceSecret('auth', workspaceId)
 
-export const resolveTenantDatabaseSecret = (tenantId: string) => resolveTenantSecret('database', tenantId)
-export const resolveTenantAuthSecret = (tenantId: string) => resolveTenantSecret('auth', tenantId)
+export const resolveWorkspaceDatabaseSecret = (workspaceId: string) => resolveWorkspaceSecret('database', workspaceId)
+export const resolveWorkspaceAuthSecret = (workspaceId: string) => resolveWorkspaceSecret('auth', workspaceId)
 
-export const provisionTenantDatabase = async (tenantId: string, slug: string): Promise<ProvisionedDatabase> => {
+export const provisionWorkspaceDatabase = async (workspaceId: string, slug: string): Promise<ProvisionedDatabase> => {
   const endpoint = requiredEndpoint('Database provisioning', process.env.SAAS_DATABASE_PROVIDER_ENDPOINT)
   const response = await fetch(`${endpoint.replace(/\/$/, '')}/databases`, {
     method: 'POST',
     headers: providerHeaders(),
-    body: JSON.stringify({ tenantId, slug })
+    body: JSON.stringify({ workspaceId, slug })
   })
   if (!response.ok) throw createError({ statusCode: 502, statusMessage: 'Database provisioning failed' })
   return await response.json() as ProvisionedDatabase

@@ -1,9 +1,9 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { enterPortalRequestContext, type PortalRequestContext } from '@nuxt-customer-portal/core/server/portal'
-import { resolveTenantAuthSecret, resolveTenantDatabaseSecret } from './provider-adapters'
+import { resolveWorkspaceAuthSecret, resolveWorkspaceDatabaseSecret } from './provider-adapters'
 
-type TenantRecord = {
+type WorkspaceRecord = {
   id: string
   slug: string
   lifecycle_status: string
@@ -30,7 +30,7 @@ const getPool = (url: string, key: string) => {
     existing.usedAt = Date.now()
     return existing.pool
   }
-  const maximum = Math.max(2, Number(process.env.SAAS_TENANT_POOL_CACHE_MAX || 25))
+  const maximum = Math.max(2, Number(process.env.SAAS_WORKSPACE_POOL_CACHE_MAX || 25))
   if (pools.size >= maximum) {
     const oldest = [...pools.entries()].sort((left, right) => left[1].usedAt - right[1].usedAt)[0]
     if (oldest) {
@@ -61,11 +61,11 @@ export const closeSaasPools = async () => {
   await Promise.allSettled(active.map(pool => pool.end()))
 }
 
-const resolveTenant = async (hostname: string): Promise<TenantRecord | null> => {
-  const result = await getControlPlanePool().query<TenantRecord>(
+const resolveWorkspace = async (hostname: string): Promise<WorkspaceRecord | null> => {
+  const result = await getControlPlanePool().query<WorkspaceRecord>(
     `SELECT t.id, t.slug, t.lifecycle_status, t.canonical_domain, t.database_secret_ref, t.auth_secret_ref, t.selected_modules
-     FROM platform_tenant t
-     LEFT JOIN platform_domain d ON d.tenant_id = t.id
+     FROM platform_workspace t
+     LEFT JOIN platform_domain d ON d.workspace_id = t.id
      WHERE (t.canonical_domain = $1 OR d.hostname = $1)
      LIMIT 1`,
     [hostname]
@@ -84,27 +84,27 @@ export const establishSaasRequestContext = async (hostname: string) => {
     return context
   }
 
-  const tenant = await resolveTenant(hostname)
-  if (!tenant || tenant.lifecycle_status === 'DELETED') {
-    throw createError({ statusCode: 404, statusMessage: 'Unknown tenant domain' })
+  const workspace = await resolveWorkspace(hostname)
+  if (!workspace || workspace.lifecycle_status === 'DELETED') {
+    throw createError({ statusCode: 404, statusMessage: 'Unknown workspace domain' })
   }
-  if (tenant.lifecycle_status === 'READ_ONLY') {
+  if (workspace.lifecycle_status === 'READ_ONLY') {
     // Feature mutation guards can use this state through the request context.
   }
 
   const [url, authSecret] = await Promise.all([
-    resolveTenantDatabaseSecret(tenant.id),
-    resolveTenantAuthSecret(tenant.id)
+    resolveWorkspaceDatabaseSecret(workspace.id),
+    resolveWorkspaceAuthSecret(workspace.id)
   ])
   const context: PortalRequestContext = {
-    database: databaseForPool(getPool(url, `tenant:${tenant.id}`)),
-    mode: 'tenant',
-    tenant: {
-      id: tenant.id,
-      slug: tenant.slug,
-      lifecycleStatus: tenant.lifecycle_status,
-      canonicalDomain: tenant.canonical_domain,
-      enabledModules: tenant.selected_modules,
+    database: databaseForPool(getPool(url, `workspace:${workspace.id}`)),
+    mode: 'workspace',
+    workspace: {
+      id: workspace.id,
+      slug: workspace.slug,
+      lifecycleStatus: workspace.lifecycle_status,
+      canonicalDomain: workspace.canonical_domain,
+      enabledModules: workspace.selected_modules,
       authSecret
     }
   }

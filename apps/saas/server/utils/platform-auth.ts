@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin } from 'better-auth/plugins'
-import { account, session, user, verification } from '@nuxt-customer-portal/core/schema'
-import { getPlatformDatabase } from './tenant-runtime'
+import { admin, organization as organizationPlugin } from 'better-auth/plugins'
+import { account, invitation, member, organization, session, user, verification } from '@nuxt-customer-portal/core/schema'
+import { getPlatformDatabase, getControlPlanePool } from './workspace-runtime'
 import { isPlatformAdminEmail } from './platform-admin'
 
 const githubEnabled = process.env.PORTAL_GITHUB_ENABLED === 'true'
@@ -15,7 +16,7 @@ export const platformAuth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(getPlatformDatabase(), {
     provider: 'pg',
-    schema: { user, account, session, verification },
+    schema: { user, account, session, verification, organization, member, invitation },
     usePlural: false
   }),
   emailAndPassword: {
@@ -33,6 +34,47 @@ export const platformAuth = betterAuth({
           }
         })
       }
+    },
+    session: {
+      create: {
+        after: async platformSession => {
+          const result = await getControlPlanePool().query<{ email: string }>(
+            'SELECT email FROM "user" WHERE id = $1 LIMIT 1',
+            [platformSession.userId]
+          )
+          const platformUser = result.rows[0]
+
+          if (!platformUser) return
+
+          const isPlatformAdmin = isPlatformAdminEmail(platformUser.email)
+          await getControlPlanePool().query(
+            'UPDATE "user" SET role = $2, updated_at = now() WHERE id = $1',
+            [platformSession.userId, isPlatformAdmin ? 'admin' : 'user']
+          )
+
+          if (!isPlatformAdmin) return
+
+          const provider = await getControlPlanePool().query<{ id: string }>(
+            `SELECT id FROM organization WHERE organization_type = 'PROVIDER' LIMIT 1`
+          )
+          const providerOrganizationId = provider.rows[0]?.id ?? randomUUID()
+          if (!provider.rows[0]) {
+            await getControlPlanePool().query(
+              `INSERT INTO organization (id, name, slug, organization_type, created_at)
+               VALUES ($1, 'Platform', 'platform', 'PROVIDER', now())`,
+              [providerOrganizationId]
+            )
+          }
+          await getControlPlanePool().query(
+            `INSERT INTO member (id, organization_id, user_id, role, created_at)
+             SELECT $1, $2, $3, 'owner', now()
+             WHERE NOT EXISTS (
+               SELECT 1 FROM member WHERE organization_id = $2 AND user_id = $3
+             )`,
+            [randomUUID(), providerOrganizationId, platformSession.userId]
+          )
+        }
+      }
     }
   },
   socialProviders: {
@@ -43,5 +85,17 @@ export const platformAuth = betterAuth({
       ? { google: { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET } }
       : {})
   },
-  plugins: [admin({ defaultRole: 'user' })]
+  plugins: [
+    organizationPlugin({
+      allowUserToCreateOrganization: false,
+      schema: {
+        organization: {
+          additionalFields: {
+            organizationType: { type: 'string', required: true, input: true }
+          }
+        }
+      }
+    }),
+    admin({ defaultRole: 'user' })
+  ]
 })
