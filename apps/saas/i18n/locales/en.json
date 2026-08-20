@@ -28,5 +28,10 @@
       "status": { "PENDING_EMAIL": "Pending email", "PROVISIONING": "Provisioning", "ACTIVE": "Active", "READ_ONLY": "Read-only", "DELETION_SCHEDULED": "Deletion scheduled", "ERROR": "Error" },
       "actions": { "readOnly": "Make read-only", "restore": "Restore", "scheduleDeletion": "Schedule deletion" }
     }
+  },
+  "features": {
+    "clients": {
+      "emptyDescription": "Clients are created when a user creates a workspace."
+    }
   }
 }

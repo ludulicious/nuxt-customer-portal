@@ -6,6 +6,7 @@ definePageMeta({ public: true })
 const { t } = useI18n()
 const form = reactive({ companyName: '', slug: '', modules: ['timesheets'], adminName: '', adminEmail: '', adminPassword: '', databaseMode: 'managed' as 'managed' | 'byod', databaseUrl: '' })
 const modules = ['timesheets', 'invoices']
+const moduleItems = computed(() => modules.map(module => ({ value: module, label: t(`platform.onboarding.module.${module}`) })))
 const submitting = ref(false)
 const result = ref<{ canonicalDomain: string } | null>(null)
 const errorMessage = ref('')
@@ -55,7 +56,7 @@ const submit = async () => {
           <UFormField name="databaseMode" :label="t('platform.onboarding.database')" required><URadioGroup v-model="form.databaseMode" :items="[{ label: t('platform.onboarding.managedDatabase'), value: 'managed' }, { label: t('platform.onboarding.byodDatabase'), value: 'byod' }]" /></UFormField>
         </div>
         <UFormField v-if="form.databaseMode === 'byod'" name="databaseUrl" :label="t('platform.onboarding.databaseUrl')" required><UInput v-model="form.databaseUrl" type="password" placeholder="postgresql://…" class="w-full" /></UFormField>
-        <UFormField name="modules" :label="t('platform.onboarding.modules')" required><div class="grid gap-2 sm:grid-cols-3"><UCheckbox v-for="module in modules" :key="module" v-model="form.modules" :value="module" :label="t(`platform.onboarding.module.${module}`)" /></div></UFormField>
+        <UFormField name="modules" :label="t('platform.onboarding.modules')" required><UCheckboxGroup v-model="form.modules" :items="moduleItems" orientation="horizontal" class="grid gap-2 sm:grid-cols-3" /></UFormField>
         <div class="flex justify-end gap-2"><UButton to="/platform/workspaces" color="neutral" variant="outline">{{ t('platform.onboarding.cancel') }}</UButton><UButton type="submit" :loading="submitting" icon="i-lucide-plus">{{ t('platform.onboarding.create') }}</UButton></div>
       </UForm>
     </UCard>

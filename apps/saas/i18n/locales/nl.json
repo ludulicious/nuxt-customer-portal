@@ -28,5 +28,10 @@
       "status": { "PENDING_EMAIL": "In afwachting", "PROVISIONING": "Provisioning", "ACTIVE": "Actief", "READ_ONLY": "Alleen lezen", "DELETION_SCHEDULED": "Verwijdering gepland", "ERROR": "Fout" },
       "actions": { "readOnly": "Alleen lezen", "restore": "Herstellen", "scheduleDeletion": "Verwijdering plannen" }
     }
+  },
+  "features": {
+    "clients": {
+      "emptyDescription": "Clients worden aangemaakt wanneer een gebruiker een workspace aanmaakt."
+    }
   }
 }
