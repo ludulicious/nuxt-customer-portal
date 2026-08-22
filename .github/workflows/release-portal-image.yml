@@ -41,7 +41,7 @@ jobs:
             echo "Version must be a semantic version" >&2
             exit 1
           fi
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/customer-portal"
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nuxt-customer-portal"
           echo "image=$image" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "sha=sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
