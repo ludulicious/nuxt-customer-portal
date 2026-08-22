@@ -16,6 +16,7 @@
     "test:e2e:docs": "pnpm --filter @nuxt-customer-portal/docs test:e2e",
     "test:e2e:demos": "playwright test",
     "verify:docs-links": "pnpm --filter @nuxt-customer-portal/docs verify:public-links",
+    "verify:saas-boundary": "node --import tsx scripts/verify-saas-boundary.ts",
     "pack:check": "node --import tsx scripts/verify-packages.ts",
     "pack:consumers": "node --import tsx scripts/verify-packages.ts --consumers",
     "pack:consumer:pnpm": "node --import tsx scripts/verify-packages.ts --consumers --manager=pnpm",

@@ -1,175 +1,116 @@
-# SaaS Multitenancy Plan
+# SaaS Dedicated-Instance Architecture
 
-## Status and implementation order
+## Status
 
-This document preserves the intended future SaaS architecture. It is not the next implementation milestone. The generic Clients module refactor described in `generic-clients-module.md` must be completed first.
+This document replaces the abandoned shared-runtime SaaS design. The
+`saas-app` branch is historical research only. It must not be merged,
+cherry-picked, or used as a source of implementation files.
 
-## Summary
+The Customer Portal remains the primary product. SaaS is an independent control
+plane that deploys ordinary Customer Portal instances; it is not a runtime mode
+of the portal.
 
-Build `apps/saas` as a private production host that provides:
+## Architecture invariants
 
-- the platform-domain control plane, with its own database and authentication;
-- the Customer Portal runtime for tenant subdomains and verified custom domains.
+- One deployed Customer Portal instance represents one SaaS customer.
+- Each instance has one PostgreSQL database, one database role, one auth secret,
+  one public origin, and its normal portal configuration.
+- Platform users and sessions exist only in the control plane. Portal users and
+  sessions exist only in their portal instance.
+- The platform never injects request, database, auth, lifecycle, or workspace
+  context into Customer Portal code.
+- Customer Portal APIs, packages, permissions, and data access remain unaware of
+  the control plane and Coolify.
+- A portal release is an immutable image identified by a tag and digest. An
+  instance upgrade is an explicit change from one digest to another.
+- The control plane cannot read portal business data and receives no portal
+  session or management API.
 
-All tenants run the same application release, but each tenant receives a separate PostgreSQL database. Each tenant database contains exactly one `PROVIDER` organization and that provider's `CLIENT` organizations.
+## Repository boundary
 
-## Application architecture
+This repository owns the Customer Portal and publishes the deployable portal
+image. It may contain generic deployment documentation, health checks,
+migrations, and release automation useful to any portal operator. It must not
+contain the SaaS control-plane application or Coolify client code.
 
-- Add a private `apps/saas` application; do not publish it as an npm package.
-- Consume the public Customer Portal preset and feature packages.
-- The platform domain and control plane may be served by the same `apps/saas` runtime as tenant domains. Platform routes and tenant routes must remain explicitly separated by host and request context.
-- The platform has its own PostgreSQL database and its own Better Auth installation. Platform users, onboarding records, platform sessions, and control-plane records never live in tenant databases.
-- Resolve every portal request by normalized hostname before initializing authentication or feature repositories.
-- Resolve the hostname through a central control-plane database to obtain:
-  - tenant ID and immutable slug;
-  - canonical and alias domains;
-  - tenant lifecycle status;
-  - database secret reference;
-  - tenant schema and application version.
-- Extend Core during the SaaS phase with injectable, request-scoped database and authentication providers.
-- Existing dedicated Customer Portal hosts use a fixed database provider. `apps/saas` uses hostname-based tenant resolution.
-- Cache tenant database pools with a strict maximum size, idle eviction, and guaranteed cleanup.
-- Never expose or log raw tenant connection strings.
+The private control-plane repository owns its own Nuxt application, Better Auth
+installation, PostgreSQL schema, migrations, secrets, background jobs, tests,
+and deployment. It must not import Customer Portal layers or packages.
 
-## Control plane
+The boundary is enforced in CI by `pnpm verify:saas-boundary`.
 
-The central control-plane database stores only platform-level data:
+## Portal release contract
 
-- tenant ID, immutable slug, and lifecycle status;
-- standard subdomain, custom domains, verification status, and canonical-domain selection;
-- database secret reference and provisioning metadata;
-- schema/application version and health information;
-- primary owner contact details;
-- subscription status and external billing identifiers;
-- creation, suspension, restoration, and deletion audit timestamps.
-- platform onboarding records, including requested company information, selected modules, requested owner email, and provisioning progress.
+The `apps/demo-apex/Dockerfile` image is built from a release tag and also tagged
+with the source commit SHA. The registry digest recorded after publishing is the
+only value used to provision or upgrade customer instances.
 
-Database credentials belong in a host secret manager. The control-plane database stores references to those secrets, not connection strings.
+At startup the existing entrypoint validates portal configuration, reports
+migration status, applies the configured package migrations, reports status
+again, and starts Nuxt. `/api/health` remains the deployment health endpoint.
 
-The control-plane database and authentication data are not tenant data. Platform authentication is used for platform-domain onboarding, operator access, and post-onboarding account management; tenant authentication remains local to each tenant database.
+Each instance receives only ordinary portal environment configuration:
 
-Use the following lifecycle states:
+- `DATABASE_URL` for its dedicated database and least-privilege role;
+- a unique `BETTER_AUTH_SECRET`;
+- matching `PUBLIC_URL` and `BETTER_AUTH_URL` values;
+- the verified customer email in `ADMIN_EMAILS`;
+- regular registration, email, OAuth, module, and branding settings.
 
-- `PENDING_EMAIL`
-- `PROVISIONING`
-- `ACTIVE`
-- `READ_ONLY`
-- `DELETION_SCHEDULED`
-- `ERROR`
-- `DELETED`
+The platform does not pass a platform token, instance ID, lifecycle state,
+callback URL, shared cookie configuration, or provisioning credential to the
+portal.
 
-Do not store tenant users, clients, timesheets, requests, invoices, or other tenant business data centrally.
+## Independent control plane
 
-## Self-service onboarding
+The first release provides verified self-service signup without billing and
+allows one instance per platform account. The platform stores only platform
+users, instance ownership and desired configuration, external resource IDs,
+image versions, provisioning attempts, sanitized failures, and audit history.
+It never stores portal users or business records.
 
-Onboarding is a platform-domain workflow and is separate from tenant authentication. It collects the company information, immutable tenant slug, selected modules, and the credentials for the first tenant user, who receives the tenant `admin` role.
+The lifecycle is `PENDING_EMAIL`, `QUEUED`, `PROVISIONING`, `ACTIVE`, `ERROR`,
+`SUSPENDED`, and `DELETION_SCHEDULED`. Instance creation and retry are
+owner-scoped; suspend, upgrade, and deletion scheduling are operator-only.
 
-1. Authenticate or verify the onboarding identity through platform authentication.
-2. Collect the company information, immutable tenant slug, selected modules, and first tenant admin username/password.
-3. Reserve `slug.platform.tld` atomically.
-4. Provision or register the tenant PostgreSQL database through a provider adapter.
-5. Run all configured Customer Portal package migrations.
-6. Seed exactly one `PROVIDER` organization and the first Better Auth tenant user with the `admin` role.
-7. Configure the selected module activations for the tenant.
-8. Mark the tenant active and register its standard subdomain.
-9. Redirect to the tenant subdomain using a short-lived, single-use handoff code.
-10. Exchange the handoff code for a tenant-local session.
+Infrastructure work runs in a resumable background job:
 
-Provisioning must be idempotent and resumable after partial failures. Retrying a failed step must not create a second database, provider organization, user, or domain binding.
+1. Verify the owner and atomically reserve the slug.
+2. Create a unique PostgreSQL role and database on the managed shared server.
+3. Generate the portal auth secret and ordinary environment configuration.
+4. Create a Coolify application pinned to the selected portal image digest.
+5. Set its domain and environment variables, then request deployment.
+6. Poll the Coolify deployment and the portal health endpoint with bounded
+   retries.
+7. Mark the instance active and show or email its normal portal signup URL.
 
-The first tenant admin password must be transferred only through the provisioning workflow and must not be stored in the control-plane database, onboarding journal, logs, or handoff code. If the platform stores a temporary credential, it must be encrypted, single-use, and deleted immediately after successful tenant-user creation.
+Every step uses the platform instance ID as its idempotency/correlation key and
+discovers an existing resource before creating one. Partial resources are kept
+for retry. Deletion is a separate, explicit, audited workflow.
 
-## Provider adapters
+Provisioning is expressed through `DatabaseProvider` and `DeploymentProvider`
+contracts. V1 implements a shared-server PostgreSQL provider and Coolify. A
+future BYOD provider must plug into the same orchestration without changing the
+portal.
 
-`apps/saas` should define or implement adapters for:
-
-- database provisioning, migration, suspension, restoration, and deletion;
-- tenant database registration for bring-your-own-database deployments;
-- secret storage and secret-reference resolution;
-- custom-domain registration, DNS instructions, validation, and certificate provisioning;
-- billing-plan and subscription-state synchronization;
-- platform-operator authentication and authorization.
-
-Billing integration in the first version stores plan, status, and external customer/subscription IDs. Checkout and provider-specific billing workflows remain outside the Customer Portal packages.
-
-The default database flow provisions a dedicated PostgreSQL database. A BYOD flow accepts a provider-approved PostgreSQL connection, such as a Neon database URL, validates connectivity and permissions, stores only a secret reference, and applies the same migration and health checks. Raw BYOD connection strings must never be persisted in control-plane records or logs.
-
-## Tenant request lifecycle
-
-For every tenant-domain request:
-
-1. Normalize and validate the hostname.
-2. Trust forwarded host headers only when the request came through an explicitly configured trusted proxy.
-3. Resolve the tenant and canonical domain from the control plane.
-4. Reject unknown, deleted, or invalid domains before authentication.
-5. Redirect verified aliases to the canonical domain before creating or reading a session.
-6. Resolve the database secret and obtain a cached tenant pool.
-7. Initialize tenant-local Better Auth and the request database context.
-8. Execute Customer Portal handlers against that request context only.
-
-Feature code must never import a global database singleton in the SaaS runtime.
-
-## Domains and sessions
-
-- Give every tenant a standard `slug.platform.tld` subdomain.
-- Allow verified custom domains through the domain-provider adapter.
-- Maintain exactly one canonical active domain per tenant.
-- Redirect other verified aliases before authentication.
-- Retain the standard subdomain as the recovery fallback.
-- If monitoring detects that a custom canonical domain is no longer valid, fall back to the standard subdomain.
-- Use host-only cookies; do not share sessions across tenant domains.
-- Keep tenant identities and sessions tenant-local. There is no shared tenant login directory or tenant switcher; platform users authenticate separately on the platform domain.
-
-Initially support email/password and email OTP. Dynamic custom domains make provider callback URLs difficult to manage, so social login remains disabled until a central OAuth broker is designed.
-
-## Tenant administration and lifecycle
-
-- Tenant-domain users cannot manage custom domains, subscription settings, onboarding, or tenant termination.
-- These actions are available exclusively on the platform domain through platform authentication and a narrow, server-only control-plane service.
-- Tenant feature code does not receive general control-plane database access.
-- Authenticate platform operators through a host-provided authorization adapter.
-- Platform operators may inspect provisioning, versions, domains, and health, but do not automatically receive access to tenant business data.
-- Suspended or cancelled tenants become `READ_ONLY` first.
-- In read-only state, block business-data mutations while allowing authorized export and restoration flows.
-- Retain tenant data for 30 days.
-- After 30 days, an audited background job removes the database, secrets, custom-domain bindings, and remaining tenant routing records.
-
-## Public Customer Portal integration
-
-The SaaS implementation will require public Core contracts for:
-
-- resolving a tenant for an incoming request;
-- obtaining a request-scoped database context;
-- creating a request-scoped Better Auth instance;
-- disposing or evicting database pools;
-- reporting the required package migration set and schema version;
-- running the same portal packages in fixed-database and tenant-resolved modes.
-
-These contracts should remain provider-neutral. Concrete SaaS provisioning, domain, secret, and billing integrations stay private to `apps/saas`.
-The platform control plane and its Better Auth integration are host-owned by `apps/saas`; they are not part of the public Customer Portal preset.
+The verified owner becomes the first portal administrator through the existing
+`ADMIN_EMAILS` behavior and completes the unchanged portal signup flow. There is
+no password or session handoff.
 
 ## Verification
 
-- Prove isolation with two tenant databases containing overlapping user, organization, client, and record IDs.
-- Test hostname normalization, unknown hosts, spoofed forwarded headers, and trusted-proxy behavior.
-- Test canonical redirects and ensure authentication cookies are never created on aliases.
-- Test database-pool limits, idle eviction, application shutdown, and unavailable tenant databases.
-- Test duplicate slugs, expired verification, failed provisioning, failed migrations, and idempotent retry.
-- Test platform authentication boundaries, onboarding credential handling, selected module activation, and tenant-admin creation.
-- Test BYOD database registration, connectivity failure, insufficient permissions, secret rotation, and removal.
-- Test custom-domain validation, certificate failure, invalidated primary domains, and fallback to the standard subdomain.
-- Test `READ_ONLY`, restoration within 30 days, and audited deletion after the retention period.
-- Run the same package contract and feature suites against fixed-database and hostname-resolved database providers.
+- Run the existing portal tests, lint, typecheck, build, package checks, and
+  authentication end-to-end coverage on every portal change.
+- Build one image and run two instances with different databases, origins,
+  secrets, and administrator emails; sessions and records must not cross.
+- Reject control-plane imports, SaaS runtime environment variables, and
+  request-scoped auth/database infrastructure from portal runtime paths.
+- In the control-plane repository, test ownership, slug reservation, lifecycle
+  transitions, redaction, rate limits, adapter contracts, idempotent retries,
+  PostgreSQL isolation, and Coolify failure recovery.
 
-## Assumptions
+## V1 exclusions
 
-- PostgreSQL remains the only database provider.
-- The first shared deployment targets approximately 10-100 tenants.
-- One runtime release serves all shared tenants.
-- Every tenant database contains exactly one `PROVIDER` organization.
-- The platform has a separate database and authentication system from every tenant.
-- Clients and all business data remain tenant-local.
-- Platform-domain administration is the only location for onboarding, domain, subscription, and tenant lifecycle management.
-- Tenants may use either a provisioned PostgreSQL database or an approved bring-your-own PostgreSQL database.
-- Cross-tenant reporting and central tenant-data access are out of scope.
-- Dedicated deployment per tenant is not part of the first SaaS implementation.
+Billing, shared login, session handoff, custom-domain self-service, BYOD,
+cross-instance reporting, and central access to portal data are deliberately out
+of scope.
