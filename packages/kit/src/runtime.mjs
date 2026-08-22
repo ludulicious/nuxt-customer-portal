@@ -23,6 +23,7 @@ export const localPortalLayer = (input) => ({
   version: input.version ?? '0.0.0-local',
   schema: input.schema,
   migrations: input.migrations,
+  migrationSearchPath: input.migrationSearchPath,
   dependsOn: [...(input.dependsOn ?? [])]
 })
 
@@ -415,6 +416,10 @@ export const migratePortalDatabase = async (config, options = {}) => {
           if (existing) continue
           await client.query('BEGIN')
           try {
+            if (manifest.migrationSearchPath?.length) {
+              const searchPath = manifest.migrationSearchPath.map(schema => quoteIdentifier(assertString(schema, `${manifest.id} migration search path schema`))).join(', ')
+              await client.query(`SET LOCAL search_path TO ${searchPath}`)
+            }
             await client.query(file.sql)
             await client.query(`INSERT INTO ${quoteIdentifier(migrationSchema)}.${quoteIdentifier(table)} (name, checksum, package_version) VALUES ($1, $2, $3)`, [file.name, file.checksum, manifest.version])
             await client.query('COMMIT')

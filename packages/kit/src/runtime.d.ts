@@ -6,6 +6,7 @@ export interface PortalLayerManifest {
   includes?: readonly string[]
   schema?: string
   migrations?: string
+  migrationSearchPath?: readonly string[]
   root?: string
   local?: boolean
   clientModuleId?: string
@@ -17,6 +18,7 @@ export interface LocalPortalLayerInput {
   version?: string
   schema?: string
   migrations?: string
+  migrationSearchPath?: string[]
   dependsOn?: string[]
 }
 

@@ -5,5 +5,6 @@ export default {
   clientModuleId: 'timesheets',
   dependsOn: ['core', 'ui', 'organizations', 'clients'],
   schema: './server/db/schema/timesheets.ts',
-  migrations: './migrations'
+  migrations: './migrations',
+  migrationSearchPath: ['timesheets', 'public']
 }

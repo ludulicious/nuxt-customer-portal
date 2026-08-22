@@ -9,11 +9,21 @@ test('portal config exposes Nuxt layer sources without losing provider metadata'
     source: './layers/billing',
     schema: './layers/billing/server/db/schema',
     migrations: './layers/billing/migrations',
+    migrationSearchPath: ['billing', 'public'],
     dependsOn: ['core']
   })
   const config = definePortalConfig({ layers: ['@nuxt-customer-portal/preset', local] })
   assert.deepEqual(config.nuxtLayers, ['@nuxt-customer-portal/preset', './layers/billing'])
   assert.equal(config.layers[1], local)
+  assert.deepEqual(local.migrationSearchPath, ['billing', 'public'])
+})
+
+test('timesheets migrations run with their schema on the transaction-local search path', async () => {
+  const manifest = (await import('../../timesheets/portal.manifest.mjs')).default
+  const runtime = await readFile(new URL('../src/runtime.mjs', import.meta.url), 'utf8')
+
+  assert.deepEqual(manifest.migrationSearchPath, ['timesheets', 'public'])
+  assert.match(runtime, /SET LOCAL search_path TO/)
 })
 
 test('provider manifests sort dependencies before consumers', () => {
