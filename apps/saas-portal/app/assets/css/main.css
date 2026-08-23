@@ -1,0 +1,5 @@
+@import "../../../../demo-apex/app/assets/css/main.css";
+
+html,body{overflow-x:clip}
+body{font-family:var(--font-sans)}
+button,a,[role='button']{transition:color 140ms ease,background-color 140ms ease,border-color 140ms ease,opacity 140ms ease}

@@ -1,0 +1,20 @@
+{
+  "saasSettings": {
+    "navigation": "Portaalinstellingen", "title": "Portaalinstellingen", "onboardingTitle": "Stel je portaal in",
+    "bootstrap": { "title": "Maak de portaalbeheerder aan", "description": "Dit nieuwe portaal is gereserveerd voor de aangewezen beheerder. Maak eerst dit account aan; na het inloggen configureer je het portaal." },
+    "editor": {
+      "setupProgress": "Voortgang van de installatie", "portalConfiguration": "Portaalconfiguratie", "configurationSections": "Configuratieonderdelen", "loading": "Instellingen laden…", "unavailable": "Instellingen niet beschikbaar",
+      "steps": { "branding": "Huisstijl en weergave", "modules": "Modules", "home": "Homepage", "legal": "Juridische pagina's", "review": "Controleren" },
+      "appearanceSection": "Weergave",
+      "logoSection": "Logo's voor de gekozen kleurmodus",
+      "fields": { "portalName": "Portaalnaam", "tagline": "Ondertitel", "supportEmail": "E-mailadres voor ondersteuning", "supportUrl": "URL voor ondersteuning", "markLight": "Pictogram voor lichte modus", "markDark": "Pictogram voor donkere modus", "logoLight": "Volledig logo voor lichte modus", "logoDark": "Volledig logo voor donkere modus", "theme": "Thema", "colorMode": "Kleurmodus", "primaryLight": "Primaire kleur — licht", "primaryDark": "Primaire kleur — donker", "heroTitle": "Titel van de hero", "heroDescription": "Beschrijving van de hero", "actionLabel": "Tekst van de knop", "actionUrl": "URL van de knop", "introductionTitle": "Titel van de introductie", "introduction": "Introductie", "supportTitle": "Titel van ondersteuning", "supportText": "Tekst voor ondersteuning", "termsTitle": "Titel van de voorwaarden", "termsText": "Algemene voorwaarden", "privacyTitle": "Titel van het privacybeleid", "privacyText": "Privacybeleid" },
+      "assetDescriptions": { "markLight": "Vierkant pictogram voor compacte onderdelen op een lichte achtergrond, zoals de login- en registratieschermen.", "markDark": "Vierkant pictogram voor compacte onderdelen op een donkere achtergrond, zoals de login- en registratieschermen.", "logoLight": "Breed logo voor kopteksten en pagina's met een lichte achtergrond.", "logoDark": "Breed logo voor kopteksten en pagina's met een donkere achtergrond." },
+      "themes": { "apex": "Apex", "brutal": "Brutal" }, "colorModes": { "userChoice": "Keuze van de gebruiker", "lightOnly": "Alleen licht", "darkOnly": "Alleen donker" },
+      "modules": { "timesheets": "Urenregistratie", "timesheetsDescription": "Registreer uren per medewerker, klant, project en activiteit.", "invoices": "Facturen", "invoicesDescription": "Maak, beheer, verstuur en volg facturen voor klanten.", "serviceRequests": "Serviceverzoeken", "serviceRequestsDescription": "Laat klanten verzoeken indienen en de voortgang volgen.", "invoiceTimesheets": "Factuur uit urenregistratie", "invoiceTimesheetsDescription": "Zet goedgekeurde uren om in factuurregels; vereist Urenregistratie en Facturen.", "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt." },
+      "actions": { "remove": "Verwijderen", "chooseImage": "Afbeelding kiezen", "addFeature": "Kenmerk toevoegen", "back": "Terug", "save": "Wijzigingen opslaan", "saveContinue": "Opslaan en doorgaan", "complete": "Installatie voltooien" },
+      "featureTitle": "Titel van het kenmerk", "featureDescription": "Beschrijving van het kenmerk", "showSupport": "Ondersteuningssectie tonen",
+      "review": { "portal": "Portaal", "theme": "Thema", "colorMode": "Kleurmodus", "activeModules": "Actieve modules", "description": "Na het voltooien van de installatie worden de openbare pagina's en de rest van het portaal geopend." },
+      "messages": { "saved": "Instellingen opgeslagen.", "reviewSettings": "Controleer de instellingen.", "saveFailed": "De instellingen konden niet worden opgeslagen.", "completeFailed": "De installatie kon niet worden voltooid.", "invalidImage": "Gebruik een PNG-, JPEG- of WebP-afbeelding kleiner dan 2 MB." }
+    }
+  }
+}

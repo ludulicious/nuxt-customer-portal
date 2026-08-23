@@ -1,0 +1,23 @@
+{
+  "name": "@nuxt-customer-portal/saas-configuration",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "main": "./nuxt.config.ts",
+  "exports": {
+    ".": "./nuxt.config.ts",
+    "./portal-manifest": "./portal.manifest.mjs",
+    "./shared/*": "./shared/*.ts",
+    "./server/*": "./server/*.ts"
+  },
+  "dependencies": {
+    "@nuxt-customer-portal/core": "workspace:^",
+    "@nuxt-customer-portal/ui": "workspace:^",
+    "@nuxtjs/i18n": "^10.6.0",
+    "drizzle-orm": "^0.45.2",
+    "sharp": "^0.34.5",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" },
+  "devDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" }
+}

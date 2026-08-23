@@ -1,0 +1,20 @@
+{
+  "saasSettings": {
+    "navigation": "Portal settings", "title": "Portal settings", "onboardingTitle": "Set up your portal",
+    "bootstrap": { "title": "Create the portal administrator", "description": "This new portal is reserved for its designated administrator. Create that account first; you will configure the portal after signing in." },
+    "editor": {
+      "setupProgress": "Setup progress", "portalConfiguration": "Portal configuration", "configurationSections": "Configuration sections", "loading": "Loading settings…", "unavailable": "Settings unavailable",
+      "steps": { "branding": "Branding and appearance", "modules": "Modules", "home": "Home page", "legal": "Legal pages", "review": "Review" },
+      "appearanceSection": "Appearance",
+      "logoSection": "Logos for the selected color mode",
+      "fields": { "portalName": "Portal name", "tagline": "Tagline", "supportEmail": "Support email", "supportUrl": "Support URL", "markLight": "Compact icon for light mode", "markDark": "Compact icon for dark mode", "logoLight": "Full logo for light mode", "logoDark": "Full logo for dark mode", "theme": "Theme", "colorMode": "Color mode", "primaryLight": "Primary color — light", "primaryDark": "Primary color — dark", "heroTitle": "Hero title", "heroDescription": "Hero description", "actionLabel": "Action label", "actionUrl": "Action URL", "introductionTitle": "Introduction title", "introduction": "Introduction", "supportTitle": "Support title", "supportText": "Support text", "termsTitle": "Terms title", "termsText": "Terms text", "privacyTitle": "Privacy title", "privacyText": "Privacy text" },
+      "assetDescriptions": { "markLight": "Square icon for compact UI elements on light backgrounds, such as the login and signup screens.", "markDark": "Square icon for compact UI elements on dark backgrounds, such as the login and signup screens.", "logoLight": "Wide logo for headers and pages with a light background.", "logoDark": "Wide logo for headers and pages with a dark background." },
+      "themes": { "apex": "Apex", "brutal": "Brutal" }, "colorModes": { "userChoice": "User choice", "lightOnly": "Light only", "darkOnly": "Dark only" },
+      "modules": { "timesheets": "Timesheets", "timesheetsDescription": "Register hours by employee, client, project, and activity.", "invoices": "Invoices", "invoicesDescription": "Create, manage, send, and track customer invoices.", "serviceRequests": "Service requests", "serviceRequestsDescription": "Let customers submit requests and follow their progress.", "invoiceTimesheets": "Invoice from timesheets", "invoiceTimesheetsDescription": "Turn approved timesheet entries into invoice lines; requires Timesheets and Invoices.", "preserved": "Data is preserved when this module is disabled." },
+      "actions": { "remove": "Remove", "chooseImage": "Choose image", "addFeature": "Add feature", "back": "Back", "save": "Save changes", "saveContinue": "Save and continue", "complete": "Complete setup" },
+      "featureTitle": "Feature title", "featureDescription": "Feature description", "showSupport": "Show support section",
+      "review": { "portal": "Portal", "theme": "Theme", "colorMode": "Color mode", "activeModules": "Active modules", "description": "Completing setup opens the configured public pages and the rest of the portal." },
+      "messages": { "saved": "Settings saved.", "reviewSettings": "Review the settings.", "saveFailed": "Settings could not be saved.", "completeFailed": "Setup could not be completed.", "invalidImage": "Use a PNG, JPEG, or WebP image smaller than 2 MB." }
+    }
+  }
+}

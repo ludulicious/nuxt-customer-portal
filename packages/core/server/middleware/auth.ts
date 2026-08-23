@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   if (!url || !url.startsWith('/api/')) {
     return
   }
-  const unprotectedPaths = ['/api/auth/', '/api/_nuxt_icon', '/api/health']
+  const unprotectedPaths = ['/api/auth/', '/api/_nuxt_icon', '/api/health', '/api/portal/bootstrap', '/api/portal/public']
 
   const isUnprotected = unprotectedPaths.some((path) => url.startsWith(path))
 

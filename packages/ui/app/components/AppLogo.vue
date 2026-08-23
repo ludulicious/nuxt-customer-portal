@@ -1,10 +1,19 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   name?: string
   tagline?: string
 }>(), {
   name: 'Nuxt Customer Portal',
   tagline: 'Customer workspace'
+})
+
+const portalRuntimeSettings = useState<{ branding?: { portalName?: string, tagline?: string, markLight?: string, markDark?: string } } | null>('portal-runtime-settings', () => null)
+const colorMode = useColorMode()
+const runtimeName = computed(() => portalRuntimeSettings.value?.branding?.portalName || props.name)
+const runtimeTagline = computed(() => portalRuntimeSettings.value?.branding?.tagline || props.tagline)
+const runtimeMark = computed(() => {
+  const branding = portalRuntimeSettings.value?.branding
+  return colorMode.value === 'dark' ? (branding?.markDark || branding?.markLight || '') : (branding?.markLight || branding?.markDark || '')
 })
 </script>
 
@@ -12,7 +21,8 @@ withDefaults(defineProps<{
   <div class="flex items-center gap-3">
     <!-- Logo Icon -->
     <div class="relative">
-      <svg class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain">
+      <svg v-else class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <!-- Background circle -->
         <circle cx="20" cy="20" r="20" fill="var(--portal-logo-surface)" />
         <!-- Building/facility icon -->
@@ -29,10 +39,10 @@ withDefaults(defineProps<{
     <!-- Company Name -->
     <div class="flex flex-col">
       <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-        {{ name }}
+        {{ runtimeName }}
       </span>
       <span class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
-        {{ tagline }}
+        {{ runtimeTagline }}
       </span>
     </div>
   </div>

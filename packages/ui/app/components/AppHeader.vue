@@ -2,7 +2,7 @@
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   showNavigation?: boolean
   brandName?: string
   brandTagline?: string
@@ -14,6 +14,16 @@ withDefaults(defineProps<{
 
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
+const portalRuntimeSettings = useState<{ branding?: { portalName?: string, tagline?: string, markLight?: string, markDark?: string }, appearance?: { colorMode?: string } } | null>('portal-runtime-settings', () => null)
+const colorMode = useColorMode()
+const runtimeBrandName = computed(() => portalRuntimeSettings.value?.branding?.portalName || props.brandName)
+const runtimeTagline = computed(() => portalRuntimeSettings.value?.branding?.tagline || props.brandTagline)
+const runtimeMark = computed(() => {
+  const branding = portalRuntimeSettings.value?.branding
+  if (!branding) return ''
+  return colorMode.value === 'dark' ? (branding.markDark || branding.markLight || '') : (branding.markLight || branding.markDark || '')
+})
+const showColorModeControl = computed(() => !portalRuntimeSettings.value || portalRuntimeSettings.value.appearance?.colorMode === 'user-choice')
 // User store
 const userStore = useUserStore()
 const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
@@ -138,9 +148,10 @@ const stopImpersonating = async () => {
     <template #left>
       <div class="flex items-center gap-3">
         <!-- Logo Icon -->
-        <NuxtLink to="/" class="shrink-0" :aria-label="brandName">
+        <NuxtLink to="/" class="shrink-0" :aria-label="runtimeBrandName">
           <div class="relative">
-            <svg class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain">
+            <svg v-else class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <!-- Background circle -->
               <circle cx="20" cy="20" r="20" fill="var(--portal-logo-surface)" />
               <!-- Building/facility icon -->
@@ -158,7 +169,7 @@ const stopImpersonating = async () => {
         <!-- Neutral fallback wordmark; host shells can replace the layout entirely. -->
         <div class="hidden flex-col sm:flex">
           <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-            {{ brandName }}
+            {{ runtimeBrandName }}
           </span>
           <div
             v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
@@ -197,7 +208,7 @@ const stopImpersonating = async () => {
             Loading...
           </span>
           <span v-else class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
-            {{ brandTagline }}
+            {{ runtimeTagline }}
           </span>
         </div>
       </div>
@@ -229,7 +240,7 @@ const stopImpersonating = async () => {
           @click="searchOpen = true"
         />
         <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
-        <UColorModeButton />
+        <UColorModeButton v-if="showColorModeControl" />
 
         <!-- User Avatar Dropdown (only show when user is logged in) -->
         <AppUserMenu size="sm" />
@@ -259,7 +270,7 @@ const stopImpersonating = async () => {
             @click="searchOpen = true"
           />
           <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-32" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
-          <UColorModeButton size="md" class="min-h-11 min-w-11" />
+          <UColorModeButton v-if="showColorModeControl" size="md" class="min-h-11 min-w-11" />
         </div>
       </div>
 
