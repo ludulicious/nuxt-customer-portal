@@ -138,6 +138,34 @@ export const auth = betterAuth({
 
           if (isSystemAdminEmail(user.email, systemAdminEmails)) return { data: { ...user, role: 'admin' } }
         },
+        after: async (user) => {
+          if (!isSystemAdminEmail(user.email, systemAdminEmails)) return
+
+          const [providerOrganization] = await db
+            .select({ id: organizationTable.id })
+            .from(organizationTable)
+            .where(eq(organizationTable.organizationType, 'PROVIDER'))
+            .limit(1)
+          if (!providerOrganization) return
+
+          const [membership] = await db
+            .select({ id: organizationMemberTable.id })
+            .from(organizationMemberTable)
+            .where(and(
+              eq(organizationMemberTable.organizationId, providerOrganization.id),
+              eq(organizationMemberTable.userId, user.id)
+            ))
+            .limit(1)
+          if (membership) return
+
+          await db.insert(organizationMemberTable).values({
+            id: generateId(),
+            organizationId: providerOrganization.id,
+            userId: user.id,
+            role: 'owner',
+            createdAt: new Date()
+          })
+        },
       }
     },
     session: {

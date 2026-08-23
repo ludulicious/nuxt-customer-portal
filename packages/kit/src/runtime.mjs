@@ -173,6 +173,47 @@ export const migrateGenericClients = async (config, options = {}) => {
   })
 }
 
+export const bootstrapPortalProvider = async (options = {}) => {
+  const name = assertString(options.organizationName, '--organization-name')
+  const slug = assertString(options.organizationSlug, '--organization-slug')
+  return withPool(options.databaseUrl, async (pool) => {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const existingProvider = await client.query(`SELECT id, slug FROM organization WHERE organization_type = 'PROVIDER' LIMIT 1`)
+      if (existingProvider.rowCount && existingProvider.rows[0].slug !== slug) {
+        throw new Error(`A PROVIDER organization already exists with slug ${existingProvider.rows[0].slug}`)
+      }
+      const organizationId = existingProvider.rows[0]?.id ?? randomUUID()
+      await client.query(`INSERT INTO organization (id, name, slug, organization_type, created_at)
+        VALUES ($1, $2, $3, 'PROVIDER', now())
+        ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name`, [organizationId, name, slug])
+
+      // Installation defaults belong to the portal release. The control plane
+      // deliberately does not know which schemas or modules the image contains.
+      const timesheetsSchema = await client.query(`SELECT to_regclass('timesheets.workspace_settings') AS table_name`)
+      if (timesheetsSchema.rows[0]?.table_name) {
+        await client.query(`INSERT INTO timesheets.workspace_settings (organization_id, workspace_enabled)
+          VALUES ($1, true)
+          ON CONFLICT (organization_id) DO UPDATE SET workspace_enabled = true, updated_at = now()`, [organizationId])
+      }
+      const invoicesSchema = await client.query(`SELECT to_regclass('invoices.settings') AS table_name`)
+      if (invoicesSchema.rows[0]?.table_name) {
+        await client.query(`INSERT INTO invoices.settings (organization_id, enabled)
+          VALUES ($1, true)
+          ON CONFLICT (organization_id) DO UPDATE SET enabled = true, updated_at = now()`, [organizationId])
+      }
+      await client.query('COMMIT')
+      return { organizationId, name, slug }
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  })
+}
+
 export const seedPortalProvider = async (options = {}) => {
   const name = assertString(options.organizationName, '--organization-name')
   const slug = assertString(options.organizationSlug, '--organization-slug')

@@ -6,6 +6,7 @@ import { createJiti } from 'jiti'
 import {
   adoptLegacyMigrations,
   assignPortalSystemAdmin,
+  bootstrapPortalProvider,
   inspectPortalMigrations,
   migrateGenericClients,
   seedPortalProvider,
@@ -48,6 +49,11 @@ try {
       backupConfirmed: args.includes('--backup-confirmed'),
       once: args.includes('--once')
     }))
+  } else if (args[0] === 'provider' && args[1] === 'bootstrap') {
+    const value = flag => args[args.indexOf(flag) + 1]
+    print(await bootstrapPortalProvider({
+      organizationName: value('--organization-name'), organizationSlug: value('--organization-slug')
+    }))
   } else if (args[0] === 'provider' && args[1] === 'seed') {
     const value = flag => args[args.indexOf(flag) + 1]
     print(await seedPortalProvider({
@@ -76,6 +82,7 @@ try {
   nuxt-customer-portal db generate --provider <id>
   nuxt-customer-portal db adopt-legacy [--apply]
   nuxt-customer-portal admin grant --email <existing-user-email>
+  nuxt-customer-portal provider bootstrap --organization-name <name> --organization-slug <slug>
   nuxt-customer-portal provider seed --organization-name <name> --organization-slug <slug> --user-name <name> --user-email <email> --user-password <password>
   nuxt-customer-portal clients migrate --provider <id-or-slug> [--apply --backup-confirmed --once]`)
   }
