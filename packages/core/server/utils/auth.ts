@@ -10,6 +10,7 @@ import { user as userTable, account as accountTable, session as sessionTable, ve
 import { nanoid } from 'nanoid'
 import { ac, user, admin as adminRole } from '../../shared/permissions'
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
+import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -26,6 +27,7 @@ const registrationMode = ['open', 'invitation-only', 'disabled'].includes(proces
   : portalAuthConfig.registrationMode
 const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED, portalAuthConfig.githubEnabled)
 const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED, portalAuthConfig.googleEnabled)
+const systemAdminEmails = parseSystemAdminEmails(process.env.ADMIN_EMAILS)
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
@@ -118,22 +120,44 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          if (registrationMode !== 'invitation-only') return
+          if (registrationMode === 'invitation-only') {
+            const [invitation] = await db
+              .select({ id: organizationInvitationTable.id })
+              .from(organizationInvitationTable)
+              .where(and(
+                eq(organizationInvitationTable.email, user.email),
+                eq(organizationInvitationTable.status, 'pending'),
+                gt(organizationInvitationTable.expiresAt, new Date())
+              ))
+              .limit(1)
 
-          const [invitation] = await db
-            .select({ id: organizationInvitationTable.id })
-            .from(organizationInvitationTable)
-            .where(and(
-              eq(organizationInvitationTable.email, user.email),
-              eq(organizationInvitationTable.status, 'pending'),
-              gt(organizationInvitationTable.expiresAt, new Date())
-            ))
+            if (!invitation) {
+              throw new APIError('FORBIDDEN', { message: 'Registration requires a valid invitation' })
+            }
+          }
+
+          if (isSystemAdminEmail(user.email, systemAdminEmails)) return { data: { ...user, role: 'admin' } }
+        },
+      }
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          const [record] = await db
+            .select({ email: userTable.email, role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, session.userId))
             .limit(1)
 
-          if (!invitation) {
-            throw new APIError('FORBIDDEN', { message: 'Registration requires a valid invitation' })
+          if (record && record.role !== 'admin' && isSystemAdminEmail(record.email, systemAdminEmails)) {
+            await db
+              .update(userTable)
+              .set({ role: 'admin', updatedAt: new Date() })
+              .where(eq(userTable.id, session.userId))
           }
-        },
+
+          return { data: session }
+        }
       }
     }
   },
