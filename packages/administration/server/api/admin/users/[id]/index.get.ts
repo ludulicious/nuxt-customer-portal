@@ -30,11 +30,7 @@ export default defineEventHandler(async (event): Promise<AdminUserResponse> => {
     throw createError({ statusCode: 400, message: 'User ID is required' })
   }
 
-  const [user] = await db
-    .select()
-    .from(userTable)
-    .where(eq(userTable.id, id))
-    .limit(1)
+  const [user] = await db.select().from(userTable).where(eq(userTable.id, id)).limit(1)
 
   if (!user) {
     throw createError({ statusCode: 404, message: 'User not found' })

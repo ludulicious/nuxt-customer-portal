@@ -1,7 +1,4 @@
-import type {
-  QueryInput,
-  FilterOperator as FilterOperatorType,
-} from '@nuxt-customer-portal/core/shared/types/index'
+import type { QueryInput, FilterOperator as FilterOperatorType } from '@nuxt-customer-portal/core/shared/types/index'
 import { z } from 'zod'
 import type { SQL, SQLWrapper, AnyColumn } from 'drizzle-orm'
 import { and, eq, ne, gt, lt, gte, lte, ilike, inArray, notInArray, asc, desc } from 'drizzle-orm'
@@ -18,7 +15,7 @@ export const FilterOperatorSchema = z.enum([
   'startsWith',
   'endsWith',
   'in',
-  'notIn',
+  'notIn'
 ])
 
 // Schema for a single filter object
@@ -31,26 +28,20 @@ export const FilterSchema = z.object({
     z.number(),
     z.boolean(),
     z.array(z.union([z.string(), z.number(), z.boolean()])),
-    z.null(),
-  ]),
+    z.null()
+  ])
 })
 
 // Define Zod schema for the Sort object, matching QueryInput's Sort interface
 export const SortSchema = z.object({
   field: z.string(),
-  direction: z.enum(['asc', 'desc']),
+  direction: z.enum(['asc', 'desc'])
 })
 
 // Base schema for common query parameters, now including a generic 'filters' array
 export const BaseQuerySchema = z.object({
-  take: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().min(1).optional(),
-  ),
-  skip: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().min(0).optional(),
-  ),
+  take: z.preprocess((val) => (val ? Number(val) : undefined), z.number().int().min(1).optional()),
+  skip: z.preprocess((val) => (val ? Number(val) : undefined), z.number().int().min(0).optional()),
   sortField: z.string().optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   filters: z.preprocess((val) => {
@@ -62,7 +53,7 @@ export const BaseQuerySchema = z.object({
       }
     }
     return val
-  }, z.array(FilterSchema).optional()),
+  }, z.array(FilterSchema).optional())
 })
 
 /**
@@ -92,10 +83,10 @@ export function createFieldResolver(table: unknown): FieldResolver {
 
     // Type guard to ensure it's a valid column (has column-like properties)
     if (
-      column
-      && typeof column === 'object'
-      && column !== null
-      && ('name' in column || 'getSQL' in column || 'table' in column)
+      column &&
+      typeof column === 'object' &&
+      column !== null &&
+      ('name' in column || 'getSQL' in column || 'table' in column)
     ) {
       return column as AnyColumn | SQLWrapper
     }
@@ -118,7 +109,7 @@ function createFilterCondition(
   fieldResolver: FieldResolver,
   fieldPath: string,
   operator: FilterOperatorType,
-  value: unknown,
+  value: unknown
 ): SQL | undefined {
   const column = fieldResolver(fieldPath)
   if (!column) {
@@ -224,12 +215,11 @@ export interface DrizzleQueryResult {
 export function buildDrizzleQuery(
   queryInput: QueryInput,
   tableOrResolver: unknown | FieldResolver,
-  baseWhere?: SQL,
+  baseWhere?: SQL
 ): DrizzleQueryResult {
   // Determine if tableOrResolver is a function (FieldResolver) or a table object
-  const fieldResolver: FieldResolver = typeof tableOrResolver === 'function'
-    ? (tableOrResolver as FieldResolver)
-    : createFieldResolver(tableOrResolver)
+  const fieldResolver: FieldResolver =
+    typeof tableOrResolver === 'function' ? (tableOrResolver as FieldResolver) : createFieldResolver(tableOrResolver)
   // 1. Build where conditions from filters
   const filterConditions: SQL[] = []
 
@@ -239,7 +229,7 @@ export function buildDrizzleQuery(
         fieldResolver,
         filter.field,
         filter.operator as FilterOperatorType,
-        filter.value,
+        filter.value
       )
       if (condition) {
         filterConditions.push(condition)
@@ -254,9 +244,7 @@ export function buildDrizzleQuery(
   } else if (baseWhere) {
     finalWhere = baseWhere
   } else if (filterConditions.length > 0) {
-    finalWhere = filterConditions.length === 1
-      ? filterConditions[0]
-      : and(...filterConditions)!
+    finalWhere = filterConditions.length === 1 ? filterConditions[0] : and(...filterConditions)!
   }
 
   // 2. Build orderBy
@@ -277,6 +265,6 @@ export function buildDrizzleQuery(
     where: finalWhere,
     orderBy,
     limit,
-    offset,
+    offset
   }
 }

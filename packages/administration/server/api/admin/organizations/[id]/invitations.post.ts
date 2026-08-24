@@ -1,7 +1,10 @@
 import { defineEventHandler, createError, readBody, getRouterParam } from 'h3'
 import { auth, generateId } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { invitation as invitationTable, member as memberTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
+import {
+  invitation as invitationTable,
+  member as memberTable
+} from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
 import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
 import { getInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
@@ -12,7 +15,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsByIdInvitationsPost',
     summary: 'Invite an organization member',
-    description: 'Invite an organization member. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Invite an organization member. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -34,22 +38,23 @@ export default defineEventHandler(async (event) => {
     const [member] = await db
       .select()
       .from(memberTable)
-      .where(
-        and(
-          eq(memberTable.userId, user.id),
-          eq(memberTable.organizationId, organizationId)
-        )
-      )
+      .where(and(eq(memberTable.userId, user.id), eq(memberTable.organizationId, organizationId)))
       .limit(1)
 
     if (!member) {
-      throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization with invitation permissions.' })
+      throw createError({
+        statusCode: 403,
+        message: 'Access denied. You must be an admin or a member of this organization with invitation permissions.'
+      })
     }
 
     // Only owners and admins have invitation.create permission
     // Members don't have invitation permissions, so they can't create invitations
     if (member.role !== 'owner' && member.role !== 'admin') {
-      throw createError({ statusCode: 403, message: 'Access denied. Only organization owners and admins can create invitations.' })
+      throw createError({
+        statusCode: 403,
+        message: 'Access denied. Only organization owners and admins can create invitations.'
+      })
     }
   }
 

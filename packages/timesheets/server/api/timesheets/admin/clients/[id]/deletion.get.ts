@@ -5,9 +5,10 @@ import { getClientDeletionEligibility } from '@nuxt-customer-portal/timesheets/s
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminClientsByIdDeletionGet',
+    operationId: 'timesheetsAdminClientsByIdDeletionGet',
     summary: 'Check client deletion eligibility',
-    description: 'Check client deletion eligibility. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Check client deletion eligibility. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 

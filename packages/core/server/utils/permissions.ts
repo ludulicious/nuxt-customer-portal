@@ -58,7 +58,7 @@ export const getUserPermissions = async (
   userId: string,
   _systemRole: string | null | undefined,
   organizationId: string | null | undefined
-): Promise<{ permissions: RoleStatements, orgRole: MemberRole | null, organization: Organization | null }> => {
+): Promise<{ permissions: RoleStatements; orgRole: MemberRole | null; organization: Organization | null }> => {
   let roleDefinition: unknown = userRole
   let orgRole: MemberRole | null = null
   let organization: Organization | null = null
@@ -69,12 +69,7 @@ export const getUserPermissions = async (
       const [member] = await db
         .select({ role: memberTable.role })
         .from(memberTable)
-        .where(
-          and(
-            eq(memberTable.userId, userId),
-            eq(memberTable.organizationId, organizationId)
-          )
-        )
+        .where(and(eq(memberTable.userId, userId), eq(memberTable.organizationId, organizationId)))
         .limit(1)
 
       if (member) {
@@ -83,11 +78,7 @@ export const getUserPermissions = async (
       }
 
       // Get organization details
-      const [org] = await db
-        .select()
-        .from(organizationTable)
-        .where(eq(organizationTable.id, organizationId))
-        .limit(1)
+      const [org] = await db.select().from(organizationTable).where(eq(organizationTable.id, organizationId)).limit(1)
 
       if (org) {
         organization = org as Organization
@@ -137,7 +128,7 @@ export const hasPermission = async (
  * @returns true if the user has the permission, false otherwise
  */
 export const checkOrganizationPermission = async (
-  session: { user: { id: string, role?: string } },
+  session: { user: { id: string; role?: string } },
   organizationId: string,
   subject: string,
   action: string
@@ -146,13 +137,7 @@ export const checkOrganizationPermission = async (
     return false
   }
 
-  return await hasPermission(
-    session.user.id,
-    session.user.role,
-    organizationId,
-    subject,
-    action
-  )
+  return await hasPermission(session.user.id, session.user.role, organizationId, subject, action)
 }
 
 /**
@@ -161,20 +146,12 @@ export const checkOrganizationPermission = async (
  * @param organizationId The organization ID
  * @returns The organization role or null if not a member
  */
-export const getUserOrganizationRole = async (
-  userId: string,
-  organizationId: string
-): Promise<MemberRole | null> => {
+export const getUserOrganizationRole = async (userId: string, organizationId: string): Promise<MemberRole | null> => {
   try {
     const [member] = await db
       .select({ role: memberTable.role })
       .from(memberTable)
-      .where(
-        and(
-          eq(memberTable.userId, userId),
-          eq(memberTable.organizationId, organizationId)
-        )
-      )
+      .where(and(eq(memberTable.userId, userId), eq(memberTable.organizationId, organizationId)))
       .limit(1)
 
     return member ? (member.role as MemberRole) : null

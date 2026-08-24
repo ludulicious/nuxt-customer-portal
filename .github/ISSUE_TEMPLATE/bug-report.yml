@@ -1,6 +1,6 @@
 name: Bug report
 description: Report reproducible Customer Portal behavior that is incorrect or unsafe.
-title: "Bug: "
+title: 'Bug: '
 body:
   - type: markdown
     attributes:

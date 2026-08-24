@@ -11,9 +11,10 @@ import { serviceRequestFeature } from '../shared/feature'
 import { filterServiceRequestSchema } from '../server/utils/service-request-validation'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix]
-  return Object.entries(value).flatMap(([key, child]) =>
-    objectKeys(child, prefix ? `${prefix}.${key}` : key))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [prefix]
+  }
+  return Object.entries(value).flatMap(([key, child]) => objectKeys(child, prefix ? `${prefix}.${key}` : key))
 }
 
 test('English and Dutch expose identical feature locale keys', () => {
@@ -35,7 +36,7 @@ test('all app translation references exist in both locales', () => {
     const referencedKeys = [
       ...source.matchAll(/(?<![\w$])(?:\$t|t)\(\s*['"]([^'"`]+)['"]/g),
       ...source.matchAll(/labelKey\s*:\s*['"]([^'"]+)['"]/g)
-    ].map(match => match[1])
+    ].map((match) => match[1])
 
     for (const [locale, keys] of Object.entries(localeKeys)) {
       for (const key of referencedKeys) {
@@ -46,10 +47,7 @@ test('all app translation references exist in both locales', () => {
 })
 
 test('query validation normalizes both new and legacy pagination', () => {
-  assert.deepEqual(
-    filterServiceRequestSchema.parse({ page: '2', pageSize: '10' }),
-    expectPagination(2, 10, 10)
-  )
+  assert.deepEqual(filterServiceRequestSchema.parse({ page: '2', pageSize: '10' }), expectPagination(2, 10, 10))
   assert.deepEqual(
     filterServiceRequestSchema.parse({ skip: '20', take: '10' }),
     expectPagination(3, 10, 20, { skip: 20, take: 10 })
@@ -63,19 +61,17 @@ test('service-request policy keeps management out of the member role', () => {
 })
 
 test('service-request dashboard separates manager attention from the general overview', () => {
-  assert.deepEqual(serviceRequestFeature.dashboardWidgets?.map(widget => widget.id), [
-    'service-requests-attention',
-    'service-requests-overview'
-  ])
-  assert.equal(serviceRequestFeature.dashboardWidgets?.find(widget => widget.id === 'service-requests-attention')?.area, 'attention')
+  assert.deepEqual(
+    serviceRequestFeature.dashboardWidgets?.map((widget) => widget.id),
+    ['service-requests-attention', 'service-requests-overview']
+  )
+  assert.equal(
+    serviceRequestFeature.dashboardWidgets?.find((widget) => widget.id === 'service-requests-attention')?.area,
+    'attention'
+  )
 })
 
-function expectPagination(
-  page: number,
-  pageSize: number,
-  offset: number,
-  extra: Record<string, number> = {}
-) {
+function expectPagination(page: number, pageSize: number, offset: number, extra: Record<string, number> = {}) {
   return {
     sortBy: 'createdAt',
     sortDir: 'desc',
@@ -89,7 +85,9 @@ function expectPagination(
 function sourceFiles(directory: URL): URL[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const url = new URL(entry.name, directory)
-    if (entry.isDirectory()) return sourceFiles(new URL(`${entry.name}/`, directory))
+    if (entry.isDirectory()) {
+      return sourceFiles(new URL(`${entry.name}/`, directory))
+    }
     return /\.(?:ts|vue)$/.test(entry.name) ? [url] : []
   })
 }

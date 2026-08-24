@@ -16,12 +16,14 @@ const { editPageUrl, markdownPath, reportPageUrl } = useDocumentationLinks({
 
 const items = computed(() => [
   ...(editPageUrl.value
-    ? [{
-        label: 'Edit page on GitHub',
-        icon: 'i-lucide-pencil-line',
-        target: '_blank',
-        to: editPageUrl.value
-      }]
+    ? [
+        {
+          label: 'Edit page on GitHub',
+          icon: 'i-lucide-pencil-line',
+          target: '_blank',
+          to: editPageUrl.value
+        }
+      ]
     : []),
   {
     label: 'Report a docs issue',

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { canManageOrganizationEmailCredential, canViewOrganizationDirectory, isPortalActionAllowed, mergePortalModuleMenuContributions, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
+import {
+  canManageOrganizationEmailCredential,
+  canViewOrganizationDirectory,
+  isPortalActionAllowed,
+  mergePortalModuleMenuContributions,
+  sortPortalDashboardWidgets,
+  upsertPortalFeature
+} from '../shared/feature-registry'
 import { getActiveOrganizationId } from '../shared/portal-session'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
 
@@ -27,14 +34,37 @@ test('dashboard contributions sort deterministically by area, order, and stable 
     { id: 'a', component: 'A', area: 'attention' as const, size: 'half' as const, order: 20 },
     { id: 'aside', component: 'Aside', area: 'aside' as const, size: 'full' as const, order: 1 }
   ]
-  assert.deepEqual(sortPortalDashboardWidgets(widgets).map(widget => widget.id), ['a', 'b', 'z', 'aside'])
-  assert.deepEqual(widgets.map(widget => widget.id), ['z', 'b', 'a', 'aside'])
+  assert.deepEqual(
+    sortPortalDashboardWidgets(widgets).map((widget) => widget.id),
+    ['a', 'b', 'z', 'aside']
+  )
+  assert.deepEqual(
+    widgets.map((widget) => widget.id),
+    ['z', 'b', 'a', 'aside']
+  )
 })
 
 test('features can contribute menu items to an existing module', () => {
-  const modules = [{ id: 'admin', labelKey: 'admin', to: '/admin', routePrefixes: ['/admin'], audiences: ['admin' as const], menuItems: [{ id: 'users', labelKey: 'users', to: '/admin/users', audiences: ['admin' as const] }] }]
-  const result = mergePortalModuleMenuContributions(modules, [{ moduleId: 'admin', item: { id: 'portal-settings', labelKey: 'portalSettings', to: '/admin/portal-settings', audiences: ['admin'] } }])
-  assert.deepEqual(result[0]?.menuItems?.map(item => item.id), ['users', 'portal-settings'])
+  const modules = [
+    {
+      id: 'admin',
+      labelKey: 'admin',
+      to: '/admin',
+      routePrefixes: ['/admin'],
+      audiences: ['admin' as const],
+      menuItems: [{ id: 'users', labelKey: 'users', to: '/admin/users', audiences: ['admin' as const] }]
+    }
+  ]
+  const result = mergePortalModuleMenuContributions(modules, [
+    {
+      moduleId: 'admin',
+      item: { id: 'portal-settings', labelKey: 'portalSettings', to: '/admin/portal-settings', audiences: ['admin'] }
+    }
+  ])
+  assert.deepEqual(
+    result[0]?.menuItems?.map((item) => item.id),
+    ['users', 'portal-settings']
+  )
 })
 
 test('feature policy honors organization roles without a system-admin bypass', () => {
@@ -45,14 +75,20 @@ test('feature policy honors organization roles without a system-admin bypass', (
 
 test('active organization supports both Better Auth session shapes', () => {
   const user = { id: 'user-1' }
-  assert.equal(getActiveOrganizationId({
-    user,
-    session: { activeOrganizationId: 'nested-organization' }
-  }), 'nested-organization')
-  assert.equal(getActiveOrganizationId({
-    user,
-    activeOrganizationId: 'top-level-organization'
-  }), 'top-level-organization')
+  assert.equal(
+    getActiveOrganizationId({
+      user,
+      session: { activeOrganizationId: 'nested-organization' }
+    }),
+    'nested-organization'
+  )
+  assert.equal(
+    getActiveOrganizationId({
+      user,
+      activeOrganizationId: 'top-level-organization'
+    }),
+    'top-level-organization'
+  )
 })
 
 test('organization email credentials are restricted to PROVIDER organization owners', () => {

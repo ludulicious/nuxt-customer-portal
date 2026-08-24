@@ -7,7 +7,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsByIdInvitationsByInvitationIdDeletePost',
     summary: 'Cancel an organization invitation',
-    description: 'Cancel an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Cancel an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
   // Check if user has permission to cancel invitations
   const hasPermission = await checkOrganizationPermission(
-    session as { user: { id: string, role?: string } },
+    session as { user: { id: string; role?: string } },
     organizationId,
     'invitation',
     'cancel'

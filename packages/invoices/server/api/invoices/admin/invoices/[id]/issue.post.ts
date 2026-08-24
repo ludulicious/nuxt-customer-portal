@@ -6,7 +6,7 @@ import { invoiceEmailDeliverySchema } from '@nuxt-customer-portal/invoices/serve
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdIssuePost',
+    operationId: 'invoicesAdminInvoicesByIdIssuePost',
     summary: 'Issue an invoice',
     description: 'Issue an invoice. Scoped to the active organization and the applicable Invoices permission.'
   }
@@ -14,5 +14,11 @@ operationId: 'invoicesAdminInvoicesByIdIssuePost',
 
 export default defineEventHandler(async (event) => {
   const { organizationId, session } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return deliverInvoiceEmail(organizationId, session.user.id, getRouterParam(event, 'id')!, invoiceEmailDeliverySchema.parse(await readBody(event)), true)
+  return deliverInvoiceEmail(
+    organizationId,
+    session.user.id,
+    getRouterParam(event, 'id')!,
+    invoiceEmailDeliverySchema.parse(await readBody(event)),
+    true
+  )
 })

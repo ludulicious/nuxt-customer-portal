@@ -5,17 +5,14 @@ import { stopTimer } from '@nuxt-customer-portal/timesheets/server/utils/timeshe
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsTimerDelete',
+    operationId: 'timesheetsTimerDelete',
     summary: 'Stop the time tracking timer',
-    description: 'Stop the time tracking timer. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Stop the time tracking timer. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'update'
-  )
+  const { session, organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'update')
   return stopTimer(organizationId, session.user.id)
 })

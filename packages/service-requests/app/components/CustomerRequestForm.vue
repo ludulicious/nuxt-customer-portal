@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { ServiceRequest, ServiceRequestCreateInput } from '@nuxt-customer-portal/service-requests/shared/types/service-request'
+import type {
+  ServiceRequest,
+  ServiceRequestCreateInput
+} from '@nuxt-customer-portal/service-requests/shared/types/service-request'
 
 const props = defineProps<{
   initialData?: Partial<ServiceRequest>
@@ -74,7 +77,12 @@ const handleSubmit = () => {
       </div>
 
       <div>
-        <UFormField :label="t('features.serviceRequests.fields.description')" name="description" required class="w-full">
+        <UFormField
+          :label="t('features.serviceRequests.fields.description')"
+          name="description"
+          required
+          class="w-full"
+        >
           <UTextarea
             v-model="state.description"
             class="w-full"
@@ -91,7 +99,7 @@ const handleSubmit = () => {
             <USelect
               v-model="state.priority"
               class="w-full"
-              :items="priorityOptions.filter(i => i.value !== undefined)"
+              :items="priorityOptions.filter((i) => i.value !== undefined)"
               size="lg"
             />
           </UFormField>
@@ -109,10 +117,7 @@ const handleSubmit = () => {
         </div>
       </div>
 
-      <div
-        v-if="editMode && props.initialData?.status"
-        class="rounded-lg border border-default bg-elevated/20 p-4"
-      >
+      <div v-if="editMode && props.initialData?.status" class="rounded-lg border border-default bg-elevated/20 p-4">
         <div class="flex items-center justify-between gap-3">
           <div class="text-sm font-medium text-muted">
             {{ t('features.serviceRequests.fields.status') }}
@@ -125,21 +130,10 @@ const handleSubmit = () => {
 
       <div class="pt-4 border-t border-default">
         <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-          <UButton
-            type="button"
-            variant="outline"
-            size="lg"
-            :disabled="loading"
-            @click="$emit('cancel')"
-          >
+          <UButton type="button" variant="outline" size="lg" :disabled="loading" @click="$emit('cancel')">
             {{ t('common.cancel') }}
           </UButton>
-          <UButton
-            type="submit"
-            color="primary"
-            size="lg"
-            :loading="loading"
-          >
+          <UButton type="submit" color="primary" size="lg" :loading="loading">
             {{ editMode ? t('common.save') : t('common.create') }}
           </UButton>
         </div>

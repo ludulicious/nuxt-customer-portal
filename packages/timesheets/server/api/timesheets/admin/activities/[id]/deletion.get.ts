@@ -5,17 +5,14 @@ import { getActivityDeletionEligibility } from '@nuxt-customer-portal/timesheets
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminActivitiesByIdDeletionGet',
+    operationId: 'timesheetsAdminActivitiesByIdDeletionGet',
     summary: 'Check activity deletion eligibility',
-    description: 'Check activity deletion eligibility. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Check activity deletion eligibility. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   return getActivityDeletionEligibility(organizationId, getRouterParam(event, 'id')!)
 })

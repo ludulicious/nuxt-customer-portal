@@ -73,20 +73,16 @@ export const usePaginatedResource = <Item, Filters extends object>(
         signal: abortController.signal
       })
 
-      if (sequence !== requestSequence) return
+      if (sequence !== requestSequence) {
+        return
+      }
       if (mode === 'append') {
         const existingKeys = new Set(items.value.map(options.getKey))
-        items.value = [
-          ...items.value,
-          ...result.items.filter(item => !existingKeys.has(options.getKey(item)))
-        ]
+        items.value = [...items.value, ...result.items.filter((item) => !existingKeys.has(options.getKey(item)))]
         lastLoadedPage.value = Math.max(lastLoadedPage.value, result.pagination.page)
       } else if (mode === 'prepend') {
         const existingKeys = new Set(items.value.map(options.getKey))
-        items.value = [
-          ...result.items.filter(item => !existingKeys.has(options.getKey(item))),
-          ...items.value
-        ]
+        items.value = [...result.items.filter((item) => !existingKeys.has(options.getKey(item))), ...items.value]
         firstLoadedPage.value = Math.min(firstLoadedPage.value, result.pagination.page)
       } else {
         items.value = result.items
@@ -96,7 +92,9 @@ export const usePaginatedResource = <Item, Filters extends object>(
       pagination.value = result.pagination
       return result
     } catch (cause) {
-      if (sequence !== requestSequence || (cause instanceof Error && cause.name === 'AbortError')) return
+      if (sequence !== requestSequence || (cause instanceof Error && cause.name === 'AbortError')) {
+        return
+      }
       error.value = cause instanceof Error ? cause : new Error('Failed to load data')
       throw cause
     } finally {
@@ -109,7 +107,9 @@ export const usePaginatedResource = <Item, Filters extends object>(
   }
 
   const loadNextPage = (filters: Filters = activeFilters as Filters) => {
-    if (!filters || pending.value || lastLoadedPage.value >= pagination.value.pageCount) return
+    if (!filters || pending.value || lastLoadedPage.value >= pagination.value.pageCount) {
+      return
+    }
     return loadPage(filters, {
       mode: 'append',
       page: lastLoadedPage.value + 1,
@@ -118,7 +118,9 @@ export const usePaginatedResource = <Item, Filters extends object>(
   }
 
   const loadPreviousPage = (filters: Filters = activeFilters as Filters) => {
-    if (!filters || pending.value || firstLoadedPage.value <= 1) return
+    if (!filters || pending.value || firstLoadedPage.value <= 1) {
+      return
+    }
     return loadPage(filters, {
       mode: 'prepend',
       page: firstLoadedPage.value - 1,

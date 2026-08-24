@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import type { OrganizationMemberWithUser } from '@nuxt-customer-portal/core/shared/types/index'
 
-const props = withDefaults(defineProps<{
-  organizationId: string
-  members: OrganizationMemberWithUser[]
-  loading?: boolean
-  canManage?: boolean
-}>(), {
-  loading: false,
-  canManage: false
-})
+const props = withDefaults(
+  defineProps<{
+    organizationId: string
+    members: OrganizationMemberWithUser[]
+    loading?: boolean
+    canManage?: boolean
+  }>(),
+  {
+    loading: false,
+    canManage: false
+  }
+)
 
 const emit = defineEmits<{ refresh: [] }>()
 const { t } = useI18n()
@@ -26,11 +29,15 @@ const requestRemove = (member: OrganizationMemberWithUser) => {
 }
 
 const handleRemove = async () => {
-  if (!selectedMember.value) return
+  if (!selectedMember.value) {
+    return
+  }
   try {
     removing.value = true
     const result = await removeMember(selectedMember.value.user.email, props.organizationId)
-    if (result.error) throw result.error
+    if (result.error) {
+      throw result.error
+    }
     toast.add({ title: t('common.success'), description: t('organization.members.removeSuccess'), color: 'success' })
     emit('refresh')
   } catch (error) {
@@ -50,9 +57,15 @@ const handleRemove = async () => {
     </template>
 
     <div v-if="loading" class="py-8 text-center text-muted">{{ t('organization.members.loading') }}</div>
-    <div v-else-if="members.length === 0" class="py-8 text-center text-muted">{{ t('organization.members.empty') }}</div>
+    <div v-else-if="members.length === 0" class="py-8 text-center text-muted">
+      {{ t('organization.members.empty') }}
+    </div>
     <div v-else class="divide-y divide-default">
-      <div v-for="member in members" :key="member.id" class="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
+      <div
+        v-for="member in members"
+        :key="member.id"
+        class="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+      >
         <div class="flex min-w-0 items-center gap-3">
           <UAvatar :src="member.user.image || undefined" :alt="member.user.name || member.user.email" size="md" />
           <div class="min-w-0">
@@ -61,7 +74,10 @@ const handleRemove = async () => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <UBadge :color="member.role === 'owner' ? 'primary' : member.role === 'admin' ? 'info' : 'neutral'" variant="soft">
+          <UBadge
+            :color="member.role === 'owner' ? 'primary' : member.role === 'admin' ? 'info' : 'neutral'"
+            variant="soft"
+          >
             {{ t(`organization.members.roles.${Array.isArray(member.role) ? member.role[0] : member.role}`) }}
           </UBadge>
           <UButton

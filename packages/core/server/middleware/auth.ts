@@ -3,7 +3,7 @@ import { auth } from '../utils/auth'
 
 async function isAuthenticated(event: H3Event): Promise<boolean> {
   const session = await auth.api.getSession({
-    headers: event.headers,
+    headers: event.headers
   })
   if (!session) {
     return false
@@ -17,7 +17,13 @@ export default defineEventHandler(async (event) => {
   if (!url || !url.startsWith('/api/')) {
     return
   }
-  const unprotectedPaths = ['/api/auth/', '/api/_nuxt_icon', '/api/health', '/api/portal/bootstrap', '/api/portal/public']
+  const unprotectedPaths = [
+    '/api/auth/',
+    '/api/_nuxt_icon',
+    '/api/health',
+    '/api/portal/bootstrap',
+    '/api/portal/public'
+  ]
 
   const isUnprotected = unprotectedPaths.some((path) => url.startsWith(path))
 
@@ -32,14 +38,11 @@ export default defineEventHandler(async (event) => {
 
   // Allow POST (index), PUT (specific response), and GET (specific response) to questionnaire-responses for anonymous users
   const isQuestionnaireResponseIndex = url === '/api/questionnaire-responses'
-  const isSpecificQuestionnaireResponse = url.startsWith(
-    '/api/questionnaire-responses/',
-  )
+  const isSpecificQuestionnaireResponse = url.startsWith('/api/questionnaire-responses/')
 
   if (
-    (isQuestionnaireResponseIndex && event.method === 'POST')
-    || (isSpecificQuestionnaireResponse
-      && (event.method === 'PUT' || event.method === 'GET'))
+    (isQuestionnaireResponseIndex && event.method === 'POST') ||
+    (isSpecificQuestionnaireResponse && (event.method === 'PUT' || event.method === 'GET'))
   ) {
     return
   }
@@ -53,6 +56,6 @@ export default defineEventHandler(async (event) => {
   throw createError({
     statusCode: 401,
     statusMessage: 'Unauthorized',
-    message: 'Authentication required',
+    message: 'Authentication required'
   })
 })

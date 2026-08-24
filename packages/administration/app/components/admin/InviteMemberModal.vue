@@ -16,10 +16,12 @@ const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
 
-const formSchema = computed(() => z.object({
-  email: z.string().email(t('organization.members.validation.emailInvalid')),
-  role: z.enum(['owner', 'admin', 'member'], { error: t('admin.organization.detail.invitations.roleRequired') })
-}))
+const formSchema = computed(() =>
+  z.object({
+    email: z.string().email(t('organization.members.validation.emailInvalid')),
+    role: z.enum(['owner', 'admin', 'member'], { error: t('admin.organization.detail.invitations.roleRequired') })
+  })
+)
 
 const form = reactive({
   email: '',
@@ -35,10 +37,8 @@ watch(open, async (isOpen) => {
     checkingOwner.value = true
     try {
       // Fetch members to check if organization has an owner
-      const members = await $fetch<Array<{ role: string }>>(
-        `/api/admin/organizations/${props.organizationId}/members`
-      )
-      hasOwner.value = members?.some(member => member.role === 'owner') || false
+      const members = await $fetch<Array<{ role: string }>>(`/api/admin/organizations/${props.organizationId}/members`)
+      hasOwner.value = members?.some((member) => member.role === 'owner') || false
 
       // Set default role to 'owner' if no owner exists, otherwise 'member'
       form.role = hasOwner.value ? 'member' : 'owner'
@@ -104,7 +104,11 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.organization.detail.invitations.modalTitle')" :ui="{ footer: 'justify-end' }">
+  <UModal
+    v-model:open="open"
+    :title="t('admin.organization.detail.invitations.modalTitle')"
+    :ui="{ footer: 'justify-end' }"
+  >
     <template #body>
       <UForm :state="form" :schema="formSchema" class="space-y-4" @submit="handleSubmit">
         <UFormField name="email" :label="t('admin.organization.detail.invitations.emailLabel')" required>
@@ -117,27 +121,13 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
           />
         </UFormField>
         <UFormField name="role" :label="t('admin.organization.detail.invitations.roleLabel')" required>
-          <USelect
-            v-model="form.role"
-            :items="roleOptions"
-            value-key="value"
-            size="lg"
-            class="w-full"
-          />
+          <USelect v-model="form.role" :items="roleOptions" value-key="value" size="lg" class="w-full" />
         </UFormField>
         <div class="flex gap-4 justify-end pt-4">
-          <UButton
-            type="button"
-            variant="outline"
-            @click="open = false"
-          >
+          <UButton type="button" variant="outline" @click="open = false">
             {{ t('admin.organization.detail.invitations.cancel') }}
           </UButton>
-          <UButton
-            type="submit"
-            :loading="inviting"
-            color="primary"
-          >
+          <UButton type="submit" :loading="inviting" color="primary">
             {{ t('admin.organization.detail.invitations.sendButton') }}
           </UButton>
         </div>

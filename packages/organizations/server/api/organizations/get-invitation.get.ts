@@ -1,6 +1,9 @@
 import { defineEventHandler, createError, getQuery } from 'h3'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { invitation as invitationTable, organization as organizationTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
+import {
+  invitation as invitationTable,
+  organization as organizationTable
+} from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 
 defineRouteMeta({
@@ -8,7 +11,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsGetInvitationGet',
     summary: 'Get an organization invitation',
-    description: 'Get an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Get an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -30,11 +34,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Fetch the invitation
-    const [invitation] = await db
-      .select()
-      .from(invitationTable)
-      .where(eq(invitationTable.id, invitationId))
-      .limit(1)
+    const [invitation] = await db.select().from(invitationTable).where(eq(invitationTable.id, invitationId)).limit(1)
 
     if (!invitation) {
       throw createError({ statusCode: 404, message: 'Invitation not found' })

@@ -3,20 +3,37 @@
   "version": "0.1.0-alpha.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
-  "repository": { "type": "git", "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git"
+  },
   "type": "module",
   "main": "./src/runtime.mjs",
   "types": "./src/runtime.d.ts",
-  "files": ["LICENSE", "bin", "src", "README.md"],
+  "files": [
+    "LICENSE",
+    "bin",
+    "src",
+    "README.md"
+  ],
   "exports": {
-    ".": { "types": "./src/runtime.d.ts", "import": "./src/runtime.mjs" }
+    ".": {
+      "types": "./src/runtime.d.ts",
+      "import": "./src/runtime.mjs"
+    }
   },
-  "bin": { "nuxt-customer-portal": "./bin/nuxt-customer-portal.mjs" },
-  "publishConfig": { "access": "public" },
+  "bin": {
+    "nuxt-customer-portal": "./bin/nuxt-customer-portal.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "better-auth": "1.6.25",
     "jiti": "^2.6.1",
     "pg": "^8.22.0"
   },
-  "devDependencies": { "@types/pg": "8.15.5" }
+  "devDependencies": {
+    "@types/pg": "8.15.5"
+  }
 }

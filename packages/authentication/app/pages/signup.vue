@@ -20,48 +20,62 @@ const toast = useToast()
 const portalAuth = useRuntimeConfig().public.portalAuth
 
 const invitationId = useRoute().query.invitationId
-if (portalAuth.registrationMode === 'disabled' || (portalAuth.registrationMode === 'invitation-only' && !invitationId)) {
+if (
+  portalAuth.registrationMode === 'disabled' ||
+  (portalAuth.registrationMode === 'invitation-only' && !invitationId)
+) {
   await navigateTo('/login')
 }
 
-const fields = computed(() => [{
-  name: 'name',
-  type: 'text' as const,
-  label: t('signup.fields.name'),
-  placeholder: t('signup.fields.namePlaceholder')
-}, {
-  name: 'email',
-  type: 'text' as const,
-  label: t('signup.fields.email'),
-  placeholder: t('signup.fields.emailPlaceholder')
-}, {
-  name: 'password',
-  label: t('signup.fields.password'),
-  type: 'password' as const,
-  placeholder: t('signup.fields.passwordPlaceholder')
-}])
-
-const providers = computed(() => [{
-  enabled: portalAuth.googleEnabled,
-  label: t('signup.providers.google'),
-  icon: 'i-simple-icons-google',
-  onClick: async () => {
-    await handleGoogleLogin()
+const fields = computed(() => [
+  {
+    name: 'name',
+    type: 'text' as const,
+    label: t('signup.fields.name'),
+    placeholder: t('signup.fields.namePlaceholder')
+  },
+  {
+    name: 'email',
+    type: 'text' as const,
+    label: t('signup.fields.email'),
+    placeholder: t('signup.fields.emailPlaceholder')
+  },
+  {
+    name: 'password',
+    label: t('signup.fields.password'),
+    type: 'password' as const,
+    placeholder: t('signup.fields.passwordPlaceholder')
   }
-}, {
-  enabled: portalAuth.githubEnabled,
-  label: t('signup.providers.github'),
-  icon: 'i-simple-icons-github',
-  onClick: async () => {
-    await handleGitHubLogin()
-  }
-}].filter(provider => provider.enabled))
+])
 
-const schema = computed(() => z.object({
-  name: z.string().min(1, t('signup.validation.nameRequired')),
-  email: z.email(t('signup.validation.invalidEmail')),
-  password: z.string().min(8, t('signup.validation.passwordMinLength'))
-}))
+const providers = computed(() =>
+  [
+    {
+      enabled: portalAuth.googleEnabled,
+      label: t('signup.providers.google'),
+      icon: 'i-simple-icons-google',
+      onClick: async () => {
+        await handleGoogleLogin()
+      }
+    },
+    {
+      enabled: portalAuth.githubEnabled,
+      label: t('signup.providers.github'),
+      icon: 'i-simple-icons-github',
+      onClick: async () => {
+        await handleGitHubLogin()
+      }
+    }
+  ].filter((provider) => provider.enabled)
+)
+
+const schema = computed(() =>
+  z.object({
+    name: z.string().min(1, t('signup.validation.nameRequired')),
+    email: z.email(t('signup.validation.invalidEmail')),
+    password: z.string().min(8, t('signup.validation.passwordMinLength'))
+  })
+)
 
 type Schema = {
   name: string
@@ -72,7 +86,7 @@ type Schema = {
 const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
-const invitationInfo = ref<{ organizationName?: string, role?: string, email?: string } | null>(null)
+const invitationInfo = ref<{ organizationName?: string; role?: string; email?: string } | null>(null)
 const acceptingInvitation = ref(false)
 
 // User store for checking authentication
@@ -123,8 +137,11 @@ const handleLoggedInInvitation = async (invId: string) => {
         expiresAt?: Date | string
       }>(`/api/organizations/get-invitation?id=${encodeURIComponent(invId)}`)
     } catch (fetchErr: unknown) {
-      const apiError = fetchErr as { data?: { message?: string }, message?: string }
-      const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Invitation not found' })
+      const apiError = fetchErr as { data?: { message?: string }; message?: string }
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        t('signup.invitation.loggedIn.error', { error: 'Invitation not found' })
       error.value = errorMessage
       toast.add({
         title: t('common.error'),
@@ -166,10 +183,13 @@ const handleLoggedInInvitation = async (invId: string) => {
     // Accept the invitation using custom endpoint to bypass inviter membership check
     // This is necessary because admins who create organizations are removed as members
     try {
-      const result = await $fetch<{ success: boolean, organization?: { id: string, name: string } }>('/api/organizations/accept-invitation', {
-        method: 'POST',
-        body: { invitationId: invId }
-      })
+      const result = await $fetch<{ success: boolean; organization?: { id: string; name: string } }>(
+        '/api/organizations/accept-invitation',
+        {
+          method: 'POST',
+          body: { invitationId: invId }
+        }
+      )
 
       if (!result || !result.success) {
         throw new Error('Failed to accept invitation')
@@ -181,8 +201,11 @@ const handleLoggedInInvitation = async (invId: string) => {
         await userStore.setActiveOrganizationId(result.organization.id)
       }
     } catch (err: unknown) {
-      const apiError = err as { data?: { message?: string }, message?: string }
-      const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Unknown error' })
+      const apiError = err as { data?: { message?: string }; message?: string }
+      const errorMessage =
+        apiError?.data?.message ||
+        apiError?.message ||
+        t('signup.invitation.loggedIn.error', { error: 'Unknown error' })
       error.value = errorMessage
       toast.add({
         title: t('common.error'),
@@ -207,7 +230,7 @@ const handleLoggedInInvitation = async (invId: string) => {
     localStorage.removeItem('pendingInvitationId')
 
     // Redirect to dashboard after short delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1500))
     await navigateTo('/dashboard')
   } catch (err) {
     console.error('Error handling logged-in invitation:', err)
@@ -302,7 +325,6 @@ const handleGoogleLogin = async () => {
     loading.value = false
   }
 }
-
 </script>
 
 <template>
@@ -313,15 +335,24 @@ const handleGoogleLogin = async () => {
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
 
-    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')" :loading="loading"
-      :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
+    <UAuthForm
+      :fields="fields"
+      :schema="schema"
+      :providers="providers"
+      :title="t('signup.title')"
+      :loading="loading"
+      :submit="{ label: t('signup.submitButton') }"
+      @submit="onSubmit"
+    >
       <template #description>
-        {{ t('signup.description') }} <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }}
-        </ULink>.
+        {{ t('signup.description') }}
+        <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }} </ULink>.
       </template>
 
       <template #footer>
-        {{ t('signup.footer') }} <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
+        {{ t('signup.footer') }}
+        <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink
+        >.
       </template>
     </UAuthForm>
   </div>

@@ -10,15 +10,26 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsByIdPatch',
     summary: 'Update an organization',
-    description: 'Update an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Update an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
 const updateOrganizationSchema = z.object({
   name: z.string().trim().min(1),
-  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   officialCompanyName: z.string().trim().min(1).max(200),
-  logo: z.string().max(2_800_000).refine(value => !value || /^data:image\/(png|jpeg|gif|webp);base64,/.test(value) || z.string().url().safeParse(value).success)
+  logo: z
+    .string()
+    .max(2_800_000)
+    .refine(
+      (value) =>
+        !value || /^data:image\/(png|jpeg|gif|webp);base64,/.test(value) || z.string().url().safeParse(value).success
+    )
 })
 
 export default defineEventHandler(async (event): Promise<Organization> => {
@@ -63,7 +74,7 @@ export default defineEventHandler(async (event): Promise<Organization> => {
 
   let metadata: Record<string, unknown>
   try {
-    metadata = existing.metadata ? JSON.parse(existing.metadata) as Record<string, unknown> : {}
+    metadata = existing.metadata ? (JSON.parse(existing.metadata) as Record<string, unknown>) : {}
   } catch {
     metadata = {}
   }
@@ -71,7 +82,12 @@ export default defineEventHandler(async (event): Promise<Organization> => {
 
   const [updated] = await db
     .update(organizationTable)
-    .set({ name: parsed.data.name, slug: parsed.data.slug, logo: parsed.data.logo || null, metadata: JSON.stringify(metadata) })
+    .set({
+      name: parsed.data.name,
+      slug: parsed.data.slug,
+      logo: parsed.data.logo || null,
+      metadata: JSON.stringify(metadata)
+    })
     .where(eq(organizationTable.id, organizationId))
     .returning()
 

@@ -18,9 +18,11 @@ const { t } = useI18n()
 const toast = useToast()
 
 // Password form schema
-const passwordSchema = computed(() => z.object({
-  newPassword: z.string().min(8, t('login.validation.passwordMinLength'))
-}))
+const passwordSchema = computed(() =>
+  z.object({
+    newPassword: z.string().min(8, t('login.validation.passwordMinLength'))
+  })
+)
 
 type PasswordSchema = z.output<typeof passwordSchema.value>
 
@@ -30,7 +32,9 @@ const passwordForm = reactive<PasswordSchema>({
 })
 
 const handlePasswordSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   try {
     const { error: passwordError } = await authClient.admin.setUserPassword({

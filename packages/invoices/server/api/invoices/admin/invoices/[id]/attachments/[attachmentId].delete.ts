@@ -5,13 +5,19 @@ import { deleteInvoiceAttachment } from '@nuxt-customer-portal/invoices/server/u
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdAttachmentsByAttachmentIdDelete',
+    operationId: 'invoicesAdminInvoicesByIdAttachmentsByAttachmentIdDelete',
     summary: 'Delete an invoice attachment',
-    description: 'Delete an invoice attachment. Scoped to the active organization and the applicable Invoices permission.'
+    description:
+      'Delete an invoice attachment. Scoped to the active organization and the applicable Invoices permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
   const { organizationId, session } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return deleteInvoiceAttachment(organizationId, session.user.id, getRouterParam(event, 'id')!, getRouterParam(event, 'attachmentId')!)
+  return deleteInvoiceAttachment(
+    organizationId,
+    session.user.id,
+    getRouterParam(event, 'id')!,
+    getRouterParam(event, 'attachmentId')!
+  )
 })

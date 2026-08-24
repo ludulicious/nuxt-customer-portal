@@ -5,10 +5,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-10-24',
   modules: ['@nuxtjs/i18n'],
   css: [fileURLToPath(new URL('./app/assets/timesheets.css', import.meta.url))],
-  components: [{
-    path: fileURLToPath(new URL('./app/components', import.meta.url)),
-    global: true
-  }],
+  components: [
+    {
+      path: fileURLToPath(new URL('./app/components', import.meta.url)),
+      global: true
+    }
+  ],
   i18n: {
     locales: [
       { code: 'en', iso: 'en-US', name: 'English', file: 'en.json' },

@@ -8,7 +8,7 @@ const { moduleNavigationGroups, activeModuleId } = useModuleNavigation()
 const isDesktop = useMediaQuery('(min-width: 64rem)')
 const userStore = useUserStore()
 const { currentUser, activeOrganization } = storeToRefs(userStore)
-const currentLocale = computed({ get: () => locale.value, set: value => setLocale(value) })
+const currentLocale = computed({ get: () => locale.value, set: (value) => setLocale(value) })
 const showOrgSwitcher = ref(false)
 const logout = async () => {
   await authClient.signOut()
@@ -16,7 +16,9 @@ const logout = async () => {
   await navigateTo('/')
 }
 const closeMobileNavigation = (event: MouseEvent) => {
-  if (!isDesktop.value && (event.target as HTMLElement).closest('a')) open.value = false
+  if (!isDesktop.value && (event.target as HTMLElement).closest('a')) {
+    open.value = false
+  }
 }
 </script>
 
@@ -32,18 +34,37 @@ const closeMobileNavigation = (event: MouseEvent) => {
       </details>
     </nav>
     <div class="brutal-mobile-utilities">
-      <button v-if="activeOrganization" type="button" class="brutal-mobile-organization" @click="showOrgSwitcher = true">
-        <UIcon name="i-lucide-building-2" class="size-4" /><span>{{ activeOrganization.name }}</span><UIcon name="i-lucide-arrow-left-right" class="ml-auto size-4" />
+      <button
+        v-if="activeOrganization"
+        type="button"
+        class="brutal-mobile-organization"
+        @click="showOrgSwitcher = true"
+      >
+        <UIcon name="i-lucide-building-2" class="size-4" /><span>{{ activeOrganization.name }}</span
+        ><UIcon name="i-lucide-arrow-left-right" class="ml-auto size-4" />
       </button>
-      <div class="brutal-mobile-settings"><ULocaleSelect v-model="currentLocale" :locales="[en, nl]" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" /><UColorModeButton /></div>
+      <div class="brutal-mobile-settings">
+        <ULocaleSelect
+          v-model="currentLocale"
+          :locales="[en, nl]"
+          :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
+        /><UColorModeButton />
+      </div>
       <div v-if="currentUser" class="brutal-mobile-account">
-        <div class="brutal-mobile-identity"><span>{{ currentUser.name }}</span><UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name" size="sm" /></div>
+        <div class="brutal-mobile-identity">
+          <span>{{ currentUser.name }}</span
+          ><UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name" size="sm" />
+        </div>
         <NuxtLink to="/settings"><UIcon name="i-lucide-cog" class="size-4" />{{ t('menu.settings.title') }}</NuxtLink>
-        <button type="button" @click="logout"><UIcon name="i-lucide-log-out" class="size-4" />{{ t('menu.logout') }}</button>
+        <button type="button" @click="logout">
+          <UIcon name="i-lucide-log-out" class="size-4" />{{ t('menu.logout') }}
+        </button>
       </div>
     </div>
     <UModal v-model:open="showOrgSwitcher" :title="t('menu.switchOrganization')">
-      <template #body><OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcher = false" /></template>
+      <template #body
+        ><OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcher = false"
+      /></template>
     </UModal>
   </aside>
 </template>

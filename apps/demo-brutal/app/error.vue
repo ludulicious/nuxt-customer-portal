@@ -10,8 +10,6 @@ defineProps<{ error: NuxtError }>()
     <p>ROUTE FAILURE</p>
     <h1>{{ error.statusCode }}</h1>
     <p>{{ error.statusMessage }}</p>
-    <UButton to="/">
-      RETURN HOME
-    </UButton>
+    <UButton to="/"> RETURN HOME </UButton>
   </div>
 </template>

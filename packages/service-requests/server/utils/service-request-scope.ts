@@ -8,11 +8,22 @@ import { serviceRequestFeature, type ServiceRequestAction } from '@nuxt-customer
 export const requireServiceRequestScope = async (event: H3Event, action: ServiceRequestAction) => {
   const context = await requireFeatureAccess(event, serviceRequestFeature.policy, action)
   if (context.organizationType === 'PROVIDER') {
-    return { ...context, providerOrganizationId: context.organizationId, clientOrganizationId: undefined, ownOnly: false }
+    return {
+      ...context,
+      providerOrganizationId: context.organizationId,
+      clientOrganizationId: undefined,
+      ownOnly: false
+    }
   }
   await requireClientModuleEnabled(context.organizationId, 'service-requests')
-  const [provider] = await db.select({ id: organization.id }).from(organization).where(eq(organization.organizationType, 'PROVIDER')).limit(1)
-  if (!provider) throw createError({ statusCode: 409, message: 'PROVIDER organization is not configured' })
+  const [provider] = await db
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.organizationType, 'PROVIDER'))
+    .limit(1)
+  if (!provider) {
+    throw createError({ statusCode: 409, message: 'PROVIDER organization is not configured' })
+  }
   return {
     ...context,
     providerOrganizationId: provider.id,
@@ -21,7 +32,10 @@ export const requireServiceRequestScope = async (event: H3Event, action: Service
   }
 }
 
-export const canAccessScopedRequest = (row: { organizationId: string, clientOrganizationId: string, createdById: string }, scope: Awaited<ReturnType<typeof requireServiceRequestScope>>) =>
-  row.organizationId === scope.providerOrganizationId
-  && (!scope.clientOrganizationId || row.clientOrganizationId === scope.clientOrganizationId)
-  && (!scope.ownOnly || row.createdById === scope.session.user.id)
+export const canAccessScopedRequest = (
+  row: { organizationId: string; clientOrganizationId: string; createdById: string },
+  scope: Awaited<ReturnType<typeof requireServiceRequestScope>>
+) =>
+  row.organizationId === scope.providerOrganizationId &&
+  (!scope.clientOrganizationId || row.clientOrganizationId === scope.clientOrganizationId) &&
+  (!scope.ownOnly || row.createdById === scope.session.user.id)

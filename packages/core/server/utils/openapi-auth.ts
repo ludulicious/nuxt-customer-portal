@@ -10,22 +10,25 @@ const mergeObjects = (left: unknown, right: unknown): OpenApiObject => ({
   ...(right as OpenApiObject | undefined)
 })
 
-const prefixAuthPath = (path: string): string =>
-  `${AUTH_PATH_PREFIX}${path.startsWith('/') ? path : `/${path}`}`
+const prefixAuthPath = (path: string): string => `${AUTH_PATH_PREFIX}${path.startsWith('/') ? path : `/${path}`}`
 
 const tagAuthenticationOperations = (pathItem: OpenApiObject): OpenApiObject =>
-  Object.fromEntries(Object.entries(pathItem).map(([method, value]) => {
-    if (!value || typeof value !== 'object' || method === 'parameters') return [method, value]
-    return [method, {
-      ...(value as OpenApiObject),
-      tags: [AUTH_TAG]
-    }]
-  }))
+  Object.fromEntries(
+    Object.entries(pathItem).map(([method, value]) => {
+      if (!value || typeof value !== 'object' || method === 'parameters') {
+        return [method, value]
+      }
+      return [
+        method,
+        {
+          ...(value as OpenApiObject),
+          tags: [AUTH_TAG]
+        }
+      ]
+    })
+  )
 
-export const mergeBetterAuthOpenApi = (
-  document: OpenApiDocument,
-  authDocument: OpenApiDocument
-): OpenApiDocument => {
+export const mergeBetterAuthOpenApi = (document: OpenApiDocument, authDocument: OpenApiDocument): OpenApiDocument => {
   const components = mergeObjects(document.components, authDocument.components)
   components.schemas = mergeObjects(
     (document.components as OpenApiObject | undefined)?.schemas,
@@ -51,9 +54,10 @@ export const mergeBetterAuthOpenApi = (
     tags: [
       {
         name: AUTH_TAG,
-        description: 'Authentication, session, account, administration, email verification, and organization membership endpoints provided by Better Auth.'
+        description:
+          'Authentication, session, account, administration, email verification, and organization membership endpoints provided by Better Auth.'
       },
-      ...tags.filter(tag => (tag as OpenApiObject)?.name !== AUTH_TAG)
+      ...tags.filter((tag) => (tag as OpenApiObject)?.name !== AUTH_TAG)
     ],
     paths: {
       ...document.paths,

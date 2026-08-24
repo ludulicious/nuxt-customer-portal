@@ -1,5 +1,11 @@
 import { requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
-import { ensureSettings, listActivities, listApprovalQueue, listClients, listProjects } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
+import {
+  ensureSettings,
+  listActivities,
+  listApprovalQueue,
+  listClients,
+  listProjects
+} from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId } = await requireActiveOrganizationRole(event)
@@ -17,6 +23,9 @@ export default defineEventHandler(async (event) => {
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
-    approvals, clients, projects, activities
+    approvals,
+    clients,
+    projects,
+    activities
   }
 })

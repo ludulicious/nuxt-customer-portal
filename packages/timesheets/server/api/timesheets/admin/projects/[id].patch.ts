@@ -6,21 +6,14 @@ import { projectUpdateSchema } from '@nuxt-customer-portal/timesheets/server/uti
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminProjectsByIdPatch',
+    operationId: 'timesheetsAdminProjectsByIdPatch',
     summary: 'Update a timesheet project',
-    description: 'Update a timesheet project. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Update a timesheet project. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
-  return updateProject(
-    organizationId,
-    getRouterParam(event, 'id')!,
-    projectUpdateSchema.parse(await readBody(event))
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
+  return updateProject(organizationId, getRouterParam(event, 'id')!, projectUpdateSchema.parse(await readBody(event)))
 })

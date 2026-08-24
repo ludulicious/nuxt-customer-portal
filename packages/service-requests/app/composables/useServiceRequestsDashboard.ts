@@ -2,8 +2,12 @@ import type { ServiceRequestDashboardDto } from '@nuxt-customer-portal/service-r
 
 export const useServiceRequestsDashboard = () => {
   const { activeOrganizationId } = usePortalSession()
-  return useAsyncData('service-requests-dashboard', () => $fetch<ServiceRequestDashboardDto>('/api/service-requests/dashboard'), {
-    watch: [activeOrganizationId],
-    dedupe: 'defer'
-  })
+  return useAsyncData(
+    'service-requests-dashboard',
+    () => $fetch<ServiceRequestDashboardDto>('/api/service-requests/dashboard'),
+    {
+      watch: [activeOrganizationId],
+      dedupe: 'defer'
+    }
+  )
 }

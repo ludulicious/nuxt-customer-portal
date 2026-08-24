@@ -12,22 +12,20 @@ const toast = useToast()
 const fileRef = ref<HTMLInputElement>()
 
 // Zod schema for profile form validation
-const schema = z.object({
-  name: z.string()
-    .trim()
-    .min(1, t('profile.validation.nameRequired'))
-    .max(255, t('profile.validation.nameMaxLength')),
-  image: z.union([
-    z.string().url(t('profile.validation.imageInvalidUrl')),
-    z.literal('').transform(() => null),
-    z.null()
-  ]).optional()
-}).refine(
-  (data) => data.name !== undefined || data.image !== undefined,
-  {
+const schema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, t('profile.validation.nameRequired'))
+      .max(255, t('profile.validation.nameMaxLength')),
+    image: z
+      .union([z.string().url(t('profile.validation.imageInvalidUrl')), z.literal('').transform(() => null), z.null()])
+      .optional()
+  })
+  .refine((data) => data.name !== undefined || data.image !== undefined, {
     message: t('profile.validation.atLeastOneField')
-  }
-)
+  })
 
 type Schema = z.output<typeof schema>
 
@@ -51,13 +49,17 @@ watchEffect(() => {
 })
 
 // Watch for form changes
-watch(() => [form.name, form.image], () => {
-  if (currentUser.value) {
-    const nameChanged = form.name !== (currentUser.value.name || '')
-    const imageChanged = form.image !== (currentUser.value.image || '')
-    isDirty.value = nameChanged || imageChanged
-  }
-}, { deep: true })
+watch(
+  () => [form.name, form.image],
+  () => {
+    if (currentUser.value) {
+      const nameChanged = form.name !== (currentUser.value.name || '')
+      const imageChanged = form.image !== (currentUser.value.image || '')
+      isDirty.value = nameChanged || imageChanged
+    }
+  },
+  { deep: true }
+)
 
 // Page metadata
 useSeoMeta({
@@ -66,7 +68,9 @@ useSeoMeta({
 })
 
 const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
-  if (!currentUser.value) return
+  if (!currentUser.value) {
+    return
+  }
 
   isLoading.value = true
   try {
@@ -124,9 +128,10 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
     }
   } catch (error: unknown) {
     console.error('Error updating profile:', error)
-    const errorMessage = (error as { data?: { message?: string }, message?: string })?.data?.message
-      || (error as { message?: string })?.message
-      || t('profile.messages.updateFailed')
+    const errorMessage =
+      (error as { data?: { message?: string }; message?: string })?.data?.message ||
+      (error as { message?: string })?.message ||
+      t('profile.messages.updateFailed')
     toast.add({
       title: t('profile.messages.error'),
       description: errorMessage,
@@ -190,22 +195,39 @@ onUnmounted(() => {
   <AppCard class="mb-8" :title="$t('profile.sections.profileInfo')">
     <UForm :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
       <!-- Profile Picture Section -->
-      <UFormField :label="$t('profile.fields.profilePicture')"
-        :description="$t('profile.fields.profilePictureDescription')" name="image"
-        class="flex max-sm:flex-col justify-between sm:items-center gap-4">
+      <UFormField
+        :label="$t('profile.fields.profilePicture')"
+        :description="$t('profile.fields.profilePictureDescription')"
+        name="image"
+        class="flex max-sm:flex-col justify-between sm:items-center gap-4"
+      >
         <div class="flex flex-wrap items-center gap-3">
-          <UAvatar :src="form.image || undefined" :alt="form.name || currentUser?.email || 'User'"
-            :text="form.name ? form.name.charAt(0).toUpperCase() : (currentUser?.email?.charAt(0).toUpperCase() || 'U')"
-            size="xl" class="ring-2 ring-gray-200 dark:ring-gray-700" />
+          <UAvatar
+            :src="form.image || undefined"
+            :alt="form.name || currentUser?.email || 'User'"
+            :text="form.name ? form.name.charAt(0).toUpperCase() : currentUser?.email?.charAt(0).toUpperCase() || 'U'"
+            size="xl"
+            class="ring-2 ring-gray-200 dark:ring-gray-700"
+          />
           <UButton :label="$t('profile.fields.chooseAvatar')" color="primary" variant="outline" @click="onFileClick" />
-          <input ref="fileRef" type="file" class="hidden" accept=".jpg, .jpeg, .png, .gif" @change="onFileChange">
+          <input ref="fileRef" type="file" class="hidden" accept=".jpg, .jpeg, .png, .gif" @change="onFileChange" />
         </div>
       </UFormField>
 
-      <UFormField :label="$t('profile.fields.name')" :description="$t('profile.fields.nameDescription')" name="name"
-        required>
-        <UInput v-model="form.name" type="text" :placeholder="$t('profile.fields.namePlaceholder')" icon="i-lucide-user"
-          class="w-full" required />
+      <UFormField
+        :label="$t('profile.fields.name')"
+        :description="$t('profile.fields.nameDescription')"
+        name="name"
+        required
+      >
+        <UInput
+          v-model="form.name"
+          type="text"
+          :placeholder="$t('profile.fields.namePlaceholder')"
+          icon="i-lucide-user"
+          class="w-full"
+          required
+        />
       </UFormField>
 
       <UFormField :label="$t('profile.fields.email')" :description="$t('profile.fields.emailDescription')" name="email">

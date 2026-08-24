@@ -17,10 +17,7 @@ if (!post.value) {
 
 const { data: surround } = await useAsyncData(
   () => `blog-post-surround-${locale.value}-${contentPath.value}`,
-  () => queryCollectionItemSurroundings(
-    'posts_en',
-    contentPath.value
-  ).order('id', 'DESC')
+  () => queryCollectionItemSurroundings('posts_en', contentPath.value).order('id', 'DESC')
 )
 
 const title = post.value.seo?.title || post.value.title
@@ -45,15 +42,25 @@ definePageMeta({
         <template #headline>
           <UBadge v-if="post?.badge" v-bind="post?.badge" variant="subtle" />
           <span class="text-muted">&middot;</span>
-          <time class="text-muted">{{ new Date(post?.date).toLocaleDateString('en', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric' }) }}</time>
+          <time class="text-muted">{{
+            new Date(post?.date).toLocaleDateString('en', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })
+          }}</time>
         </template>
 
         <div class="flex flex-wrap items-center gap-3 mt-4">
-          <UButton v-for="(author, index) in post.authors" :key="index" :to="author.to || '#'" color="neutral" variant="subtle"
-            target="_blank" size="sm">
+          <UButton
+            v-for="(author, index) in post.authors"
+            :key="index"
+            :to="author.to || '#'"
+            color="neutral"
+            variant="subtle"
+            target="_blank"
+            size="sm"
+          >
             <UAvatar v-if="author.avatar" v-bind="author.avatar" alt="Author avatar" size="2xs" />
 
             {{ author.name }}

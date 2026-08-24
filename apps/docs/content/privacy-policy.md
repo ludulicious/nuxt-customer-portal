@@ -2,6 +2,7 @@
 title: Privacy Policy
 description: How we handle information for the Customer Portal project, documentation, and hosted demos.
 ---
+
 Effective date: January 15, 2026
 
 This Privacy Policy explains how the Customer Portal project ("Project", "we", "us") collects, uses, and shares information when you use our software, website, documentation, or any hosted demo we operate.

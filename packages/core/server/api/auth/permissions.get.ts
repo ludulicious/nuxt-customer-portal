@@ -8,7 +8,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAuthPermissionsGet',
     summary: 'Get current user permissions',
-    description: 'Get current user permissions. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Get current user permissions. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -25,16 +26,16 @@ export default defineEventHandler(async (event) => {
 
   // Check organization role for both "user" and "admin" roles if activeOrganizationId exists
   // auth.api.getSession() returns { user, session } where session has activeOrganizationId
-  type SessionWithOrg = { session?: { activeOrganizationId?: string }, activeOrganizationId?: string }
+  type SessionWithOrg = { session?: { activeOrganizationId?: string }; activeOrganizationId?: string }
   const sessionWithOrg = session as SessionWithOrg
   const activeOrganizationId = sessionWithOrg?.session?.activeOrganizationId || sessionWithOrg?.activeOrganizationId
 
   // Get user permissions using the shared utility
-  const { permissions: rolePermissions, orgRole, organization: activeOrganization } = await getUserPermissions(
-    session.user.id,
-    currentRole,
-    activeOrganizationId || undefined
-  )
+  const {
+    permissions: rolePermissions,
+    orgRole,
+    organization: activeOrganization
+  } = await getUserPermissions(session.user.id, currentRole, activeOrganizationId || undefined)
 
   // Get all permissions for the user
   const permissions: Record<string, boolean> = {}
@@ -47,7 +48,8 @@ export default defineEventHandler(async (event) => {
 
       for (const action of actions) {
         // Check if the role has this permission
-        permissions[`${subject}.${action}`] = Array.isArray(rolePermissionsForSubject) && rolePermissionsForSubject.includes(action)
+        permissions[`${subject}.${action}`] =
+          Array.isArray(rolePermissionsForSubject) && rolePermissionsForSubject.includes(action)
       }
     }
   }

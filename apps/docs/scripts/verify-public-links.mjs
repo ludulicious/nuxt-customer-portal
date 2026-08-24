@@ -2,17 +2,25 @@ import { readFile } from 'node:fs/promises'
 import { gunzipSync } from 'node:zlib'
 
 const source = await readFile(new URL('../.env.example', import.meta.url), 'utf8')
-const productInventory = JSON.parse(await readFile(new URL('../shared/product-inventory.json', import.meta.url), 'utf8'))
-const productEnvironment = JSON.parse(await readFile(new URL('../shared/product-environment.json', import.meta.url), 'utf8'))
-const githubCollaboration = JSON.parse(await readFile(new URL('../shared/github-collaboration.json', import.meta.url), 'utf8'))
-const configuration = Object.fromEntries(source
-  .split(/\r?\n/)
-  .map(line => line.trim())
-  .filter(line => line && !line.startsWith('#') && line.includes('='))
-  .map((line) => {
-    const separator = line.indexOf('=')
-    return [line.slice(0, separator), line.slice(separator + 1)]
-  }))
+const productInventory = JSON.parse(
+  await readFile(new URL('../shared/product-inventory.json', import.meta.url), 'utf8')
+)
+const productEnvironment = JSON.parse(
+  await readFile(new URL('../shared/product-environment.json', import.meta.url), 'utf8')
+)
+const githubCollaboration = JSON.parse(
+  await readFile(new URL('../shared/github-collaboration.json', import.meta.url), 'utf8')
+)
+const configuration = Object.fromEntries(
+  source
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#') && line.includes('='))
+    .map((line) => {
+      const separator = line.indexOf('=')
+      return [line.slice(0, separator), line.slice(separator + 1)]
+    })
+)
 
 const docsRepository = configuration.NUXT_PUBLIC_DOCS_REPOSITORY_URL
 const docsBranch = configuration.NUXT_PUBLIC_DOCS_REPOSITORY_BRANCH
@@ -20,7 +28,7 @@ const feedbackRepository = configuration.NUXT_PUBLIC_DOCS_FEEDBACK_REPOSITORY_UR
 const productRepository = configuration.NUXT_PUBLIC_PRODUCT_REPOSITORY_URL
 const productCommit = configuration.NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT
 const githubHeaders = {
-  'accept': 'application/vnd.github+json',
+  accept: 'application/vnd.github+json',
   'user-agent': 'nuxt-customer-portal-public-link-check',
   ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {})
 }
@@ -33,7 +41,9 @@ const checks = [
 ]
 
 for (const [label, url] of checks) {
-  if (!url) throw new Error(`Missing URL for ${label}`)
+  if (!url) {
+    throw new Error(`Missing URL for ${label}`)
+  }
   const response = await fetch(url, {
     headers: { 'user-agent': 'nuxt-customer-portal-public-link-check' },
     redirect: 'follow',
@@ -76,13 +86,15 @@ for (const [role, expected] of Object.entries(githubCollaboration.repositories))
     throw new Error(`${role} repository collaboration settings have changed:\n${differences.join('\n')}`)
   }
 
-  console.log(`✓ ${role} collaboration: public=${actualSettings.public}, issues=${actualSettings.issues}, discussions=${actualSettings.discussions}, template=${actualSettings.template}`)
+  console.log(
+    `✓ ${role} collaboration: public=${actualSettings.public}, issues=${actualSettings.issues}, discussions=${actualSettings.discussions}, template=${actualSettings.template}`
+  )
 }
 
 const sourceMap = await readFile(new URL('../content/4.reference/7.source-map.md', import.meta.url), 'utf8')
 const escapedRepository = productRepository.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const sourceLinkPattern = new RegExp(`${escapedRepository}/blob/${productCommit}/([^)]+)`, 'g')
-const documentedSourcePaths = [...sourceMap.matchAll(sourceLinkPattern)].map(match => match[1])
+const documentedSourcePaths = [...sourceMap.matchAll(sourceLinkPattern)].map((match) => match[1])
 
 if (!documentedSourcePaths.length) {
   throw new Error('Product source map does not contain pinned source links')
@@ -104,8 +116,8 @@ if (tree.truncated) {
   throw new Error('GitHub returned a truncated product tree; source-map integrity cannot be proven')
 }
 
-const repositoryFiles = new Set(tree.tree.filter(entry => entry.type === 'blob').map(entry => entry.path))
-const missingSourcePaths = documentedSourcePaths.filter(path => !repositoryFiles.has(path))
+const repositoryFiles = new Set(tree.tree.filter((entry) => entry.type === 'blob').map((entry) => entry.path))
+const missingSourcePaths = documentedSourcePaths.filter((path) => !repositoryFiles.has(path))
 if (missingSourcePaths.length) {
   throw new Error(`Product source map references missing files:\n${missingSourcePaths.join('\n')}`)
 }
@@ -113,17 +125,19 @@ if (missingSourcePaths.length) {
 console.log(`✓ product source map: ${documentedSourcePaths.length} pinned files`)
 
 const repositoryLayers = [...repositoryFiles]
-  .map(path => path.match(/^packages\/([^/]+)\/package\.json$/)?.[1])
+  .map((path) => path.match(/^packages\/([^/]+)\/package\.json$/)?.[1])
   .filter(Boolean)
   .sort()
-const documentedLayers = productInventory.layers.map(layer => layer.id).sort()
+const documentedLayers = productInventory.layers.map((layer) => layer.id).sort()
 
 if (JSON.stringify(repositoryLayers) !== JSON.stringify(documentedLayers)) {
-  throw new Error([
-    'Documented public package inventory does not match the pinned repository tree.',
-    `Repository: ${repositoryLayers.join(', ')}`,
-    `Documented: ${documentedLayers.join(', ')}`
-  ].join('\n'))
+  throw new Error(
+    [
+      'Documented public package inventory does not match the pinned repository tree.',
+      `Repository: ${repositoryLayers.join(', ')}`,
+      `Documented: ${documentedLayers.join(', ')}`
+    ].join('\n')
+  )
 }
 
 console.log(`✓ product package inventory: ${documentedLayers.length} documented packages`)
@@ -131,15 +145,19 @@ console.log(`✓ product package inventory: ${documentedLayers.length} documente
 for (const layer of productInventory.layers) {
   const pagePrefix = `packages/${layer.id}/app/pages/`
   const apiPrefix = `packages/${layer.id}/server/api/`
-  const pageCount = [...repositoryFiles].filter(path => path.startsWith(pagePrefix) && path.endsWith('.vue')).length
-  const apiHandlerCount = [...repositoryFiles].filter(path => path.startsWith(apiPrefix) && path.endsWith('.ts')).length
+  const pageCount = [...repositoryFiles].filter((path) => path.startsWith(pagePrefix) && path.endsWith('.vue')).length
+  const apiHandlerCount = [...repositoryFiles].filter(
+    (path) => path.startsWith(apiPrefix) && path.endsWith('.ts')
+  ).length
 
   if (pageCount !== layer.pageCount || apiHandlerCount !== layer.apiHandlerCount) {
-    throw new Error([
-      `Product surface inventory is stale for ${layer.id}.`,
-      `Repository: ${pageCount} pages, ${apiHandlerCount} API handlers`,
-      `Documented: ${layer.pageCount} pages, ${layer.apiHandlerCount} API handlers`
-    ].join('\n'))
+    throw new Error(
+      [
+        `Product surface inventory is stale for ${layer.id}.`,
+        `Repository: ${pageCount} pages, ${apiHandlerCount} API handlers`,
+        `Documented: ${layer.pageCount} pages, ${layer.apiHandlerCount} API handlers`
+      ].join('\n')
+    )
   }
 }
 
@@ -147,7 +165,7 @@ const totalPages = productInventory.layers.reduce((total, layer) => total + laye
 const totalApiHandlers = productInventory.layers.reduce((total, layer) => total + layer.apiHandlerCount, 0)
 console.log(`✓ product surface inventory: ${totalPages} pages and ${totalApiHandlers} API handlers`)
 
-const productLicenseFiles = [...repositoryFiles].filter(path => /^(licen[cs]e|copying)(\.[a-z0-9]+)?$/i.test(path))
+const productLicenseFiles = [...repositoryFiles].filter((path) => /^(licen[cs]e|copying)(\.[a-z0-9]+)?$/i.test(path))
 if (!['pending', 'licensed'].includes(productInventory.license.status)) {
   throw new Error(`Unsupported product license status: ${productInventory.license.status}`)
 }
@@ -163,7 +181,11 @@ if (productInventory.license.status === 'licensed' && productInventory.license.s
 console.log(`✓ product licensing status: ${productInventory.license.status} (${productInventory.license.spdxId})`)
 
 function tarString(buffer, start, length) {
-  return buffer.subarray(start, start + length).toString('utf8').replace(/\0.*$/, '').trim()
+  return buffer
+    .subarray(start, start + length)
+    .toString('utf8')
+    .replace(/\0.*$/, '')
+    .trim()
 }
 
 function readTarFiles(archive) {
@@ -172,7 +194,9 @@ function readTarFiles(archive) {
 
   while (offset + 512 <= archive.length) {
     const header = archive.subarray(offset, offset + 512)
-    if (header.every(byte => byte === 0)) break
+    if (header.every((byte) => byte === 0)) {
+      break
+    }
 
     const name = tarString(header, 0, 100)
     const prefix = tarString(header, 345, 155)
@@ -206,44 +230,69 @@ const productFiles = readTarFiles(gunzipSync(Buffer.from(await archiveResponse.a
 const sourceVariables = new Set()
 const environmentPattern = /process\.env(?:\.([A-Z][A-Z0-9_]*)|\[['"]([A-Z][A-Z0-9_]*)['"]\])/g
 for (const [path, source] of productFiles) {
-  if (!/\.(?:[cm]?[jt]s|tsx|vue)$/.test(path)) continue
-  for (const match of source.matchAll(environmentPattern)) sourceVariables.add(match[1] || match[2])
+  if (!/\.(?:[cm]?[jt]s|tsx|vue)$/.test(path)) {
+    continue
+  }
+  for (const match of source.matchAll(environmentPattern)) {
+    sourceVariables.add(match[1] || match[2])
+  }
 }
 
 const actualDirectVariables = [...sourceVariables].sort()
 const expectedDirectVariables = [...productEnvironment.directVariables].sort()
 if (JSON.stringify(actualDirectVariables) !== JSON.stringify(expectedDirectVariables)) {
-  throw new Error([
-    'Documented direct environment variables do not match the pinned product source.',
-    `Source: ${actualDirectVariables.join(', ')}`,
-    `Documented: ${expectedDirectVariables.join(', ')}`
-  ].join('\n'))
+  throw new Error(
+    [
+      'Documented direct environment variables do not match the pinned product source.',
+      `Source: ${actualDirectVariables.join(', ')}`,
+      `Documented: ${expectedDirectVariables.join(', ')}`
+    ].join('\n')
+  )
 }
 
 const productEnvExample = productFiles.get('.env.example')
-if (!productEnvExample) throw new Error('Pinned product source does not contain .env.example')
+if (!productEnvExample) {
+  throw new Error('Pinned product source does not contain .env.example')
+}
 const exampleVariables = productEnvExample
   .split(/\r?\n/)
-  .map(line => line.replace(/^\uFEFF/, '').trim())
-  .filter(line => /^[A-Z][A-Z0-9_]*=/.test(line))
-  .map(line => line.slice(0, line.indexOf('=')))
+  .map((line) => line.replace(/^\uFEFF/, '').trim())
+  .filter((line) => /^[A-Z][A-Z0-9_]*=/.test(line))
+  .map((line) => line.slice(0, line.indexOf('=')))
   .sort()
-const expectedExampleVariables = [...new Set([
-  ...productEnvironment.directVariables.filter(variable => !productEnvironment.exampleExclusions.includes(variable)),
-  ...productEnvironment.libraryVariables.filter(variable => !productEnvironment.knownExampleOmissions.includes(variable))
-])].sort()
+const expectedExampleVariables = [
+  ...new Set([
+    ...productEnvironment.directVariables.filter(
+      (variable) => !productEnvironment.exampleExclusions.includes(variable)
+    ),
+    ...productEnvironment.libraryVariables.filter(
+      (variable) => !productEnvironment.knownExampleOmissions.includes(variable)
+    )
+  ])
+].sort()
 if (JSON.stringify(exampleVariables) !== JSON.stringify(expectedExampleVariables)) {
-  throw new Error([
-    'Pinned product .env.example does not match the documented environment contract.',
-    `Product example: ${exampleVariables.join(', ')}`,
-    `Documented: ${expectedExampleVariables.join(', ')}`
-  ].join('\n'))
+  throw new Error(
+    [
+      'Pinned product .env.example does not match the documented environment contract.',
+      `Product example: ${exampleVariables.join(', ')}`,
+      `Documented: ${expectedExampleVariables.join(', ')}`
+    ].join('\n')
+  )
 }
 
-const configurationReference = await readFile(new URL('../content/4.reference/2.configuration.md', import.meta.url), 'utf8')
-for (const variable of [...productEnvironment.directVariables, ...productEnvironment.libraryVariables, ...productEnvironment.runtimeVariables]) {
+const configurationReference = await readFile(
+  new URL('../content/4.reference/2.configuration.md', import.meta.url),
+  'utf8'
+)
+for (const variable of [
+  ...productEnvironment.directVariables,
+  ...productEnvironment.libraryVariables,
+  ...productEnvironment.runtimeVariables
+]) {
   if (!configurationReference.includes(`\`${variable}\``)) {
     throw new Error(`Configuration reference does not document ${variable}`)
   }
 }
-console.log(`✓ product environment contract: ${actualDirectVariables.length} direct, ${productEnvironment.libraryVariables.length} library-owned, ${productEnvironment.runtimeVariables.length} runtime variables`)
+console.log(
+  `✓ product environment contract: ${actualDirectVariables.length} direct, ${productEnvironment.libraryVariables.length} library-owned, ${productEnvironment.runtimeVariables.length} runtime variables`
+)

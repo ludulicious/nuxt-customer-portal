@@ -26,17 +26,12 @@ const handleSubmit = async (data: ServiceRequestCreateInput) => {
     })
   }
 }
-
 </script>
 
 <template>
   <div class="container mx-auto py-8 max-w-2xl">
     <h1 class="text-3xl font-bold mb-6">{{ t('features.serviceRequests.create') }}</h1>
 
-    <CustomerRequestForm
-      :loading="loading"
-      @submit="handleSubmit"
-      @cancel="navigateTo('/requests')"
-    />
+    <CustomerRequestForm :loading="loading" @submit="handleSubmit" @cancel="navigateTo('/requests')" />
   </div>
 </template>

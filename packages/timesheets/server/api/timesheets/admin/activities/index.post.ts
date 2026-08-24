@@ -6,17 +6,14 @@ import { activityCreateSchema } from '@nuxt-customer-portal/timesheets/server/ut
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminActivitiesPost',
+    operationId: 'timesheetsAdminActivitiesPost',
     summary: 'Create a timesheet activity',
-    description: 'Create a timesheet activity. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Create a timesheet activity. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   return createActivity(organizationId, activityCreateSchema.parse(await readBody(event)))
 })

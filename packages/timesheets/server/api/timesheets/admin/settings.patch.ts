@@ -6,17 +6,14 @@ import { settingsUpdateSchema } from '@nuxt-customer-portal/timesheets/server/ut
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminSettingsPatch',
+    operationId: 'timesheetsAdminSettingsPatch',
     summary: 'Update timesheets workspace settings',
-    description: 'Update timesheets workspace settings. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Update timesheets workspace settings. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   return updateSettings(organizationId, settingsUpdateSchema.parse(await readBody(event)))
 })

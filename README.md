@@ -9,19 +9,19 @@ MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, S
 
 ## Packages
 
-| Package | Purpose |
-| --- | --- |
-| `@nuxt-customer-portal/core` | Headless auth/session, tenancy, authorization, registry, database, and contracts |
-| `@nuxt-customer-portal/ui` | Neutral fallback layouts, dashboard, navigation, modals, and notifications |
-| `@nuxt-customer-portal/authentication` | Authentication routes and forms |
-| `@nuxt-customer-portal/organizations` | Profile, organizations, membership, and invitations |
-| `@nuxt-customer-portal/clients` | Shared client profiles, memberships, and module activation |
-| `@nuxt-customer-portal/service-requests` | Optional Service Requests feature |
-| `@nuxt-customer-portal/timesheets` | Optional time, approval, and reporting feature |
-| `@nuxt-customer-portal/invoices` | Standalone invoicing, delivery, payment, and client-access feature |
-| `@nuxt-customer-portal/invoice-timesheets` | Optional bridge for invoicing approved Timesheets entries |
-| `@nuxt-customer-portal/preset` | Core, UI, authentication, provider organizations, and clients |
-| `@nuxt-customer-portal/kit` | Portal configuration, diagnostics, and migration CLI |
+| Package                                    | Purpose                                                                          |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `@nuxt-customer-portal/core`               | Headless auth/session, tenancy, authorization, registry, database, and contracts |
+| `@nuxt-customer-portal/ui`                 | Neutral fallback layouts, dashboard, navigation, modals, and notifications       |
+| `@nuxt-customer-portal/authentication`     | Authentication routes and forms                                                  |
+| `@nuxt-customer-portal/organizations`      | Profile, organizations, membership, and invitations                              |
+| `@nuxt-customer-portal/clients`            | Shared client profiles, memberships, and module activation                       |
+| `@nuxt-customer-portal/service-requests`   | Optional Service Requests feature                                                |
+| `@nuxt-customer-portal/timesheets`         | Optional time, approval, and reporting feature                                   |
+| `@nuxt-customer-portal/invoices`           | Standalone invoicing, delivery, payment, and client-access feature               |
+| `@nuxt-customer-portal/invoice-timesheets` | Optional bridge for invoicing approved Timesheets entries                        |
+| `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
+| `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
 
 All public packages are linked at `0.1.0-alpha.0`. This milestone produces and verifies tarballs but does not publish them.
 

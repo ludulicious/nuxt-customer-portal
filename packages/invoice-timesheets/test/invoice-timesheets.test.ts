@@ -4,9 +4,28 @@ import test from 'node:test'
 import { timesheetInvoiceCreateSchema } from '../shared/validation'
 
 test('bridge validates source-backed lines', () => {
-  const input = { clientOrganizationId: 'client', number: '2026.0001', currency: 'EUR', issueDate: '2026-08-12', dueDate: '2026-09-11', lines: [{ description: 'Approved time', quantityMilli: 1000, unit: 'hour', unitPriceMinor: 10000, vatRateBasisPoints: 2100, timeEntryIds: ['entry'] }] }
+  const input = {
+    clientOrganizationId: 'client',
+    number: '2026.0001',
+    currency: 'EUR',
+    issueDate: '2026-08-12',
+    dueDate: '2026-09-11',
+    lines: [
+      {
+        description: 'Approved time',
+        quantityMilli: 1000,
+        unit: 'hour',
+        unitPriceMinor: 10000,
+        vatRateBasisPoints: 2100,
+        timeEntryIds: ['entry']
+      }
+    ]
+  }
   assert.equal(timesheetInvoiceCreateSchema.safeParse(input).success, true)
-  assert.equal(timesheetInvoiceCreateSchema.safeParse({ ...input, lines: [{ ...input.lines[0], timeEntryIds: [] }] }).success, false)
+  assert.equal(
+    timesheetInvoiceCreateSchema.safeParse({ ...input, lines: [{ ...input.lines[0], timeEntryIds: [] }] }).success,
+    false
+  )
 })
 
 test('bridge owns only canonical integration endpoints and concurrency protection', () => {

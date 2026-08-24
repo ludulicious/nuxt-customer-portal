@@ -5,9 +5,10 @@ import { filterServiceRequestSchema } from '@nuxt-customer-portal/service-reques
 defineRouteMeta({
   openAPI: {
     tags: ['Service Requests'],
-operationId: 'serviceRequestsAdminGet',
+    operationId: 'serviceRequestsAdminGet',
     summary: 'List service requests for administration',
-    description: 'List service requests for administration. Scoped to the active organization and the applicable Service Requests permission.'
+    description:
+      'List service requests for administration. Scoped to the active organization and the applicable Service Requests permission.'
   }
 })
 

@@ -1,6 +1,6 @@
 name: Feature request
 description: Describe a user problem that may fit an existing Customer Portal layer.
-title: "Feature: "
+title: 'Feature: '
 body:
   - type: textarea
     id: problem

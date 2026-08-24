@@ -11,8 +11,13 @@ test.describe('marketing homepage', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build your portal, layer by layer.')
     await expect(page.getByRole('heading', { name: 'A working week, end to end.' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Help shape the portal.' })).toBeVisible()
-    await expect(page.getByRole('note', { name: 'Open-source license' })).toContainText('open source under the MIT License')
-    await expect(page.getByRole('link', { name: 'Read compatibility and release status' })).toHaveAttribute('href', '/reference/compatibility-and-releases')
+    await expect(page.getByRole('note', { name: 'Open-source license' })).toContainText(
+      'open source under the MIT License'
+    )
+    await expect(page.getByRole('link', { name: 'Read compatibility and release status' })).toHaveAttribute(
+      'href',
+      '/reference/compatibility-and-releases'
+    )
     await expect(page.getByRole('link', { name: 'Create a feature layer' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Improve the documentation' })).toBeVisible()
 

@@ -1,4 +1,4 @@
-export type ClientModuleState = { moduleId: string, enabled: boolean }
+export type ClientModuleState = { moduleId: string; enabled: boolean }
 
 export interface ClientMemberDto {
   id: string
@@ -39,5 +39,12 @@ export interface GenericClientDto {
 
 export interface ClientListResponse {
   items: GenericClientDto[]
-  pagination: { page: number, pageSize: number, totalItems: number, totalPages: number, hasPrevious: boolean, hasNext: boolean }
+  pagination: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+    hasPrevious: boolean
+    hasNext: boolean
+  }
 }

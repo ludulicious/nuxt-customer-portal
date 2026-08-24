@@ -6,7 +6,7 @@ import { invoiceIssueSchema, invoiceUpdateSchema } from '@nuxt-customer-portal/i
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdPatch',
+    operationId: 'invoicesAdminInvoicesByIdPatch',
     summary: 'Update an invoice',
     description: 'Update an invoice. Scoped to the active organization and the applicable Invoices permission.'
   }

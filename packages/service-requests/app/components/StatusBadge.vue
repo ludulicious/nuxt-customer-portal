@@ -7,7 +7,6 @@ const props = defineProps<{
 }>()
 
 const { getStatusColor, getStatusBadgeText } = useServiceRequests()
-
 </script>
 
 <template>

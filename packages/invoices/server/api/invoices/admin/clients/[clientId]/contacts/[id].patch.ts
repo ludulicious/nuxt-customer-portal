@@ -5,5 +5,9 @@ import { billingContactUpdateSchema } from '@nuxt-customer-portal/invoices/serve
 
 export default defineEventHandler(async (event) => {
   await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return updateBillingContact(getRouterParam(event, 'clientId')!, getRouterParam(event, 'id')!, billingContactUpdateSchema.parse(await readBody(event)))
+  return updateBillingContact(
+    getRouterParam(event, 'clientId')!,
+    getRouterParam(event, 'id')!,
+    billingContactUpdateSchema.parse(await readBody(event))
+  )
 })

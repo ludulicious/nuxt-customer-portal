@@ -2,7 +2,10 @@ import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { organization as organizationTable, member as memberTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
+import {
+  organization as organizationTable,
+  member as memberTable
+} from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import type { SessionUser, Organization } from '@nuxt-customer-portal/core/shared/types/index'
 
 defineRouteMeta({
@@ -10,7 +13,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsBySlugBySlugGet',
     summary: 'Get an organization by slug',
-    description: 'Get an organization by slug. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Get an organization by slug. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -27,11 +31,7 @@ export default defineEventHandler(async (event): Promise<Organization> => {
   }
 
   // Get organization by slug
-  const [organization] = await db
-    .select()
-    .from(organizationTable)
-    .where(eq(organizationTable.slug, slug))
-    .limit(1)
+  const [organization] = await db.select().from(organizationTable).where(eq(organizationTable.slug, slug)).limit(1)
 
   if (!organization) {
     throw createError({ statusCode: 404, message: 'Organization not found' })
@@ -46,16 +46,14 @@ export default defineEventHandler(async (event): Promise<Organization> => {
   const [member] = await db
     .select()
     .from(memberTable)
-    .where(
-      and(
-        eq(memberTable.userId, user.id),
-        eq(memberTable.organizationId, organization.id)
-      )
-    )
+    .where(and(eq(memberTable.userId, user.id), eq(memberTable.organizationId, organization.id)))
     .limit(1)
 
   if (!member) {
-    throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization.' })
+    throw createError({
+      statusCode: 403,
+      message: 'Access denied. You must be an admin or a member of this organization.'
+    })
   }
 
   // Check if user has organization.read permission

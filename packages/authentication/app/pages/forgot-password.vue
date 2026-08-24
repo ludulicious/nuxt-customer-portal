@@ -5,7 +5,7 @@ import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 
 definePageMeta({
   layout: 'centerform',
-  public: true,
+  public: true
 })
 
 const { t } = useI18n()
@@ -31,7 +31,9 @@ let cooldownTimer: NodeJS.Timeout | null = null
 // Auto-focus email input on mount
 onMounted(() => {
   const input = document.querySelector('input[type="email"]') as HTMLInputElement
-  if (input) input.focus()
+  if (input) {
+    input.focus()
+  }
 })
 
 // Clean up timer on unmount
@@ -65,19 +67,25 @@ const handleOtpInput = (event: Event) => {
 }
 
 // Email validation schema
-const emailSchema = computed(() => z.object({
-  email: z.email(t('forgotPassword.validation.invalidEmail'))
-}))
+const emailSchema = computed(() =>
+  z.object({
+    email: z.email(t('forgotPassword.validation.invalidEmail'))
+  })
+)
 
 // Password reset validation schema
-const resetSchema = computed(() => z.object({
-  otp: z.string().min(6, t('forgotPassword.validation.otpLength')),
-  newPassword: z.string().min(8, t('forgotPassword.validation.passwordMinLength')),
-  confirmPassword: z.string().min(8, t('forgotPassword.validation.passwordMinLength'))
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: t('forgotPassword.validation.passwordsMatch'),
-  path: ['confirmPassword']
-}))
+const resetSchema = computed(() =>
+  z
+    .object({
+      otp: z.string().min(6, t('forgotPassword.validation.otpLength')),
+      newPassword: z.string().min(8, t('forgotPassword.validation.passwordMinLength')),
+      confirmPassword: z.string().min(8, t('forgotPassword.validation.passwordMinLength'))
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: t('forgotPassword.validation.passwordsMatch'),
+      path: ['confirmPassword']
+    })
+)
 
 // Step 1: Send verification code
 const sendVerificationCode = async (payload: FormSubmitEvent<{ email: string }>) => {
@@ -100,7 +108,9 @@ const sendVerificationCode = async (payload: FormSubmitEvent<{ email: string }>)
       // Auto-focus OTP input
       await nextTick()
       const otpInput = document.querySelector('input[type="text"]') as HTMLInputElement
-      if (otpInput) otpInput.focus()
+      if (otpInput) {
+        otpInput.focus()
+      }
     } else {
       error.value = result.error?.message || t('forgotPassword.messages.userNotFound')
     }
@@ -143,7 +153,9 @@ const resendCode = async () => {
 }
 
 // Step 2: Reset password with OTP
-const resetPassword = async (payload: FormSubmitEvent<{ otp: string, newPassword: string, confirmPassword: string }>) => {
+const resetPassword = async (
+  payload: FormSubmitEvent<{ otp: string; newPassword: string; confirmPassword: string }>
+) => {
   isLoading.value = true
   error.value = ''
   success.value = ''
@@ -180,22 +192,35 @@ watch(otpCode, async (newValue) => {
         newPassword: newPassword.value,
         confirmPassword: confirmPassword.value
       }
-      await resetPassword({ data: formData } as FormSubmitEvent<{ otp: string, newPassword: string, confirmPassword: string }>)
+      await resetPassword({ data: formData } as FormSubmitEvent<{
+        otp: string
+        newPassword: string
+        confirmPassword: string
+      }>)
     }
   }
 })
 </script>
 
 <template>
-  <CustomPageCard :title="t('forgotPassword.title')"
+  <CustomPageCard
+    :title="t('forgotPassword.title')"
     :description="currentStep === 1 ? t('forgotPassword.description') : t('forgotPassword.step2Description', { email })"
-    :success="success" :error="error">
+    :success="success"
+    :error="error"
+  >
     <!-- Step 1: Email Entry -->
     <div v-if="currentStep === 1">
       <UForm :schema="emailSchema" :state="{ email }" class="space-y-4" @submit="sendVerificationCode">
         <UFormField :label="t('forgotPassword.fields.email')" name="email" required>
-          <UInput v-model="email" class="mb-4 w-full" type="email"
-            :placeholder="t('forgotPassword.fields.emailPlaceholder')" :disabled="isLoading" size="lg" />
+          <UInput
+            v-model="email"
+            class="mb-4 w-full"
+            type="email"
+            :placeholder="t('forgotPassword.fields.emailPlaceholder')"
+            :disabled="isLoading"
+            size="lg"
+          />
         </UFormField>
 
         <UButton :loading="isLoading" :disabled="!email || isLoading" color="primary" size="lg" block type="submit">
@@ -206,31 +231,66 @@ watch(otpCode, async (newValue) => {
 
     <!-- Step 2: OTP + Password Reset -->
     <div v-if="currentStep === 2" class="space-y-4">
-      <UForm :schema="resetSchema" :state="{ otp: otpCode, newPassword, confirmPassword }" class="space-y-4"
-        @submit="resetPassword">
+      <UForm
+        :schema="resetSchema"
+        :state="{ otp: otpCode, newPassword, confirmPassword }"
+        class="space-y-4"
+        @submit="resetPassword"
+      >
         <!-- OTP Input -->
         <div class="flex flex-col items-center w-full">
-          <UFormField name="otp" required class="w-full flex flex-col items-center" :label="t('forgotPassword.fields.otp')">
-            <UInput id="otp" v-model="otpCode" size="xl" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+          <UFormField
+            name="otp"
+            required
+            class="w-full flex flex-col items-center"
+            :label="t('forgotPassword.fields.otp')"
+          >
+            <UInput
+              id="otp"
+              v-model="otpCode"
+              size="xl"
+              type="text"
+              maxlength="6"
+              inputmode="numeric"
+              pattern="[0-9]*"
               class="w-32 text-center"
-              :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
+              :placeholder="$t('verify.codePlaceholder')"
+              :disabled="isLoading"
+              @input="handleOtpInput"
+            />
           </UFormField>
         </div>
         <USeparator />
         <!-- New Password -->
         <UFormField :label="t('forgotPassword.fields.newPassword')" name="newPassword" required>
-          <UInput v-model="newPassword" type="password"
-            :placeholder="t('forgotPassword.fields.newPasswordPlaceholder')" :disabled="isLoading" class="w-full" />
+          <UInput
+            v-model="newPassword"
+            type="password"
+            :placeholder="t('forgotPassword.fields.newPasswordPlaceholder')"
+            :disabled="isLoading"
+            class="w-full"
+          />
         </UFormField>
 
         <!-- Confirm Password -->
         <UFormField :label="t('forgotPassword.fields.confirmPassword')" name="confirmPassword" required>
-          <UInput v-model="confirmPassword" type="password"
-              :placeholder="t('forgotPassword.fields.confirmPasswordPlaceholder')" :disabled="isLoading" class="w-full" />
+          <UInput
+            v-model="confirmPassword"
+            type="password"
+            :placeholder="t('forgotPassword.fields.confirmPasswordPlaceholder')"
+            :disabled="isLoading"
+            class="w-full"
+          />
         </UFormField>
 
-        <UButton :loading="isLoading" :disabled="otpCode.length !== 6 || !newPassword || !confirmPassword || isLoading"
-          color="primary" size="lg" block type="submit">
+        <UButton
+          :loading="isLoading"
+          :disabled="otpCode.length !== 6 || !newPassword || !confirmPassword || isLoading"
+          color="primary"
+          size="lg"
+          block
+          type="submit"
+        >
           {{ t('forgotPassword.buttons.resetPassword') }}
         </UButton>
       </UForm>
@@ -238,8 +298,11 @@ watch(otpCode, async (newValue) => {
       <!-- Resend Code -->
       <div class="text-center">
         <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
-          {{ resendCooldown > 0 ? t('forgotPassword.messages.resendIn', { seconds: resendCooldown })
-            : t('forgotPassword.buttons.resendCode') }}
+          {{
+            resendCooldown > 0
+              ? t('forgotPassword.messages.resendIn', { seconds: resendCooldown })
+              : t('forgotPassword.buttons.resendCode')
+          }}
         </UButton>
       </div>
     </div>

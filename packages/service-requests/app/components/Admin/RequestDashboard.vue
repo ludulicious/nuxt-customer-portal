@@ -16,7 +16,7 @@ defineProps<{
 defineEmits<{
   select: [id: string]
   filter: [filters: ServiceRequestFilters]
-  update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
+  update: [data: { id: string; updates: AdminServiceRequestUpdateInput }]
 }>()
 const { t } = useI18n()
 </script>
@@ -52,7 +52,13 @@ const { t } = useI18n()
     </div>
 
     <!-- Filters and Table -->
-    <AdminRequestTable :requests="requests" :loading="loading" :pagination="pagination"
-      @select="$emit('select', $event)" @filter="$emit('filter', $event)" @update="$emit('update', $event)" />
+    <AdminRequestTable
+      :requests="requests"
+      :loading="loading"
+      :pagination="pagination"
+      @select="$emit('select', $event)"
+      @filter="$emit('filter', $event)"
+      @update="$emit('update', $event)"
+    />
   </div>
 </template>

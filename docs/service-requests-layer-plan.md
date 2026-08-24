@@ -38,6 +38,7 @@ This implementation uses Drizzle's modular schema approach to organize the datab
 ### 1.1 Create Layer Directory
 
 Create `layers/service-requests/` with the following structure:
+
 ```
 layers/service-requests/
 ├── nuxt.config.ts
@@ -60,10 +61,11 @@ Note: The Drizzle schema is defined in `server/db/schema/service-requests.ts` at
 ### 1.2 Create Layer Nuxt Config
 
 Create `layers/service-requests/nuxt.config.ts`:
+
 ```typescript
 export default defineNuxtConfig({
   // Layer-specific configuration
-  compatibilityDate: '2025-10-24',
+  compatibilityDate: '2025-10-24'
 })
 ```
 
@@ -72,23 +74,14 @@ export default defineNuxtConfig({
 ### 2.1 Define Service Request Schema
 
 Create `server/db/schema/service-requests.ts`:
+
 ```typescript
 import { pgEnum, pgTable, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
 
 // Enums
-export const serviceRequestStatus = pgEnum('ServiceRequestStatus', [
-  'OPEN',
-  'IN_PROGRESS',
-  'RESOLVED',
-  'CLOSED',
-])
+export const serviceRequestStatus = pgEnum('ServiceRequestStatus', ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'])
 
-export const serviceRequestPriority = pgEnum('ServiceRequestPriority', [
-  'LOW',
-  'MEDIUM',
-  'HIGH',
-  'URGENT',
-])
+export const serviceRequestPriority = pgEnum('ServiceRequestPriority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
 
 // Table
 export const serviceRequest = pgTable(
@@ -114,14 +107,14 @@ export const serviceRequest = pgTable(
     createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
     resolvedAt: timestamp('resolvedAt', { mode: 'date' }),
-    closedAt: timestamp('closedAt', { mode: 'date' }),
+    closedAt: timestamp('closedAt', { mode: 'date' })
   },
   (t) => ({
     organizationIdIdx: index('service_request_organizationId_idx').on(t.organizationId),
     createdByIdIdx: index('service_request_createdById_idx').on(t.createdById),
     assignedToIdIdx: index('service_request_assignedToId_idx').on(t.assignedToId),
     statusIdx: index('service_request_status_idx').on(t.status),
-    createdAtIdx: index('service_request_createdAt_idx').on(t.createdAt),
+    createdAtIdx: index('service_request_createdAt_idx').on(t.createdAt)
   })
 )
 ```
@@ -137,13 +130,14 @@ export default defineConfig({
   schema: './server/db/schema',
   out: './drizzle',
   dialect: 'postgresql',
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  dbCredentials: { url: process.env.DATABASE_URL! }
 })
 ```
 
 ### 2.3 Export Schema from Index (Optional)
 
 Create or update `server/db/schema/index.ts` to export all schemas:
+
 ```typescript
 export * from './auth-schema'
 export * from './service-requests'
@@ -152,6 +146,7 @@ export * from './service-requests'
 ### 2.4 Run Migration
 
 Generate and run Drizzle migrations:
+
 ```bash
 npx drizzle-kit generate
 npx drizzle-kit migrate
@@ -164,6 +159,7 @@ Note: Drizzle will automatically detect the new service request schema when you 
 ### 3.1 Create TypeScript Types
 
 Create `layers/service-requests/app/types/service-request.d.ts`:
+
 ```typescript
 export type ServiceRequestStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
 export type ServiceRequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
@@ -251,13 +247,7 @@ Service request permissions are already defined in `shared/permissions.ts`:
 ```typescript
 export const statement = {
   ...defaultStatements,
-  'service-request': [
-    'create',
-    'read',
-    'update',
-    'delete',
-    'list',
-  ],
+  'service-request': ['create', 'read', 'update', 'delete', 'list']
   // ... existing statements
 } as const
 ```
@@ -269,6 +259,7 @@ The permission system automatically grants appropriate service-request permissio
 ### 5.1 Create Validation Schemas
 
 Create `layers/service-requests/server/utils/service-request-validation.ts`:
+
 ```typescript
 import { z } from 'zod'
 
@@ -307,6 +298,7 @@ export const filterServiceRequestSchema = z.object({
 ### 5.2 Create Helper Functions
 
 Create `layers/service-requests/server/utils/service-request-helpers.ts`:
+
 ```typescript
 import { checkOrganizationPermission, hasPermission, isOrganizationMember } from '~~/server/utils/permissions'
 import { db } from '~~/server/utils/db'
@@ -318,7 +310,7 @@ import { serviceRequest } from '~~/server/db/schema/service-requests'
  * Uses the centralized permission system
  */
 export async function verifyServiceRequestAccess(
-  session: { user: { id: string, role?: string } },
+  session: { user: { id: string; role?: string } },
   organizationId: string,
   action: 'read' | 'update' | 'delete' | 'list'
 ): Promise<boolean> {
@@ -330,16 +322,10 @@ export async function verifyServiceRequestAccess(
  * Organization owners/admins and system admins have this permission
  */
 export async function verifyServiceRequestAdminAccess(
-  session: { user: { id: string, role?: string } },
+  session: { user: { id: string; role?: string } },
   organizationId: string
 ): Promise<boolean> {
-  return await hasPermission(
-    session.user.id,
-    session.user.role,
-    organizationId,
-    'service-request',
-    'delete'
-  )
+  return await hasPermission(session.user.id, session.user.role, organizationId, 'service-request', 'delete')
 }
 
 /**
@@ -347,7 +333,7 @@ export async function verifyServiceRequestAdminAccess(
  * System admins are considered members of all organizations
  */
 export async function verifyOrganizationMembership(
-  session: { user: { id: string, role?: string } },
+  session: { user: { id: string; role?: string } },
   organizationId: string
 ): Promise<boolean> {
   return await isOrganizationMember(session.user.id, organizationId, session.user.role)
@@ -356,10 +342,7 @@ export async function verifyOrganizationMembership(
 /**
  * Verify user owns a specific service request
  */
-export async function verifyRequestOwnership(
-  userId: string,
-  requestId: string
-): Promise<boolean> {
+export async function verifyRequestOwnership(userId: string, requestId: string): Promise<boolean> {
   const [row] = await db
     .select({ createdById: serviceRequest.createdById })
     .from(serviceRequest)
@@ -373,22 +356,19 @@ export async function verifyRequestOwnership(
  */
 export function buildRequestQuery(filters: any) {
   const conditions = []
-  
+
   if (filters.status) conditions.push(eq(serviceRequest.status, filters.status))
   if (filters.priority) conditions.push(eq(serviceRequest.priority, filters.priority))
   if (filters.category) conditions.push(eq(serviceRequest.category, filters.category))
   if (filters.assignedToId) conditions.push(eq(serviceRequest.assignedToId, filters.assignedToId))
   if (filters.createdById) conditions.push(eq(serviceRequest.createdById, filters.createdById))
-  
+
   if (filters.search) {
     conditions.push(
-      or(
-        ilike(serviceRequest.title, `%${filters.search}%`),
-        ilike(serviceRequest.description, `%${filters.search}%`)
-      )!
+      or(ilike(serviceRequest.title, `%${filters.search}%`), ilike(serviceRequest.description, `%${filters.search}%`))!
     )
   }
-  
+
   return conditions.length > 0 ? and(...conditions) : undefined
 }
 ```
@@ -398,6 +378,7 @@ export function buildRequestQuery(filters: any) {
 ### 6.1 List Service Requests (Customer)
 
 Create `layers/service-requests/server/api/service-requests/index.get.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -411,32 +392,30 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const query = getQuery(event)
   const filters = filterServiceRequestSchema.parse(query)
-  
+
   // Get user's active organization from session
   const organizationId = (session as any).session?.activeOrganizationId
-  
+
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
-  
+
   // Verify user has permission to list service requests
   const hasAccess = await verifyServiceRequestAccess(session, organizationId, 'list')
   if (!hasAccess) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
-  
-  const whereConditions = [
-    eq(serviceRequest.organizationId, organizationId)
-  ]
+
+  const whereConditions = [eq(serviceRequest.organizationId, organizationId)]
   const queryConditions = buildRequestQuery(filters)
   if (queryConditions) {
     whereConditions.push(queryConditions)
   }
   const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0]
-  
+
   // Note: Drizzle doesn't have automatic relations like Prisma
   // You'll need to join tables manually or fetch related data separately
   const [requests, totalRows] = await Promise.all([
@@ -452,13 +431,13 @@ export default defineEventHandler(async (event) => {
       .from(serviceRequest)
       .where(where)
   ])
-  
+
   const total = Number(totalRows[0]?.count || 0)
-  
+
   // Optionally fetch related user data separately if needed
   // const userIds = [...new Set([...requests.map(r => r.createdById), ...requests.map(r => r.assignedToId).filter(Boolean)])]
   // const users = await db.select().from(userTable).where(inArray(userTable.id, userIds))
-  
+
   return {
     requests,
     pagination: {
@@ -474,6 +453,7 @@ export default defineEventHandler(async (event) => {
 ### 6.2 Create Service Request
 
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -487,23 +467,23 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const body = await readBody(event)
   const data = createServiceRequestSchema.parse(body)
-  
+
   // Get user's active organization from session
   const organizationId = (session as any).session?.activeOrganizationId
-  
+
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
-  
+
   // Verify user has permission to create service requests
   const hasAccess = await verifyServiceRequestAccess(session, organizationId, 'create')
   if (!hasAccess) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
-  
+
   const [request] = await db
     .insert(serviceRequest)
     .values({
@@ -511,10 +491,10 @@ export default defineEventHandler(async (event) => {
       organizationId,
       createdById: session.user.id,
       status: 'OPEN',
-      priority: (data.priority || 'MEDIUM') as any,
+      priority: (data.priority || 'MEDIUM') as any
     })
     .returning()
-  
+
   return request
 })
 ```
@@ -522,6 +502,7 @@ export default defineEventHandler(async (event) => {
 ### 6.3 Get Single Service Request
 
 Create `layers/service-requests/server/api/service-requests/[id].get.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -534,37 +515,29 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const id = getRouterParam(event, 'id')
-  
-  const [request] = await db
-    .select()
-    .from(serviceRequest)
-    .where(eq(serviceRequest.id, id!))
-    .limit(1)
-  
+
+  const [request] = await db.select().from(serviceRequest).where(eq(serviceRequest.id, id!)).limit(1)
+
   if (!request) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
-  
+
   // Verify user has access to this organization's requests
-  const hasAccess = await verifyServiceRequestAccess(
-    session,
-    request.organizationId,
-    'read'
-  )
-  
+  const hasAccess = await verifyServiceRequestAccess(session, request.organizationId, 'read')
+
   if (!hasAccess) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
-  
+
   // Hide internal notes from non-admin users
   const isAdmin = await verifyServiceRequestAdminAccess(session, request.organizationId)
-  
+
   if (!isAdmin) {
     delete request.internalNotes
   }
-  
+
   return request
 })
 ```
@@ -572,6 +545,7 @@ export default defineEventHandler(async (event) => {
 ### 6.4 Update Service Request
 
 Create `layers/service-requests/server/api/service-requests/[id].patch.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -585,47 +559,39 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
   const data = updateServiceRequestSchema.parse(body)
-  
+
   // Get the request to check organization
   const [existingRequest] = await db
     .select({ organizationId: serviceRequest.organizationId })
     .from(serviceRequest)
     .where(eq(serviceRequest.id, id!))
     .limit(1)
-  
+
   if (!existingRequest) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
-  
+
   // Verify user has permission to update (must be owner or have update permission)
   const isOwner = await verifyRequestOwnership(session.user.id, id!)
-  const hasUpdatePermission = await verifyServiceRequestAccess(
-    session,
-    existingRequest.organizationId,
-    'update'
-  )
-  
+  const hasUpdatePermission = await verifyServiceRequestAccess(session, existingRequest.organizationId, 'update')
+
   if (!isOwner && !hasUpdatePermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
-  
+
   // Users can only update certain fields
   const allowedUpdates: any = {}
   if (data.title) allowedUpdates.title = data.title
   if (data.description) allowedUpdates.description = data.description
   if (data.priority) allowedUpdates.priority = data.priority
   if (data.category) allowedUpdates.category = data.category
-  
-  const [request] = await db
-    .update(serviceRequest)
-    .set(allowedUpdates)
-    .where(eq(serviceRequest.id, id!))
-    .returning()
-  
+
+  const [request] = await db.update(serviceRequest).set(allowedUpdates).where(eq(serviceRequest.id, id!)).returning()
+
   return request
 })
 ```
@@ -633,6 +599,7 @@ export default defineEventHandler(async (event) => {
 ### 6.5 Delete Service Request
 
 Create `layers/service-requests/server/api/service-requests/[id].delete.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -645,36 +612,30 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const id = getRouterParam(event, 'id')
-  
+
   // Get the request to check organization
   const [existingRequest] = await db
     .select({ organizationId: serviceRequest.organizationId })
     .from(serviceRequest)
     .where(eq(serviceRequest.id, id!))
     .limit(1)
-  
+
   if (!existingRequest) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
-  
+
   // Verify ownership or admin delete permission
   const isOwner = await verifyRequestOwnership(session.user.id, id!)
-  const hasDeletePermission = await verifyServiceRequestAccess(
-    session,
-    existingRequest.organizationId,
-    'delete'
-  )
-  
+  const hasDeletePermission = await verifyServiceRequestAccess(session, existingRequest.organizationId, 'delete')
+
   if (!isOwner && !hasDeletePermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
-  
-  await db
-    .delete(serviceRequest)
-    .where(eq(serviceRequest.id, id!))
-  
+
+  await db.delete(serviceRequest).where(eq(serviceRequest.id, id!))
+
   return { success: true }
 })
 ```
@@ -684,6 +645,7 @@ export default defineEventHandler(async (event) => {
 ### 7.1 List All Service Requests (Admin)
 
 Create `layers/service-requests/server/api/service-requests/admin/index.get.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -697,26 +659,26 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   // Get active organization from session
   const organizationId = (session as any).session?.activeOrganizationId
-  
+
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
-  
+
   // Check if user has admin-level access (can delete service requests)
   const isAdmin = await verifyServiceRequestAdminAccess(session, organizationId)
-  
+
   if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
-  
+
   const query = getQuery(event)
   const filters = filterServiceRequestSchema.parse(query)
-  
+
   const where = buildRequestQuery(filters)
-  
+
   const [requests, totalRows, statusCounts] = await Promise.all([
     db
       .select()
@@ -730,20 +692,23 @@ export default defineEventHandler(async (event) => {
       .from(serviceRequest)
       .where(where),
     db
-      .select({ 
+      .select({
         status: serviceRequest.status,
         count: sql<number>`count(*)`
       })
       .from(serviceRequest)
       .groupBy(serviceRequest.status)
   ])
-  
+
   const total = Number(totalRows[0]?.count || 0)
-  const stats = statusCounts.reduce((acc, item) => {
-    acc[item.status] = Number(item.count)
-    return acc
-  }, {} as Record<string, number>)
-  
+  const stats = statusCounts.reduce(
+    (acc, item) => {
+      acc[item.status] = Number(item.count)
+      return acc
+    },
+    {} as Record<string, number>
+  )
+
   return {
     requests,
     pagination: {
@@ -760,6 +725,7 @@ export default defineEventHandler(async (event) => {
 ### 7.2 Admin Update Service Request
 
 Create `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`:
+
 ```typescript
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
@@ -773,34 +739,34 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   const id = getRouterParam(event, 'id')
-  
+
   // Get the request to check organization
   const [existingRequest] = await db
     .select({ organizationId: serviceRequest.organizationId })
     .from(serviceRequest)
     .where(eq(serviceRequest.id, id!))
     .limit(1)
-  
+
   if (!existingRequest) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
-  
+
   // Check if user has admin-level access
   const isAdmin = await verifyServiceRequestAdminAccess(session, existingRequest.organizationId)
-  
+
   if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
-  
+
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
   const data = adminUpdateServiceRequestSchema.parse(body)
-  
+
   // Prepare update data
   const updateData: any = { ...data }
-  
+
   // Handle status transitions
   if (data.status === 'RESOLVED' && !updateData.resolvedAt) {
     updateData.resolvedAt = new Date()
@@ -808,13 +774,9 @@ export default defineEventHandler(async (event) => {
   if (data.status === 'CLOSED' && !updateData.closedAt) {
     updateData.closedAt = new Date()
   }
-  
-  const [request] = await db
-    .update(serviceRequest)
-    .set(updateData)
-    .where(eq(serviceRequest.id, id!))
-    .returning()
-  
+
+  const [request] = await db.update(serviceRequest).set(updateData).where(eq(serviceRequest.id, id!)).returning()
+
   return request
 })
 ```
@@ -824,6 +786,7 @@ export default defineEventHandler(async (event) => {
 ### 8.1 Create useServiceRequests Composable
 
 Create `layers/service-requests/app/composables/useServiceRequests.ts`:
+
 ```typescript
 import { authClient } from '~/utils/auth-client'
 
@@ -832,20 +795,20 @@ export const useServiceRequests = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const pagination = ref({ total: 0, page: 1, limit: 20, pages: 0 })
-  
+
   const fetchRequests = async (filters?: ServiceRequestFilters) => {
     loading.value = true
     error.value = null
-    
+
     try {
       // Get current organization using better-auth
       const { data: member } = await authClient.organization.getActiveMember()
       const organizationId = member?.organizationId
-      
+
       if (!organizationId) {
         throw new Error('No organization found')
       }
-      
+
       const response = await $fetch('/api/service-requests', {
         query: { ...filters, organizationId }
       })
@@ -858,11 +821,11 @@ export const useServiceRequests = () => {
       loading.value = false
     }
   }
-  
+
   const createRequest = async (data: ServiceRequestCreateInput) => {
     loading.value = true
     error.value = null
-    
+
     try {
       const newRequest = await $fetch('/api/service-requests', {
         method: 'POST',
@@ -877,20 +840,17 @@ export const useServiceRequests = () => {
       loading.value = false
     }
   }
-  
-  const updateRequest = async (
-    id: string,
-    data: ServiceRequestUpdateInput
-  ) => {
+
+  const updateRequest = async (id: string, data: ServiceRequestUpdateInput) => {
     loading.value = true
     error.value = null
-    
+
     try {
       const updated = await $fetch(`/api/service-requests/${id}`, {
         method: 'PATCH',
         body: data
       })
-      const index = requests.value.findIndex(r => r.id === id)
+      const index = requests.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         requests.value[index] = updated
       }
@@ -902,16 +862,16 @@ export const useServiceRequests = () => {
       loading.value = false
     }
   }
-  
+
   const deleteRequest = async (id: string) => {
     loading.value = true
     error.value = null
-    
+
     try {
       await $fetch(`/api/service-requests/${id}`, {
         method: 'DELETE'
       })
-      requests.value = requests.value.filter(r => r.id !== id)
+      requests.value = requests.value.filter((r) => r.id !== id)
     } catch (e: any) {
       error.value = e.message
       throw e
@@ -919,11 +879,11 @@ export const useServiceRequests = () => {
       loading.value = false
     }
   }
-  
+
   const getRequest = async (id: string) => {
     loading.value = true
     error.value = null
-    
+
     try {
       return await $fetch(`/api/service-requests/${id}`)
     } catch (e: any) {
@@ -933,7 +893,7 @@ export const useServiceRequests = () => {
       loading.value = false
     }
   }
-  
+
   return {
     requests: readonly(requests),
     loading: readonly(loading),
@@ -953,6 +913,7 @@ export const useServiceRequests = () => {
 ### 9.1 Create useAdminServiceRequests Composable
 
 Create `layers/service-requests/app/composables/useAdminServiceRequests.ts`:
+
 ```typescript
 import { authClient } from '~/utils/auth-client'
 
@@ -962,20 +923,20 @@ export const useAdminServiceRequests = () => {
   const error = ref<string | null>(null)
   const pagination = ref({ total: 0, page: 1, limit: 20, pages: 0 })
   const stats = ref<Record<string, number>>({})
-  
+
   const fetchAllRequests = async (filters?: ServiceRequestFilters) => {
     loading.value = true
     error.value = null
-    
+
     try {
       // Verify admin access using better-auth
       const { data: role } = await authClient.organization.getActiveMemberRole()
       const isAdmin = role?.includes('owner') || role?.includes('admin')
-      
+
       if (!isAdmin) {
         throw new Error('Admin access required')
       }
-      
+
       const response = await $fetch('/api/service-requests/admin', {
         query: filters
       })
@@ -989,20 +950,17 @@ export const useAdminServiceRequests = () => {
       loading.value = false
     }
   }
-  
-  const adminUpdateRequest = async (
-    id: string,
-    data: AdminServiceRequestUpdateInput
-  ) => {
+
+  const adminUpdateRequest = async (id: string, data: AdminServiceRequestUpdateInput) => {
     loading.value = true
     error.value = null
-    
+
     try {
       const updated = await $fetch(`/api/service-requests/admin/${id}`, {
         method: 'PATCH',
         body: data
       })
-      const index = requests.value.findIndex(r => r.id === id)
+      const index = requests.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         requests.value[index] = updated
       }
@@ -1014,23 +972,23 @@ export const useAdminServiceRequests = () => {
       loading.value = false
     }
   }
-  
+
   const assignRequest = async (id: string, userId: string) => {
     return adminUpdateRequest(id, { assignedToId: userId })
   }
-  
+
   const resolveRequest = async (id: string) => {
     return adminUpdateRequest(id, { status: 'RESOLVED' })
   }
-  
+
   const closeRequest = async (id: string) => {
     return adminUpdateRequest(id, { status: 'CLOSED' })
   }
-  
+
   const reopenRequest = async (id: string) => {
     return adminUpdateRequest(id, { status: 'OPEN' })
   }
-  
+
   return {
     requests: readonly(requests),
     loading: readonly(loading),
@@ -1052,6 +1010,7 @@ export const useAdminServiceRequests = () => {
 ### 10.1 Status Badge Component
 
 Create `layers/service-requests/app/components/ServiceRequest/StatusBadge.vue`:
+
 ```vue
 <template>
   <UBadge :color="statusColor" :variant="variant">
@@ -1067,11 +1026,16 @@ const props = defineProps<{
 
 const statusColor = computed(() => {
   switch (props.status) {
-    case 'OPEN': return 'primary'
-    case 'IN_PROGRESS': return 'warning'
-    case 'RESOLVED': return 'success'
-    case 'CLOSED': return 'neutral'
-    default: return 'neutral'
+    case 'OPEN':
+      return 'primary'
+    case 'IN_PROGRESS':
+      return 'warning'
+    case 'RESOLVED':
+      return 'success'
+    case 'CLOSED':
+      return 'neutral'
+    default:
+      return 'neutral'
   }
 })
 
@@ -1088,39 +1052,31 @@ const statusLabel = computed(() => {
 ### 10.2 Customer Request Form Component
 
 Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestForm.vue`:
+
 ```vue
 <template>
   <UForm :state="state" :schema="schema" @submit="handleSubmit">
     <UFormField label="Title" name="title" required>
       <UInput v-model="state.title" placeholder="Brief description of your request" />
     </UFormField>
-    
+
     <UFormField label="Description" name="description" required>
-      <UTextarea 
-        v-model="state.description" 
-        placeholder="Provide detailed information about your request"
-        :rows="6"
-      />
+      <UTextarea v-model="state.description" placeholder="Provide detailed information about your request" :rows="6" />
     </UFormField>
-    
+
     <UFormField label="Priority" name="priority">
-      <USelect 
-        v-model="state.priority" 
-        :options="priorityOptions"
-      />
+      <USelect v-model="state.priority" :options="priorityOptions" />
     </UFormField>
-    
+
     <UFormField label="Category" name="category">
       <UInput v-model="state.category" placeholder="e.g., Technical, Billing, General" />
     </UFormField>
-    
+
     <div class="flex gap-2">
       <UButton type="submit" :loading="loading">
         {{ editMode ? 'Update Request' : 'Submit Request' }}
       </UButton>
-      <UButton variant="ghost" @click="$emit('cancel')">
-        Cancel
-      </UButton>
+      <UButton variant="ghost" @click="$emit('cancel')"> Cancel </UButton>
     </div>
   </UForm>
 </template>
@@ -1170,49 +1126,32 @@ const handleSubmit = () => {
 ### 10.3 Customer Request List Component
 
 Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestList.vue`:
+
 ```vue
 <template>
   <div class="space-y-4">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-bold">My Service Requests</h2>
-      <UButton @click="$emit('create')">
-        New Request
-      </UButton>
+      <UButton @click="$emit('create')"> New Request </UButton>
     </div>
-    
+
     <!-- Filters -->
     <div class="flex gap-2">
-      <USelect 
-        v-model="filters.status" 
-        :options="statusOptions"
-        placeholder="Filter by status"
-      />
-      <USelect 
-        v-model="filters.priority" 
-        :options="priorityOptions"
-        placeholder="Filter by priority"
-      />
-      <UInput 
-        v-model="filters.search" 
-        placeholder="Search requests..."
-        icon="i-lucide-search"
-      />
+      <USelect v-model="filters.status" :options="statusOptions" placeholder="Filter by status" />
+      <USelect v-model="filters.priority" :options="priorityOptions" placeholder="Filter by priority" />
+      <UInput v-model="filters.search" placeholder="Search requests..." icon="i-lucide-search" />
     </div>
-    
+
     <!-- List -->
     <div v-if="loading">
       <USkeleton class="h-20 w-full mb-2" v-for="i in 5" :key="i" />
     </div>
-    
-    <UEmpty
-      v-else-if="requests.length === 0"
-      icon="i-lucide-ticket"
-      description="No service requests found"
-    />
-    
+
+    <UEmpty v-else-if="requests.length === 0" icon="i-lucide-ticket" description="No service requests found" />
+
     <div v-else class="space-y-3">
-      <UCard 
-        v-for="request in requests" 
+      <UCard
+        v-for="request in requests"
         :key="request.id"
         class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
         @click="$emit('select', request.id)"
@@ -1237,14 +1176,10 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestLis
         </div>
       </UCard>
     </div>
-    
+
     <!-- Pagination -->
     <div v-if="pagination.pages > 1" class="flex justify-center">
-      <UPagination 
-        v-model="currentPage"
-        :total="pagination.total"
-        :page-size="pagination.limit"
-      />
+      <UPagination v-model="currentPage" :total="pagination.total" :page-size="pagination.limit" />
     </div>
   </div>
 </template>
@@ -1284,6 +1219,7 @@ watch(currentPage, (page) => {
 ### 10.4 Customer Request Detail Component
 
 Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestDetail.vue`:
+
 ```vue
 <template>
   <div v-if="request" class="space-y-6">
@@ -1300,35 +1236,22 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestDet
           </UBadge>
         </div>
       </div>
-      
+
       <div class="flex gap-2">
-        <UButton 
-          v-if="canEdit" 
-          variant="ghost" 
-          @click="$emit('edit')"
-        >
-          Edit
-        </UButton>
-        <UButton 
-          v-if="canDelete" 
-          variant="ghost" 
-          color="red"
-          @click="$emit('delete')"
-        >
-          Delete
-        </UButton>
+        <UButton v-if="canEdit" variant="ghost" @click="$emit('edit')"> Edit </UButton>
+        <UButton v-if="canDelete" variant="ghost" color="red" @click="$emit('delete')"> Delete </UButton>
       </div>
     </div>
-    
+
     <UDivider />
-    
+
     <div class="prose dark:prose-invert max-w-none">
       <h3>Description</h3>
       <p>{{ request.description }}</p>
     </div>
-    
+
     <UDivider />
-    
+
     <div class="grid grid-cols-2 gap-4 text-sm">
       <div>
         <span class="font-semibold">Created by:</span>
@@ -1371,6 +1294,7 @@ const emit = defineEmits<{
 ### 11.1 Admin Request Dashboard Component
 
 Create `layers/service-requests/app/components/ServiceRequest/AdminRequestDashboard.vue`:
+
 ```vue
 <template>
   <div class="space-y-6">
@@ -1401,9 +1325,9 @@ Create `layers/service-requests/app/components/ServiceRequest/AdminRequestDashbo
         </div>
       </UCard>
     </div>
-    
+
     <!-- Filters and Table -->
-    <AdminRequestTable 
+    <AdminRequestTable
       :requests="requests"
       :loading="loading"
       :pagination="pagination"
@@ -1425,7 +1349,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [id: string]
   filter: [filters: ServiceRequestFilters]
-  update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
+  update: [data: { id: string; updates: AdminServiceRequestUpdateInput }]
 }>()
 </script>
 ```
@@ -1433,6 +1357,7 @@ const emit = defineEmits<{
 ### 11.2 Admin Request Table Component
 
 Create `layers/service-requests/app/components/ServiceRequest/AdminRequestTable.vue`:
+
 ```vue
 <template>
   <UCard>
@@ -1442,66 +1367,56 @@ Create `layers/service-requests/app/components/ServiceRequest/AdminRequestTable.
       <USelect v-model="filters.priority" :options="priorityOptions" placeholder="Priority" />
       <UInput v-model="filters.search" placeholder="Search..." icon="i-lucide-search" />
     </div>
-    
+
     <!-- Table -->
-    <UTable 
-      :rows="requests" 
-      :columns="columns"
-      :loading="loading"
-      @select="$emit('select', $event.id)"
-    >
+    <UTable :rows="requests" :columns="columns" :loading="loading" @select="$emit('select', $event.id)">
       <template #title-data="{ row }">
         <div class="cursor-pointer hover:underline" @click="$emit('select', row.id)">
           {{ row.title }}
         </div>
       </template>
-      
+
       <template #status-data="{ row }">
         <StatusBadge :status="row.status" />
       </template>
-      
+
       <template #priority-data="{ row }">
         <UBadge :color="getPriorityColor(row.priority)" size="xs">
           {{ row.priority }}
         </UBadge>
       </template>
-      
+
       <template #organization-data="{ row }">
         {{ row.organization.name }}
       </template>
-      
+
       <template #assignedTo-data="{ row }">
         <span v-if="row.assignedTo">
           {{ row.assignedTo.name || row.assignedTo.email }}
         </span>
-        <UButton 
-          v-else 
-          size="xs" 
-          variant="ghost"
-          @click="$emit('assign', row.id)"
-        >
-          Assign
-        </UButton>
+        <UButton v-else size="xs" variant="ghost" @click="$emit('assign', row.id)"> Assign </UButton>
       </template>
-      
+
       <template #actions-data="{ row }">
         <UDropdownMenu :items="getActions(row)">
           <UButton variant="ghost" icon="i-lucide-more-vertical" />
-        </UDropdownMenu>
-      </template>
+        </UDropdownMenu> </template></UTable
+  ></UCard>
+</template>
 ```
 
 **Note**: Uses `UDropdownMenu` instead of `UDropdown` for consistency with NuxtUI patterns.
-    </UTable>
-    
+</UTable>
+
     <!-- Pagination -->
     <div v-if="pagination.pages > 1" class="flex justify-center mt-4">
-      <UPagination 
+      <UPagination
         v-model="currentPage"
         :total="pagination.total"
         :page-size="pagination.limit"
       />
     </div>
+
   </UCard>
 </template>
 
@@ -1540,7 +1455,8 @@ const getActions = (request: ServiceRequestWithRelations) => {
 
 // ... filters and helper functions
 </script>
-```
+
+````
 
 ## Phase 12: Customer Pages
 
@@ -1550,7 +1466,7 @@ Create `layers/service-requests/app/pages/requests/index.vue`:
 ```vue
 <template>
   <div class="container mx-auto py-8">
-    <CustomerRequestList 
+    <CustomerRequestList
       :requests="requests"
       :loading="loading"
       :pagination="pagination"
@@ -1562,11 +1478,11 @@ Create `layers/service-requests/app/pages/requests/index.vue`:
 </template>
 
 <script setup lang="ts">
-const { 
-  requests, 
-  loading, 
-  pagination, 
-  fetchRequests 
+const {
+  requests,
+  loading,
+  pagination,
+  fetchRequests
 } = useServiceRequests()
 
 onMounted(() => {
@@ -1581,21 +1497,18 @@ definePageMeta({
   middleware: 'auth'
 })
 </script>
-```
+````
 
 ### 12.2 Create Request Page
 
 Create `layers/service-requests/app/pages/requests/new.vue`:
+
 ```vue
 <template>
   <div class="container mx-auto py-8 max-w-2xl">
     <h1 class="text-3xl font-bold mb-6">Create Service Request</h1>
-    
-    <CustomerRequestForm 
-      :loading="loading"
-      @submit="handleSubmit"
-      @cancel="navigateTo('/requests')"
-    />
+
+    <CustomerRequestForm :loading="loading" @submit="handleSubmit" @cancel="navigateTo('/requests')" />
   </div>
 </template>
 
@@ -1629,35 +1542,36 @@ definePageMeta({
 ### 12.3 Request Detail Page
 
 Create `layers/service-requests/app/pages/requests/[id].vue`:
+
 ```vue
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
-    
+
     <div v-else-if="!request" class="text-center py-8">
       <p>Request not found</p>
       <UButton @click="navigateTo('/requests')">Back to Requests</UButton>
     </div>
-    
+
     <div v-else>
-      <CustomerRequestDetail 
+      <CustomerRequestDetail
         :request="request"
         :can-edit="canEdit"
         :can-delete="canDelete"
         @edit="showEditModal = true"
         @delete="handleDelete"
       />
-      
+
       <!-- Edit Modal -->
       <UModal v-model="showEditModal">
         <UCard>
           <template #header>
             <h2 class="text-xl font-bold">Edit Request</h2>
           </template>
-          
-          <CustomerRequestForm 
+
+          <CustomerRequestForm
             :initial-data="request"
             :loading="updating"
             @submit="handleUpdate"
@@ -1726,7 +1640,7 @@ const handleUpdate = async (data: ServiceRequestUpdateInput) => {
 
 const handleDelete = async () => {
   if (!confirm('Are you sure you want to delete this request?')) return
-  
+
   try {
     await deleteRequest(requestId)
     toast.add({
@@ -1754,12 +1668,13 @@ definePageMeta({
 ### 13.1 Admin Request List Page
 
 Create `layers/service-requests/app/pages/admin/requests/index.vue`:
+
 ```vue
 <template>
   <div class="container mx-auto py-8">
     <h1 class="text-3xl font-bold mb-6">Service Requests Management</h1>
-    
-    <AdminRequestDashboard 
+
+    <AdminRequestDashboard
       :requests="requests"
       :loading="loading"
       :pagination="pagination"
@@ -1772,14 +1687,7 @@ Create `layers/service-requests/app/pages/admin/requests/index.vue`:
 </template>
 
 <script setup lang="ts">
-const { 
-  requests, 
-  loading, 
-  pagination,
-  stats,
-  fetchAllRequests,
-  adminUpdateRequest
-} = useAdminServiceRequests()
+const { requests, loading, pagination, stats, fetchAllRequests, adminUpdateRequest } = useAdminServiceRequests()
 
 const toast = useToast()
 
@@ -1791,7 +1699,7 @@ const handleFilter = (filters: ServiceRequestFilters) => {
   fetchAllRequests(filters)
 }
 
-const handleUpdate = async ({ id, updates }: { id: string, updates: AdminServiceRequestUpdateInput }) => {
+const handleUpdate = async ({ id, updates }: { id: string; updates: AdminServiceRequestUpdateInput }) => {
   try {
     await adminUpdateRequest(id, updates)
     toast.add({
@@ -1816,61 +1724,44 @@ definePageMeta({
 ### 13.2 Admin Request Detail Page
 
 Create `layers/service-requests/app/pages/admin/requests/[id].vue`:
+
 ```vue
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
-    
+
     <div v-else-if="request" class="space-y-6">
       <!-- Full request details with admin controls -->
       <CustomerRequestDetail :request="request" />
-      
+
       <UDivider />
-      
+
       <!-- Admin Actions -->
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold">Admin Actions</h3>
         </template>
-        
+
         <div class="space-y-4">
           <UFormField label="Status">
-            <USelect 
-              v-model="adminUpdates.status" 
-              :options="statusOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.status" :options="statusOptions" @change="handleQuickUpdate" />
           </UFormField>
-          
+
           <UFormField label="Priority">
-            <USelect 
-              v-model="adminUpdates.priority" 
-              :options="priorityOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.priority" :options="priorityOptions" @change="handleQuickUpdate" />
           </UFormField>
-          
+
           <UFormField label="Assign To">
-            <USelect 
-              v-model="adminUpdates.assignedToId" 
-              :options="userOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.assignedToId" :options="userOptions" @change="handleQuickUpdate" />
           </UFormField>
-          
+
           <UFormField label="Internal Notes">
-            <UTextarea 
-              v-model="adminUpdates.internalNotes"
-              :rows="4"
-              placeholder="Notes visible only to admins..."
-            />
+            <UTextarea v-model="adminUpdates.internalNotes" :rows="4" placeholder="Notes visible only to admins..." />
           </UFormField>
-          
-          <UButton @click="handleUpdate" :loading="updating">
-            Save Changes
-          </UButton>
+
+          <UButton @click="handleUpdate" :loading="updating"> Save Changes </UButton>
         </div>
       </UCard>
     </div>
@@ -1943,6 +1834,7 @@ definePageMeta({
 ### 14.1 English Translations
 
 Create `layers/service-requests/i18n/locales/en.json`:
+
 ```json
 {
   "serviceRequest": {
@@ -1989,6 +1881,7 @@ Create `layers/service-requests/i18n/locales/en.json`:
 ### 14.2 Dutch Translations
 
 Create `layers/service-requests/i18n/locales/nl.json`:
+
 ```json
 {
   "serviceRequest": {
@@ -2037,11 +1930,10 @@ Create `layers/service-requests/i18n/locales/nl.json`:
 ### 15.1 Extend Layer in Main Config
 
 Update `nuxt.config.ts` in main application:
+
 ```typescript
 export default defineNuxtConfig({
-  extends: [
-    './layers/service-requests'
-  ],
+  extends: ['./layers/service-requests']
   // ... other config
 })
 ```
@@ -2049,14 +1941,13 @@ export default defineNuxtConfig({
 ### 15.2 Expose Menu Options from Service Requests Layer
 
 Create `layers/service-requests/app/composables/useServiceRequestMenu.ts`:
+
 ```typescript
 import { authClient } from '~/utils/auth-client'
 
 export const useServiceRequestMenu = () => {
   const { data: role } = authClient.organization.getActiveMemberRole()
-  const isOrganizationAdmin = computed(() => 
-    role?.includes('owner') || role?.includes('admin')
-  )
+  const isOrganizationAdmin = computed(() => role?.includes('owner') || role?.includes('admin'))
 
   const menuItems = computed(() => {
     const items = [
@@ -2088,19 +1979,15 @@ export const useServiceRequestMenu = () => {
 ### 15.3 Update Main App Header to Use Service Request Menu
 
 Update `app/components/AppHeader.vue`:
+
 ```vue
 <template>
   <nav>
     <!-- Existing navigation items -->
-    
+
     <!-- Service Request Menu Items (only if layer is present) -->
     <template v-if="isAuthenticated && serviceRequestMenu">
-      <NuxtLink 
-        v-for="item in serviceRequestMenu.menuItems" 
-        :key="item.to"
-        :to="item.to"
-        class="nav-link"
-      >
+      <NuxtLink v-for="item in serviceRequestMenu.menuItems" :key="item.to" :to="item.to" class="nav-link">
         <UIcon :name="item.icon" />
         {{ item.label }}
       </NuxtLink>
@@ -2117,11 +2004,12 @@ const serviceRequestMenu = useServiceRequestMenu?.() || null
 ### 15.4 Add Dashboard Widget
 
 Update `app/pages/dashboard.vue`:
+
 ```vue
 <template>
   <div class="space-y-6">
     <!-- Existing dashboard content -->
-    
+
     <!-- Service Requests Widget (only if layer is present) -->
     <UCard v-if="serviceRequestWidget">
       <template #header>
@@ -2132,7 +2020,7 @@ Update `app/pages/dashboard.vue`:
           </NuxtLink>
         </div>
       </template>
-      
+
       <RecentServiceRequestsWidget />
     </UCard>
   </div>
@@ -2147,6 +2035,7 @@ const serviceRequestWidget = useServiceRequestWidget?.() || null
 ### 15.5 Create Service Request Widget Composable
 
 Create `layers/service-requests/app/composables/useServiceRequestWidget.ts`:
+
 ```typescript
 import { authClient } from '~/utils/auth-client'
 
@@ -2175,23 +2064,22 @@ export const useServiceRequestWidget = () => {
 ### 15.6 Create Recent Service Requests Widget
 
 Create `app/components/RecentServiceRequestsWidget.vue`:
+
 ```vue
 <template>
   <div class="space-y-2">
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
-    
+
     <div v-else-if="requests.length === 0">
       <p class="text-gray-500 text-center py-4">No recent requests</p>
-      <UButton @click="navigateTo('/requests/new')" block>
-        Create Your First Request
-      </UButton>
+      <UButton @click="navigateTo('/requests/new')" block> Create Your First Request </UButton>
     </div>
-    
+
     <div v-else class="space-y-2">
-      <div 
-        v-for="request in requests.slice(0, 5)" 
+      <div
+        v-for="request in requests.slice(0, 5)"
         :key="request.id"
         class="flex justify-between items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-900 rounded cursor-pointer"
         @click="navigateTo(`/requests/${request.id}`)"
@@ -2212,7 +2100,7 @@ const widget = useServiceRequestWidget?.()
 
 if (widget) {
   const { requests, loading, initializeWidget } = widget
-  
+
   onMounted(() => {
     initializeWidget()
   })
@@ -2227,23 +2115,27 @@ if (widget) {
 ## Technical Considerations
 
 ### Layer Independence
+
 - Service requests layer is self-contained
 - Only depends on better-auth organization system from main layer
 - Can be easily removed by deleting layer directory and removing from nuxt.config
 
 ### Security
+
 - Organization-based access control using better-auth organization membership
 - Ownership verification for updates/deletes
 - Better-auth organization role checks for admin endpoints
 - Internal notes hidden from non-admin users using better-auth roles
 
 ### Performance
+
 - Indexed queries on organizationId, status, createdAt
 - Pagination on all list endpoints
 - Lazy loading of components
 - Optimistic UI updates where appropriate
 
 ### Extensibility
+
 - Easy to add custom fields via metadata JSON
 - Category system can be expanded to taxonomy
 - Attachments field ready for file upload implementation
@@ -2252,11 +2144,13 @@ if (widget) {
 ## Files to Create
 
 **Layer Structure:**
+
 - `layers/service-requests/nuxt.config.ts`
 - `server/db/schema/service-requests.ts` (Drizzle schema at root level)
 - `layers/service-requests/app/types/service-request.d.ts`
 
 **Server:**
+
 - `layers/service-requests/server/utils/service-request-validation.ts`
 - `layers/service-requests/server/utils/service-request-helpers.ts`
 - `layers/service-requests/server/api/service-requests/index.get.ts`
@@ -2268,12 +2162,14 @@ if (widget) {
 - `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`
 
 **Composables:**
+
 - `layers/service-requests/app/composables/useServiceRequests.ts`
 - `layers/service-requests/app/composables/useAdminServiceRequests.ts`
 - `layers/service-requests/app/composables/useServiceRequestMenu.ts`
 - `layers/service-requests/app/composables/useServiceRequestWidget.ts`
 
 **Components:**
+
 - `layers/service-requests/app/components/ServiceRequest/StatusBadge.vue`
 - `layers/service-requests/app/components/ServiceRequest/CustomerRequestForm.vue`
 - `layers/service-requests/app/components/ServiceRequest/CustomerRequestList.vue`
@@ -2282,6 +2178,7 @@ if (widget) {
 - `layers/service-requests/app/components/ServiceRequest/AdminRequestTable.vue`
 
 **Pages:**
+
 - `layers/service-requests/app/pages/requests/index.vue`
 - `layers/service-requests/app/pages/requests/new.vue`
 - `layers/service-requests/app/pages/requests/[id].vue`
@@ -2289,10 +2186,12 @@ if (widget) {
 - `layers/service-requests/app/pages/admin/requests/[id].vue`
 
 **i18n:**
+
 - `layers/service-requests/i18n/locales/en.json`
 - `layers/service-requests/i18n/locales/nl.json`
 
 **Main App Integration:**
+
 - Update `nuxt.config.ts`
 - Update `app/components/AppHeader.vue`
 - Update `app/pages/dashboard.vue`

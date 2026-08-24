@@ -17,10 +17,12 @@ const { t } = useI18n()
 const toast = useToast()
 const { inviteMember } = useOrganization()
 
-const formSchema = computed(() => z.object({
-  email: z.string().email(t('organization.members.validation.emailInvalid')),
-  role: z.enum(['member', 'admin'], { error: t('organization.members.validation.roleRequired') })
-}))
+const formSchema = computed(() =>
+  z.object({
+    email: z.string().email(t('organization.members.validation.emailInvalid')),
+    role: z.enum(['member', 'admin'], { error: t('organization.members.validation.roleRequired') })
+  })
+)
 
 const form = reactive({
   email: '',
@@ -86,20 +88,10 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
           />
         </UFormField>
         <div class="flex flex-col sm:flex-row gap-4 justify-end pt-4">
-          <UButton
-            type="button"
-            variant="outline"
-            class="flex-1 sm:flex-none"
-            @click="open = false"
-          >
+          <UButton type="button" variant="outline" class="flex-1 sm:flex-none" @click="open = false">
             {{ t('organization.members.invitations.cancel') }}
           </UButton>
-          <UButton
-            type="submit"
-            :loading="inviting"
-            color="primary"
-            class="flex-1 sm:flex-none"
-          >
+          <UButton type="submit" :loading="inviting" color="primary" class="flex-1 sm:flex-none">
             {{ t('organization.members.invitations.sendButton') }}
           </UButton>
         </div>

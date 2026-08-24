@@ -15,15 +15,21 @@ const draft = reactive({
   currency: 'EUR',
   timezone: 'Europe/Amsterdam'
 })
-const schema = computed(() => z.object({
-  currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
-  timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
-}))
+const schema = computed(() =>
+  z.object({
+    currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
+    timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
+  })
+)
 
-watch(() => props.settings, (settings) => {
-  draft.currency = settings.currency
-  draft.timezone = settings.timezone
-}, { immediate: true })
+watch(
+  () => props.settings,
+  (settings) => {
+    draft.currency = settings.currency
+    draft.timezone = settings.timezone
+  },
+  { immediate: true }
+)
 
 const save = async () => {
   busy.value = true

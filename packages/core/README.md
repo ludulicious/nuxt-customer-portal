@@ -21,7 +21,7 @@ A feature supplies only its fetch adapter and stable item key:
 ```ts
 const products = usePaginatedResource<Product, ProductFilters>({
   pageSize: 20,
-  getKey: product => product.id,
+  getKey: (product) => product.id,
   fetchPage: ({ filters, page, pageSize, signal }) =>
     $fetch('/api/products', {
       query: { ...filters, page, pageSize },

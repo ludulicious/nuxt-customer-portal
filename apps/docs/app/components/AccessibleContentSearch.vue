@@ -18,19 +18,23 @@ function enhanceSearchDialog() {
   return true
 }
 
-watch(open, async (isOpen) => {
-  if (!isOpen || !import.meta.client) {
-    return
-  }
+watch(
+  open,
+  async (isOpen) => {
+    if (!isOpen || !import.meta.client) {
+      return
+    }
 
-  await nextTick()
+    await nextTick()
 
-  if (enhanceSearchDialog()) {
-    return
-  }
+    if (enhanceSearchDialog()) {
+      return
+    }
 
-  requestAnimationFrame(enhanceSearchDialog)
-}, { flush: 'post' })
+    requestAnimationFrame(enhanceSearchDialog)
+  },
+  { flush: 'post' }
+)
 </script>
 
 <template>

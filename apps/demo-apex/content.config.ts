@@ -9,104 +9,128 @@ const sizeEnum = z.enum(['xs', 'sm', 'md', 'lg', 'xl'])
 const orientationEnum = z.enum(['vertical', 'horizontal'])
 const imageLoadingEnum = z.enum(['lazy', 'eager'])
 
-const createBaseSchema = () => z.object({
-  title: z.string().min(1),
-  description: z.string().min(1)
-})
+const createBaseSchema = () =>
+  z.object({
+    title: z.string().min(1),
+    description: z.string().min(1)
+  })
 
-const createFeatureItemSchema = () => createBaseSchema().extend({
-  icon: z.string().min(1).editor({ input: 'icon' })
-})
+const createFeatureItemSchema = () =>
+  createBaseSchema().extend({
+    icon: z.string().min(1).editor({ input: 'icon' })
+  })
 
-const createLinkSchema = () => z.object({
-  label: z.string().min(1),
-  to: z.string().min(1),
-  icon: z.string().optional().editor({ input: 'icon' }),
-  size: sizeEnum.optional(),
-  trailing: z.boolean().optional(),
-  target: z.string().optional(),
-  color: colorEnum.optional(),
-  variant: variantEnum.optional()
-})
+const createLinkSchema = () =>
+  z.object({
+    label: z.string().min(1),
+    to: z.string().min(1),
+    icon: z.string().optional().editor({ input: 'icon' }),
+    size: sizeEnum.optional(),
+    trailing: z.boolean().optional(),
+    target: z.string().optional(),
+    color: colorEnum.optional(),
+    variant: variantEnum.optional()
+  })
 
-const createImageSchema = () => z.object({
-  src: z.string().min(1).editor({ input: 'media' }),
-  alt: z.string().optional(),
-  loading: imageLoadingEnum.optional(),
-  srcset: z.string().optional()
-})
+const createImageSchema = () =>
+  z.object({
+    src: z.string().min(1).editor({ input: 'media' }),
+    alt: z.string().optional(),
+    loading: imageLoadingEnum.optional(),
+    srcset: z.string().optional()
+  })
 
 export const collections = {
   index_en: defineCollection({
     source: { cwd: publicSiteContent, include: 'en/0.index.yml' },
     type: 'page',
     schema: z.object({
-      hero: z.object({
-        links: z.array(createLinkSchema())
-      }).optional(),
-      sections: z.array(
-        createBaseSchema().extend({
-          id: z.string().optional(),
-          orientation: orientationEnum.optional(),
-          reverse: z.boolean().optional(),
-          features: z.array(createFeatureItemSchema()).optional()
+      hero: z
+        .object({
+          links: z.array(createLinkSchema())
         })
-      ).optional(),
-      features: createBaseSchema().extend({
-        items: z.array(createFeatureItemSchema())
-      }).optional(),
-      testimonials: createBaseSchema().extend({
-        headline: z.string().optional(),
-        items: z.array(
-          z.object({
-            quote: z.string().min(1),
-            user: z.object({
-              name: z.string().min(1),
-              description: z.string().min(1),
-              avatar: createImageSchema()
-            })
+        .optional(),
+      sections: z
+        .array(
+          createBaseSchema().extend({
+            id: z.string().optional(),
+            orientation: orientationEnum.optional(),
+            reverse: z.boolean().optional(),
+            features: z.array(createFeatureItemSchema()).optional()
           })
         )
-      }).optional(),
-      cta: createBaseSchema().extend({
-        links: z.array(createLinkSchema())
-      }).optional()
+        .optional(),
+      features: createBaseSchema()
+        .extend({
+          items: z.array(createFeatureItemSchema())
+        })
+        .optional(),
+      testimonials: createBaseSchema()
+        .extend({
+          headline: z.string().optional(),
+          items: z.array(
+            z.object({
+              quote: z.string().min(1),
+              user: z.object({
+                name: z.string().min(1),
+                description: z.string().min(1),
+                avatar: createImageSchema()
+              })
+            })
+          )
+        })
+        .optional(),
+      cta: createBaseSchema()
+        .extend({
+          links: z.array(createLinkSchema())
+        })
+        .optional()
     })
   }),
   index_nl: defineCollection({
     source: { cwd: publicSiteContent, include: 'nl/0.index.yml' },
     type: 'page',
     schema: z.object({
-      hero: z.object({
-        links: z.array(createLinkSchema())
-      }).optional(),
-      sections: z.array(
-        createBaseSchema().extend({
-          id: z.string().optional(),
-          orientation: orientationEnum.optional(),
-          reverse: z.boolean().optional(),
-          features: z.array(createFeatureItemSchema()).optional()
+      hero: z
+        .object({
+          links: z.array(createLinkSchema())
         })
-      ).optional(),
-      features: createBaseSchema().extend({
-        items: z.array(createFeatureItemSchema())
-      }).optional(),
-      testimonials: createBaseSchema().extend({
-        headline: z.string().optional(),
-        items: z.array(
-          z.object({
-            quote: z.string().min(1),
-            user: z.object({
-              name: z.string().min(1),
-              description: z.string().min(1),
-              avatar: createImageSchema()
-            })
+        .optional(),
+      sections: z
+        .array(
+          createBaseSchema().extend({
+            id: z.string().optional(),
+            orientation: orientationEnum.optional(),
+            reverse: z.boolean().optional(),
+            features: z.array(createFeatureItemSchema()).optional()
           })
         )
-      }).optional(),
-      cta: createBaseSchema().extend({
-        links: z.array(createLinkSchema())
-      }).optional()
+        .optional(),
+      features: createBaseSchema()
+        .extend({
+          items: z.array(createFeatureItemSchema())
+        })
+        .optional(),
+      testimonials: createBaseSchema()
+        .extend({
+          headline: z.string().optional(),
+          items: z.array(
+            z.object({
+              quote: z.string().min(1),
+              user: z.object({
+                name: z.string().min(1),
+                description: z.string().min(1),
+                avatar: createImageSchema()
+              })
+            })
+          )
+        })
+        .optional(),
+      cta: createBaseSchema()
+        .extend({
+          links: z.array(createLinkSchema())
+        })
+        .optional()
     })
   }),
   blog_en: defineCollection({
@@ -122,7 +146,7 @@ export const collections = {
     source: {
       include: 'en/blog/**/*',
       prefix: 'blog/',
-      cwd: publicSiteContent,
+      cwd: publicSiteContent
     },
     schema: z.object({
       image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),
@@ -142,7 +166,7 @@ export const collections = {
     source: {
       include: 'nl/blog/**/*',
       prefix: 'blog/',
-      cwd: publicSiteContent,
+      cwd: publicSiteContent
     },
     schema: z.object({
       image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),

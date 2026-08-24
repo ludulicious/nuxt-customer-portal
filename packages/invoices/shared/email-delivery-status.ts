@@ -10,13 +10,14 @@ export const knownEmailProviderEvents = [
   'clicked'
 ] as const
 
-export type KnownEmailProviderEvent = typeof knownEmailProviderEvents[number]
+export type KnownEmailProviderEvent = (typeof knownEmailProviderEvents)[number]
 
-export const normalizeEmailProviderEvent = (value: string): string => value
-  .trim()
-  .toLowerCase()
-  .replace(/^email\./, '')
-  .replaceAll('-', '_')
+export const normalizeEmailProviderEvent = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^email\./, '')
+    .replaceAll('-', '_')
 
 export const isKnownEmailProviderEvent = (value: string): value is KnownEmailProviderEvent =>
   knownEmailProviderEvents.includes(value as KnownEmailProviderEvent)

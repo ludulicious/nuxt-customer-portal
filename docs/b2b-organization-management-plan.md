@@ -1,7 +1,9 @@
 # B2B Organization Management Implementation
 
 ## Overview
+
 Transform the customer portal from a self-service organization model to a B2B admin-controlled model where:
+
 - Only admins can create organizations
 - Admins invite organization owners
 - Owners accept invitations during signup and automatically get owner role
@@ -11,11 +13,13 @@ Transform the customer portal from a self-service organization model to a B2B ad
 ## UI/UX Requirements
 
 ### Component Library
+
 - **All UI components must use NuxtUI** (already configured in project)
 - Use NuxtUI components: `UCard`, `UButton`, `UInput`, `UFormGroup`, `UAlert`, `UModal`, `UTable`, `UBadge`, `UDropdown`, `UAvatar`, `USelect`, etc.
 - Follow existing patterns from `app/components/admin/organizations.vue` and other admin components
 
 ### Responsive Design
+
 - **Mobile-first approach**: All interfaces must work seamlessly on mobile and desktop
 - Use NuxtUI's responsive utilities and grid system
 - Tables should be scrollable on mobile or converted to card layouts
@@ -24,6 +28,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Navigation and action buttons should be touch-friendly (adequate spacing)
 
 ### Design Patterns
+
 - Follow existing admin UI patterns (see `app/components/admin/organizations.vue`)
 - Use consistent spacing, typography, and color schemes
 - Implement loading states with `UButton` loading prop and `UIcon` spinners
@@ -31,6 +36,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Implement confirmation dialogs for destructive actions (delete, cancel)
 
 ## Current State Analysis
+
 - `server/utils/auth.ts`: Currently allows all users to create organizations (`allowUserToCreateOrganization: true`) and auto-creates organizations on user signup
 - `app/pages/organizations/create.vue`: Organization creation page (currently commented out)
 - `app/composables/useOrganization.ts`: Has basic organization methods including `inviteMember`
@@ -40,12 +46,14 @@ Transform the customer portal from a self-service organization model to a B2B ad
 ## Implementation Steps
 
 ### 1. Update Auth Configuration (`server/utils/auth.ts`)
+
 - Set `allowUserToCreateOrganization: false` to restrict creation to admins only
 - Remove auto-organization creation from `databaseHooks.user.create.after`
 - Configure `sendInvitationEmail` hook to send invitation emails
 - Add `afterAcceptInvitation` hook to ensure users get the correct role (owner) when accepting admin invitations
 
 ### 2. Create Admin Organization Management UI
+
 - **File**: `app/pages/admin/organizations/[slug].vue` (create new)
 - Use NuxtUI components: `UCard`, `UButton`, `UInput`, `UFormGroup`, `UAlert`, `UTable`, `UBadge`, `UModal`
 - Responsive layout: Stack cards vertically on mobile, side-by-side on desktop
@@ -57,6 +65,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Loading states and error handling with `UAlert`
 
 ### 3. Update Admin Organizations List (`app/components/admin/organizations.vue`)
+
 - Use existing NuxtUI components (already using `UCard`, `UButton`)
 - Add "Create Organization" button using `UButton` with icon
 - Responsive button placement: Full width on mobile, inline on desktop
@@ -64,6 +73,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Ensure card layout is responsive (stack on mobile)
 
 ### 4. Create Admin Organization Creation Page
+
 - **File**: `app/pages/admin/organizations/create.vue` (create new)
 - Use NuxtUI components: `UCard`, `UButton`, `UInput`, `UFormGroup`, `UAlert`
 - Responsive form layout: Full width on mobile, centered card on desktop
@@ -74,6 +84,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Redirect to organization detail page after creation
 
 ### 5. Create Server API Endpoints
+
 - **File**: `server/api/admin/organizations.post.ts` (create new)
 - Admin-only endpoint to create organizations
 - Use `auth.api.createOrganization()` with `userId` parameter
@@ -88,6 +99,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Cancel invitation using `auth.api.cancelInvitation()`
 
 ### 6. Update Signup Flow (`app/pages/signup.vue`)
+
 - Use existing NuxtUI `UAuthForm` component (already in use)
 - Check for invitation ID in query parameters (`?invitationId=xxx`)
 - Store invitation ID in session/localStorage
@@ -97,12 +109,14 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Mobile-responsive form (already handled by `UAuthForm`)
 
 ### 7. Update Email Verification (`app/pages/verify-email.vue`)
+
 - After successful verification, check for pending invitation
 - If invitation exists, automatically accept it
 - Redirect to dashboard after acceptance
 - Use `UAlert` to show invitation acceptance status
 
 ### 8. Create Owner Organization Management UI
+
 - **File**: `app/pages/organization/members.vue` (create new or update existing)
 - Use NuxtUI components: `UCard`, `UButton`, `UInput`, `UFormGroup`, `UAlert`, `UTable`, `UBadge`, `UModal`, `USelect`
 - Responsive layout: Cards stack on mobile, side-by-side on desktop
@@ -117,6 +131,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Loading states and error handling
 
 ### 9. Create Server API Endpoints for Owner
+
 - **File**: `server/api/organizations/[id]/invitations/[invitationId]/resend.post.ts` (create new)
 - Resend invitation (owner/admin access check)
 
@@ -124,6 +139,7 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - Cancel invitation (owner/admin access check)
 
 ### 10. Update Organization Composable (`app/composables/useOrganization.ts`)
+
 - Add methods:
   - `listInvitations(organizationId)` - wrapper for `authClient.organization.listInvitations()`
   - `resendInvitation(invitationId, organizationId, email, role)` - wrapper for inviteMember with resend
@@ -131,16 +147,19 @@ Transform the customer portal from a self-service organization model to a B2B ad
   - `acceptInvitation(invitationId)` - wrapper for `authClient.organization.acceptInvitation()`
 
 ### 11. Update Invitation Email Template
+
 - Configure `sendInvitationEmail` in organization plugin options
 - Include invitation link with invitation ID: `${baseURL}/signup?invitationId=${invitation.id}`
 - Use existing email utility (`server/utils/email.ts`)
 
 ### 12. Remove/Update Public Organization Creation
+
 - Remove or restrict `app/pages/organizations/create.vue` (redirect non-admins or remove entirely)
 
 ## Technical Details
 
 ### Better Auth Methods Used
+
 - `auth.api.createOrganization()` - Server-side organization creation (admin only)
 - `authClient.organization.inviteMember()` - Invite with role and resend option
 - `authClient.organization.listInvitations()` - List organization invitations
@@ -149,12 +168,14 @@ Transform the customer portal from a self-service organization model to a B2B ad
 - `authClient.organization.listUserInvitations()` - List invitations for current user
 
 ### Role Assignment
+
 - Admin creates organization → no member created initially
 - Admin invites owner → invitation with role 'owner'
 - Owner accepts invitation → automatically becomes member with 'owner' role (handled by Better Auth)
 - Owner invites members → invitations with specified roles
 
 ### Access Control
+
 - Organization creation: Admin only (via `allowUserToCreateOrganization: false`)
 - Invitation management: Admin (for all orgs) or Owner (for their org)
 - Member invitation: Admin or Owner only
@@ -169,4 +190,3 @@ Transform the customer portal from a self-service organization model to a B2B ad
 6. Create API endpoints for invitation resend and delete (admin and owner)
 7. Configure invitation email template with signup link
 8. Update organization composable with invitation management methods
-

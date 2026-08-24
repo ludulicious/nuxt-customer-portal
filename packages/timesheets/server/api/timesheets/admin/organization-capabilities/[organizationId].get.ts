@@ -3,10 +3,17 @@ import { getOrganizationTimesheetCapabilities } from '@nuxt-customer-portal/time
 
 export default defineEventHandler(async (event) => {
   const session = await requireSession(event)
-  if (session.user.role !== 'admin') throw createError({ statusCode: 403, message: 'System administrator access required' })
+  if (session.user.role !== 'admin') {
+    throw createError({ statusCode: 403, message: 'System administrator access required' })
+  }
   const organizationId = getRouterParam(event, 'organizationId')!
   const organization = await getPortalOrganization(organizationId)
-  if (!organization) throw createError({ statusCode: 404, message: 'Organization not found' })
+  if (!organization) {
+    throw createError({ statusCode: 404, message: 'Organization not found' })
+  }
   const capabilities = await getOrganizationTimesheetCapabilities(organizationId)
-  return { ...capabilities, workspaceEnabled: organization.organizationType === 'PROVIDER' && capabilities.workspaceEnabled }
+  return {
+    ...capabilities,
+    workspaceEnabled: organization.organizationType === 'PROVIDER' && capabilities.workspaceEnabled
+  }
 })

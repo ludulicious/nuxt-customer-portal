@@ -6,7 +6,7 @@ import { invoiceCreateSchema } from '@nuxt-customer-portal/invoices/server/utils
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesPost',
+    operationId: 'invoicesAdminInvoicesPost',
     summary: 'Create an invoice',
     description: 'Create an invoice. Scoped to the active organization and the applicable Invoices permission.'
   }

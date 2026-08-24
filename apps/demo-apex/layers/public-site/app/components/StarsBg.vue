@@ -5,29 +5,31 @@ interface Star {
   size: number
 }
 
-const props = withDefaults(defineProps<{
-  starCount?: number
-  color?: string
-  speed?: 'slow' | 'normal' | 'fast'
-  size?: { min: number, max: number }
-}>(), {
-  starCount: 300,
-  color: 'var(--ui-primary)',
-  speed: 'normal',
-  size: () => ({
-    min: 1,
-    max: 2
-  })
-})
+const props = withDefaults(
+  defineProps<{
+    starCount?: number
+    color?: string
+    speed?: 'slow' | 'normal' | 'fast'
+    size?: { min: number; max: number }
+  }>(),
+  {
+    starCount: 300,
+    color: 'var(--ui-primary)',
+    speed: 'normal',
+    size: () => ({
+      min: 1,
+      max: 2
+    })
+  }
+)
 
 // Generate random star positions and sizes
 const generateStars = (count: number): Star[] => {
   return Array.from({ length: count }, () => ({
     x: Math.floor(Math.random() * 2000),
     y: Math.floor(Math.random() * 2000),
-    size: typeof props.size === 'number'
-      ? props.size
-      : Math.random() * (props.size.max - props.size.min) + props.size.min
+    size:
+      typeof props.size === 'number' ? props.size : Math.random() * (props.size.max - props.size.min) + props.size.min
   }))
 }
 
@@ -39,7 +41,7 @@ const speedMap = {
 }
 
 // Use a more efficient approach to generate and store stars
-const stars = useState<{ slow: Star[], normal: Star[], fast: Star[] }>('stars', () => {
+const stars = useState<{ slow: Star[]; normal: Star[]; fast: Star[] }>('stars', () => {
   return {
     slow: generateStars(Math.floor(props.starCount * speedMap.slow.ratio)),
     normal: generateStars(Math.floor(props.starCount * speedMap.normal.ratio)),
@@ -56,7 +58,9 @@ const starLayers = computed(() => [
 </script>
 
 <template>
-  <div class="public-stars absolute pointer-events-none z-[-1] inset-y-0 inset-x-5 sm:inset-x-7 lg:inset-x-9 overflow-hidden">
+  <div
+    class="public-stars absolute pointer-events-none z-[-1] inset-y-0 inset-x-5 sm:inset-x-7 lg:inset-x-9 overflow-hidden"
+  >
     <svg
       aria-hidden="true"
       class="absolute inset-0 pointer-events-none"
@@ -65,17 +69,10 @@ const starLayers = computed(() => [
       xmlns="http://www.w3.org/2000/svg"
     >
       <g opacity="0.5">
-        <mask
-          id="path-1-inside-1_846_160841"
-          fill="white"
-        >
+        <mask id="path-1-inside-1_846_160841" fill="white">
           <path d="M0 0H1017V181H0V0Z" />
         </mask>
-        <path
-          d="M0 0H1017V181H0V0Z"
-          fill="url(#paint0_radial_846_160841)"
-          fill-opacity="0.22"
-        />
+        <path d="M0 0H1017V181H0V0Z" fill="url(#paint0_radial_846_160841)" fill-opacity="0.22" />
       </g>
       <defs>
         <radialGradient
@@ -87,11 +84,7 @@ const starLayers = computed(() => [
           gradientTransform="translate(508.999 19.5) rotate(90.177) scale(161.501 509.002)"
         >
           <stop stop-color="var(--ui-primary)" />
-          <stop
-            offset="1"
-            stop-color="var(--ui-primary)"
-            stop-opacity="0"
-          />
+          <stop offset="1" stop-color="var(--ui-primary)" stop-opacity="0" />
         </radialGradient>
         <linearGradient
           id="paint1_linear_846_160841"
@@ -101,19 +94,9 @@ const starLayers = computed(() => [
           y2="90.502"
           gradientUnits="userSpaceOnUse"
         >
-          <stop
-            stop-color="var(--ui-primary)"
-            stop-opacity="0"
-          />
-          <stop
-            offset="0.395"
-            stop-color="var(--ui-primary)"
-          />
-          <stop
-            offset="1"
-            stop-color="var(--ui-primary)"
-            stop-opacity="0"
-          />
+          <stop stop-color="var(--ui-primary)" stop-opacity="0" />
+          <stop offset="0.395" stop-color="var(--ui-primary)" />
+          <stop offset="1" stop-color="var(--ui-primary)" stop-opacity="0" />
         </linearGradient>
       </defs>
     </svg>
@@ -151,18 +134,22 @@ const starLayers = computed(() => [
 .stars {
   left: 50%;
   transform: translate(-50%);
-  -webkit-mask-image: linear-gradient(180deg,
-      rgba(217, 217, 217, 0) 0%,
-      rgba(217, 217, 217, 0.8) 25%,
-      #d9d9d9 50%,
-      rgba(217, 217, 217, 0.8) 75%,
-      rgba(217, 217, 217, 0) 100%);
-  mask-image: linear-gradient(180deg,
-      rgba(217, 217, 217, 0) 0%,
-      rgba(217, 217, 217, 0.8) 25%,
-      #d9d9d9 50%,
-      rgba(217, 217, 217, 0.8) 75%,
-      rgba(217, 217, 217, 0) 100%);
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(217, 217, 217, 0) 0%,
+    rgba(217, 217, 217, 0.8) 25%,
+    #d9d9d9 50%,
+    rgba(217, 217, 217, 0.8) 75%,
+    rgba(217, 217, 217, 0) 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    rgba(217, 217, 217, 0) 0%,
+    rgba(217, 217, 217, 0.8) 25%,
+    #d9d9d9 50%,
+    rgba(217, 217, 217, 0.8) 75%,
+    rgba(217, 217, 217, 0) 100%
+  );
   -webkit-mask-size: cover;
   mask-size: cover;
 }

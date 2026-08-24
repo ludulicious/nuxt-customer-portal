@@ -6,26 +6,20 @@ import { clientCreateSchema } from '@nuxt-customer-portal/timesheets/server/util
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminClientsPost',
+    operationId: 'timesheetsAdminClientsPost',
     summary: 'Link a timesheet client',
     description: 'Link a timesheet client. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId, session } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId, session } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const input = clientCreateSchema.parse(await readBody(event))
   if (input.mode === 'create') {
-    throw createError({ statusCode: 410, message: 'Create clients in the Clients module before linking them to Timesheets' })
+    throw createError({
+      statusCode: 410,
+      message: 'Create clients in the Clients module before linking them to Timesheets'
+    })
   }
-  return linkClient(
-    organizationId,
-    session.user.id,
-    session.user.role === 'admin',
-    input.organizationId
-  )
+  return linkClient(organizationId, session.user.id, session.user.role === 'admin', input.organizationId)
 })

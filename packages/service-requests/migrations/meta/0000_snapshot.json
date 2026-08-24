@@ -187,12 +187,8 @@
           "name": "service_request_organization_id_organization_id_fk",
           "tableFrom": "service_request",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -200,12 +196,8 @@
           "name": "service_request_created_by_id_user_id_fk",
           "tableFrom": "service_request",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -213,12 +205,8 @@
           "name": "service_request_assigned_to_id_user_id_fk",
           "tableFrom": "service_request",
           "tableTo": "user",
-          "columnsFrom": [
-            "assigned_to_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["assigned_to_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -234,22 +222,12 @@
     "service_requests.ServiceRequestPriority": {
       "name": "ServiceRequestPriority",
       "schema": "service_requests",
-      "values": [
-        "LOW",
-        "MEDIUM",
-        "HIGH",
-        "URGENT"
-      ]
+      "values": ["LOW", "MEDIUM", "HIGH", "URGENT"]
     },
     "service_requests.ServiceRequestStatus": {
       "name": "ServiceRequestStatus",
       "schema": "service_requests",
-      "values": [
-        "OPEN",
-        "IN_PROGRESS",
-        "RESOLVED",
-        "CLOSED"
-      ]
+      "values": ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]
     }
   },
   "schemas": {

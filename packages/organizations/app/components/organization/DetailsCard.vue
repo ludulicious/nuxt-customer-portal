@@ -1,21 +1,26 @@
 <script setup lang="ts">
 import type { Organization } from '@nuxt-customer-portal/core/shared/types/index'
 
-const props = withDefaults(defineProps<{
-  canEdit?: boolean
-  editing?: boolean
-  organization: Organization
-  role?: string | null
-}>(), {
-  canEdit: false,
-  editing: false,
-  role: null
-})
+const props = withDefaults(
+  defineProps<{
+    canEdit?: boolean
+    editing?: boolean
+    organization: Organization
+    role?: string | null
+  }>(),
+  {
+    canEdit: false,
+    editing: false,
+    role: null
+  }
+)
 
 const emit = defineEmits(['edit'])
 const { t } = useI18n()
 const officialCompanyName = computed(() => {
-  if (!props.organization.metadata) return props.organization.name
+  if (!props.organization.metadata) {
+    return props.organization.name
+  }
   try {
     const metadata = JSON.parse(props.organization.metadata) as Record<string, unknown>
     return typeof metadata.officialCompanyName === 'string' ? metadata.officialCompanyName : props.organization.name
@@ -48,12 +53,16 @@ const officialCompanyName = computed(() => {
         :src="organization.logo"
         :alt="officialCompanyName"
         class="mb-4 max-h-20 max-w-56 object-contain object-left"
-      >
+      />
       <div>
         <span class="text-sm text-muted">{{ t('organization.details.name') }}</span>
         <div class="flex items-center gap-2">
           <p class="font-semibold">{{ organization.name }}</p>
-          <UBadge v-if="role" :color="role === 'owner' ? 'primary' : role === 'admin' ? 'info' : 'neutral'" variant="soft">
+          <UBadge
+            v-if="role"
+            :color="role === 'owner' ? 'primary' : role === 'admin' ? 'info' : 'neutral'"
+            variant="soft"
+          >
             {{ role.charAt(0).toUpperCase() + role.slice(1) }}
           </UBadge>
         </div>

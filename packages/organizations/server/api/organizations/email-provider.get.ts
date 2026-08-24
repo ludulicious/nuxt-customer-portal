@@ -6,7 +6,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsEmailProviderGet',
     summary: 'Get organization email credentials',
-    description: 'Get organization email credentials. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Get organization email credentials. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 

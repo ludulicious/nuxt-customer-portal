@@ -17,7 +17,7 @@ import {
 const cwd = process.cwd()
 const args = process.argv.slice(2)
 const configPath = ['portal.config.ts', 'portal.config.mjs', 'portal.config.js']
-  .map(file => resolve(cwd, file))
+  .map((file) => resolve(cwd, file))
   .find(existsSync)
 
 if (!configPath) {
@@ -27,12 +27,21 @@ if (!configPath) {
 
 const jiti = createJiti(import.meta.url, { interopDefault: true })
 const config = await jiti.import(configPath, { default: true })
-const print = value => console.log(JSON.stringify(value, null, 2))
+const print = (value) => console.log(JSON.stringify(value, null, 2))
 
 try {
   if (args[0] === 'doctor') {
     const manifests = await resolvePortalManifests(config, cwd)
-    print({ ok: true, providers: manifests.map(({ id, version, source, dependsOn, migrations }) => ({ id, version, source, dependsOn, migrations: Boolean(migrations) })) })
+    print({
+      ok: true,
+      providers: manifests.map(({ id, version, source, dependsOn, migrations }) => ({
+        id,
+        version,
+        source,
+        dependsOn,
+        migrations: Boolean(migrations)
+      }))
+    })
   } else if (args[0] === 'db' && args[1] === 'status') {
     print(await inspectPortalMigrations(config, { cwd }))
   } else if (args[0] === 'db' && args[1] === 'migrate') {
@@ -41,38 +50,63 @@ try {
     print(await adoptLegacyMigrations(config, { cwd, apply: args.includes('--apply') }))
   } else if (args[0] === 'clients' && args[1] === 'migrate') {
     const provider = args[args.indexOf('--provider') + 1]
-    if (!provider || provider.startsWith('--')) throw new Error('clients migrate requires --provider <organization-id-or-slug>')
-    print(await migrateGenericClients(config, {
-      cwd,
-      provider,
-      apply: args.includes('--apply'),
-      backupConfirmed: args.includes('--backup-confirmed'),
-      once: args.includes('--once')
-    }))
+    if (!provider || provider.startsWith('--')) {
+      throw new Error('clients migrate requires --provider <organization-id-or-slug>')
+    }
+    print(
+      await migrateGenericClients(config, {
+        cwd,
+        provider,
+        apply: args.includes('--apply'),
+        backupConfirmed: args.includes('--backup-confirmed'),
+        once: args.includes('--once')
+      })
+    )
   } else if (args[0] === 'provider' && args[1] === 'bootstrap') {
-    const value = flag => args[args.indexOf(flag) + 1]
-    print(await bootstrapPortalProvider({
-      organizationName: value('--organization-name'), organizationSlug: value('--organization-slug')
-    }))
+    const value = (flag) => args[args.indexOf(flag) + 1]
+    print(
+      await bootstrapPortalProvider({
+        organizationName: value('--organization-name'),
+        organizationSlug: value('--organization-slug')
+      })
+    )
   } else if (args[0] === 'provider' && args[1] === 'seed') {
-    const value = flag => args[args.indexOf(flag) + 1]
-    print(await seedPortalProvider({
-      organizationName: value('--organization-name'), organizationSlug: value('--organization-slug'),
-      userName: value('--user-name'), userEmail: value('--user-email'), userPassword: value('--user-password')
-    }))
+    const value = (flag) => args[args.indexOf(flag) + 1]
+    print(
+      await seedPortalProvider({
+        organizationName: value('--organization-name'),
+        organizationSlug: value('--organization-slug'),
+        userName: value('--user-name'),
+        userEmail: value('--user-email'),
+        userPassword: value('--user-password')
+      })
+    )
   } else if (args[0] === 'admin' && args[1] === 'grant') {
     const email = args[args.indexOf('--email') + 1]
-    if (!email || email.startsWith('--')) throw new Error('admin grant requires --email <existing-user-email>')
+    if (!email || email.startsWith('--')) {
+      throw new Error('admin grant requires --email <existing-user-email>')
+    }
     print(await assignPortalSystemAdmin({ email }))
   } else if (args[0] === 'db' && args[1] === 'generate') {
     const provider = args[args.indexOf('--provider') + 1]
-    if (!provider || provider.startsWith('--')) throw new Error('db generate requires --provider <id>')
-    const manifest = (await resolvePortalManifests(config, cwd)).find(item => item.id === provider)
-    if (!manifest) throw new Error(`Unknown provider: ${provider}`)
-    if (!manifest.local) throw new Error('Only local providers can generate migrations; official package migrations are immutable')
+    if (!provider || provider.startsWith('--')) {
+      throw new Error('db generate requires --provider <id>')
+    }
+    const manifest = (await resolvePortalManifests(config, cwd)).find((item) => item.id === provider)
+    if (!manifest) {
+      throw new Error(`Unknown provider: ${provider}`)
+    }
+    if (!manifest.local) {
+      throw new Error('Only local providers can generate migrations; official package migrations are immutable')
+    }
     const drizzleConfig = resolve(manifest.root, 'drizzle.config.ts')
-    if (!existsSync(drizzleConfig)) throw new Error(`Local provider must supply ${drizzleConfig}`)
-    const result = spawnSync('pnpm', ['exec', 'drizzle-kit', 'generate', '--config', drizzleConfig], { cwd, stdio: 'inherit' })
+    if (!existsSync(drizzleConfig)) {
+      throw new Error(`Local provider must supply ${drizzleConfig}`)
+    }
+    const result = spawnSync('pnpm', ['exec', 'drizzle-kit', 'generate', '--config', drizzleConfig], {
+      cwd,
+      stdio: 'inherit'
+    })
     process.exit(result.status ?? 1)
   } else {
     console.log(`Usage:

@@ -71,12 +71,8 @@
           "tableFrom": "invoice_time_entry",
           "tableTo": "invoice",
           "schemaTo": "invoices",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -85,12 +81,8 @@
           "tableFrom": "invoice_time_entry",
           "tableTo": "invoice_line",
           "schemaTo": "invoices",
-          "columnsFrom": [
-            "invoice_line_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_line_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -99,12 +91,8 @@
           "tableFrom": "invoice_time_entry",
           "tableTo": "time_entry",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "time_entry_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["time_entry_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }

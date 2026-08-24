@@ -26,11 +26,19 @@ export const useOrganization = () => {
     return data
   }
 
-  const createOrganization = async (data: { name: string, slug: string, organizationType: OrganizationType, keepCurrentActiveOrganization?: boolean }) => {
+  const createOrganization = async (data: {
+    name: string
+    slug: string
+    organizationType: OrganizationType
+    keepCurrentActiveOrganization?: boolean
+  }) => {
     return await authClient.organization.create(data)
   }
 
-  const updateAdminOrganization = async (organizationId: string, data: { name: string, slug: string, officialCompanyName: string, logo: string }) => {
+  const updateAdminOrganization = async (
+    organizationId: string,
+    data: { name: string; slug: string; officialCompanyName: string; logo: string }
+  ) => {
     return await $fetch<Organization>(`/api/admin/organizations/${organizationId}`, {
       method: 'PATCH',
       body: data

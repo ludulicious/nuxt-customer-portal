@@ -3,9 +3,7 @@ import { auth } from '../utils/auth'
 
 const API_DOCS_PATH = '/api-docs'
 
-const isApiDocsRequest = (path: string): boolean => (
-  path === API_DOCS_PATH || path.startsWith(`${API_DOCS_PATH}/`)
-)
+const isApiDocsRequest = (path: string): boolean => path === API_DOCS_PATH || path.startsWith(`${API_DOCS_PATH}/`)
 
 export default defineEventHandler(async (event) => {
   if (!isApiDocsRequest(event.path)) {

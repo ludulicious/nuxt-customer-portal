@@ -27,10 +27,15 @@ const formData = ref({
   slug: ''
 })
 
-const schema = computed(() => z.object({
-  name: z.string().min(1, t('admin.organization.create.validation.nameRequired')),
-  slug: z.string().min(1, t('admin.organization.create.validation.slugRequired')).regex(/^[a-z0-9-]+$/, t('admin.organization.create.validation.slugInvalid'))
-}))
+const schema = computed(() =>
+  z.object({
+    name: z.string().min(1, t('admin.organization.create.validation.nameRequired')),
+    slug: z
+      .string()
+      .min(1, t('admin.organization.create.validation.slugRequired'))
+      .regex(/^[a-z0-9-]+$/, t('admin.organization.create.validation.slugInvalid'))
+  })
+)
 
 type Schema = {
   name: string
@@ -38,14 +43,17 @@ type Schema = {
 }
 
 // Auto-generate slug from name
-watch(() => formData.value.name, (name) => {
-  if (name) {
-    formData.value.slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+watch(
+  () => formData.value.name,
+  (name) => {
+    if (name) {
+      formData.value.slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    }
   }
-})
+)
 
 const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
   try {
@@ -80,12 +88,7 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
       <UCard>
         <template #header>
           <div class="flex items-center gap-4">
-            <UButton
-              icon="i-lucide-arrow-left"
-              variant="ghost"
-              size="sm"
-              :to="'/admin/organizations'"
-            >
+            <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" :to="'/admin/organizations'">
               {{ t('admin.organization.create.back') }}
             </UButton>
             <h1 class="text-2xl font-bold">{{ t('admin.organization.create.title') }}</h1>
@@ -114,20 +117,10 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
             </template>
           </UFormField>
 
-          <UAlert
-            v-if="error"
-            color="error"
-            :title="error"
-            class="mb-4" variant="outline" />
+          <UAlert v-if="error" color="error" :title="error" class="mb-4" variant="outline" />
 
           <div class="flex flex-col sm:flex-row gap-4">
-            <UButton
-              type="submit"
-              :loading="loading"
-              color="primary"
-              size="lg"
-              class="flex-1"
-            >
+            <UButton type="submit" :loading="loading" color="primary" size="lg" class="flex-1">
               {{ t('admin.organization.create.createButton') }}
             </UButton>
             <UButton

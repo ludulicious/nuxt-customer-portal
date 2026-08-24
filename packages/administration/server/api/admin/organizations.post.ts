@@ -7,7 +7,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsPost',
     summary: 'Create an organization',
-    description: 'Create an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Create an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 

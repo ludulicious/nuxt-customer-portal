@@ -17,10 +17,12 @@ const emit = defineEmits<{
 }>()
 const form = defineModel<TimesheetsActivityFormModel>({ required: true })
 const { t } = useI18n()
-const schema = computed(() => z.object({
-  name: z.string().trim().min(2, t('features.timesheets.validation.activityNameLength')).max(120),
-  billable: z.boolean()
-}))
+const schema = computed(() =>
+  z.object({
+    name: z.string().trim().min(2, t('features.timesheets.validation.activityNameLength')).max(120),
+    billable: z.boolean()
+  })
+)
 </script>
 
 <template>
@@ -30,7 +32,15 @@ const schema = computed(() => z.object({
         <h2 class="font-semibold">
           {{ editing ? t('features.timesheets.admin.editActivity') : t('features.timesheets.admin.newActivity') }}
         </h2>
-        <UButton v-if="editing" type="button" color="neutral" variant="ghost" icon="i-lucide-x" :aria-label="t('features.timesheets.admin.close')" @click="emit('cancel')" />
+        <UButton
+          v-if="editing"
+          type="button"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          :aria-label="t('features.timesheets.admin.close')"
+          @click="emit('cancel')"
+        />
       </div>
     </template>
     <UForm :state="form" :schema="schema" class="space-y-4" @submit="emit('submit')">

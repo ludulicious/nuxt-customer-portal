@@ -8,7 +8,7 @@ import { usePaginatedResource } from '@nuxt-customer-portal/core/app/composables
 export const usePaginatedServiceRequests = (pageSize = 20) =>
   usePaginatedResource<ServiceRequest, ServiceRequestFilters>({
     pageSize,
-    getKey: request => request.id,
+    getKey: (request) => request.id,
     fetchPage: ({ filters, page, pageSize, signal }) =>
       $fetch<ServiceRequestListResponse>('/api/service-requests', {
         query: {

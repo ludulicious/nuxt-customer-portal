@@ -3,12 +3,25 @@
   "version": "0.1.0-alpha.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
-  "repository": { "type": "git", "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git"
+  },
   "type": "module",
   "main": "./nuxt.config.ts",
-  "files": ["LICENSE", "nuxt.config.ts", "portal.manifest.mjs", "README.md"],
-  "exports": { ".": "./nuxt.config.ts", "./portal-manifest": "./portal.manifest.mjs" },
-  "publishConfig": { "access": "public" },
+  "files": [
+    "LICENSE",
+    "nuxt.config.ts",
+    "portal.manifest.mjs",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./nuxt.config.ts",
+    "./portal-manifest": "./portal.manifest.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@nuxt-customer-portal/administration": "workspace:^",
     "@nuxt-customer-portal/clients": "workspace:^",
@@ -17,6 +30,10 @@
     "@nuxt-customer-portal/organizations": "workspace:^",
     "@nuxt-customer-portal/ui": "workspace:^"
   },
-  "peerDependencies": { "nuxt": "^4.5.1" },
-  "devDependencies": { "nuxt": "^4.5.1" }
+  "peerDependencies": {
+    "nuxt": "^4.5.1"
+  },
+  "devDependencies": {
+    "nuxt": "^4.5.1"
+  }
 }

@@ -7,8 +7,15 @@ defineOptions({ name: 'TimesheetsWorkbenchPage' })
 
 definePageMeta({
   middleware: async () => {
-    const capabilities = await $fetch<{ canEnterTime: boolean, canReviewClientTimesheets: boolean, canApproveInternalTimesheets: boolean, canViewSupplierTime: boolean }>('/api/timesheets/capabilities')
-    if (capabilities.canEnterTime) return
+    const capabilities = await $fetch<{
+      canEnterTime: boolean
+      canReviewClientTimesheets: boolean
+      canApproveInternalTimesheets: boolean
+      canViewSupplierTime: boolean
+    }>('/api/timesheets/capabilities')
+    if (capabilities.canEnterTime) {
+      return
+    }
     return navigateTo(
       capabilities.canReviewClientTimesheets
         ? '/timesheets/approvals'
@@ -48,77 +55,101 @@ const { data, pending, refresh } = await useAsyncData(
 )
 
 const week = computed(() => data.value?.week)
-const projects = computed(() => data.value?.projects.filter(project => project.status === 'ACTIVE') ?? [])
-const activities = computed(() => data.value?.activities.filter(activity => activity.active) ?? [])
-const rememberedEntryContext = ref<{ projectId: string, activityTypeId: string } | null>(null)
+const projects = computed(() => data.value?.projects.filter((project) => project.status === 'ACTIVE') ?? [])
+const activities = computed(() => data.value?.activities.filter((activity) => activity.active) ?? [])
+const rememberedEntryContext = ref<{ projectId: string; activityTypeId: string } | null>(null)
 const lastReusableEntryContext = computed(() => {
-  if (rememberedEntryContext.value) return rememberedEntryContext.value
+  if (rememberedEntryContext.value) {
+    return rememberedEntryContext.value
+  }
 
   const entry = [...(week.value?.entries ?? [])].reverse().find((candidate) => {
-    const project = projects.value.find(item => item.id === candidate.projectId)
-    return project?.activityTypeIds.includes(candidate.activityTypeId)
-      && activities.value.some(item => item.id === candidate.activityTypeId)
+    const project = projects.value.find((item) => item.id === candidate.projectId)
+    return (
+      project?.activityTypeIds.includes(candidate.activityTypeId) &&
+      activities.value.some((item) => item.id === candidate.activityTypeId)
+    )
   })
 
-  return entry
-    ? { projectId: entry.projectId, activityTypeId: entry.activityTypeId }
-    : null
+  return entry ? { projectId: entry.projectId, activityTypeId: entry.activityTypeId } : null
 })
-const runningEntry = computed(() => week.value?.entries.find(entry => entry.timerStartedAt) ?? null)
-const editable = computed(() => Boolean(data.value?.canEnterTime) && ['DRAFT', 'REJECTED'].includes(week.value?.status ?? ''))
-const currentMember = computed(() => data.value?.team.find(member => member.id === week.value?.userId))
-const selectedActivity = computed(() => activities.value.find(activity => activity.id === form.activityTypeId))
-const selectedProject = computed(() => projects.value.find(project => project.id === form.projectId))
-const tariffMissing = computed(() => Boolean(
-  selectedActivity.value?.billable
-  && currentMember.value?.defaultHourlyRateMinor === null
-  && selectedProject.value?.personRates[week.value?.userId ?? ''] === undefined
-))
-const selectedProjectNeedsTariff = computed(() => Boolean(
-  selectedProject.value
-  && currentMember.value?.defaultHourlyRateMinor === null
-  && selectedProject.value.personRates[week.value?.userId ?? ''] === undefined
-  && activities.value.some(activity => activity.active && activity.billable && selectedProject.value?.activityTypeIds.includes(activity.id))
-))
-const workspaceStructureIncomplete = computed(() => data.value
-  ? !(
-      data.value.setupStatus.hasClient
-      && data.value.setupStatus.hasActiveActivity
-      && data.value.setupStatus.hasConfiguredProject
+const runningEntry = computed(() => week.value?.entries.find((entry) => entry.timerStartedAt) ?? null)
+const editable = computed(
+  () => Boolean(data.value?.canEnterTime) && ['DRAFT', 'REJECTED'].includes(week.value?.status ?? '')
+)
+const currentMember = computed(() => data.value?.team.find((member) => member.id === week.value?.userId))
+const selectedActivity = computed(() => activities.value.find((activity) => activity.id === form.activityTypeId))
+const selectedProject = computed(() => projects.value.find((project) => project.id === form.projectId))
+const tariffMissing = computed(() =>
+  Boolean(
+    selectedActivity.value?.billable &&
+    currentMember.value?.defaultHourlyRateMinor === null &&
+    selectedProject.value?.personRates[week.value?.userId ?? ''] === undefined
+  )
+)
+const selectedProjectNeedsTariff = computed(() =>
+  Boolean(
+    selectedProject.value &&
+    currentMember.value?.defaultHourlyRateMinor === null &&
+    selectedProject.value.personRates[week.value?.userId ?? ''] === undefined &&
+    activities.value.some(
+      (activity) => activity.active && activity.billable && selectedProject.value?.activityTypeIds.includes(activity.id)
     )
-  : false)
-const memberDefaultTariffMissing = computed(() => Boolean(
-  !isOrganizationAdmin.value
-  && data.value?.canEnterTime
-  && !workspaceStructureIncomplete.value
-  && currentMember.value?.defaultHourlyRateMinor === null
-  && data.value.setupStatus.billableWorkExists
-))
+  )
+)
+const workspaceStructureIncomplete = computed(() =>
+  data.value
+    ? !(
+        data.value.setupStatus.hasClient &&
+        data.value.setupStatus.hasActiveActivity &&
+        data.value.setupStatus.hasConfiguredProject
+      )
+    : false
+)
+const memberDefaultTariffMissing = computed(() =>
+  Boolean(
+    !isOrganizationAdmin.value &&
+    data.value?.canEnterTime &&
+    !workspaceStructureIncomplete.value &&
+    currentMember.value?.defaultHourlyRateMinor === null &&
+    data.value.setupStatus.billableWorkExists
+  )
+)
 const weekDays = computed(() => {
-  if (!week.value) return []
+  if (!week.value) {
+    return []
+  }
   return Array.from({ length: 7 }, (_, index) => {
     const date = addDays(parseISO(week.value!.weekStartsOn), index)
     return { value: format(date, 'yyyy-MM-dd'), label: format(date, 'EEE'), day: format(date, 'd') }
   })
 })
-const selectedDayEntries = computed(() => (week.value?.entries ?? [])
-  .filter(entry => entry.entryDate === selectedDay.value)
-  .map(entry => {
-    const project = projects.value.find(item => item.id === entry.projectId)
-    const activity = activities.value.find(item => item.id === entry.activityTypeId)
-    return {
-      ...entry,
-      clientName: project?.clientName ?? '',
-      projectName: project?.name ?? '',
-      activityName: activity?.name ?? ''
-    }
-  }))
+const selectedDayEntries = computed(() =>
+  (week.value?.entries ?? [])
+    .filter((entry) => entry.entryDate === selectedDay.value)
+    .map((entry) => {
+      const project = projects.value.find((item) => item.id === entry.projectId)
+      const activity = activities.value.find((item) => item.id === entry.activityTypeId)
+      return {
+        ...entry,
+        clientName: project?.clientName ?? '',
+        projectName: project?.name ?? '',
+        activityName: activity?.name ?? ''
+      }
+    })
+)
 const selectedDayTotal = computed(() => totalForDate(selectedDay.value))
 
-watch(weekDays, (days) => {
-  if (!days.length || days.some(day => day.value === selectedDay.value)) return
-  selectedDay.value = days.find(day => day.value === currentDate.value)?.value ?? days[0]!.value
-}, { immediate: true })
+watch(
+  weekDays,
+  (days) => {
+    if (!days.length || days.some((day) => day.value === selectedDay.value)) {
+      return
+    }
+    selectedDay.value = days.find((day) => day.value === currentDate.value)?.value ?? days[0]!.value
+  },
+  { immediate: true }
+)
 
 const form = reactive({
   id: null as string | null,
@@ -129,73 +160,84 @@ const form = reactive({
   minutes: 0,
   note: ''
 })
-const entrySchema = computed(() => z.object({
-  id: z.string().nullable(),
-  projectId: z.string().min(1, t('features.timesheets.validation.required')),
-  activityTypeId: z.string().min(1, t('features.timesheets.validation.required')),
-  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
-  hours: z.number().int().min(0).max(24, t('features.timesheets.validation.hoursRange')),
-  minutes: z.number().int().min(0).max(59, t('features.timesheets.validation.minutesRange')),
-  note: z.string().trim().max(2000)
-}).refine(value => value.hours * 60 + value.minutes > 0, {
-  message: t('features.timesheets.validation.positiveDuration'),
-  path: ['hours']
-}).refine(value => value.hours * 60 + value.minutes <= 24 * 60, {
-  message: t('features.timesheets.validation.maximumDuration'),
-  path: ['hours']
-}))
-const timerSchema = computed(() => z.object({
-  id: z.string().nullable(),
-  projectId: z.string().min(1, t('features.timesheets.validation.required')),
-  activityTypeId: z.string().min(1, t('features.timesheets.validation.required')),
-  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
-  note: z.string().trim().max(2000)
-}))
+const entrySchema = computed(() =>
+  z
+    .object({
+      id: z.string().nullable(),
+      projectId: z.string().min(1, t('features.timesheets.validation.required')),
+      activityTypeId: z.string().min(1, t('features.timesheets.validation.required')),
+      entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
+      hours: z.number().int().min(0).max(24, t('features.timesheets.validation.hoursRange')),
+      minutes: z.number().int().min(0).max(59, t('features.timesheets.validation.minutesRange')),
+      note: z.string().trim().max(2000)
+    })
+    .refine((value) => value.hours * 60 + value.minutes > 0, {
+      message: t('features.timesheets.validation.positiveDuration'),
+      path: ['hours']
+    })
+    .refine((value) => value.hours * 60 + value.minutes <= 24 * 60, {
+      message: t('features.timesheets.validation.maximumDuration'),
+      path: ['hours']
+    })
+)
+const timerSchema = computed(() =>
+  z.object({
+    id: z.string().nullable(),
+    projectId: z.string().min(1, t('features.timesheets.validation.required')),
+    activityTypeId: z.string().min(1, t('features.timesheets.validation.required')),
+    entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
+    note: z.string().trim().max(2000)
+  })
+)
 
 const activityOptions = computed(() => {
-  const selected = projects.value.find(project => project.id === form.projectId)
+  const selected = projects.value.find((project) => project.id === form.projectId)
   return activities.value
-    .filter(activity => selected?.activityTypeIds.includes(activity.id))
+    .filter((activity) => selected?.activityTypeIds.includes(activity.id))
     .map((activity) => {
-      const lacksTariff = activity.billable
-        && currentMember.value?.defaultHourlyRateMinor === null
-        && selected?.personRates[week.value?.userId ?? ''] === undefined
+      const lacksTariff =
+        activity.billable &&
+        currentMember.value?.defaultHourlyRateMinor === null &&
+        selected?.personRates[week.value?.userId ?? ''] === undefined
       return {
-        label: `${activity.name}${activity.billable ? lacksTariff ? ` · ${t('features.timesheets.tariffMissingShort')}` : '' : ` · ${t('features.timesheets.nonBillable')}`}`,
+        label: `${activity.name}${activity.billable ? (lacksTariff ? ` · ${t('features.timesheets.tariffMissingShort')}` : '') : ` · ${t('features.timesheets.nonBillable')}`}`,
         value: activity.id,
         disabled: lacksTariff
       }
     })
 })
 
-const projectOptions = computed(() => projects.value.map(project => ({
-  label: `${project.clientName} · ${project.name}`,
-  value: project.id
-})))
+const projectOptions = computed(() =>
+  projects.value.map((project) => ({
+    label: `${project.clientName} · ${project.name}`,
+    value: project.id
+  }))
+)
 
-const totalForDate = (date: string) => week.value?.entries
-  .filter(entry => entry.entryDate === date)
-  .reduce((sum, entry) => sum + entry.durationMinutes, 0) ?? 0
+const totalForDate = (date: string) =>
+  week.value?.entries
+    .filter((entry) => entry.entryDate === date)
+    .reduce((sum, entry) => sum + entry.durationMinutes, 0) ?? 0
 
-const totalMinutes = computed(() => week.value?.entries.reduce(
-  (sum, entry) => sum + entry.durationMinutes,
-  0
-) ?? 0)
+const totalMinutes = computed(() => week.value?.entries.reduce((sum, entry) => sum + entry.durationMinutes, 0) ?? 0)
 
 const groupedRows = computed(() => {
-  const groups = new Map<string, {
-    projectId: string
-    activityTypeId: string
-    clientName: string
-    projectName: string
-    activityName: string
-    label: string
-    entries: TimeEntryDto[]
-  }>()
+  const groups = new Map<
+    string,
+    {
+      projectId: string
+      activityTypeId: string
+      clientName: string
+      projectName: string
+      activityName: string
+      label: string
+      entries: TimeEntryDto[]
+    }
+  >()
   for (const entry of week.value?.entries ?? []) {
     const key = `${entry.projectId}:${entry.activityTypeId}`
-    const selectedProject = projects.value.find(project => project.id === entry.projectId)
-    const activity = activities.value.find(item => item.id === entry.activityTypeId)
+    const selectedProject = projects.value.find((project) => project.id === entry.projectId)
+    const activity = activities.value.find((item) => item.id === entry.activityTypeId)
     if (!groups.has(key)) {
       groups.set(key, {
         projectId: entry.projectId,
@@ -218,15 +260,13 @@ const selectedCell = ref<{
 } | null>(null)
 
 const formatDuration = (minutes: number) => {
-  if (!minutes) return '—'
+  if (!minutes) {
+    return '—'
+  }
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 }
 
-const openCreate = (
-  date = format(new Date(), 'yyyy-MM-dd'),
-  projectId?: string,
-  activityTypeId?: string
-) => {
+const openCreate = (date = format(new Date(), 'yyyy-MM-dd'), projectId?: string, activityTypeId?: string) => {
   const remembered = lastReusableEntryContext.value
   Object.assign(form, {
     id: null,
@@ -255,7 +295,7 @@ const openEdit = (entry: TimeEntryDto) => {
 }
 
 const openRowCell = (row: (typeof groupedRows.value)[number], date: string) => {
-  const entries = row.entries.filter(item => item.entryDate === date)
+  const entries = row.entries.filter((item) => item.entryDate === date)
   if (entries.length) {
     selectedCell.value = { row, date, entries }
     cellEntriesOpen.value = true
@@ -266,7 +306,7 @@ const openRowCell = (row: (typeof groupedRows.value)[number], date: string) => {
 }
 
 const openDayCell = (date: string) => {
-  const entries = (week.value?.entries ?? []).filter(entry => entry.entryDate === date)
+  const entries = (week.value?.entries ?? []).filter((entry) => entry.entryDate === date)
   if (entries.length) {
     selectedCell.value = { date, entries }
     cellEntriesOpen.value = true
@@ -277,14 +317,16 @@ const openDayCell = (date: string) => {
 }
 
 const addToSelectedCell = () => {
-  if (!selectedCell.value) return
+  if (!selectedCell.value) {
+    return
+  }
   const { row, date } = selectedCell.value
   cellEntriesOpen.value = false
   openCreate(date, row?.projectId, row?.activityTypeId)
 }
 
-const entryProject = (entry: TimeEntryDto) => projects.value.find(project => project.id === entry.projectId)
-const entryActivity = (entry: TimeEntryDto) => activities.value.find(activity => activity.id === entry.activityTypeId)
+const entryProject = (entry: TimeEntryDto) => projects.value.find((project) => project.id === entry.projectId)
+const entryActivity = (entry: TimeEntryDto) => activities.value.find((activity) => activity.id === entry.activityTypeId)
 
 const saveEntry = async () => {
   saving.value = true
@@ -296,8 +338,11 @@ const saveEntry = async () => {
       durationMinutes: Number(form.hours) * 60 + Number(form.minutes),
       note: form.note || null
     }
-    if (form.id) await timesheets.updateEntry(form.id, payload)
-    else await timesheets.createEntry(payload)
+    if (form.id) {
+      await timesheets.updateEntry(form.id, payload)
+    } else {
+      await timesheets.createEntry(payload)
+    }
     rememberedEntryContext.value = {
       projectId: form.projectId,
       activityTypeId: form.activityTypeId
@@ -312,7 +357,9 @@ const saveEntry = async () => {
 }
 
 const removeEntry = async () => {
-  if (!form.id) return
+  if (!form.id) {
+    return
+  }
   saving.value = true
   try {
     await timesheets.deleteEntry(form.id)
@@ -371,7 +418,9 @@ const stopTimer = async () => {
 }
 
 const submit = async () => {
-  if (!week.value) return
+  if (!week.value) {
+    return
+  }
   try {
     await timesheets.submitWeek(week.value.id)
     await refresh()
@@ -387,11 +436,15 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (timerInterval !== undefined) window.clearInterval(timerInterval)
+  if (timerInterval !== undefined) {
+    window.clearInterval(timerInterval)
+  }
 })
 
 const runningDuration = computed(() => {
-  if (!runningEntry.value?.timerStartedAt) return ''
+  if (!runningEntry.value?.timerStartedAt) {
+    return ''
+  }
   const seconds = Math.floor((now.value - new Date(runningEntry.value.timerStartedAt).getTime()) / 1000)
   return `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 })
@@ -409,11 +462,27 @@ const runningDuration = computed(() => {
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <UButton icon="i-lucide-chevron-left" color="neutral" variant="outline" :aria-label="t('features.timesheets.previousWeek')" @click="changeWeek(-1)" />
+        <UButton
+          icon="i-lucide-chevron-left"
+          color="neutral"
+          variant="outline"
+          :aria-label="t('features.timesheets.previousWeek')"
+          @click="changeWeek(-1)"
+        />
         <UBadge color="neutral" variant="subtle" size="lg">
-          {{ week ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}` : '—' }}
+          {{
+            week
+              ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}`
+              : '—'
+          }}
         </UBadge>
-        <UButton icon="i-lucide-chevron-right" color="neutral" variant="outline" :aria-label="t('features.timesheets.nextWeek')" @click="changeWeek(1)" />
+        <UButton
+          icon="i-lucide-chevron-right"
+          color="neutral"
+          variant="outline"
+          :aria-label="t('features.timesheets.nextWeek')"
+          @click="changeWeek(1)"
+        />
         <UTooltip v-if="!runningEntry" class="ml-auto sm:hidden" :text="t('features.timesheets.timer.start')">
           <UButton
             class="size-11 justify-center rounded-full p-0"
@@ -426,7 +495,14 @@ const runningDuration = computed(() => {
             @click="openTimer"
           />
         </UTooltip>
-        <UButton v-if="!runningEntry" class="hidden sm:ml-auto sm:inline-flex" icon="i-lucide-timer" color="success" :disabled="!editable" @click="openTimer">
+        <UButton
+          v-if="!runningEntry"
+          class="hidden sm:ml-auto sm:inline-flex"
+          icon="i-lucide-timer"
+          color="success"
+          :disabled="!editable"
+          @click="openTimer"
+        >
           {{ t('features.timesheets.timer.start') }}
         </UButton>
       </div>
@@ -437,10 +513,26 @@ const runningDuration = computed(() => {
       color="error"
       icon="i-lucide-message-square-warning"
       :title="t('features.timesheets.status.rejected')"
-      :description="week.rejectionComment ?? undefined" variant="outline" />
+      :description="week.rejectionComment ?? undefined"
+      variant="outline"
+    />
 
-    <UAlert v-if="data && !data.canEnterTime" color="warning" icon="i-lucide-clock-alert" :title="t('features.timesheets.errors.entryDisabledTitle')" :description="t('features.timesheets.errors.entryDisabled')" variant="outline" />
-    <UAlert v-else-if="memberDefaultTariffMissing" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.memberTariffMissingTitle')" :description="t('features.timesheets.errors.memberTariffMissingDescription')" variant="outline" />
+    <UAlert
+      v-if="data && !data.canEnterTime"
+      color="warning"
+      icon="i-lucide-clock-alert"
+      :title="t('features.timesheets.errors.entryDisabledTitle')"
+      :description="t('features.timesheets.errors.entryDisabled')"
+      variant="outline"
+    />
+    <UAlert
+      v-else-if="memberDefaultTariffMissing"
+      color="warning"
+      icon="i-lucide-badge-alert"
+      :title="t('features.timesheets.errors.memberTariffMissingTitle')"
+      :description="t('features.timesheets.errors.memberTariffMissingDescription')"
+      variant="outline"
+    />
 
     <UCard v-if="runningEntry" class="timesheet-timer">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -449,8 +541,8 @@ const runningDuration = computed(() => {
             {{ t('features.timesheets.timer.running') }}
           </p>
           <p class="truncate font-medium">
-            {{ projects.find(item => item.id === runningEntry?.projectId)?.name }} ·
-            {{ activities.find(item => item.id === runningEntry?.activityTypeId)?.name }}
+            {{ projects.find((item) => item.id === runningEntry?.projectId)?.name }} ·
+            {{ activities.find((item) => item.id === runningEntry?.activityTypeId)?.name }}
           </p>
         </div>
         <div class="flex items-center gap-3">
@@ -504,15 +596,21 @@ const runningDuration = computed(() => {
               :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
               @click="openRowCell(row, day.value)"
             >
-              <span>{{ formatDuration(row.entries.filter(entry => entry.entryDate === day.value).reduce((sum, entry) => sum + entry.durationMinutes, 0)) }}</span>
+              <span>{{
+                formatDuration(
+                  row.entries
+                    .filter((entry) => entry.entryDate === day.value)
+                    .reduce((sum, entry) => sum + entry.durationMinutes, 0)
+                )
+              }}</span>
               <UBadge
-                v-if="row.entries.filter(entry => entry.entryDate === day.value).length > 1"
+                v-if="row.entries.filter((entry) => entry.entryDate === day.value).length > 1"
                 class="ml-1"
                 color="neutral"
                 variant="subtle"
                 size="sm"
               >
-                {{ row.entries.filter(entry => entry.entryDate === day.value).length }}
+                {{ row.entries.filter((entry) => entry.entryDate === day.value).length }}
               </UBadge>
             </button>
             <div class="timesheet-grid__cell text-right font-semibold">
@@ -521,13 +619,7 @@ const runningDuration = computed(() => {
           </template>
 
           <div class="timesheet-grid__cell">
-            <UButton
-              v-if="editable"
-              size="sm"
-              variant="ghost"
-              icon="i-lucide-plus"
-              @click="openCreate()"
-            >
+            <UButton v-if="editable" size="sm" variant="ghost" icon="i-lucide-plus" @click="openCreate()">
               {{ t('features.timesheets.addEntry') }}
             </UButton>
           </div>
@@ -562,7 +654,10 @@ const runningDuration = computed(() => {
             type="button"
             role="tab"
             class="timesheet-mobile__day"
-            :class="{ 'timesheet-mobile__day--active': selectedDay === day.value, 'timesheet-mobile__day--weekend': index > 4 }"
+            :class="{
+              'timesheet-mobile__day--active': selectedDay === day.value,
+              'timesheet-mobile__day--weekend': index > 4
+            }"
             :aria-selected="selectedDay === day.value"
             @click="selectedDay = day.value"
           >
@@ -575,7 +670,8 @@ const runningDuration = computed(() => {
         <div class="timesheet-mobile__summary">
           <div>
             <p class="timesheet-mobile__date">
-              {{ weekDays.find(day => day.value === selectedDay)?.label }} {{ weekDays.find(day => day.value === selectedDay)?.day }}
+              {{ weekDays.find((day) => day.value === selectedDay)?.label }}
+              {{ weekDays.find((day) => day.value === selectedDay)?.day }}
             </p>
             <p class="text-sm text-muted">
               {{ t('features.timesheets.mobile.entryCount', selectedDayEntries.length) }}
@@ -633,7 +729,13 @@ const runningDuration = computed(() => {
         {{ t(`features.timesheets.status.${(week?.status ?? 'DRAFT').toLowerCase()}`) }}
       </UBadge>
       <div class="ml-auto flex items-center gap-3">
-        <UButton v-if="editable" icon="i-lucide-send" size="sm" :disabled="!totalMinutes || !!runningEntry" @click="submit">
+        <UButton
+          v-if="editable"
+          icon="i-lucide-send"
+          size="sm"
+          :disabled="!totalMinutes || !!runningEntry"
+          @click="submit"
+        >
           {{ t('features.timesheets.submit') }}
         </UButton>
         <div class="text-right">
@@ -647,18 +749,51 @@ const runningDuration = computed(() => {
       </div>
     </footer>
 
-    <UModal v-model:open="modalOpen" :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')">
+    <UModal
+      v-model:open="modalOpen"
+      :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')"
+    >
       <template #body>
-        <UAlert v-if="!isOrganizationAdmin && workspaceStructureIncomplete" color="warning" icon="i-lucide-hourglass" :title="t('features.timesheets.setup.waitingTitle')" :description="t('features.timesheets.setup.waitingDescription')" variant="outline" />
+        <UAlert
+          v-if="!isOrganizationAdmin && workspaceStructureIncomplete"
+          color="warning"
+          icon="i-lucide-hourglass"
+          :title="t('features.timesheets.setup.waitingTitle')"
+          :description="t('features.timesheets.setup.waitingDescription')"
+          variant="outline"
+        />
         <UForm v-else :state="form" :schema="entrySchema" class="space-y-4" @submit="saveEntry">
           <UFormField name="projectId" :label="t('features.timesheets.fields.project')" required>
-            <USelect v-model="form.projectId" :items="projectOptions" value-key="value" class="w-full" @update:model-value="form.activityTypeId = ''" />
+            <USelect
+              v-model="form.projectId"
+              :items="projectOptions"
+              value-key="value"
+              class="w-full"
+              @update:model-value="form.activityTypeId = ''"
+            />
           </UFormField>
           <UFormField name="activityTypeId" :label="t('features.timesheets.fields.activity')" required>
             <USelect v-model="form.activityTypeId" :items="activityOptions" value-key="value" class="w-full" />
           </UFormField>
-          <UAlert v-if="selectedProjectNeedsTariff" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.tariffRequiredTitle')" :description="t(isOrganizationAdmin ? 'features.timesheets.errors.tariffRequiredAdmin' : 'features.timesheets.errors.tariffRequiredMember')" variant="outline">
-            <template v-if="isOrganizationAdmin" #actions><UButton to="/admin/timesheets/rates" size="sm" color="warning">{{ t('features.timesheets.errors.configureRates') }}</UButton></template>
+          <UAlert
+            v-if="selectedProjectNeedsTariff"
+            color="warning"
+            icon="i-lucide-badge-alert"
+            :title="t('features.timesheets.errors.tariffRequiredTitle')"
+            :description="
+              t(
+                isOrganizationAdmin
+                  ? 'features.timesheets.errors.tariffRequiredAdmin'
+                  : 'features.timesheets.errors.tariffRequiredMember'
+              )
+            "
+            variant="outline"
+          >
+            <template v-if="isOrganizationAdmin" #actions>
+              <UButton to="/admin/timesheets/rates" size="sm" color="warning">
+                {{ t('features.timesheets.errors.configureRates') }}
+              </UButton>
+            </template>
           </UAlert>
           <UFormField name="entryDate" :label="t('features.timesheets.fields.date')" required>
             <UInput v-model="form.entryDate" type="date" class="w-full" />
@@ -675,7 +810,14 @@ const runningDuration = computed(() => {
             <UTextarea v-model="form.note" :rows="3" class="w-full" />
           </UFormField>
           <div class="flex justify-between gap-3">
-            <UButton v-if="form.id" type="button" color="error" variant="ghost" icon="i-lucide-trash-2" @click="removeEntry">
+            <UButton
+              v-if="form.id"
+              type="button"
+              color="error"
+              variant="ghost"
+              icon="i-lucide-trash-2"
+              @click="removeEntry"
+            >
               {{ t('features.timesheets.delete') }}
             </UButton>
             <div class="ml-auto flex gap-2">
@@ -733,16 +875,46 @@ const runningDuration = computed(() => {
 
     <UModal v-model:open="timerModalOpen" :title="t('features.timesheets.timer.start')">
       <template #body>
-        <UAlert v-if="!isOrganizationAdmin && workspaceStructureIncomplete" color="warning" icon="i-lucide-hourglass" :title="t('features.timesheets.setup.waitingTitle')" :description="t('features.timesheets.setup.waitingDescription')" variant="outline" />
+        <UAlert
+          v-if="!isOrganizationAdmin && workspaceStructureIncomplete"
+          color="warning"
+          icon="i-lucide-hourglass"
+          :title="t('features.timesheets.setup.waitingTitle')"
+          :description="t('features.timesheets.setup.waitingDescription')"
+          variant="outline"
+        />
         <UForm v-else :state="form" :schema="timerSchema" class="space-y-4" @submit="startTimer">
           <UFormField name="projectId" :label="t('features.timesheets.fields.project')" required>
-            <USelect v-model="form.projectId" :items="projectOptions" value-key="value" class="w-full" @update:model-value="form.activityTypeId = ''" />
+            <USelect
+              v-model="form.projectId"
+              :items="projectOptions"
+              value-key="value"
+              class="w-full"
+              @update:model-value="form.activityTypeId = ''"
+            />
           </UFormField>
           <UFormField name="activityTypeId" :label="t('features.timesheets.fields.activity')" required>
             <USelect v-model="form.activityTypeId" :items="activityOptions" value-key="value" class="w-full" />
           </UFormField>
-          <UAlert v-if="selectedProjectNeedsTariff" color="warning" icon="i-lucide-badge-alert" :title="t('features.timesheets.errors.tariffRequiredTitle')" :description="t(isOrganizationAdmin ? 'features.timesheets.errors.tariffRequiredAdmin' : 'features.timesheets.errors.tariffRequiredMember')" variant="outline">
-            <template v-if="isOrganizationAdmin" #actions><UButton to="/admin/timesheets/rates" size="sm" color="warning">{{ t('features.timesheets.errors.configureRates') }}</UButton></template>
+          <UAlert
+            v-if="selectedProjectNeedsTariff"
+            color="warning"
+            icon="i-lucide-badge-alert"
+            :title="t('features.timesheets.errors.tariffRequiredTitle')"
+            :description="
+              t(
+                isOrganizationAdmin
+                  ? 'features.timesheets.errors.tariffRequiredAdmin'
+                  : 'features.timesheets.errors.tariffRequiredMember'
+              )
+            "
+            variant="outline"
+          >
+            <template v-if="isOrganizationAdmin" #actions>
+              <UButton to="/admin/timesheets/rates" size="sm" color="warning">
+                {{ t('features.timesheets.errors.configureRates') }}
+              </UButton>
+            </template>
           </UAlert>
           <UFormField name="note" :label="t('features.timesheets.fields.note')">
             <UInput v-model="form.note" class="w-full" />

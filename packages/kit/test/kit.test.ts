@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { assertCompatiblePortalVersions, definePortalConfig, localPortalLayer, sortPortalManifests } from '../src/runtime.mjs'
+import {
+  assertCompatiblePortalVersions,
+  definePortalConfig,
+  localPortalLayer,
+  sortPortalManifests
+} from '../src/runtime.mjs'
 
 test('portal config exposes Nuxt layer sources without losing provider metadata', () => {
   const local = localPortalLayer({
@@ -32,32 +37,49 @@ test('provider manifests sort dependencies before consumers', () => {
     { id: 'ui', version: '1.0.0', source: 'ui', dependsOn: ['core'] },
     { id: 'core', version: '1.0.0', source: 'core', dependsOn: [] }
   ])
-  assert.deepEqual(ordered.map(provider => provider.id), ['core', 'ui', 'feature'])
+  assert.deepEqual(
+    ordered.map((provider) => provider.id),
+    ['core', 'ui', 'feature']
+  )
 })
 
 test('provider validation rejects duplicate IDs, missing dependencies, and cycles', () => {
   const provider = { id: 'core', version: '1.0.0', source: 'core', dependsOn: [] }
   assert.throws(() => sortPortalManifests([provider, provider]), /Duplicate provider id/)
   assert.throws(() => sortPortalManifests([{ ...provider, id: 'feature', dependsOn: ['missing'] }]), /missing provider/)
-  assert.throws(() => sortPortalManifests([
-    { ...provider, id: 'one', dependsOn: ['two'] },
-    { ...provider, id: 'two', dependsOn: ['one'] }
-  ]), /dependency cycle/)
-  assert.throws(() => sortPortalManifests([
-    { ...provider, id: 'acme-billing' },
-    { ...provider, id: 'acme_billing' }
-  ]), /same migration journal/)
+  assert.throws(
+    () =>
+      sortPortalManifests([
+        { ...provider, id: 'one', dependsOn: ['two'] },
+        { ...provider, id: 'two', dependsOn: ['one'] }
+      ]),
+    /dependency cycle/
+  )
+  assert.throws(
+    () =>
+      sortPortalManifests([
+        { ...provider, id: 'acme-billing' },
+        { ...provider, id: 'acme_billing' }
+      ]),
+    /same migration journal/
+  )
 })
 
 test('manifest resolution rejects mixed official package versions', () => {
-  assert.throws(() => assertCompatiblePortalVersions([
-    { id: 'core', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/core', dependsOn: [] },
-    { id: 'ui', version: '0.2.0-alpha.0', source: '@nuxt-customer-portal/ui', dependsOn: ['core'] }
-  ]), /Incompatible official package versions/)
-  assert.doesNotThrow(() => assertCompatiblePortalVersions([
-    { id: 'core', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/core', dependsOn: [] },
-    { id: 'local', version: '9.0.0', source: './layers/local', dependsOn: ['core'] }
-  ]))
+  assert.throws(
+    () =>
+      assertCompatiblePortalVersions([
+        { id: 'core', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/core', dependsOn: [] },
+        { id: 'ui', version: '0.2.0-alpha.0', source: '@nuxt-customer-portal/ui', dependsOn: ['core'] }
+      ]),
+    /Incompatible official package versions/
+  )
+  assert.doesNotThrow(() =>
+    assertCompatiblePortalVersions([
+      { id: 'core', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/core', dependsOn: [] },
+      { id: 'local', version: '9.0.0', source: './layers/local', dependsOn: ['core'] }
+    ])
+  )
 })
 
 test('provider terminology is used by client migration and provider seeding', async () => {

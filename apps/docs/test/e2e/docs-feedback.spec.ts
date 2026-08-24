@@ -58,7 +58,7 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   await page.goto('/contributing/distribute-a-layer')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Distribute a feature layer' })).toBeVisible()
-  await expect(page.getByText('Official layers use Nuxt\'s npm-layer model', { exact: false })).toBeVisible()
+  await expect(page.getByText("Official layers use Nuxt's npm-layer model", { exact: false })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Package contract' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
     'href',
@@ -145,7 +145,9 @@ test('configuration journey exposes the required production auth secret', async 
 
   await page.goto('/getting-started/installation')
   await expect(page.getByText('openssl rand -base64 32', { exact: false }).first()).toBeVisible()
-  await expect(page.getByText('BETTER_AUTH_SECRET=<paste-the-generated-secret>', { exact: false }).first()).toBeVisible()
+  await expect(
+    page.getByText('BETTER_AUTH_SECRET=<paste-the-generated-secret>', { exact: false }).first()
+  ).toBeVisible()
 
   await page.setViewportSize({ width: 375, height: 812 })
   const installationWidth = await page.evaluate(() => ({

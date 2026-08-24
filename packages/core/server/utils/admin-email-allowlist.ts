@@ -1,8 +1,10 @@
 export function parseSystemAdminEmails(value: string | undefined) {
-  return new Set((value || '')
-    .split(',')
-    .map(email => email.trim().toLowerCase())
-    .filter(Boolean))
+  return new Set(
+    (value || '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean)
+  )
 }
 
 export function isSystemAdminEmail(email: string | null | undefined, allowlist: ReadonlySet<string>) {

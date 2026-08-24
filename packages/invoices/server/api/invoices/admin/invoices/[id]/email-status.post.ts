@@ -5,17 +5,14 @@ import { refreshInvoiceEmailStatuses } from '@nuxt-customer-portal/invoices/serv
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdEmailStatusPost',
+    operationId: 'invoicesAdminInvoicesByIdEmailStatusPost',
     summary: 'Refresh invoice email delivery status',
-    description: 'Refresh invoice email delivery status. Scoped to the active organization and the applicable Invoices permission.'
+    description:
+      'Refresh invoice email delivery status. Scoped to the active organization and the applicable Invoices permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return refreshInvoiceEmailStatuses(
-    organizationId,
-    getRouterParam(event, 'id')!,
-    getQuery(event).refresh === '1'
-  )
+  return refreshInvoiceEmailStatuses(organizationId, getRouterParam(event, 'id')!, getQuery(event).refresh === '1')
 })

@@ -27,9 +27,15 @@ test('adds query parameters and JSON request bodies from validation schemas', ()
   const list = document.paths?.['/api/package/items']?.get
   const create = document.paths?.['/api/package/items']?.post
   const remove = document.paths?.['/api/package/items/{id}']?.delete
-  assert.ok((list?.parameters as unknown[]).some(parameter => (parameter as { name: string }).name === 'page'))
-  assert.deepEqual((create?.requestBody as { content: Record<string, unknown> }).content['application/json'] !== undefined, true)
-  assert.deepEqual((remove?.requestBody as { content: Record<string, unknown> }).content['application/json'] !== undefined, true)
+  assert.ok((list?.parameters as unknown[]).some((parameter) => (parameter as { name: string }).name === 'page'))
+  assert.deepEqual(
+    (create?.requestBody as { content: Record<string, unknown> }).content['application/json'] !== undefined,
+    true
+  )
+  assert.deepEqual(
+    (remove?.requestBody as { content: Record<string, unknown> }).content['application/json'] !== undefined,
+    true
+  )
 })
 
 test('documents invoice attachment uploads as multipart form data', () => {

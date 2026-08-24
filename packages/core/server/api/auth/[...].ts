@@ -3,10 +3,11 @@ import { toWebRequest } from 'h3'
 
 defineRouteMeta({
   openAPI: {
-    'tags': ['Authentication'],
-    'operationId': 'generalAuthAllAll',
-    'summary': 'Handle an authentication request',
-    'description': 'Better Auth catch-all transport. Concrete authentication routes are documented separately from Better Auth’s generated OpenAPI contract.',
+    tags: ['Authentication'],
+    operationId: 'generalAuthAllAll',
+    summary: 'Handle an authentication request',
+    description:
+      'Better Auth catch-all transport. Concrete authentication routes are documented separately from Better Auth’s generated OpenAPI contract.',
     'x-scalar-ignore': true
   }
 })

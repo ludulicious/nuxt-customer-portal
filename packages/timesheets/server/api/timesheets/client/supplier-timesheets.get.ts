@@ -4,7 +4,14 @@ import { listClientSupplierTimesheetsPage } from '@nuxt-customer-portal/timeshee
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId, organizationType, role } = await requireActiveOrganizationRole(event)
-  if (organizationType !== 'CLIENT') throw createError({ statusCode: 403, message: 'Supplier timesheets are only available to client organizations' })
+  if (organizationType !== 'CLIENT') {
+    throw createError({ statusCode: 403, message: 'Supplier timesheets are only available to client organizations' })
+  }
   const isAdmin = role === 'owner' || role === 'admin' || session.user.role === 'admin'
-  return listClientSupplierTimesheetsPage(organizationId, session.user.id, isAdmin, clientSupplierTimesheetListQuerySchema.parse(getQuery(event)))
+  return listClientSupplierTimesheetsPage(
+    organizationId,
+    session.user.id,
+    isAdmin,
+    clientSupplierTimesheetListQuerySchema.parse(getQuery(event))
+  )
 })

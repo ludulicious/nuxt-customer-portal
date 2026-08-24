@@ -28,7 +28,9 @@ export default defineNitroPlugin(() => {
     owner: 'timesheets',
     query: {
       timesheetsBootstrapGet: weekQuerySchema,
-      timesheetsAdminBootstrapGet: z.object({ section: z.enum(['approvals', 'clients', 'projects', 'activities', 'rates', 'settings', 'reports']).optional() }),
+      timesheetsAdminBootstrapGet: z.object({
+        section: z.enum(['approvals', 'clients', 'projects', 'activities', 'rates', 'settings', 'reports']).optional()
+      }),
       timesheetsAdminActivitiesGet: activityListQuerySchema,
       timesheetsAdminClientsGet: clientListQuerySchema,
       timesheetsAdminProjectsGet: projectListQuerySchema,

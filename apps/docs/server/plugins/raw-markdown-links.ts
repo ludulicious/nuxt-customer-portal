@@ -1,7 +1,9 @@
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('llms:generate', (_event, options) => {
     for (const section of options.sections) {
-      if (section.contentCollection !== 'docs') continue
+      if (section.contentCollection !== 'docs') {
+        continue
+      }
 
       section.links = section.links?.map((link) => {
         const url = new URL(link.href)

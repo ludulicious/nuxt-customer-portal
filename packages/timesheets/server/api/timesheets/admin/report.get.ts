@@ -6,18 +6,14 @@ import { reportQuerySchema } from '@nuxt-customer-portal/timesheets/server/utils
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminReportGet',
+    operationId: 'timesheetsAdminReportGet',
     summary: 'Get a timesheets report',
     description: 'Get a timesheets report. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'report'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'report')
   const rawQuery = getQuery(event)
   const format = rawQuery.format
   const report = await getReport(organizationId, reportQuerySchema.parse(rawQuery))

@@ -51,12 +51,7 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
   if (search && search.trim()) {
     const searchPattern = `%${search.trim()}%`
     const users = await baseQuery
-      .where(
-        or(
-          ilike(userTable.name, searchPattern),
-          ilike(userTable.email, searchPattern)
-        )
-      )
+      .where(or(ilike(userTable.name, searchPattern), ilike(userTable.email, searchPattern)))
       .orderBy(userTable.createdAt)
     return users as AdminUsersResponse
   }

@@ -22,7 +22,9 @@ const sessions = ref<UserSession[]>([])
 const revokingSession = ref<string | null>(null)
 
 const loadUserSessions = async () => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   try {
     loadingSessions.value = true
@@ -54,7 +56,9 @@ const isSessionExpired = (expiresAt: Date | string) => {
 }
 
 const isCurrentSession = (session: UserSession): boolean => {
-  if (!currentSession.value) return false
+  if (!currentSession.value) {
+    return false
+  }
   // Get session ID and token from getSession() result
   const sessionId = currentSession.value.id
   const token = currentSession.value?.token
@@ -74,7 +78,7 @@ const isCurrentSession = (session: UserSession): boolean => {
 
 const revokeSession = async (sessionToken: string) => {
   // Find the session being revoked
-  const sessionToRevoke = sessions.value.find(s => s.token === sessionToken)
+  const sessionToRevoke = sessions.value.find((s) => s.token === sessionToken)
 
   // Prevent revoking current session
   if (sessionToRevoke && isCurrentSession(sessionToRevoke)) {
@@ -117,7 +121,9 @@ const revokeSession = async (sessionToken: string) => {
 }
 
 const revokeAllSessions = async () => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   // Prevent revoking all sessions if it includes the current session
   if (currentUser.value && currentUser.value.id === props.user.id && currentSession.value?.token) {
@@ -203,14 +209,30 @@ const revokeAllSessions = async () => {
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2">
                 <UBadge :color="isSessionExpired(session.expiresAt) ? 'error' : 'success'" variant="soft" size="xs">
-                  {{ isSessionExpired(session.expiresAt) ? t('admin.user.sessions.expired') : t('admin.user.sessions.active') }}
+                  {{
+                    isSessionExpired(session.expiresAt)
+                      ? t('admin.user.sessions.expired')
+                      : t('admin.user.sessions.active')
+                  }}
                 </UBadge>
               </div>
               <div class="text-sm">
-                <div><strong>{{ t('admin.user.sessions.ipAddress') }}:</strong> {{ session.ipAddress || t('admin.user.list.notAvailable') }}</div>
-                <div><strong>{{ t('admin.user.sessions.userAgent') }}:</strong> {{ session.userAgent || t('admin.user.list.notAvailable') }}</div>
-                <div><strong>{{ t('admin.user.sessions.createdAt') }}:</strong> {{ new Date(session.createdAt).toLocaleString(locale) }}</div>
-                <div><strong>{{ t('admin.user.sessions.expiresAt') }}:</strong> {{ new Date(session.expiresAt).toLocaleString(locale) }}</div>
+                <div>
+                  <strong>{{ t('admin.user.sessions.ipAddress') }}:</strong>
+                  {{ session.ipAddress || t('admin.user.list.notAvailable') }}
+                </div>
+                <div>
+                  <strong>{{ t('admin.user.sessions.userAgent') }}:</strong>
+                  {{ session.userAgent || t('admin.user.list.notAvailable') }}
+                </div>
+                <div>
+                  <strong>{{ t('admin.user.sessions.createdAt') }}:</strong>
+                  {{ new Date(session.createdAt).toLocaleString(locale) }}
+                </div>
+                <div>
+                  <strong>{{ t('admin.user.sessions.expiresAt') }}:</strong>
+                  {{ new Date(session.expiresAt).toLocaleString(locale) }}
+                </div>
               </div>
             </div>
             <template v-if="isCurrentSession(session)">

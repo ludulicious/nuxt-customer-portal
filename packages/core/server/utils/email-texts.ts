@@ -92,7 +92,8 @@ export function getDeleteAccountEmailContent(params: DeleteAccountEmailParams) {
         `,
       action_url: deletionLink,
       action_text: 'Delete Account',
-      footer_text: 'If you did not request to delete your account, please ignore this email and your account will remain active.'
+      footer_text:
+        'If you did not request to delete your account, please ignore this email and your account will remain active.'
     }
   }
 }

@@ -4,10 +4,10 @@
  * honest: pass (46) · chrome: pass (47) · tokens: pass (48) · icons: pass (30)
  * responsive: pass (49) · mobile: pass (34, 49, 50–57)
  */
-@import "@fontsource-variable/space-grotesk";
-@import "./tokens.css";
-@import "tailwindcss";
-@import "@nuxt/ui";
+@import '@fontsource-variable/space-grotesk';
+@import './tokens.css';
+@import 'tailwindcss';
+@import '@nuxt/ui';
 
 @source "../../../content/**/*";
 
@@ -487,10 +487,10 @@ main code:not(pre code) {
   opacity: 0.82;
 }
 
-.workflow-stage[aria-disabled="true"],
-.marketing-link[aria-disabled="true"],
-.contributor-path[aria-disabled="true"],
-.technology-list a[aria-disabled="true"] {
+.workflow-stage[aria-disabled='true'],
+.marketing-link[aria-disabled='true'],
+.contributor-path[aria-disabled='true'],
+.technology-list a[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.55;
   pointer-events: none;

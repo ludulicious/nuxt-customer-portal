@@ -18,6 +18,12 @@
     "sharp": "^0.34.5",
     "zod": "^4.4.3"
   },
-  "peerDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" },
-  "devDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" }
+  "peerDependencies": {
+    "nuxt": "^4.5.1",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "nuxt": "^4.5.1",
+    "vue": "^3.5.0"
+  }
 }

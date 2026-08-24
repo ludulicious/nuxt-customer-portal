@@ -5,5 +5,8 @@ import { billingContactCreateSchema } from '@nuxt-customer-portal/invoices/serve
 
 export default defineEventHandler(async (event) => {
   await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return createBillingContact(getRouterParam(event, 'clientId')!, billingContactCreateSchema.parse(await readBody(event)))
+  return createBillingContact(
+    getRouterParam(event, 'clientId')!,
+    billingContactCreateSchema.parse(await readBody(event))
+  )
 })

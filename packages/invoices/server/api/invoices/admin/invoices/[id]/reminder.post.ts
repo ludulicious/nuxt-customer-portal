@@ -6,7 +6,7 @@ import { invoiceEmailDeliverySchema } from '@nuxt-customer-portal/invoices/serve
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdReminderPost',
+    operationId: 'invoicesAdminInvoicesByIdReminderPost',
     summary: 'Send an invoice reminder',
     description: 'Send an invoice reminder. Scoped to the active organization and the applicable Invoices permission.'
   }

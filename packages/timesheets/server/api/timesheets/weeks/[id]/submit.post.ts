@@ -5,17 +5,13 @@ import { submitWeek } from '@nuxt-customer-portal/timesheets/server/utils/timesh
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsWeeksByIdSubmitPost',
+    operationId: 'timesheetsWeeksByIdSubmitPost',
     summary: 'Submit a timesheet week',
     description: 'Submit a timesheet week. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'submit'
-  )
+  const { session, organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'submit')
   return submitWeek(organizationId, session.user.id, getRouterParam(event, 'id')!)
 })

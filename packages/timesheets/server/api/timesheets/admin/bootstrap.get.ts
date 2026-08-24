@@ -13,33 +13,28 @@ import {
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminBootstrapGet',
+    operationId: 'timesheetsAdminBootstrapGet',
     summary: 'Get timesheets administration data',
-    description: 'Get timesheets administration data. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Get timesheets administration data. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId, session } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId, session } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const section = String(getQuery(event).section ?? '')
   const settings = await ensureSettings(organizationId)
-  const [clients, availableClientOrganizations, projects, activities, team, approvals, setupStatus] = await Promise.all([
-    section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
-    listAvailableClientOrganizations(
-      organizationId,
-      session.user.id,
-      session.user.role === 'admin'
-    ),
-    section === 'projects' ? Promise.resolve([]) : listProjects(organizationId),
-    section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
-    listTeam(organizationId),
-    Promise.resolve([]),
-    getTimesheetsSetupStatus(organizationId)
-  ])
+  const [clients, availableClientOrganizations, projects, activities, team, approvals, setupStatus] = await Promise.all(
+    [
+      section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
+      listAvailableClientOrganizations(organizationId, session.user.id, session.user.role === 'admin'),
+      section === 'projects' ? Promise.resolve([]) : listProjects(organizationId),
+      section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
+      listTeam(organizationId),
+      Promise.resolve([]),
+      getTimesheetsSetupStatus(organizationId)
+    ]
+  )
   return {
     settings: {
       currency: settings.currency,

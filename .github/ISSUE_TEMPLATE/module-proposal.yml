@@ -1,6 +1,6 @@
 name: Reusable layer proposal
 description: Propose a portable business capability as a new Customer Portal feature layer.
-title: "Module proposal: "
+title: 'Module proposal: '
 body:
   - type: markdown
     attributes:

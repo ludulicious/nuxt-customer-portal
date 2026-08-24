@@ -5,7 +5,7 @@ import { getInvoice } from '@nuxt-customer-portal/invoices/server/utils/invoice-
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdGet',
+    operationId: 'invoicesAdminInvoicesByIdGet',
     summary: 'Get an invoice',
     description: 'Get an invoice. Scoped to the active organization and the applicable Invoices permission.'
   }

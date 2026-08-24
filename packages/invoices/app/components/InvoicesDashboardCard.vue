@@ -11,6 +11,16 @@ const total = computed(() => data.value?.pagination.total ?? 0)
 
 <template>
   <UCard>
-    <div class="flex items-center justify-between gap-4"><div><p class="text-sm text-muted">{{ t(sales ? 'features.invoices.salesInvoices' : 'features.invoices.receivedInvoices') }}</p><p class="mt-1 text-3xl font-semibold">{{ pending ? '…' : total }}</p></div><UButton :to="sales ? '/admin/invoices' : '/invoices'" variant="outline" icon="i-lucide-arrow-right">{{ t('features.invoices.dashboard.open') }}</UButton></div>
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <p class="text-sm text-muted">
+          {{ t(sales ? 'features.invoices.salesInvoices' : 'features.invoices.receivedInvoices') }}
+        </p>
+        <p class="mt-1 text-3xl font-semibold">{{ pending ? '…' : total }}</p>
+      </div>
+      <UButton :to="sales ? '/admin/invoices' : '/invoices'" variant="outline" icon="i-lucide-arrow-right">
+        {{ t('features.invoices.dashboard.open') }}
+      </UButton>
+    </div>
   </UCard>
 </template>

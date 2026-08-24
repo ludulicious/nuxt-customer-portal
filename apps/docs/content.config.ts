@@ -15,12 +15,16 @@ export default defineContentConfig({
       schema: z.object({
         rawbody: z.string(),
         githubPath: z.string().optional(),
-        links: z.array(z.object({
-          label: z.string(),
-          icon: z.string(),
-          to: z.string(),
-          target: z.string().optional()
-        })).optional()
+        links: z
+          .array(
+            z.object({
+              label: z.string(),
+              icon: z.string(),
+              to: z.string(),
+              target: z.string().optional()
+            })
+          )
+          .optional()
       })
     })
   }

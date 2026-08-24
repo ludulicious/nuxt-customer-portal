@@ -10,17 +10,21 @@ useSeoMeta({
   title: () => t('settings.security')
 })
 
-const passwordSchema = z.object({
-  currentPassword: z.string()
-    .min(1, t('security.password.validation.currentPasswordRequired'))
-    .min(8, t('login.validation.passwordMinLength')),
-  newPassword: z.string()
-    .min(1, t('security.password.validation.newPasswordRequired'))
-    .min(8, t('login.validation.passwordMinLength'))
-}).refine((data) => data.currentPassword !== data.newPassword, {
-  message: t('security.password.validation.passwordsMustBeDifferent'),
-  path: ['newPassword']
-})
+const passwordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, t('security.password.validation.currentPasswordRequired'))
+      .min(8, t('login.validation.passwordMinLength')),
+    newPassword: z
+      .string()
+      .min(1, t('security.password.validation.newPasswordRequired'))
+      .min(8, t('login.validation.passwordMinLength'))
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: t('security.password.validation.passwordsMustBeDifferent'),
+    path: ['newPassword']
+  })
 
 type PasswordSchema = z.output<typeof passwordSchema>
 
@@ -104,72 +108,79 @@ const handleDeleteError = (message: string) => {
 
 <template>
   <div>
-  <AppCard v-if="changePasswordAllowed"
-    :title="t('security.password.title')"
-    :description="t('security.password.description')"
-  >
-    <UForm
-      :schema="passwordSchema"
-      :state="password"
-      :validate="validate"
-      class="flex flex-col gap-4 max-w-xs"
-      @submit="handleSubmit"
+    <AppCard
+      v-if="changePasswordAllowed"
+      :title="t('security.password.title')"
+      :description="t('security.password.description')"
     >
-      <UFormField :name="'currentPassword'" :label="t('security.password.currentPassword')">
-        <UInput
-          v-model="password.currentPassword"
-          type="password"
-          :placeholder="t('security.password.currentPasswordPlaceholder')"
-          class="w-full"
+      <UForm
+        :schema="passwordSchema"
+        :state="password"
+        :validate="validate"
+        class="flex flex-col gap-4 max-w-xs"
+        @submit="handleSubmit"
+      >
+        <UFormField :name="'currentPassword'" :label="t('security.password.currentPassword')">
+          <UInput
+            v-model="password.currentPassword"
+            type="password"
+            :placeholder="t('security.password.currentPasswordPlaceholder')"
+            class="w-full"
+            :disabled="isLoading"
+          />
+        </UFormField>
+
+        <UFormField :name="'newPassword'" :label="t('security.password.newPassword')">
+          <UInput
+            v-model="password.newPassword"
+            type="password"
+            :placeholder="t('security.password.newPasswordPlaceholder')"
+            class="w-full"
+            :disabled="isLoading"
+          />
+        </UFormField>
+
+        <UButton
+          :label="t('security.password.updateButton')"
+          class="w-fit"
+          type="submit"
+          :loading="isLoading"
           :disabled="isLoading"
         />
-      </UFormField>
+      </UForm>
+    </AppCard>
 
-      <UFormField :name="'newPassword'" :label="t('security.password.newPassword')">
-        <UInput
-          v-model="password.newPassword"
-          type="password"
-          :placeholder="t('security.password.newPasswordPlaceholder')"
-          class="w-full"
-          :disabled="isLoading"
-        />
-      </UFormField>
-
-      <UButton
-        :label="t('security.password.updateButton')"
-        class="w-fit"
-        type="submit"
-        :loading="isLoading"
-        :disabled="isLoading"
-      />
-    </UForm>
-  </AppCard>
-
-  <UCard
-    :title="t('security.account.title')"
-    :description="t('security.account.description')"
-    class="bg-linear-to-tl from-error/10 from-5% to-default mt-8"
-    variant="subtle"
-  >
-  <template #header>
-      <div>
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ t('security.account.title') }}
-        </h2>
-        <h6 class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('security.account.description') }}
-        </h6>
-      </div>
-    </template>
-    <template #footer>
-      <UButton
-        :label="t('security.account.deleteButton')"
-        :disabled="isDeleteRequested"
-        color="error"
-        @click="showDeleteModal = true"
-      />
+    <UCard
+      :title="t('security.account.title')"
+      :description="t('security.account.description')"
+      class="bg-linear-to-tl from-error/10 from-5% to-default mt-8"
+      variant="subtle"
+    >
+      <template #header>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            {{ t('security.account.title') }}
+          </h2>
+          <h6 class="text-sm text-gray-600 dark:text-gray-400">
+            {{ t('security.account.description') }}
+          </h6>
+        </div>
       </template>
-      <UAlert v-if="isDeleteRequested" color="warning" :title="t('security.account.deleteRequested')" :description="t('security.account.deleteRequestedDescription')" variant="outline" />
+      <template #footer>
+        <UButton
+          :label="t('security.account.deleteButton')"
+          :disabled="isDeleteRequested"
+          color="error"
+          @click="showDeleteModal = true"
+        />
+      </template>
+      <UAlert
+        v-if="isDeleteRequested"
+        color="warning"
+        :title="t('security.account.deleteRequested')"
+        :description="t('security.account.deleteRequestedDescription')"
+        variant="outline"
+      />
     </UCard>
 
     <!-- Delete Account Modal -->

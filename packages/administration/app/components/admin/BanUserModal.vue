@@ -18,24 +18,41 @@ const { t } = useI18n()
 const toast = useToast()
 
 // Ban form schema
-const banSchema = computed(() => z.object({
-  reason: z.string().optional(),
-  expiresInDays: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
-    if (val === '' || val === undefined) return undefined
-    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
-    return isNaN(num) ? undefined : num
-  }).optional(),
-  expiresInHours: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
-    if (val === '' || val === undefined) return undefined
-    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
-    return isNaN(num) ? undefined : num
-  }).optional(),
-  expiresInMinutes: z.union([z.string(), z.number(), z.undefined()]).transform((val) => {
-    if (val === '' || val === undefined) return undefined
-    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
-    return isNaN(num) ? undefined : num
-  }).optional()
-}))
+const banSchema = computed(() =>
+  z.object({
+    reason: z.string().optional(),
+    expiresInDays: z
+      .union([z.string(), z.number(), z.undefined()])
+      .transform((val) => {
+        if (val === '' || val === undefined) {
+          return undefined
+        }
+        const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
+        return isNaN(num) ? undefined : num
+      })
+      .optional(),
+    expiresInHours: z
+      .union([z.string(), z.number(), z.undefined()])
+      .transform((val) => {
+        if (val === '' || val === undefined) {
+          return undefined
+        }
+        const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
+        return isNaN(num) ? undefined : num
+      })
+      .optional(),
+    expiresInMinutes: z
+      .union([z.string(), z.number(), z.undefined()])
+      .transform((val) => {
+        if (val === '' || val === undefined) {
+          return undefined
+        }
+        const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
+        return isNaN(num) ? undefined : num
+      })
+      .optional()
+  })
+)
 
 type BanSchema = z.input<typeof banSchema.value>
 
@@ -48,7 +65,9 @@ const banForm = reactive<BanSchema>({
 })
 
 const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.value>>) => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   // Prevent banning admin users (safety check)
   if (props.user.role === 'admin') {
@@ -68,7 +87,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
     const minutes = event.data.expiresInMinutes ?? 0
 
     if (days > 0 || hours > 0 || minutes > 0) {
-      banExpiresIn = (days * 24 * 60 * 60) + (hours * 60 * 60) + (minutes * 60)
+      banExpiresIn = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60
     }
 
     const { error: banError } = await authClient.admin.banUser({
@@ -109,11 +128,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
         </p>
 
         <UFormField name="reason" :label="t('admin.user.ban.reason')">
-          <UTextarea
-            v-model="banForm.reason"
-            :placeholder="t('admin.user.ban.reasonPlaceholder')"
-            class="w-full"
-          />
+          <UTextarea v-model="banForm.reason" :placeholder="t('admin.user.ban.reasonPlaceholder')" class="w-full" />
         </UFormField>
 
         <div>

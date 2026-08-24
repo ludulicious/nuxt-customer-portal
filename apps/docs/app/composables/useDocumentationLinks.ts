@@ -15,13 +15,15 @@ export function useDocumentationLinks(options: DocumentationLinkOptions) {
   const markdownPath = computed(() => `${siteUrl.value}/raw${route.path}.md`)
   const editPageUrl = computed(() => {
     const githubPath = toValue(options.githubPath)
-    if (!githubPath) return undefined
+    if (!githubPath) {
+      return undefined
+    }
 
     return `${config.public.docsRepositoryUrl}/edit/${config.public.docsRepositoryBranch}/${githubPath}`
   })
-  const sourceRevisionUrl = computed(() => (
-    `${config.public.productRepositoryUrl}/commit/${config.public.productSourceCommit}`
-  ))
+  const sourceRevisionUrl = computed(
+    () => `${config.public.productRepositoryUrl}/commit/${config.public.productSourceCommit}`
+  )
   const sourceRevisionLabel = computed(() => config.public.productSourceCommit.slice(0, 7))
   const reportPageUrl = computed(() => {
     const title = toValue(options.title) || route.path

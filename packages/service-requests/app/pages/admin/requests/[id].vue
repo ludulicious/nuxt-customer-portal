@@ -48,7 +48,9 @@ const userOptions = [
 onMounted(async () => {
   try {
     request.value = await $fetch(`/api/service-requests/${requestId}`)
-    if (!request.value) return
+    if (!request.value) {
+      return
+    }
     adminUpdates.status = request.value.status
     adminUpdates.priority = request.value.priority
     adminUpdates.assignedToId = request.value.assignedToId || ''
@@ -86,7 +88,6 @@ const handleUpdate = async () => {
 const handleQuickUpdate = () => {
   handleUpdate()
 }
-
 </script>
 
 <template>
@@ -110,27 +111,15 @@ const handleQuickUpdate = () => {
 
         <div class="space-y-4">
           <UFormField :label="t('features.serviceRequests.fields.status')">
-            <USelect
-              v-model="adminUpdates.status"
-              :options="statusOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.status" :options="statusOptions" @change="handleQuickUpdate" />
           </UFormField>
 
           <UFormField :label="t('features.serviceRequests.fields.priority')">
-            <USelect
-              v-model="adminUpdates.priority"
-              :options="priorityOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.priority" :options="priorityOptions" @change="handleQuickUpdate" />
           </UFormField>
 
           <UFormField :label="t('features.serviceRequests.fields.assignedTo')">
-            <USelect
-              v-model="adminUpdates.assignedToId"
-              :options="userOptions"
-              @change="handleQuickUpdate"
-            />
+            <USelect v-model="adminUpdates.assignedToId" :options="userOptions" @change="handleQuickUpdate" />
           </UFormField>
 
           <UFormField :label="t('features.serviceRequests.fields.internalNotes')">

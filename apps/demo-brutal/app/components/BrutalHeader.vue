@@ -6,7 +6,7 @@ const emit = defineEmits<{ toggleSidebar: [] }>()
 const { t, locale, setLocale } = useI18n()
 const userStore = useUserStore()
 const { currentUser, activeOrganization } = storeToRefs(userStore)
-const currentLocale = computed({ get: () => locale.value, set: value => setLocale(value) })
+const currentLocale = computed({ get: () => locale.value, set: (value) => setLocale(value) })
 const showOrgSwitcher = ref(false)
 </script>
 
@@ -23,19 +23,29 @@ const showOrgSwitcher = ref(false)
         :aria-label="sidebarOpen ? 'Close navigation' : 'Open navigation'"
         @click="emit('toggleSidebar')"
       />
-      <NuxtLink to="/" class="brutal-wordmark">BRUTAL<br>WORKS</NuxtLink>
+      <NuxtLink to="/" class="brutal-wordmark">BRUTAL<br />WORKS</NuxtLink>
     </div>
     <div class="brutal-header-context">
       <button v-if="activeOrganization" type="button" class="brutal-organization" @click="showOrgSwitcher = true">
         <span>{{ activeOrganization.name }}</span>
         <UIcon name="i-lucide-arrow-left-right" class="size-4" />
       </button>
-      <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="brutal-desktop-control" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
+      <ULocaleSelect
+        v-model="currentLocale"
+        :locales="[en, nl]"
+        class="brutal-desktop-control"
+        :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
+      />
       <UColorModeButton class="brutal-desktop-control" />
-      <div class="brutal-account"><span>{{ currentUser?.name || 'GUEST' }}</span><AppUserMenu /></div>
+      <div class="brutal-account">
+        <span>{{ currentUser?.name || 'GUEST' }}</span
+        ><AppUserMenu />
+      </div>
     </div>
     <UModal v-model:open="showOrgSwitcher" :title="t('menu.switchOrganization')">
-      <template #body><OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcher = false" /></template>
+      <template #body
+        ><OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcher = false"
+      /></template>
     </UModal>
   </header>
 </template>

@@ -16,7 +16,9 @@ export default defineAppConfig({
     selectMenu: { slots: { base: 'brutal-input', content: 'brutal-overlay-surface', item: 'brutal-menu-item' } },
     skeleton: { base: 'brutal-skeleton' },
     slideover: { slots: { content: 'brutal-overlay-surface', overlay: 'brutal-overlay' } },
-    table: { slots: { root: 'brutal-table', thead: 'brutal-table-head', th: 'brutal-table-heading', tr: 'brutal-table-row' } },
+    table: {
+      slots: { root: 'brutal-table', thead: 'brutal-table-head', th: 'brutal-table-heading', tr: 'brutal-table-row' }
+    },
     tabs: { slots: { list: 'brutal-tabs-list', trigger: 'brutal-tabs-trigger', indicator: 'brutal-tabs-indicator' } },
     textarea: { slots: { base: 'brutal-input' } },
     toast: { slots: { root: 'brutal-toast' } },

@@ -6,13 +6,19 @@ import { invoicePaymentSchema } from '@nuxt-customer-portal/invoices/server/util
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdPaymentsPost',
+    operationId: 'invoicesAdminInvoicesByIdPaymentsPost',
     summary: 'Register an invoice payment',
-    description: 'Register an invoice payment. Scoped to the active organization and the applicable Invoices permission.'
+    description:
+      'Register an invoice payment. Scoped to the active organization and the applicable Invoices permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
   const { organizationId, session } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
-  return registerInvoicePayment(organizationId, session.user.id, getRouterParam(event, 'id')!, invoicePaymentSchema.parse(await readBody(event)))
+  return registerInvoicePayment(
+    organizationId,
+    session.user.id,
+    getRouterParam(event, 'id')!,
+    invoicePaymentSchema.parse(await readBody(event))
+  )
 })

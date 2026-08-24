@@ -3,8 +3,22 @@ import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/
 export const accountOrganizationsFeature: PortalFeatureDefinition = {
   id: 'organizations',
   navigation: [
-    { id: 'my-organizations', labelKey: 'myOrganizations.title', icon: 'i-lucide-building', to: '/my-organizations', audiences: ['authenticated'], order: 80 },
-    { id: 'settings', labelKey: 'menu.settings.title', icon: 'i-lucide-settings', to: '/settings', audiences: ['authenticated'], order: 90 }
+    {
+      id: 'my-organizations',
+      labelKey: 'myOrganizations.title',
+      icon: 'i-lucide-building',
+      to: '/my-organizations',
+      audiences: ['authenticated'],
+      order: 80
+    },
+    {
+      id: 'settings',
+      labelKey: 'menu.settings.title',
+      icon: 'i-lucide-settings',
+      to: '/settings',
+      audiences: ['authenticated'],
+      order: 90
+    }
   ],
   policy: { owner: [], admin: [], member: [] }
 }

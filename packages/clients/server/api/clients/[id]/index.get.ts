@@ -5,6 +5,8 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   await requireClientProfileManager(event, id)
   const selected = await getClient(id)
-  if (!selected) throw createError({ statusCode: 404, message: 'Client not found' })
+  if (!selected) {
+    throw createError({ statusCode: 404, message: 'Client not found' })
+  }
   return selected
 })

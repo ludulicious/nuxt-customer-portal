@@ -36,19 +36,10 @@ const formatDate = (date: string | Date) => {
       </div>
 
       <div class="flex gap-2">
-        <UButton
-          v-if="canEdit"
-          variant="ghost"
-          @click="$emit('edit')"
-        >
+        <UButton v-if="canEdit" variant="ghost" @click="$emit('edit')">
           {{ t('features.serviceRequests.edit') }}
         </UButton>
-        <UButton
-          v-if="canDelete"
-          variant="ghost"
-          color="error"
-          @click="$emit('delete')"
-        >
+        <UButton v-if="canDelete" variant="ghost" color="error" @click="$emit('delete')">
           {{ t('features.serviceRequests.delete') }}
         </UButton>
       </div>

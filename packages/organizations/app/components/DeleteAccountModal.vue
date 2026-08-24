@@ -23,8 +23,7 @@ const passwordSchema = computed(() => {
     return z.object({})
   }
   return z.object({
-    password: z.string()
-      .min(1, t('security.account.delete.passwordRequired'))
+    password: z.string().min(1, t('security.account.delete.passwordRequired'))
   })
 })
 
@@ -38,7 +37,7 @@ const handleDelete = async (event?: FormSubmitEvent<PasswordSchema>) => {
   isLoading.value = true
 
   try {
-    type DeleteParams = { password?: string, callbackURL?: string }
+    type DeleteParams = { password?: string; callbackURL?: string }
     const deleteParams: DeleteParams = {
       callbackURL: '/'
     }
@@ -99,11 +98,21 @@ const handleCancel = () => {
           {{ t('security.account.delete.confirmMessage') }}
         </p>
 
-        <UForm v-if="requiresPassword" :schema="passwordSchema" :state="passwordForm as unknown as PasswordSchema"
-          class="space-y-4" @submit="handleDelete">
+        <UForm
+          v-if="requiresPassword"
+          :schema="passwordSchema"
+          :state="passwordForm as unknown as PasswordSchema"
+          class="space-y-4"
+          @submit="handleDelete"
+        >
           <UFormField name="password" :label="t('security.account.delete.passwordRequired')">
-            <UInput v-model="passwordForm.password" type="password"
-              :placeholder="t('security.account.delete.passwordPlaceholder')" class="w-full" :disabled="isLoading" />
+            <UInput
+              v-model="passwordForm.password"
+              type="password"
+              :placeholder="t('security.account.delete.passwordPlaceholder')"
+              class="w-full"
+              :disabled="isLoading"
+            />
           </UFormField>
 
           <div class="flex gap-4 justify-end pt-4">

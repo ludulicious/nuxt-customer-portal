@@ -6,5 +6,9 @@ import { clientAccessUpdateSchema } from '@nuxt-customer-portal/timesheets/serve
 export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const body = await readBody(event)
-  return updateClientAccess(organizationId, getRouterParam(event, 'id')!, clientAccessUpdateSchema.parse(body).accessMode)
+  return updateClientAccess(
+    organizationId,
+    getRouterParam(event, 'id')!,
+    clientAccessUpdateSchema.parse(body).accessMode
+  )
 })

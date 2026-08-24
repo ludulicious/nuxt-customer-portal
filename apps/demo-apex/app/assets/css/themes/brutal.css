@@ -101,7 +101,9 @@ html[data-portal-theme='brutal'] :where([class*='card'], [data-variant='subtle']
   border-color: var(--color-rule);
   border-radius: var(--radius-flat);
   box-shadow: none;
-  transition: border-color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 html[data-portal-theme='brutal'] :where([class*='card']):hover {
@@ -117,27 +119,35 @@ html[data-portal-theme='brutal'] :where([class*='border-gray-200'], [class*='bor
   border-color: var(--color-rule-muted) !important;
 }
 
-html[data-portal-theme='brutal'] :where([class*='text-gray-600'], [class*='text-slate-600'], [class*='dark:text-gray-400']) {
+html[data-portal-theme='brutal']
+  :where([class*='text-gray-600'], [class*='text-slate-600'], [class*='dark:text-gray-400']) {
   color: var(--color-muted) !important;
 }
 
-html[data-portal-theme='brutal'] :where([class*='text-gray-900'], [class*='text-slate-900'], [class*='dark:text-white']) {
+html[data-portal-theme='brutal']
+  :where([class*='text-gray-900'], [class*='text-slate-900'], [class*='dark:text-white']) {
   color: var(--color-ink) !important;
 }
 
-html[data-portal-theme='brutal'] :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']) {
+html[data-portal-theme='brutal']
+  :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']) {
   box-shadow: var(--shadow-hard-small);
-  transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  html[data-portal-theme='brutal'] :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):hover {
+  html[data-portal-theme='brutal']
+    :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):hover {
     box-shadow: var(--shadow-hard-small);
     transform: translate(-1px, -1px);
   }
 }
 
-html[data-portal-theme='brutal'] :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):active {
+html[data-portal-theme='brutal']
+  :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):active {
   box-shadow: none;
   transform: translate(1px, 1px);
 }
@@ -151,7 +161,10 @@ html[data-portal-theme='brutal'] .brutal-button {
   letter-spacing: 0.035em;
   text-transform: uppercase;
   white-space: nowrap;
-  transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 html[data-portal-theme='brutal'] .brutal-button:active {
@@ -174,7 +187,9 @@ html[data-portal-theme='brutal'] .brutal-input {
   background: var(--color-paper);
   outline: 2px solid transparent;
   outline-offset: 1px;
-  transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -395,11 +410,12 @@ html[data-portal-theme='brutal'] .main-fade-enter-active::before {
   background: none;
 }
 
-html[data-portal-theme='brutal']:not(.dark) :where(
-  .fixed.inset-0.z-50:not([role='dialog']),
-  [data-headlessui-state].fixed.inset-0:not([role='dialog']),
-  [role='dialog'] ~ .fixed.inset-0
-) {
+html[data-portal-theme='brutal']:not(.dark)
+  :where(
+    .fixed.inset-0.z-50:not([role='dialog']),
+    [data-headlessui-state].fixed.inset-0:not([role='dialog']),
+    [role='dialog'] ~ .fixed.inset-0
+  ) {
   background: var(--color-overlay) !important;
   backdrop-filter: none !important;
 }

@@ -4,7 +4,8 @@ import { documentationDefaults } from '../../../shared/documentation'
 
 export default defineMcpTool({
   title: 'Find Customer Portal documentation',
-  description: 'Find source-backed Customer Portal guides about setup, architecture, modules, product workflows, and contributing.',
+  description:
+    'Find source-backed Customer Portal guides about setup, architecture, modules, product workflows, and contributing.',
   tags: ['documentation', 'customer-portal', 'read-only'],
   annotations: {
     readOnlyHint: true,
@@ -13,7 +14,10 @@ export default defineMcpTool({
     openWorldHint: false
   },
   inputSchema: {
-    query: z.string().default('').describe('Words describing the task or Customer Portal topic. Leave empty to list the documentation.'),
+    query: z
+      .string()
+      .default('')
+      .describe('Words describing the task or Customer Portal topic. Leave empty to list the documentation.'),
     limit: z.number().int().min(1).max(20).default(8)
   },
   inputExamples: [

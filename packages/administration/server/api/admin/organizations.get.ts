@@ -9,7 +9,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsGet',
     summary: 'List organizations',
-    description: 'List organizations. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'List organizations. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -26,10 +27,7 @@ export default defineEventHandler(async (event): Promise<AdminOrganizationsRespo
   }
 
   // Get all organizations with member counts
-  const organizations = await db
-    .select()
-    .from(organizationTable)
-    .orderBy(organizationTable.createdAt)
+  const organizations = await db.select().from(organizationTable).orderBy(organizationTable.createdAt)
 
   return organizations as AdminOrganizationsResponse
 })

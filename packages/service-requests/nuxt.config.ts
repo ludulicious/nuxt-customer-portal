@@ -4,10 +4,12 @@ export default defineNuxtConfig({
   $meta: { name: 'nuxt-customer-portal-service-requests' },
   compatibilityDate: '2025-10-24',
   modules: ['@nuxtjs/i18n'],
-  components: [{
-    path: fileURLToPath(new URL('./app/components', import.meta.url)),
-    global: true
-  }],
+  components: [
+    {
+      path: fileURLToPath(new URL('./app/components', import.meta.url)),
+      global: true
+    }
+  ],
   i18n: {
     locales: [
       {

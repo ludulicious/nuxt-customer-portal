@@ -10,10 +10,12 @@ export const useAdminServiceRequests = () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const pagination = ref({ total: 0, page: 1, pageSize: 20, pageCount: 0 })
-  const stats = computed(() => requests.value.reduce<Record<string, number>>((result, request) => {
-    result[request.status] = (result[request.status] ?? 0) + 1
-    return result
-  }, {}))
+  const stats = computed(() =>
+    requests.value.reduce<Record<string, number>>((result, request) => {
+      result[request.status] = (result[request.status] ?? 0) + 1
+      return result
+    }, {})
+  )
 
   const fetchAllRequests = async (filters: ServiceRequestFilters = {}) => {
     loading.value = true
@@ -35,8 +37,10 @@ export const useAdminServiceRequests = () => {
       method: 'PATCH',
       body: data
     })
-    const index = requests.value.findIndex(request => request.id === id)
-    if (index >= 0) requests.value[index] = updated
+    const index = requests.value.findIndex((request) => request.id === id)
+    if (index >= 0) {
+      requests.value[index] = updated
+    }
     return updated
   }
 

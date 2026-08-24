@@ -3,8 +3,16 @@ export type ProjectStatus = 'ACTIVE' | 'ARCHIVED'
 export type ClientAccessMode = 'DISABLED' | 'VIEW' | 'REVIEW'
 export type ClientReviewStatus = 'PENDING' | 'APPROVED' | 'DISPUTED'
 
-export interface TimesheetsListPagination { total: number, page: number, pageSize: number, pageCount: number }
-export interface TimesheetsListResponse<T> { items: T[], pagination: TimesheetsListPagination }
+export interface TimesheetsListPagination {
+  total: number
+  page: number
+  pageSize: number
+  pageCount: number
+}
+export interface TimesheetsListResponse<T> {
+  items: T[]
+  pagination: TimesheetsListPagination
+}
 
 export interface TimesheetSettingsDto {
   currency: string
@@ -58,12 +66,53 @@ export interface ClientDto {
   accessMode: ClientAccessMode
 }
 
-export interface ClientWorkspaceDto { id: string, workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode, canReview: boolean, canManageReviewers: boolean }
-export interface ClientReviewerDto { id: string, name: string, email: string, role: string, assigned: boolean, fixedAccess: boolean }
-export interface ClientTimesheetEntryDto { id: string, date: string, project: string, person: string, activity: string, minutes: number, note: string | null }
-export interface ClientTimesheetHistoryDto { id: string, action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT', actorName: string, comment: string | null, createdAt: string }
-export interface ClientTimesheetSliceDto { weeklyTimesheetId: string, weekStartsOn: string, person: string, status: ClientReviewStatus, version: number, comment: string | null, reviewedAt: string | null, entries: ClientTimesheetEntryDto[], history: ClientTimesheetHistoryDto[] }
-export interface ClientTimesheetsDto { workspace: ClientWorkspaceDto, slices: ClientTimesheetSliceDto[] }
+export interface ClientWorkspaceDto {
+  id: string
+  workspaceOrganizationId: string
+  workspaceName: string
+  accessMode: ClientAccessMode
+  canReview: boolean
+  canManageReviewers: boolean
+}
+export interface ClientReviewerDto {
+  id: string
+  name: string
+  email: string
+  role: string
+  assigned: boolean
+  fixedAccess: boolean
+}
+export interface ClientTimesheetEntryDto {
+  id: string
+  date: string
+  project: string
+  person: string
+  activity: string
+  minutes: number
+  note: string | null
+}
+export interface ClientTimesheetHistoryDto {
+  id: string
+  action: 'SUBMITTED' | 'APPROVED_INTERNAL' | 'REOPENED' | 'APPROVED_CLIENT' | 'DISPUTED_CLIENT'
+  actorName: string
+  comment: string | null
+  createdAt: string
+}
+export interface ClientTimesheetSliceDto {
+  weeklyTimesheetId: string
+  weekStartsOn: string
+  person: string
+  status: ClientReviewStatus
+  version: number
+  comment: string | null
+  reviewedAt: string | null
+  entries: ClientTimesheetEntryDto[]
+  history: ClientTimesheetHistoryDto[]
+}
+export interface ClientTimesheetsDto {
+  workspace: ClientWorkspaceDto
+  slices: ClientTimesheetSliceDto[]
+}
 export interface ClientApprovalItemDto {
   id: string
   workspaceClientId: string
@@ -98,8 +147,10 @@ export interface ClientReviewerSupplierDto extends ClientWorkspaceDto {
   pendingCount: number
   reviewerCount: number
 }
-export interface ClientApprovalSupplierOptionDto { id: string, name: string }
-
+export interface ClientApprovalSupplierOptionDto {
+  id: string
+  name: string
+}
 
 export interface ClientOrganizationOptionDto {
   id: string
@@ -181,10 +232,29 @@ export interface TimesheetCapabilitiesDto {
 }
 
 export interface TimesheetsDashboardDto {
-  myWeek?: { weekStartsOn: string, status: TimesheetStatus, totalMinutes: number, rejectionComment: string | null, hasRunningTimer: boolean }
-  internalApprovals?: { pendingCount: number, items: Array<Pick<ApprovalQueueItemDto, 'id' | 'userName' | 'weekStartsOn' | 'totalMinutes' | 'submittedAt' | 'status'>> }
-  clientApprovals?: { pendingCount: number, unassignedSupplierCount: number, items: Array<Pick<ClientApprovalItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>> }
-  supplierTimesheets?: { items: Array<Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>> }
+  myWeek?: {
+    weekStartsOn: string
+    status: TimesheetStatus
+    totalMinutes: number
+    rejectionComment: string | null
+    hasRunningTimer: boolean
+  }
+  internalApprovals?: {
+    pendingCount: number
+    items: Array<
+      Pick<ApprovalQueueItemDto, 'id' | 'userName' | 'weekStartsOn' | 'totalMinutes' | 'submittedAt' | 'status'>
+    >
+  }
+  clientApprovals?: {
+    pendingCount: number
+    unassignedSupplierCount: number
+    items: Array<Pick<ClientApprovalItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>>
+  }
+  supplierTimesheets?: {
+    items: Array<
+      Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>
+    >
+  }
 }
 
 export interface ApprovalQueueItemDto {
@@ -199,7 +269,7 @@ export interface ApprovalQueueItemDto {
   currency: string
   submittedAt: string | null
   entries: TimeEntryDto[]
-  clientReviews: Array<{ clientOrganizationId: string, status: ClientReviewStatus, comment: string | null }>
+  clientReviews: Array<{ clientOrganizationId: string; status: ClientReviewStatus; comment: string | null }>
 }
 
 export interface ReportRowDto {

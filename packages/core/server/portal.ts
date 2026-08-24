@@ -1,8 +1,15 @@
 import type { H3Event } from 'h3'
 import { and, asc, eq, ilike, inArray, ne } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import type { PortalFeaturePolicy, PortalOrganizationRole, PortalOrganizationType } from '@nuxt-customer-portal/core/shared/types/feature'
-import { canManageOrganizationEmailCredential, isPortalActionAllowed } from '@nuxt-customer-portal/core/shared/feature-registry'
+import type {
+  PortalFeaturePolicy,
+  PortalOrganizationRole,
+  PortalOrganizationType
+} from '@nuxt-customer-portal/core/shared/types/feature'
+import {
+  canManageOrganizationEmailCredential,
+  isPortalActionAllowed
+} from '@nuxt-customer-portal/core/shared/feature-registry'
 import { getActiveOrganizationId, type PortalSession } from '@nuxt-customer-portal/core/shared/portal-session'
 import { member, organization, user } from './db/schema/auth-schema'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
@@ -47,8 +54,15 @@ export const requireOrganizationContext = async (session: PortalSession) => {
     getPortalOrganization(organizationId),
     getUserOrganizationRole(session.user.id, organizationId) as Promise<PortalOrganizationRole | null>
   ])
-  if (!selected || !role) throw createError({ statusCode: 403, message: 'Organization membership required' })
-  return { organizationId, organizationType: selected.organizationType as PortalOrganizationType, organization: selected, role }
+  if (!selected || !role) {
+    throw createError({ statusCode: 403, message: 'Organization membership required' })
+  }
+  return {
+    organizationId,
+    organizationType: selected.organizationType as PortalOrganizationType,
+    organization: selected,
+    role
+  }
 }
 
 export const authorize = async <Action extends string>(
@@ -76,7 +90,9 @@ export const hasFeatureAccess = async <Action extends string>(
     getUserOrganizationRole(session.user.id, organizationId) as Promise<PortalOrganizationRole | null>,
     getPortalOrganization(organizationId)
   ])
-  return Boolean(selected && isPortalActionAllowed(policy, role, action, selected.organizationType as PortalOrganizationType))
+  return Boolean(
+    selected && isPortalActionAllowed(policy, role, action, selected.organizationType as PortalOrganizationType)
+  )
 }
 
 export const requireFeatureAccess = async <Action extends string>(
@@ -98,7 +114,7 @@ export const requireFeatureAccess = async <Action extends string>(
 
 export const requireActiveOrganizationRole = async (event: H3Event) => {
   const session = await requireSession(event)
-  return { session, ...await requireOrganizationContext(session) }
+  return { session, ...(await requireOrganizationContext(session)) }
 }
 
 export const requireOrganizationOwnerOrSystemAdmin = async (event: H3Event, requestedOrganizationId?: string) => {
@@ -108,7 +124,9 @@ export const requireOrganizationOwnerOrSystemAdmin = async (event: H3Event, requ
     throw createError({ statusCode: 403, message: 'Organization owner access required' })
   }
   const context = await requireOrganizationContext(session)
-  if (!canManageOrganizationEmailCredential(context.role, context.organizationType)) throw createError({ statusCode: 403, message: 'Organization owner access required' })
+  if (!canManageOrganizationEmailCredential(context.role, context.organizationType)) {
+    throw createError({ statusCode: 403, message: 'Organization owner access required' })
+  }
   return { session, organizationId: context.organizationId }
 }
 
@@ -117,43 +135,39 @@ export const requireOrganizationOwnerOrSystemAdmin = async (event: H3Event, requ
  * prevents features from importing host authentication tables at runtime.
  */
 export const listPortalOrganizationMembers = async (organizationId: string) =>
-  db.select({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    image: user.image,
-    organizationRole: member.role,
-    phone: member.phone,
-    jobTitle: member.jobTitle
-  })
+  db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      organizationRole: member.role,
+      phone: member.phone,
+      jobTitle: member.jobTitle
+    })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))
     .where(eq(member.organizationId, organizationId))
     .orderBy(asc(user.name), asc(user.email))
 
-export const searchPortalOrganizations = async (
-  workspaceOrganizationId: string,
-  search?: string
-) =>
-  db.select({
-    id: organization.id,
-    name: organization.name,
-    slug: organization.slug,
-    logo: organization.logo,
-    metadata: organization.metadata,
-    organizationType: organization.organizationType
-  })
+export const searchPortalOrganizations = async (workspaceOrganizationId: string, search?: string) =>
+  db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: organization.logo,
+      metadata: organization.metadata,
+      organizationType: organization.organizationType
+    })
     .from(organization)
-    .where(and(
-      ne(organization.id, workspaceOrganizationId),
-      search ? ilike(organization.name, `%${search}%`) : undefined
-    ))
+    .where(
+      and(ne(organization.id, workspaceOrganizationId), search ? ilike(organization.name, `%${search}%`) : undefined)
+    )
     .orderBy(asc(organization.name))
     .limit(50)
 
-export const listPortalOrganizationsForUser = async (
-  userId: string
-) => {
+export const listPortalOrganizationsForUser = async (userId: string) => {
   const selection = {
     id: organization.id,
     name: organization.name,
@@ -161,7 +175,8 @@ export const listPortalOrganizationsForUser = async (
     logo: organization.logo,
     organizationType: organization.organizationType
   }
-  return db.select(selection)
+  return db
+    .select(selection)
     .from(member)
     .innerJoin(organization, eq(organization.id, member.organizationId))
     .where(eq(member.userId, userId))
@@ -169,15 +184,18 @@ export const listPortalOrganizationsForUser = async (
 }
 
 export const getPortalOrganizationsByIds = async (organizationIds: string[]) => {
-  if (!organizationIds.length) return []
-  return db.select({
-    id: organization.id,
-    name: organization.name,
-    slug: organization.slug,
-    logo: organization.logo,
-    metadata: organization.metadata,
-    organizationType: organization.organizationType
-  })
+  if (!organizationIds.length) {
+    return []
+  }
+  return db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: organization.logo,
+      metadata: organization.metadata,
+      organizationType: organization.organizationType
+    })
     .from(organization)
     .where(inArray(organization.id, organizationIds))
     .orderBy(asc(organization.name))
@@ -189,19 +207,22 @@ export const createPortalOrganizationRecord = async (input: {
   logo?: string | null
   organizationType?: PortalOrganizationType
 }) => {
-  const [created] = await db.insert(organization).values({
-    id: nanoid(),
-    name: input.name,
-    slug: input.slug,
-    logo: input.logo ?? null,
-    organizationType: input.organizationType ?? 'CLIENT',
-    createdAt: new Date()
-  }).returning({
-    id: organization.id,
-    name: organization.name,
-    slug: organization.slug,
-    logo: organization.logo,
-    organizationType: organization.organizationType
-  })
+  const [created] = await db
+    .insert(organization)
+    .values({
+      id: nanoid(),
+      name: input.name,
+      slug: input.slug,
+      logo: input.logo ?? null,
+      organizationType: input.organizationType ?? 'CLIENT',
+      createdAt: new Date()
+    })
+    .returning({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: organization.logo,
+      organizationType: organization.organizationType
+    })
   return created
 }

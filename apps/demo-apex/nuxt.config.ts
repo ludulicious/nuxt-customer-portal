@@ -4,15 +4,7 @@ import portal from './portal.config'
 export default defineNuxtConfig({
   extends: portal.nuxtLayers,
   ssr: false,
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/image',
-    '@nuxt/ui',
-    '@nuxt/content',
-    '@vueuse/nuxt',
-    '@nuxtjs/i18n',
-    '@pinia/nuxt'
-  ],
+  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/ui', '@nuxt/content', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
   image: {
     quality: 80,
     format: ['webp', 'avif', 'jpeg'],
@@ -22,7 +14,7 @@ export default defineNuxtConfig({
       md: 768,
       lg: 1024,
       xl: 1280,
-      xxl: 1536,
+      xxl: 1536
     },
     densities: [1, 2],
     presets: {
@@ -59,7 +51,7 @@ export default defineNuxtConfig({
     }
   },
   devServer: {
-    port: 3051,
+    port: 3051
   },
   css: ['~/assets/css/main.css'],
 
@@ -92,7 +84,8 @@ export default defineNuxtConfig({
       production: 'runtime',
       meta: {
         title: 'ApexPro API',
-        description: 'Interactive API documentation for the ApexPro customer portal. Requests are made using your current authenticated session and permissions.',
+        description:
+          'Interactive API documentation for the ApexPro customer portal. Requests are made using your current authenticated session and permissions.',
         version: '1.0.0'
       },
       route: '/api-docs/openapi.raw.json',
@@ -160,6 +153,6 @@ export default defineNuxtConfig({
       redirectOn: 'root',
       alwaysRedirect: false,
       fallbackLocale: 'en'
-    },
+    }
   }
 })

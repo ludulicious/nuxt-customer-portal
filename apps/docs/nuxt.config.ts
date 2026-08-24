@@ -58,11 +58,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       concurrency: 1,
-      routes: [
-        '/',
-        '/robots.txt',
-        '/sitemap.xml'
-      ],
+      routes: ['/', '/robots.txt', '/sitemap.xml'],
       crawlLinks: true,
       autoSubfolderIndex: false
     }
@@ -117,51 +113,37 @@ export default defineNuxtConfig({
       {
         title: 'Getting Started',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/getting-started%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/getting-started%' }]
       },
       {
         title: 'Architecture',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/architecture%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/architecture%' }]
       },
       {
         title: 'Modules',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/modules%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/modules%' }]
       },
       {
         title: 'Reference',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/reference%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/reference%' }]
       },
       {
         title: 'Operations',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/operations%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/operations%' }]
       },
       {
         title: 'User Guides',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/guides%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/guides%' }]
       },
       {
         title: 'Contributing',
         contentCollection: 'docs',
-        contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/contributing%' }
-        ]
+        contentFilters: [{ field: 'path', operator: 'LIKE', value: '/contributing%' }]
       }
     ]
   },

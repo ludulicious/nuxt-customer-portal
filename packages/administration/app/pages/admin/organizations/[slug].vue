@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '@nuxt-customer-portal/core/shared/types/index'
+import type {
+  Organization,
+  OrganizationInvitationsResponse,
+  OrganizationMemberWithUser,
+  ApiError
+} from '@nuxt-customer-portal/core/shared/types/index'
 
 const userStore = useUserStore()
 const { isAdmin, myOrganizations } = storeToRefs(userStore)
@@ -16,7 +21,7 @@ const slug = computed(() => String(route.params.slug))
 // For non-admins, only show when navigating from my-organizations
 const showBackButton = computed(() => {
   if (isAdmin.value) {
-    return (route.query.from === 'my-organizations' || route.query.from === 'admin-organizations') ? true : false
+    return route.query.from === 'my-organizations' || route.query.from === 'admin-organizations' ? true : false
   }
   return false
 })
@@ -24,13 +29,23 @@ const showBackButton = computed(() => {
 // Determine back route based on query parameter and user role
 const backRoute = computed(() => {
   if (isAdmin.value) {
-    if (route.query.from === 'my-organizations') return '/my-organizations'
+    if (route.query.from === 'my-organizations') {
+      return '/my-organizations'
+    }
     if (route.query.from === 'admin-organizations') {
       const query: Record<string, string> = {}
-      if (route.query.search != null && route.query.search !== '') query.search = String(route.query.search)
-      if (route.query.sortBy != null && route.query.sortBy !== '') query.sortBy = String(route.query.sortBy)
-      if (route.query.sortDir != null && route.query.sortDir !== '') query.sortDir = String(route.query.sortDir)
-      if (route.query.scroll != null && route.query.scroll !== '') query.scroll = String(route.query.scroll)
+      if (route.query.search != null && route.query.search !== '') {
+        query.search = String(route.query.search)
+      }
+      if (route.query.sortBy != null && route.query.sortBy !== '') {
+        query.sortBy = String(route.query.sortBy)
+      }
+      if (route.query.sortDir != null && route.query.sortDir !== '') {
+        query.sortDir = String(route.query.sortDir)
+      }
+      if (route.query.scroll != null && route.query.scroll !== '') {
+        query.scroll = String(route.query.scroll)
+      }
       return { path: '/admin/organizations', query }
     }
     return '/admin/organizations'
@@ -67,8 +82,11 @@ type OrganizationWithRole = Organization & { role?: string | null }
 
 // Get user's role in this organization
 const userOrganizationRole = computed(() => {
-  if (!myOrganizations.value || !organization.value) return null
-  const org = myOrganizations.value.find(org => org.slug === organization.value?.slug) as OrganizationWithRole | undefined
+  if (!myOrganizations.value || !organization.value) {
+    return null
+  }
+  const org = myOrganizations.value.find((org) => org.slug === organization.value?.slug) as
+    OrganizationWithRole | undefined
   return org?.role || null
 })
 
@@ -80,10 +98,7 @@ const loadOrganization = async () => {
     organization.value = await $fetch<Organization>(`/api/admin/organizations/by-slug/${slug.value}`)
 
     if (organization.value) {
-      await Promise.all([
-        loadMembers(),
-        loadInvitations()
-      ])
+      await Promise.all([loadMembers(), loadInvitations()])
     }
   } catch (err) {
     const apiError = err as ApiError
@@ -95,7 +110,9 @@ const loadOrganization = async () => {
 
 // Load members
 const loadMembers = async () => {
-  if (!organization.value) return
+  if (!organization.value) {
+    return
+  }
 
   try {
     // Use admin API endpoint that bypasses membership check
@@ -110,7 +127,9 @@ const loadMembers = async () => {
 
 // Load invitations
 const loadInvitations = async () => {
-  if (!organization.value) return
+  if (!organization.value) {
+    return
+  }
 
   try {
     // Use admin API endpoint that bypasses membership check
@@ -138,7 +157,6 @@ const handleOrganizationUpdated = async (updated: Organization) => {
 }
 
 await loadOrganization()
-
 </script>
 
 <template>
@@ -164,9 +182,19 @@ await loadOrganization()
 
       <!-- Organization Details -->
       <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">
-        <OrganizationDetailsCard :organization="organization" :role="userOrganizationRole" :can-edit="isAdmin" :editing="showEditModal" @edit="showEditModal = true">
+        <OrganizationDetailsCard
+          :organization="organization"
+          :role="userOrganizationRole"
+          :can-edit="isAdmin"
+          :editing="showEditModal"
+          @edit="showEditModal = true"
+        >
           <template #edit>
-            <AdminOrganizationForm :organization="organization" @updated="handleOrganizationUpdated" @canceled="showEditModal = false" />
+            <AdminOrganizationForm
+              :organization="organization"
+              @updated="handleOrganizationUpdated"
+              @canceled="showEditModal = false"
+            />
           </template>
         </OrganizationDetailsCard>
 
@@ -177,8 +205,22 @@ await loadOrganization()
           :organization-id="organization.id"
         />
 
-        <AdminOrganizationMembersCard v-if="hasPermission('member', 'list')" :organization-id="organization.id" :members="members" :loading="loading" :can-remove="isAdmin || userOrganizationRole === 'owner' || userOrganizationRole === 'admin'" :can-link="isAdmin" @refresh="loadMembers" />
-        <AdminOrganizationInvitationsCard v-if="hasPermission('invitation', 'list')" :organization-id="organization.id" :invitations="invitations" :loading="loading" @refresh="loadInvitations" />
+        <AdminOrganizationMembersCard
+          v-if="hasPermission('member', 'list')"
+          :organization-id="organization.id"
+          :members="members"
+          :loading="loading"
+          :can-remove="isAdmin || userOrganizationRole === 'owner' || userOrganizationRole === 'admin'"
+          :can-link="isAdmin"
+          @refresh="loadMembers"
+        />
+        <AdminOrganizationInvitationsCard
+          v-if="hasPermission('invitation', 'list')"
+          :organization-id="organization.id"
+          :invitations="invitations"
+          :loading="loading"
+          @refresh="loadInvitations"
+        />
       </div>
     </UContainer>
   </div>

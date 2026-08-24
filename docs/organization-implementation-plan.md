@@ -13,6 +13,7 @@ The better-auth organization plugin is available and provides comprehensive orga
 ### 1.2 Configure Organization Plugin in Auth
 
 Update `lib/auth.ts`:
+
 ```typescript
 import { organization } from 'better-auth/plugins'
 
@@ -25,7 +26,7 @@ plugins: [
         console.log(`Created organization ${organization.name} for user ${user.email}`)
       }
     }
-  }),
+  })
   // ... other plugins
 ]
 ```
@@ -42,6 +43,7 @@ npx drizzle-kit migrate
 ```
 
 This will automatically create:
+
 - `organization` table
 - `member` table (organization members)
 - `invitation` table (organization invitations)
@@ -56,6 +58,7 @@ The migration will add these tables with proper relationships and indexes. No ma
 ### 2.3 Generate Drizzle Migrations
 
 After defining schema changes, generate Drizzle migrations:
+
 ```bash
 npx drizzle-kit generate
 npx drizzle-kit migrate
@@ -99,11 +102,11 @@ databaseHooks: {
             .set({ role: 'admin' })
             .where(eq(userTable.id, user.id))
         }
-        
+
         // Auto-create organization using better-auth API
         const orgName = user.name || user.email.split('@')[0]
         const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
-        
+
         await auth.api.createOrganization({
           body: {
             name: `${orgName}'s Organization`,
@@ -123,6 +126,7 @@ databaseHooks: {
 ### 4.1 Add Organization Client Plugin
 
 Update `lib/auth-client.ts`:
+
 ```typescript
 import { createAuthClient } from 'better-auth/client'
 import { organizationClient } from 'better-auth/client/plugins'
@@ -140,35 +144,36 @@ export const authClient = createAuthClient({
 ### 4.2 Create Organization Composable
 
 Create `app/composables/useCurrentOrganization.ts`:
+
 ```typescript
 export const useCurrentOrganization = () => {
   const { data: session } = useSession()
-  
+
   const currentOrganization = computed(() => session.value?.user?.organization || null)
   const organizationId = computed(() => currentOrganization.value?.id)
-  
+
   // Use better-auth client methods
   const createOrganization = async (data: { name: string; slug: string }) => {
     return await authClient.organization.create(data)
   }
-  
+
   const getActiveMember = async () => {
     return await authClient.organization.getActiveMember()
   }
-  
+
   const listMembers = async (organizationId: string) => {
-    return await authClient.organization.listMembers({ 
-      query: { organizationId } 
+    return await authClient.organization.listMembers({
+      query: { organizationId }
     })
   }
-  
+
   const inviteMember = async (email: string, organizationId: string) => {
     return await authClient.organization.inviteMember({
       email,
       organizationId
     })
   }
-  
+
   return {
     currentOrganization,
     organizationId,
@@ -191,23 +196,19 @@ import { eq } from 'drizzle-orm'
 
 customSession(async (sessionData) => {
   const { user, session } = sessionData
-  
-  const [account] = await db
-    .select()
-    .from(accountTable)
-    .where(eq(accountTable.userId, user.id))
-    .limit(1)
-  
+
+  const [account] = await db.select().from(accountTable).where(eq(accountTable.userId, user.id)).limit(1)
+
   // Better-auth organization plugin handles organization data automatically
   // The user object will include activeOrganizationId and organization data
-  
+
   return {
     ...session,
     user: {
       ...user,
-      providerId: account?.providerId || null,
+      providerId: account?.providerId || null
       // Organization data is automatically included by the plugin
-    },
+    }
   }
 })
 ```
@@ -219,7 +220,7 @@ customSession(async (sessionData) => {
 The better-auth organization plugin automatically provides all necessary API endpoints:
 
 - `POST /organization/create` - Create organization
-- `GET /organization/list` - List user organizations  
+- `GET /organization/list` - List user organizations
 - `POST /organization/switch` - Switch active organization
 - `POST /organization/invite` - Invite members
 - `GET /organization/members` - List organization members
@@ -244,12 +245,12 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
-  
+
   // Use better-auth server API for organization operations
   const result = await auth.api.listMembers({
     query: { organizationId: session.user.activeOrganizationId }
   })
-  
+
   // Add custom business logic here
   return result
 })
@@ -262,7 +263,7 @@ export default defineEventHandler(async (event) => {
 The better-auth organization plugin includes built-in role-based permissions:
 
 - **Owner**: Full control over organization
-- **Admin**: Manage members and organization settings  
+- **Admin**: Manage members and organization settings
 - **Member**: Basic organization access
 
 ### 6.2 Custom Roles (Optional)
@@ -308,25 +309,25 @@ export const useOrganizationHelpers = () => {
     const { data: member } = await authClient.organization.getActiveMember()
     return member?.organization
   }
-  
+
   // Check if user is organization owner
   const isOrganizationOwner = async () => {
     const { data: role } = await authClient.organization.getActiveMemberRole()
     return role?.includes('owner')
   }
-  
+
   // Check if user is organization admin
   const isOrganizationAdmin = async () => {
     const { data: role } = await authClient.organization.getActiveMemberRole()
     return role?.includes('admin') || role?.includes('owner')
   }
-  
+
   // List all user organizations
   const getUserOrganizations = async () => {
     const { data } = await authClient.organization.list()
     return data
   }
-  
+
   return {
     getCurrentOrganization,
     isOrganizationOwner,
@@ -356,7 +357,7 @@ export async function isOrganizationMember(userId: string, organizationId: strin
   const members = await auth.api.listMembers({
     query: { organizationId }
   })
-  return members.some(member => member.userId === userId)
+  return members.some((member) => member.userId === userId)
 }
 ```
 
@@ -377,20 +378,13 @@ Create `app/components/OrganizationSwitcher.vue`:
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="switcher">
       <label for="org-select">Organization:</label>
-      <select 
-        id="org-select" 
-        v-model="selectedOrg" 
-        @change="switchOrganization"
-        class="org-select"
-      >
+      <select id="org-select" v-model="selectedOrg" @change="switchOrganization" class="org-select">
         <option value="">Select Organization</option>
         <option v-for="org in organizations" :key="org.id" :value="org.id">
           {{ org.name }}
         </option>
       </select>
-      <button @click="createNewOrg" class="create-btn">
-        Create New Organization
-      </button>
+      <button @click="createNewOrg" class="create-btn">Create New Organization</button>
     </div>
   </div>
 </template>
@@ -420,7 +414,7 @@ const loadOrganizations = async () => {
 const switchOrganization = async (event) => {
   const orgId = event.target.value
   if (!orgId) return
-  
+
   try {
     await authClient.organization.switch({ organizationId: orgId })
     // Refresh the page or emit event to update parent components
@@ -478,50 +472,31 @@ Create `app/components/OrganizationSettings.vue`:
 <template>
   <div class="organization-settings">
     <h2>Organization Settings</h2>
-    
+
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="settings-form">
       <form @submit.prevent="updateOrganization">
         <div class="form-group">
           <label for="org-name">Organization Name:</label>
-          <input 
-            id="org-name"
-            v-model="formData.name" 
-            type="text" 
-            required
-            class="form-input"
-          />
+          <input id="org-name" v-model="formData.name" type="text" required class="form-input" />
         </div>
-        
+
         <div class="form-group">
           <label for="org-slug">Organization Slug:</label>
-          <input 
-            id="org-slug"
-            v-model="formData.slug" 
-            type="text" 
-            required
-            class="form-input"
-          />
+          <input id="org-slug" v-model="formData.slug" type="text" required class="form-input" />
         </div>
-        
+
         <div class="form-group">
           <label for="org-logo">Logo URL:</label>
-          <input 
-            id="org-logo"
-            v-model="formData.logo" 
-            type="url" 
-            class="form-input"
-          />
+          <input id="org-logo" v-model="formData.logo" type="url" class="form-input" />
         </div>
-        
+
         <div class="form-actions">
           <button type="submit" :disabled="updating" class="btn-primary">
             {{ updating ? 'Updating...' : 'Update Organization' }}
           </button>
-          <button type="button" @click="deleteOrganization" class="btn-danger">
-            Delete Organization
-          </button>
+          <button type="button" @click="deleteOrganization" class="btn-danger">Delete Organization</button>
         </div>
       </form>
     </div>
@@ -576,7 +551,7 @@ const updateOrganization = async () => {
 
 const deleteOrganization = async () => {
   if (!confirm('Are you sure you want to delete this organization?')) return
-  
+
   try {
     await authClient.organization.delete({
       organizationId: formData.value.id
@@ -652,11 +627,9 @@ Create `app/components/OrganizationMembers.vue`:
   <div class="organization-members">
     <div class="members-header">
       <h3>Organization Members</h3>
-      <button @click="showInviteModal = true" class="btn-primary">
-        Invite Member
-      </button>
+      <button @click="showInviteModal = true" class="btn-primary">Invite Member</button>
     </div>
-    
+
     <div v-if="loading" class="loading">Loading members...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="members-list">
@@ -667,16 +640,12 @@ Create `app/components/OrganizationMembers.vue`:
           <div class="member-role">{{ member.role.join(', ') }}</div>
         </div>
         <div class="member-actions">
-          <button @click="updateMemberRole(member)" class="btn-secondary">
-            Update Role
-          </button>
-          <button @click="removeMember(member)" class="btn-danger">
-            Remove
-          </button>
+          <button @click="updateMemberRole(member)" class="btn-secondary">Update Role</button>
+          <button @click="removeMember(member)" class="btn-danger">Remove</button>
         </div>
       </div>
     </div>
-    
+
     <!-- Invite Modal -->
     <div v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
       <div class="modal" @click.stop>
@@ -684,21 +653,13 @@ Create `app/components/OrganizationMembers.vue`:
         <form @submit.prevent="inviteMember">
           <div class="form-group">
             <label for="invite-email">Email:</label>
-            <input 
-              id="invite-email"
-              v-model="inviteEmail" 
-              type="email" 
-              required
-              class="form-input"
-            />
+            <input id="invite-email" v-model="inviteEmail" type="email" required class="form-input" />
           </div>
           <div class="form-actions">
             <button type="submit" :disabled="inviting" class="btn-primary">
               {{ inviting ? 'Sending...' : 'Send Invitation' }}
             </button>
-            <button type="button" @click="showInviteModal = false" class="btn-secondary">
-              Cancel
-            </button>
+            <button type="button" @click="showInviteModal = false" class="btn-secondary">Cancel</button>
           </div>
         </form>
       </div>
@@ -755,7 +716,7 @@ const updateMemberRole = async (member) => {
 
 const removeMember = async (member) => {
   if (!confirm(`Remove ${member.user.email} from organization?`)) return
-  
+
   try {
     await authClient.organization.removeMember({
       memberIdOrEmail: member.user.email,
@@ -841,6 +802,7 @@ onMounted(() => {
 ## Technical Considerations
 
 ### Leveraging Better-Auth Features
+
 - All organization functionality provided by better-auth plugin
 - Built-in database schema with proper indexes
 - Automatic API endpoints for all operations
@@ -848,12 +810,14 @@ onMounted(() => {
 - Session management includes organization data
 
 ### Performance
+
 - Better-auth handles all database optimizations
 - Built-in caching and query optimization
 - Efficient member listing and filtering
 - Automatic pagination support
 
 ### Security
+
 - Better-auth handles all security concerns
 - Built-in permission checks
 - Secure invitation system

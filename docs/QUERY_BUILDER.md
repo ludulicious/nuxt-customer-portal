@@ -5,6 +5,7 @@ This document explains how to use the generic Drizzle ORM query builder for buil
 ## Overview
 
 The query builder provides a standardized way to:
+
 - Build dynamic WHERE clauses from filter arrays
 - Apply sorting (orderBy) based on field names
 - Handle pagination with limit and offset
@@ -41,7 +42,7 @@ export default defineEventHandler(async (event) => {
   const baseSelect = db.select().from(userTable)
   const queryWithWhere = where ? baseSelect.where(where) : baseSelect
   const queryWithOrder = queryWithWhere.orderBy(orderBy || userTable.createdAt)
-  
+
   const finalQuery = (() => {
     let q = queryWithOrder
     if (limit !== undefined) q = q.limit(limit) as typeof q
@@ -74,28 +75,26 @@ const { where, orderBy, limit, offset } = buildDrizzleQuery(queryInput, customRe
 
 The query builder supports the following filter operators:
 
-| Operator | Description | Example Value Types |
-|----------|-------------|---------------------|
-| `eq` | Equals | `string`, `number`, `boolean`, `null` |
-| `neq` | Not equals | `string`, `number`, `boolean`, `null` |
-| `gt` | Greater than | `number`, `Date` |
-| `lt` | Less than | `number`, `Date` |
-| `gte` | Greater than or equal | `number`, `Date` |
-| `lte` | Less than or equal | `number`, `Date` |
-| `contains` | String contains (case-insensitive) | `string` |
-| `startsWith` | String starts with (case-insensitive) | `string` |
-| `endsWith` | String ends with (case-insensitive) | `string` |
-| `in` | Value in array | `string[]`, `number[]` |
-| `notIn` | Value not in array | `string[]`, `number[]` |
+| Operator     | Description                           | Example Value Types                   |
+| ------------ | ------------------------------------- | ------------------------------------- |
+| `eq`         | Equals                                | `string`, `number`, `boolean`, `null` |
+| `neq`        | Not equals                            | `string`, `number`, `boolean`, `null` |
+| `gt`         | Greater than                          | `number`, `Date`                      |
+| `lt`         | Less than                             | `number`, `Date`                      |
+| `gte`        | Greater than or equal                 | `number`, `Date`                      |
+| `lte`        | Less than or equal                    | `number`, `Date`                      |
+| `contains`   | String contains (case-insensitive)    | `string`                              |
+| `startsWith` | String starts with (case-insensitive) | `string`                              |
+| `endsWith`   | String ends with (case-insensitive)   | `string`                              |
+| `in`         | Value in array                        | `string[]`, `number[]`                |
+| `notIn`      | Value not in array                    | `string[]`, `number[]`                |
 
 ### Filter Examples
 
 ```typescript
 // Single filter
 const queryInput = {
-  filters: [
-    { field: 'email', operator: 'contains', value: '@example.com' }
-  ]
+  filters: [{ field: 'email', operator: 'contains', value: '@example.com' }]
 }
 
 // Multiple filters (combined with AND)
@@ -117,9 +116,7 @@ const queryInput = {
 
 // Null checks
 const queryInput = {
-  filters: [
-    { field: 'deletedAt', operator: 'eq', value: null }
-  ]
+  filters: [{ field: 'deletedAt', operator: 'eq', value: null }]
 }
 ```
 
@@ -129,17 +126,17 @@ The `QueryInput` interface has the following structure:
 
 ```typescript
 interface QueryInput {
-  filters?: Filter[]           // Array of filter objects
-  sortField?: string          // Field name to sort by
-  sortDirection?: 'asc' | 'desc'  // Sort direction (defaults to 'asc')
-  take?: number               // Limit (number of records)
-  skip?: number               // Offset (number of records to skip)
+  filters?: Filter[] // Array of filter objects
+  sortField?: string // Field name to sort by
+  sortDirection?: 'asc' | 'desc' // Sort direction (defaults to 'asc')
+  take?: number // Limit (number of records)
+  skip?: number // Offset (number of records to skip)
 }
 
 interface Filter {
-  field: string               // Field name (must match table column)
-  operator: FilterOperator    // One of the supported operators
-  value: unknown              // Filter value (type depends on operator)
+  field: string // Field name (must match table column)
+  operator: FilterOperator // One of the supported operators
+  value: unknown // Filter value (type depends on operator)
 }
 ```
 
@@ -156,6 +153,7 @@ const queryInput = BaseQuerySchema.parse(queryParams)
 ```
 
 The schema automatically handles:
+
 - Converting string numbers to numbers for `take` and `skip`
 - Parsing JSON stringified `filters` array
 - Validating filter structure and operators
@@ -214,7 +212,7 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
       role: userTable.role,
       emailVerified: userTable.emailVerified,
       createdAt: userTable.createdAt,
-      banned: userTable.banned,
+      banned: userTable.banned
     })
     .from(userTable)
 
@@ -251,7 +249,7 @@ const baseWhere = eq(userTable.active, true)
 const { where, orderBy, limit, offset } = buildDrizzleQuery(
   queryInput,
   userTable,
-  baseWhere  // Base condition combined with filters using AND
+  baseWhere // Base condition combined with filters using AND
 )
 ```
 
@@ -268,7 +266,7 @@ const fieldResolver = (fieldPath: string) => {
     const orgField = fieldPath.replace('organization.', '')
     return orgTable[orgField as keyof typeof orgTable]
   }
-  
+
   // Default to member table fields
   return memberTable[fieldPath as keyof typeof memberTable]
 }
@@ -295,9 +293,9 @@ The query builder handles invalid fields gracefully:
 
 const queryInput = {
   filters: [
-    { field: 'email', operator: 'contains', value: 'test' },      // Valid
-    { field: 'invalidField', operator: 'eq', value: 'test' },    // Invalid - ignored
-    { field: 'name', operator: 'contains', value: 'John' }       // Valid
+    { field: 'email', operator: 'contains', value: 'test' }, // Valid
+    { field: 'invalidField', operator: 'eq', value: 'test' }, // Invalid - ignored
+    { field: 'name', operator: 'contains', value: 'John' } // Valid
   ]
 }
 // Only 'email' and 'name' filters will be applied
@@ -310,10 +308,10 @@ const queryInput = {
 ```typescript
 // Query builder result
 interface DrizzleQueryResult {
-  where: SQL | undefined      // Drizzle SQL condition for WHERE clause
-  orderBy: SQL | undefined    // Drizzle SQL expression for ORDER BY
-  limit: number | undefined   // Limit value
-  offset: number | undefined  // Offset value
+  where: SQL | undefined // Drizzle SQL condition for WHERE clause
+  orderBy: SQL | undefined // Drizzle SQL expression for ORDER BY
+  limit: number | undefined // Limit value
+  offset: number | undefined // Offset value
 }
 
 // Field resolver function type
@@ -347,11 +345,9 @@ const BaseQuerySchema: z.ZodObject<{
 }>
 
 // Filter operator schema
-const FilterOperatorSchema: z.ZodEnum<[
-  'eq', 'neq', 'gt', 'lt', 'gte', 'lte',
-  'contains', 'startsWith', 'endsWith',
-  'in', 'notIn'
-]>
+const FilterOperatorSchema: z.ZodEnum<
+  ['eq', 'neq', 'gt', 'lt', 'gte', 'lte', 'contains', 'startsWith', 'endsWith', 'in', 'notIn']
+>
 ```
 
 ## Best Practices
@@ -369,8 +365,8 @@ const FilterOperatorSchema: z.ZodEnum<[
 
 ```typescript
 const queryInput = {
-  take: 20,    // Page size
-  skip: 0,     // Page offset (page * pageSize)
+  take: 20, // Page size
+  skip: 0, // Page offset (page * pageSize)
   sortField: 'createdAt',
   sortDirection: 'desc' as const
 }
@@ -404,6 +400,7 @@ const queryInput = {
 ### Field Not Found
 
 If a field is not being filtered, check:
+
 1. Field name matches the table column name exactly (case-sensitive)
 2. Field exists in the table schema
 3. Check console for warnings about unresolved fields
@@ -411,6 +408,7 @@ If a field is not being filtered, check:
 ### Type Errors
 
 If you encounter TypeScript errors:
+
 1. Ensure you are importing types from a documented `@nuxt-customer-portal/core/*` export
 2. Use `as QueryInput` when parsing query parameters
 3. Check that your table type matches what Drizzle expects
@@ -418,6 +416,7 @@ If you encounter TypeScript errors:
 ### Filters Not Applied
 
 If filters aren't working:
+
 1. Verify the filter structure matches the `Filter` interface
 2. Check that the operator is one of the supported values
 3. Ensure the value type matches what the operator expects

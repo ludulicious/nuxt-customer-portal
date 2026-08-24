@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const title = 'Customer Portal — an extensible customer portal for Nuxt'
-const description = 'Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.'
+const description =
+  'Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.'
 
 const extensionModel = [
   {
@@ -9,7 +10,8 @@ const extensionModel = [
   },
   {
     title: 'Feature registry',
-    description: 'Layers register navigation, module menus, surfaces, dashboard widgets, and role policies without host edits.'
+    description:
+      'Layers register navigation, module menus, surfaces, dashboard widgets, and role policies without host edits.'
   },
   {
     title: 'Business layers',
@@ -47,15 +49,18 @@ const workflowStages = [
 const ownershipRows = [
   {
     term: 'Core',
-    description: 'Owns headless authentication, organization context, authorization helpers, shared adapters, and the feature contract.'
+    description:
+      'Owns headless authentication, organization context, authorization helpers, shared adapters, and the feature contract.'
   },
   {
     term: 'Registry',
-    description: 'Combines installed feature definitions into navigation, module menus, dashboard widgets, and role-aware capabilities.'
+    description:
+      'Combines installed feature definitions into navigation, module menus, dashboard widgets, and role-aware capabilities.'
   },
   {
     term: 'Feature layer',
-    description: 'Owns one coherent business capability, including routes, types, policies, translations, migrations, and tests.'
+    description:
+      'Owns one coherent business capability, including routes, types, policies, translations, migrations, and tests.'
   }
 ]
 
@@ -82,14 +87,54 @@ const contributorPaths = [
 
 const techStack = [
   { label: 'Nuxt 4', description: 'Frontend and backend', icon: 'i-simple-icons-nuxtdotjs', href: 'https://nuxt.com/' },
-  { label: 'Nuxt UI', description: 'Tailwind CSS and Reka UI', icon: 'i-simple-icons-tailwindcss', href: 'https://ui.nuxt.com/' },
-  { label: 'TypeScript', description: 'Typed end to end', icon: 'i-simple-icons-typescript', href: 'https://www.typescriptlang.org/' },
-  { label: 'PostgreSQL', description: 'Primary database', icon: 'i-simple-icons-postgresql', href: 'https://www.postgresql.org/' },
-  { label: 'Drizzle ORM', description: 'Type-safe persistence', icon: 'i-simple-icons-drizzle', href: 'https://orm.drizzle.team/' },
-  { label: 'better-auth', description: 'Authentication', icon: 'i-simple-icons-betterauth', href: 'https://www.better-auth.com/' },
-  { label: 'Docker', description: 'Container deployments', icon: 'i-simple-icons-docker', href: 'https://www.docker.com/' },
-  { label: 'Nuxt i18n', description: 'Layer-owned translations', icon: 'i-simple-icons-i18next', href: 'https://i18n.nuxtjs.org/' },
-  { label: 'VueUse', description: 'Composition utilities', icon: 'i-simple-icons-vuedotjs', href: 'https://vueuse.org/' }
+  {
+    label: 'Nuxt UI',
+    description: 'Tailwind CSS and Reka UI',
+    icon: 'i-simple-icons-tailwindcss',
+    href: 'https://ui.nuxt.com/'
+  },
+  {
+    label: 'TypeScript',
+    description: 'Typed end to end',
+    icon: 'i-simple-icons-typescript',
+    href: 'https://www.typescriptlang.org/'
+  },
+  {
+    label: 'PostgreSQL',
+    description: 'Primary database',
+    icon: 'i-simple-icons-postgresql',
+    href: 'https://www.postgresql.org/'
+  },
+  {
+    label: 'Drizzle ORM',
+    description: 'Type-safe persistence',
+    icon: 'i-simple-icons-drizzle',
+    href: 'https://orm.drizzle.team/'
+  },
+  {
+    label: 'better-auth',
+    description: 'Authentication',
+    icon: 'i-simple-icons-betterauth',
+    href: 'https://www.better-auth.com/'
+  },
+  {
+    label: 'Docker',
+    description: 'Container deployments',
+    icon: 'i-simple-icons-docker',
+    href: 'https://www.docker.com/'
+  },
+  {
+    label: 'Nuxt i18n',
+    description: 'Layer-owned translations',
+    icon: 'i-simple-icons-i18next',
+    href: 'https://i18n.nuxtjs.org/'
+  },
+  {
+    label: 'VueUse',
+    description: 'Composition utilities',
+    icon: 'i-simple-icons-vuedotjs',
+    href: 'https://vueuse.org/'
+  }
 ]
 
 useSeoMeta({
@@ -117,14 +162,11 @@ defineOgImage('DocsSatori', {
     <UContainer class="marketing-hero">
       <div class="marketing-hero-grid">
         <div class="marketing-hero-copy">
-          <p class="marketing-kicker">
-            Public development preview
-          </p>
-          <h1 class="marketing-display">
-            Build your portal, layer by layer.
-          </h1>
+          <p class="marketing-kicker">Public development preview</p>
+          <h1 class="marketing-display">Build your portal, layer by layer.</h1>
           <p>
-            Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.
+            Start with authentication, organizations, administration, and a dashboard. Add business capabilities as
+            independent Nuxt layers.
           </p>
           <div class="marketing-actions">
             <UButton
@@ -192,11 +234,10 @@ defineOgImage('DocsSatori', {
     <section class="workflow-band" aria-labelledby="workflow-title">
       <UContainer>
         <div class="workflow-intro">
-          <h2 id="workflow-title" class="marketing-display">
-            A working week, end to end.
-          </h2>
+          <h2 id="workflow-title" class="marketing-display">A working week, end to end.</h2>
           <p>
-            Timesheets and invoices are used in real Customer Portal deployments. The module covers the complete path from workspace configuration to a paid invoice—not a disconnected feature demo.
+            Timesheets and invoices are used in real Customer Portal deployments. The module covers the complete path
+            from workspace configuration to a paid invoice—not a disconnected feature demo.
           </p>
         </div>
         <ol class="workflow-sequence">
@@ -215,12 +256,8 @@ defineOgImage('DocsSatori', {
     <section class="marketing-section" aria-labelledby="platform-title">
       <UContainer class="platform-grid">
         <header class="section-heading">
-          <h2 id="platform-title" class="marketing-display">
-            Core stays stable. Features own their work.
-          </h2>
-          <p>
-            The host composes capabilities. It does not need to know their implementation details.
-          </p>
+          <h2 id="platform-title" class="marketing-display">Core stays stable. Features own their work.</h2>
+          <p>The host composes capabilities. It does not need to know their implementation details.</p>
         </header>
         <div>
           <dl class="ownership-list">
@@ -244,11 +281,10 @@ defineOgImage('DocsSatori', {
     <section class="contributor-section" aria-labelledby="contributor-title">
       <UContainer class="contributor-grid">
         <div class="contributor-copy">
-          <h2 id="contributor-title" class="marketing-display">
-            Help shape the portal.
-          </h2>
+          <h2 id="contributor-title" class="marketing-display">Help shape the portal.</h2>
           <p>
-            You do not need to start with a large pull request. A precise documentation correction, a failing authorization test, or a focused layer proposal can move the project forward.
+            You do not need to start with a large pull request. A precise documentation correction, a failing
+            authorization test, or a focused layer proposal can move the project forward.
           </p>
           <NuxtLink to="/contributing" class="marketing-link">
             Contribution guide <span aria-hidden="true">→</span>

@@ -3,5 +3,9 @@ import { listClientWorkspaces } from '@nuxt-customer-portal/timesheets/server/ut
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId, role } = await requireActiveOrganizationRole(event)
-  return listClientWorkspaces(organizationId, session.user.id, role === 'owner' || role === 'admin' || session.user.role === 'admin')
+  return listClientWorkspaces(
+    organizationId,
+    session.user.id,
+    role === 'owner' || role === 'admin' || session.user.role === 'admin'
+  )
 })

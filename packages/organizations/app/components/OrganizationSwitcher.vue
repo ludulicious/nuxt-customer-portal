@@ -11,7 +11,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   compact: false,
-  showCreateButton: true,
+  showCreateButton: true
 })
 
 const emit = defineEmits<{
@@ -27,18 +27,26 @@ const error = ref('')
 const organizations = authClient.useListOrganizations()
 
 // Sync selectedOrg with activeOrganizationId from store
-watch(activeOrganizationId, (newOrgId) => {
-  if (newOrgId && newOrgId !== selectedOrg.value) {
-    selectedOrg.value = newOrgId
-  }
-}, { immediate: true })
+watch(
+  activeOrganizationId,
+  (newOrgId) => {
+    if (newOrgId && newOrgId !== selectedOrg.value) {
+      selectedOrg.value = newOrgId
+    }
+  },
+  { immediate: true }
+)
 
 // Also watch for when organizations load and set initial value
-watch(() => organizations.value.data, (orgs) => {
-  if (orgs && activeOrganizationId.value && !selectedOrg.value) {
-    selectedOrg.value = activeOrganizationId.value
-  }
-}, { immediate: true })
+watch(
+  () => organizations.value.data,
+  (orgs) => {
+    if (orgs && activeOrganizationId.value && !selectedOrg.value) {
+      selectedOrg.value = activeOrganizationId.value
+    }
+  },
+  { immediate: true }
+)
 
 // Check if user has any organizations
 const hasOrgs = computed(() => {
@@ -46,15 +54,19 @@ const hasOrgs = computed(() => {
 })
 
 const selectItems = computed<SelectItem[]>(() => {
-  if (!organizations.value.data) return []
-  return organizations.value.data.map(org => ({
+  if (!organizations.value.data) {
+    return []
+  }
+  return organizations.value.data.map((org) => ({
     label: org.name,
-    value: org.id,
+    value: org.id
   }))
 })
 
 const switchOrganization = async (value: unknown) => {
-  if (!value || typeof value !== 'string') return
+  if (!value || typeof value !== 'string') {
+    return
+  }
 
   try {
     // Update the store's activeOrganizationId (this also calls authClient.organization.setActive)
@@ -91,7 +103,9 @@ const createNewOrg = () => {
           color="error"
           :title="t('common.error')"
           :description="organizations.error?.message || 'Failed to load organizations'"
-          icon="i-lucide-alert-circle" variant="outline" />
+          icon="i-lucide-alert-circle"
+          variant="outline"
+        />
       </div>
       <div v-else class="flex flex-col gap-4">
         <UFormField label="Select Organization" name="organization">

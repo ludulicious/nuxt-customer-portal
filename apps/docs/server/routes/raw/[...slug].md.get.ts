@@ -9,10 +9,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const path = withLeadingSlash(slug.slice(0, -3)).replace(/\/index$/, '') || '/'
-  const page = await queryCollection(event, 'docs')
-    .path(path)
-    .select('rawbody')
-    .first()
+  const page = await queryCollection(event, 'docs').path(path).select('rawbody').first()
 
   if (!page?.rawbody) {
     throw createError({ statusCode: 404, statusMessage: 'Page not found' })

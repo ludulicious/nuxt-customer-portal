@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url'
 
-const envFlag = (value: string | undefined, fallback = true) => value === undefined ? fallback : value === 'true'
+const envFlag = (value: string | undefined, fallback = true) => (value === undefined ? fallback : value === 'true')
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
-  ? process.env.PORTAL_REGISTRATION_MODE as 'open' | 'invitation-only' | 'disabled'
+  ? (process.env.PORTAL_REGISTRATION_MODE as 'open' | 'invitation-only' | 'disabled')
   : 'open'
 
 export default defineNuxtConfig({
@@ -12,7 +12,10 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: 'en',
     strategy: 'no_prefix',
-    locales: [{ code: 'en', file: 'en.json' }, { code: 'nl', file: 'nl.json' }]
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'nl', file: 'nl.json' }
+    ]
   },
   runtimeConfig: {
     portalEmail: {
@@ -34,9 +37,11 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
-    serverAssets: [{
-      baseName: 'portal-core',
-      dir: fileURLToPath(new URL('./server/utils', import.meta.url))
-    }]
+    serverAssets: [
+      {
+        baseName: 'portal-core',
+        dir: fileURLToPath(new URL('./server/utils', import.meta.url))
+      }
+    ]
   }
 })

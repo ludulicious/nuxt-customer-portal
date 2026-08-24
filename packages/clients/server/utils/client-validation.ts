@@ -1,7 +1,12 @@
 import { z } from 'zod'
 
 const id = z.string().min(1).max(128)
-const slug = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+const slug = z
+  .string()
+  .trim()
+  .min(1)
+  .max(160)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
 
 export const genericClientListQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
@@ -25,7 +30,10 @@ export const genericClientCreateSchema = z.object({
   moduleIds: z.array(z.string().trim().min(1).max(100)).max(50).optional()
 })
 
-export const clientUpdateSchema = genericClientCreateSchema.omit({ slug: true, moduleIds: true }).partial().refine(value => Object.keys(value).length > 0, 'At least one field is required')
+export const clientUpdateSchema = genericClientCreateSchema
+  .omit({ slug: true, moduleIds: true })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, 'At least one field is required')
 export const clientArchiveSchema = z.object({ archived: z.boolean() })
 export const clientModuleUpdateSchema = z.object({ enabled: z.boolean() })
 export const genericClientDeleteSchema = z.object({ clientName: z.string().trim().min(1).max(200) })
@@ -40,8 +48,10 @@ export const genericClientInvitationSchema = z.object({
   role: z.enum(['owner', 'admin', 'member']).default('member')
 })
 
-export const genericClientMemberUpdateSchema = z.object({
-  role: z.enum(['owner', 'admin', 'member']).optional(),
-  phone: z.string().trim().max(50).nullable().optional(),
-  jobTitle: z.string().trim().max(120).nullable().optional()
-}).refine(value => Object.keys(value).length > 0)
+export const genericClientMemberUpdateSchema = z
+  .object({
+    role: z.enum(['owner', 'admin', 'member']).optional(),
+    phone: z.string().trim().max(50).nullable().optional(),
+    jobTitle: z.string().trim().max(120).nullable().optional()
+  })
+  .refine((value) => Object.keys(value).length > 0)

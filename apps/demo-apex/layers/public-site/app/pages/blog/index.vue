@@ -7,9 +7,7 @@ const { data: page } = await useAsyncData(
 )
 const { data: posts } = await useAsyncData(
   () => `blog-posts-en-${route.path}`,
-  () => queryCollection('posts_en')
-    .order('id', 'DESC')
-    .all()
+  () => queryCollection('posts_en').order('id', 'DESC').all()
 )
 
 const title = page.value?.seo?.title || page.value?.title
@@ -33,10 +31,7 @@ definePageMeta({
       <template #top>
         <HeroBackground />
       </template>
-      <UPageHeader
-        v-bind="page"
-        class="py-[50px]"
-      />
+      <UPageHeader v-bind="page" class="py-[50px]" />
       <UPageBody>
         <UBlogPosts>
           <UBlogPost

@@ -18,43 +18,54 @@ useSeoMeta({
 const router = useRouter()
 const route = useRoute()
 const portalAuth = useRuntimeConfig().public.portalAuth
-const fields = computed(() => [{
-  name: 'email',
-  type: 'text' as const,
-  label: t('login.fields.email'),
-  placeholder: t('login.fields.emailPlaceholder'),
-  required: true
-}, {
-  name: 'password',
-  label: t('login.fields.password'),
-  type: 'password' as const,
-  placeholder: t('login.fields.passwordPlaceholder')
-}, {
-  name: 'remember',
-  label: t('login.fields.remember'),
-  type: 'checkbox' as const
-}])
-
-const providers = computed(() => [{
-  enabled: portalAuth.googleEnabled,
-  label: t('login.providers.google'),
-  icon: 'i-simple-icons-google',
-  onClick: async () => {
-    await handleGoogleLogin()
+const fields = computed(() => [
+  {
+    name: 'email',
+    type: 'text' as const,
+    label: t('login.fields.email'),
+    placeholder: t('login.fields.emailPlaceholder'),
+    required: true
+  },
+  {
+    name: 'password',
+    label: t('login.fields.password'),
+    type: 'password' as const,
+    placeholder: t('login.fields.passwordPlaceholder')
+  },
+  {
+    name: 'remember',
+    label: t('login.fields.remember'),
+    type: 'checkbox' as const
   }
-}, {
-  enabled: portalAuth.githubEnabled,
-  label: t('login.providers.github'),
-  icon: 'i-simple-icons-github',
-  onClick: async () => {
-    await handleGitHubLogin()
-  }
-}].filter(provider => provider.enabled))
+])
 
-const schema = computed(() => z.object({
-  email: z.email(t('login.validation.invalidEmail')),
-  password: z.string().min(8, t('login.validation.passwordMinLength'))
-}))
+const providers = computed(() =>
+  [
+    {
+      enabled: portalAuth.googleEnabled,
+      label: t('login.providers.google'),
+      icon: 'i-simple-icons-google',
+      onClick: async () => {
+        await handleGoogleLogin()
+      }
+    },
+    {
+      enabled: portalAuth.githubEnabled,
+      label: t('login.providers.github'),
+      icon: 'i-simple-icons-github',
+      onClick: async () => {
+        await handleGitHubLogin()
+      }
+    }
+  ].filter((provider) => provider.enabled)
+)
+
+const schema = computed(() =>
+  z.object({
+    email: z.email(t('login.validation.invalidEmail')),
+    password: z.string().min(8, t('login.validation.passwordMinLength'))
+  })
+)
 
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -73,7 +84,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     await signIn.email(
       {
         email: payload.data.email,
-        password: payload.data.password,
+        password: payload.data.password
       },
       {
         onRequest: () => {
@@ -114,14 +125,14 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
             // Redirect to OTP verification page with login context
             const redirectTo = route.query.redirect?.toString() || '/dashboard'
             router.push(
-              `/verify-email?email=${encodeURIComponent(payload.data.email)}&redirect=${encodeURIComponent(redirectTo)}&from=login`,
+              `/verify-email?email=${encodeURIComponent(payload.data.email)}&redirect=${encodeURIComponent(redirectTo)}&from=login`
             )
           } else {
             errorMessage.value = error?.message || t('login.errors.invalidCredentials')
           }
           loading.value = false
-        },
-      },
+        }
+      }
     )
   } catch (error) {
     console.error('Unexpected login error:', error)
@@ -168,22 +179,33 @@ const handleGoogleLogin = async () => {
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
 
-    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
-      :loading="loading" :submit="{ label: t('login.submitButton') }" @submit="onSubmit">
+    <UAuthForm
+      :fields="fields"
+      :schema="schema"
+      :providers="providers"
+      :title="t('login.title')"
+      icon="i-lucide-lock"
+      :loading="loading"
+      :submit="{ label: t('login.submitButton') }"
+      @submit="onSubmit"
+    >
       <template #description>
         <template v-if="portalAuth.registrationMode === 'open'">
-          {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
-        </ULink>.
+          {{ t('login.description') }}
+          <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }} </ULink>.
         </template>
       </template>
 
       <template #password-hint>
         <ULink to="/forgot-password" class="text-primary font-medium" tabindex="-1">{{
-          t('login.forgotPassword') }}</ULink>
+          t('login.forgotPassword')
+        }}</ULink>
       </template>
 
       <template #footer>
-        {{ t('login.footer') }} <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink>.
+        {{ t('login.footer') }}
+        <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink
+        >.
       </template>
     </UAuthForm>
   </div>

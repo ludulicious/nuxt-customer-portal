@@ -21,9 +21,6 @@ await load()
 <template>
   <USkeleton v-if="pending" class="h-32 w-full" />
   <template v-else-if="capabilities">
-    <TimesheetsOrganizationFeaturesCard
-      v-model="capabilities"
-      :organization-id="organizationId"
-    />
+    <TimesheetsOrganizationFeaturesCard v-model="capabilities" :organization-id="organizationId" />
   </template>
 </template>

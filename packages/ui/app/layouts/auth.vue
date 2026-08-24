@@ -2,7 +2,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const { t } = useI18n()
-const bootstrap = useState<{ adminExists?: boolean, completed?: boolean } | null>('portal-bootstrap-state', () => null)
+const bootstrap = useState<{ adminExists?: boolean; completed?: boolean } | null>('portal-bootstrap-state', () => null)
 </script>
 
 <template>
@@ -16,11 +16,16 @@ const bootstrap = useState<{ adminExists?: boolean, completed?: boolean } | null
       class="auth-back-button absolute left-8 top-8 rounded-full z-10"
     />
 
-    <UPageCard
-      variant="subtle"
-      class="max-w-sm w-full"
-    >
-      <UAlert v-if="route.path === '/signup' && bootstrap && !bootstrap.adminExists" class="mb-5" color="info" variant="subtle" icon="i-lucide-shield-check" :title="t('saasSettings.bootstrap.title')" :description="t('saasSettings.bootstrap.description')" />
+    <UPageCard variant="subtle" class="max-w-sm w-full">
+      <UAlert
+        v-if="route.path === '/signup' && bootstrap && !bootstrap.adminExists"
+        class="mb-5"
+        color="info"
+        variant="subtle"
+        icon="i-lucide-shield-check"
+        :title="t('saasSettings.bootstrap.title')"
+        :description="t('saasSettings.bootstrap.description')"
+      />
       <slot />
     </UPageCard>
   </div>

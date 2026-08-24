@@ -1,13 +1,12 @@
-@import "tailwindcss";
-@import "@nuxt/ui";
-@import "../../../tokens.css";
-@import "./themes/brutal.css";
+@import 'tailwindcss';
+@import '@nuxt/ui';
+@import '../../../tokens.css';
+@import './themes/brutal.css';
 
 :root {
   --font-sans: 'Bricolage Grotesque', sans-serif;
   --portal-logo-surface: #75cbfe;
   --portal-logo-ink: #ffffff;
-
 
   /* Primary - Sky Blue */
   --color-primary-50: #f0f9ff;
@@ -226,11 +225,15 @@ html[data-portal-theme='apex'] .portal-header .portal-wordmark {
 
 /* Nuxt Page Transitions */
 .main-fade-enter-active {
-  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .main-fade-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19), transform 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  transition:
+    opacity 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19),
+    transform 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
 }
 
 .main-fade-enter-from {
@@ -261,10 +264,12 @@ html[data-portal-theme='apex'] .portal-header .portal-wordmark {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     rgba(59, 130, 246, 0.05) 0%,
     rgba(249, 115, 22, 0.05) 50%,
-    rgba(34, 197, 94, 0.05) 100%);
+    rgba(34, 197, 94, 0.05) 100%
+  );
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
@@ -298,14 +303,17 @@ body {
 }
 
 /* Enhanced card styling */
-:root [class*="card"],
-:root [data-variant="subtle"],
-:root [data-variant="outline"] {
-  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+:root [class*='card'],
+:root [data-variant='subtle'],
+:root [data-variant='outline'] {
+  transition:
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Better shadows for elevated surfaces */
-:root [class*="shadow"] {
+:root [class*='shadow'] {
   box-shadow: var(--ui-shadow);
 }
 
@@ -317,61 +325,64 @@ body {
 }
 
 /* Subtle background for muted areas */
-:root [class*="bg-gray-50"],
-:root [class*="bg-slate-50"] {
+:root [class*='bg-gray-50'],
+:root [class*='bg-slate-50'] {
   background-color: var(--ui-bg-muted) !important;
 }
 
 /* Enhanced borders */
-:root [class*="border-gray-200"],
-:root [class*="border-slate-200"] {
+:root [class*='border-gray-200'],
+:root [class*='border-slate-200'] {
   border-color: var(--ui-border) !important;
 }
 
 /* Better text contrast */
-:root [class*="text-gray-600"],
-:root [class*="text-slate-600"] {
+:root [class*='text-gray-600'],
+:root [class*='text-slate-600'] {
   color: var(--ui-text-toned) !important;
 }
 
-:root [class*="text-gray-500"],
-:root [class*="text-slate-500"] {
+:root [class*='text-gray-500'],
+:root [class*='text-slate-500'] {
   color: var(--ui-text-muted) !important;
 }
 
-:root [class*="text-gray-900"],
-:root [class*="text-slate-900"] {
+:root [class*='text-gray-900'],
+:root [class*='text-slate-900'] {
   color: var(--ui-text-highlighted) !important;
 }
 
 /* Enhanced hover states */
-:root [class*="hover:bg-gray-50"],
-:root [class*="hover:bg-slate-50"] {
+:root [class*='hover:bg-gray-50'],
+:root [class*='hover:bg-slate-50'] {
   transition: background-color 0.2s ease;
 }
 
-:root [class*="hover:bg-gray-50"]:hover,
-:root [class*="hover:bg-slate-50"]:hover {
+:root [class*='hover:bg-gray-50']:hover,
+:root [class*='hover:bg-slate-50']:hover {
   background-color: var(--ui-bg-accented) !important;
 }
 
 /* Primary buttons with better contrast */
-:root button[class*="bg-primary"],
-:root [class*="bg-blue-600"],
-:root [class*="bg-primary-600"] {
+:root button[class*='bg-primary'],
+:root [class*='bg-blue-600'],
+:root [class*='bg-primary-600'] {
   box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-:root button[class*="bg-primary"]:hover,
-:root [class*="bg-blue-600"]:hover,
-:root [class*="bg-primary-600"]:hover {
+:root button[class*='bg-primary']:hover,
+:root [class*='bg-blue-600']:hover,
+:root [class*='bg-primary-600']:hover {
   box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
   transform: translateY(-1px);
 }
 
 /* Subtle card hover effects */
-:root [class*="card"]:hover {
+:root [class*='card']:hover {
   box-shadow: var(--ui-shadow-md);
   border-color: var(--ui-border-accented);
 }
@@ -382,35 +393,35 @@ body {
 /* Dark mode is excluded - it already has proper backdrop styling */
 
 /* Target overlay with z-index classes - light mode only */
-html:not(.dark) .fixed.inset-0.z-50:not([role="dialog"]),
-html.light .fixed.inset-0.z-50:not([role="dialog"]),
-html:not(.dark) .fixed.inset-0.z-\[50\]:not([role="dialog"]),
-html.light .fixed.inset-0.z-\[50\]:not([role="dialog"]) {
+html:not(.dark) .fixed.inset-0.z-50:not([role='dialog']),
+html.light .fixed.inset-0.z-50:not([role='dialog']),
+html:not(.dark) .fixed.inset-0.z-\[50\]:not([role='dialog']),
+html.light .fixed.inset-0.z-\[50\]:not([role='dialog']) {
   background-color: rgba(240, 249, 255, 0.75) !important;
   backdrop-filter: blur(2px);
 }
 
 /* Target overlay with data-headlessui-state attribute - light mode only */
-html:not(.dark) [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
-html.light [data-headlessui-state].fixed.inset-0:not([role="dialog"]) {
+html:not(.dark) [data-headlessui-state].fixed.inset-0:not([role='dialog']),
+html.light [data-headlessui-state].fixed.inset-0:not([role='dialog']) {
   background-color: rgba(240, 249, 255, 0.75) !important;
   backdrop-filter: blur(2px);
 }
 
 /* Target backdrop that appears before dialog in DOM - light mode only */
-html:not(.dark) [role="dialog"] ~ .fixed.inset-0,
-html.light [role="dialog"] ~ .fixed.inset-0 {
+html:not(.dark) [role='dialog'] ~ .fixed.inset-0,
+html.light [role='dialog'] ~ .fixed.inset-0 {
   background-color: rgba(240, 249, 255, 0.75) !important;
   backdrop-filter: blur(2px);
 }
 
 /* The alternate theme must override the Apex light-mode backdrop rules above. */
-html[data-portal-theme="brutal"]:not(.dark) .fixed.inset-0.z-50:not([role="dialog"]),
-html[data-portal-theme="brutal"].light .fixed.inset-0.z-50:not([role="dialog"]),
-html[data-portal-theme="brutal"]:not(.dark) [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
-html[data-portal-theme="brutal"].light [data-headlessui-state].fixed.inset-0:not([role="dialog"]),
-html[data-portal-theme="brutal"]:not(.dark) [role="dialog"] ~ .fixed.inset-0,
-html[data-portal-theme="brutal"].light [role="dialog"] ~ .fixed.inset-0 {
+html[data-portal-theme='brutal']:not(.dark) .fixed.inset-0.z-50:not([role='dialog']),
+html[data-portal-theme='brutal'].light .fixed.inset-0.z-50:not([role='dialog']),
+html[data-portal-theme='brutal']:not(.dark) [data-headlessui-state].fixed.inset-0:not([role='dialog']),
+html[data-portal-theme='brutal'].light [data-headlessui-state].fixed.inset-0:not([role='dialog']),
+html[data-portal-theme='brutal']:not(.dark) [role='dialog'] ~ .fixed.inset-0,
+html[data-portal-theme='brutal'].light [role='dialog'] ~ .fixed.inset-0 {
   background: var(--color-overlay) !important;
   backdrop-filter: none !important;
 }

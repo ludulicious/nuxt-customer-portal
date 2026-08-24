@@ -17,7 +17,7 @@ const emit = defineEmits<{
   select: [id: string]
   filter: [filters: ServiceRequestFilters]
   assign: [id: string]
-  update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
+  update: [data: { id: string; updates: AdminServiceRequestUpdateInput }]
 }>()
 const { t } = useI18n()
 
@@ -37,12 +37,20 @@ watch(currentPage, (page) => {
 })
 
 const getActions = (request: ServiceRequest) => {
-  return [[
-    { label: t('features.serviceRequests.actions.view'), click: () => emit('select', request.id) },
-    { label: t('features.serviceRequests.actions.assign'), click: () => emit('assign', request.id) },
-    { label: t('features.serviceRequests.actions.resolve'), click: () => emit('update', { id: request.id, updates: { status: 'RESOLVED' } }) },
-    { label: t('features.serviceRequests.actions.close'), click: () => emit('update', { id: request.id, updates: { status: 'CLOSED' } }) }
-  ]]
+  return [
+    [
+      { label: t('features.serviceRequests.actions.view'), click: () => emit('select', request.id) },
+      { label: t('features.serviceRequests.actions.assign'), click: () => emit('assign', request.id) },
+      {
+        label: t('features.serviceRequests.actions.resolve'),
+        click: () => emit('update', { id: request.id, updates: { status: 'RESOLVED' } })
+      },
+      {
+        label: t('features.serviceRequests.actions.close'),
+        click: () => emit('update', { id: request.id, updates: { status: 'CLOSED' } })
+      }
+    ]
+  ]
 }
 
 const statusOptions = computed(() => [
@@ -61,11 +69,16 @@ const priorityOptions = computed(() => [
 
 const getPriorityColor = (priority: ServiceRequestPriority) => {
   switch (priority) {
-    case 'LOW': return 'success'
-    case 'MEDIUM': return 'info'
-    case 'HIGH': return 'warning'
-    case 'URGENT': return 'error'
-    default: return 'neutral'
+    case 'LOW':
+      return 'success'
+    case 'MEDIUM':
+      return 'info'
+    case 'HIGH':
+      return 'warning'
+    case 'URGENT':
+      return 'error'
+    default:
+      return 'neutral'
   }
 }
 </script>
@@ -74,8 +87,16 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
   <UCard>
     <!-- Filters -->
     <div class="flex gap-2 mb-4">
-      <USelect v-model="filters.status" :options="statusOptions" :placeholder="t('features.serviceRequests.fields.status')" />
-      <USelect v-model="filters.priority" :options="priorityOptions" :placeholder="t('features.serviceRequests.fields.priority')" />
+      <USelect
+        v-model="filters.status"
+        :options="statusOptions"
+        :placeholder="t('features.serviceRequests.fields.status')"
+      />
+      <USelect
+        v-model="filters.priority"
+        :options="priorityOptions"
+        :placeholder="t('features.serviceRequests.fields.priority')"
+      />
       <UInput v-model="filters.search" :placeholder="t('common.searchPlaceholder')" icon="i-lucide-search" />
     </div>
 
@@ -109,7 +130,9 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
             </td>
             <td class="p-3">{{ request.clientName || request.clientOrganizationId }}</td>
             <td class="p-3"><StatusBadge :status="request.status" /></td>
-            <td class="p-3"><UBadge :color="getPriorityColor(request.priority)">{{ request.priority }}</UBadge></td>
+            <td class="p-3">
+              <UBadge :color="getPriorityColor(request.priority)">{{ request.priority }}</UBadge>
+            </td>
             <td class="p-3">{{ request.assignedToId || '—' }}</td>
             <td class="p-3">
               <UDropdownMenu :items="getActions(request)">

@@ -6,7 +6,7 @@ import { listClientsPage } from '@nuxt-customer-portal/timesheets/server/utils/t
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminClientsGet',
+    operationId: 'timesheetsAdminClientsGet',
     summary: 'List timesheet clients',
     description: 'List timesheet clients. Scoped to the active organization and the applicable Timesheets permission.'
   }

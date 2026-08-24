@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError, MemberRole } from '@nuxt-customer-portal/core/shared/types/index'
+import type {
+  Organization,
+  OrganizationInvitationsResponse,
+  OrganizationMemberWithUser,
+  ApiError,
+  MemberRole
+} from '@nuxt-customer-portal/core/shared/types/index'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import { canViewOrganizationDirectory as canViewDirectory } from '@nuxt-customer-portal/core/shared/feature-registry'
 
@@ -40,7 +46,9 @@ const loadOrganization = async () => {
     const { data: roleData, error: roleError } = await authClient.organization.getActiveMemberRole({
       query: { organizationId: activeOrganizationId.value }
     })
-    if (roleError) throw roleError
+    if (roleError) {
+      throw roleError
+    }
     userOrganizationRole.value = (roleData?.role as MemberRole | undefined) ?? null
     organization.value = await $fetch<Organization>(`/api/organizations/${activeOrganizationId.value}`)
     const capabilities = await $fetch<{ canInvoice: boolean }>('/api/timesheets/capabilities')
@@ -60,16 +68,20 @@ const loadOrganization = async () => {
 
 // Load members
 const loadMembers = async () => {
-  if (!organization.value) return
+  if (!organization.value) {
+    return
+  }
 
   try {
     const { listMembers } = useOrganization()
     const result = await listMembers(organization.value.id)
-    if (result.error) throw result.error
+    if (result.error) {
+      throw result.error
+    }
     const data = result.data
     members.value = Array.isArray(data)
-      ? data as OrganizationMemberWithUser[]
-      : (data?.members || []) as OrganizationMemberWithUser[]
+      ? (data as OrganizationMemberWithUser[])
+      : ((data?.members || []) as OrganizationMemberWithUser[])
   } catch (err) {
     console.error('Failed to load members:', err)
     members.value = []
@@ -78,7 +90,9 @@ const loadMembers = async () => {
 
 // Load invitations
 const loadInvitations = async () => {
-  if (!organization.value) return
+  if (!organization.value) {
+    return
+  }
 
   try {
     invitations.value = await $fetch<OrganizationInvitationsResponse>(
@@ -96,18 +110,21 @@ const handleOrganizationUpdated = async () => {
   await loadOrganization()
 }
 
-watch(activeOrganizationId, (id) => {
-  if (id) {
-    void loadOrganization()
-  } else {
-    loading.value = false
-    organization.value = null
-    userOrganizationRole.value = null
-    members.value = []
-    invitations.value = []
-  }
-}, { immediate: true })
-
+watch(
+  activeOrganizationId,
+  (id) => {
+    if (id) {
+      void loadOrganization()
+    } else {
+      loading.value = false
+      organization.value = null
+      userOrganizationRole.value = null
+      members.value = []
+      invitations.value = []
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -125,16 +142,38 @@ watch(activeOrganizationId, (id) => {
 
     <!-- Organization Details -->
     <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">
-      <OrganizationDetailsCard :organization="organization" :role="userOrganizationRole" :can-edit="userOrganizationRole === 'owner'" :editing="showEditModal" @edit="showEditModal = true">
+      <OrganizationDetailsCard
+        :organization="organization"
+        :role="userOrganizationRole"
+        :can-edit="userOrganizationRole === 'owner'"
+        :editing="showEditModal"
+        @edit="showEditModal = true"
+      >
         <template #edit>
           <OrganizationSettings @updated="handleOrganizationUpdated" @canceled="showEditModal = false" />
         </template>
       </OrganizationDetailsCard>
 
-      <OrganizationEmailProviderSettings v-if="organization.organizationType === 'PROVIDER' && invoicingEnabled && userOrganizationRole === 'owner'" />
+      <OrganizationEmailProviderSettings
+        v-if="organization.organizationType === 'PROVIDER' && invoicingEnabled && userOrganizationRole === 'owner'"
+      />
 
-      <OrganizationMembersCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :members="members" :loading="loading" :can-manage="true" @refresh="loadMembers" />
-      <OrganizationInvitationsCard v-if="canViewOrganizationDirectory" :organization-id="organization.id" :invitations="invitations" :loading="loading" :can-manage="true" @refresh="loadInvitations" />
+      <OrganizationMembersCard
+        v-if="canViewOrganizationDirectory"
+        :organization-id="organization.id"
+        :members="members"
+        :loading="loading"
+        :can-manage="true"
+        @refresh="loadMembers"
+      />
+      <OrganizationInvitationsCard
+        v-if="canViewOrganizationDirectory"
+        :organization-id="organization.id"
+        :invitations="invitations"
+        :loading="loading"
+        :can-manage="true"
+        @refresh="loadInvitations"
+      />
     </div>
   </div>
 </template>

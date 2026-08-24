@@ -11,7 +11,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsByIdGet',
     summary: 'Get an organization',
-    description: 'Get an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Get an organization. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event): Promise<Organization> => {
 
   // Check if user has permission to read this organization
   const hasPermission = await checkOrganizationPermission(
-    session as { user: { id: string, role?: string } },
+    session as { user: { id: string; role?: string } },
     organizationId,
     'organization',
     'read'

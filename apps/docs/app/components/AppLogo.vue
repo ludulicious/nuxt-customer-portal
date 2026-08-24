@@ -7,14 +7,7 @@
     preserveAspectRatio="xMidYMid meet"
   >
     <defs>
-      <linearGradient
-        id="a"
-        x1="0"
-        x2="1"
-        y1="0"
-        y2="0"
-        gradientUnits="objectBoundingBox"
-      >
+      <linearGradient id="a" x1="0" x2="1" y1="0" y2="0" gradientUnits="objectBoundingBox">
         <stop offset="0%" stop-color="#6ee2f5" />
         <stop offset="100%" stop-color="#6454f0" />
       </linearGradient>

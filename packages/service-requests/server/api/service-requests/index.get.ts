@@ -5,14 +5,18 @@ import { listServiceRequests } from '@nuxt-customer-portal/service-requests/serv
 defineRouteMeta({
   openAPI: {
     tags: ['Service Requests'],
-operationId: 'serviceRequestsGet',
+    operationId: 'serviceRequestsGet',
     summary: 'List service requests',
-    description: 'List service requests. Scoped to the active organization and the applicable Service Requests permission.'
+    description:
+      'List service requests. Scoped to the active organization and the applicable Service Requests permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
   const scope = await requireServiceRequestScope(event, 'list')
   const filters = filterServiceRequestSchema.parse(getQuery(event))
-  return listServiceRequests(scope.providerOrganizationId, filters, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
+  return listServiceRequests(scope.providerOrganizationId, filters, {
+    clientOrganizationId: scope.clientOrganizationId,
+    createdById: scope.ownOnly ? scope.session.user.id : undefined
+  })
 })

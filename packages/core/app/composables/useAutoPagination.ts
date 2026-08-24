@@ -11,8 +11,12 @@ export const useAutoPagination = (options: AutoPaginationOptions) => {
   const { stop } = useIntersectionObserver(
     options.sentinel,
     ([entry]) => {
-      if (!entry?.isIntersecting) return
-      if (toValue(options.loading) || !toValue(options.canLoadMore)) return
+      if (!entry?.isIntersecting) {
+        return
+      }
+      if (toValue(options.loading) || !toValue(options.canLoadMore)) {
+        return
+      }
       void options.loadMore()
     },
     {

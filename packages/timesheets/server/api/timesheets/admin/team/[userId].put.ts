@@ -15,7 +15,9 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const userId = getRouterParam(event, 'userId')
-  if (!userId) throw createError({ statusCode: 400, message: 'Team member is required' })
+  if (!userId) {
+    throw createError({ statusCode: 400, message: 'Team member is required' })
+  }
   const input = teamMemberSettingsUpdateSchema.parse(await readBody(event))
   await updateTeamMemberSettings(organizationId, userId, input)
   return { updated: true }

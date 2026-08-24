@@ -2,17 +2,19 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [[
-    "@nuxt-customer-portal/core",
-    "@nuxt-customer-portal/ui",
-    "@nuxt-customer-portal/authentication",
-    "@nuxt-customer-portal/organizations",
-    "@nuxt-customer-portal/administration",
-    "@nuxt-customer-portal/service-requests",
-    "@nuxt-customer-portal/timesheets",
-    "@nuxt-customer-portal/preset",
-    "@nuxt-customer-portal/kit"
-  ]],
+  "fixed": [
+    [
+      "@nuxt-customer-portal/core",
+      "@nuxt-customer-portal/ui",
+      "@nuxt-customer-portal/authentication",
+      "@nuxt-customer-portal/organizations",
+      "@nuxt-customer-portal/administration",
+      "@nuxt-customer-portal/service-requests",
+      "@nuxt-customer-portal/timesheets",
+      "@nuxt-customer-portal/preset",
+      "@nuxt-customer-portal/kit"
+    ]
+  ],
   "access": "restricted",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",

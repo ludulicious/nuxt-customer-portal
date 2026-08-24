@@ -6,16 +6,17 @@ import { orderOpenApiDocument, type OpenApiDocument } from '../../utils/openapi-
 
 defineRouteMeta({
   openAPI: {
-    'tags': ['Internal'],
-    'summary': 'Get the ordered OpenAPI document',
-    'description': 'Returns the generated OpenAPI document in a stable, domain-oriented order for the documentation interfaces.',
+    tags: ['Internal'],
+    summary: 'Get the ordered OpenAPI document',
+    description:
+      'Returns the generated OpenAPI document in a stable, domain-oriented order for the documentation interfaces.',
     'x-scalar-ignore': true
   }
 })
 
 export default defineEventHandler(async (event) => {
   const response = await fetchWithEvent(event, new URL('/api-docs/openapi.raw.json', getRequestURL(event)))
-  const document = await response.json() as OpenApiDocument
-  const authDocument = await auth.api.generateOpenAPISchema() as unknown as OpenApiDocument
+  const document = (await response.json()) as OpenApiDocument
+  const authDocument = (await auth.api.generateOpenAPISchema()) as unknown as OpenApiDocument
   return orderOpenApiDocument(enrichOpenApiContracts(mergeBetterAuthOpenApi(document, authDocument)))
 })

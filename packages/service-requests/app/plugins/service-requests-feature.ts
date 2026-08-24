@@ -4,11 +4,14 @@ export default defineNuxtPlugin(() => {
   const { registerFeature } = usePortalFeatures()
   const { activeOrganizationRole, activeOrganizationType } = usePortalSession()
   const register = () => {
-    const canManage = activeOrganizationType.value === 'PROVIDER'
-      && (activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin')
+    const canManage =
+      activeOrganizationType.value === 'PROVIDER' &&
+      (activeOrganizationRole.value === 'owner' || activeOrganizationRole.value === 'admin')
     registerFeature({
       ...serviceRequestFeature,
-      dashboardWidgets: serviceRequestFeature.dashboardWidgets?.filter(widget => widget.id !== 'service-requests-attention' || canManage)
+      dashboardWidgets: serviceRequestFeature.dashboardWidgets?.filter(
+        (widget) => widget.id !== 'service-requests-attention' || canManage
+      )
     })
   }
   watch([activeOrganizationRole, activeOrganizationType], register, { immediate: true })

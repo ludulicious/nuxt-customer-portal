@@ -5,7 +5,7 @@ type ThemeUI = NonNullable<ThemeProps['ui']>
 
 export const portalThemeNames = ['apex', 'brutal'] as const
 
-export type PortalThemeName = typeof portalThemeNames[number]
+export type PortalThemeName = (typeof portalThemeNames)[number]
 
 export interface PortalThemeDefinition {
   name: PortalThemeName
@@ -129,8 +129,6 @@ export const portalThemes: Record<PortalThemeName, PortalThemeDefinition> = {
 export const isPortalThemeName = (value: unknown): value is PortalThemeName =>
   typeof value === 'string' && portalThemeNames.includes(value as PortalThemeName)
 
-export const resolvePortalThemeName = (value: unknown): PortalThemeName =>
-  isPortalThemeName(value) ? value : 'apex'
+export const resolvePortalThemeName = (value: unknown): PortalThemeName => (isPortalThemeName(value) ? value : 'apex')
 
-export const resolvePortalTheme = (value: unknown): PortalThemeDefinition =>
-  portalThemes[resolvePortalThemeName(value)]
+export const resolvePortalTheme = (value: unknown): PortalThemeDefinition => portalThemes[resolvePortalThemeName(value)]

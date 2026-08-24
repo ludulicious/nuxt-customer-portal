@@ -4,7 +4,7 @@ import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 const route = useRoute()
 const { t } = useI18n()
 
-const email = ref(decodeURIComponent(route.query.email as string || ''))
+const email = ref(decodeURIComponent((route.query.email as string) || ''))
 const otpCode = ref('')
 const isLoading = ref(false)
 const error = ref('')
@@ -111,7 +111,11 @@ const verifyCode = async () => {
     // Check for success - signIn.emailOtp returns user data, verifyEmail fallback returns status
     const isSuccess = result.data?.user || (result.data as unknown as { status: boolean })?.status === true
 
-    console.log('Verification success check:', { isSuccess, hasUser: !!result.data?.user, hasStatus: !!(result.data as unknown as { status: boolean })?.status })
+    console.log('Verification success check:', {
+      isSuccess,
+      hasUser: !!result.data?.user,
+      hasStatus: !!(result.data as unknown as { status: boolean })?.status
+    })
 
     if (isSuccess) {
       success.value = t('verify.success')
@@ -126,10 +130,12 @@ const verifyCode = async () => {
           localStorage.setItem('pendingInvitationId', invitationId.value)
         }
         // Show a message and redirect to login
-        const invitationMessage = invitationId.value ? ' After signing in, your invitation will be accepted automatically.' : ''
+        const invitationMessage = invitationId.value
+          ? ' After signing in, your invitation will be accepted automatically.'
+          : ''
         success.value = t('verify.success') + invitationMessage + ' Please sign in to continue.'
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        const redirectTo = route.query.redirect as string || '/dashboard'
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        const redirectTo = (route.query.redirect as string) || '/dashboard'
         const loginPath = '/login'
         const fullPath = `${loginPath}?email=${encodeURIComponent(email.value)}&redirect=${encodeURIComponent(redirectTo)}`
         console.log('Redirecting to login:', fullPath)
@@ -139,7 +145,7 @@ const verifyCode = async () => {
 
       // For login verification, user should be signed in
       // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       // Check if session is established
       try {
@@ -157,12 +163,12 @@ const verifyCode = async () => {
       console.log('Redirecting...')
       // The user should now be automatically signed in after email verification
       // Use window.location for a full page refresh to ensure session state is updated
-      const redirectTo = route.query.redirect as string || '/dashboard'
+      const redirectTo = (route.query.redirect as string) || '/dashboard'
       console.log('Redirecting to:', redirectTo)
       window.location.href = redirectTo
     } else {
       console.log('Verification failed:', result.error)
-      error.value = result.error?.message as string || t('verify.invalidCode')
+      error.value = (result.error?.message as string) || t('verify.invalidCode')
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err)
@@ -190,18 +196,20 @@ const resendCode = async () => {
     const isLoginVerification = route.query.redirect || route.query.from === 'login'
     const otpType = isLoginVerification ? 'sign-in' : 'email-verification'
 
-    await authClient.emailOtp.sendVerificationOtp({
-      email: email.value,
-      type: otpType
-    }).then((result) => {
-      if (result.data?.success) {
-        success.value = t('verify.codeSent')
-        // Start the cooldown timer after successful resend
-        startCooldownTimer()
-      } else {
-        error.value = result.error?.message || t('verify.resendError')
-      }
-    })
+    await authClient.emailOtp
+      .sendVerificationOtp({
+        email: email.value,
+        type: otpType
+      })
+      .then((result) => {
+        if (result.data?.success) {
+          success.value = t('verify.codeSent')
+          // Start the cooldown timer after successful resend
+          startCooldownTimer()
+        } else {
+          error.value = result.error?.message || t('verify.resendError')
+        }
+      })
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     error.value = errorMessage || t('verify.resendError')
@@ -212,7 +220,9 @@ const resendCode = async () => {
 
 // Accept pending invitation
 const acceptPendingInvitation = async () => {
-  if (!invitationId.value) return
+  if (!invitationId.value) {
+    return
+  }
 
   acceptingInvitation.value = true
   try {
@@ -220,7 +230,7 @@ const acceptPendingInvitation = async () => {
     const result = await authClient.organization.acceptInvitation({
       invitationId: invitationId.value
     })
-    
+
     if (result.error) {
       console.error('Failed to accept invitation:', result.error)
       // Don't show error to user, just log it - they can accept manually later
@@ -247,7 +257,7 @@ watch(otpCode, (newValue) => {
 
 definePageMeta({
   layout: 'centerform',
-  public: true,
+  public: true
 })
 
 useSeoMeta({
@@ -256,22 +266,35 @@ useSeoMeta({
 </script>
 
 <template>
-  <CustomPageCard :title="$t('verify.title')" :description="$t('verify.subtitle', { email })" :success="success"
-    :error="error">
+  <CustomPageCard
+    :title="$t('verify.title')"
+    :description="$t('verify.subtitle', { email })"
+    :success="success"
+    :error="error"
+  >
     <!-- OTP Input -->
     <div class="flex flex-col items-center w-full">
       <UFormField name="otp" required class="w-full flex flex-col items-center" :label="t('verify.enterCode')">
-        <UInput id="otp" v-model="otpCode" size="xl" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-          class="w-32 text-center" :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading"
-          @input="handleOtpInput" />
+        <UInput
+          id="otp"
+          v-model="otpCode"
+          size="xl"
+          type="text"
+          maxlength="6"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          class="w-32 text-center"
+          :placeholder="$t('verify.codePlaceholder')"
+          :disabled="isLoading"
+          @input="handleOtpInput"
+        />
       </UFormField>
     </div>
 
     <!-- Resend Code -->
     <div class="text-center">
       <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
-        {{ resendCooldown > 0 ? t('verify.resendIn', { seconds: resendCooldown })
-          : t('verify.resendCode') }}
+        {{ resendCooldown > 0 ? t('verify.resendIn', { seconds: resendCooldown }) : t('verify.resendCode') }}
       </UButton>
     </div>
   </CustomPageCard>

@@ -1,6 +1,6 @@
 name: Documentation feedback
 description: Report an unclear, incomplete, outdated, or incorrect documentation page.
-title: "Docs: "
+title: 'Docs: '
 labels:
   - documentation
 body:

@@ -1,17 +1,20 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  title?: string
-  description?: string
-  success?: string
-  error?: string
-  showLogo?: boolean
-}>(), {
-  title: '',
-  description: '',
-  success: '',
-  error: '',
-  showLogo: true
-})
+const props = withDefaults(
+  defineProps<{
+    title?: string
+    description?: string
+    success?: string
+    error?: string
+    showLogo?: boolean
+  }>(),
+  {
+    title: '',
+    description: '',
+    success: '',
+    error: '',
+    showLogo: true
+  }
+)
 </script>
 
 <template>

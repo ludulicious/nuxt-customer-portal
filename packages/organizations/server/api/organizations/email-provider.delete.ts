@@ -6,7 +6,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsEmailProviderDelete',
     summary: 'Remove organization email credentials',
-    description: 'Remove organization email credentials. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Remove organization email credentials. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 

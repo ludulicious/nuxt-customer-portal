@@ -46,8 +46,10 @@ export const useServiceRequests = () => {
     loading.value = true
     try {
       const updated = await $fetch<ServiceRequest>(`/api/service-requests/${id}`, { method: 'PATCH', body: data })
-      const index = requests.value.findIndex(request => request.id === id)
-      if (index >= 0) requests.value[index] = updated
+      const index = requests.value.findIndex((request) => request.id === id)
+      if (index >= 0) {
+        requests.value[index] = updated
+      }
       return updated
     } finally {
       loading.value = false
@@ -56,7 +58,7 @@ export const useServiceRequests = () => {
 
   const deleteRequest = async (id: string) => {
     await $fetch(`/api/service-requests/${id}`, { method: 'DELETE' as never })
-    requests.value = requests.value.filter(request => request.id !== id)
+    requests.value = requests.value.filter((request) => request.id !== id)
   }
 
   const getRequest = (id: string) => $fetch<ServiceRequest>(`/api/service-requests/${id}`)
@@ -64,22 +66,33 @@ export const useServiceRequests = () => {
     t(`features.serviceRequests.status.${status.toLowerCase()}`)
   const getPriorityBadgeText = (priority: ServiceRequestPriority) =>
     t(`features.serviceRequests.priority.${priority.toLowerCase()}`)
-  const getPriorityColor = (priority: ServiceRequestPriority) => ({
-    LOW: 'success',
-    MEDIUM: 'info',
-    HIGH: 'warning',
-    URGENT: 'error'
-  } as const)[priority]
-  const getStatusColor = (status: ServiceRequestStatus) => ({
-    OPEN: 'primary',
-    IN_PROGRESS: 'warning',
-    RESOLVED: 'success',
-    CLOSED: 'neutral'
-  } as const)[status]
+  const getPriorityColor = (priority: ServiceRequestPriority) =>
+    (
+      ({
+        LOW: 'success',
+        MEDIUM: 'info',
+        HIGH: 'warning',
+        URGENT: 'error'
+      }) as const
+    )[priority]
+  const getStatusColor = (status: ServiceRequestStatus) =>
+    (
+      ({
+        OPEN: 'primary',
+        IN_PROGRESS: 'warning',
+        RESOLVED: 'success',
+        CLOSED: 'neutral'
+      }) as const
+    )[status]
 
   const statusOptions = computed(() => [
-    { label: t('features.serviceRequests.filters.allStatuses'), value: undefined, badgeText: '', badgeColor: 'neutral' as const },
-    ...(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map(value => ({
+    {
+      label: t('features.serviceRequests.filters.allStatuses'),
+      value: undefined,
+      badgeText: '',
+      badgeColor: 'neutral' as const
+    },
+    ...(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((value) => ({
       label: getStatusBadgeText(value),
       value,
       badgeText: getStatusBadgeText(value),
@@ -87,8 +100,13 @@ export const useServiceRequests = () => {
     }))
   ])
   const priorityOptions = computed(() => [
-    { label: t('features.serviceRequests.filters.allPriorities'), value: undefined, badgeText: '', badgeColor: 'neutral' as const },
-    ...(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map(value => ({
+    {
+      label: t('features.serviceRequests.filters.allPriorities'),
+      value: undefined,
+      badgeText: '',
+      badgeColor: 'neutral' as const
+    },
+    ...(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((value) => ({
       label: getPriorityBadgeText(value),
       value,
       badgeText: getPriorityBadgeText(value),

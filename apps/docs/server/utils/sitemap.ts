@@ -3,15 +3,13 @@ import { absoluteSiteUrl } from './site'
 
 export const sitemapRoutes = [
   '/',
-  ...documentationCatalog.map(page => page.path),
+  ...documentationCatalog.map((page) => page.path),
   '/privacy-policy',
   '/terms-of-service'
 ]
 
 export function renderSitemap() {
-  const entries = sitemapRoutes
-    .map(path => `  <url><loc>${absoluteSiteUrl(path)}</loc></url>`)
-    .join('\n')
+  const entries = sitemapRoutes.map((path) => `  <url><loc>${absoluteSiteUrl(path)}</loc></url>`).join('\n')
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

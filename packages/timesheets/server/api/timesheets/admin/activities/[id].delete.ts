@@ -6,18 +6,15 @@ import { activityDeleteSchema } from '@nuxt-customer-portal/timesheets/server/ut
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminActivitiesByIdDelete',
+    operationId: 'timesheetsAdminActivitiesByIdDelete',
     summary: 'Delete a timesheet activity',
-    description: 'Delete a timesheet activity. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Delete a timesheet activity. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const input = activityDeleteSchema.parse(await readBody(event))
   return deleteActivity(organizationId, getRouterParam(event, 'id')!, input.activityName)
 })

@@ -16,11 +16,10 @@ const { editPageUrl, reportPageUrl, sourceRevisionLabel, sourceRevisionUrl } = u
     aria-labelledby="docs-feedback-title"
   >
     <div class="max-w-2xl">
-      <h2 id="docs-feedback-title" class="text-base font-semibold text-highlighted">
-        Help improve this page
-      </h2>
+      <h2 id="docs-feedback-title" class="text-base font-semibold text-highlighted">Help improve this page</h2>
       <p class="mt-1 text-sm text-muted">
-        Found something unclear, incomplete, or outdated? Open a focused report or propose a correction in the documentation source.
+        Found something unclear, incomplete, or outdated? Open a focused report or propose a correction in the
+        documentation source.
       </p>
       <p class="mt-2 text-sm text-muted">
         Verified against Customer Portal
@@ -30,8 +29,8 @@ const { editPageUrl, reportPageUrl, sourceRevisionLabel, sourceRevisionUrl } = u
           target="_blank"
           rel="noopener noreferrer"
         >
-          <code>{{ sourceRevisionLabel }}</code>
-        </a>.
+          <code>{{ sourceRevisionLabel }}</code> </a
+        >.
       </p>
     </div>
 

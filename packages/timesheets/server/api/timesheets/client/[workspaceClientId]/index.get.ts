@@ -3,5 +3,10 @@ import { getClientTimesheets } from '@nuxt-customer-portal/timesheets/server/uti
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId, role } = await requireActiveOrganizationRole(event)
-  return getClientTimesheets(getRouterParam(event, 'workspaceClientId')!, organizationId, session.user.id, role === 'owner' || role === 'admin' || session.user.role === 'admin')
+  return getClientTimesheets(
+    getRouterParam(event, 'workspaceClientId')!,
+    organizationId,
+    session.user.id,
+    role === 'owner' || role === 'admin' || session.user.role === 'admin'
+  )
 })

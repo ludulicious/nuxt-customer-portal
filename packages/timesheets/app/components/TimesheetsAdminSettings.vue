@@ -10,9 +10,6 @@ defineProps<{
 
 <template>
   <section class="grid gap-4">
-    <TimesheetsWorkspaceSettingsForm
-      :settings="data.settings"
-      :refresh="refresh"
-    />
+    <TimesheetsWorkspaceSettingsForm :settings="data.settings" :refresh="refresh" />
   </section>
 </template>

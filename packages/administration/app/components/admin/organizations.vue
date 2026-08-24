@@ -27,13 +27,12 @@ const sortOptions = computed(() => [
   { label: t('admin.organization.detail.created'), value: 'createdAt' as const }
 ])
 
-const currentSortLabel = computed(() =>
-  sortOptions.value.find(o => o.value === sortBy.value)?.label
-  || t('common.sort')
+const currentSortLabel = computed(
+  () => sortOptions.value.find((o) => o.value === sortBy.value)?.label || t('common.sort')
 )
 
 const sortDropdownItems = computed(() =>
-  sortOptions.value.map(option => ({
+  sortOptions.value.map((option) => ({
     label: option.label,
     icon: sortBy.value === option.value ? 'i-lucide-check' : undefined,
     onSelect: () => {
@@ -50,11 +49,7 @@ const filteredAndSortedOrganizations = computed(() => {
   let list = [...organizations.value]
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
-    list = list.filter(
-      org =>
-        org.name?.toLowerCase().includes(q)
-        || org.slug?.toLowerCase().includes(q)
-    )
+    list = list.filter((org) => org.name?.toLowerCase().includes(q) || org.slug?.toLowerCase().includes(q))
   }
   list.sort((a, b) => {
     let cmp = 0
@@ -83,7 +78,9 @@ const loadOrganizations = async () => {
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch(searchQuery, () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
   searchTimeout = setTimeout(() => {
     // Client-side filter only; no API call
   }, 300)
@@ -94,7 +91,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
 })
 
 const listContainerRef = ref<HTMLElement | null>(null)
@@ -104,7 +103,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
   <UDashboardPanel
     id="admin-organizations"
     class="lg:pb-8 min-h-0 overflow-hidden"
-    style="height: calc(100dvh - var(--ui-header-height));"
+    style="height: calc(100dvh - var(--ui-header-height))"
     :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
   >
     <template #header>
@@ -167,11 +166,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
               :items="sortDropdownItems"
               :content="{ align: 'end', collisionPadding: 12 }"
             >
-              <UButton
-                icon="i-lucide-arrow-down-up"
-                variant="outline"
-                class="w-48 justify-between"
-              >
+              <UButton icon="i-lucide-arrow-down-up" variant="outline" class="w-48 justify-between">
                 <span class="truncate">{{ currentSortLabel }}</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
               </UButton>
@@ -192,12 +187,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
         <template #body>
           <div class="space-y-4">
             <UFormField :label="t('common.sortBy')">
-              <USelect
-                v-model="sortBy"
-                class="w-full"
-                :items="sortOptions"
-                :placeholder="t('common.sortBy')"
-              />
+              <USelect v-model="sortBy" class="w-full" :items="sortOptions" :placeholder="t('common.sortBy')" />
             </UFormField>
 
             <UFormField :label="t('common.direction')">
@@ -261,11 +251,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
                     {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
                   </p>
                 </div>
-                <UButton
-                  :to="`/admin/organizations/${org.slug}?from=admin-organizations`"
-                  variant="outline"
-                  size="sm"
-                >
+                <UButton :to="`/admin/organizations/${org.slug}?from=admin-organizations`" variant="outline" size="sm">
                   {{ t('admin.organization.list.view') }}
                 </UButton>
               </div>
@@ -283,7 +269,8 @@ const listContainerRef = ref<HTMLElement | null>(null)
           {{ t('admin.organization.list.totalCount', { count: organizations.length }) }}
         </span>
         <span>
-          {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ filteredAndSortedOrganizations.length }}</span>
+          {{ t('common.loaded') }}:
+          <span class="font-medium text-highlighted">{{ filteredAndSortedOrganizations.length }}</span>
         </span>
       </div>
     </template>

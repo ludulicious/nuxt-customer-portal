@@ -4,7 +4,9 @@ export const hasNumericInvoiceSequence = (number: string) => trailingSequence.te
 
 export const incrementInvoiceNumber = (number: string): string => {
   const match = number.match(trailingSequence)
-  if (!match || match.index === undefined) throw new Error('Invoice number must end with a numeric sequence')
+  if (!match || match.index === undefined) {
+    throw new Error('Invoice number must end with a numeric sequence')
+  }
   const digits = match[0].split('')
   let carry = 1
   for (let index = digits.length - 1; index >= 0 && carry; index -= 1) {
@@ -12,7 +14,9 @@ export const incrementInvoiceNumber = (number: string): string => {
     digits[index] = String(next % 10)
     carry = next > 9 ? 1 : 0
   }
-  if (carry) digits.unshift('1')
+  if (carry) {
+    digits.unshift('1')
+  }
   const next = digits.join('').padStart(match[0].length, '0')
   return `${number.slice(0, match.index)}${next}`
 }

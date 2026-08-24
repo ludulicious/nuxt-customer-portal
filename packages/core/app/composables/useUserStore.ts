@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
         organizationsData.value = null
       } else if (data) {
         // Convert null logos to undefined to match Organization type
-        organizationsData.value = data.map(org => ({
+        organizationsData.value = data.map((org) => ({
           ...org,
           logo: org.logo ?? undefined
         })) as Organization[]
@@ -76,16 +76,20 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // Watch authentication status and fetch organizations when user becomes authenticated
-  watch(currentUser, (user, oldUser) => {
-    if (user && !oldUser) {
-      // User just logged in, fetch organizations
-      fetchOrganizations()
-    } else if (!user) {
-      // User logged out, clear organizations
-      organizationsData.value = null
-      organizationsError.value = null
-    }
-  }, { immediate: true })
+  watch(
+    currentUser,
+    (user, oldUser) => {
+      if (user && !oldUser) {
+        // User just logged in, fetch organizations
+        fetchOrganizations()
+      } else if (!user) {
+        // User logged out, clear organizations
+        organizationsData.value = null
+        organizationsError.value = null
+      }
+    },
+    { immediate: true }
+  )
 
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
@@ -94,16 +98,22 @@ export const useUserStore = defineStore('user', () => {
   const isLoading = ref(false)
   const activeOrganization = computed(() => {
     // Prefer the one from permissions API if available, otherwise use organizationsHelper
-    return activeOrganizationFromPermissions.value || organizationsHelper.value.data?.find((org: Organization) => org.id === activeOrganizationId.value)
+    return (
+      activeOrganizationFromPermissions.value ||
+      organizationsHelper.value.data?.find((org: Organization) => org.id === activeOrganizationId.value)
+    )
   })
 
   const colorMode = useColorMode() // Use the colorMode composable
   const theme = ref(colorMode.preference)
 
   // Watch for changes in colorMode.preference from @nuxtjs/color-mode
-  watch(() => colorMode.preference, (newValue) => {
-    theme.value = newValue // Update our store's theme ref
-  })
+  watch(
+    () => colorMode.preference,
+    (newValue) => {
+      theme.value = newValue // Update our store's theme ref
+    }
+  )
 
   const hasPermission = (subject: string, action: string): boolean => {
     return permissions.value[`${subject}.${action}`] ?? false
@@ -122,7 +132,7 @@ export const useUserStore = defineStore('user', () => {
     if (!name) {
       return ''
     }
-    const parts = name.split(' ').filter(part => part.length > 0)
+    const parts = name.split(' ').filter((part) => part.length > 0)
     if (parts.length === 0) {
       return ''
     }
@@ -143,19 +153,23 @@ export const useUserStore = defineStore('user', () => {
   const activeOrganizationRoleValue = ref<string | null>(null)
 
   // Watch for changes in activeOrganizationId and fetch the role
-  watch([activeOrganizationId, currentUser], async ([newOrgId, user]) => {
-    if (newOrgId && user) {
-      try {
-        const { data: roleData } = await authClient.organization.getActiveMemberRole()
-        activeOrganizationRoleValue.value = roleData?.role || null
-      } catch (error) {
-        console.error('Error fetching active organization role:', error)
+  watch(
+    [activeOrganizationId, currentUser],
+    async ([newOrgId, user]) => {
+      if (newOrgId && user) {
+        try {
+          const { data: roleData } = await authClient.organization.getActiveMemberRole()
+          activeOrganizationRoleValue.value = roleData?.role || null
+        } catch (error) {
+          console.error('Error fetching active organization role:', error)
+          activeOrganizationRoleValue.value = null
+        }
+      } else {
         activeOrganizationRoleValue.value = null
       }
-    } else {
-      activeOrganizationRoleValue.value = null
-    }
-  }, { immediate: true })
+    },
+    { immediate: true }
+  )
 
   // Computed property that returns the active organization role
   const activeOrganizationRole = computed(() => {
@@ -165,7 +179,9 @@ export const useUserStore = defineStore('user', () => {
 
   const loggedInUsingEmail = computed(() => {
     const user = currentUser.value
-    if (!user || typeof user.providerId === 'undefined') return false
+    if (!user || typeof user.providerId === 'undefined') {
+      return false
+    }
     return user.providerId === 'credential'
   })
 
@@ -222,12 +238,14 @@ export const useUserStore = defineStore('user', () => {
         while (retries > 0) {
           sessionResponse = await authClient.getSession()
           // Check if the session has been updated with the new organizationId
-          const sessionData = sessionResponse?.data as unknown as AuthSessionResponse & { activeOrganizationId?: string }
+          const sessionData = sessionResponse?.data as unknown as AuthSessionResponse & {
+            activeOrganizationId?: string
+          }
           if (sessionData && sessionData.activeOrganizationId === organizationId) {
             break
           }
           console.log('ActiverOganizationId not yet set in Session data, retrying (retries left: ${retries -1})...')
-          await new Promise(resolve => setTimeout(resolve, 50))
+          await new Promise((resolve) => setTimeout(resolve, 50))
           retries--
         }
 
@@ -285,42 +303,48 @@ export const useUserStore = defineStore('user', () => {
   const hasAttemptedAutoSet = ref(false)
 
   // Auto-set first organization when activeOrganizationId is null but user has organizations
-  watch([activeOrganizationId, () => organizationsHelper.value.data, currentUser], async ([orgId, organizations, user]) => {
-    // Only run on client side
-    if (import.meta.server) return
-
-    // Only proceed if:
-    // 1. User is authenticated
-    // 2. activeOrganizationId is null
-    // 3. User has at least one organization
-    // 4. We haven't already attempted to set it
-    // 5. Organizations are not still loading
-    if (
-      user
-      && !orgId
-      && organizations
-      && organizations.length > 0
-      && !hasAttemptedAutoSet.value
-      && !organizationsHelper.value.isPending
-    ) {
-      hasAttemptedAutoSet.value = true
-      try {
-        // A provider user may also belong to one or more client organizations.
-        // Prefer the provider workspace as the initial context so provider-only
-        // modules (Clients, administration, and sales invoices) are available
-        // after a session without an active organization is restored.
-        const firstOrg = organizations.find(org => org.organizationType === 'PROVIDER') ?? organizations[0]
-        if (firstOrg?.id) {
-          console.log('Auto-setting first organization as active:', firstOrg.id)
-          await setActiveOrganizationId(firstOrg.id)
-        }
-      } catch (error) {
-        console.error('Error auto-setting first organization:', error)
-        // Reset flag on error so we can retry later
-        hasAttemptedAutoSet.value = false
+  watch(
+    [activeOrganizationId, () => organizationsHelper.value.data, currentUser],
+    async ([orgId, organizations, user]) => {
+      // Only run on client side
+      if (import.meta.server) {
+        return
       }
-    }
-  }, { immediate: true })
+
+      // Only proceed if:
+      // 1. User is authenticated
+      // 2. activeOrganizationId is null
+      // 3. User has at least one organization
+      // 4. We haven't already attempted to set it
+      // 5. Organizations are not still loading
+      if (
+        user &&
+        !orgId &&
+        organizations &&
+        organizations.length > 0 &&
+        !hasAttemptedAutoSet.value &&
+        !organizationsHelper.value.isPending
+      ) {
+        hasAttemptedAutoSet.value = true
+        try {
+          // A provider user may also belong to one or more client organizations.
+          // Prefer the provider workspace as the initial context so provider-only
+          // modules (Clients, administration, and sales invoices) are available
+          // after a session without an active organization is restored.
+          const firstOrg = organizations.find((org) => org.organizationType === 'PROVIDER') ?? organizations[0]
+          if (firstOrg?.id) {
+            console.log('Auto-setting first organization as active:', firstOrg.id)
+            await setActiveOrganizationId(firstOrg.id)
+          }
+        } catch (error) {
+          console.error('Error auto-setting first organization:', error)
+          // Reset flag on error so we can retry later
+          hasAttemptedAutoSet.value = false
+        }
+      }
+    },
+    { immediate: true }
+  )
 
   // Reset the auto-set flag when activeOrganizationId changes to a non-null value or user logs out
   watch([activeOrganizationId, currentUser], ([orgId, user]) => {
@@ -333,34 +357,42 @@ export const useUserStore = defineStore('user', () => {
   })
 
   // Fetch roles for all organizations when organizations are loaded
-  watch(() => organizationsHelper.value.data, async (organizations) => {
-    if (!organizations || !currentUser.value) {
-      organizationRoles.value = {}
-      return
-    }
-
-    // Fetch only the current user's role. Listing the full member directory is
-    // restricted to organization owners and admins.
-    const roles: Record<string, string> = {}
-    for (const org of organizations) {
-      try {
-        const { data } = await authClient.organization.getActiveMemberRole({
-          query: { organizationId: org.id }
-        })
-        if (data?.role) roles[org.id] = data.role
-      } catch (error) {
-        console.error(`Error fetching role for organization ${org.id}:`, error)
+  watch(
+    () => organizationsHelper.value.data,
+    async (organizations) => {
+      if (!organizations || !currentUser.value) {
+        organizationRoles.value = {}
+        return
       }
-    }
-    organizationRoles.value = roles
-  }, { immediate: true })
+
+      // Fetch only the current user's role. Listing the full member directory is
+      // restricted to organization owners and admins.
+      const roles: Record<string, string> = {}
+      for (const org of organizations) {
+        try {
+          const { data } = await authClient.organization.getActiveMemberRole({
+            query: { organizationId: org.id }
+          })
+          if (data?.role) {
+            roles[org.id] = data.role
+          }
+        } catch (error) {
+          console.error(`Error fetching role for organization ${org.id}:`, error)
+        }
+      }
+      organizationRoles.value = roles
+    },
+    { immediate: true }
+  )
 
   // Enhanced organizations with roles
   const myOrganizations = computed(() => {
     const orgs = organizationsHelper.value.data as Organization[] | null | undefined
-    if (!orgs) return orgs
+    if (!orgs) {
+      return orgs
+    }
 
-    return orgs.map(org => ({
+    return orgs.map((org) => ({
       ...org,
       role: organizationRoles.value[org.id] || null
     }))

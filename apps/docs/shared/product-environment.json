@@ -17,17 +17,8 @@
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL"
   ],
-  "libraryVariables": [
-    "BETTER_AUTH_SECRET"
-  ],
-  "runtimeVariables": [
-    "HOST",
-    "PORT"
-  ],
-  "exampleExclusions": [
-    "NODE_ENV"
-  ],
-  "knownExampleOmissions": [
-    "BETTER_AUTH_SECRET"
-  ]
+  "libraryVariables": ["BETTER_AUTH_SECRET"],
+  "runtimeVariables": ["HOST", "PORT"],
+  "exampleExclusions": ["NODE_ENV"],
+  "knownExampleOmissions": ["BETTER_AUTH_SECRET"]
 }

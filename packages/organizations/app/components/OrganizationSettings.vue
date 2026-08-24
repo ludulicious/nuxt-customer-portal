@@ -27,22 +27,26 @@ const formState = reactive({
 
 const { t } = useI18n()
 
-const normalizeSlug = (value: string) => value
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9-]+/g, '-')
-  .replace(/^-+|-+$/g, '')
+const normalizeSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-const formSchema = computed(() => z.object({
-  name: z.string().min(1, t('organization.settings.validation.nameRequired')),
-  slug: z.string()
-    .min(1, t('organization.settings.validation.slugRequired'))
-    .transform((value) => normalizeSlug(value))
-    .refine((value) => /^[a-z0-9-]+$/.test(value), {
-      message: t('organization.settings.validation.slugInvalid')
-    }),
-  logo: z.string().url(t('organization.settings.validation.logoInvalid')).optional().or(z.literal(''))
-}))
+const formSchema = computed(() =>
+  z.object({
+    name: z.string().min(1, t('organization.settings.validation.nameRequired')),
+    slug: z
+      .string()
+      .min(1, t('organization.settings.validation.slugRequired'))
+      .transform((value) => normalizeSlug(value))
+      .refine((value) => /^[a-z0-9-]+$/.test(value), {
+        message: t('organization.settings.validation.slugInvalid')
+      }),
+    logo: z.string().url(t('organization.settings.validation.logoInvalid')).optional().or(z.literal(''))
+  })
+)
 
 const userStore = useUserStore()
 
@@ -115,20 +119,23 @@ const debouncedSlugCheck = useDebounceFn((slug: string) => {
   void checkSlugAvailability(slug)
 }, 400)
 
-watch(() => formState.slug, (newSlug) => {
-  const normalized = normalizeSlug(newSlug)
-  if (normalized !== newSlug) {
-    formState.slug = normalized
-    return
-  }
-  if (!slugChanged.value) {
-    slugStatus.value = 'idle'
-    slugMessage.value = ''
-    return
-  }
+watch(
+  () => formState.slug,
+  (newSlug) => {
+    const normalized = normalizeSlug(newSlug)
+    if (normalized !== newSlug) {
+      formState.slug = normalized
+      return
+    }
+    if (!slugChanged.value) {
+      slugStatus.value = 'idle'
+      slugMessage.value = ''
+      return
+    }
 
-  debouncedSlugCheck(newSlug)
-})
+    debouncedSlugCheck(newSlug)
+  }
+)
 
 const updateOrganization = async (event: FormSubmitEvent<z.output<typeof formSchema.value>>) => {
   try {
@@ -222,17 +229,31 @@ onUnmounted(() => {
     <UForm v-else class="space-y-4" :state="formState" :schema="formSchema" @submit="updateOrganization">
       <UAlert v-if="!isOwner" color="warning" :title="t('organization.settings.ownerOnly')" variant="outline" />
       <UFormField name="name" :label="t('organization.settings.nameLabel')" required>
-        <UInput v-model="formState.name" type="text" :placeholder="t('organization.settings.namePlaceholder')" required :disabled="!isOwner"
-          class="w-full" />
+        <UInput
+          v-model="formState.name"
+          type="text"
+          :placeholder="t('organization.settings.namePlaceholder')"
+          required
+          :disabled="!isOwner"
+          class="w-full"
+        />
       </UFormField>
 
       <UFormField name="slug" :label="t('organization.settings.slugLabel')" required>
-        <UInput v-model="formState.slug" type="text" :placeholder="t('organization.settings.slugPlaceholder')" required :disabled="!isOwner"
-          class="w-full" />
+        <UInput
+          v-model="formState.slug"
+          type="text"
+          :placeholder="t('organization.settings.slugPlaceholder')"
+          required
+          :disabled="!isOwner"
+          class="w-full"
+        />
         <template #hint>
           <div class="flex flex-col gap-1">
             <span>{{ t('organization.settings.slugHint') }}</span>
-            <span v-if="slugStatus === 'checking'" class="text-sm text-gray-500">{{ t('organization.settings.slugChecking') }}</span>
+            <span v-if="slugStatus === 'checking'" class="text-sm text-gray-500">{{
+              t('organization.settings.slugChecking')
+            }}</span>
             <span v-else-if="slugStatus === 'available'" class="text-sm text-green-600">{{ slugMessage }}</span>
             <span v-else-if="slugStatus === 'unavailable'" class="text-sm text-red-600">{{ slugMessage }}</span>
             <span v-else-if="slugStatus === 'error'" class="text-sm text-red-600">{{ slugMessage }}</span>
@@ -244,16 +265,32 @@ onUnmounted(() => {
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-center gap-3">
             <div
-              class="flex items-center justify-center w-28 h-16 rounded-md ring-2 ring-gray-200 dark:ring-gray-700 bg-gray-50 dark:bg-gray-900 overflow-hidden">
-              <img v-if="formState.logo" :src="formState.logo" :alt="formState.name || 'Organization'"
-                class="w-full h-full object-contain">
+              class="flex items-center justify-center w-28 h-16 rounded-md ring-2 ring-gray-200 dark:ring-gray-700 bg-gray-50 dark:bg-gray-900 overflow-hidden"
+            >
+              <img
+                v-if="formState.logo"
+                :src="formState.logo"
+                :alt="formState.name || 'Organization'"
+                class="w-full h-full object-contain"
+              />
               <span v-else class="text-sm font-semibold text-gray-500">
                 {{ formState.name ? formState.name.charAt(0).toUpperCase() : 'O' }}
               </span>
             </div>
-            <UButton :label="t('organization.settings.logoChoose')" color="primary" variant="outline" :disabled="!isOwner"
-              @click="onLogoFileClick" />
-            <input ref="fileRef" type="file" class="hidden" accept=".jpg, .jpeg, .png, .gif" @change="onLogoFileChange">
+            <UButton
+              :label="t('organization.settings.logoChoose')"
+              color="primary"
+              variant="outline"
+              :disabled="!isOwner"
+              @click="onLogoFileClick"
+            />
+            <input
+              ref="fileRef"
+              type="file"
+              class="hidden"
+              accept=".jpg, .jpeg, .png, .gif"
+              @change="onLogoFileChange"
+            />
           </div>
           <p class="text-sm text-gray-600 dark:text-gray-400">
             {{ t('organization.settings.logoHint') }}
@@ -265,7 +302,11 @@ onUnmounted(() => {
         <UButton type="button" variant="ghost" color="neutral" @click="emit('canceled')">
           {{ $t('common.cancel') }}
         </UButton>
-        <UButton type="submit" :loading="updating" :disabled="updating || !isOwner || (slugChanged && slugStatus !== 'available')">
+        <UButton
+          type="submit"
+          :loading="updating"
+          :disabled="updating || !isOwner || (slugChanged && slugStatus !== 'available')"
+        >
           {{ $t('common.save') }}
         </UButton>
       </div>

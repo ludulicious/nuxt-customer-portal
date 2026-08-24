@@ -6,9 +6,10 @@ import { clientDeleteSchema } from '@nuxt-customer-portal/timesheets/server/util
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminClientsByIdDelete',
+    operationId: 'timesheetsAdminClientsByIdDelete',
     summary: 'Remove a timesheet client',
-    description: 'Remove a timesheet client. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Remove a timesheet client. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 

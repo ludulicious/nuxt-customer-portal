@@ -1,4 +1,5 @@
-export const DEFAULT_INVOICE_EMAIL_TEMPLATE = '<div style="font-family:Arial,sans-serif;white-space:pre-line">{{body}}</div>'
+export const DEFAULT_INVOICE_EMAIL_TEMPLATE =
+  '<div style="font-family:Arial,sans-serif;white-space:pre-line">{{body}}</div>'
 
 export interface InvoiceEmailTemplateValues {
   body: string
@@ -9,12 +10,13 @@ export interface InvoiceEmailTemplateValues {
   logoUrl: string
 }
 
-const escapeHtml = (value: string) => value
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('\u0022', '&quot;')
-  .replaceAll('\u0027', '&#039;')
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('\u0022', '&quot;')
+    .replaceAll('\u0027', '&#039;')
 
 export const renderInvoiceEmailTemplate = (template: string | null | undefined, values: InvoiceEmailTemplateValues) => {
   const replacements = {

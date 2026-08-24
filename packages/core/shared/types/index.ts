@@ -4,15 +4,7 @@
  */
 
 // Database entity types
-export type {
-  User,
-  Organization,
-  Member,
-  Invitation,
-  Session,
-  Account,
-  Verification
-} from './sections/database'
+export type { User, Organization, Member, Invitation, Session, Account, Verification } from './sections/database'
 
 // Auth-related types
 export type {
@@ -45,9 +37,4 @@ export type {
   UpdateUserRequest
 } from './sections/api'
 
-export type {
-  FilterOperator,
-  Filter,
-  QueryInput,
-  QueryResult
-} from './sections/queryBuilder'
+export type { FilterOperator, Filter, QueryInput, QueryResult } from './sections/queryBuilder'

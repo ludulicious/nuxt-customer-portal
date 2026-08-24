@@ -7,12 +7,8 @@ const { data: files } = useLazyAsyncData('search', () => queryCollectionSearchSe
 })
 
 useHead({
-  meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
-  ],
-  link: [
-    { rel: 'icon', href: '/favicon.ico' }
-  ],
+  meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
+  link: [{ rel: 'icon', href: '/favicon.ico' }],
   htmlAttrs: {
     lang: 'en'
   }
@@ -42,10 +38,7 @@ provide('navigation', navigation)
     <AppFooter />
 
     <ClientOnly>
-      <LazyAccessibleContentSearch
-        :files="files"
-        :navigation="navigation"
-      />
+      <LazyAccessibleContentSearch :files="files" :navigation="navigation" />
     </ClientOnly>
   </UApp>
 </template>

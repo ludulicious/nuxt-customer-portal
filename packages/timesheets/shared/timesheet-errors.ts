@@ -10,4 +10,4 @@ export const TIMESHEET_ERROR_CODES = {
   internalApprovalDuplicateAssignment: 'TIMESHEET_INTERNAL_APPROVAL_DUPLICATE_ASSIGNMENT'
 } as const
 
-export type TimesheetErrorCode = typeof TIMESHEET_ERROR_CODES[keyof typeof TIMESHEET_ERROR_CODES]
+export type TimesheetErrorCode = (typeof TIMESHEET_ERROR_CODES)[keyof typeof TIMESHEET_ERROR_CODES]

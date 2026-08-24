@@ -5,7 +5,7 @@ import { getInvoiceEmailPreview } from '@nuxt-customer-portal/invoices/server/ut
 defineRouteMeta({
   openAPI: {
     tags: ['Invoices'],
-operationId: 'invoicesAdminInvoicesByIdEmailPreviewGet',
+    operationId: 'invoicesAdminInvoicesByIdEmailPreviewGet',
     summary: 'Preview an invoice email',
     description: 'Preview an invoice email. Scoped to the active organization and the applicable Invoices permission.'
   }
@@ -14,5 +14,9 @@ operationId: 'invoicesAdminInvoicesByIdEmailPreviewGet',
 export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
   const locale = getQuery(event).locale
-  return getInvoiceEmailPreview(organizationId, getRouterParam(event, 'id')!, typeof locale === 'string' ? locale : undefined)
+  return getInvoiceEmailPreview(
+    organizationId,
+    getRouterParam(event, 'id')!,
+    typeof locale === 'string' ? locale : undefined
+  )
 })

@@ -11,31 +11,43 @@ const breakpoints = useBreakpoints({
 })
 const isMobile = breakpoints.smaller('mobile')
 
-const links = [[{
-  label: t('settings.profile'),
-  icon: 'i-lucide-user',
-  to: '/settings',
-  exact: true
-}, {
-  label: t('settings.organization'),
-  icon: 'i-lucide-users',
-  to: '/settings/organization'
-}, {
-  label: t('settings.security'),
-  icon: 'i-lucide-shield',
-  to: '/settings/security'
-}]] satisfies NavigationMenuItem[][]
+const links = [
+  [
+    {
+      label: t('settings.profile'),
+      icon: 'i-lucide-user',
+      to: '/settings',
+      exact: true
+    },
+    {
+      label: t('settings.organization'),
+      icon: 'i-lucide-users',
+      to: '/settings/organization'
+    },
+    {
+      label: t('settings.security'),
+      icon: 'i-lucide-shield',
+      to: '/settings/security'
+    }
+  ]
+] satisfies NavigationMenuItem[][]
 
 const flatLinks = computed(() => links[0] ?? [])
 
 const activeLink = computed(() => {
   const items = flatLinks.value
-  if (!items.length) return undefined
+  if (!items.length) {
+    return undefined
+  }
   const found = items.find((item) => {
     const to = String(item.to || '')
-    if (!to) return false
+    if (!to) {
+      return false
+    }
     // `/settings` should not match `/settings/*` (profile tab only on the root route)
-    if (to === '/settings') return route.path === to
+    if (to === '/settings') {
+      return route.path === to
+    }
     return route.path === to || route.path.startsWith(`${to}/`)
   })
   return found || items[0]
@@ -46,7 +58,7 @@ useSeoMeta({
 })
 
 const mobileMenuItems = computed(() => [
-  flatLinks.value.map(item => ({
+  flatLinks.value.map((item) => ({
     label: item.label,
     icon: item.icon,
     onSelect: () => router.push(String(item.to))
@@ -72,11 +84,7 @@ const mobileMenuItems = computed(() => [
             itemDescription: 'text-muted'
           }"
         >
-          <UButton
-            color="neutral"
-            variant="outline"
-            class="w-full justify-between"
-          >
+          <UButton color="neutral" variant="outline" class="w-full justify-between">
             <span class="flex items-center gap-2 min-w-0">
               <UIcon v-if="activeLink?.icon" :name="activeLink.icon" class="size-4 shrink-0" />
               <span class="truncate">{{ activeLink?.label }}</span>

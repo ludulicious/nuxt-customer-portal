@@ -5,27 +5,9 @@ import { defaultStatements, adminAc } from 'better-auth/plugins/admin/access'
 export const statement = {
   ...defaultStatements,
   // Organization-related permissions
-  organization: [
-    'read',
-    'create',
-    'update',
-    'delete',
-  ],
-  member: [
-    'read',
-    'list',
-    'create',
-    'update',
-    'delete',
-    'update-name',
-  ],
-  invitation: [
-    'list',
-    'create',
-    'resend',
-    'cancel',
-    'delete',
-  ],
+  organization: ['read', 'create', 'update', 'delete'],
+  member: ['read', 'list', 'create', 'update', 'delete', 'update-name'],
+  invitation: ['list', 'create', 'resend', 'cancel', 'delete']
 } as const
 
 // Create the access control instance

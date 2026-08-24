@@ -11,28 +11,27 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalProfilePatch',
     summary: 'Update the current user profile',
-    description: 'Update the current user profile. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Update the current user profile. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
 // Zod schema for profile update request
-const updateProfileSchema = z.object({
-  name: z.string()
-    .trim()
-    .min(1, 'Name must be a non-empty string')
-    .max(255, 'Name must be less than 255 characters')
-    .optional(),
-  image: z.union([
-    z.string().url('Image must be a valid URL'),
-    z.literal('').transform(() => null),
-    z.null()
-  ]).optional()
-}).refine(
-  (data) => data.name !== undefined || data.image !== undefined,
-  {
+const updateProfileSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name must be a non-empty string')
+      .max(255, 'Name must be less than 255 characters')
+      .optional(),
+    image: z
+      .union([z.string().url('Image must be a valid URL'), z.literal('').transform(() => null), z.null()])
+      .optional()
+  })
+  .refine((data) => data.name !== undefined || data.image !== undefined, {
     message: 'At least one field (name or image) must be provided'
-  }
-)
+  })
 
 interface UpdateProfileResponse {
   success: boolean
@@ -67,7 +66,7 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
   const validatedData = validationResult.data
 
   // Build update object
-  const updateData: { name?: string, image?: string | null } = {}
+  const updateData: { name?: string; image?: string | null } = {}
   if (validatedData.name !== undefined) {
     updateData.name = validatedData.name.trim()
   }
@@ -76,16 +75,12 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
   }
 
   // Update user in database
-  const [updatedUser] = await db
-    .update(userTable)
-    .set(updateData)
-    .where(eq(userTable.id, user.id))
-    .returning({
-      id: userTable.id,
-      name: userTable.name,
-      email: userTable.email,
-      image: userTable.image
-    })
+  const [updatedUser] = await db.update(userTable).set(updateData).where(eq(userTable.id, user.id)).returning({
+    id: userTable.id,
+    name: userTable.name,
+    email: userTable.email,
+    image: userTable.image
+  })
 
   if (!updatedUser) {
     throw createError({ statusCode: 500, message: 'Failed to update profile' })

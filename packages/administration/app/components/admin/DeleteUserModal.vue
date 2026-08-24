@@ -3,18 +3,22 @@ import type { AdminUserResponse } from '@nuxt-customer-portal/core/shared/types/
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 
 const props = defineProps<{ user: AdminUserResponse | null }>()
-const emit = defineEmits<{ success: [], error: [message: string] }>()
+const emit = defineEmits<{ success: []; error: [message: string] }>()
 const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
 const deleting = ref(false)
 
 const deleteUser = async () => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
   try {
     deleting.value = true
     const { error } = await authClient.admin.removeUser({ userId: props.user.id })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     toast.add({ title: t('common.success'), description: t('admin.user.delete.success'), color: 'success' })
     open.value = false
     emit('success')

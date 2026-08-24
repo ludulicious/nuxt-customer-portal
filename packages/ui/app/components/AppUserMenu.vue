@@ -2,13 +2,16 @@
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-withDefaults(defineProps<{
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'xs'
-  inline?: boolean
-}>(), {
-  size: 'sm',
-  inline: false
-})
+withDefaults(
+  defineProps<{
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'xs'
+    inline?: boolean
+  }>(),
+  {
+    size: 'sm',
+    inline: false
+  }
+)
 
 const emit = defineEmits<{ navigate: [] }>()
 
@@ -49,18 +52,21 @@ const userMenuItems = computed(() => {
 
   // Add organization menu items for admins/owners
   if (isOrgAdmin.value && menuItems[1]) {
-    menuItems[1].push({
-      label: 'Create Organization',
-      icon: 'i-lucide-plus-circle',
-      to: '/organizations/create'
-    }, {
-      label: 'Invite User',
-      icon: 'i-lucide-user-plus',
-      onSelect: () => {
-        // Navigate to organization page with invite modal
-        navigateTo('/organization?invite=true')
+    menuItems[1].push(
+      {
+        label: 'Create Organization',
+        icon: 'i-lucide-plus-circle',
+        to: '/organizations/create'
+      },
+      {
+        label: 'Invite User',
+        icon: 'i-lucide-user-plus',
+        onSelect: () => {
+          // Navigate to organization page with invite modal
+          navigateTo('/organization?invite=true')
+        }
       }
-    })
+    )
   }
 
   menuItems.push([

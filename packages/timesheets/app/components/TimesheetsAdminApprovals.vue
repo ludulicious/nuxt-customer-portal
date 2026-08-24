@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { ApprovalQueueItemDto, InternalApprovalQueueDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
+import type {
+  ApprovalQueueItemDto,
+  InternalApprovalQueueDto
+} from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 const props = defineProps<{
   data: InternalApprovalQueueDto
@@ -14,26 +17,31 @@ const rejectionOpen = ref(false)
 const rejectionWeekId = ref('')
 const rejectionComment = ref('')
 const rejectionState = computed(() => ({ comment: rejectionComment.value }))
-const rejectionSchema = computed(() => z.object({
-  comment: z.string().trim().min(1, t('features.timesheets.validation.rejectionReason')).max(2000)
-}))
+const rejectionSchema = computed(() =>
+  z.object({
+    comment: z.string().trim().min(1, t('features.timesheets.validation.rejectionReason')).max(2000)
+  })
+)
 
 const formatHours = (minutes: number) => `${(minutes / 60).toFixed(2)} h`
-const formatMoney = (minor: number) => new Intl.NumberFormat(locale.value, {
-  style: 'currency',
-  currency: props.data.settings.currency
-}).format(minor / 100)
-const formatEntryMoney = (minor: number, currency: string) => new Intl.NumberFormat(locale.value, {
-  style: 'currency',
-  currency
-}).format(minor / 100)
-const formatEntryDate = (date: string) => new Intl.DateTimeFormat(locale.value, {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short'
-}).format(new Date(`${date}T12:00:00`))
-const projectFor = (projectId: string) => props.data.projects.find(project => project.id === projectId)
-const activityFor = (activityTypeId: string) => props.data.activities.find(activity => activity.id === activityTypeId)
+const formatMoney = (minor: number) =>
+  new Intl.NumberFormat(locale.value, {
+    style: 'currency',
+    currency: props.data.settings.currency
+  }).format(minor / 100)
+const formatEntryMoney = (minor: number, currency: string) =>
+  new Intl.NumberFormat(locale.value, {
+    style: 'currency',
+    currency
+  }).format(minor / 100)
+const formatEntryDate = (date: string) =>
+  new Intl.DateTimeFormat(locale.value, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  }).format(new Date(`${date}T12:00:00`))
+const projectFor = (projectId: string) => props.data.projects.find((project) => project.id === projectId)
+const activityFor = (activityTypeId: string) => props.data.activities.find((activity) => activity.id === activityTypeId)
 const weekdayTotals = (item: ApprovalQueueItemDto) => {
   const weekStart = new Date(`${item.weekStartsOn}T12:00:00`)
   return Array.from({ length: 7 }, (_, index) => {
@@ -44,7 +52,7 @@ const weekdayTotals = (item: ApprovalQueueItemDto) => {
       value,
       label: new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(date),
       minutes: item.entries
-        .filter(entry => entry.entryDate === value)
+        .filter((entry) => entry.entryDate === value)
         .reduce((sum, entry) => sum + entry.durationMinutes, 0)
     }
   })
@@ -66,8 +74,7 @@ const run = async (operation: () => Promise<unknown>) => {
   }
 }
 
-const review = (id: string, action: 'APPROVE' | 'REOPEN') =>
-  run(() => timesheets.reviewWeek(id, action))
+const review = (id: string, action: 'APPROVE' | 'REOPEN') => run(() => timesheets.reviewWeek(id, action))
 
 const openReject = (id: string) => {
   rejectionWeekId.value = id
@@ -75,10 +82,11 @@ const openReject = (id: string) => {
   rejectionOpen.value = true
 }
 
-const reject = () => run(async () => {
-  await timesheets.reviewWeek(rejectionWeekId.value, 'REJECT', rejectionComment.value)
-  rejectionOpen.value = false
-})
+const reject = () =>
+  run(async () => {
+    await timesheets.reviewWeek(rejectionWeekId.value, 'REJECT', rejectionComment.value)
+    rejectionOpen.value = false
+  })
 </script>
 
 <template>
@@ -107,8 +115,15 @@ const reject = () => run(async () => {
             {{ item.weekStartsOn }} · {{ formatHours(item.totalMinutes) }} · {{ formatMoney(item.billableAmountMinor) }}
           </p>
           <div v-if="item.clientReviews.length" class="mt-2 flex flex-wrap gap-2">
-            <UBadge v-for="clientReview in item.clientReviews" :key="clientReview.clientOrganizationId" :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'" variant="subtle">
-              {{ data.clients.find(client => client.organizationId === clientReview.clientOrganizationId)?.name }} · {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`) }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
+            <UBadge
+              v-for="clientReview in item.clientReviews"
+              :key="clientReview.clientOrganizationId"
+              :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'"
+              variant="subtle"
+            >
+              {{ data.clients.find((client) => client.organizationId === clientReview.clientOrganizationId)?.name }} ·
+              {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`)
+              }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
             </UBadge>
           </div>
           <ul class="mt-3 flex max-w-2xl overflow-hidden rounded-md border border-default">
@@ -146,11 +161,15 @@ const reject = () => run(async () => {
       </div>
 
       <details class="group mt-4 border-t border-default" :open="item.status === 'SUBMITTED'">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
           <span class="flex items-center gap-2">
             <UIcon name="i-lucide-list-checks" class="size-4 text-primary" />
             {{ t('features.timesheets.admin.reviewDetails') }}
-            <span class="font-normal text-muted">{{ t('features.timesheets.admin.entryCount', item.entries.length) }}</span>
+            <span class="font-normal text-muted">{{
+              t('features.timesheets.admin.entryCount', item.entries.length)
+            }}</span>
           </span>
           <UIcon name="i-lucide-chevron-down" class="size-4 text-muted transition-transform group-open:rotate-180" />
         </summary>
@@ -184,7 +203,7 @@ const reject = () => run(async () => {
               <span class="text-muted">{{ formatEntryMoney(entry.hourlyRateMinor, entry.currency) }}/h</span>
               <span class="text-dimmed">=</span>
               <span class="font-semibold text-highlighted">
-                {{ formatEntryMoney(Math.round(entry.durationMinutes * entry.hourlyRateMinor / 60), entry.currency) }}
+                {{ formatEntryMoney(Math.round((entry.durationMinutes * entry.hourlyRateMinor) / 60), entry.currency) }}
               </span>
             </div>
           </article>

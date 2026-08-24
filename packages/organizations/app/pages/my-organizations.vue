@@ -22,7 +22,9 @@ useSeoMeta({
 })
 
 const isActiveOrganization = (organizationId: string) => {
-  if (!activeOrganizationId.value) return false
+  if (!activeOrganizationId.value) {
+    return false
+  }
   return activeOrganizationId.value === organizationId
 }
 
@@ -79,10 +81,20 @@ const handleSetActive = async (organizationId: string) => {
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ organization.name }}</h3>
                   <UBadge
                     v-if="(organization as OrganizationWithRole).role"
-                    :color="(organization as OrganizationWithRole).role === 'owner' ? 'primary' : (organization as OrganizationWithRole).role === 'admin' ? 'info' : 'neutral'"
+                    :color="
+                      (organization as OrganizationWithRole).role === 'owner'
+                        ? 'primary'
+                        : (organization as OrganizationWithRole).role === 'admin'
+                          ? 'info'
+                          : 'neutral'
+                    "
                     variant="soft"
                   >
-                    {{ String((organization as OrganizationWithRole).role).charAt(0).toUpperCase() + String((organization as OrganizationWithRole).role).slice(1) }}
+                    {{
+                      String((organization as OrganizationWithRole).role)
+                        .charAt(0)
+                        .toUpperCase() + String((organization as OrganizationWithRole).role).slice(1)
+                    }}
                   </UBadge>
                 </div>
                 <div class="flex items-center gap-2" @click.stop>

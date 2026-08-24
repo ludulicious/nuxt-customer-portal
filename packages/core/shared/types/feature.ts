@@ -1,4 +1,12 @@
-export type PortalAudience = 'public' | 'authenticated' | 'organizationAdmin' | 'admin' | 'providerAuthenticated' | 'providerAdmin' | 'clientAuthenticated' | 'clientAdmin'
+export type PortalAudience =
+  | 'public'
+  | 'authenticated'
+  | 'organizationAdmin'
+  | 'admin'
+  | 'providerAuthenticated'
+  | 'providerAdmin'
+  | 'clientAuthenticated'
+  | 'clientAdmin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
 export type PortalOrganizationType = 'PROVIDER' | 'CLIENT'
 
@@ -65,10 +73,12 @@ export interface PortalRolePolicy<Action extends string = string> {
   member: readonly Action[]
 }
 
-export type PortalFeaturePolicy<Action extends string = string> = PortalRolePolicy<Action> | {
-  PROVIDER: PortalRolePolicy<Action>
-  CLIENT: PortalRolePolicy<Action>
-}
+export type PortalFeaturePolicy<Action extends string = string> =
+  | PortalRolePolicy<Action>
+  | {
+      PROVIDER: PortalRolePolicy<Action>
+      CLIENT: PortalRolePolicy<Action>
+    }
 
 export interface PortalClientIntegration {
   moduleId: string

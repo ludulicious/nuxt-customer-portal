@@ -10,7 +10,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalAdminOrganizationsByIdMembersGet',
     summary: 'List organization members',
-    description: 'List organization members. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'List organization members. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -34,16 +35,14 @@ export default defineEventHandler(async (event): Promise<OrganizationMemberWithU
     const [member] = await db
       .select()
       .from(memberTable)
-      .where(
-        and(
-          eq(memberTable.userId, user.id),
-          eq(memberTable.organizationId, organizationId)
-        )
-      )
+      .where(and(eq(memberTable.userId, user.id), eq(memberTable.organizationId, organizationId)))
       .limit(1)
 
     if (!member) {
-      throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization.' })
+      throw createError({
+        statusCode: 403,
+        message: 'Access denied. You must be an admin or a member of this organization.'
+      })
     }
 
     // Members have member.list permission (as defined in permissions.get.ts)

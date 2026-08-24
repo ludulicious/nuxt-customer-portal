@@ -17,12 +17,28 @@ const items = computed(() => [
 </script>
 
 <template>
-  <UAlert color="warning" icon="i-lucide-list-checks" :title="t('features.timesheets.setup.title')" :description="t('features.timesheets.setup.description')" variant="outline">
+  <UAlert
+    color="warning"
+    icon="i-lucide-list-checks"
+    :title="t('features.timesheets.setup.title')"
+    :description="t('features.timesheets.setup.description')"
+    variant="outline"
+  >
     <template #actions>
       <ul class="grid w-full gap-2 sm:grid-cols-2">
         <li v-for="item in items" :key="item.key">
-          <UButton :to="item.complete ? undefined : item.to" :disabled="item.complete" color="neutral" variant="soft" size="sm" class="w-full justify-start">
-            <UIcon :name="item.complete ? 'i-lucide-circle-check' : 'i-lucide-circle-dashed'" :class="item.complete ? 'text-success' : 'text-warning'" />
+          <UButton
+            :to="item.complete ? undefined : item.to"
+            :disabled="item.complete"
+            color="neutral"
+            variant="soft"
+            size="sm"
+            class="w-full justify-start"
+          >
+            <UIcon
+              :name="item.complete ? 'i-lucide-circle-check' : 'i-lucide-circle-dashed'"
+              :class="item.complete ? 'text-success' : 'text-warning'"
+            />
             {{ t(`features.timesheets.setup.${item.key}`, { count: item.count ?? 0 }) }}
           </UButton>
         </li>

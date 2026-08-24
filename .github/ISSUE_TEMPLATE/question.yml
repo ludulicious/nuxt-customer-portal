@@ -1,6 +1,6 @@
 name: Implementation question
 description: Ask a focused setup, configuration, architecture, or module question.
-title: "Question: "
+title: 'Question: '
 body:
   - type: markdown
     attributes:

@@ -5,8 +5,16 @@ import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
 import { admin as adminPlugin, customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
 import { db } from './db'
-import { and, eq, gt, or } from 'drizzle-orm'
-import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
+import { and, eq, gt } from 'drizzle-orm'
+import {
+  user as userTable,
+  account as accountTable,
+  session as sessionTable,
+  verification as verificationTable,
+  organization as organizationTable,
+  member as organizationMemberTable,
+  invitation as organizationInvitationTable
+} from '../db/schema/auth-schema'
 import { nanoid } from 'nanoid'
 import { ac, user, admin as adminRole } from '../../shared/permissions'
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
@@ -20,7 +28,7 @@ export function generateId(): string {
   return nanoid()
 }
 
-const envFlag = (value: string | undefined, fallback = true) => value === undefined ? fallback : value === 'true'
+const envFlag = (value: string | undefined, fallback = true) => (value === undefined ? fallback : value === 'true')
 const portalAuthConfig = useRuntimeConfig().portalAuth
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? process.env.PORTAL_REGISTRATION_MODE
@@ -40,27 +48,35 @@ export const auth = betterAuth({
       member: organizationMemberTable,
       verification: verificationTable,
       organization: organizationTable,
-      invitation: organizationInvitationTable,
+      invitation: organizationInvitationTable
     },
-    usePlural: false,
+    usePlural: false
     // Tables are singular (e.g., "user"), so no need for usePlural
   }),
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') return
+      if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') {
+        return
+      }
 
       const session = await getSessionFromCtx(ctx)
-      if (!session) return
+      if (!session) {
+        return
+      }
       const organizationId = ctx.query?.organizationId || session.session.activeOrganizationId
-      if (!organizationId) return
+      if (!organizationId) {
+        return
+      }
 
       const [membership] = await db
         .select({ role: organizationMemberTable.role })
         .from(organizationMemberTable)
-        .where(and(
-          eq(organizationMemberTable.userId, session.user.id),
-          eq(organizationMemberTable.organizationId, String(organizationId))
-        ))
+        .where(
+          and(
+            eq(organizationMemberTable.userId, session.user.id),
+            eq(organizationMemberTable.organizationId, String(organizationId))
+          )
+        )
         .limit(1)
 
       if (!canViewOrganizationDirectory(membership?.role)) {
@@ -99,21 +115,25 @@ export const auth = betterAuth({
         if (record?.role === 'admin') {
           throw new APIError('BAD_REQUEST', { message: 'System administrator accounts cannot be deleted' })
         }
-      },
+      }
     }
   },
   socialProviders: {
     ...(githubEnabled && process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-      ? { github: {
-          clientId: process.env.GITHUB_CLIENT_ID,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET
-        } }
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET
+          }
+        }
       : {}),
     ...(googleEnabled && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? { google: {
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET
-        } }
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET
+          }
+        }
       : {})
   },
   databaseHooks: {
@@ -124,11 +144,13 @@ export const auth = betterAuth({
             const [invitation] = await db
               .select({ id: organizationInvitationTable.id })
               .from(organizationInvitationTable)
-              .where(and(
-                eq(organizationInvitationTable.email, user.email),
-                eq(organizationInvitationTable.status, 'pending'),
-                gt(organizationInvitationTable.expiresAt, new Date())
-              ))
+              .where(
+                and(
+                  eq(organizationInvitationTable.email, user.email),
+                  eq(organizationInvitationTable.status, 'pending'),
+                  gt(organizationInvitationTable.expiresAt, new Date())
+                )
+              )
               .limit(1)
 
             if (!invitation) {
@@ -136,27 +158,37 @@ export const auth = betterAuth({
             }
           }
 
-          if (isSystemAdminEmail(user.email, systemAdminEmails)) return { data: { ...user, role: 'admin' } }
+          if (isSystemAdminEmail(user.email, systemAdminEmails)) {
+            return { data: { ...user, role: 'admin' } }
+          }
         },
         after: async (user) => {
-          if (!isSystemAdminEmail(user.email, systemAdminEmails)) return
+          if (!isSystemAdminEmail(user.email, systemAdminEmails)) {
+            return
+          }
 
           const [providerOrganization] = await db
             .select({ id: organizationTable.id })
             .from(organizationTable)
             .where(eq(organizationTable.organizationType, 'PROVIDER'))
             .limit(1)
-          if (!providerOrganization) return
+          if (!providerOrganization) {
+            return
+          }
 
           const [membership] = await db
             .select({ id: organizationMemberTable.id })
             .from(organizationMemberTable)
-            .where(and(
-              eq(organizationMemberTable.organizationId, providerOrganization.id),
-              eq(organizationMemberTable.userId, user.id)
-            ))
+            .where(
+              and(
+                eq(organizationMemberTable.organizationId, providerOrganization.id),
+                eq(organizationMemberTable.userId, user.id)
+              )
+            )
             .limit(1)
-          if (membership) return
+          if (membership) {
+            return
+          }
 
           await db.insert(organizationMemberTable).values({
             id: generateId(),
@@ -165,7 +197,7 @@ export const auth = betterAuth({
             role: 'owner',
             createdAt: new Date()
           })
-        },
+        }
       }
     },
     session: {
@@ -236,9 +268,7 @@ export const auth = betterAuth({
           // A system admin manages organizations globally and does not need an
           // artificial membership in every organization they create.
           if (creatorRecord?.role === 'admin' && member) {
-            await db
-              .delete(organizationMemberTable)
-              .where(eq(organizationMemberTable.id, member.id))
+            await db.delete(organizationMemberTable).where(eq(organizationMemberTable.id, member.id))
             console.log(`Removed system admin ${creator.email} as member from ${createdOrganization.name}`)
           }
         },

@@ -60,7 +60,7 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
       role: userTable.role,
       emailVerified: userTable.emailVerified,
       createdAt: userTable.createdAt,
-      banned: userTable.banned,
+      banned: userTable.banned
     })
     .from(userTable)
 

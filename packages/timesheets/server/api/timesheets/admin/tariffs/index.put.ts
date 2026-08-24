@@ -6,18 +6,15 @@ import { tariffUpdateSchema } from '@nuxt-customer-portal/timesheets/server/util
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminTariffsPut',
+    operationId: 'timesheetsAdminTariffsPut',
     summary: 'Update team billing rates',
-    description: 'Update team billing rates. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Update team billing rates. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'manage'
-  )
+  const { organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const input = tariffUpdateSchema.parse(await readBody(event))
   return setTeamTariff(organizationId, input.userId, input.hourlyRateMinor)
 })

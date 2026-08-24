@@ -5,20 +5,15 @@ import { reviewSchema } from '@nuxt-customer-portal/timesheets/server/utils/time
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsAdminApprovalsByIdPost',
+    operationId: 'timesheetsAdminApprovalsByIdPost',
     summary: 'Review a submitted timesheet',
-    description: 'Review a submitted timesheet. Scoped to the active organization and the applicable Timesheets permission.'
+    description:
+      'Review a submitted timesheet. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId } = await requireActiveOrganizationRole(event)
   const input = reviewSchema.parse(await readBody(event))
-  return reviewWeek(
-    organizationId,
-    session.user.id,
-    getRouterParam(event, 'id')!,
-    input.action,
-    input.comment
-  )
+  return reviewWeek(organizationId, session.user.id, getRouterParam(event, 'id')!, input.action, input.comment)
 })

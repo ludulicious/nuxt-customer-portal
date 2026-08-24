@@ -4,14 +4,7 @@ import type {
   ServiceRequestFilters
 } from '@nuxt-customer-portal/service-requests/shared/types/service-request'
 
-const {
-  requests,
-  loading,
-  pagination,
-  stats,
-  fetchAllRequests,
-  adminUpdateRequest
-} = useAdminServiceRequests()
+const { requests, loading, pagination, stats, fetchAllRequests, adminUpdateRequest } = useAdminServiceRequests()
 
 const toast = useToast()
 const { t } = useI18n()
@@ -28,7 +21,7 @@ const handleFilter = (filters: ServiceRequestFilters) => {
   fetchAllRequests(filters)
 }
 
-const handleUpdate = async ({ id, updates }: { id: string, updates: AdminServiceRequestUpdateInput }) => {
+const handleUpdate = async ({ id, updates }: { id: string; updates: AdminServiceRequestUpdateInput }) => {
   try {
     await adminUpdateRequest(id, updates)
     toast.add({
@@ -43,7 +36,6 @@ const handleUpdate = async ({ id, updates }: { id: string, updates: AdminService
     })
   }
 }
-
 </script>
 
 <template>

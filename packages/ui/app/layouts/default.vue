@@ -10,15 +10,17 @@ const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
 const { currentSession } = storeToRefs(useUserStore())
 const isImpersonating = computed(() => Boolean(currentSession.value?.impersonatedBy))
 
-const groups = computed(() => [{
-  id: 'links',
-  label: 'Go to',
-  items: links.value.flat().map(item => ({
-    label: item.label,
-    icon: item.icon,
-    to: item.to
-  }))
-}])
+const groups = computed(() => [
+  {
+    id: 'links',
+    label: 'Go to',
+    items: links.value.flat().map((item) => ({
+      label: item.label,
+      icon: item.icon,
+      to: item.to
+    }))
+  }
+])
 
 onMounted(async () => {
   const cookie = useCookie('cookie-consent')
@@ -30,18 +32,21 @@ onMounted(async () => {
     title: 'We use first-party cookies to enhance your experience on our website.',
     duration: 0,
     close: false,
-    actions: [{
-      label: 'Accept',
-      color: 'neutral',
-      variant: 'outline',
-      onClick: () => {
-        cookie.value = 'accepted'
+    actions: [
+      {
+        label: 'Accept',
+        color: 'neutral',
+        variant: 'outline',
+        onClick: () => {
+          cookie.value = 'accepted'
+        }
+      },
+      {
+        label: 'Opt out',
+        color: 'neutral',
+        variant: 'ghost'
       }
-    }, {
-      label: 'Opt out',
-      color: 'neutral',
-      variant: 'ghost'
-    }]
+    ]
   })
 })
 </script>
@@ -55,10 +60,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <UDashboardGroup
-      unit="rem"
-      class="px-4 mx-auto max-w-[1600px]! w-full!"
-    >
+    <UDashboardGroup unit="rem" class="px-4 mx-auto max-w-[1600px]! w-full!">
       <UDashboardSidebar
         id="default"
         v-model:open="open"
@@ -81,7 +83,13 @@ onMounted(async () => {
           <div v-if="!collapsed && activeModule" class="px-2.5 pt-3 pb-1 text-xs font-semibold uppercase text-muted">
             {{ activeModule.label }}
           </div>
-          <UNavigationMenu :collapsed="collapsed" :items="activeModuleMenuItems" orientation="vertical" tooltip popover />
+          <UNavigationMenu
+            :collapsed="collapsed"
+            :items="activeModuleMenuItems"
+            orientation="vertical"
+            tooltip
+            popover
+          />
         </template>
       </UDashboardSidebar>
 

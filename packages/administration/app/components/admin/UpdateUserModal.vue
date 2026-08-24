@@ -17,9 +17,11 @@ const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
 
-const updateSchema = computed(() => z.object({
-  name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength'))
-}))
+const updateSchema = computed(() =>
+  z.object({
+    name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength'))
+  })
+)
 
 type UpdateSchema = z.output<typeof updateSchema.value>
 type UpdateFormInput = z.input<typeof updateSchema.value>
@@ -28,12 +30,20 @@ const updateForm = reactive<UpdateFormInput>({
   name: ''
 })
 
-watch([open, () => props.user], ([isOpen, user]) => {
-  if (isOpen && user) updateForm.name = user.name || ''
-}, { immediate: true })
+watch(
+  [open, () => props.user],
+  ([isOpen, user]) => {
+    if (isOpen && user) {
+      updateForm.name = user.name || ''
+    }
+  },
+  { immediate: true }
+)
 
 const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   try {
     const { error: updateError } = await authClient.admin.updateUser({
@@ -74,11 +84,7 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
         </p>
 
         <UFormField name="name" :label="t('admin.user.update.name')">
-          <UInput
-            v-model="updateForm.name"
-            :placeholder="t('admin.user.update.name')"
-            class="w-full"
-          />
+          <UInput v-model="updateForm.name" :placeholder="t('admin.user.update.name')" class="w-full" />
         </UFormField>
 
         <div class="flex gap-4 justify-end pt-4">

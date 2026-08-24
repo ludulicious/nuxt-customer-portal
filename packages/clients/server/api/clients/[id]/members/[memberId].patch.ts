@@ -8,7 +8,13 @@ export default defineEventHandler(async (event) => {
   const organizationId = getRouterParam(event, 'id')!
   await requireClientProfileManager(event, organizationId)
   const input = genericClientMemberUpdateSchema.parse(await readBody(event))
-  const [updated] = await db.update(member).set(input).where(and(eq(member.id, getRouterParam(event, 'memberId')!), eq(member.organizationId, organizationId))).returning()
-  if (!updated) throw createError({ statusCode: 404, message: 'Client member not found' })
+  const [updated] = await db
+    .update(member)
+    .set(input)
+    .where(and(eq(member.id, getRouterParam(event, 'memberId')!), eq(member.organizationId, organizationId)))
+    .returning()
+  if (!updated) {
+    throw createError({ statusCode: 404, message: 'Client member not found' })
+  }
   return updated
 })

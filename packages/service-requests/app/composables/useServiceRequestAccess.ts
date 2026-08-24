@@ -6,12 +6,13 @@ import type { PortalOrganizationRole } from '@nuxt-customer-portal/core/shared/t
 export const useServiceRequestAccess = () => {
   const { activeOrganizationRole, activeOrganizationType } = usePortalSession()
 
-  const can = (action: ServiceRequestAction) => isPortalActionAllowed(
-    serviceRequestFeature.policy,
-    activeOrganizationRole.value as PortalOrganizationRole | null,
-    action,
-    activeOrganizationType.value ?? 'PROVIDER'
-  )
+  const can = (action: ServiceRequestAction) =>
+    isPortalActionAllowed(
+      serviceRequestFeature.policy,
+      activeOrganizationRole.value as PortalOrganizationRole | null,
+      action,
+      activeOrganizationType.value ?? 'PROVIDER'
+    )
 
   return { can }
 }

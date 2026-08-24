@@ -11,7 +11,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsByIdInvitationsGet',
     summary: 'List organization invitations',
-    description: 'List organization invitations. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'List organization invitations. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
 
   // Check if user has permission to list members (which includes viewing invitations)
   const hasPermission = await checkOrganizationPermission(
-    session as { user: { id: string, role?: string } },
+    session as { user: { id: string; role?: string } },
     organizationId,
     'member',
     'list'
@@ -42,12 +43,7 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
   const invitations = await db
     .select()
     .from(invitationTable)
-    .where(
-      and(
-        eq(invitationTable.organizationId, organizationId),
-        eq(invitationTable.status, 'pending')
-      )
-    )
+    .where(and(eq(invitationTable.organizationId, organizationId), eq(invitationTable.status, 'pending')))
 
   return invitations as OrganizationInvitationsResponse
 })

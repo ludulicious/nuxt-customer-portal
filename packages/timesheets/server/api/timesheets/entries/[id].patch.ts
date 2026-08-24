@@ -6,18 +6,14 @@ import { entryUpdateSchema } from '@nuxt-customer-portal/timesheets/server/utils
 defineRouteMeta({
   openAPI: {
     tags: ['Timesheets'],
-operationId: 'timesheetsEntriesByIdPatch',
+    operationId: 'timesheetsEntriesByIdPatch',
     summary: 'Update a time entry',
     description: 'Update a time entry. Scoped to the active organization and the applicable Timesheets permission.'
   }
 })
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireFeatureAccess(
-    event,
-    timesheetsFeature.policy,
-    'update'
-  )
+  const { session, organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'update')
   return updateEntry(
     organizationId,
     session.user.id,

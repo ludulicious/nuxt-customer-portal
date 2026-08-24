@@ -1,6 +1,9 @@
 import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
 import { timesheetsFeature } from '@nuxt-customer-portal/timesheets/shared/feature'
-import { getTimesheetsSetupStatus, requireTimesheetWorkspace } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
+import {
+  getTimesheetsSetupStatus,
+  requireTimesheetWorkspace
+} from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 
 defineRouteMeta({
   openAPI: {

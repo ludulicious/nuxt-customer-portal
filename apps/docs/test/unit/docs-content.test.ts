@@ -21,16 +21,14 @@ const documentedSections = [
 function markdownFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
     const path = join(directory, entry)
-    return statSync(path).isDirectory()
-      ? markdownFiles(path)
-      : path.endsWith('.md') ? [path] : []
+    return statSync(path).isDirectory() ? markdownFiles(path) : path.endsWith('.md') ? [path] : []
   })
 }
 
 function publicRoute(file: string): string {
   const segments = relative(contentRoot, file)
     .split(sep)
-    .map(segment => segment.replace(/^\d+\./, '').replace(/\.md$/, ''))
+    .map((segment) => segment.replace(/^\d+\./, '').replace(/\.md$/, ''))
 
   if (segments.at(-1) === 'index') {
     segments.pop()
@@ -41,9 +39,7 @@ function publicRoute(file: string): string {
 
 function frontmatterValue(source: string, key: string): string | undefined {
   const frontmatter = source.match(/^---\n([\s\S]*?)\n---/)?.[1]
-  return frontmatter
-    ?.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]
-    ?.replace(/^['"]|['"]$/g, '')
+  return frontmatter?.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]?.replace(/^['"]|['"]$/g, '')
 }
 
 function envExampleValue(key: string): string | undefined {
@@ -53,7 +49,7 @@ function envExampleValue(key: string): string | undefined {
 
 describe('documentation content', () => {
   const allFiles = markdownFiles(contentRoot)
-  const activeFiles = documentedSections.flatMap(section => markdownFiles(join(contentRoot, section)))
+  const activeFiles = documentedSections.flatMap((section) => markdownFiles(join(contentRoot, section)))
   const routes = new Set(allFiles.map(publicRoute))
 
   it('has unique public routes', () => {
@@ -66,12 +62,20 @@ describe('documentation content', () => {
       const sourcePath = relative(repositoryRoot, file).split(sep).join('/')
       const problems: string[] = []
 
-      if (!frontmatterValue(source, 'title')) problems.push('missing title')
-      if (!frontmatterValue(source, 'description')) problems.push('missing description')
-      if (frontmatterValue(source, 'githubPath') !== sourcePath) problems.push('githubPath does not match source')
-      if (!existsSync(join(repositoryRoot, sourcePath))) problems.push('githubPath does not exist')
+      if (!frontmatterValue(source, 'title')) {
+        problems.push('missing title')
+      }
+      if (!frontmatterValue(source, 'description')) {
+        problems.push('missing description')
+      }
+      if (frontmatterValue(source, 'githubPath') !== sourcePath) {
+        problems.push('githubPath does not match source')
+      }
+      if (!existsSync(join(repositoryRoot, sourcePath))) {
+        problems.push('githubPath does not exist')
+      }
 
-      return problems.map(problem => `${sourcePath}: ${problem}`)
+      return problems.map((problem) => `${sourcePath}: ${problem}`)
     })
 
     expect(failures, failures.join('\n')).toEqual([])
@@ -80,16 +84,13 @@ describe('documentation content', () => {
   it('does not link to missing internal documentation routes', () => {
     const failures = activeFiles.flatMap((file) => {
       const source = readFileSync(file, 'utf8').replace(/```[\s\S]*?```/g, '')
-      const links = [
-        ...source.matchAll(/\]\((\/[^)\s]+)\)/g),
-        ...source.matchAll(/^\s*to:\s*(\/\S+)\s*$/gm)
-      ].map(match => match[1])
+      const links = [...source.matchAll(/\]\((\/[^)\s]+)\)/g), ...source.matchAll(/^\s*to:\s*(\/\S+)\s*$/gm)].map(
+        (match) => match[1]
+      )
 
       return links.flatMap((link) => {
         const route = link?.split(/[?#]/)[0]?.replace(/\/$/, '') || '/'
-        return route.startsWith('/raw') || routes.has(route)
-          ? []
-          : [`${relative(root, file)} -> ${link}`]
+        return route.startsWith('/raw') || routes.has(route) ? [] : [`${relative(root, file)} -> ${link}`]
       })
     })
 
@@ -97,14 +98,16 @@ describe('documentation content', () => {
   })
 
   it('keeps the MCP catalog aligned with maintained documentation', () => {
-    const expected = activeFiles.map((file) => {
-      const source = readFileSync(file, 'utf8')
-      return {
-        path: publicRoute(file),
-        title: frontmatterValue(source, 'title'),
-        description: frontmatterValue(source, 'description')
-      }
-    }).sort((left, right) => left.path.localeCompare(right.path))
+    const expected = activeFiles
+      .map((file) => {
+        const source = readFileSync(file, 'utf8')
+        return {
+          path: publicRoute(file),
+          title: frontmatterValue(source, 'title'),
+          description: frontmatterValue(source, 'description')
+        }
+      })
+      .sort((left, right) => left.path.localeCompare(right.path))
     const actual = [...documentationCatalog].sort((left, right) => left.path.localeCompare(right.path))
 
     expect(actual).toEqual(expected)
@@ -113,7 +116,7 @@ describe('documentation content', () => {
   it('publishes every maintained page in a valid sitemap', () => {
     const expectedRoutes = [
       '/',
-      ...documentationCatalog.map(page => page.path),
+      ...documentationCatalog.map((page) => page.path),
       '/privacy-policy',
       '/terms-of-service'
     ]
@@ -136,7 +139,9 @@ describe('documentation content', () => {
     expect(documentationDefaults.productSourceCommit).toMatch(/^[\w./-]+$/)
     expect(envExampleValue('NUXT_PUBLIC_DOCS_REPOSITORY_URL')).toBe(documentationDefaults.docsRepositoryUrl)
     expect(envExampleValue('NUXT_PUBLIC_DOCS_REPOSITORY_BRANCH')).toBe(documentationDefaults.docsRepositoryBranch)
-    expect(envExampleValue('NUXT_PUBLIC_DOCS_FEEDBACK_REPOSITORY_URL')).toBe(documentationDefaults.feedbackRepositoryUrl)
+    expect(envExampleValue('NUXT_PUBLIC_DOCS_FEEDBACK_REPOSITORY_URL')).toBe(
+      documentationDefaults.feedbackRepositoryUrl
+    )
     expect(envExampleValue('NUXT_PUBLIC_PRODUCT_REPOSITORY_URL')).toBe(documentationDefaults.productRepositoryUrl)
     expect(envExampleValue('NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT')).toBe(documentationDefaults.productSourceCommit)
   })
@@ -144,15 +149,18 @@ describe('documentation content', () => {
   it('documents the verified GitHub collaboration channels', () => {
     const collaboration = JSON.parse(readFileSync(join(root, 'shared/github-collaboration.json'), 'utf8')) as {
       documentationPath: string
-      repositories: Record<string, {
-        url: string
-        public: boolean
-        defaultBranch: string
-        issues: boolean
-        discussions: boolean
-        template: boolean
-        archived: boolean
-      }>
+      repositories: Record<
+        string,
+        {
+          url: string
+          public: boolean
+          defaultBranch: string
+          issues: boolean
+          discussions: boolean
+          template: boolean
+          archived: boolean
+        }
+      >
     }
     const community = readFileSync(join(contentRoot, '7.contributing/7.community.md'), 'utf8')
     const installation = readFileSync(join(contentRoot, '1.getting-started/2.installation.md'), 'utf8')
@@ -194,7 +202,9 @@ describe('documentation content', () => {
   it('maps documented product internals to source-backed monorepo links', () => {
     const sourceMap = readFileSync(join(contentRoot, '4.reference/7.source-map.md'), 'utf8')
     const sourcePrefix = `${documentationDefaults.productRepositoryUrl}/blob/`
-    const sourceLinks = [...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/nuxt-customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)]
+    const sourceLinks = [
+      ...sourceMap.matchAll(/\]\((https:\/\/github\.com\/ludulicious\/nuxt-customer-portal\/blob\/([^/]+)\/([^)]+))\)/g)
+    ]
 
     expect(sourceLinks.length).toBeGreaterThanOrEqual(30)
     sourceLinks.forEach(([, url, revision, path]) => {
@@ -204,7 +214,7 @@ describe('documentation content', () => {
       expect(path).not.toContain('#')
       expect(existsSync(join(repositoryRoot, path)), `${path} does not exist`).toBe(true)
     })
-    expect(new Set(sourceLinks.map(match => match[3])).size).toBe(sourceLinks.length)
+    expect(new Set(sourceLinks.map((match) => match[3])).size).toBe(sourceLinks.length)
     expect(sourceMap).toContain('[glossary](/reference/glossary)')
   })
 
@@ -221,7 +231,7 @@ describe('documentation content', () => {
 
   it('documents every layer shipped by the pinned product inventory', () => {
     const inventory = JSON.parse(readFileSync(join(root, 'shared/product-inventory.json'), 'utf8')) as {
-      license: { status: string, spdxId: string | null, documentationPath: string }
+      license: { status: string; spdxId: string | null; documentationPath: string }
       layers: Array<{
         id: string
         kind: string
@@ -231,15 +241,17 @@ describe('documentation content', () => {
         apiFamilies: string[]
       }>
     }
-    const routeFiles = new Map(activeFiles.map(file => [publicRoute(file), file]))
-    const layerIds = inventory.layers.map(layer => layer.id)
+    const routeFiles = new Map(activeFiles.map((file) => [publicRoute(file), file]))
+    const layerIds = inventory.layers.map((layer) => layer.id)
     const moduleOverview = readFileSync(join(contentRoot, '3.modules/1.overview.md'), 'utf8')
 
     expect(new Set(layerIds).size).toBe(layerIds.length)
-    expect(new Set(inventory.layers.map(layer => layer.kind))).toEqual(new Set(['foundation', 'platform', 'business']))
+    expect(new Set(inventory.layers.map((layer) => layer.kind))).toEqual(
+      new Set(['foundation', 'platform', 'business'])
+    )
     inventory.layers
-      .filter(layer => layer.kind === 'business')
-      .forEach(layer => expect(moduleOverview).toContain(`\`${layer.id}\``))
+      .filter((layer) => layer.kind === 'business')
+      .forEach((layer) => expect(moduleOverview).toContain(`\`${layer.id}\``))
 
     inventory.layers.forEach((layer) => {
       const documentationFile = routeFiles.get(layer.documentationPath)
@@ -247,7 +259,7 @@ describe('documentation content', () => {
       expect(readFileSync(documentationFile!, 'utf8')).toContain(`\`${layer.id}\``)
       expect(layer.pageCount).toBeGreaterThanOrEqual(0)
       expect(layer.apiHandlerCount).toBeGreaterThanOrEqual(0)
-      layer.apiFamilies.forEach(family => expect(family).toMatch(/^\/api\//))
+      layer.apiFamilies.forEach((family) => expect(family).toMatch(/^\/api\//))
     })
 
     const apiReference = readFileSync(join(contentRoot, '4.reference/4.server-api.md'), 'utf8')
@@ -280,7 +292,7 @@ describe('documentation content', () => {
 
     expect(new Set(variables).size).toBe(variables.length)
     expect(routes.has(environment.documentationPath)).toBe(true)
-    variables.forEach(variable => expect(configuration).toContain(`\`${variable}\``))
+    variables.forEach((variable) => expect(configuration).toContain(`\`${variable}\``))
     expect(environment.libraryVariables).toEqual(['BETTER_AUTH_SECRET'])
     expect(environment.knownExampleOmissions).toEqual(['BETTER_AUTH_SECRET'])
     expect(environment.exampleExclusions).toEqual(['NODE_ENV'])
@@ -295,9 +307,9 @@ describe('documentation content', () => {
 
     expect(creationGuide).toContain('PortalFeatureDefinition<NoteAction>')
     expect(creationGuide).toContain('requireFeatureAccess')
-    expect(creationGuide).toContain('pgSchema(\'notes\')')
-    expect(creationGuide).toContain('area: \'aside\'')
-    expect(creationGuide).toContain('size: \'full\'')
+    expect(creationGuide).toContain("pgSchema('notes')")
+    expect(creationGuide).toContain("area: 'aside'")
+    expect(creationGuide).toContain("size: 'full'")
     expect(creationGuide).toContain('localPortalLayer')
     expect(creationGuide).toContain('administration.organization.detail')
     expect(distributionGuide).toContain('package entry point is `nuxt.config.ts`')

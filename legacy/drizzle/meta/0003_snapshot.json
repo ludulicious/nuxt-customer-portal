@@ -140,12 +140,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -256,12 +252,8 @@
           "name": "invitation_organization_id_organization_id_fk",
           "tableFrom": "invitation",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -269,12 +261,8 @@
           "name": "invitation_inviter_id_user_id_fk",
           "tableFrom": "invitation",
           "tableTo": "user",
-          "columnsFrom": [
-            "inviter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["inviter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -358,12 +346,8 @@
           "name": "member_organization_id_organization_id_fk",
           "tableFrom": "member",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -371,12 +355,8 @@
           "name": "member_user_id_user_id_fk",
           "tableFrom": "member",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -451,9 +431,7 @@
         "organization_slug_unique": {
           "name": "organization_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -563,12 +541,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -578,9 +552,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -700,9 +672,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -974,12 +944,8 @@
           "name": "service_request_organization_id_organization_id_fk",
           "tableFrom": "service_request",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -987,12 +953,8 @@
           "name": "service_request_created_by_id_user_id_fk",
           "tableFrom": "service_request",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1000,12 +962,8 @@
           "name": "service_request_assigned_to_id_user_id_fk",
           "tableFrom": "service_request",
           "tableTo": "user",
-          "columnsFrom": [
-            "assigned_to_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["assigned_to_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1110,12 +1068,8 @@
           "name": "activity_type_organization_id_organization_id_fk",
           "tableFrom": "activity_type",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1271,12 +1225,8 @@
           "name": "project_organization_id_organization_id_fk",
           "tableFrom": "project",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1284,12 +1234,8 @@
           "name": "project_client_organization_id_organization_id_fk",
           "tableFrom": "project",
           "tableTo": "organization",
-          "columnsFrom": [
-            "client_organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["client_organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1352,12 +1298,8 @@
           "tableFrom": "project_activity",
           "tableTo": "project",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1366,12 +1308,8 @@
           "tableFrom": "project_activity",
           "tableTo": "activity_type",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "activity_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["activity_type_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1454,12 +1392,8 @@
           "tableFrom": "project_person_tariff",
           "tableTo": "project",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1467,12 +1401,8 @@
           "name": "project_person_tariff_user_id_user_id_fk",
           "tableFrom": "project_person_tariff",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1554,12 +1484,8 @@
           "name": "team_tariff_organization_id_organization_id_fk",
           "tableFrom": "team_tariff",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1567,12 +1493,8 @@
           "name": "team_tariff_user_id_user_id_fk",
           "tableFrom": "team_tariff",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1745,12 +1667,8 @@
           "name": "time_entry_organization_id_organization_id_fk",
           "tableFrom": "time_entry",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1759,12 +1677,8 @@
           "tableFrom": "time_entry",
           "tableTo": "weekly_timesheet",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "weekly_timesheet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["weekly_timesheet_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1772,12 +1686,8 @@
           "name": "time_entry_user_id_user_id_fk",
           "tableFrom": "time_entry",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1786,12 +1696,8 @@
           "tableFrom": "time_entry",
           "tableTo": "project",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1800,12 +1706,8 @@
           "tableFrom": "time_entry",
           "tableTo": "activity_type",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "activity_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["activity_type_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1882,12 +1784,8 @@
           "tableFrom": "approval_history",
           "tableTo": "weekly_timesheet",
           "schemaTo": "timesheets",
-          "columnsFrom": [
-            "weekly_timesheet_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["weekly_timesheet_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1895,12 +1793,8 @@
           "name": "approval_history_actor_user_id_user_id_fk",
           "tableFrom": "approval_history",
           "tableTo": "user",
-          "columnsFrom": [
-            "actor_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2041,12 +1935,8 @@
           "name": "weekly_timesheet_organization_id_organization_id_fk",
           "tableFrom": "weekly_timesheet",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2054,12 +1944,8 @@
           "name": "weekly_timesheet_user_id_user_id_fk",
           "tableFrom": "weekly_timesheet",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2067,12 +1953,8 @@
           "name": "weekly_timesheet_reviewed_by_id_user_id_fk",
           "tableFrom": "weekly_timesheet",
           "tableTo": "user",
-          "columnsFrom": [
-            "reviewed_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reviewed_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2163,12 +2045,8 @@
           "name": "workspace_client_workspace_organization_id_organization_id_fk",
           "tableFrom": "workspace_client",
           "tableTo": "organization",
-          "columnsFrom": [
-            "workspace_organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workspace_organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2176,12 +2054,8 @@
           "name": "workspace_client_client_organization_id_organization_id_fk",
           "tableFrom": "workspace_client",
           "tableTo": "organization",
-          "columnsFrom": [
-            "client_organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["client_organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2244,12 +2118,8 @@
           "name": "workspace_settings_organization_id_organization_id_fk",
           "tableFrom": "workspace_settings",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2265,50 +2135,27 @@
     "service_requests.ServiceRequestPriority": {
       "name": "ServiceRequestPriority",
       "schema": "service_requests",
-      "values": [
-        "LOW",
-        "MEDIUM",
-        "HIGH",
-        "URGENT"
-      ]
+      "values": ["LOW", "MEDIUM", "HIGH", "URGENT"]
     },
     "service_requests.ServiceRequestStatus": {
       "name": "ServiceRequestStatus",
       "schema": "service_requests",
-      "values": [
-        "OPEN",
-        "IN_PROGRESS",
-        "RESOLVED",
-        "CLOSED"
-      ]
+      "values": ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]
     },
     "timesheets.approval_action": {
       "name": "approval_action",
       "schema": "timesheets",
-      "values": [
-        "SUBMITTED",
-        "APPROVED",
-        "REJECTED",
-        "REOPENED"
-      ]
+      "values": ["SUBMITTED", "APPROVED", "REJECTED", "REOPENED"]
     },
     "timesheets.project_status": {
       "name": "project_status",
       "schema": "timesheets",
-      "values": [
-        "ACTIVE",
-        "ARCHIVED"
-      ]
+      "values": ["ACTIVE", "ARCHIVED"]
     },
     "timesheets.timesheet_status": {
       "name": "timesheet_status",
       "schema": "timesheets",
-      "values": [
-        "DRAFT",
-        "SUBMITTED",
-        "APPROVED",
-        "REJECTED"
-      ]
+      "values": ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"]
     }
   },
   "schemas": {

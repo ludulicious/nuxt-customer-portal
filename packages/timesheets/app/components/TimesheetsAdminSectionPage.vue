@@ -33,10 +33,12 @@ const sectionTitleKeys = {
   reports: 'reports'
 } satisfies Record<AdminSection, string>
 const sectionIcons: Partial<Record<AdminSection, string>> = {
-  projects: 'i-lucide-folder-kanban', activities: 'i-lucide-tags'
+  projects: 'i-lucide-folder-kanban',
+  activities: 'i-lucide-tags'
 }
 const createLabelKeys: Partial<Record<AdminSection, string>> = {
-  projects: 'newProject', activities: 'newActivity'
+  projects: 'newProject',
+  activities: 'newActivity'
 }
 const { t } = useI18n()
 const timesheets = useTimesheets()
@@ -47,14 +49,17 @@ const titleKey = computed(() => sectionTitleKeys[props.section])
 const sectionTitle = computed(() => t(`features.timesheets.admin.${titleKey.value}`))
 const sectionSubtitle = computed(() => t(`features.timesheets.admin.sectionSubtitles.${props.section}`))
 const hasConstrainedList = computed(() => ['projects', 'activities'].includes(props.section))
-const createLabel = computed(() => createLabelKeys[props.section] ? t(`features.timesheets.admin.${createLabelKeys[props.section]}`) : '')
-const { data, pending, refresh } = await useAsyncData(
-  `timesheets-admin-${props.section}`,
-  () => timesheets.adminBootstrap(props.section)
+const createLabel = computed(() =>
+  createLabelKeys[props.section] ? t(`features.timesheets.admin.${createLabelKeys[props.section]}`) : ''
+)
+const { data, pending, refresh } = await useAsyncData(`timesheets-admin-${props.section}`, () =>
+  timesheets.adminBootstrap(props.section)
 )
 const openCreate = () => sectionViewRef.value?.openCreate()
 const refreshSection = async () => {
-  if (refreshing.value) return
+  if (refreshing.value) {
+    return
+  }
   refreshing.value = true
   try {
     await Promise.all([refresh(), sectionViewRef.value?.refreshList()])
@@ -67,19 +72,49 @@ useSeoMeta({ title: sectionTitle })
 </script>
 
 <template>
-  <TimesheetsPageShell class="timesheet-admin h-full min-h-0" :setup-status="data?.setupStatus" :class="hasConstrainedList ? 'flex flex-col overflow-hidden' : 'space-y-6 overflow-y-auto'">
+  <TimesheetsPageShell
+    class="timesheet-admin h-full min-h-0"
+    :setup-status="data?.setupStatus"
+    :class="hasConstrainedList ? 'flex flex-col overflow-hidden' : 'space-y-6 overflow-y-auto'"
+  >
     <header :class="hasConstrainedList ? 'mb-6 shrink-0' : ''">
       <div class="flex items-end justify-between gap-4">
         <div class="min-w-0">
-          <div class="flex items-center gap-2"><UIcon v-if="sectionIcons[section]" :name="sectionIcons[section]" class="size-6 shrink-0" /><h1 class="text-2xl font-semibold text-highlighted">{{ sectionTitle }}</h1></div>
+          <div class="flex items-center gap-2">
+            <UIcon v-if="sectionIcons[section]" :name="sectionIcons[section]" class="size-6 shrink-0" />
+            <h1 class="text-2xl font-semibold text-highlighted">{{ sectionTitle }}</h1>
+          </div>
           <p class="mt-1 hidden text-sm text-muted sm:block">{{ sectionSubtitle }}</p>
         </div>
         <div v-if="hasConstrainedList" class="flex shrink-0 items-center gap-1">
-          <UButton v-if="sectionViewRef?.showCreate" class="rounded-full sm:hidden" icon="i-lucide-plus" :aria-label="createLabel" :disabled="!sectionViewRef.canCreate" @click="openCreate" />
-          <UButton v-if="sectionViewRef?.showCreate" icon="i-lucide-plus" size="sm" variant="outline" class="hidden h-8 sm:inline-flex" :disabled="!sectionViewRef.canCreate" @click="openCreate">
+          <UButton
+            v-if="sectionViewRef?.showCreate"
+            class="rounded-full sm:hidden"
+            icon="i-lucide-plus"
+            :aria-label="createLabel"
+            :disabled="!sectionViewRef.canCreate"
+            @click="openCreate"
+          />
+          <UButton
+            v-if="sectionViewRef?.showCreate"
+            icon="i-lucide-plus"
+            size="sm"
+            variant="outline"
+            class="hidden h-8 sm:inline-flex"
+            :disabled="!sectionViewRef.canCreate"
+            @click="openCreate"
+          >
             {{ createLabel }}
           </UButton>
-          <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="refreshing" :aria-label="t('features.timesheets.admin.refresh')" @click="refreshSection" />
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :loading="refreshing"
+            :aria-label="t('features.timesheets.admin.refresh')"
+            @click="refreshSection"
+          />
         </div>
       </div>
     </header>

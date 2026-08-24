@@ -1,7 +1,11 @@
 import { defineEventHandler, createError, readBody } from 'h3'
 import { auth, generateId } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { invitation as invitationTable, member as memberTable, organization as organizationTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
+import {
+  invitation as invitationTable,
+  member as memberTable,
+  organization as organizationTable
+} from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser } from '@nuxt-customer-portal/core/shared/types/index'
 
@@ -10,7 +14,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsAcceptInvitationPost',
     summary: 'Accept an organization invitation',
-    description: 'Accept an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Accept an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -35,11 +40,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Fetch the invitation
-    const [invitation] = await db
-      .select()
-      .from(invitationTable)
-      .where(eq(invitationTable.id, invitationId))
-      .limit(1)
+    const [invitation] = await db.select().from(invitationTable).where(eq(invitationTable.id, invitationId)).limit(1)
 
     if (!invitation) {
       throw createError({ statusCode: 404, message: 'Invitation not found' })
@@ -69,12 +70,7 @@ export default defineEventHandler(async (event) => {
     const [existingMember] = await db
       .select()
       .from(memberTable)
-      .where(
-        and(
-          eq(memberTable.organizationId, invitation.organizationId),
-          eq(memberTable.userId, user.id)
-        )
-      )
+      .where(and(eq(memberTable.organizationId, invitation.organizationId), eq(memberTable.userId, user.id)))
       .limit(1)
 
     if (existingMember) {
@@ -103,10 +99,7 @@ export default defineEventHandler(async (event) => {
     })
 
     // Update invitation status to accepted
-    await db
-      .update(invitationTable)
-      .set({ status: 'accepted' })
-      .where(eq(invitationTable.id, invitationId))
+    await db.update(invitationTable).set({ status: 'accepted' }).where(eq(invitationTable.id, invitationId))
 
     return {
       success: true,

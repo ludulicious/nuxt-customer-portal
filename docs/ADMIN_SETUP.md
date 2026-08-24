@@ -26,6 +26,7 @@ The system automatically assigns the admin role to users with whitelisted email 
 ### 3. Admin Permissions
 
 Users with the admin role have access to:
+
 - All questionnaire permissions (create, read, update, delete, list, share, view-responses)
 - All questionnaire-response permissions (create, read, update, delete, list, generate-sample-responses)
 - Default admin permissions from Better Auth

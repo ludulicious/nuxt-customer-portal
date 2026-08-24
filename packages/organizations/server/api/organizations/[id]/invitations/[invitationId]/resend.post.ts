@@ -1,7 +1,10 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { invitation as invitationTable, organization as organizationTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
+import {
+  invitation as invitationTable,
+  organization as organizationTable
+} from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 import { checkOrganizationPermission } from '@nuxt-customer-portal/core/server/utils/permissions'
 import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
@@ -13,7 +16,8 @@ defineRouteMeta({
     tags: ['General'],
     operationId: 'generalOrganizationsByIdInvitationsByInvitationIdResendPost',
     summary: 'Resend an organization invitation',
-    description: 'Resend an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
+    description:
+      'Resend an organization invitation. Uses the current authenticated session and enforces the relevant portal permissions.'
   }
 })
 
@@ -33,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
   // Check if user has permission to create invitations (resending is creating a new invitation)
   const hasPermission = await checkOrganizationPermission(
-    session as { user: { id: string, role?: string } },
+    session as { user: { id: string; role?: string } },
     organizationId,
     'invitation',
     'create'
@@ -44,11 +48,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get invitation details
-  const [invitation] = await db
-    .select()
-    .from(invitationTable)
-    .where(eq(invitationTable.id, invitationId))
-    .limit(1)
+  const [invitation] = await db.select().from(invitationTable).where(eq(invitationTable.id, invitationId)).limit(1)
 
   if (!invitation || invitation.organizationId !== organizationId) {
     throw createError({ statusCode: 404, message: 'Invitation not found' })

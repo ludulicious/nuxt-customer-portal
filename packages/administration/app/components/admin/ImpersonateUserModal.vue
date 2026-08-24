@@ -16,7 +16,9 @@ const { t } = useI18n()
 const toast = useToast()
 
 const impersonateUser = async () => {
-  if (!props.user) return
+  if (!props.user) {
+    return
+  }
 
   try {
     const { error: impersonateError } = await authClient.admin.impersonateUser({

@@ -1,4 +1,1 @@
-export {
-  organization,
-  user
-} from './schema/auth-schema'
+export { organization, user } from './schema/auth-schema'

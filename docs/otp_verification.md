@@ -63,6 +63,7 @@ await authClient.emailOTP.verifyEmail({
 ## Email Template
 
 The OTP codes are sent using the existing email template system with:
+
 - **Subject**: "Verify your Apex Pro email address"
 - **Body**: "Your verification code is: 123456"
 - **Footer**: Expiration notice and security information
@@ -78,6 +79,7 @@ The OTP codes are sent using the existing email template system with:
 ## Configuration
 
 No additional environment variables needed - uses existing:
+
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 

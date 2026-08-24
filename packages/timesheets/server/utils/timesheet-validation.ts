@@ -55,14 +55,17 @@ export const entryCreateSchema = z.object({
   projectId: id,
   activityTypeId: id,
   entryDate: isoDate,
-  durationMinutes: z.number().int().min(1).max(24 * 60),
+  durationMinutes: z
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 60),
   note: z.string().trim().max(2000).nullable().optional()
 })
 
-export const entryUpdateSchema = entryCreateSchema.partial().refine(
-  value => Object.keys(value).length > 0,
-  'At least one field is required'
-)
+export const entryUpdateSchema = entryCreateSchema
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, 'At least one field is required')
 
 export const timerStartSchema = z.object({
   projectId: id,
@@ -76,7 +79,12 @@ export const clientCreateSchema = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('create'),
     name: z.string().trim().min(2).max(160),
-    slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    slug: z
+      .string()
+      .trim()
+      .min(1)
+      .max(160)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   })
 ])
 
@@ -86,13 +94,17 @@ export const organizationCapabilitiesUpdateSchema = z.object({
   workspaceEnabled: z.boolean()
 })
 export const clientReviewerUpdateSchema = z.object({ userId: id, assigned: z.boolean() })
-export const clientReviewSchema = z.object({
-  action: z.enum(['APPROVE', 'DISPUTE']),
-  expectedVersion: z.number().int().min(1),
-  comment: z.string().trim().max(2000).nullable().optional()
-}).superRefine((value, context) => {
-  if (value.action === 'DISPUTE' && !value.comment) context.addIssue({ code: 'custom', path: ['comment'], message: 'A dispute comment is required' })
-})
+export const clientReviewSchema = z
+  .object({
+    action: z.enum(['APPROVE', 'DISPUTE']),
+    expectedVersion: z.number().int().min(1),
+    comment: z.string().trim().max(2000).nullable().optional()
+  })
+  .superRefine((value, context) => {
+    if (value.action === 'DISPUTE' && !value.comment) {
+      context.addIssue({ code: 'custom', path: ['comment'], message: 'A dispute comment is required' })
+    }
+  })
 
 export const activityCreateSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -118,27 +130,30 @@ const projectSchema = z.object({
   activityTypeIds: z.array(id).min(1)
 })
 
-export const projectCreateSchema = projectSchema.refine(v => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
+export const projectCreateSchema = projectSchema.refine((v) => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
   message: 'End date must not precede start date',
   path: ['endsOn']
 })
 
-export const projectUpdateSchema = projectSchema.partial().extend({
-  status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
-  personRates: z.record(id, moneyMinor).optional()
-}).refine(v => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
-  message: 'End date must not precede start date',
-  path: ['endsOn']
-})
+export const projectUpdateSchema = projectSchema
+  .partial()
+  .extend({
+    status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
+    personRates: z.record(id, moneyMinor).optional()
+  })
+  .refine((v) => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
+    message: 'End date must not precede start date',
+    path: ['endsOn']
+  })
 
 export const hasInvalidProjectActivityAssignments = (
   requestedIds: string[],
-  activities: Array<{ id: string, active: boolean }>,
+  activities: Array<{ id: string; active: boolean }>,
   existingIds: string[] = []
 ) => {
   const existing = new Set(existingIds)
   return requestedIds.some((id) => {
-    const activity = activities.find(item => item.id === id)
+    const activity = activities.find((item) => item.id === id)
     return !activity || (!activity.active && !existing.has(id))
   })
 }
@@ -165,18 +180,24 @@ export const internalApprovalMemberUpdateSchema = z.object({
 })
 
 export const settingsUpdateSchema = z.object({
-  currency: z.string().length(3).transform(v => v.toUpperCase()).optional(),
+  currency: z
+    .string()
+    .length(3)
+    .transform((v) => v.toUpperCase())
+    .optional(),
   timezone: z.string().min(3).max(100).optional()
 })
 
-export const reviewSchema = z.object({
-  action: z.enum(['APPROVE', 'REJECT', 'REOPEN']),
-  comment: z.string().trim().max(2000).nullable().optional()
-}).superRefine((value, context) => {
-  if (value.action === 'REJECT' && !value.comment) {
-    context.addIssue({ code: 'custom', path: ['comment'], message: 'A rejection comment is required' })
-  }
-})
+export const reviewSchema = z
+  .object({
+    action: z.enum(['APPROVE', 'REJECT', 'REOPEN']),
+    comment: z.string().trim().max(2000).nullable().optional()
+  })
+  .superRefine((value, context) => {
+    if (value.action === 'REJECT' && !value.comment) {
+      context.addIssue({ code: 'custom', path: ['comment'], message: 'A rejection comment is required' })
+    }
+  })
 
 export const reportQuerySchema = z.object({
   from: isoDate.optional(),
@@ -185,7 +206,10 @@ export const reportQuerySchema = z.object({
   projectId: id.optional(),
   userId: id.optional(),
   activityTypeId: id.optional(),
-  billable: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  billable: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   status: z.enum(['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED']).optional()
 })
 

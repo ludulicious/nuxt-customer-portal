@@ -9,7 +9,7 @@ const componentMissing = typeof resolvedComponent === 'string'
 
 <template>
   <NuxtErrorBoundary>
-    <component v-if="!componentMissing" :is="resolvedComponent" />
+    <component :is="resolvedComponent" v-if="!componentMissing" />
     <UCard v-else>
       <p class="font-medium">{{ $t('dashboard.error.title') }}</p>
       <p class="mt-1 text-sm text-muted">{{ $t('dashboard.error.description') }}</p>

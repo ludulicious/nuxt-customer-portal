@@ -34,13 +34,27 @@ const backRoute = computed(() => {
     return '/requests'
   }
   const query: Record<string, string> = {}
-  if (route.query.search != null && route.query.search !== '') query.search = String(route.query.search)
-  if (route.query.status != null && route.query.status !== '') query.status = String(route.query.status)
-  if (route.query.priority != null && route.query.priority !== '') query.priority = String(route.query.priority)
-  if (route.query.category != null && route.query.category !== '') query.category = String(route.query.category)
-  if (route.query.sortBy != null && route.query.sortBy !== '') query.sortBy = String(route.query.sortBy)
-  if (route.query.sortDir != null && route.query.sortDir !== '') query.sortDir = String(route.query.sortDir)
-  if (route.query.page != null && route.query.page !== '') query.page = String(route.query.page)
+  if (route.query.search != null && route.query.search !== '') {
+    query.search = String(route.query.search)
+  }
+  if (route.query.status != null && route.query.status !== '') {
+    query.status = String(route.query.status)
+  }
+  if (route.query.priority != null && route.query.priority !== '') {
+    query.priority = String(route.query.priority)
+  }
+  if (route.query.category != null && route.query.category !== '') {
+    query.category = String(route.query.category)
+  }
+  if (route.query.sortBy != null && route.query.sortBy !== '') {
+    query.sortBy = String(route.query.sortBy)
+  }
+  if (route.query.sortDir != null && route.query.sortDir !== '') {
+    query.sortDir = String(route.query.sortDir)
+  }
+  if (route.query.page != null && route.query.page !== '') {
+    query.page = String(route.query.page)
+  }
   return { path: '/requests', query }
 })
 
@@ -79,7 +93,9 @@ const handleUpdate = async (data: ServiceRequestUpdateInput) => {
 }
 
 const handleDelete = async () => {
-  if (!confirm('Are you sure you want to delete this request?')) return
+  if (!confirm('Are you sure you want to delete this request?')) {
+    return
+  }
 
   try {
     await deleteRequest(requestId)
@@ -96,18 +112,12 @@ const handleDelete = async () => {
     })
   }
 }
-
 </script>
 
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
     <div class="mb-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        size="sm"
-        :to="backRoute"
-      >
+      <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" :to="backRoute">
         {{ t('features.serviceRequests.actions.back') }}
       </UButton>
     </div>

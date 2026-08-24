@@ -48,67 +48,33 @@ defineOgImage('DocsSatori', {
 const links = computed(() => {
   return toc?.bottom?.links || []
 })
-
 </script>
 
 <template>
   <UPage v-if="page">
-    <UPageHeader
-      :title="page.title"
-      :description="page.description"
-      :headline="headline"
-    >
+    <UPageHeader :title="page.title" :description="page.description" :headline="headline">
       <template #links>
-        <PageHeaderLinks
-          :github-path="page.githubPath"
-          :title="page.title"
-        />
+        <PageHeaderLinks :github-path="page.githubPath" :title="page.title" />
       </template>
     </UPageHeader>
 
     <UPageBody>
-      <ContentRenderer
-        v-if="page"
-        :value="page"
-      />
+      <ContentRenderer v-if="page" :value="page" />
 
-      <DocsFeedback
-        :github-path="page.githubPath"
-        :title="page.title"
-      />
+      <DocsFeedback :github-path="page.githubPath" :title="page.title" />
 
       <USeparator v-if="surround?.length" />
 
       <UContentSurround :surround="surround" />
     </UPageBody>
 
-    <template
-      v-if="page?.body?.toc?.links?.length"
-      #right
-    >
-      <UContentToc
-        :title="toc?.title"
-        :links="page.body?.toc?.links"
-        aria-label="On this page"
-      >
-        <template
-          v-if="toc?.bottom"
-          #bottom
-        >
-          <div
-            class="hidden lg:block space-y-6"
-            :class="{ 'mt-6!': page.body?.toc?.links?.length }"
-          >
-            <USeparator
-              v-if="page.body?.toc?.links?.length"
-              type="dashed"
-            />
+    <template v-if="page?.body?.toc?.links?.length" #right>
+      <UContentToc :title="toc?.title" :links="page.body?.toc?.links" aria-label="On this page">
+        <template v-if="toc?.bottom" #bottom>
+          <div class="hidden lg:block space-y-6" :class="{ 'mt-6!': page.body?.toc?.links?.length }">
+            <USeparator v-if="page.body?.toc?.links?.length" type="dashed" />
 
-            <UPageLinks
-              :title="toc.bottom.title"
-              :links="links"
-              aria-label="Community links"
-            />
+            <UPageLinks :title="toc.bottom.title" :links="links" aria-label="Community links" />
           </div>
         </template>
       </UContentToc>

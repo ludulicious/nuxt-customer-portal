@@ -4,5 +4,8 @@ import { requireServiceRequestScope } from '@nuxt-customer-portal/service-reques
 export default defineEventHandler(async (event) => {
   const scope = await requireServiceRequestScope(event, 'read')
   const canManage = scope.organizationType === 'PROVIDER' && (scope.role === 'owner' || scope.role === 'admin')
-  return getServiceRequestDashboard(scope.providerOrganizationId, canManage, { clientOrganizationId: scope.clientOrganizationId, createdById: scope.ownOnly ? scope.session.user.id : undefined })
+  return getServiceRequestDashboard(scope.providerOrganizationId, canManage, {
+    clientOrganizationId: scope.clientOrganizationId,
+    createdById: scope.ownOnly ? scope.session.user.id : undefined
+  })
 })

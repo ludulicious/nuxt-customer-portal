@@ -5,7 +5,7 @@ import { resolvePortalTheme, resolvePortalThemeName } from './themes/portal-them
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const { locale } = useI18n()
-const uiLocale = computed(() => locale.value === 'nl' ? nl : en)
+const uiLocale = computed(() => (locale.value === 'nl' ? nl : en))
 const activeThemeName = computed(() => resolvePortalThemeName(appConfig.portal.theme))
 const activeTheme = computed(() => resolvePortalTheme(activeThemeName.value))
 
@@ -28,16 +28,20 @@ useHead(() => ({
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }
   ],
   htmlAttrs: {
-    'lang': locale.value,
-    'class': colorMode.value,
+    lang: locale.value,
+    class: colorMode.value,
     'data-portal-theme': activeThemeName.value
   }
 }))
 
 if (import.meta.client) {
-  watch(activeThemeName, (themeName) => {
-    document.documentElement.dataset.portalTheme = themeName
-  }, { immediate: true })
+  watch(
+    activeThemeName,
+    (themeName) => {
+      document.documentElement.dataset.portalTheme = themeName
+    },
+    { immediate: true }
+  )
 }
 
 useSeoMeta({
@@ -51,7 +55,6 @@ useSeoMeta({
 const navigation = ref([])
 
 provide('navigation', navigation)
-
 </script>
 
 <template>

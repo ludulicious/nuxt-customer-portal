@@ -21,7 +21,8 @@ useSeoMeta({
   title: () => t('features.serviceRequests.title')
 })
 
-const { getStatusColor, getStatusBadgeText, getPriorityBadgeText, getPriorityColor, statusOptions, priorityOptions } = useServiceRequests()
+const { getStatusColor, getStatusBadgeText, getPriorityBadgeText, getPriorityColor, statusOptions, priorityOptions } =
+  useServiceRequests()
 
 // Mobile breakpoint detection
 const breakpoints = useBreakpoints({
@@ -62,14 +63,20 @@ const selectedRequest = ref<ServiceRequest | null>(null)
 const mutationPending = ref(false)
 
 const drawerTitle = computed(() => {
-  if (drawerMode.value === 'create') return t('features.serviceRequests.create')
-  if (drawerMode.value === 'edit') return t('features.serviceRequests.edit')
+  if (drawerMode.value === 'create') {
+    return t('features.serviceRequests.create')
+  }
+  if (drawerMode.value === 'edit') {
+    return t('features.serviceRequests.edit')
+  }
   return selectedRequest.value?.title || t('features.serviceRequests.title')
 })
 
 const canCreate = computed(() => can('create'))
 const isOwner = computed(() => {
-  if (!selectedRequest.value?.createdById) return false
+  if (!selectedRequest.value?.createdById) {
+    return false
+  }
   return selectedRequest.value.createdById === currentUser.value?.id
 })
 const canEdit = computed(() => isOwner.value || can('update'))
@@ -88,15 +95,11 @@ const closeDrawer = () => {
 }
 
 // Filter state (init from URL)
-const statusFilter = ref<ServiceRequestStatus | undefined>(
-  (route.query.status as ServiceRequestStatus) || undefined
-)
+const statusFilter = ref<ServiceRequestStatus | undefined>((route.query.status as ServiceRequestStatus) || undefined)
 const priorityFilter = ref<ServiceRequestPriority | undefined>(
   (route.query.priority as ServiceRequestPriority) || undefined
 )
-const categoryFilter = ref<string | undefined>(
-  (route.query.category as string) || undefined
-)
+const categoryFilter = ref<string | undefined>((route.query.category as string) || undefined)
 const searchQuery = ref((route.query.search as string) ?? '')
 
 // Sort state (init from URL)
@@ -105,9 +108,7 @@ const sortBy = ref<'createdAt' | 'status' | 'priority'>(
     ? (route.query.sortBy as 'createdAt' | 'status' | 'priority')
     : 'createdAt'
 )
-const sortDir = ref<'asc' | 'desc'>(
-  route.query.sortDir === 'asc' ? 'asc' : 'desc'
-)
+const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'asc' ? 'asc' : 'desc')
 
 const sortOptions = computed(() => [
   { label: t('features.serviceRequests.fields.createdAt'), value: 'createdAt' as const },
@@ -116,11 +117,11 @@ const sortOptions = computed(() => [
 ])
 
 const currentSortLabel = computed(() => {
-  return sortOptions.value.find(o => o.value === sortBy.value)?.label || ''
+  return sortOptions.value.find((o) => o.value === sortBy.value)?.label || ''
 })
 
 const sortDropdownItems = computed(() => [
-  sortOptions.value.map(option => ({
+  sortOptions.value.map((option) => ({
     label: option.label,
     icon: sortBy.value === option.value ? 'i-lucide-check' : undefined,
     onSelect: () => {
@@ -135,13 +136,27 @@ const toggleSortDir = () => {
 
 function buildListQuery(includePage = true) {
   const q: Record<string, string> = {}
-  if (searchQuery.value.trim()) q.search = searchQuery.value.trim()
-  if (statusFilter.value) q.status = statusFilter.value
-  if (priorityFilter.value) q.priority = priorityFilter.value
-  if (categoryFilter.value) q.category = categoryFilter.value
-  if (sortBy.value !== 'createdAt') q.sortBy = sortBy.value
-  if (sortDir.value !== 'desc') q.sortDir = sortDir.value
-  if (includePage && currentPage.value > 1) q.page = String(currentPage.value)
+  if (searchQuery.value.trim()) {
+    q.search = searchQuery.value.trim()
+  }
+  if (statusFilter.value) {
+    q.status = statusFilter.value
+  }
+  if (priorityFilter.value) {
+    q.priority = priorityFilter.value
+  }
+  if (categoryFilter.value) {
+    q.category = categoryFilter.value
+  }
+  if (sortBy.value !== 'createdAt') {
+    q.sortBy = sortBy.value
+  }
+  if (sortDir.value !== 'desc') {
+    q.sortDir = sortDir.value
+  }
+  if (includePage && currentPage.value > 1) {
+    q.page = String(currentPage.value)
+  }
   return q
 }
 
@@ -153,7 +168,7 @@ function getDetailTo(request: ServiceRequestWithRelations) {
 // Extract unique categories from loaded requests
 const categoryOptions = computed(() => {
   const categories = new Set<string>()
-  list.value.forEach(request => {
+  list.value.forEach((request) => {
     if (request.category) {
       categories.add(request.category)
     }
@@ -161,7 +176,7 @@ const categoryOptions = computed(() => {
   const sortedCategories = Array.from(categories).sort()
   return [
     { label: t('features.serviceRequests.filters.allCategories'), value: undefined },
-    ...sortedCategories.map(cat => ({ label: cat, value: cat }))
+    ...sortedCategories.map((cat) => ({ label: cat, value: cat }))
   ]
 })
 
@@ -195,7 +210,9 @@ const loadNextPage = async () => {
   try {
     const result = await appendNextPage(currentFilters())
 
-    if (!result) return
+    if (!result) {
+      return
+    }
     currentPage.value = result.pagination.page
     await updateRoute()
   } catch (e) {
@@ -209,7 +226,9 @@ const loadPreviousPage = async () => {
 
   try {
     const result = await prependPreviousPage(currentFilters())
-    if (!result) return
+    if (!result) {
+      return
+    }
 
     await nextTick()
     if (container) {
@@ -266,7 +285,9 @@ const handleCreate = async (data: ServiceRequestCreateInput) => {
 }
 
 const handleUpdate = async (data: ServiceRequestCreateInput) => {
-  if (!selectedRequest.value?.id) return
+  if (!selectedRequest.value?.id) {
+    return
+  }
 
   mutationPending.value = true
   try {
@@ -298,7 +319,9 @@ const handleUpdate = async (data: ServiceRequestCreateInput) => {
 }
 
 const handleDelete = async () => {
-  if (!selectedRequest.value?.id) return
+  if (!selectedRequest.value?.id) {
+    return
+  }
 
   mutationPending.value = true
   try {
@@ -326,7 +349,9 @@ const handleDelete = async () => {
 }
 
 const editInitialData = computed<Partial<ServiceRequest> | undefined>(() => {
-  if (drawerMode.value !== 'edit') return undefined
+  if (drawerMode.value !== 'edit') {
+    return undefined
+  }
   return selectedRequest.value ?? undefined
 })
 
@@ -334,7 +359,9 @@ const updateRoute = () => router.replace({ path: '/requests', query: buildListQu
 
 const getPageTo = (page: number) => {
   const query = buildListQuery(false)
-  if (page > 1) query.page = String(page)
+  if (page > 1) {
+    query.page = String(page)
+  }
   return { path: '/requests', query }
 }
 
@@ -369,13 +396,18 @@ watch(searchQuery, () => {
   handleSearch()
 })
 
-watch(() => route.query.page, async (page) => {
-  const nextPage = Math.max(1, Number(page) || 1)
-  if (nextPage === currentPage.value) return
-  currentPage.value = nextPage
-  await loadData()
-  listContainerRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
-})
+watch(
+  () => route.query.page,
+  async (page) => {
+    const nextPage = Math.max(1, Number(page) || 1)
+    if (nextPage === currentPage.value) {
+      return
+    }
+    currentPage.value = nextPage
+    await loadData()
+    listContainerRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+)
 
 useAutoPagination({
   sentinel: loadMoreSentinelRef,
@@ -401,7 +433,9 @@ const formatDate = (date: string | Date) => {
 }
 
 onUnmounted(() => {
-  if (searchTimeout) clearTimeout(searchTimeout)
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
 })
 </script>
 
@@ -409,16 +443,14 @@ onUnmounted(() => {
   <UDashboardPanel
     id="service-requests"
     class="min-h-0 overflow-hidden"
-    style="height: calc(100dvh - var(--ui-header-height));"
+    style="height: calc(100dvh - var(--ui-header-height))"
     :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
   >
     <template #header>
       <UDashboardNavbar :ui="{ right: 'gap-3' }" :toggle="false">
         <template #leading>
           <UIcon name="i-lucide-ticket" class="size-6 shrink-0" />
-          <span class="text-lg font-semibold text-gray-900 dark:text-white">
-            Service Requests
-          </span>
+          <span class="text-lg font-semibold text-gray-900 dark:text-white"> Service Requests </span>
         </template>
 
         <template #right>
@@ -507,12 +539,7 @@ onUnmounted(() => {
         </template>
         <template #right>
           <div class="flex items-center gap-2">
-            <UButton
-              v-if="isMobile"
-              icon="i-lucide-filter"
-              variant="outline"
-              @click="showFiltersModal = true"
-            >
+            <UButton v-if="isMobile" icon="i-lucide-filter" variant="outline" @click="showFiltersModal = true">
               Filters
             </UButton>
             <UButton
@@ -530,11 +557,7 @@ onUnmounted(() => {
               :items="sortDropdownItems"
               :content="{ align: 'end', collisionPadding: 12 }"
             >
-              <UButton
-                icon="i-lucide-arrow-down-up"
-                variant="outline"
-                class="w-48 justify-between"
-              >
+              <UButton icon="i-lucide-arrow-down-up" variant="outline" class="w-48 justify-between">
                 <span class="truncate">{{ currentSortLabel }}</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
               </UButton>
@@ -551,7 +574,11 @@ onUnmounted(() => {
       </UDashboardToolbar>
 
       <!-- Mobile Filters Modal -->
-      <UModal v-model:open="showFiltersModal" :title="t('features.serviceRequests.filters.title')" :ui="{ content: 'w-full sm:max-w-md' }">
+      <UModal
+        v-model:open="showFiltersModal"
+        :title="t('features.serviceRequests.filters.title')"
+        :ui="{ content: 'w-full sm:max-w-md' }"
+      >
         <template #body>
           <div class="space-y-4">
             <UFormField :label="t('features.serviceRequests.fields.status')">
@@ -612,12 +639,7 @@ onUnmounted(() => {
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton
-              variant="outline"
-              @click="showFiltersModal = false"
-            >
-              Close
-            </UButton>
+            <UButton variant="outline" @click="showFiltersModal = false"> Close </UButton>
           </div>
         </template>
       </UModal>
@@ -627,12 +649,7 @@ onUnmounted(() => {
         <template #body>
           <div class="space-y-4">
             <UFormField :label="t('common.sortBy')">
-              <USelect
-                v-model="sortBy"
-                class="w-full"
-                :items="sortOptions"
-                :placeholder="t('common.sortBy')"
-              />
+              <USelect v-model="sortBy" class="w-full" :items="sortOptions" :placeholder="t('common.sortBy')" />
             </UFormField>
 
             <UFormField :label="t('common.direction')">
@@ -674,7 +691,9 @@ onUnmounted(() => {
             color="error"
             icon="i-lucide-circle-alert"
             :title="t('features.serviceRequests.messages.fetchError')"
-            class="mb-4" variant="outline" />
+            class="mb-4"
+            variant="outline"
+          />
 
           <UEmpty
             v-if="list.length === 0 && !pending"
@@ -683,12 +702,7 @@ onUnmounted(() => {
             class="ring-inset"
           />
 
-          <div
-            v-if="hasPreviousPage"
-            ref="loadPreviousSentinelRef"
-            aria-hidden="true"
-            class="h-px"
-          />
+          <div v-if="hasPreviousPage" ref="loadPreviousSentinelRef" aria-hidden="true" class="h-px" />
 
           <div v-if="loadingPreviousPage" class="pb-4 space-y-2">
             <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
@@ -722,7 +736,10 @@ onUnmounted(() => {
                     <span v-if="request.category">{{ request.category }}</span>
                   </div>
                 </div>
-                <span aria-hidden="true" class="grid size-11 place-items-center rounded-md text-muted group-hover:text-highlighted">
+                <span
+                  aria-hidden="true"
+                  class="grid size-11 place-items-center rounded-md text-muted group-hover:text-highlighted"
+                >
                   <UIcon name="i-lucide-chevron-right" class="size-5" />
                 </span>
               </NuxtLink>
@@ -733,12 +750,7 @@ onUnmounted(() => {
             <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
           </div>
 
-          <div
-            v-if="hasNextPage"
-            ref="loadMoreSentinelRef"
-            aria-hidden="true"
-            class="h-px"
-          />
+          <div v-if="hasNextPage" ref="loadMoreSentinelRef" aria-hidden="true" class="h-px" />
 
           <div v-if="loadingNextPage" class="py-4 space-y-2">
             <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
@@ -755,7 +767,9 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between gap-4">
+      <div
+        class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between gap-4"
+      >
         <span>
           {{ t('features.serviceRequests.resultCount', { count: pagination.total }) }}
         </span>
@@ -770,7 +784,12 @@ onUnmounted(() => {
       </div>
 
       <!-- Drawer (create / view / edit) -->
-      <USlideover v-if="drawerOpen" v-model:open="drawerOpen" :title="drawerTitle" :ui="{ content: 'w-full sm:max-w-lg' }">
+      <USlideover
+        v-if="drawerOpen"
+        v-model:open="drawerOpen"
+        :title="drawerTitle"
+        :ui="{ content: 'w-full sm:max-w-lg' }"
+      >
         <template #body>
           <div class="space-y-4">
             <template v-if="drawerMode === 'view' && selectedRequest">
@@ -821,10 +840,19 @@ onUnmounted(() => {
 
 <style scoped>
 @keyframes end-of-list-bounce {
-  0%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-10px); }
-  55% { transform: translateY(0); }
-  75% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+  55% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-4px);
+  }
 }
 
 .end-of-list-bounce {

@@ -2,31 +2,44 @@
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 
-const props = withDefaults(defineProps<{
-  showNavigation?: boolean
-  brandName?: string
-  brandTagline?: string
-}>(), {
-  showNavigation: true,
-  brandName: 'Nuxt Customer Portal',
-  brandTagline: 'Customer workspace'
-})
+const props = withDefaults(
+  defineProps<{
+    showNavigation?: boolean
+    brandName?: string
+    brandTagline?: string
+  }>(),
+  {
+    showNavigation: true,
+    brandName: 'Nuxt Customer Portal',
+    brandTagline: 'Customer workspace'
+  }
+)
 
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
-const portalRuntimeSettings = useState<{ branding?: { portalName?: string, tagline?: string, markLight?: string, markDark?: string }, appearance?: { colorMode?: string } } | null>('portal-runtime-settings', () => null)
+const portalRuntimeSettings = useState<{
+  branding?: { portalName?: string; tagline?: string; markLight?: string; markDark?: string }
+  appearance?: { colorMode?: string }
+} | null>('portal-runtime-settings', () => null)
 const colorMode = useColorMode()
 const runtimeBrandName = computed(() => portalRuntimeSettings.value?.branding?.portalName || props.brandName)
 const runtimeTagline = computed(() => portalRuntimeSettings.value?.branding?.tagline || props.brandTagline)
 const runtimeMark = computed(() => {
   const branding = portalRuntimeSettings.value?.branding
-  if (!branding) return ''
-  return colorMode.value === 'dark' ? (branding.markDark || branding.markLight || '') : (branding.markLight || branding.markDark || '')
+  if (!branding) {
+    return ''
+  }
+  return colorMode.value === 'dark'
+    ? branding.markDark || branding.markLight || ''
+    : branding.markLight || branding.markDark || ''
 })
-const showColorModeControl = computed(() => !portalRuntimeSettings.value || portalRuntimeSettings.value.appearance?.colorMode === 'user-choice')
+const showColorModeControl = computed(
+  () => !portalRuntimeSettings.value || portalRuntimeSettings.value.appearance?.colorMode === 'user-choice'
+)
 // User store
 const userStore = useUserStore()
-const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
+const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } =
+  storeToRefs(userStore)
 
 const showOrgSwitcherModal = ref(false)
 const searchOpen = ref(false)
@@ -45,16 +58,20 @@ const { searchGroups } = useNavigationLinks(sidebarOpen)
 const { modules, moduleNavigationGroups, activeModuleId, activeModule } = useModuleNavigation(headerMenuOpen)
 const expandedMobileModuleId = ref('')
 
-watch(activeModuleId, (moduleId) => {
-  expandedMobileModuleId.value = moduleId
-}, { immediate: true })
+watch(
+  activeModuleId,
+  (moduleId) => {
+    expandedMobileModuleId.value = moduleId
+  },
+  { immediate: true }
+)
 
 const toggleMobileModule = (moduleId: string) => {
   expandedMobileModuleId.value = expandedMobileModuleId.value === moduleId ? '' : moduleId
 }
 
 const moduleItems = computed(() => {
-  return modules.value.map(module => ({
+  return modules.value.map((module) => ({
     ...module,
     active: module.id === activeModuleId.value
   }))
@@ -67,12 +84,16 @@ const moduleBadgeProps = (badge: (typeof modules.value)[number]['badge']) =>
 const currentLocale = ref(locale.value)
 
 // Watch for locale changes and handle them properly
-watch(locale, (newLocale) => {
-  currentLocale.value = newLocale
-  setLocale(newLocale)
-  console.log('Locale changed to:', newLocale)
-  // No URL change needed with no_prefix strategy
-}, { immediate: false })
+watch(
+  locale,
+  (newLocale) => {
+    currentLocale.value = newLocale
+    setLocale(newLocale)
+    console.log('Locale changed to:', newLocale)
+    // No URL change needed with no_prefix strategy
+  },
+  { immediate: false }
+)
 
 // Watch currentLocale changes to update the global locale
 watch(currentLocale, (newLocale) => {
@@ -103,7 +124,6 @@ const stopImpersonating = async () => {
     })
   }
 }
-
 </script>
 
 <template>
@@ -118,14 +138,11 @@ const stopImpersonating = async () => {
         wrapper: 'flex-1',
         title: 'text-sm font-medium',
         actions: 'ml-auto'
-      }" variant="outline" >
+      }"
+      variant="outline"
+    >
       <template #actions>
-        <UButton
-          color="warning"
-          variant="solid"
-          size="sm"
-          @click="stopImpersonating"
-        >
+        <UButton color="warning" variant="solid" size="sm" @click="stopImpersonating">
           {{ t('admin.user.impersonate.stop') }}
         </UButton>
       </template>
@@ -150,8 +167,17 @@ const stopImpersonating = async () => {
         <!-- Logo Icon -->
         <NuxtLink to="/" class="shrink-0" :aria-label="runtimeBrandName">
           <div class="relative">
-            <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain">
-            <svg v-else class="portal-logo-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain" />
+            <svg
+              v-else
+              class="portal-logo-mark"
+              width="40"
+              height="40"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
               <!-- Background circle -->
               <circle cx="20" cy="20" r="20" fill="var(--portal-logo-surface)" />
               <!-- Building/facility icon -->
@@ -194,12 +220,13 @@ const stopImpersonating = async () => {
 
     <nav v-if="showNavigation" class="hidden lg:flex flex-1 items-center justify-center gap-6">
       <template v-for="module in moduleItems" :key="module.id">
-        <NuxtLink :to="module.to" :class="[
-          'text-sm font-medium transition-colors flex items-center gap-1.5',
-          module.active
-            ? 'text-primary font-semibold'
-            : 'text-muted hover:text-highlighted'
-        ]">
+        <NuxtLink
+          :to="module.to"
+          :class="[
+            'text-sm font-medium transition-colors flex items-center gap-1.5',
+            module.active ? 'text-primary font-semibold' : 'text-muted hover:text-highlighted'
+          ]"
+        >
           <UIcon v-if="module.icon" :name="module.icon" class="w-4 h-4" />
           {{ module.label }}
           <UBadge v-if="module.badge" v-bind="moduleBadgeProps(module.badge)" />
@@ -209,15 +236,12 @@ const stopImpersonating = async () => {
 
     <template #right>
       <div class="hidden lg:flex items-center gap-3 ml-auto">
-        <UButton
-          icon="i-lucide-search"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          square
-          @click="searchOpen = true"
+        <UButton icon="i-lucide-search" color="neutral" variant="ghost" size="sm" square @click="searchOpen = true" />
+        <ULocaleSelect
+          v-model="currentLocale"
+          :locales="[en, nl]"
+          :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
         />
-        <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
         <UColorModeButton v-if="showColorModeControl" />
 
         <!-- User Avatar Dropdown (only show when user is logged in) -->
@@ -227,7 +251,11 @@ const stopImpersonating = async () => {
       <!-- Organization Switcher Modal -->
       <UModal v-model:open="showOrgSwitcherModal" :title="t('menu.switchOrganization')" :ui="{ footer: 'justify-end' }">
         <template #body>
-          <OrganizationSwitcher v-if="isAuthenticated" :show-create-button="false" @switched="showOrgSwitcherModal = false" />
+          <OrganizationSwitcher
+            v-if="isAuthenticated"
+            :show-create-button="false"
+            @switched="showOrgSwitcherModal = false"
+          />
         </template>
         <template #footer="{ close }">
           <UButton label="Close" color="neutral" variant="outline" @click="close" />
@@ -247,7 +275,12 @@ const stopImpersonating = async () => {
             class="min-h-11 justify-start"
             @click="searchOpen = true"
           />
-          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-32" :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }" />
+          <ULocaleSelect
+            v-model="currentLocale"
+            :locales="[en, nl]"
+            class="w-32"
+            :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
+          />
           <UColorModeButton v-if="showColorModeControl" size="md" class="min-h-11 min-w-11" />
         </div>
       </div>
@@ -279,9 +312,16 @@ const stopImpersonating = async () => {
             :class="module.id === activeModuleId ? 'bg-primary/10 text-primary' : ''"
             @click="headerMenuOpen = false"
           >
-            <UIcon v-if="module.menuItems[0]?.icon ?? module.icon" :name="module.menuItems[0]?.icon ?? module.icon" class="size-5 shrink-0" />
+            <UIcon
+              v-if="module.menuItems[0]?.icon ?? module.icon"
+              :name="module.menuItems[0]?.icon ?? module.icon"
+              class="size-5 shrink-0"
+            />
             <span class="min-w-0 flex-1 truncate">{{ module.menuItems[0]?.label ?? module.label }}</span>
-            <UBadge v-if="module.menuItems[0]?.badge ?? module.badge" v-bind="moduleBadgeProps(module.menuItems[0]?.badge ?? module.badge)" />
+            <UBadge
+              v-if="module.menuItems[0]?.badge ?? module.badge"
+              v-bind="moduleBadgeProps(module.menuItems[0]?.badge ?? module.badge)"
+            />
           </NuxtLink>
           <UNavigationMenu
             v-if="module.menuItems.length > 1 && expandedMobileModuleId === module.id"

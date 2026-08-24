@@ -6,9 +6,20 @@ import { timesheetsFeature } from '@nuxt-customer-portal/timesheets/shared/featu
 
 export default defineEventHandler(async (event) => {
   const { organizationId, organizationType } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
-  if (organizationType !== 'PROVIDER') throw createError({ statusCode: 403, message: 'PROVIDER organization required' })
+  if (organizationType !== 'PROVIDER') {
+    throw createError({ statusCode: 403, message: 'PROVIDER organization required' })
+  }
   const clientOrganizationId = getRouterParam(event, 'clientId')!
   await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
-  const [settings] = await db.select().from(workspaceClient).where(and(eq(workspaceClient.workspaceOrganizationId, organizationId), eq(workspaceClient.clientOrganizationId, clientOrganizationId))).limit(1)
+  const [settings] = await db
+    .select()
+    .from(workspaceClient)
+    .where(
+      and(
+        eq(workspaceClient.workspaceOrganizationId, organizationId),
+        eq(workspaceClient.clientOrganizationId, clientOrganizationId)
+      )
+    )
+    .limit(1)
   return settings ?? { clientOrganizationId, accessMode: 'DISABLED' }
 })

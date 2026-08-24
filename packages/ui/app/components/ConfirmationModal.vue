@@ -42,7 +42,9 @@ const isI18nKey = (str: string): boolean => {
 
 // Get translated or raw text
 const getText = (key: string | undefined, fallback: string): string => {
-  if (!key) return fallback
+  if (!key) {
+    return fallback
+  }
   if (isI18nKey(key)) {
     return t(key)
   }
@@ -63,19 +65,10 @@ const getText = (key: string | undefined, fallback: string): string => {
           </template>
         </p>
         <div class="flex gap-4 justify-end pt-4">
-          <UButton
-            type="button"
-            variant="outline"
-            @click="handleCancel"
-          >
+          <UButton type="button" variant="outline" @click="handleCancel">
             {{ getText(props.cancelText, t('common.cancel')) }}
           </UButton>
-          <UButton
-            type="button"
-            :color="confirmColor"
-            :variant="confirmVariant"
-            @click="handleConfirm"
-          >
+          <UButton type="button" :color="confirmColor" :variant="confirmVariant" @click="handleConfirm">
             {{ getText(props.confirmText, t('common.confirm')) }}
           </UButton>
         </div>

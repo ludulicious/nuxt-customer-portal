@@ -21,15 +21,11 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL
 
 if (!RESEND_API_KEY) {
-  console.warn(
-    'RESEND_API_KEY environment variable is not set. Email sending will be disabled.',
-  )
+  console.warn('RESEND_API_KEY environment variable is not set. Email sending will be disabled.')
 }
 // Update warning message to check for RESEND_FROM_EMAIL
 if (!RESEND_FROM_EMAIL) {
-  console.warn(
-    'RESEND_FROM_EMAIL environment variable is not set. Email sending may fail.',
-  )
+  console.warn('RESEND_FROM_EMAIL environment variable is not set. Email sending may fail.')
 }
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
@@ -42,7 +38,7 @@ export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
   // Check for RESEND_FROM_EMAIL
   if (!resend || !RESEND_FROM_EMAIL || !emailTemplate) {
     console.error(
-      'Email prerequisites not met (Resend key/instance, RESEND_FROM_EMAIL, or template loaded). Skipping email send.',
+      'Email prerequisites not met (Resend key/instance, RESEND_FROM_EMAIL, or template loaded). Skipping email send.'
     )
     return Promise.resolve() // Resolve promise even if email not sent to avoid breaking auth flow
   }
@@ -57,7 +53,7 @@ export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
     action_url: params.action_url,
     action_text: params.action_text,
     footer_text: params.footer_text,
-    current_year: currentYear.toString(),
+    current_year: currentYear.toString()
   }
 
   // Replace placeholders
@@ -69,9 +65,7 @@ export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
   // Simple text version (can be improved)
   const textContent = `${params.greeting || 'Hello,'}\n\n${params.body_text}\n\nPlease visit: ${params.action_url}\n\n${params.footer_text}`
 
-  console.log(
-    `Attempting to send email via Resend to ${to} with subject: ${subject}`,
-  )
+  console.log(`Attempting to send email via Resend to ${to} with subject: ${subject}`)
   try {
     const { data, error } = await resend.emails.send({
       // Use RESEND_FROM_EMAIL as the sender
@@ -79,7 +73,7 @@ export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
       to: [to],
       subject: subject,
       html: htmlContent,
-      text: textContent, // Include text version
+      text: textContent // Include text version
     })
 
     if (error) {

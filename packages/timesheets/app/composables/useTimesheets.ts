@@ -17,11 +17,11 @@ import type {
   TimesheetsDashboardDto,
   TimesheetsSetupStatusDto,
   InternalApprovalConfigurationDto,
-  InternalApprovalQueueDto,
+  InternalApprovalQueueDto
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
-  settings: { currency: string, timezone: string, weekStartsOn: number, internalApprovalsEnabled: boolean }
+  settings: { currency: string; timezone: string; weekStartsOn: number; internalApprovalsEnabled: boolean }
   clients: ClientDto[]
   availableClientOrganizations: ClientOrganizationOptionDto[]
   projects: ProjectDto[]
@@ -30,16 +30,20 @@ export interface TimesheetsAdminBootstrap {
   approvals: ApprovalQueueItemDto[]
   setupStatus: TimesheetsSetupStatusDto
 }
-export interface OrganizationTimesheetCapabilities { workspaceEnabled: boolean, clientOf: Array<{ workspaceOrganizationId: string, workspaceName: string, accessMode: ClientAccessMode }> }
+export interface OrganizationTimesheetCapabilities {
+  workspaceEnabled: boolean
+  clientOf: Array<{ workspaceOrganizationId: string; workspaceName: string; accessMode: ClientAccessMode }>
+}
 
 export const useTimesheets = () => {
-  const bootstrap = (week?: string) =>
-    $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
+  const bootstrap = (week?: string) => $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
   const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
   const internalApprovalQueue = () => $fetch<InternalApprovalQueueDto>('/api/timesheets/internal-approvals')
-  const internalApprovalConfiguration = () => $fetch<InternalApprovalConfigurationDto>('/api/timesheets/admin/internal-approvals')
-  const updateInternalApprovalWorkspace = (enabled: boolean) => $fetch('/api/timesheets/admin/internal-approvals', { method: 'PATCH', body: { enabled } })
-  const updateInternalApprovalMember = (userId: string, input: { required: boolean, approverUserIds: string[] }) =>
+  const internalApprovalConfiguration = () =>
+    $fetch<InternalApprovalConfigurationDto>('/api/timesheets/admin/internal-approvals')
+  const updateInternalApprovalWorkspace = (enabled: boolean) =>
+    $fetch('/api/timesheets/admin/internal-approvals', { method: 'PATCH', body: { enabled } })
+  const updateInternalApprovalMember = (userId: string, input: { required: boolean; approverUserIds: string[] }) =>
     $fetch(`/api/timesheets/admin/internal-approvals/${userId}`, { method: 'PUT', body: input })
   const setupStatus = () => $fetch<TimesheetsSetupStatusDto>('/api/timesheets/setup-status')
 
@@ -51,59 +55,67 @@ export const useTimesheets = () => {
     note?: string | null
   }) => $fetch<TimeEntryDto>('/api/timesheets/entries', { method: 'POST', body: input })
 
-  const updateEntry = (id: string, input: Partial<{
-    projectId: string
-    activityTypeId: string
-    entryDate: string
-    durationMinutes: number
-    note: string | null
-  }>) => $fetch<TimeEntryDto>(`/api/timesheets/entries/${id}`, { method: 'PATCH', body: input })
+  const updateEntry = (
+    id: string,
+    input: Partial<{
+      projectId: string
+      activityTypeId: string
+      entryDate: string
+      durationMinutes: number
+      note: string | null
+    }>
+  ) => $fetch<TimeEntryDto>(`/api/timesheets/entries/${id}`, { method: 'PATCH', body: input })
 
-  const deleteEntry = (id: string) =>
-    $fetch(`/api/timesheets/entries/${id}`, { method: 'DELETE' as never })
+  const deleteEntry = (id: string) => $fetch(`/api/timesheets/entries/${id}`, { method: 'DELETE' as never })
 
-  const startTimer = (input: {
-    projectId: string
-    activityTypeId: string
-    entryDate: string
-    note?: string | null
-  }) => $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'POST', body: input })
+  const startTimer = (input: { projectId: string; activityTypeId: string; entryDate: string; note?: string | null }) =>
+    $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'POST', body: input })
 
-  const stopTimer = () =>
-    $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'DELETE' as never })
+  const stopTimer = () => $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'DELETE' as never })
 
-  const submitWeek = (id: string) =>
-    $fetch(`/api/timesheets/weeks/${id}/submit`, { method: 'POST' })
+  const submitWeek = (id: string) => $fetch(`/api/timesheets/weeks/${id}/submit`, { method: 'POST' })
 
-  const adminBootstrap = (section?: string) => $fetch<TimesheetsAdminBootstrap>('/api/timesheets/admin/bootstrap', { query: section ? { section } : undefined })
-  const createClient = (input: { mode: 'link', organizationId: string } | { mode: 'create', name: string, slug: string }) =>
-    $fetch('/api/timesheets/admin/clients', { method: 'POST', body: input })
+  const adminBootstrap = (section?: string) =>
+    $fetch<TimesheetsAdminBootstrap>('/api/timesheets/admin/bootstrap', { query: section ? { section } : undefined })
+  const createClient = (
+    input: { mode: 'link'; organizationId: string } | { mode: 'create'; name: string; slug: string }
+  ) => $fetch('/api/timesheets/admin/clients', { method: 'POST', body: input })
   const getClientDeletionEligibility = (id: string) =>
-    $fetch<{ clientId: string, clientName: string, canDelete: boolean }>(
-      `/api/timesheets/admin/clients/${id}/deletion`
-    )
+    $fetch<{ clientId: string; clientName: string; canDelete: boolean }>(`/api/timesheets/admin/clients/${id}/deletion`)
   const deleteClient = (id: string, clientName: string) =>
     $fetch(`/api/timesheets/admin/clients/${id}`, {
       method: 'DELETE' as never,
       body: { clientName }
     })
-  const updateClientAccess = (id: string, accessMode: ClientAccessMode) => $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { accessMode } })
-  const getOrganizationTimesheetCapabilities = (organizationId: string) => $fetch<OrganizationTimesheetCapabilities>(`/api/timesheets/admin/organization-capabilities/${organizationId}`)
-  const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean }) => $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
+  const updateClientAccess = (id: string, accessMode: ClientAccessMode) =>
+    $fetch(`/api/timesheets/admin/clients/${id}`, { method: 'PATCH', body: { accessMode } })
+  const getOrganizationTimesheetCapabilities = (organizationId: string) =>
+    $fetch<OrganizationTimesheetCapabilities>(`/api/timesheets/admin/organization-capabilities/${organizationId}`)
+  const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean }) =>
+    $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
   const clientWorkspaces = () => $fetch<ClientWorkspaceDto[]>('/api/timesheets/client/workspaces')
-  const clientApprovalSuppliers = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/approval-suppliers')
-  const clientSupplierOptions = () => $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/supplier-options')
+  const clientApprovalSuppliers = () =>
+    $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/approval-suppliers')
+  const clientSupplierOptions = () =>
+    $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/supplier-options')
   const clientReviewerSuppliers = () => $fetch<ClientReviewerSupplierDto[]>('/api/timesheets/client/reviewer-suppliers')
-  const clientTimesheets = (workspaceClientId: string) => $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
-  const reviewClientSlice = (workspaceClientId: string, weekId: string, input: { action: 'APPROVE' | 'DISPUTE', expectedVersion: number, comment?: string | null }) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
-  const clientReviewers = (workspaceClientId: string) => $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
-  const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviewers`, { method: 'PUT', body: { userId, assigned } })
-  const createActivity = (input: { name: string, billable: boolean }) =>
+  const clientTimesheets = (workspaceClientId: string) =>
+    $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
+  const reviewClientSlice = (
+    workspaceClientId: string,
+    weekId: string,
+    input: { action: 'APPROVE' | 'DISPUTE'; expectedVersion: number; comment?: string | null }
+  ) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
+  const clientReviewers = (workspaceClientId: string) =>
+    $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
+  const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) =>
+    $fetch(`/api/timesheets/client/${workspaceClientId}/reviewers`, { method: 'PUT', body: { userId, assigned } })
+  const createActivity = (input: { name: string; billable: boolean }) =>
     $fetch('/api/timesheets/admin/activities', { method: 'POST', body: input })
-  const updateActivity = (id: string, input: Partial<{ name: string, billable: boolean, active: boolean }>) =>
+  const updateActivity = (id: string, input: Partial<{ name: string; billable: boolean; active: boolean }>) =>
     $fetch(`/api/timesheets/admin/activities/${id}`, { method: 'PATCH', body: input })
   const getActivityDeletionEligibility = (id: string) =>
-    $fetch<{ activityId: string, activityName: string, canDelete: boolean }>(
+    $fetch<{ activityId: string; activityName: string; canDelete: boolean }>(
       `/api/timesheets/admin/activities/${id}/deletion`
     )
   const deleteActivity = (id: string, activityName: string) =>
@@ -123,7 +135,7 @@ export const useTimesheets = () => {
   const updateProject = (id: string, input: Record<string, unknown>) =>
     $fetch(`/api/timesheets/admin/projects/${id}`, { method: 'PATCH', body: input })
   const getProjectDeletionEligibility = (id: string) =>
-    $fetch<{ projectId: string, projectName: string, canDelete: boolean }>(
+    $fetch<{ projectId: string; projectName: string; canDelete: boolean }>(
       `/api/timesheets/admin/projects/${id}/deletion`
     )
   const deleteProject = (id: string, projectName: string) =>
@@ -136,9 +148,11 @@ export const useTimesheets = () => {
       method: 'PUT',
       body: { userId, hourlyRateMinor }
     })
-  const updateTeamMemberSettings = (userId: string, input: { canEnterTime: boolean, defaultHourlyRateMinor: number | null }) =>
-    $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
-  const updateSettings = (input: { currency?: string, timezone?: string }) =>
+  const updateTeamMemberSettings = (
+    userId: string,
+    input: { canEnterTime: boolean; defaultHourlyRateMinor: number | null }
+  ) => $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
+  const updateSettings = (input: { currency?: string; timezone?: string }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
   const reviewWeek = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
     $fetch(`/api/timesheets/internal-approvals/${id}`, {
@@ -190,6 +204,6 @@ export const useTimesheets = () => {
     updateTeamMemberSettings,
     updateSettings,
     reviewWeek,
-    getReport,
+    getReport
   }
 }
