@@ -47,6 +47,15 @@ const resetForm = () =>
     budgetAmount: props.project.budgetMinor === null ? null : props.project.budgetMinor / 100,
     activityTypeIds: [...props.project.activityTypeIds]
   })
+const toggleEditing = () => {
+  editing.value = !editing.value
+  deleting.value = false
+  resetForm()
+}
+const cancelEditing = () => {
+  editing.value = false
+  resetForm()
+}
 const resetRates = () => {
   for (const key of Object.keys(rateDrafts)) {
     Reflect.deleteProperty(rateDrafts, key)
@@ -170,16 +179,7 @@ onKeyStroke('Escape', () => {
         </div>
         <p class="mt-1 text-sm text-muted">{{ project.clientName }}{{ project.code ? ` · ${project.code}` : '' }}</p>
       </div>
-      <UButton
-        size="sm"
-        variant="outline"
-        icon="i-lucide-pencil"
-        @click="
-          editing = !editing
-          deleting = false
-          resetForm()
-        "
-      >
+      <UButton size="sm" variant="outline" icon="i-lucide-pencil" @click="toggleEditing">
         {{ t('features.timesheets.admin.editProject') }}
       </UButton>
     </header>
@@ -193,10 +193,7 @@ onKeyStroke('Escape', () => {
       :show-cancel="true"
       :add-activity="addActivity"
       @submit="save"
-      @cancel="
-        editing = false
-        resetForm()
-      "
+      @cancel="cancelEditing"
     />
 
     <UCard v-else>

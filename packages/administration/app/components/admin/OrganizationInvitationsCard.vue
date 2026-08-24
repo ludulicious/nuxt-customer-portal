@@ -47,6 +47,11 @@ const openResendModal = (invitation: Invitation) => {
   showResendModal.value = true
 }
 
+const openDeleteModal = (invitationId: string) => {
+  deleteInvitationId.value = invitationId
+  showDeleteModal.value = true
+}
+
 const handleResendInvitation = async () => {
   if (!selectedInvitation.value) {
     return
@@ -153,10 +158,7 @@ const handleDeleteInvitation = async () => {
             variant="ghost"
             size="sm"
             color="error"
-            @click="
-              deleteInvitationId = row.original.id
-              showDeleteModal = true
-            "
+            @click="openDeleteModal(row.original.id)"
           >
             {{ t('admin.organization.detail.invitations.delete') }}
           </UButton>

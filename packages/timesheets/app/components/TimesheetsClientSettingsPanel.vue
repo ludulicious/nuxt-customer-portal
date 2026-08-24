@@ -15,7 +15,10 @@ if (data.value) {
 const save = async () => {
   busy.value = true
   try {
-    await $fetch(`/api/timesheets/admin/client-settings/${props.client.organizationId}`, { method: 'PUT', body: state })
+    await $fetch(`/api/timesheets/admin/client-settings/${props.client.organizationId}`, {
+      method: 'PUT',
+      body: state
+    })
     toast.add({ title: t('features.timesheets.messages.saved'), color: 'success' })
   } finally {
     busy.value = false

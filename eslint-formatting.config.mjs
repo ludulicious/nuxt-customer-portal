@@ -10,5 +10,11 @@ export const formattingConfigs = [
       'vue/html-self-closing': 'off',
       '@stylistic/member-delimiter-style': 'off'
     }
+  },
+  {
+    files: ['**/*.vue'],
+    rules: {
+      'max-statements-per-line': 'off'
+    }
   }
 ]

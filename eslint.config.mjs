@@ -39,12 +39,21 @@ export default withNuxt(
       ]
     }
   }
-).append(prettierConfig, {
-  rules: {
-    curly: ['error', 'all'],
-    'brace-style': ['error', '1tbs', { allowSingleLine: false }],
-    'max-statements-per-line': ['error', { max: 1 }],
-    'vue/html-self-closing': 'off',
-    '@stylistic/member-delimiter-style': 'off'
+).append(
+  prettierConfig,
+  {
+    rules: {
+      curly: ['error', 'all'],
+      'brace-style': ['error', '1tbs', { allowSingleLine: false }],
+      'max-statements-per-line': ['error', { max: 1 }],
+      'vue/html-self-closing': 'off',
+      '@stylistic/member-delimiter-style': 'off'
+    }
+  },
+  {
+    files: ['**/*.vue'],
+    rules: {
+      'max-statements-per-line': 'off'
+    }
   }
-})
+)

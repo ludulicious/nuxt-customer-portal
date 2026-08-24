@@ -98,6 +98,11 @@ function chooseLogo() {
   fileInput.value?.click()
 }
 
+function removeLogo() {
+  state.logo = ''
+  selectedFile.value = null
+}
+
 function selectLogo(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) {
@@ -172,10 +177,7 @@ function selectLogo(event: Event) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-x"
-            @click="
-              state.logo = ''
-              selectedFile = null
-            "
+            @click="removeLogo"
           >
             {{ t('organization.settings.logoRemove') }}
           </UButton>

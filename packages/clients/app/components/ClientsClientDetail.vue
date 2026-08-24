@@ -104,6 +104,11 @@ const removeMember = async (memberId: string) => {
     busy.value = false
   }
 }
+
+const toggleEditing = () => {
+  editing.value = !editing.value
+  deleting.value = false
+}
 </script>
 
 <template>
@@ -121,15 +126,7 @@ const removeMember = async (memberId: string) => {
           <p class="text-sm text-muted">{{ client.officialName }}</p>
         </div>
       </div>
-      <UButton
-        size="sm"
-        variant="outline"
-        icon="i-lucide-pencil"
-        @click="
-          editing = !editing
-          deleting = false
-        "
-      >
+      <UButton size="sm" variant="outline" icon="i-lucide-pencil" @click="toggleEditing">
         {{ t('features.clients.edit') }}
       </UButton>
     </header>

@@ -304,6 +304,10 @@ const chooseTimeSource = async () => {
   source.value = 'TIME'
   next()
 }
+const chooseFreeSource = () => {
+  source.value = 'FREE'
+  next()
+}
 const save = async () => {
   busy.value = true
   try {
@@ -389,10 +393,7 @@ await Promise.all([listing.load(), refreshAvailableProviders()])
       <div v-if="step === 1" class="grid gap-3 md:grid-cols-2">
         <button
           class="invoice-source-card min-w-0 rounded-lg border border-default p-5 text-left hover:border-primary"
-          @click="
-            source = 'FREE'
-            next()
-          "
+          @click="chooseFreeSource"
         >
           <UIcon name="i-lucide-file-pen-line" class="mb-3 size-6" />
           <h3 class="font-medium">{{ t('features.invoices.admin.freeForm') }}</h3>

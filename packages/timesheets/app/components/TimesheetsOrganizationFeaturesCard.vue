@@ -11,7 +11,9 @@ const update = async (change: Partial<Pick<OrganizationTimesheetCapabilities, 'w
   const next = { ...props.modelValue, ...change }
   busy.value = true
   try {
-    await api.updateOrganizationTimesheetCapabilities(props.organizationId, { workspaceEnabled: next.workspaceEnabled })
+    await api.updateOrganizationTimesheetCapabilities(props.organizationId, {
+      workspaceEnabled: next.workspaceEnabled
+    })
     emit('update:modelValue', next)
     toast.add({ title: t('features.timesheets.organizationFeatures.saved'), color: 'success' })
   } catch (error) {
