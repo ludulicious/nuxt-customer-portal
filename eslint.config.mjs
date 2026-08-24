@@ -1,5 +1,5 @@
 // @ts-check
-import withNuxt from './.nuxt/eslint.config.mjs'
+import withNuxt from './apps/saas-portal/.nuxt/eslint.config.mjs'
 import prettierConfig from 'eslint-config-prettier/flat'
 
 export default withNuxt(
