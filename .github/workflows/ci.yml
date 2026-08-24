@@ -62,5 +62,7 @@ jobs:
           bun-version: latest
       - if: matrix.manager == 'yarn'
         run: corepack enable
+      - if: matrix.manager == 'npm'
+        run: npm install --global npm@11.6.1
       - run: pnpm install --frozen-lockfile
       - run: node --import tsx scripts/verify-packages.ts --consumers --manager=${{ matrix.manager }}
