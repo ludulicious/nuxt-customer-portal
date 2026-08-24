@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/demo-apex/Dockerfile
+          file: apps/saas-portal/Dockerfile
           push: true
           tags: |
             ${{ steps.image.outputs.image }}:${{ steps.image.outputs.version }}

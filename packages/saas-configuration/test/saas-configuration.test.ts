@@ -24,12 +24,15 @@ test('branding assets fall back across color modes', () => {
 })
 
 test('the deployable app includes its settings migration and image contract', async () => {
-  const [config, dockerfile, migration] = await Promise.all([
+  const [config, dockerfile, migration, releaseWorkflow] = await Promise.all([
     readFile(new URL('../../../apps/saas-portal/portal.config.ts', import.meta.url), 'utf8'),
     readFile(new URL('../../../apps/saas-portal/Dockerfile', import.meta.url), 'utf8'),
-    readFile(new URL('../migrations/0000_portal_settings.sql', import.meta.url), 'utf8')
+    readFile(new URL('../migrations/0000_portal_settings.sql', import.meta.url), 'utf8'),
+    readFile(new URL('../../../.github/workflows/release-portal-image.yml', import.meta.url), 'utf8')
   ])
   assert.match(config, /@nuxt-customer-portal\/saas-configuration/)
   assert.match(dockerfile, /saas-portal build/)
+  assert.match(releaseWorkflow, /file: apps\/saas-portal\/Dockerfile/)
+  assert.doesNotMatch(releaseWorkflow, /file: apps\/demo-apex\/Dockerfile/)
   assert.match(migration, /CHECK \("id" = true\)/)
 })

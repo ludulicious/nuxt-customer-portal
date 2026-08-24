@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { extname, join, relative } from 'node:path'
 
 const root = new URL('..', import.meta.url).pathname
-const runtimeRoots = ['packages', 'apps/demo-apex', 'apps/demo-brutal']
+const runtimeRoots = ['packages', 'apps/demo-apex', 'apps/demo-brutal', 'apps/saas-portal']
 const sourceExtensions = new Set(['.js', '.mjs', '.ts', '.vue'])
 const forbidden = [
   { label: 'SaaS application import', pattern: /(?:from\s+|import\s*\()['"](?:~\/|@\/|\.\.\/)*apps\/saas(?:\/|['"])/ },

@@ -41,7 +41,7 @@ The boundary is enforced in CI by `pnpm verify:saas-boundary`.
 
 ## Portal release contract
 
-The `apps/demo-apex/Dockerfile` image is built from a release tag and also tagged
+The `apps/saas-portal/Dockerfile` image is built from a release tag and also tagged
 with the source commit SHA. The registry digest recorded after publishing is the
 only value used to provision or upgrade customer instances.
 
