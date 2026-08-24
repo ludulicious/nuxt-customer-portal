@@ -171,18 +171,12 @@ const stopImpersonating = async () => {
           <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
             {{ runtimeBrandName }}
           </span>
-          <div
-            v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
-            class="-mt-1 flex items-center gap-1"
-          >
-            <button
-              type="button"
-              class="text-left text-sm leading-tight text-gray-600 transition-colors hover:text-highlighted dark:text-gray-400"
-              @click="showOrgSwitcherModal = true"
-            >
-              {{ activeOrganization.name }}
-            </button>
+          <div class="-mt-1 flex items-center gap-1">
+            <span class="text-sm leading-tight text-gray-600 dark:text-gray-400">
+              {{ runtimeTagline }}
+            </span>
             <UButton
+              v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
               :aria-label="t('menu.switchOrganization')"
               :title="t('menu.switchOrganization')"
               icon="i-lucide-arrow-left-right"
@@ -194,22 +188,6 @@ const stopImpersonating = async () => {
               @click="showOrgSwitcherModal = true"
             />
           </div>
-          <span
-            v-else-if="isAuthenticated && activeOrganization"
-            class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1"
-          >
-            {{ activeOrganization.name }}
-          </span>
-          <span
-            v-else-if="isAuthenticated && loadingOrganization"
-            class="text-sm text-gray-400 leading-tight -mt-1 flex items-center gap-1"
-          >
-            <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
-            Loading...
-          </span>
-          <span v-else class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
-            {{ runtimeTagline }}
-          </span>
         </div>
       </div>
     </template>

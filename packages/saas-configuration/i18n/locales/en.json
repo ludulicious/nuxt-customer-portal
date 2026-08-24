@@ -1,6 +1,6 @@
 {
   "saasSettings": {
-    "navigation": "Portal settings", "title": "Portal settings", "onboardingTitle": "Set up your portal",
+    "navigation": "Portal settings", "title": "Portal settings", "onboardingTitle": "Set up your portal", "public": { "myDashboard": "My dashboard" },
     "bootstrap": { "title": "Create the portal administrator", "description": "This new portal is reserved for its designated administrator. Create that account first; you will configure the portal after signing in." },
     "editor": {
       "setupProgress": "Setup progress", "portalConfiguration": "Portal configuration", "configurationSections": "Configuration sections", "loading": "Loading settings…", "unavailable": "Settings unavailable",

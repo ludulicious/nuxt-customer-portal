@@ -54,6 +54,11 @@ export interface PortalModuleContribution {
   menuItems?: readonly PortalModuleMenuItem[]
 }
 
+export interface PortalModuleMenuContribution {
+  moduleId: string
+  item: PortalModuleMenuItem
+}
+
 export interface PortalRolePolicy<Action extends string = string> {
   owner: readonly Action[]
   admin: readonly Action[]
@@ -83,6 +88,7 @@ export interface PortalFeatureDefinition<Action extends string = string> {
   id: string
   navigation?: readonly PortalNavigationItem[]
   modules?: readonly PortalModuleContribution[]
+  moduleMenuItems?: readonly PortalModuleMenuContribution[]
   dashboardWidgets?: readonly PortalDashboardWidget[]
   surfaces?: readonly PortalSurfaceContribution[]
   clientIntegration?: PortalClientIntegration

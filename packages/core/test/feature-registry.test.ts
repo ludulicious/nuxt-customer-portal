@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { canManageOrganizationEmailCredential, canViewOrganizationDirectory, isPortalActionAllowed, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
+import { canManageOrganizationEmailCredential, canViewOrganizationDirectory, isPortalActionAllowed, mergePortalModuleMenuContributions, sortPortalDashboardWidgets, upsertPortalFeature } from '../shared/feature-registry'
 import { getActiveOrganizationId } from '../shared/portal-session'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
 
@@ -29,6 +29,12 @@ test('dashboard contributions sort deterministically by area, order, and stable 
   ]
   assert.deepEqual(sortPortalDashboardWidgets(widgets).map(widget => widget.id), ['a', 'b', 'z', 'aside'])
   assert.deepEqual(widgets.map(widget => widget.id), ['z', 'b', 'a', 'aside'])
+})
+
+test('features can contribute menu items to an existing module', () => {
+  const modules = [{ id: 'admin', labelKey: 'admin', to: '/admin', routePrefixes: ['/admin'], audiences: ['admin' as const], menuItems: [{ id: 'users', labelKey: 'users', to: '/admin/users', audiences: ['admin' as const] }] }]
+  const result = mergePortalModuleMenuContributions(modules, [{ moduleId: 'admin', item: { id: 'portal-settings', labelKey: 'portalSettings', to: '/admin/portal-settings', audiences: ['admin'] } }])
+  assert.deepEqual(result[0]?.menuItems?.map(item => item.id), ['users', 'portal-settings'])
 })
 
 test('feature policy honors organization roles without a system-admin bypass', () => {

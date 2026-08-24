@@ -1,5 +1,5 @@
 import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/types/feature'
-import { sortPortalDashboardWidgets, upsertPortalFeature } from '@nuxt-customer-portal/core/shared/feature-registry'
+import { mergePortalModuleMenuContributions, sortPortalDashboardWidgets, upsertPortalFeature } from '@nuxt-customer-portal/core/shared/feature-registry'
 
 export const usePortalFeatures = () => {
   const features = useState<PortalFeatureDefinition[]>('portal-features', () => [])
@@ -23,9 +23,13 @@ export const usePortalFeatures = () => {
     features.value.filter(featureEnabled).flatMap(feature => feature.dashboardWidgets ?? [])
   ))
 
-  const modules = computed(() => features.value.filter(featureEnabled)
-    .flatMap(feature => feature.modules ?? [])
-    .sort((a, b) => (a.order ?? 100) - (b.order ?? 100)))
+  const modules = computed(() => {
+    const enabledFeatures = features.value.filter(featureEnabled)
+    return mergePortalModuleMenuContributions(
+      enabledFeatures.flatMap(feature => feature.modules ?? []),
+      enabledFeatures.flatMap(feature => feature.moduleMenuItems ?? [])
+    ).sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
+  })
 
   const surfaces = computed(() => features.value.filter(featureEnabled)
     .flatMap(feature => feature.surfaces ?? [])

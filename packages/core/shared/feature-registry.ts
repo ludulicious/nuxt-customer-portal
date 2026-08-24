@@ -1,10 +1,22 @@
 import type {
   PortalFeatureDefinition,
   PortalFeaturePolicy,
+  PortalModuleContribution,
+  PortalModuleMenuContribution,
   PortalOrganizationRole,
   PortalOrganizationType,
   PortalRolePolicy
 } from './types/feature'
+
+export const mergePortalModuleMenuContributions = (
+  modules: readonly PortalModuleContribution[],
+  contributions: readonly PortalModuleMenuContribution[]
+): PortalModuleContribution[] => modules.map(module => {
+  const additions = contributions.filter(contribution => contribution.moduleId === module.id).map(contribution => contribution.item)
+  const items = new Map((module.menuItems ?? []).map(item => [item.id, item]))
+  for (const item of additions) items.set(item.id, item)
+  return { ...module, menuItems: [...items.values()] }
+})
 
 export const upsertPortalFeature = (
   features: PortalFeatureDefinition[],

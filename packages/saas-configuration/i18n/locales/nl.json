@@ -1,6 +1,6 @@
 {
   "saasSettings": {
-    "navigation": "Portaalinstellingen", "title": "Portaalinstellingen", "onboardingTitle": "Stel je portaal in",
+    "navigation": "Portaalinstellingen", "title": "Portaalinstellingen", "onboardingTitle": "Stel je portaal in", "public": { "myDashboard": "Mijn dashboard" },
     "bootstrap": { "title": "Maak de portaalbeheerder aan", "description": "Dit nieuwe portaal is gereserveerd voor de aangewezen beheerder. Maak eerst dit account aan; na het inloggen configureer je het portaal." },
     "editor": {
       "setupProgress": "Voortgang van de installatie", "portalConfiguration": "Portaalconfiguratie", "configurationSections": "Configuratieonderdelen", "loading": "Instellingen laden…", "unavailable": "Instellingen niet beschikbaar",

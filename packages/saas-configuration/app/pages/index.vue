@@ -3,15 +3,18 @@
 import type { PublicPortalSettings } from '../composables/usePortalSettings'
 
 definePageMeta({ layout: 'portal', public: true })
-const { locale } = useI18n()
+const { locale, t } = useI18n()
+const { isAuthenticated } = usePortalSession()
 const settings = useState<PublicPortalSettings | null>('portal-runtime-settings')
 const content = computed(() => settings.value?.content?.[locale.value as 'en' | 'nl'] || settings.value?.content?.en)
+const heroActionLabel = computed(() => isAuthenticated.value ? t('saasSettings.public.myDashboard') : content.value?.home.heroActionLabel)
+const heroActionUrl = computed(() => isAuthenticated.value ? '/dashboard' : (content.value?.home.heroActionUrl || '/login'))
 useSeoMeta({ title: () => content.value?.home.heroTitle || settings.value?.branding?.portalName || 'Customer Portal' })
 </script>
 
 <template>
   <main v-if="content" class="public-home">
-    <section class="public-hero"><div><p class="eyebrow">{{ settings?.branding?.tagline }}</p><h1>{{ content.home.heroTitle }}</h1><p>{{ content.home.heroDescription }}</p><UButton v-if="content.home.heroActionLabel" :to="content.home.heroActionUrl || '/login'" size="xl" trailing-icon="i-lucide-arrow-right">{{ content.home.heroActionLabel }}</UButton></div><aside><PublicPortalLogo /><p v-if="settings?.branding?.supportEmail">{{ settings.branding.supportEmail }}</p></aside></section>
+    <section class="public-hero"><div><p class="eyebrow">{{ settings?.branding?.tagline }}</p><h1>{{ content.home.heroTitle }}</h1><p>{{ content.home.heroDescription }}</p><UButton v-if="heroActionLabel" :to="heroActionUrl" size="xl" trailing-icon="i-lucide-arrow-right">{{ heroActionLabel }}</UButton></div><aside><PublicPortalLogo /><p v-if="settings?.branding?.supportEmail">{{ settings.branding.supportEmail }}</p></aside></section>
     <section class="public-intro"><h2>{{ content.home.introductionTitle }}</h2><p>{{ content.home.introductionBody }}</p></section>
     <section v-if="content.home.features.some((item:any) => item.visible)" class="public-features"><article v-for="(feature, index) in content.home.features.filter((item:any) => item.visible)" :key="index"><span>0{{ Number(index) + 1 }}</span><h3>{{ feature.title }}</h3><p>{{ feature.description }}</p></article></section>
     <section v-if="content.home.supportVisible" class="public-support"><h2>{{ content.home.supportTitle }}</h2><p>{{ content.home.supportBody }}</p><UButton v-if="settings?.branding?.supportUrl" :to="settings.branding.supportUrl" color="neutral" variant="outline">Contact support</UButton></section>
