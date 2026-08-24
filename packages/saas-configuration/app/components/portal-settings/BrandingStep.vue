@@ -5,24 +5,63 @@ const state = defineModel<PortalSettings>({ required: true })
 const emit = defineEmits<{ error: [message: string] }>()
 const { t } = useI18n()
 type BrandAssetField = 'markLight' | 'markDark' | 'logoLight' | 'logoDark'
+const assetErrors = reactive<Partial<Record<BrandAssetField, string>>>({})
 const assetFields = computed<BrandAssetField[]>(() => {
   if (state.value.appearance.colorMode === 'light-only') return ['markLight', 'logoLight']
   if (state.value.appearance.colorMode === 'dark-only') return ['markDark', 'logoDark']
   return ['markLight', 'markDark', 'logoLight', 'logoDark']
 })
 
-async function readImage(file: File | null | undefined, field: BrandAssetField) {
-  if (!file) return
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2_000_000) {
-    emit('error', t('saasSettings.editor.messages.invalidImage'))
-    return
-  }
-  state.value.branding[field] = await new Promise<string>((resolve, reject) => {
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
-    reader.onerror = reject
+    reader.onerror = () => reject(new Error('Could not read image'))
     reader.readAsDataURL(file)
   })
+}
+
+function readDimensions(source: string) {
+  return new Promise<{ width: number, height: number }>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight })
+    image.onerror = () => reject(new Error('Could not decode image'))
+    image.src = source
+  })
+}
+
+function rejectImage(field: BrandAssetField, message: string) {
+  assetErrors[field] = message
+  emit('error', message)
+}
+
+async function readImage(file: File | null | undefined, field: BrandAssetField) {
+  if (!file) return
+  assetErrors[field] = undefined
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2_000_000) {
+    rejectImage(field, t('saasSettings.editor.messages.invalidImage'))
+    return
+  }
+  try {
+    const source = await readAsDataUrl(file)
+    const { width, height } = await readDimensions(source)
+    if (width > 2400 || height > 2400) {
+      rejectImage(field, t('saasSettings.editor.messages.imageTooLarge'))
+      return
+    }
+    if (field.startsWith('mark') && (width < 64 || height < 64)) {
+      rejectImage(field, t('saasSettings.editor.messages.markTooSmall'))
+      return
+    }
+    state.value.branding[field] = source
+  } catch {
+    rejectImage(field, t('saasSettings.editor.messages.invalidImage'))
+  }
+}
+
+function removeImage(field: BrandAssetField) {
+  assetErrors[field] = undefined
+  state.value.branding[field] = ''
 }
 </script>
 
@@ -38,8 +77,8 @@ async function readImage(file: File | null | undefined, field: BrandAssetField) 
     <UFormField v-if="state.appearance.colorMode !== 'dark-only'" name="appearance.primaryLight" required :label="t('saasSettings.editor.fields.primaryLight')"><input v-model="state.appearance.primaryLight" type="color" class="color-input"></UFormField>
     <UFormField v-if="state.appearance.colorMode !== 'light-only'" name="appearance.primaryDark" required :label="t('saasSettings.editor.fields.primaryDark')"><input v-model="state.appearance.primaryDark" type="color" class="color-input"></UFormField>
     <h2 class="section-heading">{{ t('saasSettings.editor.logoSection') }}</h2>
-    <UFormField v-for="field in assetFields" :key="field" :name="`branding.${field}`" :label="t(`saasSettings.editor.fields.${field}`)" :description="t(`saasSettings.editor.assetDescriptions.${field}`)">
-      <div class="asset-field"><img v-if="state.branding[field]" :src="state.branding[field]" alt="" ><UFileUpload variant="button" accept="image/png,image/jpeg,image/webp" reset :label="t('saasSettings.editor.actions.chooseImage')" @update:model-value="readImage($event, field)" /><UButton v-if="state.branding[field]" type="button" color="neutral" variant="ghost" size="xs" @click="state.branding[field] = ''">{{ t('saasSettings.editor.actions.remove') }}</UButton></div>
+    <UFormField v-for="field in assetFields" :key="field" :name="`branding.${field}`" :label="t(`saasSettings.editor.fields.${field}`)" :description="t(`saasSettings.editor.assetDescriptions.${field}`)" :error="assetErrors[field]">
+      <div class="asset-field"><img v-if="state.branding[field]" :src="state.branding[field]" alt="" ><UFileUpload variant="button" accept="image/png,image/jpeg,image/webp" reset :label="t('saasSettings.editor.actions.chooseImage')" @update:model-value="readImage($event, field)" /><UButton v-if="state.branding[field]" type="button" color="neutral" variant="ghost" size="xs" @click="removeImage(field)">{{ t('saasSettings.editor.actions.remove') }}</UButton></div>
     </UFormField>
   </div>
 </template>

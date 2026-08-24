@@ -14,7 +14,7 @@
       "actions": { "remove": "Remove", "chooseImage": "Choose image", "addFeature": "Add feature", "back": "Back", "save": "Save changes", "saveContinue": "Save and continue", "complete": "Complete setup" },
       "featureTitle": "Feature title", "featureDescription": "Feature description", "showSupport": "Show support section",
       "review": { "portal": "Portal", "theme": "Theme", "colorMode": "Color mode", "activeModules": "Active modules", "description": "Completing setup opens the configured public pages and the rest of the portal." },
-      "messages": { "saved": "Settings saved.", "reviewSettings": "Review the settings.", "saveFailed": "Settings could not be saved.", "completeFailed": "Setup could not be completed.", "invalidImage": "Use a PNG, JPEG, or WebP image smaller than 2 MB." }
+      "messages": { "saved": "Settings saved.", "reviewSettings": "Review the settings.", "saveFailed": "Settings could not be saved.", "completeFailed": "Setup could not be completed.", "invalidImage": "Use a valid PNG, JPEG, or WebP image smaller than 2 MB.", "imageTooLarge": "The image dimensions must not exceed 2400×2400 pixels.", "markTooSmall": "Compact icons must be at least 64×64 pixels." }
     }
   }
 }

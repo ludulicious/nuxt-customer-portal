@@ -14,7 +14,7 @@
       "actions": { "remove": "Verwijderen", "chooseImage": "Afbeelding kiezen", "addFeature": "Kenmerk toevoegen", "back": "Terug", "save": "Wijzigingen opslaan", "saveContinue": "Opslaan en doorgaan", "complete": "Installatie voltooien" },
       "featureTitle": "Titel van het kenmerk", "featureDescription": "Beschrijving van het kenmerk", "showSupport": "Ondersteuningssectie tonen",
       "review": { "portal": "Portaal", "theme": "Thema", "colorMode": "Kleurmodus", "activeModules": "Actieve modules", "description": "Na het voltooien van de installatie worden de openbare pagina's en de rest van het portaal geopend." },
-      "messages": { "saved": "Instellingen opgeslagen.", "reviewSettings": "Controleer de instellingen.", "saveFailed": "De instellingen konden niet worden opgeslagen.", "completeFailed": "De installatie kon niet worden voltooid.", "invalidImage": "Gebruik een PNG-, JPEG- of WebP-afbeelding kleiner dan 2 MB." }
+      "messages": { "saved": "Instellingen opgeslagen.", "reviewSettings": "Controleer de instellingen.", "saveFailed": "De instellingen konden niet worden opgeslagen.", "completeFailed": "De installatie kon niet worden voltooid.", "invalidImage": "Gebruik een geldige PNG-, JPEG- of WebP-afbeelding kleiner dan 2 MB.", "imageTooLarge": "De afmetingen mogen niet groter zijn dan 2400×2400 pixels.", "markTooSmall": "Compacte pictogrammen moeten minimaal 64×64 pixels zijn." }
     }
   }
 }
