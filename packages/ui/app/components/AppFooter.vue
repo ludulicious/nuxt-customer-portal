@@ -5,7 +5,10 @@ const { t } = useI18n()
 <template>
   <USeparator class="h-px" />
 
-  <UFooter class="portal-footer" :ui="{ top: 'border-b border-default' }">
+  <UFooter
+    class="portal-footer"
+    :ui="{ top: 'border-b border-default', container: 'w-full max-w-none px-0 sm:px-0 lg:px-0' }"
+  >
     <template #left>
       <p class="text-muted text-sm">© {{ new Date().getFullYear() }}. {{ t('footer.copyright') }}</p>
     </template>
