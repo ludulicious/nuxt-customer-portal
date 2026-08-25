@@ -1,8 +1,9 @@
 # Nuxt Customer Portal
 
-MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, Service Requests, Timesheets, and invoicing. The repository is the canonical pnpm monorepo for public packages, two structurally distinct demos, migration tooling, and documentation.
+MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, Service Requests, Timesheets, and invoicing. The repository includes public packages, two structurally distinct demos, migration tooling, documentation, and a ready-to-run SaaS portal configurable for your own organization.
 
 - [Documentation](https://nuxt-customer-portal.com)
+- [Request a hosted evaluation at PortalNuxt](https://portalnuxt.com)
 - [Installation](https://nuxt-customer-portal.com/getting-started/installation)
 - [Architecture](https://nuxt-customer-portal.com/architecture/overview)
 - [Package compatibility](https://nuxt-customer-portal.com/reference/compatibility-and-releases)
@@ -72,7 +73,7 @@ pnpm build
 pnpm pack:check
 ```
 
-Run `pnpm dev:apex`, `pnpm dev:brutal`, or `pnpm dev:docs`. Apex uses a conventional header/sidebar shell; Brutal uses an independent editorial command-bar/two-pane shell. Public pages and branding belong to demo or consumer hosts, not reusable packages.
+Run `pnpm dev:apex`, `pnpm dev:brutal`, `pnpm --filter @nuxt-customer-portal/saas-portal dev`, or `pnpm dev:docs`. Apex uses a conventional header/sidebar shell; Brutal uses an independent editorial command-bar/two-pane shell. The SaaS portal adds guided, organization-specific configuration for branding, appearance, modules, public content, support, and legal pages.
 
 The unchanged combined migration history is under `legacy/drizzle`. Use `db adopt-legacy` to verify and map a recognized installation before stamping package baselines.
 

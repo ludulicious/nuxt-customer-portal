@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const title = 'Customer Portal — an extensible customer portal for Nuxt'
 const description =
-  'Start with authentication, organizations, administration, and a dashboard. Add business capabilities as independent Nuxt layers.'
+  'Build from composable Nuxt layers or configure the ready-to-run SaaS portal for your own organization.'
 
 const extensionModel = [
   {
@@ -230,6 +230,31 @@ defineOgImage('DocsSatori', {
         </section>
       </div>
     </UContainer>
+
+    <section class="hosted-evaluation" aria-labelledby="hosted-evaluation-title">
+      <UContainer class="hosted-evaluation-grid">
+        <div>
+          <p class="marketing-kicker">Hosted evaluation</p>
+          <h2 id="hosted-evaluation-title" class="marketing-display">See your own portal take shape.</h2>
+          <p>
+            The new SaaS portal is a ready-to-run application that your organization can configure with its own
+            branding, modules, homepage content, support details, and legal pages. Request a hosted evaluation version
+            at PortalNuxt—no local installation required.
+          </p>
+        </div>
+        <UButton
+          to="https://portalnuxt.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          size="xl"
+          trailing-icon="i-lucide-arrow-up-right"
+          class="marketing-action hosted-evaluation-action"
+          data-testid="hosted-evaluation-cta"
+        >
+          Request a hosted evaluation
+        </UButton>
+      </UContainer>
+    </section>
 
     <section class="workflow-band" aria-labelledby="workflow-title">
       <UContainer>

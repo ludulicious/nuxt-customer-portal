@@ -223,6 +223,35 @@ main code:not(pre code) {
   color: var(--color-marketing-on-dark);
 }
 
+.hosted-evaluation {
+  border-block: var(--rule-thin) solid var(--color-marketing-rule);
+  background: var(--color-marketing-paper-2);
+}
+
+.hosted-evaluation-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+}
+
+.hosted-evaluation-grid h2 {
+  max-width: 16ch;
+  margin-block: 0.75rem 1rem;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+}
+
+.hosted-evaluation-grid > div > p:last-child {
+  max-width: 68ch;
+  color: var(--color-marketing-ink-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.hosted-evaluation-action {
+  justify-self: start;
+}
+
 .workflow-intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -526,6 +555,14 @@ main code:not(pre code) {
 }
 
 @media (min-width: 60rem) {
+  .hosted-evaluation-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .hosted-evaluation-action {
+    justify-self: end;
+  }
+
   .marketing-hero-grid {
     grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
     gap: clamp(var(--space-xl), 6vw, var(--space-3xl));
