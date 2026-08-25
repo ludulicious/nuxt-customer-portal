@@ -8,6 +8,21 @@ const colorMode = useColorMode()
 const settings = useState<Pick<PortalSettings, 'branding' | 'appearance'> | null>('portal-runtime-settings')
 const theme = computed(() => resolvePortalTheme(settings.value?.appearance?.theme))
 const uiLocale = computed(() => (locale.value === 'nl' ? nl : en))
+
+watchEffect(() => {
+  const branding = settings.value?.branding
+  if (!branding) {
+    return
+  }
+
+  if (!branding.markLight) {
+    branding.markLight = '/images/portalnuxt-logo-light.webp'
+  }
+  if (!branding.markDark) {
+    branding.markDark = '/images/portalnuxt-logo-dark.webp'
+  }
+})
+
 useHead(() => ({
   htmlAttrs: {
     lang: locale.value,
@@ -24,6 +39,24 @@ useHead(() => ({
             ? 'dark'
             : 'light dark'
     }
+  ],
+  link: [
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '64x64',
+      href: '/favicon-light.png',
+      media: '(prefers-color-scheme: light)'
+    },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '64x64',
+      href: '/favicon-dark.png',
+      media: '(prefers-color-scheme: dark)'
+    },
+    { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
   ]
 }))
 useSeoMeta({
