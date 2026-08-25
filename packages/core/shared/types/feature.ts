@@ -94,6 +94,29 @@ export interface PortalSurfaceContribution {
   order?: number
 }
 
+export type PortalEmailLocale = 'en' | 'nl'
+
+export interface PortalEmailPlaceholder {
+  key: string
+  labelKey: string
+  descriptionKey?: string
+  example: string
+}
+
+export interface PortalEmailText {
+  subject: string
+  body: string
+  footer?: string
+}
+
+export interface PortalEmailDefinition {
+  id: string
+  labelKey: string
+  descriptionKey?: string
+  defaults: Record<PortalEmailLocale, PortalEmailText>
+  placeholders: readonly PortalEmailPlaceholder[]
+}
+
 export interface PortalFeatureDefinition<Action extends string = string> {
   id: string
   navigation?: readonly PortalNavigationItem[]
@@ -102,5 +125,6 @@ export interface PortalFeatureDefinition<Action extends string = string> {
   dashboardWidgets?: readonly PortalDashboardWidget[]
   surfaces?: readonly PortalSurfaceContribution[]
   clientIntegration?: PortalClientIntegration
+  emails?: readonly PortalEmailDefinition[]
   policy: PortalFeaturePolicy<Action>
 }

@@ -141,7 +141,6 @@ export interface InvoiceSettingsDto {
   iban: string | null
   bic: string | null
   invoiceEmail: string | null
-  invoiceEmailTemplate: string | null
   preferredLocale: 'nl' | 'en'
 }
 export interface InvoiceCapabilitiesDto {

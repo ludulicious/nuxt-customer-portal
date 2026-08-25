@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
-  canManageOrganizationEmailCredential,
   canViewOrganizationDirectory,
   isPortalActionAllowed,
   mergePortalModuleMenuContributions,
@@ -11,6 +10,7 @@ import {
 } from '../shared/feature-registry'
 import { getActiveOrganizationId } from '../shared/portal-session'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
+import { coreFeature } from '../shared/core-feature'
 
 const feature: PortalFeatureDefinition<'read' | 'manage'> = {
   id: 'example',
@@ -25,6 +25,24 @@ test('feature registration is idempotent and replaces definitions by id', () => 
   assert.deepEqual(upsertPortalFeature([], feature), [feature])
   const replacement = { ...feature, navigation: [] }
   assert.deepEqual(upsertPortalFeature([feature], replacement), [replacement])
+})
+
+test('core email definitions have unique ids, localized defaults, and declared placeholders', () => {
+  const emails = coreFeature.emails ?? []
+  assert.equal(new Set(emails.map((email) => email.id)).size, emails.length)
+  for (const email of emails) {
+    assert.ok(email.defaults.en.subject)
+    assert.ok(email.defaults.en.body)
+    assert.ok(email.defaults.nl.subject)
+    assert.ok(email.defaults.nl.body)
+    const allowed = new Set([...email.placeholders.map((placeholder) => placeholder.key), 'brand_name'])
+    for (const locale of ['en', 'nl'] as const) {
+      const placeholders = Object.values(email.defaults[locale]).flatMap((value) =>
+        [...String(value).matchAll(/{{\s*([a-z0-9_]+)\s*}}/gi)].map((match) => match[1])
+      )
+      assert.ok(placeholders.every((placeholder) => allowed.has(String(placeholder))))
+    }
+  }
 })
 
 test('dashboard contributions sort deterministically by area, order, and stable id', () => {
@@ -91,14 +109,6 @@ test('active organization supports both Better Auth session shapes', () => {
   )
 })
 
-test('organization email credentials are restricted to PROVIDER organization owners', () => {
-  assert.equal(canManageOrganizationEmailCredential('owner'), true)
-  assert.equal(canManageOrganizationEmailCredential('admin'), false)
-  assert.equal(canManageOrganizationEmailCredential('member'), false)
-  assert.equal(canManageOrganizationEmailCredential(null), false)
-  assert.equal(canManageOrganizationEmailCredential('owner', 'CLIENT'), false)
-})
-
 test('organization member and invitation directories are restricted to owners and admins', () => {
   assert.equal(canViewOrganizationDirectory('owner'), true)
   assert.equal(canViewOrganizationDirectory('admin'), true)
@@ -117,4 +127,12 @@ test('provider organization migration preserves the immutable owner-type migrati
   assert.match(provider, /WHERE "organization_type" = 'OWNER'/)
   assert.match(provider, /CHECK \("organization_type" IN \('PROVIDER', 'CLIENT'\)\)/)
   assert.match(provider, /organization_single_provider_uidx/)
+})
+
+test('central email migration creates singleton settings without dropping legacy credentials', async () => {
+  const migration = await readFile(new URL('../migrations/0005_portal_email_settings.sql', import.meta.url), 'utf8')
+  assert.doesNotMatch(migration, /DROP TABLE/)
+  assert.match(migration, /CREATE TABLE "portal_email_settings"/)
+  assert.match(migration, /CHECK \("id" = true\)/)
+  assert.match(migration, /encrypted_api_key/)
 })

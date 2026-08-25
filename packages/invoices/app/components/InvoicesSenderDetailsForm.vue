@@ -10,8 +10,8 @@ const props = defineProps<{
 const { t } = useI18n()
 const toast = useToast()
 const invoices = useInvoices()
-const { activeOrganizationRole, isSystemAdmin } = usePortalSession()
-const canConfigureProvider = computed(() => isSystemAdmin.value || activeOrganizationRole.value === 'owner')
+const { isSystemAdmin } = usePortalSession()
+const canConfigureProvider = computed(() => isSystemAdmin.value)
 const busy = ref(false)
 const checkingDomain = ref(false)
 type DomainStatus = { email: string | null; domain: string | null; configured: boolean; verified: boolean }
@@ -24,8 +24,7 @@ const draft = reactive({
   vatNumber: '',
   iban: '',
   bic: '',
-  invoiceEmail: '',
-  invoiceEmailTemplate: ''
+  invoiceEmail: ''
 })
 const schema = computed(() =>
   z.object({
@@ -39,15 +38,7 @@ const schema = computed(() =>
       .trim()
       .min(1, t('features.invoices.validation.required'))
       .email(t('features.invoices.validation.validEmail'))
-      .max(320),
-    invoiceEmailTemplate: z
-      .string()
-      .trim()
-      .max(50_000)
-      .refine(
-        (value) => !value || value.includes('{{body}}'),
-        t('features.invoices.admin.invoiceEmailTemplateBodyRequired')
-      )
+      .max(320)
   })
 )
 
@@ -86,8 +77,7 @@ watch(
       vatNumber: profile.vatNumber ?? '',
       iban: profile.iban ?? '',
       bic: profile.bic ?? '',
-      invoiceEmail: profile.invoiceEmail ?? '',
-      invoiceEmailTemplate: profile.invoiceEmailTemplate ?? ''
+      invoiceEmail: profile.invoiceEmail ?? ''
     })
   },
   { immediate: true }
@@ -148,7 +138,7 @@ const save = async () => {
           </p>
           <UButton
             v-if="canConfigureProvider"
-            to="/settings/organization"
+            to="/admin/email"
             color="neutral"
             variant="solid"
             size="xs"
@@ -226,26 +216,6 @@ const save = async () => {
           <UInput v-model="draft.invoiceEmail" type="email" class="w-full" />
         </UFormField>
       </div>
-      <UFormField
-        name="invoiceEmailTemplate"
-        :label="t('features.invoices.admin.invoiceEmailTemplate')"
-        :description="t('features.invoices.admin.invoiceEmailTemplateDescription')"
-      >
-        <UTextarea
-          v-model="draft.invoiceEmailTemplate"
-          :rows="12"
-          class="w-full font-mono text-xs"
-          placeholder='<div style="font-family: Arial, sans-serif">{{body}}</div>'
-        />
-        <template #hint>
-          <span>
-            {{ t('features.invoices.admin.invoiceEmailTemplateVariables') }}
-            <code>&#123;&#123;body&#125;&#125;</code>, <code>&#123;&#123;subject&#125;&#125;</code>,
-            <code>&#123;&#123;invoice_number&#125;&#125;</code>, <code>&#123;&#123;sender_name&#125;&#125;</code>,
-            <code>&#123;&#123;recipient_name&#125;&#125;</code>, <code>&#123;&#123;logo_url&#125;&#125;</code>.
-          </span>
-        </template>
-      </UFormField>
       <UButton type="submit" block icon="i-lucide-save" :loading="busy">
         {{ t('features.invoices.save') }}
       </UButton>

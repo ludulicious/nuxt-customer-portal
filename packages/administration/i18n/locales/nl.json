@@ -1,5 +1,51 @@
 {
   "admin": {
+    "email": {
+      "title": "E-mail",
+      "description": "Configureer portaalbrede e-mailbezorging, opmaak en berichtteksten.",
+      "provider": "Resend-provider",
+      "apiKey": "Resend API-sleutel",
+      "replaceKey": "API-sleutel vervangen (nu ••••{suffix})",
+      "fromName": "Naam afzender",
+      "fromEmail": "E-mailadres afzender",
+      "defaultLocale": "Standaardtaal voor e-mail",
+      "validateProvider": "Provider en domeinen controleren",
+      "providerValid": "Resend-configuratie is geldig",
+      "providerInvalid": "Resend-configuratie kon niet worden gecontroleerd",
+      "template": "HTML-sjabloon",
+      "projectDefault": "Projectstandaard",
+      "resetTemplate": "Herstellen naar projectsjabloon",
+      "templateReset": "Project-e-mailsjabloon hersteld",
+      "texts": "E-mailteksten",
+      "subject": "Onderwerp",
+      "body": "Inhoud (HTML ondersteund)",
+      "footer": "Voettekst",
+      "preview": "Voorbeeld",
+      "testAddress": "Testontvanger",
+      "sendTest": "Test verzenden",
+      "testSent": "Test-e-mail verzonden",
+      "testFailed": "Test-e-mail kon niet worden verzonden",
+      "save": "E-mailinstellingen opslaan",
+      "saved": "E-mailinstellingen opgeslagen",
+      "saveFailed": "E-mailinstellingen konden niet worden opgeslagen",
+      "messages": {
+        "emailVerification": "E-mailverificatie",
+        "signIn": "Inlogcode",
+        "passwordReset": "Wachtwoord herstellen",
+        "changeEmail": "E-mailadres wijzigen",
+        "invitation": "Organisatie-uitnodiging",
+        "accountDeletion": "Account verwijderen"
+      },
+      "placeholders": {
+        "title": "Beschikbare velden",
+        "otp": "Verificatiecode",
+        "inviterName": "Naam uitnodiger",
+        "organizationName": "Organisatienaam",
+        "role": "Rol",
+        "actionUrl": "Actie-URL",
+        "userName": "Gebruikersnaam"
+      }
+    },
     "menu": {
       "organizations": "Organisaties",
       "users": "Gebruikers"

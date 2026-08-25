@@ -1,5 +1,51 @@
 {
   "admin": {
+    "email": {
+      "title": "Email",
+      "description": "Configure portal-wide email delivery, layout, and message text.",
+      "provider": "Resend provider",
+      "apiKey": "Resend API key",
+      "replaceKey": "Replace API key (currently ••••{suffix})",
+      "fromName": "Sender name",
+      "fromEmail": "Sender email address",
+      "defaultLocale": "Default email language",
+      "validateProvider": "Validate provider and domains",
+      "providerValid": "Resend configuration is valid",
+      "providerInvalid": "Resend configuration could not be validated",
+      "template": "HTML template",
+      "projectDefault": "Project default",
+      "resetTemplate": "Reset to project template",
+      "templateReset": "Project email template restored",
+      "texts": "Email texts",
+      "subject": "Subject",
+      "body": "Body (HTML supported)",
+      "footer": "Footer",
+      "preview": "Preview",
+      "testAddress": "Test recipient",
+      "sendTest": "Send test",
+      "testSent": "Test email sent",
+      "testFailed": "Test email could not be sent",
+      "save": "Save email settings",
+      "saved": "Email settings saved",
+      "saveFailed": "Email settings could not be saved",
+      "messages": {
+        "emailVerification": "Email verification",
+        "signIn": "Sign-in code",
+        "passwordReset": "Password reset",
+        "changeEmail": "Email address change",
+        "invitation": "Organization invitation",
+        "accountDeletion": "Account deletion"
+      },
+      "placeholders": {
+        "title": "Available placeholders",
+        "otp": "Verification code",
+        "inviterName": "Inviter name",
+        "organizationName": "Organization name",
+        "role": "Role",
+        "actionUrl": "Action URL",
+        "userName": "User name"
+      }
+    },
     "menu": {
       "organizations": "Organizations",
       "users": "Users"

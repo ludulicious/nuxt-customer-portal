@@ -1,9 +1,6 @@
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
-import {
-  EmailProviderRejectedError,
-  retrieveOrganizationEmail
-} from '@nuxt-customer-portal/core/server/utils/organization-email-provider'
+import { retrievePortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { normalizeEmailProviderEvent } from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
 import type { InvoiceEmailStatusRefreshDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 import { invoice, invoiceEmailDelivery } from '@nuxt-customer-portal/invoices/server/db/schema/invoices'
@@ -41,7 +38,7 @@ export const refreshInvoiceEmailStatuses = async (
         return
       }
       try {
-        const providerEmail = await retrieveOrganizationEmail(organizationId, delivery.providerMessageId!)
+        const providerEmail = await retrievePortalEmail(delivery.providerMessageId!)
         const checkedAt = new Date()
         await db
           .update(invoiceEmailDelivery)
@@ -54,7 +51,7 @@ export const refreshInvoiceEmailStatuses = async (
         failures.push({
           deliveryId: delivery.id,
           code:
-            error instanceof EmailProviderRejectedError && error.reason === 'PROVIDER_NOT_CONFIGURED'
+            error instanceof Error && error.message.includes('not configured')
               ? 'PROVIDER_NOT_CONFIGURED'
               : 'PROVIDER_LOOKUP_FAILED'
         })

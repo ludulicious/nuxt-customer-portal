@@ -1,7 +1,7 @@
 // Core authentication and organization schema owned by portal core.
 
 import { sql } from 'drizzle-orm'
-import { pgTable, text, timestamp, boolean, check, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, check, index, uniqueIndex, jsonb } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
   'user',
@@ -136,6 +136,26 @@ export const member = pgTable(
   ]
 )
 
+export const portalEmailSettings = pgTable('portal_email_settings', {
+  id: boolean('id').primaryKey().default(true),
+  provider: text('provider').default('RESEND').notNull(),
+  encryptedApiKey: text('encrypted_api_key'),
+  keyFingerprint: text('key_fingerprint'),
+  keyLastFour: text('key_last_four'),
+  fromName: text('from_name'),
+  fromEmail: text('from_email'),
+  defaultLocale: text('default_locale').default('en').notNull(),
+  htmlTemplate: text('html_template'),
+  textOverrides: jsonb('text_overrides').$type<Record<string, unknown>>().default({}).notNull(),
+  configuredById: text('configured_by_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull()
+})
+
+// Retained for one compatibility release. Runtime email delivery no longer reads this table.
 export const organizationEmailCredential = pgTable('organization_email_credential', {
   organizationId: text('organization_id')
     .primaryKey()
@@ -150,7 +170,7 @@ export const organizationEmailCredential = pgTable('organization_email_credentia
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull()
 })
 

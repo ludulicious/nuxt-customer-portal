@@ -27,10 +27,6 @@ export const registerPortalOpenApiContracts = (contracts: PortalOpenApiContracts
 }
 
 const id = z.string().min(1).max(128)
-const organizationEmailProviderQuerySchema = z.object({
-  organizationId: id.optional(),
-  refresh: z.enum(['1']).optional()
-})
 const userQuerySchema = z.object({ search: z.string().trim().max(200).optional() })
 const genericUserQuerySchema = z.object({
   take: z.coerce.number().int().min(1).optional(),
@@ -43,9 +39,6 @@ const genericUserQuerySchema = z.object({
 const querySchemas: Record<string, z.ZodType> = {
   generalAdminUsersGet: userQuerySchema,
   generalAdminUsersQueryGet: genericUserQuerySchema,
-  generalOrganizationsEmailProviderDelete: organizationEmailProviderQuerySchema,
-  generalOrganizationsEmailProviderGet: organizationEmailProviderQuerySchema,
-  generalOrganizationsEmailProviderPut: organizationEmailProviderQuerySchema,
   generalOrganizationsGetInvitationGet: z.object({ id })
 }
 
@@ -66,7 +59,6 @@ const bodySchemas: Record<string, z.ZodType> = {
   }),
   generalAdminUsersByIdRolePatch: z.object({ role: z.enum(['user', 'admin']) }),
   generalOrganizationsAcceptInvitationPost: z.object({ invitationId: id }),
-  generalOrganizationsEmailProviderPut: z.object({ apiKey: z.string().min(8).max(500) }),
   generalProfilePatch: z.object({
     name: z.string().min(1).max(255).optional(),
     image: z.string().url().nullable().optional()

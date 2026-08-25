@@ -48,7 +48,6 @@ test('settings, billing contacts, email, and numbering validate', () => {
       iban: null,
       bic: null,
       invoiceEmail: null,
-      invoiceEmailTemplate: null,
       preferredLocale: 'nl'
     }).success,
     true

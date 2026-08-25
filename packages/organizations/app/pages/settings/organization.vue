@@ -25,7 +25,6 @@ const organization = ref<Organization | null>(null)
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showEditModal = ref(false)
-const invoicingEnabled = ref(false)
 const userOrganizationRole = ref<MemberRole | null>(null)
 const canViewOrganizationDirectory = computed(() => canViewDirectory(userOrganizationRole.value))
 
@@ -51,9 +50,6 @@ const loadOrganization = async () => {
     }
     userOrganizationRole.value = (roleData?.role as MemberRole | undefined) ?? null
     organization.value = await $fetch<Organization>(`/api/organizations/${activeOrganizationId.value}`)
-    const capabilities = await $fetch<{ canInvoice: boolean }>('/api/timesheets/capabilities')
-    invoicingEnabled.value = capabilities.canInvoice
-
     if (organization.value && canViewOrganizationDirectory.value) {
       await loadMembers()
       await loadInvitations()
@@ -153,10 +149,6 @@ watch(
           <OrganizationSettings @updated="handleOrganizationUpdated" @canceled="showEditModal = false" />
         </template>
       </OrganizationDetailsCard>
-
-      <OrganizationEmailProviderSettings
-        v-if="organization.organizationType === 'PROVIDER' && invoicingEnabled && userOrganizationRole === 'owner'"
-      />
 
       <OrganizationMembersCard
         v-if="canViewOrganizationDirectory"

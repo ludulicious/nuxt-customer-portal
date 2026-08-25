@@ -58,10 +58,5 @@ export const isPortalActionAllowed = <Action extends string>(
   return Boolean(role && contextual[role].includes(action))
 }
 
-export const canManageOrganizationEmailCredential = (
-  role: PortalOrganizationRole | null,
-  organizationType: PortalOrganizationType = 'PROVIDER'
-): boolean => organizationType === 'PROVIDER' && role === 'owner'
-
 export const canViewOrganizationDirectory = (role: PortalOrganizationRole | string | null | undefined): boolean =>
   role === 'owner' || role === 'admin'

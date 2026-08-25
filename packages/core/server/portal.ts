@@ -6,10 +6,7 @@ import type {
   PortalOrganizationRole,
   PortalOrganizationType
 } from '@nuxt-customer-portal/core/shared/types/feature'
-import {
-  canManageOrganizationEmailCredential,
-  isPortalActionAllowed
-} from '@nuxt-customer-portal/core/shared/feature-registry'
+import { isPortalActionAllowed } from '@nuxt-customer-portal/core/shared/feature-registry'
 import { getActiveOrganizationId, type PortalSession } from '@nuxt-customer-portal/core/shared/portal-session'
 import { member, organization, user } from './db/schema/auth-schema'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
@@ -115,19 +112,6 @@ export const requireFeatureAccess = async <Action extends string>(
 export const requireActiveOrganizationRole = async (event: H3Event) => {
   const session = await requireSession(event)
   return { session, ...(await requireOrganizationContext(session)) }
-}
-
-export const requireOrganizationOwnerOrSystemAdmin = async (event: H3Event, requestedOrganizationId?: string) => {
-  const session = await requireSession(event)
-  const activeOrganizationId = getActiveOrganizationId(session)
-  if (requestedOrganizationId && requestedOrganizationId !== activeOrganizationId) {
-    throw createError({ statusCode: 403, message: 'Organization owner access required' })
-  }
-  const context = await requireOrganizationContext(session)
-  if (!canManageOrganizationEmailCredential(context.role, context.organizationType)) {
-    throw createError({ statusCode: 403, message: 'Organization owner access required' })
-  }
-  return { session, organizationId: context.organizationId }
 }
 
 /**

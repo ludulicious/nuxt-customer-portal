@@ -3,10 +3,10 @@ import { and, desc, eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import {
-  EmailProviderRejectedError,
-  getOrganizationEmailCredentialStatus,
-  sendOrganizationEmail
-} from '@nuxt-customer-portal/core/server/utils/organization-email-provider'
+  getPortalEmailProviderStatus,
+  renderPortalEmail,
+  sendPortalEmail
+} from '@nuxt-customer-portal/core/server/utils/portal-email'
 import {
   invoice,
   invoiceAttachment,
@@ -14,29 +14,25 @@ import {
   invoiceHistory
 } from '@nuxt-customer-portal/invoices/server/db/schema/invoices'
 import type { InvoiceEmailPreviewDto, InvoiceEmailPurpose } from '@nuxt-customer-portal/invoices/shared/types/invoice'
-import { renderInvoiceEmailTemplate } from '@nuxt-customer-portal/invoices/shared/invoice-email-template'
+import { invoicesFeature } from '@nuxt-customer-portal/invoices/shared/feature'
 import { generateInvoicePdf } from './invoice-pdf'
 import { getInvoice, getOrganizationInvoiceProfile } from './invoice-repository'
 
 export const MAX_EMAIL_ATTACHMENT_SIZE = 40 * 1024 * 1024
-const copy = {
-  nl: {
-    subject: (number: string, sender: string) => `Factuur ${number} van ${sender}`,
-    body: (number: string) =>
-      `Geachte heer/mevrouw,\n\nIn de bijlage vindt u factuur ${number}.\n\nMet vriendelijke groet,`,
-    reminderSubject: (number: string, sender: string) => `Betalingsherinnering factuur ${number} van ${sender}`,
-    reminderBody: (number: string, dueDate: string, outstanding: string) =>
-      `Geachte heer/mevrouw,\n\nVolgens onze administratie staat factuur ${number}, met vervaldatum ${dueDate}, nog open voor ${outstanding}. Wij verzoeken u vriendelijk het openstaande bedrag te voldoen.\n\nHeeft u inmiddels betaald? Dan kunt u deze herinnering als niet verzonden beschouwen.\n\nMet vriendelijke groet,`
-  },
-  en: {
-    subject: (number: string, sender: string) => `Invoice ${number} from ${sender}`,
-    body: (number: string) => `Dear Sir or Madam,\n\nPlease find invoice ${number} attached.\n\nKind regards,`,
-    reminderSubject: (number: string, sender: string) => `Payment reminder for invoice ${number} from ${sender}`,
-    reminderBody: (number: string, dueDate: string, outstanding: string) =>
-      `Dear Sir or Madam,\n\nAccording to our records, invoice ${number}, due on ${dueDate}, remains outstanding for ${outstanding}. We kindly ask you to arrange payment of the outstanding amount.\n\nIf your payment has crossed with this message, please disregard this reminder.\n\nKind regards,`
-  }
-} as const
 const domainFor = (email: string) => email.split('@')[1]?.toLowerCase() ?? ''
+const emailDefinition = (purpose: InvoiceEmailPurpose) => {
+  const id = purpose === 'REMINDER' ? 'payment-reminder' : 'invoice'
+  const definition = invoicesFeature.emails?.find((item) => item.id === id)
+  if (!definition) {
+    throw new Error(`Missing invoice email definition: ${id}`)
+  }
+  return definition
+}
+const htmlToPlainText = (value: string) =>
+  value
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .trim()
 
 export const getInvoiceEmailPreview = async (
   organizationId: string,
@@ -48,7 +44,7 @@ export const getInvoiceEmailPreview = async (
     getInvoice(organizationId, id),
     getOrganizationInvoiceProfile(organizationId),
     db.select().from(invoiceAttachment).where(eq(invoiceAttachment.invoiceId, id)),
-    getOrganizationEmailCredentialStatus(organizationId)
+    getPortalEmailProviderStatus()
   ])
   if (!sender.invoiceEmail) {
     throw createError({ statusCode: 409, message: 'Configure the company invoice email first' })
@@ -60,22 +56,31 @@ export const getInvoiceEmailPreview = async (
   const pdf = await generateInvoicePdf(selected, locale)
   const pdfName = `${locale === 'nl' ? 'factuur' : 'invoice'}-${selected.number.replace(/[^a-z0-9._-]+/gi, '-')}.pdf`
   const senderDomain = domainFor(sender.invoiceEmail)
-  const localeCopy = copy[locale]
   const date = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
     new Date(`${selected.dueDate}T12:00:00Z`)
   )
   const outstanding = new Intl.NumberFormat(locale, { style: 'currency', currency: selected.currency }).format(
     selected.outstandingMinor / 100
   )
+  const values = {
+    invoice_number: selected.number,
+    sender_name: selected.senderName,
+    recipient_name: selected.recipientName,
+    due_date: date,
+    outstanding_amount: outstanding
+  }
+  const rendered = await renderPortalEmail({
+    moduleId: invoicesFeature.id,
+    definition: emailDefinition(purpose),
+    locale,
+    values
+  })
   return {
     to: selected.recipientEmail ?? '',
     cc: [],
     locale,
-    subject:
-      purpose === 'REMINDER'
-        ? localeCopy.reminderSubject(selected.number, selected.senderName)
-        : localeCopy.subject(selected.number, selected.senderName),
-    body: `${purpose === 'REMINDER' ? localeCopy.reminderBody(selected.number, date, outstanding) : localeCopy.body(selected.number)}\n${selected.senderName}`,
+    subject: rendered.subject,
+    body: htmlToPlainText(rendered.body),
     senderEmail: sender.invoiceEmail,
     senderDomain,
     emailProviderConfigured: providerStatus.configured,
@@ -156,23 +161,32 @@ export const deliverInvoiceEmail = async (
     )[0]!
   const pdf = await generateInvoicePdf(currentInvoice, input.locale)
   const storedFiles = await db.select().from(invoiceAttachment).where(eq(invoiceAttachment.invoiceId, id))
-  const sender = await getOrganizationInvoiceProfile(organizationId)
   let result: { id: string }
   try {
-    result = await sendOrganizationEmail(organizationId, {
-      from: `${currentInvoice.senderName.replace(/[<>\r\n]/g, '')} <${preview.senderEmail}>`,
+    const locale = input.locale
+    const dueDate = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+      new Date(`${currentInvoice.dueDate}T12:00:00Z`)
+    )
+    const outstandingAmount = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currentInvoice.currency
+    }).format(currentInvoice.outstandingMinor / 100)
+    result = await sendPortalEmail({
+      moduleId: invoicesFeature.id,
+      definition: emailDefinition(purpose),
+      locale,
+      values: {
+        invoice_number: currentInvoice.number,
+        sender_name: currentInvoice.senderName,
+        recipient_name: currentInvoice.recipientName,
+        due_date: dueDate,
+        outstanding_amount: outstandingAmount
+      },
+      fromEmail: preview.senderEmail,
+      fromName: currentInvoice.senderName,
       to: input.to,
       cc: input.cc,
-      subject: input.subject,
-      text: input.body,
-      html: renderInvoiceEmailTemplate(sender.invoiceEmailTemplate, {
-        body: input.body,
-        subject: input.subject,
-        invoiceNumber: currentInvoice.number,
-        senderName: currentInvoice.senderName,
-        recipientName: currentInvoice.recipientName,
-        logoUrl: currentInvoice.senderLogo ?? ''
-      }),
+      text: { subject: input.subject, body: input.body.replaceAll('\n', '<br>') },
       attachments: [
         { filename: preview.attachments[0]!.fileName, content: Buffer.from(pdf), contentType: 'application/pdf' },
         ...storedFiles.map((file) => ({
@@ -187,7 +201,7 @@ export const deliverInvoiceEmail = async (
     await db
       .update(invoiceEmailDelivery)
       .set({
-        status: error instanceof EmailProviderRejectedError ? 'FAILED' : 'PENDING',
+        status: 'FAILED',
         errorMessage: error instanceof Error ? error.message : String(error)
       })
       .where(eq(invoiceEmailDelivery.id, delivery.id))

@@ -16,6 +16,13 @@ export function getInvitationEmailContent(params: InvitationEmailParams) {
   const inviterDisplay = inviterName || inviterEmail
 
   return {
+    messageId: 'invitation',
+    values: {
+      inviter_name: inviterDisplay,
+      organization_name: organizationName,
+      role: role || 'member',
+      action_url: invitationLink
+    },
     subject: `You've been invited to join ${organizationName}`,
     params: {
       greeting: 'Hello,',
@@ -55,6 +62,8 @@ export function getOTPEmailContent(params: OTPEmailParams) {
   }
 
   return {
+    messageId: type,
+    values: { otp },
     subject: subjects[type],
     params: {
       greeting: 'Hello,',
@@ -82,6 +91,8 @@ export function getDeleteAccountEmailContent(params: DeleteAccountEmailParams) {
   const userDisplay = userName || userEmail
 
   return {
+    messageId: 'account-deletion',
+    values: { user_name: userDisplay, action_url: deletionLink },
     subject: 'Confirm Account Deletion',
     params: {
       greeting: `Hello ${userDisplay},`,

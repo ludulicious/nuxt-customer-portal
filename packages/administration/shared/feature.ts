@@ -35,6 +35,13 @@ export const administrationFeature: PortalFeatureDefinition = {
           icon: 'i-lucide-users',
           to: '/admin/users',
           audiences: ['admin']
+        },
+        {
+          id: 'admin-email',
+          labelKey: 'admin.email.title',
+          icon: 'i-lucide-mail-cog',
+          to: '/admin/email',
+          audiences: ['admin']
         }
       ]
     }

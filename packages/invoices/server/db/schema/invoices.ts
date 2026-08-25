@@ -31,6 +31,7 @@ export const invoiceSettings = invoicesSchema.table('settings', {
   iban: text('iban'),
   bic: text('bic'),
   invoiceEmail: text('invoice_email'),
+  // Retained for one compatibility release. The portal-wide email template is now used instead.
   invoiceEmailTemplate: text('invoice_email_template'),
   preferredLocale: text('preferred_locale').default('nl').notNull(),
   ...audit

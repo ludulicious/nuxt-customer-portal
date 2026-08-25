@@ -72,12 +72,6 @@ export const invoiceSettingsSchema = z.object({
   iban: z.string().trim().max(100).nullable(),
   bic: z.string().trim().max(100).nullable(),
   invoiceEmail: z.string().trim().email().max(320).nullable(),
-  invoiceEmailTemplate: z
-    .string()
-    .trim()
-    .max(50_000)
-    .refine((value) => !value || value.includes('{{body}}'), 'The template must contain {{body}}')
-    .nullable(),
   preferredLocale: z.enum(['nl', 'en'])
 })
 export const billingContactCreateSchema = z.object({
