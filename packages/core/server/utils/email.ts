@@ -48,6 +48,7 @@ export const sendEmail = async ({ to, subject, params }: SendEmailArgs) => {
   const currentYear = new Date().getFullYear()
   const replacements = {
     subject: subject,
+    brand_name: config.portalEmail?.brandName || 'Nuxt Customer Portal',
     greeting: params.greeting || 'Hello,', // Default greeting
     body_text: params.body_text,
     action_url: params.action_url,
