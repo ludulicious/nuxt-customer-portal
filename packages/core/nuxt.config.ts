@@ -24,6 +24,10 @@ export default defineNuxtConfig({
       brandName: process.env.PORTAL_EMAIL_BRAND_NAME || 'Nuxt Customer Portal',
       brandTagline: process.env.PORTAL_EMAIL_BRAND_TAGLINE || 'Customer workspace',
       brandLogo: process.env.PORTAL_EMAIL_BRAND_LOGO || '',
+      brandLogoLight: process.env.PORTAL_EMAIL_BRAND_LOGO_LIGHT || process.env.PORTAL_EMAIL_BRAND_LOGO || '',
+      brandLogoDark: process.env.PORTAL_EMAIL_BRAND_LOGO_DARK || process.env.PORTAL_EMAIL_BRAND_LOGO || '',
+      brandIconLight: process.env.PORTAL_EMAIL_BRAND_ICON_LIGHT || '',
+      brandIconDark: process.env.PORTAL_EMAIL_BRAND_ICON_DARK || '',
       primaryColor: process.env.PORTAL_EMAIL_PRIMARY_COLOR || '#0ea5e9'
     },
     portalAuth: {

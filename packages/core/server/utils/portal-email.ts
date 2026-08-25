@@ -31,6 +31,10 @@ const TEMPLATE_PLACEHOLDERS = new Set([
   'subject',
   'brand_name',
   'brand_logo',
+  'brand_logo_light',
+  'brand_logo_dark',
+  'brand_icon_light',
+  'brand_icon_dark',
   'brand_tagline',
   'brand_primary_color',
   'body',
@@ -45,14 +49,25 @@ const parseSender = (value = '') => {
   return match ? { fromName: match[1]!.trim(), fromEmail: match[2]!.trim() } : { fromName: '', fromEmail: value.trim() }
 }
 
-type PortalEmailBranding = { brandName: string; brandTagline: string; brandLogo: string; primaryColor: string }
+type PortalEmailBranding = {
+  brandName: string
+  brandTagline: string
+  brandLogoLight: string
+  brandLogoDark: string
+  brandIconLight: string
+  brandIconDark: string
+  primaryColor: string
+}
 
 const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
   const config = useRuntimeConfig()
   const fallback = {
     brandName: String(config.portalEmail?.brandName || 'Nuxt Customer Portal'),
     brandTagline: String(config.portalEmail?.brandTagline || ''),
-    brandLogo: String(config.portalEmail?.brandLogo || ''),
+    brandLogoLight: String(config.portalEmail?.brandLogoLight || config.portalEmail?.brandLogo || ''),
+    brandLogoDark: String(config.portalEmail?.brandLogoDark || config.portalEmail?.brandLogo || ''),
+    brandIconLight: String(config.portalEmail?.brandIconLight || ''),
+    brandIconDark: String(config.portalEmail?.brandIconDark || ''),
     primaryColor: /^#[0-9a-f]{6}$/i.test(String(config.portalEmail?.primaryColor))
       ? String(config.portalEmail.primaryColor)
       : '#0ea5e9'
@@ -81,8 +96,10 @@ const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
   return {
     brandName: branding?.portal_name || fallback.brandName,
     brandTagline: branding?.tagline || fallback.brandTagline,
-    brandLogo:
-      branding?.logo_light || branding?.logo_dark || branding?.mark_light || branding?.mark_dark || fallback.brandLogo,
+    brandLogoLight: branding?.logo_light || fallback.brandLogoLight,
+    brandLogoDark: branding?.logo_dark || fallback.brandLogoDark,
+    brandIconLight: branding?.mark_light || fallback.brandIconLight,
+    brandIconDark: branding?.mark_dark || fallback.brandIconDark,
     primaryColor: /^#[0-9a-f]{6}$/i.test(branding?.primary_light || '')
       ? branding!.primary_light!
       : fallback.primaryColor
@@ -95,7 +112,7 @@ const escapeHtml = (value: string) =>
     (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!
   )
 
-const renderBrandLogo = (value: string, brandName: string) => {
+const renderBrandAsset = (value: string, brandName: string) => {
   if (!value || !/^(data:image\/(png|jpeg|webp);base64,|https?:\/\/)/i.test(value)) {
     return ''
   }
@@ -305,7 +322,11 @@ export const renderPortalEmail = async (input: {
     {
       subject: escapeHtml(subject),
       brand_name: escapeHtml(brandName),
-      brand_logo: renderBrandLogo(branding.brandLogo, brandName),
+      brand_logo: renderBrandAsset(branding.brandLogoLight || branding.brandLogoDark, brandName),
+      brand_logo_light: renderBrandAsset(branding.brandLogoLight, brandName),
+      brand_logo_dark: renderBrandAsset(branding.brandLogoDark, brandName),
+      brand_icon_light: renderBrandAsset(branding.brandIconLight, brandName),
+      brand_icon_dark: renderBrandAsset(branding.brandIconDark, brandName),
       brand_tagline: escapeHtml(branding.brandTagline),
       brand_primary_color: branding.primaryColor,
       body,

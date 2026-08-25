@@ -8,6 +8,21 @@ const toast = useToast()
 const busy = ref(false)
 const state = reactive({ htmlTemplate: props.settings.htmlTemplate })
 const usingProjectTemplate = ref(props.settings.usingProjectTemplate)
+const templatePlaceholders = [
+  'subject',
+  'brand_name',
+  'brand_tagline',
+  'brand_primary_color',
+  'brand_logo',
+  'brand_logo_light',
+  'brand_logo_dark',
+  'brand_icon_light',
+  'brand_icon_dark',
+  'body',
+  'footer',
+  'current_year'
+]
+const placeholderToken = (key: string) => `{{${key}}}`
 const schema = z.object({
   htmlTemplate: z
     .string()
@@ -63,6 +78,12 @@ const reset = async () => {
       <UFormField name="htmlTemplate">
         <UTextarea v-model="state.htmlTemplate" :rows="16" class="w-full font-mono text-xs" />
       </UFormField>
+      <p class="mt-3 text-xs text-muted">
+        {{ t('admin.email.placeholders.title') }}:
+        <code v-for="placeholder in templatePlaceholders" :key="placeholder" class="mr-2">{{
+          placeholderToken(placeholder)
+        }}</code>
+      </p>
       <div class="mt-3 flex justify-end">
         <UButton
           type="button"
