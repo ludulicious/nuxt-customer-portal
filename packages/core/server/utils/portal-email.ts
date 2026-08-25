@@ -90,7 +90,10 @@ const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
 }
 
 const escapeHtml = (value: string) =>
-  value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!)
+  value.replace(
+    /[&<>"']/g,
+    (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!
+  )
 
 const renderBrandLogo = (value: string, brandName: string) => {
   if (!value || !/^(data:image\/(png|jpeg|webp);base64,|https?:\/\/)/i.test(value)) {

@@ -7,21 +7,43 @@ import EmailTextSection from '../../../components/admin/email/EmailTextSection.v
 const { t } = useI18n()
 const route = useRoute()
 const { isAdmin } = storeToRefs(useUserStore())
-if (!isAdmin.value) throw createError({ statusCode: 403, message: t('admin.errors.accessRequired') })
+if (!isAdmin.value) {
+  throw createError({ statusCode: 403, message: t('admin.errors.accessRequired') })
+}
 useSeoMeta({ title: () => t('admin.email.title') })
 
 const section = computed(() => String(route.params.section))
 const sections = computed(() => [
-  { label: t('admin.email.providerPage'), icon: 'i-lucide-server-cog', to: '/admin/email/provider', active: section.value === 'provider' },
-  { label: t('admin.email.templatePage'), icon: 'i-lucide-layout-template', to: '/admin/email/template', active: section.value === 'template' },
-  { label: t('admin.email.textPage'), icon: 'i-lucide-text-cursor-input', to: '/admin/email/text', active: section.value === 'text' }
+  {
+    label: t('admin.email.providerPage'),
+    icon: 'i-lucide-server-cog',
+    to: '/admin/email/provider',
+    active: section.value === 'provider'
+  },
+  {
+    label: t('admin.email.templatePage'),
+    icon: 'i-lucide-layout-template',
+    to: '/admin/email/template',
+    active: section.value === 'template'
+  },
+  {
+    label: t('admin.email.textPage'),
+    icon: 'i-lucide-text-cursor-input',
+    to: '/admin/email/text',
+    active: section.value === 'text'
+  }
 ])
-if (!['provider', 'template', 'text'].includes(section.value)) await navigateTo('/admin/email/provider', { replace: true })
+if (!['provider', 'template', 'text'].includes(section.value)) {
+  await navigateTo('/admin/email/provider', { replace: true })
+}
 
 const { data: settings, error } = await useFetch<PortalEmailSettings>('/api/admin/email')
 if (error.value) {
-  if (error.value.statusCode === 401) await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
-  else throw createError(error.value)
+  if (error.value.statusCode === 401) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+  } else {
+    throw createError(error.value)
+  }
 }
 </script>
 
@@ -39,7 +61,14 @@ if (error.value) {
           </div>
         </header>
         <nav class="flex flex-wrap gap-2" :aria-label="t('admin.email.sections')">
-          <UButton v-for="item in sections" :key="item.to" :to="item.to" :icon="item.icon" :color="item.active ? 'primary' : 'neutral'" :variant="item.active ? 'soft' : 'ghost'">
+          <UButton
+            v-for="item in sections"
+            :key="item.to"
+            :to="item.to"
+            :icon="item.icon"
+            :color="item.active ? 'primary' : 'neutral'"
+            :variant="item.active ? 'soft' : 'ghost'"
+          >
             {{ item.label }}
           </UButton>
         </nav>

@@ -1,7 +1,4 @@
-import {
-  getPortalEmailSettings,
-  savePortalEmailSettings
-} from '@nuxt-customer-portal/core/server/utils/portal-email'
+import { getPortalEmailSettings, savePortalEmailSettings } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { emailTemplateInput, parseEmailAdminInput, requireEmailAdmin } from '../../../utils/email-admin'
 
 export default defineEventHandler(async (event) => {
