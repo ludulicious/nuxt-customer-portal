@@ -25,6 +25,7 @@ export interface PortalEmailAttachment {
   filename: string
   content: Buffer
   contentType?: string
+  contentId?: string
 }
 
 const TEMPLATE_PLACEHOLDERS = new Set([
@@ -112,11 +113,32 @@ const escapeHtml = (value: string) =>
     (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!
   )
 
-const renderBrandAsset = (value: string, brandName: string) => {
+const renderBrandAsset = (value: string, brandName: string, sourceOverride?: string) => {
   if (!value || !/^(data:image\/(png|jpeg|webp);base64,|https?:\/\/)/i.test(value)) {
     return ''
   }
-  return `<img src="${escapeHtml(value)}" alt="${escapeHtml(brandName)}" style="display:block;max-width:220px;max-height:72px;margin:0 auto 12px" />`
+  return `<img src="${escapeHtml(sourceOverride || value)}" alt="${escapeHtml(brandName)}" style="display:block;max-width:220px;max-height:72px;margin:0 auto 12px" />`
+}
+
+const inlineBrandAsset = (
+  value: string,
+  brandName: string,
+  contentId: string,
+  attachments: PortalEmailAttachment[]
+) => {
+  const match = value.match(/^data:image\/(png|jpeg|webp);base64,([a-z0-9+/=\s]+)$/i)
+  if (!match) {
+    return renderBrandAsset(value, brandName)
+  }
+  const subtype = match[1]!.toLowerCase()
+  const extension = subtype === 'jpeg' ? 'jpg' : subtype
+  attachments.push({
+    filename: `${contentId}.${extension}`,
+    content: Buffer.from(match[2]!.replace(/\s/g, ''), 'base64'),
+    contentType: `image/${subtype}`,
+    contentId
+  })
+  return renderBrandAsset(value, brandName, `cid:${contentId}`)
 }
 
 const encryptionKey = () => {
@@ -303,6 +325,7 @@ export const renderPortalEmail = async (input: {
   values: Record<string, string>
   text?: PortalEmailText
   htmlTemplate?: string
+  inlineBrandAssets?: boolean
 }) => {
   const [settings, branding] = await Promise.all([getPortalEmailSettings(), resolvePortalEmailBranding()])
   const locale: PortalEmailLocale = input.locale === 'nl' ? 'nl' : input.locale === 'en' ? 'en' : settings.defaultLocale
@@ -317,16 +340,21 @@ export const renderPortalEmail = async (input: {
   const footer = replacePlaceholders(text.footer ?? '', messageValues, allowed)
   const htmlTemplate = input.htmlTemplate ?? settings.htmlTemplate
   validatePortalEmailTemplate(htmlTemplate)
+  const inlineAttachments: PortalEmailAttachment[] = []
+  const brandAsset = (value: string, key: string) =>
+    input.inlineBrandAssets && htmlTemplate.includes(`{{${key}}}`)
+      ? inlineBrandAsset(value, brandName, `portal-${key.replaceAll('_', '-')}`, inlineAttachments)
+      : renderBrandAsset(value, brandName)
   const html = replacePlaceholders(
     htmlTemplate,
     {
       subject: escapeHtml(subject),
       brand_name: escapeHtml(brandName),
-      brand_logo: renderBrandAsset(branding.brandLogoLight || branding.brandLogoDark, brandName),
-      brand_logo_light: renderBrandAsset(branding.brandLogoLight, brandName),
-      brand_logo_dark: renderBrandAsset(branding.brandLogoDark, brandName),
-      brand_icon_light: renderBrandAsset(branding.brandIconLight, brandName),
-      brand_icon_dark: renderBrandAsset(branding.brandIconDark, brandName),
+      brand_logo: brandAsset(branding.brandLogoLight || branding.brandLogoDark, 'brand_logo'),
+      brand_logo_light: brandAsset(branding.brandLogoLight, 'brand_logo_light'),
+      brand_logo_dark: brandAsset(branding.brandLogoDark, 'brand_logo_dark'),
+      brand_icon_light: brandAsset(branding.brandIconLight, 'brand_icon_light'),
+      brand_icon_dark: brandAsset(branding.brandIconDark, 'brand_icon_dark'),
       brand_tagline: escapeHtml(branding.brandTagline),
       brand_primary_color: branding.primaryColor,
       body,
@@ -341,6 +369,7 @@ export const renderPortalEmail = async (input: {
     body,
     footer,
     html,
+    inlineAttachments,
     text: `${body.replace(/<[^>]+>/g, ' ')}\n\n${footer.replace(/<[^>]+>/g, ' ')}`
   }
 }
@@ -359,7 +388,10 @@ export const sendPortalEmail = async (input: {
   attachments?: PortalEmailAttachment[]
   idempotencyKey?: string
 }) => {
-  const [rendered, provider] = await Promise.all([renderPortalEmail(input), providerConfiguration()])
+  const [rendered, provider] = await Promise.all([
+    renderPortalEmail({ ...input, inlineBrandAssets: true }),
+    providerConfiguration()
+  ])
   const fromEmail = input.fromEmail || provider.fromEmail
   const fromName = input.fromName || provider.fromName
   const from = fromName ? `${fromName.replace(/[<>\r\n]/g, '')} <${fromEmail}>` : fromEmail
@@ -371,7 +403,7 @@ export const sendPortalEmail = async (input: {
       subject: rendered.subject,
       html: rendered.html,
       text: rendered.text,
-      attachments: input.attachments
+      attachments: [...rendered.inlineAttachments, ...(input.attachments ?? [])]
     },
     input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined
   )

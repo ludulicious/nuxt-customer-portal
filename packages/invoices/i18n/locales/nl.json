@@ -240,6 +240,7 @@
         "emailDomainVerified": "Verzenddomein geverifieerd",
         "emailDomainUnverified": "Verzenddomein is niet geverifieerd",
         "emailDomainStatusDescription": "Domein: {domain}. Rond SPF- en DKIM-instellingen af in Resend als verificatie nog loopt.",
+        "emailDomainVerifiedDescription": "Domein: {domain}.",
         "emailDomainMissing": "Vul het factuuradres van het bedrijf in om het verzenddomein te controleren.",
         "emailDomainVerificationHelp": "Zo verifieer je dit domein in Resend",
         "emailDomainCheckAgain": "Opnieuw controleren",
@@ -253,6 +254,7 @@
         "jobTitle": "Functie",
         "addContact": "Contactpersoon toevoegen",
         "workspaceSettings": "Werkruimte-instellingen",
+        "workspaceSettingsDescription": "Configureer facturatie en de afzendergegevens voor deze werkruimte.",
         "currency": "Valuta",
         "list": {
           "search": "Zoeken…",

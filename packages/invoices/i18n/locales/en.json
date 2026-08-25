@@ -240,6 +240,7 @@
         "emailDomainVerified": "Sending domain verified",
         "emailDomainUnverified": "Sending domain is not verified",
         "emailDomainStatusDescription": "Domain: {domain}. Complete SPF and DKIM setup in Resend when verification is still pending.",
+        "emailDomainVerifiedDescription": "Domain: {domain}.",
         "emailDomainMissing": "Enter the company invoice email to check its sending domain.",
         "emailDomainVerificationHelp": "How to verify this domain in Resend",
         "emailDomainCheckAgain": "Check again",
@@ -253,6 +254,7 @@
         "jobTitle": "Job title",
         "addContact": "Add contact",
         "workspaceSettings": "Workspace settings",
+        "workspaceSettingsDescription": "Configure invoicing and the sender details used for this workspace.",
         "currency": "Currency",
         "list": {
           "search": "Search…",

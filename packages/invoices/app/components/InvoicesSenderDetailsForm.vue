@@ -166,7 +166,12 @@ const save = async () => {
           <p>
             {{
               domainStatus?.domain
-                ? t('features.invoices.admin.emailDomainStatusDescription', { domain: domainStatus.domain })
+                ? t(
+                    domainStatus.verified
+                      ? 'features.invoices.admin.emailDomainVerifiedDescription'
+                      : 'features.invoices.admin.emailDomainStatusDescription',
+                    { domain: domainStatus.domain }
+                  )
                 : t('features.invoices.admin.emailDomainMissing')
             }}
           </p>
