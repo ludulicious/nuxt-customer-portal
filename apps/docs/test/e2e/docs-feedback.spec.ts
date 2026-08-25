@@ -38,7 +38,7 @@ test('serves the repository-authored Markdown source', async ({ request }) => {
   expect(response.ok()).toBe(true)
   expect(response.headers()['content-type']).toContain('text/markdown')
   expect(source).toContain('githubPath: apps/docs/content/3.modules/1.overview.md')
-  expect(source).toContain('| Package | Responsibility |')
+  expect(source).toMatch(/\|\s*Package\s*\|\s*Responsibility\s*\|/)
   expect(source).not.toContain('<table>')
   expect(llmsIndex.ok()).toBe(true)
   expect(await llmsIndex.text()).toContain('https://nuxt-customer-portal.com/raw/modules/overview.md')
