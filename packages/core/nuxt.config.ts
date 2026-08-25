@@ -20,7 +20,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     portalEmail: {
       templateStorage: 'assets:portal-core',
-      brandName: 'Nuxt Customer Portal'
+      brandingSource: 'runtime',
+      brandName: process.env.PORTAL_EMAIL_BRAND_NAME || 'Nuxt Customer Portal',
+      brandTagline: process.env.PORTAL_EMAIL_BRAND_TAGLINE || 'Customer workspace',
+      brandLogo: process.env.PORTAL_EMAIL_BRAND_LOGO || '',
+      primaryColor: process.env.PORTAL_EMAIL_PRIMARY_COLOR || '#0ea5e9'
     },
     portalAuth: {
       registrationMode,

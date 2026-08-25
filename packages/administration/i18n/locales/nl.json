@@ -3,6 +3,12 @@
     "email": {
       "title": "E-mail",
       "description": "Configureer portaalbrede e-mailbezorging, opmaak en berichtteksten.",
+      "sections": "Onderdelen van e-mailinstellingen",
+      "providerPage": "E-mailprovider",
+      "templatePage": "E-mailsjabloon",
+      "textPage": "E-mailtekst",
+      "messageNavigation": "E-mailsoorten",
+      "languageNavigation": "E-mailtaal",
       "provider": "Resend-provider",
       "apiKey": "Resend API-sleutel",
       "replaceKey": "API-sleutel vervangen (nu ••••{suffix})",
@@ -26,8 +32,19 @@
       "testSent": "Test-e-mail verzonden",
       "testFailed": "Test-e-mail kon niet worden verzonden",
       "save": "E-mailinstellingen opslaan",
+      "saveProvider": "E-mailprovider opslaan",
+      "saveTemplate": "E-mailsjabloon opslaan",
+      "saveTexts": "E-mailteksten opslaan",
+      "saveText": "Deze e-mailtekst opslaan",
       "saved": "E-mailinstellingen opgeslagen",
       "saveFailed": "E-mailinstellingen konden niet worden opgeslagen",
+      "validation": {
+        "apiKey": "Vul minimaal 8 tekens in of laat de API-sleutel leeg",
+        "fromEmail": "Vul een geldig e-mailadres voor de afzender in",
+        "templatePlaceholders": "Het sjabloon moet de velden subject, brand_name, body, footer en current_year bevatten",
+        "subject": "Vul een onderwerp in",
+        "body": "Vul de inhoud van de e-mail in"
+      },
       "messages": {
         "emailVerification": "E-mailverificatie",
         "signIn": "Inlogcode",

@@ -5,7 +5,10 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
   ssr: false,
   css: ['~/assets/css/main.css'],
-  runtimeConfig: { public: { clients: portal.clients, portalAuth: { termsUrl: '/terms' } } },
+  runtimeConfig: {
+    portalEmail: { brandingSource: 'portal-settings' },
+    public: { clients: portal.clients, portalAuth: { termsUrl: '/terms' } }
+  },
   devServer: { port: 3052 },
   compatibilityDate: '2025-10-24',
   nitro: {

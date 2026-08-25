@@ -20,6 +20,7 @@
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-top: 6px solid {{brand_primary_color}};
       }
       .header {
         text-align: center;
@@ -30,6 +31,11 @@
         color: #ffffff;
         margin: 0;
         font-size: 24px;
+      }
+      .header p {
+        color: #cbd5e1;
+        margin: 4px 0 0;
+        font-size: 14px;
       }
       .content {
         padding: 30px;
@@ -44,7 +50,7 @@
       }
       .button {
         display: inline-block;
-        background-color: #0ea5e9; /* Theme primary color */
+        background-color: {{brand_primary_color}};
         color: #ffffff !important; /* Ensure link text is white */
         padding: 12px 25px;
         text-decoration: none;
@@ -83,7 +89,9 @@
   <body>
     <div class="container">
       <div class="header">
+        {{brand_logo}}
         <h1>{{brand_name}}</h1>
+        <p>{{brand_tagline}}</p>
       </div>
       <div class="content">
         <div>{{body}}</div>

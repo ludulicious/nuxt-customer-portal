@@ -7,7 +7,7 @@ import type {
   PortalEmailText
 } from '@nuxt-customer-portal/core/shared/types/feature'
 import { portalEmailSettings } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
-import { db } from './db'
+import { db, pool } from './db'
 
 export type PortalEmailTextOverrides = Record<string, Partial<PortalEmailText>>
 
@@ -27,8 +27,77 @@ export interface PortalEmailAttachment {
   contentType?: string
 }
 
-const TEMPLATE_PLACEHOLDERS = new Set(['subject', 'brand_name', 'body', 'footer', 'current_year'])
+const TEMPLATE_PLACEHOLDERS = new Set([
+  'subject',
+  'brand_name',
+  'brand_logo',
+  'brand_tagline',
+  'brand_primary_color',
+  'body',
+  'footer',
+  'current_year'
+])
 const placeholderPattern = /{{\s*([a-z0-9_]+)\s*}}/gi
+const senderPattern = /^\s*([^<>]+?)\s*<\s*([^<>]+)\s*>\s*$/
+
+const parseSender = (value = '') => {
+  const match = value.match(senderPattern)
+  return match ? { fromName: match[1]!.trim(), fromEmail: match[2]!.trim() } : { fromName: '', fromEmail: value.trim() }
+}
+
+type PortalEmailBranding = { brandName: string; brandTagline: string; brandLogo: string; primaryColor: string }
+
+const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
+  const config = useRuntimeConfig()
+  const fallback = {
+    brandName: String(config.portalEmail?.brandName || 'Nuxt Customer Portal'),
+    brandTagline: String(config.portalEmail?.brandTagline || ''),
+    brandLogo: String(config.portalEmail?.brandLogo || ''),
+    primaryColor: /^#[0-9a-f]{6}$/i.test(String(config.portalEmail?.primaryColor))
+      ? String(config.portalEmail.primaryColor)
+      : '#0ea5e9'
+  }
+  if (config.portalEmail?.brandingSource !== 'portal-settings') {
+    return fallback
+  }
+  const result = await pool.query<{
+    portal_name: string | null
+    tagline: string | null
+    logo_light: string | null
+    logo_dark: string | null
+    mark_light: string | null
+    mark_dark: string | null
+    primary_light: string | null
+  }>(`SELECT
+    settings->'branding'->>'portalName' AS portal_name,
+    settings->'branding'->>'tagline' AS tagline,
+    settings->'branding'->>'logoLight' AS logo_light,
+    settings->'branding'->>'logoDark' AS logo_dark,
+    settings->'branding'->>'markLight' AS mark_light,
+    settings->'branding'->>'markDark' AS mark_dark,
+    settings->'appearance'->>'primaryLight' AS primary_light
+    FROM saas_configuration.portal_settings WHERE id=true`)
+  const branding = result.rows[0]
+  return {
+    brandName: branding?.portal_name || fallback.brandName,
+    brandTagline: branding?.tagline || fallback.brandTagline,
+    brandLogo:
+      branding?.logo_light || branding?.logo_dark || branding?.mark_light || branding?.mark_dark || fallback.brandLogo,
+    primaryColor: /^#[0-9a-f]{6}$/i.test(branding?.primary_light || '')
+      ? branding!.primary_light!
+      : fallback.primaryColor
+  }
+}
+
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!)
+
+const renderBrandLogo = (value: string, brandName: string) => {
+  if (!value || !/^(data:image\/(png|jpeg|webp);base64,|https?:\/\/)/i.test(value)) {
+    return ''
+  }
+  return `<img src="${escapeHtml(value)}" alt="${escapeHtml(brandName)}" style="display:block;max-width:220px;max-height:72px;margin:0 auto 12px" />`
+}
 
 const encryptionKey = () => {
   const value = process.env.PORTAL_EMAIL_ENCRYPTION_KEY
@@ -114,12 +183,13 @@ const readRow = async () => {
 export const getPortalEmailSettings = async () => {
   const row = await readRow()
   const projectTemplate = await defaultTemplate()
+  const environmentSender = parseSender(process.env.RESEND_FROM_EMAIL)
   return {
     provider: 'RESEND' as const,
     configured: Boolean(row?.encryptedApiKey || process.env.RESEND_API_KEY),
     keyLastFour: row?.keyLastFour ?? (process.env.RESEND_API_KEY?.slice(-4) || null),
-    fromName: row?.fromName ?? '',
-    fromEmail: row?.fromEmail ?? process.env.RESEND_FROM_EMAIL ?? '',
+    fromName: row?.fromName ?? environmentSender.fromName,
+    fromEmail: row?.fromEmail ?? environmentSender.fromEmail,
     defaultLocale: row?.defaultLocale === 'nl' ? ('nl' as const) : ('en' as const),
     htmlTemplate: row?.htmlTemplate?.trim() || projectTemplate,
     usingProjectTemplate: !row?.htmlTemplate?.trim(),
@@ -180,11 +250,12 @@ export const resetPortalEmailTemplate = async (userId: string) => {
 const providerConfiguration = async () => {
   const row = await readRow()
   const apiKey = row?.encryptedApiKey ? decryptPortalEmailSecret(row.encryptedApiKey) : process.env.RESEND_API_KEY
-  const fromEmail = row?.fromEmail || process.env.RESEND_FROM_EMAIL
+  const environmentSender = parseSender(process.env.RESEND_FROM_EMAIL)
+  const fromEmail = row?.fromEmail || environmentSender.fromEmail
   if (!apiKey || !fromEmail) {
     throw new Error('Portal email provider is not configured')
   }
-  return { apiKey, fromEmail, fromName: row?.fromName || '' }
+  return { apiKey, fromEmail, fromName: row?.fromName || environmentSender.fromName }
 }
 
 export const getPortalEmailProviderStatus = async () => {
@@ -213,13 +284,12 @@ export const renderPortalEmail = async (input: {
   text?: PortalEmailText
   htmlTemplate?: string
 }) => {
-  const settings = await getPortalEmailSettings()
+  const [settings, branding] = await Promise.all([getPortalEmailSettings(), resolvePortalEmailBranding()])
   const locale: PortalEmailLocale = input.locale === 'nl' ? 'nl' : input.locale === 'en' ? 'en' : settings.defaultLocale
   const key = `${input.moduleId}.${input.definition.id}.${locale}`
   const text = { ...input.definition.defaults[locale], ...settings.textOverrides[key], ...input.text }
   validatePortalEmailText(input.definition, text)
-  const config = useRuntimeConfig()
-  const brandName = config.portalEmail?.brandName || 'Nuxt Customer Portal'
+  const brandName = branding.brandName
   const messageValues = { ...input.values, brand_name: brandName }
   const allowed = new Set([...input.definition.placeholders.map((item) => item.key), 'brand_name'])
   const subject = replacePlaceholders(text.subject, messageValues, allowed)
@@ -229,7 +299,16 @@ export const renderPortalEmail = async (input: {
   validatePortalEmailTemplate(htmlTemplate)
   const html = replacePlaceholders(
     htmlTemplate,
-    { subject, brand_name: brandName, body, footer, current_year: String(new Date().getFullYear()) },
+    {
+      subject: escapeHtml(subject),
+      brand_name: escapeHtml(brandName),
+      brand_logo: renderBrandLogo(branding.brandLogo, brandName),
+      brand_tagline: escapeHtml(branding.brandTagline),
+      brand_primary_color: branding.primaryColor,
+      body,
+      footer,
+      current_year: String(new Date().getFullYear())
+    },
     TEMPLATE_PLACEHOLDERS
   )
   return {

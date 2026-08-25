@@ -3,6 +3,12 @@
     "email": {
       "title": "Email",
       "description": "Configure portal-wide email delivery, layout, and message text.",
+      "sections": "Email settings sections",
+      "providerPage": "Email Provider",
+      "templatePage": "Email Template",
+      "textPage": "Email Text",
+      "messageNavigation": "Email kinds",
+      "languageNavigation": "Email language",
       "provider": "Resend provider",
       "apiKey": "Resend API key",
       "replaceKey": "Replace API key (currently ••••{suffix})",
@@ -26,8 +32,19 @@
       "testSent": "Test email sent",
       "testFailed": "Test email could not be sent",
       "save": "Save email settings",
+      "saveProvider": "Save email provider",
+      "saveTemplate": "Save email template",
+      "saveTexts": "Save email texts",
+      "saveText": "Save this email text",
       "saved": "Email settings saved",
       "saveFailed": "Email settings could not be saved",
+      "validation": {
+        "apiKey": "Enter at least 8 characters or leave the API key empty",
+        "fromEmail": "Enter a valid sender email address",
+        "templatePlaceholders": "The template must contain subject, brand_name, body, footer, and current_year placeholders",
+        "subject": "Enter a subject",
+        "body": "Enter the email body"
+      },
       "messages": {
         "emailVerification": "Email verification",
         "signIn": "Sign-in code",

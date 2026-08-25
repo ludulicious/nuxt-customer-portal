@@ -28,6 +28,29 @@ export const emailSettingsInput = z.object({
     .optional()
 })
 
+export const emailProviderInput = emailSettingsInput.pick({
+  apiKey: true,
+  fromName: true,
+  fromEmail: true,
+  defaultLocale: true
+})
+
+export const emailTemplateInput = emailSettingsInput.pick({ htmlTemplate: true })
+
+export const emailTextsInput = emailSettingsInput.pick({ textOverrides: true, definitions: true })
+
+export const parseEmailAdminInput = <T>(schema: z.ZodType<T>, value: unknown): T => {
+  const result = schema.safeParse(value)
+  if (!result.success) {
+    throw createError({
+      statusCode: 422,
+      statusMessage: 'Invalid email settings',
+      data: { issues: result.error.issues }
+    })
+  }
+  return result.data
+}
+
 export const emailRenderInput = z.object({
   moduleId: z.string().min(1).max(100),
   definition: z.object({
@@ -43,4 +66,9 @@ export const emailRenderInput = z.object({
   text: text,
   htmlTemplate: z.string().max(100_000).optional(),
   to: z.string().email().optional()
+})
+
+export const emailSingleTextInput = z.object({
+  definition: emailRenderInput.shape.definition,
+  text
 })
