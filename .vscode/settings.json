@@ -5,20 +5,14 @@
     "source.fixAll.eslint": "explicit"
   },
   "eslint.useFlatConfig": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "i18n-ally.disablePathParsing": false,
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.pathMatcher": "{locale}.json",
+  "i18n-ally.sourceLanguage": "en",
+  "i18n-ally.displayLanguage": "en",
+  "i18n-ally.enabledFrameworks": ["vue"],
   "i18n-ally.localesPaths": [
-    "apps/demo-apex/i18n",
-    "apps/demo-brutal/i18n",
-    "apps/saas-portal/i18n",
-    "packages/administration/i18n",
-    "packages/authentication/i18n",
-    "packages/clients/i18n",
-    "packages/core/i18n",
-    "packages/invoices/i18n",
-    "packages/organizations/i18n",
-    "packages/saas-configuration/i18n",
-    "packages/timesheets/i18n",
-    "packages/service-requests/i18n",
-    "packages/ui/i18n",
     "apps/demo-apex/i18n/locales",
     "apps/demo-brutal/i18n/locales",
     "apps/saas-portal/i18n/locales",
@@ -32,7 +26,6 @@
     "packages/timesheets/i18n/locales",
     "packages/service-requests/i18n/locales",
     "packages/ui/i18n/locales",
-    "apps/demo-apex/layers/public-site/i18n",
     "apps/demo-apex/layers/public-site/i18n/locales"
   ]
 }
