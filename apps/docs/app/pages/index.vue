@@ -101,44 +101,23 @@ defineOgImage('DocsSatori', {
       </UContainer>
     </section>
 
-    <section class="workflow-band" aria-labelledby="workflow-title">
+    <section class="technology-colophon" aria-labelledby="technology-title">
       <UContainer>
-        <div class="workflow-intro">
-          <h2 id="workflow-title" class="marketing-display">{{ page.workflow.title }}</h2>
-          <p>{{ page.workflow.description }}</p>
-        </div>
-        <ol class="workflow-sequence">
-          <li v-for="stage in page.workflow.stages" :key="stage.number">
-            <NuxtLink :to="stage.to" class="workflow-stage">
-              <span class="workflow-stage-number">{{ stage.number }}</span>
-              <h3>{{ stage.title }}</h3>
-              <p>{{ stage.description }}</p>
-              <span class="workflow-stage-arrow" aria-hidden="true">→</span>
-            </NuxtLink>
-          </li>
-        </ol>
-      </UContainer>
-    </section>
-
-    <section class="marketing-section" aria-labelledby="platform-title">
-      <UContainer class="platform-grid">
-        <header class="section-heading">
-          <h2 id="platform-title" class="marketing-display">{{ page.platform.title }}</h2>
-          <p>{{ page.platform.description }}</p>
+        <header class="technology-header">
+          <h2 id="technology-title" class="marketing-display">{{ page.technology.title }}</h2>
+          <p>{{ page.technology.description }}</p>
         </header>
-        <div>
-          <dl class="ownership-list">
-            <div v-for="row in page.platform.ownership" :key="row.term">
-              <dt>{{ row.term }}</dt>
-              <dd>{{ row.description }}</dd>
-            </div>
-          </dl>
-          <div class="platform-links">
-            <NuxtLink v-for="link in page.platform.links" :key="link.to" :to="link.to" class="marketing-link">
-              {{ link.label }} <span aria-hidden="true">→</span>
-            </NuxtLink>
-          </div>
-        </div>
+        <ul class="technology-list">
+          <li v-for="item in page.technology.items" :key="item.label">
+            <a :href="item.href" target="_blank" rel="noopener noreferrer">
+              <UIcon :name="item.icon" class="size-5" :style="item.color ? { color: item.color } : undefined" />
+              <span>
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.description }}</span>
+              </span>
+            </a>
+          </li>
+        </ul>
       </UContainer>
     </section>
 
@@ -166,24 +145,5 @@ defineOgImage('DocsSatori', {
       </UContainer>
     </section>
 
-    <section class="technology-colophon" aria-labelledby="technology-title">
-      <UContainer>
-        <header class="technology-header">
-          <h2 id="technology-title">{{ page.technology.title }}</h2>
-          <p>{{ page.technology.description }}</p>
-        </header>
-        <ul class="technology-list">
-          <li v-for="item in page.technology.items" :key="item.label">
-            <a :href="item.href" target="_blank" rel="noopener noreferrer">
-              <UIcon :name="item.icon" class="size-5" />
-              <span>
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.description }}</span>
-              </span>
-            </a>
-          </li>
-        </ul>
-      </UContainer>
-    </section>
   </div>
 </template>

@@ -35,7 +35,7 @@ export default defineAppConfig({
     ]
   },
   footer: {
-    credits: `Customer Portal • public development • © ${new Date().getFullYear()}`,
+    credits: `Nuxt Customer Portal • public development • © ${new Date().getFullYear()}`,
     colorMode: false,
     links: [
       {

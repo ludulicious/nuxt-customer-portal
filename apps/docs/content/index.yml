@@ -59,21 +59,6 @@ hostedEvaluation:
   action:
     label: Request a hosted evaluation
     to: https://portalnuxt.com
-platform:
-  title: Core stays stable. Features own their work.
-  description: The host composes capabilities. It does not need to know their implementation details.
-  ownership:
-    - term: Core
-      description: Owns headless authentication, organization context, authorization helpers, shared adapters, and the feature contract.
-    - term: Registry
-      description: Combines installed feature definitions into navigation, module menus, dashboard widgets, and role-aware capabilities.
-    - term: Feature layer
-      description: Owns one coherent business capability, including routes, types, policies, translations, migrations, and tests.
-  links:
-    - label: Understand feature layers
-      to: /architecture/layers
-    - label: Read the feature contract
-      to: /reference/feature-contract
 seo:
   title: Nuxt Customer Portal — an extensible customer portal for Nuxt
   description: Build from composable Nuxt layers or configure the ready-to-run SaaS portal for your own organization.
@@ -85,22 +70,27 @@ technology:
     - label: Nuxt 4
       description: Frontend and backend
       icon: i-simple-icons-nuxtdotjs
+      color: "#00DC82"
       href: https://nuxt.com/
     - label: Nuxt UI
       description: Tailwind CSS and Reka UI
       icon: i-simple-icons-tailwindcss
+      color: "#06B6D4"
       href: https://ui.nuxt.com/
     - label: TypeScript
       description: Typed end to end
       icon: i-simple-icons-typescript
+      color: "#3178C6"
       href: https://www.typescriptlang.org/
     - label: PostgreSQL
       description: Primary database
       icon: i-simple-icons-postgresql
+      color: "#4169E1"
       href: https://www.postgresql.org/
     - label: Drizzle ORM
       description: Type-safe persistence
       icon: i-simple-icons-drizzle
+      color: "#C5F74F"
       href: https://orm.drizzle.team/
     - label: better-auth
       description: Authentication
@@ -109,32 +99,15 @@ technology:
     - label: Docker
       description: Container deployments
       icon: i-simple-icons-docker
+      color: "#2496ED"
       href: https://www.docker.com/
     - label: Nuxt i18n
       description: Layer-owned translations
       icon: i-simple-icons-i18next
+      color: "#26A69A"
       href: https://i18n.nuxtjs.org/
     - label: VueUse
       description: Composition utilities
       icon: i-simple-icons-vuedotjs
+      color: "#4FC08D"
       href: https://vueuse.org/
-workflow:
-  title: A working week, end to end.
-  description: Timesheets and invoices are used in real Customer Portal deployments. The module covers the complete path from workspace configuration to a paid invoice—not a disconnected feature demo.
-  stages:
-    - number: "01"
-      title: Configure
-      description: Set clients, projects, activities, rates, suppliers, and approval rules.
-      to: /guides/timesheet-setup
-    - number: "02"
-      title: Record
-      description: Enter a working week, use timers, submit time, and correct rejected entries.
-      to: /guides/time-entry
-    - number: "03"
-      title: Approve
-      description: Move weeks through internal review, client approval, and disputes.
-      to: /guides/approvals
-    - number: "04"
-      title: Invoice
-      description: Create drafts from approved time, deliver PDFs, send reminders, and register payments.
-      to: /guides/invoicing

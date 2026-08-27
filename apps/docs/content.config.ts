@@ -43,19 +43,6 @@ export default defineContentConfig({
           description: z.string(),
           action: z.object({ label: z.string(), to: z.string() })
         }),
-        workflow: z.object({
-          title: z.string(),
-          description: z.string(),
-          stages: z.array(
-            z.object({ number: z.string(), title: z.string(), description: z.string(), to: z.string() })
-          )
-        }),
-        platform: z.object({
-          title: z.string(),
-          description: z.string(),
-          ownership: z.array(z.object({ term: z.string(), description: z.string() })),
-          links: z.array(z.object({ label: z.string(), to: z.string() }))
-        }),
         contributors: z.object({
           title: z.string(),
           description: z.string(),
@@ -68,7 +55,13 @@ export default defineContentConfig({
           title: z.string(),
           description: z.string(),
           items: z.array(
-            z.object({ label: z.string(), description: z.string(), icon: z.string(), href: z.string() })
+            z.object({
+              label: z.string(),
+              description: z.string(),
+              icon: z.string(),
+              color: z.string().optional(),
+              href: z.string()
+            })
           )
         })
       })
