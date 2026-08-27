@@ -1,0 +1,140 @@
+contributors:
+  title: Help shape the portal.
+  description: You do not need to start with a large pull request. A precise documentation correction, a failing authorization test, or a focused layer proposal can move the project forward.
+  link:
+    label: Contribution guide
+    to: /contributing
+  paths:
+    - number: "01"
+      title: Improve the documentation
+      description: Correct behavior, add an example, or make a workflow easier to follow.
+      to: /contributing/documentation
+    - number: "02"
+      title: Create a feature layer
+      description: Build a portable module against the public core contracts.
+      to: /contributing/create-a-layer
+    - number: "03"
+      title: Propose a module
+      description: Shape a reusable capability with maintainers before investing in implementation.
+      to: /contributing/propose-a-module
+extensionModel:
+  title: The extension model
+  badge: Nuxt 4.5
+  items:
+    - title: Headless core
+      description: With NuxtUI and better-auth as the basis, the headless core implements authentication and authorization, organizations,  users, members, authorization, database access, and shared server adapters.
+    - title: Feature registry
+      description: Layers register navigation, module menus, surfaces, dashboard widgets, and role policies without host edits.
+    - title: Business layers
+      description: Each feature owns its UI, API, translations, tests, and PostgreSQL schema.
+hero:
+  kicker: Public development preview
+  title: Nuxt Customer Portal
+  description: "A great starting point for your own or your client's customer portal. Ready to use modules for small agencies with timesheets, approvals and invoicing. "
+  actions:
+    - label: Get started
+      to: /getting-started
+      trailingIcon: i-lucide-arrow-right
+      variant: solid
+      testId: hero-get-started
+    - label: Try the demo
+      to: https://demo.nuxt-customer-portal.com
+      external: true
+      variant: outline
+      testId: hero-demo
+    - label: GitHub
+      to: https://github.com/ludulicious/nuxt-customer-portal
+      icon: i-simple-icons-github
+      external: true
+      variant: ghost
+      testId: hero-github
+  license:
+    text: Nuxt Customer Portal is open source under the MIT License.
+    linkLabel: Read compatibility and release status
+    linkTo: /reference/compatibility-and-releases
+hostedEvaluation:
+  kicker: Hosted evaluation
+  title: Want to try without installing?
+  description: "We have a hosted version available of a fully implemented Nuxt Customer Portal. Fill in the form on portalnuxt.com and we'll create your own instance for you. "
+  action:
+    label: Request a hosted evaluation
+    to: https://portalnuxt.com
+platform:
+  title: Core stays stable. Features own their work.
+  description: The host composes capabilities. It does not need to know their implementation details.
+  ownership:
+    - term: Core
+      description: Owns headless authentication, organization context, authorization helpers, shared adapters, and the feature contract.
+    - term: Registry
+      description: Combines installed feature definitions into navigation, module menus, dashboard widgets, and role-aware capabilities.
+    - term: Feature layer
+      description: Owns one coherent business capability, including routes, types, policies, translations, migrations, and tests.
+  links:
+    - label: Understand feature layers
+      to: /architecture/layers
+    - label: Read the feature contract
+      to: /reference/feature-contract
+seo:
+  title: Nuxt Customer Portal — an extensible customer portal for Nuxt
+  description: Build from composable Nuxt layers or configure the ready-to-run SaaS portal for your own organization.
+  headline: Nuxt customer portal
+technology:
+  title: Technology
+  description: One Nuxt service and one PostgreSQL database.
+  items:
+    - label: Nuxt 4
+      description: Frontend and backend
+      icon: i-simple-icons-nuxtdotjs
+      href: https://nuxt.com/
+    - label: Nuxt UI
+      description: Tailwind CSS and Reka UI
+      icon: i-simple-icons-tailwindcss
+      href: https://ui.nuxt.com/
+    - label: TypeScript
+      description: Typed end to end
+      icon: i-simple-icons-typescript
+      href: https://www.typescriptlang.org/
+    - label: PostgreSQL
+      description: Primary database
+      icon: i-simple-icons-postgresql
+      href: https://www.postgresql.org/
+    - label: Drizzle ORM
+      description: Type-safe persistence
+      icon: i-simple-icons-drizzle
+      href: https://orm.drizzle.team/
+    - label: better-auth
+      description: Authentication
+      icon: i-simple-icons-betterauth
+      href: https://www.better-auth.com/
+    - label: Docker
+      description: Container deployments
+      icon: i-simple-icons-docker
+      href: https://www.docker.com/
+    - label: Nuxt i18n
+      description: Layer-owned translations
+      icon: i-simple-icons-i18next
+      href: https://i18n.nuxtjs.org/
+    - label: VueUse
+      description: Composition utilities
+      icon: i-simple-icons-vuedotjs
+      href: https://vueuse.org/
+workflow:
+  title: A working week, end to end.
+  description: Timesheets and invoices are used in real Customer Portal deployments. The module covers the complete path from workspace configuration to a paid invoice—not a disconnected feature demo.
+  stages:
+    - number: "01"
+      title: Configure
+      description: Set clients, projects, activities, rates, suppliers, and approval rules.
+      to: /guides/timesheet-setup
+    - number: "02"
+      title: Record
+      description: Enter a working week, use timers, submit time, and correct rejected entries.
+      to: /guides/time-entry
+    - number: "03"
+      title: Approve
+      description: Move weeks through internal review, client approval, and disputes.
+      to: /guides/approvals
+    - number: "04"
+      title: Invoice
+      description: Create drafts from approved time, deliver PDFs, send reminders, and register payments.
+      to: /guides/invoicing
