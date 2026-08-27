@@ -269,7 +269,7 @@ describe('documentation content', () => {
     expect(inventory.license.spdxId).toBe('MIT')
     expect(routes.has(inventory.license.documentationPath)).toBe(true)
 
-    const homepage = readFileSync(join(root, 'app/pages/index.vue'), 'utf8')
+    const homepage = readFileSync(join(contentRoot, 'index.yml'), 'utf8')
     const terms = readFileSync(join(contentRoot, 'terms-of-service.md'), 'utf8')
     const privacy = readFileSync(join(contentRoot, 'privacy-policy.md'), 'utf8')
     expect(homepage).toContain('open source under the MIT License')

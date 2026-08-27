@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/ui',
     '@nuxt/content',
+    'nuxt-studio',
     'nuxt-og-image',
     'nuxt-llms',
     '@nuxtjs/mcp-toolkit',
@@ -50,6 +51,17 @@ export default defineNuxtConfig({
           searchDepth: 1
         }
       }
+    }
+  },
+
+  studio: {
+    repository: {
+      provider: 'github',
+      owner: 'ludulicious',
+      repo: 'nuxt-customer-portal',
+      branch: documentationDefaults.docsRepositoryBranch,
+      rootDir: 'apps/docs',
+      private: false
     }
   },
 
