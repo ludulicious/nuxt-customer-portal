@@ -123,7 +123,7 @@ main code:not(pre code) {
 .marketing-hero-copy h1 {
   max-width: 11ch;
   margin-block: var(--space-md);
-  font-size: var(--text-display);
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
   line-height: 0.94;
 }
 
@@ -239,6 +239,12 @@ main code:not(pre code) {
   max-width: 16ch;
   margin-block: 0.75rem 1rem;
   font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 0.92;
+}
+
+.contributor-copy h2 {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 0.92;
 }
 
 .hosted-evaluation-grid > div > p:last-child {
@@ -260,8 +266,7 @@ main code:not(pre code) {
 }
 
 .workflow-intro h2,
-.section-heading h2,
-.contributor-copy h2 {
+.section-heading h2 {
   font-size: clamp(var(--text-2xl), 5vw, 4.75rem);
   line-height: 1;
 }
@@ -472,10 +477,8 @@ main code:not(pre code) {
 }
 
 .technology-header h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 560;
-  letter-spacing: -0.03em;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 0.92;
 }
 
 .technology-header p {

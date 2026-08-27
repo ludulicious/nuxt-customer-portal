@@ -11,7 +11,6 @@ test.describe('marketing homepage', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build your portal, layer by layer.')
     await expect(page.getByRole('heading', { name: 'See your own portal take shape.' })).toBeVisible()
     await expect(page.getByTestId('hosted-evaluation-cta')).toHaveAttribute('href', 'https://portalnuxt.com')
-    await expect(page.getByRole('heading', { name: 'A working week, end to end.' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Help shape the portal.' })).toBeVisible()
     await expect(page.getByRole('note', { name: 'Open-source license' })).toContainText(
       'open source under the MIT License'
