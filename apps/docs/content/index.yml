@@ -54,7 +54,7 @@ hero:
     linkTo: /reference/compatibility-and-releases
 hostedEvaluation:
   kicker: Hosted evaluation
-  title: Want to try without installing?
+  title: Try without installing?
   description: "We have a hosted version available of a fully implemented Nuxt Customer Portal. Fill in the form on portalnuxt.com and we'll create your own instance for you. "
   action:
     label: Request a hosted evaluation
