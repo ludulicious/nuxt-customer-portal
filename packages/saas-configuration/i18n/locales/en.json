@@ -66,6 +66,8 @@
         "serviceRequestsDescription": "Let customers submit requests and follow their progress.",
         "invoiceTimesheets": "Invoice from timesheets",
         "invoiceTimesheetsDescription": "Turn approved timesheet entries into invoice lines; requires Timesheets and Invoices.",
+        "invoiceServiceRequests": "Invoice from service requests",
+        "invoiceServiceRequestsDescription": "Turn an accepted service-request quote into a draft invoice; requires Service Requests and Invoices.",
         "preserved": "Data is preserved when this module is disabled."
       },
       "actions": {

@@ -22,10 +22,18 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const currentPage = ref(1)
+const assignees = ref<Array<{ id: string; name: string }>>([])
 const filters = reactive({
   status: undefined,
   priority: undefined,
+  assignedToId: undefined,
+  sortBy: 'createdAt' as 'createdAt' | 'requestedDate' | 'status' | 'priority',
+  sortDir: 'desc' as 'asc' | 'desc',
   search: ''
+})
+
+onMounted(async () => {
+  assignees.value = await $fetch('/api/service-requests/admin/assignees')
 })
 
 watch(filters, () => {
@@ -42,22 +50,26 @@ const getActions = (request: ServiceRequest) => {
       { label: t('features.serviceRequests.actions.view'), click: () => emit('select', request.id) },
       { label: t('features.serviceRequests.actions.assign'), click: () => emit('assign', request.id) },
       {
-        label: t('features.serviceRequests.actions.resolve'),
-        click: () => emit('update', { id: request.id, updates: { status: 'RESOLVED' } })
+        label: t('features.serviceRequests.status.evaluating'),
+        click: () => emit('update', { id: request.id, updates: { status: 'EVALUATING' } })
       },
       {
-        label: t('features.serviceRequests.actions.close'),
-        click: () => emit('update', { id: request.id, updates: { status: 'CLOSED' } })
+        label: t('features.serviceRequests.status.completed'),
+        click: () => emit('update', { id: request.id, updates: { status: 'COMPLETED' } })
       }
     ]
   ]
 }
 
 const statusOptions = computed(() => [
-  { label: t('features.serviceRequests.status.open'), value: 'OPEN' },
+  { label: t('features.serviceRequests.status.new'), value: 'NEW' },
+  { label: t('features.serviceRequests.status.evaluating'), value: 'EVALUATING' },
+  { label: t('features.serviceRequests.status.awaiting_approval'), value: 'AWAITING_APPROVAL' },
+  { label: t('features.serviceRequests.status.accepted'), value: 'ACCEPTED' },
   { label: t('features.serviceRequests.status.in_progress'), value: 'IN_PROGRESS' },
-  { label: t('features.serviceRequests.status.resolved'), value: 'RESOLVED' },
-  { label: t('features.serviceRequests.status.closed'), value: 'CLOSED' }
+  { label: t('features.serviceRequests.status.completed'), value: 'COMPLETED' },
+  { label: t('features.serviceRequests.status.declined'), value: 'DECLINED' },
+  { label: t('features.serviceRequests.status.cancelled'), value: 'CANCELLED' }
 ])
 
 const priorityOptions = computed(() => [
@@ -65,6 +77,17 @@ const priorityOptions = computed(() => [
   { label: t('features.serviceRequests.priority.medium'), value: 'MEDIUM' },
   { label: t('features.serviceRequests.priority.high'), value: 'HIGH' },
   { label: t('features.serviceRequests.priority.urgent'), value: 'URGENT' }
+])
+const assigneeOptions = computed(() => [
+  { label: t('features.serviceRequests.filters.allAssignees'), value: undefined },
+  { label: t('features.serviceRequests.filters.unassigned'), value: 'unassigned' },
+  ...assignees.value.map((item) => ({ label: item.name, value: item.id }))
+])
+const sortOptions = computed(() => [
+  { label: t('features.serviceRequests.fields.createdAt'), value: 'createdAt' },
+  { label: t('features.serviceRequests.fields.requestedDate'), value: 'requestedDate' },
+  { label: t('features.serviceRequests.fields.status'), value: 'status' },
+  { label: t('features.serviceRequests.fields.priority'), value: 'priority' }
 ])
 
 const getPriorityColor = (priority: ServiceRequestPriority) => {
@@ -98,6 +121,9 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
         :placeholder="t('features.serviceRequests.fields.priority')"
       />
       <UInput v-model="filters.search" :placeholder="t('common.searchPlaceholder')" icon="i-lucide-search" />
+      <USelect v-model="filters.assignedToId" :items="assigneeOptions" />
+      <USelect v-model="filters.sortBy" :items="sortOptions" />
+      <UButton variant="outline" :icon="filters.sortDir === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'" @click="filters.sortDir = filters.sortDir === 'asc' ? 'desc' : 'asc'" />
     </div>
 
     <!-- Table -->

@@ -75,6 +75,18 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
     }
   ],
   clientIntegration: { moduleId: 'service-requests', labelKey: 'features.serviceRequests.navigation.myRequests' },
+  emails: [{
+    id: 'quote', labelKey: 'features.serviceRequests.sections.quotes',
+    defaults: {
+      en: { subject: 'Quote {{quote_number}} for {{request_title}}', body: 'A new quote is ready for {{request_title}}. It is valid until {{valid_until}}. Sign in to review it.' },
+      nl: { subject: 'Offerte {{quote_number}} voor {{request_title}}', body: 'Er staat een nieuwe offerte klaar voor {{request_title}}. Deze is geldig tot {{valid_until}}. Log in om de offerte te bekijken.' }
+    },
+    placeholders: [
+      { key: 'quote_number', labelKey: 'features.serviceRequests.sections.quotes', example: 'Q-2026-001' },
+      { key: 'request_title', labelKey: 'features.serviceRequests.fields.title', example: 'Repair request' },
+      { key: 'valid_until', labelKey: 'features.serviceRequests.fields.validUntil', example: '30 September 2026' }
+    ]
+  }],
   policy: {
     PROVIDER: {
       owner: serviceRequestActions,

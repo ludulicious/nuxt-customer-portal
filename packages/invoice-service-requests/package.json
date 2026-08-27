@@ -1,0 +1,12 @@
+{
+  "name": "@nuxt-customer-portal/invoice-service-requests",
+  "version": "0.1.0-alpha.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "./nuxt.config.ts",
+  "files": ["app", "migrations", "server", "shared", "nuxt.config.ts", "portal.manifest.mjs"],
+  "exports": { ".": "./nuxt.config.ts", "./schema": "./server/db/schema/invoice-service-requests.ts", "./portal-manifest": "./portal.manifest.mjs", "./server/*": "./server/*.ts", "./shared/*": "./shared/*.ts" },
+  "dependencies": { "@nuxt-customer-portal/core": "workspace:^", "@nuxt-customer-portal/invoices": "workspace:^", "@nuxt-customer-portal/service-requests": "workspace:^", "@types/pg": "8.15.5", "drizzle-orm": "^0.45.2", "nanoid": "^5.1.6", "pg": "^8.22.0", "zod": "^4.4.3" },
+  "peerDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" },
+  "devDependencies": { "nuxt": "^4.5.1", "vue": "^3.5.0" }
+}

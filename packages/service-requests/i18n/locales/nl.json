@@ -32,10 +32,14 @@
         }
       },
       "status": {
-        "open": "Open",
-        "in_progress": "In behandeling",
-        "resolved": "Opgelost",
-        "closed": "Gesloten"
+        "new": "Nieuw",
+        "evaluating": "In beoordeling",
+        "awaiting_approval": "Wacht op goedkeuring",
+        "accepted": "Geaccepteerd",
+        "in_progress": "In uitvoering",
+        "completed": "Voltooid",
+        "declined": "Afgewezen",
+        "cancelled": "Geannuleerd"
       },
       "priority": {
         "low": "Laag",
@@ -51,6 +55,8 @@
         "status": "Filter op status",
         "priority": "Filter op prioriteit",
         "category": "Filter op categorie"
+        ,"allAssignees": "Alle toegewezen personen",
+        "unassigned": "Niet toegewezen"
       },
       "fields": {
         "title": "Titel",
@@ -62,8 +68,15 @@
         "createdBy": "Aangemaakt door",
         "assignedTo": "Toegewezen aan",
         "createdAt": "Aangemaakt op",
-        "resolvedAt": "Opgelost op",
-        "internalNotes": "Interne notities"
+        "internalNotes": "Interne notities",
+        "contactName": "Contactnaam",
+        "contactEmail": "E-mailadres contact",
+        "contactPhone": "Telefoon contact",
+        "requestedDate": "Gewenste datum",
+        "serviceLocation": "Servicelocatie",
+        "comment": "Opmerking",
+        "validUntil": "Geldig tot",
+        "currency": "Valuta"
       },
       "actions": {
         "back": "Terug naar aanvragen",
@@ -72,12 +85,35 @@
         "resolve": "Oplossen",
         "close": "Sluiten",
         "saveChanges": "Wijzigingen opslaan",
-        "adminActions": "Beheeracties"
+        "adminActions": "Workflow en toewijzing",
+        "addComment": "Opmerking toevoegen",
+        "createQuote": "Offerte maken",
+        "sendQuote": "Offerte versturen",
+        "acceptQuote": "Offerte accepteren",
+        "declineQuote": "Offerte afwijzen",
+        "addLine": "Regel toevoegen",
+        "removeLine": "Regel verwijderen",
+        "upload": "Bijlage uploaden"
+        ,"cancelRequest": "Aanvraag annuleren"
       },
       "placeholders": {
         "category": "bijv. Technisch, Facturatie, Algemeen",
         "selectUser": "Selecteer gebruiker",
-        "internalNotes": "Notities die alleen voor beheerders zichtbaar zijn"
+        "internalNotes": "Notities die alleen voor beheerders zichtbaar zijn",
+        "comment": "Voeg een update toe die zichtbaar is voor de klant",
+        "serviceLocation": "Adres of locatie op afstand"
+      },
+      "validation": {
+        "clientRequired": "Selecteer een klant.",
+        "titleMin": "Vul een titel van minimaal 3 tekens in.",
+        "titleMax": "De titel mag maximaal 200 tekens bevatten.",
+        "descriptionMin": "Vul een beschrijving van minimaal 10 tekens in.",
+        "descriptionMax": "De beschrijving mag maximaal 5.000 tekens bevatten.",
+        "contactNameMax": "De contactnaam mag maximaal 200 tekens bevatten.",
+        "emailInvalid": "Vul een geldig e-mailadres in.",
+        "contactPhoneMax": "Het telefoonnummer mag maximaal 80 tekens bevatten.",
+        "serviceLocationMax": "De servicelocatie mag maximaal 500 tekens bevatten.",
+        "categoryMax": "De categorie mag maximaal 100 tekens bevatten."
       },
       "messages": {
         "createSuccess": "Serviceaanvraag succesvol aangemaakt",
@@ -89,7 +125,18 @@
         "deleteError": "Serviceaanvraag verwijderen mislukt",
         "notFound": "Aanvraag niet gevonden",
         "empty": "Geen serviceaanvragen gevonden",
-        "endOfList": "Je hebt het einde bereikt"
+        "endOfList": "Je hebt het einde bereikt",
+        "commentAdded": "Opmerking toegevoegd",
+        "quoteCreated": "Conceptofferte gemaakt",
+        "quoteSent": "Offerte verstuurd",
+        "quoteDecided": "Reactie op offerte opgeslagen",
+        "detailsLocked": "Aanvraaggegevens zijn vergrendeld zodra de beoordeling begint"
+      },
+      "sections": {
+        "details": "Aanvraaggegevens",
+        "timeline": "Activiteit",
+        "attachments": "Bijlagen",
+        "quotes": "Offertes"
       },
       "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
     }

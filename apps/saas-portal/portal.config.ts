@@ -8,6 +8,7 @@ export default definePortalConfig({
     '@nuxt-customer-portal/timesheets',
     '@nuxt-customer-portal/invoices',
     '@nuxt-customer-portal/invoice-timesheets',
+    '@nuxt-customer-portal/invoice-service-requests',
     '@nuxt-customer-portal/saas-configuration'
   ]
 })

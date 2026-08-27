@@ -53,8 +53,9 @@ export const useAdminServiceRequests = () => {
     fetchAllRequests,
     adminUpdateRequest,
     assignRequest: (id: string, userId: string) => adminUpdateRequest(id, { assignedToId: userId }),
-    resolveRequest: (id: string) => adminUpdateRequest(id, { status: 'RESOLVED' }),
-    closeRequest: (id: string) => adminUpdateRequest(id, { status: 'CLOSED' }),
-    reopenRequest: (id: string) => adminUpdateRequest(id, { status: 'OPEN' })
+    startEvaluation: (id: string) => adminUpdateRequest(id, { status: 'EVALUATING' }),
+    startRequest: (id: string) => adminUpdateRequest(id, { status: 'IN_PROGRESS' }),
+    completeRequest: (id: string) => adminUpdateRequest(id, { status: 'COMPLETED' }),
+    cancelRequest: (id: string) => adminUpdateRequest(id, { status: 'CANCELLED' })
   }
 }

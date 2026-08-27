@@ -37,6 +37,6 @@ export default defineEventHandler(async (event) => {
   ) {
     await authorize(scope.session, scope.organizationId, serviceRequestFeature.policy, 'delete')
   }
-  await deleteServiceRequest(id)
+  await deleteServiceRequest(scope.providerOrganizationId, id)
   return { success: true }
 })

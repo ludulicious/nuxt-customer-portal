@@ -27,8 +27,8 @@ const { t } = useI18n()
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <UCard>
         <div class="text-center">
-          <div class="text-3xl font-bold text-blue-600">{{ stats.OPEN || 0 }}</div>
-          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.open') }}</div>
+          <div class="text-3xl font-bold text-blue-600">{{ stats.NEW || 0 }}</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.new') }}</div>
         </div>
       </UCard>
       <UCard>
@@ -39,14 +39,14 @@ const { t } = useI18n()
       </UCard>
       <UCard>
         <div class="text-center">
-          <div class="text-3xl font-bold text-green-600">{{ stats.RESOLVED || 0 }}</div>
-          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.resolved') }}</div>
+          <div class="text-3xl font-bold text-green-600">{{ stats.COMPLETED || 0 }}</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.completed') }}</div>
         </div>
       </UCard>
       <UCard>
         <div class="text-center">
-          <div class="text-3xl font-bold text-gray-600">{{ stats.CLOSED || 0 }}</div>
-          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.closed') }}</div>
+          <div class="text-3xl font-bold text-gray-600">{{ stats.CANCELLED || 0 }}</div>
+          <div class="text-sm text-gray-600">{{ t('features.serviceRequests.status.cancelled') }}</div>
         </div>
       </UCard>
     </div>

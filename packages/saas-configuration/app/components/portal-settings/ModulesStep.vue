@@ -24,6 +24,11 @@ const modules = computed<Record<PortalModuleId, { label: string; description: st
     label: t('saasSettings.editor.modules.invoiceTimesheets'),
     description: t('saasSettings.editor.modules.invoiceTimesheetsDescription'),
     icon: 'i-lucide-workflow'
+  },
+  'invoice-service-requests': {
+    label: t('saasSettings.editor.modules.invoiceServiceRequests'),
+    description: t('saasSettings.editor.modules.invoiceServiceRequestsDescription'),
+    icon: 'i-lucide-file-input'
   }
 }))
 function toggle(moduleId: PortalModuleId, enabled: boolean) {

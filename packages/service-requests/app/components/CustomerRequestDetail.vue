@@ -67,10 +67,12 @@ const formatDate = (date: string | Date) => {
         <span class="font-semibold">{{ t('features.serviceRequests.fields.assignedTo') }}:</span>
         {{ request.assignedTo.name || request.assignedTo.email }}
       </div> -->
-      <div v-if="request.resolvedAt">
-        <span class="font-semibold">{{ t('features.serviceRequests.fields.resolvedAt') }}:</span>
-        {{ formatDate(request.resolvedAt) }}
+      <div v-if="request.requestedDate">
+        <span class="font-semibold">{{ t('features.serviceRequests.fields.requestedDate') }}:</span>
+        {{ formatDate(request.requestedDate) }}
       </div>
+      <div v-if="request.serviceLocation"><span class="font-semibold">{{ t('features.serviceRequests.fields.serviceLocation') }}:</span> {{ request.serviceLocation }}</div>
+      <div v-if="request.contactName"><span class="font-semibold">{{ t('features.serviceRequests.fields.contactName') }}:</span> {{ request.contactName }}</div>
     </div>
   </div>
 </template>

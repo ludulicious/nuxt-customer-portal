@@ -62,6 +62,15 @@ export const useServiceRequests = () => {
   }
 
   const getRequest = (id: string) => $fetch<ServiceRequest>(`/api/service-requests/${id}`)
+  const addComment = (id: string, body: string) =>
+    $fetch(`/api/service-requests/${id}/comments`, { method: 'POST', body: { body } })
+  const uploadAttachment = (id: string, file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    return $fetch(`/api/service-requests/${id}/attachments`, { method: 'POST', body })
+  }
+  const decideQuote = (requestId: string, quoteId: string, action: 'accept' | 'decline') =>
+    $fetch(`/api/service-requests/${requestId}/quotes/${quoteId}/decision`, { method: 'POST', body: { action } })
   const getStatusBadgeText = (status: ServiceRequestStatus) =>
     t(`features.serviceRequests.status.${status.toLowerCase()}`)
   const getPriorityBadgeText = (priority: ServiceRequestPriority) =>
@@ -78,10 +87,14 @@ export const useServiceRequests = () => {
   const getStatusColor = (status: ServiceRequestStatus) =>
     (
       ({
-        OPEN: 'primary',
+        NEW: 'primary',
+        EVALUATING: 'warning',
+        AWAITING_APPROVAL: 'info',
+        ACCEPTED: 'success',
         IN_PROGRESS: 'warning',
-        RESOLVED: 'success',
-        CLOSED: 'neutral'
+        COMPLETED: 'success',
+        DECLINED: 'error',
+        CANCELLED: 'neutral'
       }) as const
     )[status]
 
@@ -92,7 +105,7 @@ export const useServiceRequests = () => {
       badgeText: '',
       badgeColor: 'neutral' as const
     },
-    ...(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((value) => ({
+    ...(['NEW', 'EVALUATING', 'AWAITING_APPROVAL', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'DECLINED', 'CANCELLED'] as const).map((value) => ({
       label: getStatusBadgeText(value),
       value,
       badgeText: getStatusBadgeText(value),
@@ -124,6 +137,9 @@ export const useServiceRequests = () => {
     updateRequest,
     deleteRequest,
     getRequest,
+    addComment,
+    uploadAttachment,
+    decideQuote,
     getStatusColor,
     getPriorityBadgeText,
     getPriorityColor,

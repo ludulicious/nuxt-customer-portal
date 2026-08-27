@@ -31,12 +31,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = updateServiceRequestSchema.parse(await readBody(event))
-  const row = await updateServiceRequest(id, {
-    title: data.title,
-    description: data.description,
-    priority: data.priority,
-    category: data.category
-  })
+  if (scope.organizationType === 'CLIENT' && existing.status !== 'NEW') {
+    throw createError({ statusCode: 409, message: 'Request details are locked after evaluation starts' })
+  }
+  const row = await updateServiceRequest(id, data, scope.session.user.id)
   if (!row) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }

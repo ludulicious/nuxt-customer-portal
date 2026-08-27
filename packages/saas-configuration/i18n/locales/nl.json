@@ -70,6 +70,8 @@
         "serviceRequestsDescription": "Laat klanten verzoeken indienen en de voortgang volgen.",
         "invoiceTimesheets": "Factuur uit urenregistratie",
         "invoiceTimesheetsDescription": "Zet goedgekeurde uren om in factuurregels; vereist Urenregistratie en Facturen.",
+        "invoiceServiceRequests": "Factuur uit serviceaanvraag",
+        "invoiceServiceRequestsDescription": "Zet een geaccepteerde offerte om in een conceptfactuur; vereist Serviceaanvragen en Facturen.",
         "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt."
       },
       "actions": {

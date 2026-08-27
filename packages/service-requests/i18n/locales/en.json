@@ -32,10 +32,14 @@
         }
       },
       "status": {
-        "open": "Open",
-        "in_progress": "In Progress",
-        "resolved": "Resolved",
-        "closed": "Closed"
+        "new": "New",
+        "evaluating": "Evaluating",
+        "awaiting_approval": "Awaiting approval",
+        "accepted": "Accepted",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "declined": "Declined",
+        "cancelled": "Cancelled"
       },
       "priority": {
         "low": "Low",
@@ -51,6 +55,8 @@
         "status": "Filter by status",
         "priority": "Filter by priority",
         "category": "Filter by category"
+        ,"allAssignees": "All assignees",
+        "unassigned": "Unassigned"
       },
       "fields": {
         "title": "Title",
@@ -62,8 +68,15 @@
         "createdBy": "Created by",
         "assignedTo": "Assigned to",
         "createdAt": "Created at",
-        "resolvedAt": "Resolved at",
-        "internalNotes": "Internal notes"
+        "internalNotes": "Internal notes",
+        "contactName": "Contact name",
+        "contactEmail": "Contact email",
+        "contactPhone": "Contact phone",
+        "requestedDate": "Requested date",
+        "serviceLocation": "Service location",
+        "comment": "Comment",
+        "validUntil": "Valid until",
+        "currency": "Currency"
       },
       "actions": {
         "back": "Back to requests",
@@ -72,12 +85,35 @@
         "resolve": "Resolve",
         "close": "Close",
         "saveChanges": "Save changes",
-        "adminActions": "Admin actions"
+        "adminActions": "Workflow and assignment",
+        "addComment": "Add comment",
+        "createQuote": "Create quote",
+        "sendQuote": "Send quote",
+        "acceptQuote": "Accept quote",
+        "declineQuote": "Decline quote",
+        "addLine": "Add line",
+        "removeLine": "Remove line",
+        "upload": "Upload attachment"
+        ,"cancelRequest": "Cancel request"
       },
       "placeholders": {
         "category": "e.g. Technical, Billing, General",
         "selectUser": "Select user",
-        "internalNotes": "Notes visible only to administrators"
+        "internalNotes": "Notes visible only to administrators",
+        "comment": "Add an update visible to the customer",
+        "serviceLocation": "Address or remote location"
+      },
+      "validation": {
+        "clientRequired": "Select a client.",
+        "titleMin": "Enter a title of at least 3 characters.",
+        "titleMax": "The title may contain at most 200 characters.",
+        "descriptionMin": "Enter a description of at least 10 characters.",
+        "descriptionMax": "The description may contain at most 5,000 characters.",
+        "contactNameMax": "The contact name may contain at most 200 characters.",
+        "emailInvalid": "Enter a valid email address.",
+        "contactPhoneMax": "The phone number may contain at most 80 characters.",
+        "serviceLocationMax": "The service location may contain at most 500 characters.",
+        "categoryMax": "The category may contain at most 100 characters."
       },
       "messages": {
         "createSuccess": "Service request created successfully",
@@ -89,7 +125,18 @@
         "deleteError": "Failed to delete service request",
         "notFound": "Request not found",
         "empty": "No service requests found",
-        "endOfList": "You've reached the end"
+        "endOfList": "You've reached the end",
+        "commentAdded": "Comment added",
+        "quoteCreated": "Quote draft created",
+        "quoteSent": "Quote sent",
+        "quoteDecided": "Quote response saved",
+        "detailsLocked": "Request details are locked after evaluation starts"
+      },
+      "sections": {
+        "details": "Request details",
+        "timeline": "Activity",
+        "attachments": "Attachments",
+        "quotes": "Quotes"
       },
       "confirmDelete": "Are you sure you want to delete this service request? This action cannot be undone."
     }

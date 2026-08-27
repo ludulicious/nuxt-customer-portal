@@ -24,6 +24,11 @@ const state = reactive({
   clientOrganizationId: props.initialData?.clientOrganizationId || '',
   title: props.initialData?.title || '',
   description: props.initialData?.description || '',
+  contactName: props.initialData?.contactName || '',
+  contactEmail: props.initialData?.contactEmail || '',
+  contactPhone: props.initialData?.contactPhone || '',
+  requestedDate: props.initialData?.requestedDate || '',
+  serviceLocation: props.initialData?.serviceLocation || '',
   priority: props.initialData?.priority || 'MEDIUM',
   category: props.initialData?.category || ''
 })
@@ -34,18 +39,37 @@ watch(
     state.title = data?.title || ''
     state.clientOrganizationId = data?.clientOrganizationId || ''
     state.description = data?.description || ''
+    state.contactName = data?.contactName || ''
+    state.contactEmail = data?.contactEmail || ''
+    state.contactPhone = data?.contactPhone || ''
+    state.requestedDate = data?.requestedDate || ''
+    state.serviceLocation = data?.serviceLocation || ''
     state.priority = data?.priority || 'MEDIUM'
     state.category = data?.category || ''
   }
 )
 
-const schema = z.object({
-  clientOrganizationId: activeOrganizationType.value === 'PROVIDER' ? z.string().min(1) : z.string().optional(),
-  title: z.string().min(3).max(200),
-  description: z.string().min(10).max(5000),
+const schema = computed(() => z.object({
+  clientOrganizationId: activeOrganizationType.value === 'PROVIDER'
+    ? z.string().min(1, t('features.serviceRequests.validation.clientRequired'))
+    : z.string().optional(),
+  title: z.string()
+    .min(3, t('features.serviceRequests.validation.titleMin'))
+    .max(200, t('features.serviceRequests.validation.titleMax')),
+  description: z.string()
+    .min(10, t('features.serviceRequests.validation.descriptionMin'))
+    .max(5000, t('features.serviceRequests.validation.descriptionMax')),
+  contactName: z.string().max(200, t('features.serviceRequests.validation.contactNameMax')).optional(),
+  contactEmail: z.union([
+    z.string().email(t('features.serviceRequests.validation.emailInvalid')),
+    z.literal('')
+  ]).optional(),
+  contactPhone: z.string().max(80, t('features.serviceRequests.validation.contactPhoneMax')).optional(),
+  requestedDate: z.string().optional(),
+  serviceLocation: z.string().max(500, t('features.serviceRequests.validation.serviceLocationMax')).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
-  category: z.string().max(100).optional()
-})
+  category: z.string().max(100, t('features.serviceRequests.validation.categoryMax')).optional()
+}))
 
 const { priorityOptions, getStatusBadgeText, getStatusColor } = useServiceRequests()
 
@@ -55,7 +79,7 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <UForm :state="state" :schema="schema" class="w-full" @submit="handleSubmit">
+  <UForm :state="state" :schema="schema" :validate-on="[]" class="w-full" @submit="handleSubmit">
     <!-- Wrap in real DOM nodes so spacing is guaranteed -->
     <div class="space-y-6">
       <ClientsClientPicker
@@ -75,6 +99,24 @@ const handleSubmit = () => {
           />
         </UFormField>
       </div>
+
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <UFormField :label="t('features.serviceRequests.fields.contactName')" name="contactName">
+          <UInput v-model="state.contactName" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('features.serviceRequests.fields.contactEmail')" name="contactEmail">
+          <UInput v-model="state.contactEmail" type="email" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('features.serviceRequests.fields.contactPhone')" name="contactPhone">
+          <UInput v-model="state.contactPhone" type="tel" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('features.serviceRequests.fields.requestedDate')" name="requestedDate">
+          <UInput v-model="state.requestedDate" type="date" class="w-full" />
+        </UFormField>
+      </div>
+      <UFormField :label="t('features.serviceRequests.fields.serviceLocation')" name="serviceLocation">
+        <UInput v-model="state.serviceLocation" class="w-full" :placeholder="t('features.serviceRequests.placeholders.serviceLocation')" />
+      </UFormField>
 
       <div>
         <UFormField

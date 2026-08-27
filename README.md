@@ -21,6 +21,7 @@ MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, S
 | `@nuxt-customer-portal/timesheets`         | Optional time, approval, and reporting feature                                   |
 | `@nuxt-customer-portal/invoices`           | Standalone invoicing, delivery, payment, and client-access feature               |
 | `@nuxt-customer-portal/invoice-timesheets` | Optional bridge for invoicing approved Timesheets entries                        |
+| `@nuxt-customer-portal/invoice-service-requests` | Optional bridge for invoicing accepted Service Request quotes               |
 | `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
 | `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
 
@@ -30,7 +31,7 @@ All public packages are linked at `0.1.0-alpha.0`. This milestone produces and v
 
 ```bash
 pnpm add @nuxt-customer-portal/preset @nuxt-customer-portal/kit
-pnpm add @nuxt-customer-portal/service-requests @nuxt-customer-portal/timesheets @nuxt-customer-portal/invoices @nuxt-customer-portal/invoice-timesheets
+pnpm add @nuxt-customer-portal/service-requests @nuxt-customer-portal/timesheets @nuxt-customer-portal/invoices @nuxt-customer-portal/invoice-timesheets @nuxt-customer-portal/invoice-service-requests
 ```
 
 ```ts
@@ -43,6 +44,7 @@ export default definePortalConfig({
     '@nuxt-customer-portal/service-requests',
     '@nuxt-customer-portal/timesheets',
     '@nuxt-customer-portal/invoices',
+    '@nuxt-customer-portal/invoice-service-requests',
     '@nuxt-customer-portal/invoice-timesheets'
   ]
 })

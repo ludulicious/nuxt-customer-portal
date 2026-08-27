@@ -2,7 +2,7 @@ import { hasFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
 import { serviceRequestFeature } from '@nuxt-customer-portal/service-requests/shared/feature'
 import {
   findServiceRequest,
-  toServiceRequestDto
+  getServiceRequestDetail
 } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
 import {
   canAccessScopedRequest,
@@ -31,7 +31,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }
 
-  const dto = toServiceRequestDto(row)
+  const dto = await getServiceRequestDetail(id)
+  if (!dto) {
+throw createError({ statusCode: 404, message: 'Request not found' })
+}
   if (!(await hasFeatureAccess(scope.session, scope.organizationId, serviceRequestFeature.policy, 'manage'))) {
     dto.internalNotes = null
   }

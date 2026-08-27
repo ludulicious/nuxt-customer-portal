@@ -17,6 +17,12 @@ test('invoice-timesheets requires both source modules', () => {
   assert.equal(portalSettingsSchema.safeParse(settings).success, false)
 })
 
+test('invoice-service-requests requires both source modules', () => {
+  const settings = defaultPortalSettings()
+  settings.enabledModules = ['invoice-service-requests']
+  assert.equal(portalSettingsSchema.safeParse(settings).success, false)
+})
+
 test('branding assets fall back across color modes', () => {
   const branding = defaultPortalSettings().branding
   branding.logoLight = 'data:image/png;base64,YQ=='

@@ -3,7 +3,8 @@ const moduleApiPrefixes: Record<string, string[]> = {
   timesheets: ['/api/timesheets'],
   invoices: ['/api/invoices'],
   'service-requests': ['/api/service-requests'],
-  'invoice-timesheets': ['/api/invoice-timesheets']
+  'invoice-timesheets': ['/api/invoice-timesheets'],
+  'invoice-service-requests': ['/api/invoice-service-requests']
 }
 
 export default defineEventHandler(async (event) => {

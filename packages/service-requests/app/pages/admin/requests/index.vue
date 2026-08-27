@@ -8,16 +8,25 @@ const { requests, loading, pagination, stats, fetchAllRequests, adminUpdateReque
 
 const toast = useToast()
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 useSeoMeta({
   title: () => t('features.serviceRequests.navigation.manageRequests')
 })
 
 onMounted(() => {
-  fetchAllRequests()
+  fetchAllRequests({
+    search: typeof route.query.search === 'string' ? route.query.search : undefined,
+    status: typeof route.query.status === 'string' ? route.query.status as ServiceRequestFilters['status'] : undefined,
+    priority: typeof route.query.priority === 'string' ? route.query.priority as ServiceRequestFilters['priority'] : undefined,
+    assignedToId: typeof route.query.assignedToId === 'string' ? route.query.assignedToId : undefined,
+    page: Number(route.query.page) || 1
+  })
 })
 
 const handleFilter = (filters: ServiceRequestFilters) => {
+  router.replace({ query: Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== '')) as Record<string, string> })
   fetchAllRequests(filters)
 }
 

@@ -1,0 +1,1 @@
+export default { id: 'invoice-service-requests', version: '0.1.0-alpha.0', source: '@nuxt-customer-portal/invoice-service-requests', dependsOn: ['core', 'invoices', 'service-requests'], schema: './server/db/schema/invoice-service-requests.ts', migrations: './migrations' }

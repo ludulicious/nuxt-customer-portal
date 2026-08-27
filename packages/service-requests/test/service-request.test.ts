@@ -8,7 +8,7 @@ import layerNl from '../i18n/locales/nl.json' with { type: 'json' }
 import coreEn from '../../core/i18n/locales/en.json' with { type: 'json' }
 import coreNl from '../../core/i18n/locales/nl.json' with { type: 'json' }
 import { serviceRequestFeature } from '../shared/feature'
-import { filterServiceRequestSchema } from '../server/utils/service-request-validation'
+import { filterServiceRequestSchema, serviceRequestQuoteCreateSchema } from '../server/utils/service-request-validation'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -69,6 +69,27 @@ test('service-request dashboard separates manager attention from the general ove
     serviceRequestFeature.dashboardWidgets?.find((widget) => widget.id === 'service-requests-attention')?.area,
     'attention'
   )
+})
+
+test('production workflow exposes only deliberate transitions', () => {
+  const source = readFileSync(new URL('../server/utils/service-request-repository.ts', import.meta.url), 'utf8')
+  assert.match(source, /NEW: \['EVALUATING', 'DECLINED', 'CANCELLED'\]/)
+  assert.match(source, /COMPLETED: \[\], DECLINED: \[\], CANCELLED: \[\]/)
+})
+
+test('quote lines validate immutable invoice-ready amounts', () => {
+  const valid = { currency: 'EUR', validUntil: '2026-09-30', lines: [{ description: 'Service', quantityMilli: 1500, unit: 'hour', unitPriceMinor: 10000, vatRateBasisPoints: 2100 }] }
+  assert.equal(serviceRequestQuoteCreateSchema.safeParse(valid).success, true)
+  assert.equal(serviceRequestQuoteCreateSchema.safeParse({ ...valid, currency: 'euro' }).success, false)
+  assert.equal(serviceRequestQuoteCreateSchema.safeParse({ ...valid, lines: [] }).success, false)
+})
+
+test('workflow migration preserves legacy statuses and creates audit domains', () => {
+  const migration = readFileSync(new URL('../migrations/0002_production_workflow.sql', import.meta.url), 'utf8')
+  assert.match(migration, /WHEN 'OPEN' THEN 'NEW'/)
+  assert.match(migration, /ELSE 'COMPLETED'/)
+  assert.match(migration, /service_request_activity/)
+  assert.match(migration, /service_request_quote_line/)
 })
 
 function expectPagination(page: number, pageSize: number, offset: number, extra: Record<string, number> = {}) {

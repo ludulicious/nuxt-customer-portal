@@ -14,6 +14,7 @@
   "dependencies": {
     "@iconify-json/lucide": "^1.2.121",
     "@nuxt-customer-portal/invoice-timesheets": "workspace:*",
+    "@nuxt-customer-portal/invoice-service-requests": "workspace:*",
     "@nuxt-customer-portal/invoices": "workspace:*",
     "@nuxt-customer-portal/kit": "workspace:*",
     "@nuxt-customer-portal/preset": "workspace:*",

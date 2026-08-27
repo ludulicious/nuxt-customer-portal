@@ -31,11 +31,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = adminUpdateServiceRequestSchema.parse(await readBody(event))
-  const row = await updateServiceRequest(id, {
-    ...data,
-    resolvedAt: data.status === 'RESOLVED' ? new Date() : existing.resolvedAt,
-    closedAt: data.status === 'CLOSED' ? new Date() : existing.closedAt
-  })
+  const row = await updateServiceRequest(id, data, scope.session.user.id)
   if (!row) {
     throw createError({ statusCode: 404, message: 'Request not found' })
   }

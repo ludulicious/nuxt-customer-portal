@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const portalModuleIds = ['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'] as const
+export const portalModuleIds = ['timesheets', 'invoices', 'service-requests', 'invoice-timesheets', 'invoice-service-requests'] as const
 export type PortalModuleId = (typeof portalModuleIds)[number]
 export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
@@ -76,6 +76,12 @@ export const portalSettingsSchema = z
         path: ['enabledModules'],
         message: 'Invoice from timesheets requires both Timesheets and Invoices'
       })
+    }
+    if (
+      value.enabledModules.includes('invoice-service-requests') &&
+      (!value.enabledModules.includes('service-requests') || !value.enabledModules.includes('invoices'))
+    ) {
+      context.addIssue({ code: 'custom', path: ['enabledModules'], message: 'Invoice from service requests requires both Service Requests and Invoices' })
     }
   })
 
