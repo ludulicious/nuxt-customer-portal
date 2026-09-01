@@ -49,6 +49,9 @@ const tarballs = new Map<string, string>()
 try {
   for (const directory of packageDirectories) {
     const packageRoot = join(workspaceRoot, 'packages', directory)
+    const sourceManifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
+      version: string
+    }
     const before = new Set(readdirSync(tarballDirectory))
     execFileSync('pnpm', ['pack', '--pack-destination', tarballDirectory], { cwd: packageRoot, stdio: 'ignore' })
     const tarballName = readdirSync(tarballDirectory).find((file) => !before.has(file))
@@ -74,8 +77,10 @@ try {
     if (manifest.private) {
       throw new Error(`${manifest.name} is private in its tarball`)
     }
-    if (manifest.version !== '0.1.0-alpha.0') {
-      throw new Error(`${manifest.name} has an unlinked version`)
+    if (manifest.version !== sourceManifest.version) {
+      throw new Error(
+        `${manifest.name} tarball version ${manifest.version} does not match source version ${sourceManifest.version}`
+      )
     }
     if (manifest.license !== 'MIT' || !existsSync(join(contents, 'LICENSE'))) {
       throw new Error(`${manifest.name} is missing MIT metadata`)

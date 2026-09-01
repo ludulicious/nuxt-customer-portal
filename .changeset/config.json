@@ -15,7 +15,7 @@
       "@nuxt-customer-portal/kit"
     ]
   ],
-  "access": "restricted",
+  "access": "public",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": []

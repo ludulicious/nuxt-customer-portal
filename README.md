@@ -24,7 +24,7 @@ MIT-licensed Nuxt 4 layers for authentication, owner and client organizations, S
 | `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
 | `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
 
-All public packages are linked at `0.1.0-alpha.0`. This milestone produces and verifies tarballs but does not publish them.
+Public package versions are managed with Changesets. Publishing a GitHub release verifies the package tarballs and publishes every unpublished version to npm through trusted publishing.
 
 ## Consumer setup
 
