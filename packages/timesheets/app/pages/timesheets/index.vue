@@ -879,7 +879,7 @@ const runningDuration = computed(() => {
         <UButton
           v-if="dateEditable(selectedDay)"
           class="timesheet-mobile__add"
-          color="neutral"
+          color="primary"
           variant="outline"
           icon="i-lucide-plus"
           @click="openCreate(selectedDay)"

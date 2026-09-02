@@ -130,7 +130,7 @@ html[data-portal-theme='brutal']
 }
 
 html[data-portal-theme='brutal']
-  :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']) {
+  :where(button.bg-primary, .bg-blue-600, .bg-primary-600) {
   box-shadow: var(--shadow-hard-small);
   transition:
     background-color var(--dur-short) var(--ease-out),
@@ -140,14 +140,14 @@ html[data-portal-theme='brutal']
 
 @media (hover: hover) and (pointer: fine) {
   html[data-portal-theme='brutal']
-    :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):hover {
+    :where(button.bg-primary, .bg-blue-600, .bg-primary-600):hover {
     box-shadow: var(--shadow-hard-small);
     transform: translate(-1px, -1px);
   }
 }
 
 html[data-portal-theme='brutal']
-  :where(button[class*='bg-primary'], [class*='bg-blue-600'], [class*='bg-primary-600']):active {
+  :where(button.bg-primary, .bg-blue-600, .bg-primary-600):active {
   box-shadow: none;
   transform: translate(1px, 1px);
 }

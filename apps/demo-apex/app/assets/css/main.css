@@ -369,10 +369,11 @@ body {
   background-color: var(--ui-bg-accented) !important;
 }
 
-/* Primary buttons with better contrast */
-:root button[class*='bg-primary'],
-:root [class*='bg-blue-600'],
-:root [class*='bg-primary-600'] {
+/* Only solid backgrounds: substring matches also capture outline hover utilities
+   and overwrite the box-shadow that Tailwind uses for their border rings. */
+:root button.bg-primary,
+:root .bg-blue-600,
+:root .bg-primary-600 {
   box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
   transition:
     background-color 0.2s ease,
@@ -380,9 +381,9 @@ body {
     transform 0.2s ease;
 }
 
-:root button[class*='bg-primary']:hover,
-:root [class*='bg-blue-600']:hover,
-:root [class*='bg-primary-600']:hover {
+:root button.bg-primary:hover,
+:root .bg-blue-600:hover,
+:root .bg-primary-600:hover {
   box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
   transform: translateY(-1px);
 }
