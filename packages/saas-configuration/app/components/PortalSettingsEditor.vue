@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PortalOnboardingStep, PortalSettings } from '../../shared/settings'
 import { portalOnboardingSteps, portalSettingsSchema } from '../../shared/settings'
+import { primaryForeground } from '../../shared/primary-contrast'
 
 const props = defineProps<{ onboarding?: boolean }>()
 const { t } = useI18n()
@@ -62,6 +63,7 @@ const primaryColorStyle = computed<Record<string, string>>(() => {
   const primary = colorMode.value === 'dark' ? appearance.primaryDark : appearance.primaryLight
   return {
     '--portal-primary': primary,
+    '--portal-on-primary': primaryForeground(primary),
     '--ui-primary': primary,
     '--color-primary-500': primary,
     '--color-primary-600': primary

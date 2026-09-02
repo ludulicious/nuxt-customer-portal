@@ -4,6 +4,15 @@ const selectItem =
 
 export default defineAppConfig({
   ui: {
+    button: {
+      compoundVariants: [
+        {
+          color: 'primary',
+          variant: 'solid',
+          class: 'text-[color:var(--portal-on-primary,var(--ui-text-inverted))] hover:bg-primary active:bg-primary'
+        }
+      ]
+    },
     select: {
       slots: { content: dropdownContent, item: selectItem }
     },

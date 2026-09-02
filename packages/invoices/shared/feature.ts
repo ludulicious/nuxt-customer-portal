@@ -33,7 +33,7 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
         {
           id: 'sales-invoices',
           labelKey: 'features.invoices.salesInvoices',
-          icon: 'i-lucide-send',
+          icon: 'i-lucide-receipt-text',
           to: '/admin/invoices',
           exact: true,
           audiences: ['providerAdmin']

@@ -37,11 +37,11 @@ body {
 
 .timesheet-grid__cell--today {
   background: var(--ui-primary);
-  color: var(--ui-bg);
+  color: var(--portal-on-primary, var(--ui-bg));
 }
 
 .timesheet-grid__cell--today .text-muted {
-  color: var(--ui-bg);
+  color: var(--portal-on-primary, var(--ui-bg));
 }
 
 .timesheet-grid__identity {
@@ -189,12 +189,12 @@ body {
 
 .timesheet-mobile__day--active {
   background: var(--ui-primary);
-  color: var(--ui-bg);
+  color: var(--portal-on-primary, var(--ui-bg));
 }
 
 .timesheet-mobile__day--active strong,
 .timesheet-mobile__day--active small {
-  color: var(--ui-bg);
+  color: var(--portal-on-primary, var(--ui-bg));
 }
 
 .timesheet-mobile__day:focus-visible,

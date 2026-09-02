@@ -17,7 +17,7 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
   >
     <header class="mb-4 flex shrink-0 items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
       <div class="flex min-w-0 gap-3">
-        <UIcon name="i-lucide-send" class="mt-1 size-6 shrink-0 text-primary" />
+        <UIcon name="i-lucide-receipt-text" class="mt-1 size-6 shrink-0 text-primary" />
         <div class="min-w-0">
           <h1 class="text-2xl font-semibold">{{ t('features.invoices.salesInvoices') }}</h1>
           <p class="mt-1 hidden text-sm text-muted sm:block">
