@@ -27,12 +27,20 @@ const listing = useTimesheetsAdminList<ProjectDto>({
   defaultSort: 'name'
 })
 const activeProjects = listing.items
+const internalOrganizationLabel = computed(() =>
+  t('features.timesheets.admin.internalOrganization', { name: props.data.providerOrganization.name })
+)
+const projectClientLabel = (project: Pick<ProjectDto, 'internal' | 'clientName'>) =>
+  project.internal
+    ? t('features.timesheets.admin.internalOrganization', { name: project.clientName })
+    : project.clientName
 const projectFilters = computed(() => [
   {
     key: 'clientOrganizationId',
     placeholder: t('features.timesheets.admin.list.clientFilter'),
     items: [
       { label: t('features.timesheets.admin.list.allClients'), value: undefined },
+      { label: internalOrganizationLabel.value, value: props.data.providerOrganization.organizationId },
       ...props.data.clients.map((client) => ({ label: client.name, value: client.organizationId }))
     ]
   },
@@ -202,7 +210,7 @@ await listing.load()
                 <UBadge :color="statusColor(project.status)" variant="subtle">{{ statusLabel(project.status) }}</UBadge>
               </div>
               <p class="mt-1 text-sm text-muted">
-                {{ project.clientName }}{{ project.code ? ` · ${project.code}` : '' }}
+                {{ projectClientLabel(project) }}{{ project.code ? ` · ${project.code}` : '' }}
               </p>
               <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted">
                 <span

@@ -21,6 +21,7 @@ import type {
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 export interface TimesheetsAdminBootstrap {
+  providerOrganization: { organizationId: string; name: string }
   settings: { currency: string; timezone: string; weekStartsOn: number; internalApprovalsEnabled: boolean }
   clients: ClientDto[]
   availableClientOrganizations: ClientOrganizationOptionDto[]

@@ -275,6 +275,8 @@
         "typeProjectNameToDelete": "Typ “{name}” om te bevestigen dat je dit project permanent wilt verwijderen.",
         "projectNameConfirmation": "Projectnaam",
         "client": "Klant",
+        "internalOrganization": "{name} — Intern",
+        "internalProjectHelp": "Je kunt een intern project voor je eigen bedrijf maken, of klanten beheren om externe projecten toe te voegen.",
         "newClient": "Nieuwe klant",
         "linkClient": "Klant koppelen",
         "linkExistingOrganization": "Bestaande organisatie koppelen",

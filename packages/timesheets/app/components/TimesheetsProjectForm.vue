@@ -41,6 +41,13 @@ const availableActivities = computed(() =>
     .filter((activity) => activity.active || form.value.activityTypeIds.includes(activity.id))
     .map((activity) => ({ label: activity.name, value: activity.id }))
 )
+const clientOptions = computed(() => [
+  {
+    label: t('features.timesheets.admin.internalOrganization', { name: props.data.providerOrganization.name }),
+    value: props.data.providerOrganization.organizationId
+  },
+  ...props.data.clients.map((item) => ({ label: item.name, value: item.organizationId }))
+])
 const schema = computed(() =>
   z.object({
     clientOrganizationId: z.string().min(1, t('features.timesheets.validation.required')),
@@ -89,15 +96,10 @@ const createActivity = async () => {
     <UForm :state="form" :schema="schema" class="space-y-4" @submit="emit('submit')">
       <div>
         <UFormField name="clientOrganizationId" :label="t('features.timesheets.admin.client')" required>
-          <USelect
-            v-model="form.clientOrganizationId"
-            :items="data.clients.map((item) => ({ label: item.name, value: item.organizationId }))"
-            value-key="value"
-            class="w-full"
-          />
+          <USelect v-model="form.clientOrganizationId" :items="clientOptions" value-key="value" class="w-full" />
         </UFormField>
         <p v-if="!data.clients.length" class="mt-2 text-sm text-muted">
-          {{ t('features.timesheets.admin.createClientFirst') }}
+          {{ t('features.timesheets.admin.internalProjectHelp') }}
           <ULink to="/clients" class="text-primary">{{ t('features.timesheets.admin.manageClients') }}</ULink>
         </p>
       </div>

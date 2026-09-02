@@ -55,7 +55,10 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
     enabled: true,
     entries: report.rows.flatMap((row) => {
       const item = context.get(row.entryId)
-      return !item || used.has(row.entryId) || disputes.has(`${item.weeklyTimesheetId}:${item.clientOrganizationId}`)
+      return !item ||
+        item.clientOrganizationId === organizationId ||
+        used.has(row.entryId) ||
+        disputes.has(`${item.weeklyTimesheetId}:${item.clientOrganizationId}`)
         ? []
         : [
             {
@@ -102,6 +105,9 @@ export const createInvoiceFromTimesheets = async (
 ) => {
   await requireTimesheetWorkspace(organizationId)
   await requireInvoicesEnabled(organizationId)
+  if (input.clientOrganizationId === organizationId) {
+    throw createError({ statusCode: 400, message: 'Internal time entries cannot be invoiced' })
+  }
   return db.transaction(async (tx) => {
     const sourceIds = input.lines.flatMap((line) => line.timeEntryIds)
     if (new Set(sourceIds).size !== sourceIds.length) {

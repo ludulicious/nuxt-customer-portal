@@ -37,6 +37,11 @@ const activityNames = computed(() =>
 )
 const statusColor = computed(() => (props.project.status === 'ACTIVE' ? 'success' : 'neutral'))
 const statusLabel = computed(() => t(`features.timesheets.admin.projectStatus.${props.project.status.toLowerCase()}`))
+const clientLabel = computed(() =>
+  props.project.internal
+    ? t('features.timesheets.admin.internalOrganization', { name: props.project.clientName })
+    : props.project.clientName
+)
 
 const resetForm = () =>
   Object.assign(form, {
@@ -177,7 +182,7 @@ onKeyStroke('Escape', () => {
           <h1 class="truncate text-2xl font-semibold">{{ project.name }}</h1>
           <UBadge :color="statusColor" variant="subtle">{{ statusLabel }}</UBadge>
         </div>
-        <p class="mt-1 text-sm text-muted">{{ project.clientName }}{{ project.code ? ` · ${project.code}` : '' }}</p>
+        <p class="mt-1 text-sm text-muted">{{ clientLabel }}{{ project.code ? ` · ${project.code}` : '' }}</p>
       </div>
       <UButton size="sm" variant="outline" icon="i-lucide-pencil" @click="toggleEditing">
         {{ t('features.timesheets.admin.editProject') }}
@@ -207,7 +212,7 @@ onKeyStroke('Escape', () => {
         </div>
         <div>
           <dt class="text-sm text-muted">{{ t('features.timesheets.admin.client') }}</dt>
-          <dd>{{ project.clientName }}</dd>
+          <dd>{{ clientLabel }}</dd>
         </div>
         <div>
           <dt class="text-sm text-muted">{{ t('features.timesheets.admin.code') }}</dt>

@@ -275,6 +275,8 @@
         "typeProjectNameToDelete": "Type “{name}” to confirm that you want to permanently delete this project.",
         "projectNameConfirmation": "Project name",
         "client": "Client",
+        "internalOrganization": "{name} — Internal",
+        "internalProjectHelp": "You can create an internal project for your own company, or manage clients to add external projects.",
         "newClient": "New client",
         "linkClient": "Link client",
         "linkExistingOrganization": "Link existing organization",

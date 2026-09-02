@@ -37,6 +37,20 @@ test('every organization role shown by Timesheets has a translation', () => {
   }
 })
 
+test('internal projects use the provider organization without creating a client link', () => {
+  const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')
+  const form = readFileSync(new URL('../app/components/TimesheetsProjectForm.vue', import.meta.url), 'utf8')
+  const bootstrap = readFileSync(new URL('../server/api/timesheets/admin/bootstrap.get.ts', import.meta.url), 'utf8')
+
+  assert.match(repository, /clientOrganizationId === organizationId/)
+  assert.match(repository, /internal: item\.clientOrganizationId === organizationId/)
+  assert.match(repository, /clients\.length > 0 \|\| activeProjects\.some\(\(item\) => item\.internal\)/)
+  assert.match(form, /providerOrganization\.organizationId/)
+  assert.match(bootstrap, /providerOrganization/)
+  assert.equal(en.features.timesheets.admin.internalOrganization, '{name} — Internal')
+  assert.equal(nl.features.timesheets.admin.internalOrganization, '{name} — Intern')
+})
+
 test('provider workspace capabilities cannot leak into client organizations', () => {
   const capabilities = readFileSync(new URL('../server/api/timesheets/capabilities.get.ts', import.meta.url), 'utf8')
   const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')

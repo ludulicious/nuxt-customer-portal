@@ -170,6 +170,7 @@ export interface ProjectDto {
   id: string
   clientOrganizationId: string
   clientName: string
+  internal: boolean
   name: string
   code: string | null
   status: ProjectStatus

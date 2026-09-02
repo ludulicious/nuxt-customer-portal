@@ -256,6 +256,10 @@ export const linkClient = async (
 }
 
 export const ensureTimesheetClientSettings = async (organizationId: string, clientOrganizationId: string) => {
+  if (clientOrganizationId === organizationId) {
+    await ensureSettings(organizationId)
+    return null
+  }
   await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const [existing] = await db
     .select()
@@ -1075,7 +1079,7 @@ export const calculateTimesheetsSetupStatus = (
   const enabledMembers = team.filter((item) => item.canEnterTime)
   const missingDefaultTariffCount = enabledMembers.filter((item) => item.defaultHourlyRateMinor === null).length
   const status = {
-    hasClient: clients.length > 0,
+    hasClient: clients.length > 0 || activeProjects.some((item) => item.internal),
     hasActiveActivity: activeActivities.length > 0,
     hasConfiguredProject: activeProjects.some((item) => item.activityTypeIds.some((id) => activeActivityIds.has(id))),
     billableWorkExists,
@@ -1128,16 +1132,25 @@ const hydrateProjects = async (
     return []
   }
   const ids = projects.map((item) => item.id)
-  const [clients, assignments, rates] = await Promise.all([
+  const [clients, providerOrganizations, assignments, rates] = await Promise.all([
     listClients(organizationId),
+    db
+      .select({ id: organization.id, name: organization.name })
+      .from(organization)
+      .where(eq(organization.id, organizationId)),
     db.select().from(projectActivity).where(inArray(projectActivity.projectId, ids)),
     db.select().from(projectPersonTariff).where(inArray(projectPersonTariff.projectId, ids))
   ])
   const clientNames = new Map(clients.map((item) => [item.organizationId, item.name]))
+  const providerName = providerOrganizations[0]?.name ?? 'Unknown organization'
   return projects.map((item) => ({
     id: item.id,
     clientOrganizationId: item.clientOrganizationId,
-    clientName: clientNames.get(item.clientOrganizationId) ?? 'Unknown client',
+    clientName:
+      item.clientOrganizationId === organizationId
+        ? providerName
+        : (clientNames.get(item.clientOrganizationId) ?? 'Unknown client'),
+    internal: item.clientOrganizationId === organizationId,
     name: item.name,
     code: item.code,
     status: item.status,

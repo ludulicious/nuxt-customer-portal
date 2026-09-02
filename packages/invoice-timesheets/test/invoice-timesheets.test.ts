@@ -34,4 +34,7 @@ test('bridge owns only canonical integration endpoints and concurrency protectio
   assert.match(source, /DRAFT.*ISSUED.*PAID/)
   assert.match(source, /DISPUTED/)
   assert.match(source, /requireTimesheetWorkspace/)
+  assert.match(source, /item\.clientOrganizationId === organizationId/)
+  assert.match(source, /input\.clientOrganizationId === organizationId/)
+  assert.match(source, /Internal time entries cannot be invoiced/)
 })
