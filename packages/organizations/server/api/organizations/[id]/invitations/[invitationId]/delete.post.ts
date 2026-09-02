@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { checkOrganizationPermission } from '@nuxt-customer-portal/core/server/utils/permissions'
+import { changePendingInvitation } from '@nuxt-customer-portal/core/server/utils/invitation-management'
 
 defineRouteMeta({
   openAPI: {
@@ -37,13 +38,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
-  // Cancel invitation using Better Auth API
-  const result = await auth.api.cancelInvitation({
-    headers: event.headers,
-    body: {
-      invitationId
-    }
-  })
-
-  return result
+  return changePendingInvitation(organizationId, invitationId, { status: 'canceled' })
 })

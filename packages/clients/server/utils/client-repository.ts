@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { invitation, member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { clientModule, clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
+import { runClientCreatedHooks } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
 import type { ClientCreateInput, GenericClientListQuery, ClientUpdateInput } from './client-validation'
 
@@ -224,6 +225,7 @@ export const createClient = async (actorUserId: string, input: ClientCreateInput
       invoiceEmail: normalizeNullable(input.invoiceEmail),
       preferredLocale: input.preferredLocale
     })
+    await runClientCreatedHooks(tx, organizationId)
     for (const moduleId of [...new Set(input.moduleIds ?? [])]) {
       await tx.insert(clientModule).values({ id: nanoid(), organizationId, moduleId, enabledById: actorUserId })
     }

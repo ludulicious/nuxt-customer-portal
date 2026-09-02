@@ -100,7 +100,10 @@ export interface ClientTimesheetHistoryDto {
 }
 export interface ClientTimesheetSliceDto {
   weeklyTimesheetId: string
+  submissionId: string
   weekStartsOn: string
+  periodStartsOn: string
+  periodEndsOn: string
   person: string
   status: ClientReviewStatus
   version: number
@@ -118,7 +121,10 @@ export interface ClientApprovalItemDto {
   workspaceClientId: string
   supplierName: string
   weeklyTimesheetId: string
+  submissionId: string
   weekStartsOn: string
+  periodStartsOn: string
+  periodEndsOn: string
   person: string
   totalMinutes: number
   status: ClientReviewStatus
@@ -193,6 +199,23 @@ export interface TimeEntryDto {
   hourlyRateMinor: number
   currency: string
   timerStartedAt: string | null
+  submissionId: string | null
+  submissionStatus: TimesheetStatus | null
+}
+
+export interface TimesheetSubmissionDto {
+  id: string
+  periodStartsOn: string
+  periodEndsOn: string
+  status: TimesheetStatus
+  submittedAt: string | null
+  reviewedAt: string | null
+  reviewedById: string | null
+  reviewerName: string | null
+  reviewerImage: string | null
+  rejectionComment: string | null
+  version: number
+  entryIds: string[]
 }
 
 export interface WeekDto {
@@ -205,6 +228,7 @@ export interface WeekDto {
   reviewedById: string | null
   rejectionComment: string | null
   entries: TimeEntryDto[]
+  submissions: TimesheetSubmissionDto[]
 }
 
 export interface TimesheetBootstrapDto {
@@ -239,21 +263,51 @@ export interface TimesheetsDashboardDto {
     totalMinutes: number
     rejectionComment: string | null
     hasRunningTimer: boolean
+    batches: Array<{
+      id: string
+      status: TimesheetStatus
+      totalMinutes: number
+      periodStartsOn: string
+      periodEndsOn: string
+    }>
+    unsubmitted: {
+      totalMinutes: number
+      periodStartsOn: string
+      periodEndsOn: string
+    } | null
   }
   internalApprovals?: {
     pendingCount: number
     items: Array<
-      Pick<ApprovalQueueItemDto, 'id' | 'userName' | 'weekStartsOn' | 'totalMinutes' | 'submittedAt' | 'status'>
+      Pick<
+        ApprovalQueueItemDto,
+        | 'id'
+        | 'userName'
+        | 'weekStartsOn'
+        | 'periodStartsOn'
+        | 'periodEndsOn'
+        | 'totalMinutes'
+        | 'submittedAt'
+        | 'status'
+      >
     >
   }
   clientApprovals?: {
     pendingCount: number
     unassignedSupplierCount: number
-    items: Array<Pick<ClientApprovalItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>>
+    items: Array<
+      Pick<
+        ClientApprovalItemDto,
+        'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'periodStartsOn' | 'periodEndsOn' | 'totalMinutes'
+      >
+    >
   }
   supplierTimesheets?: {
     items: Array<
-      Pick<ClientSupplierTimesheetItemDto, 'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'totalMinutes'>
+      Pick<
+        ClientSupplierTimesheetItemDto,
+        'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'periodStartsOn' | 'periodEndsOn' | 'totalMinutes'
+      >
     >
   }
 }
@@ -263,6 +317,8 @@ export interface ApprovalQueueItemDto {
   userId: string
   userName: string
   weekStartsOn: string
+  periodStartsOn: string
+  periodEndsOn: string
   status: TimesheetStatus
   totalMinutes: number
   billableMinutes: number

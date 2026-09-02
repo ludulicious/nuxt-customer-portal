@@ -199,6 +199,10 @@ export const reviewSchema = z
     }
   })
 
+export const submissionCreateSchema = z.object({
+  cutoffDate: isoDate
+})
+
 export const reportQuerySchema = z.object({
   from: isoDate.optional(),
   to: isoDate.optional(),

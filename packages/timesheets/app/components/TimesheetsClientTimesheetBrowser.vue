@@ -75,25 +75,11 @@ const formatDate = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`))
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-const weekNumber = (weekStartsOn: string) => {
-  const date = new Date(`${weekStartsOn}T12:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + 3)
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4, 12))
-  firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - ((firstThursday.getUTCDay() + 6) % 7))
-  return 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604_800_000)
-}
-const weekPeriod = (weekStartsOn: string) => {
-  const start = new Date(`${weekStartsOn}T12:00:00`)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  return t('features.timesheets.clientPortal.weekPeriod', {
-    week: weekNumber(weekStartsOn),
-    period: new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric' }).formatRange(
-      start,
-      end
-    )
-  })
-}
+const batchPeriod = (from: string, to: string) =>
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric' }).formatRange(
+    new Date(`${from}T12:00:00`),
+    new Date(`${to}T12:00:00`)
+  )
 const reviewStatusColor = (value: ClientReviewStatus): BadgeColor =>
   value === 'APPROVED' ? 'success' : value === 'DISPUTED' ? 'error' : 'warning'
 const isApprovalItem = (item: ReadonlyItem): item is ReadonlyApprovalItem => 'canAct' in item
@@ -114,7 +100,7 @@ const closeDetail = () => router.push({ query: { ...route.query, [detailQueryKey
 const act = async (item: ReadonlyApprovalItem, action: 'APPROVE' | 'DISPUTE') => {
   saving.value = true
   try {
-    await api.reviewClientSlice(item.workspaceClientId, item.weeklyTimesheetId, {
+    await api.reviewClientSlice(item.workspaceClientId, item.submissionId, {
       action,
       expectedVersion: item.version,
       comment: action === 'DISPUTE' ? disputeComment.value : null
@@ -168,7 +154,9 @@ await listing.load()
         <header class="flex flex-wrap items-start justify-between gap-4 border-b border-default p-5">
           <div>
             <p class="text-sm font-medium text-primary">{{ selected.supplierName }}</p>
-            <h2 class="mt-1 text-xl font-semibold">{{ weekPeriod(selected.weekStartsOn) }}</h2>
+            <h2 class="mt-1 text-xl font-semibold">
+              {{ batchPeriod(selected.periodStartsOn, selected.periodEndsOn) }}
+            </h2>
             <p class="mt-1 text-sm text-muted">
               {{ selected.person }} ·
               {{ t('features.timesheets.approvals.totalHours', { hours: hours(selected.totalMinutes) }) }}
@@ -344,7 +332,7 @@ await listing.load()
               <div>
                 <p class="flex items-center gap-2 text-sm font-medium">
                   <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0 text-muted" />{{
-                    weekPeriod(item.weekStartsOn)
+                    batchPeriod(item.periodStartsOn, item.periodEndsOn)
                   }}
                 </p>
                 <p class="mt-1 flex items-center gap-2 text-xs text-muted">

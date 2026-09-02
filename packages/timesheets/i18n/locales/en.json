@@ -15,6 +15,18 @@
       "total": "Total",
       "weekNumber": "Week {number}",
       "weekTotal": "Week total",
+      "submissions": {
+        "title": "Submit time for approval",
+        "description": "Choose the last date to include. Submitted entries are locked, while later entries remain editable.",
+        "cutoff": "Submit through",
+        "summary": "{range} · {entries} · {hours}",
+        "entryCount": "{count} entry | {count} entries",
+        "partialStatus": "Partial week: {period} · {status}",
+        "remainingWeekUnsubmitted": "Other hours in this week have not been submitted yet",
+        "confirm": "Submit for approval",
+        "resubmit": "Resubmit corrected entries",
+        "none": "Unsubmitted"
+      },
       "addEntry": "Add time",
       "mobile": {
         "dayTotal": "Day total",
@@ -143,14 +155,17 @@
         "entryDisabledTitle": "Time registration is disabled",
         "entryDisabled": "You cannot register or submit time for this organization. Contact an administrator if you need access.",
         "runningTimer": "Stop this member’s running timer before disabling time registration.",
-        "timerStartTitle": "The timer could not be started"
+        "timerStartTitle": "The timer could not be started",
+        "internalApproverRequiredTitle": "An approver is required",
+        "internalApproverRequired": "No approver is assigned to you. Assign one or disable approval for your account in Internal approval settings.",
+        "configureApprovers": "Configure approvals"
       },
       "setup": {
         "title": "Finish setting up Timesheets",
         "description": "Complete these steps before your team starts registering billable time.",
         "waitingTitle": "Waiting for an administrator to set up Timesheets",
         "waitingDescription": "Timesheets setup is not complete yet. An organization administrator needs to configure the required clients, activities, projects, and team rates.",
-        "client": "Link a client",
+        "client": "Add a client",
         "activity": "Create an active activity",
         "project": "Configure an active project",
         "rates": "Add default rates ({count} missing)"
@@ -194,6 +209,10 @@
         "maximumDuration": "The duration cannot exceed 24 hours"
       },
       "dashboard": {
+        "duration": {
+          "one": "{value} hour",
+          "other": "{value} hours"
+        },
         "error": "This timesheet summary could not be loaded.",
         "retry": "Try again",
         "unavailable": "This summary is not available.",
@@ -201,6 +220,8 @@
         "review": "Review",
         "myWeek": {
           "title": "My week",
+          "period": "Week {week} · {start} to {end}",
+          "compactPeriod": "{start} to {end}",
           "rejected": "Changes requested",
           "timerRunning": "A timer is currently running."
         },

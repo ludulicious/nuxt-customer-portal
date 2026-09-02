@@ -1,4 +1,16 @@
 {
+  "invitationManagement": {
+    "pending": "Openstaande uitnodigingen",
+    "empty": "Geen openstaande uitnodigingen.",
+    "edit": "Rol van uitnodiging wijzigen",
+    "role": "Rol",
+    "save": "Rol opslaan",
+    "revoke": "Uitnodiging intrekken",
+    "confirmRevoke": "De uitnodiging voor {email} intrekken? Deze uitnodigingslink werkt daarna niet meer.",
+    "updated": "Rol van uitnodiging gewijzigd",
+    "revoked": "Uitnodiging ingetrokken",
+    "failed": "Deze uitnodiging kon niet worden gewijzigd. Vernieuw de pagina en probeer opnieuw."
+  },
   "common": {
     "refresh": "Verversen",
     "cancel": "Annuleren",

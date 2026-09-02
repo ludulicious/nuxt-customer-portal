@@ -38,6 +38,7 @@
       "memberEmail": "Member email",
       "invite": "Invite",
       "invited": "Invitation sent",
+      "inviteFailed": "The invitation could not be sent. Check the email address and try again.",
       "pendingInvitations": "Pending invitations",
       "noPendingInvitations": "No pending invitations.",
       "invitationPending": "Pending",

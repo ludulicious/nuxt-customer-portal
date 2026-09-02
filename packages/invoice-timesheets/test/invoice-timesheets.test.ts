@@ -33,6 +33,8 @@ test('bridge owns only canonical integration endpoints and concurrency protectio
   assert.match(source, /pg_advisory_xact_lock/)
   assert.match(source, /DRAFT.*ISSUED.*PAID/)
   assert.match(source, /DISPUTED/)
+  assert.match(source, /timesheetSubmission\.status/)
+  assert.match(source, /timeEntry\.submissionId/)
   assert.match(source, /requireTimesheetWorkspace/)
   assert.match(source, /item\.clientOrganizationId === organizationId/)
   assert.match(source, /input\.clientOrganizationId === organizationId/)

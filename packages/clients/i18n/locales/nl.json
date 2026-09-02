@@ -38,6 +38,7 @@
       "memberEmail": "E-mailadres van lid",
       "invite": "Uitnodigen",
       "invited": "Uitnodiging verstuurd",
+      "inviteFailed": "De uitnodiging kon niet worden verstuurd. Controleer het e-mailadres en probeer opnieuw.",
       "pendingInvitations": "Openstaande uitnodigingen",
       "noPendingInvitations": "Geen openstaande uitnodigingen.",
       "invitationPending": "Openstaand",

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { genericClientListQuerySchema } from '../server/utils/client-validation'
+import { genericClientInvitationSchema, genericClientListQuerySchema } from '../server/utils/client-validation'
 
 const listUrl = new URL('../app/pages/clients/index.vue', import.meta.url)
 const detailPageUrl = new URL('../app/pages/clients/[id].vue', import.meta.url)
@@ -46,4 +46,19 @@ test('client status filters support a default active view and a durable all view
   assert.equal(genericClientListQuerySchema.parse({ status: 'all' }).status, 'all')
   assert.equal(genericClientListQuerySchema.parse({ status: 'active' }).status, 'active')
   assert.equal(genericClientListQuerySchema.parse({ status: 'archived' }).status, 'archived')
+})
+
+test('client invitations use UForm with Zod validation and surface request failures', async () => {
+  const detailComponent = await readFile(detailComponentUrl, 'utf8')
+
+  assert.match(detailComponent, /<UForm\s+:state="invitationForm"\s+:schema="invitationSchema"/)
+  assert.match(detailComponent, /:schema="invitationSchema"\s+novalidate/)
+  assert.match(detailComponent, /<UFormField name="email">/)
+  assert.match(detailComponent, /email: z\.string\(\)\.trim\(\)\.email/)
+  assert.match(detailComponent, /features\.clients\.inviteFailed/)
+  assert.equal(
+    genericClientInvitationSchema.safeParse({ email: 'duikersgids!marpos.nl', role: 'admin' }).success,
+    false
+  )
+  assert.equal(genericClientInvitationSchema.safeParse({ email: 'duikersgids@marpos.nl', role: 'admin' }).success, true)
 })

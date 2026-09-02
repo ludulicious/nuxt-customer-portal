@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     organizationId,
     session.user.id,
     role === 'owner' || role === 'admin' || session.user.role === 'admin',
-    getRouterParam(event, 'weekId')!,
+    getRouterParam(event, 'submissionId')!,
     input.action,
     input.expectedVersion,
     input.comment

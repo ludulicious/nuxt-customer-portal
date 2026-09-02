@@ -52,52 +52,90 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
 
   const pendingInternal = approvalQueue.filter((item) => item.status === 'SUBMITTED')
   const actionableClient = clientApprovals?.items.filter((item) => item.status === 'PENDING' && item.canAct) ?? []
+  const unsubmittedEntries = bootstrap?.week.entries.filter((entry) => !entry.submissionId) ?? []
+  const unsubmittedDates = unsubmittedEntries.map((entry) => entry.entryDate).sort()
 
   return {
     ...(bootstrap && {
       myWeek: {
         weekStartsOn: bootstrap.week.weekStartsOn,
-        status: bootstrap.week.status,
+        status: bootstrap.week.submissions.some((item) => item.status === 'REJECTED')
+          ? ('REJECTED' as const)
+          : bootstrap.week.submissions.some((item) => item.status === 'SUBMITTED')
+            ? ('SUBMITTED' as const)
+            : bootstrap.week.entries.length > 0 &&
+                bootstrap.week.entries.every((item) => item.submissionStatus === 'APPROVED')
+              ? ('APPROVED' as const)
+              : ('DRAFT' as const),
         totalMinutes: bootstrap.week.entries.reduce((sum, entry) => sum + entry.durationMinutes, 0),
-        rejectionComment: bootstrap.week.rejectionComment,
-        hasRunningTimer: bootstrap.week.entries.some((entry) => Boolean(entry.timerStartedAt))
+        rejectionComment:
+          bootstrap.week.submissions.find((item) => item.status === 'REJECTED')?.rejectionComment ?? null,
+        hasRunningTimer: bootstrap.week.entries.some((entry) => Boolean(entry.timerStartedAt)),
+        batches: bootstrap.week.submissions.map((submission) => ({
+          id: submission.id,
+          status: submission.status,
+          totalMinutes: bootstrap.week.entries
+            .filter((entry) => entry.submissionId === submission.id)
+            .reduce((sum, entry) => sum + entry.durationMinutes, 0),
+          periodStartsOn: submission.periodStartsOn,
+          periodEndsOn: submission.periodEndsOn
+        })),
+        unsubmitted: unsubmittedEntries.length
+          ? {
+              totalMinutes: unsubmittedEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0),
+              periodStartsOn: unsubmittedDates[0]!,
+              periodEndsOn: unsubmittedDates.at(-1)!
+            }
+          : null
       }
     }),
     ...(hasInternalApprovals && {
       internalApprovals: {
         pendingCount: pendingInternal.length,
-        items: approvalQueue.slice(0, 5).map(({ id, userName, weekStartsOn, totalMinutes, submittedAt, status }) => ({
-          id,
-          userName,
-          weekStartsOn,
-          totalMinutes,
-          submittedAt,
-          status
-        }))
+        items: approvalQueue
+          .slice(0, 5)
+          .map(({ id, userName, weekStartsOn, periodStartsOn, periodEndsOn, totalMinutes, submittedAt, status }) => ({
+            id,
+            userName,
+            weekStartsOn,
+            periodStartsOn,
+            periodEndsOn,
+            totalMinutes,
+            submittedAt,
+            status
+          }))
       }
     }),
     ...(reviewWorkspaces.length && {
       clientApprovals: {
         pendingCount: clientApprovals?.pendingCount ?? 0,
         unassignedSupplierCount: reviewerSuppliers.filter((item) => item.reviewerCount === 0).length,
-        items: actionableClient.slice(0, 5).map(({ id, supplierName, person, weekStartsOn, totalMinutes }) => ({
-          id,
-          supplierName,
-          person,
-          weekStartsOn,
-          totalMinutes
-        }))
+        items: actionableClient
+          .slice(0, 5)
+          .map(({ id, supplierName, person, weekStartsOn, periodStartsOn, periodEndsOn, totalMinutes }) => ({
+            id,
+            supplierName,
+            person,
+            weekStartsOn,
+            periodStartsOn,
+            periodEndsOn,
+            totalMinutes
+          }))
       }
     }),
     ...(canViewSupplierTime && {
       supplierTimesheets: {
-        items: supplierTimesheets.slice(0, 5).map(({ id, supplierName, person, weekStartsOn, totalMinutes }) => ({
-          id,
-          supplierName,
-          person,
-          weekStartsOn,
-          totalMinutes
-        }))
+        items: supplierTimesheets
+          .slice(0, 5)
+          .map(({ id, supplierName, person, weekStartsOn, periodStartsOn, periodEndsOn, totalMinutes }) => ({
+            id,
+            supplierName,
+            person,
+            weekStartsOn,
+            periodStartsOn,
+            periodEndsOn,
+            totalMinutes
+          }))
       }
     })
   }

@@ -49,7 +49,7 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
     }
   ],
   dashboardWidgets: [
-    { id: 'invoices-sales', component: 'InvoicesDashboardSalesInvoices', area: 'main', size: 'half', order: 30 },
+    { id: 'invoices-sales', component: 'InvoicesDashboardSalesInvoices', area: 'main', size: 'half', order: 15 },
     { id: 'invoices-received', component: 'InvoicesDashboardReceivedInvoices', area: 'main', size: 'half', order: 40 }
   ],
   clientIntegration: {

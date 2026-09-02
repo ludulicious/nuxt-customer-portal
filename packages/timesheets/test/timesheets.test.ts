@@ -9,7 +9,8 @@ import {
   entryCreateSchema,
   organizationCapabilitiesUpdateSchema,
   reviewSchema,
-  settingsUpdateSchema
+  settingsUpdateSchema,
+  submissionCreateSchema
 } from '../server/utils/timesheet-validation'
 import { mondayFor } from '../shared/timesheet-dates'
 
@@ -49,6 +50,16 @@ test('internal projects use the provider organization without creating a client 
   assert.match(bootstrap, /providerOrganization/)
   assert.equal(en.features.timesheets.admin.internalOrganization, '{name} — Internal')
   assert.equal(nl.features.timesheets.admin.internalOrganization, '{name} — Intern')
+})
+
+test('Timesheets synchronizes every canonical client independently of module enablement', () => {
+  const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')
+  const clientSync = readFileSync(new URL('../server/plugins/client-sync.ts', import.meta.url), 'utf8')
+
+  assert.match(repository, /listSelectableClients\(\)/)
+  assert.match(repository, /insert\(workspaceClient\)/)
+  assert.match(repository, /onConflictDoNothing\(\)/)
+  assert.match(clientSync, /registerClientCreatedHook/)
 })
 
 test('provider workspace capabilities cannot leak into client organizations', () => {
@@ -126,6 +137,26 @@ test('entry, review, settings, and week boundaries remain valid', () => {
     true
   )
   assert.equal(reviewSchema.safeParse({ action: 'REJECT' }).success, false)
+  assert.equal(submissionCreateSchema.safeParse({ cutoffDate: '2026-08-31' }).success, true)
+  assert.equal(submissionCreateSchema.safeParse({ cutoffDate: '31-08-2026' }).success, false)
   assert.equal(settingsUpdateSchema.parse({ currency: 'eur' }).currency, 'EUR')
   assert.equal(mondayFor('2026-08-12'), '2026-08-10')
+})
+
+test('rolling submissions use entry-scoped batches and preserve the weekly container', () => {
+  const schema = readFileSync(new URL('../server/db/schema/timesheets.ts', import.meta.url), 'utf8')
+  const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')
+  const migration = readFileSync(new URL('../migrations/0002_submission_batches.sql', import.meta.url), 'utf8')
+  const page = readFileSync(new URL('../app/pages/timesheets/index.vue', import.meta.url), 'utf8')
+
+  assert.match(schema, /export const timesheetSubmission/)
+  assert.match(schema, /submissionId: text\('submission_id'/)
+  assert.match(repository, /isNull\(timeEntry\.submissionId\)/)
+  assert.match(repository, /lte\(timeEntry\.entryDate, cutoffDate\)/)
+  assert.match(repository, /pg_advisory_xact_lock/)
+  assert.match(repository, /resubmitSubmission/)
+  assert.match(migration, /INSERT INTO "timesheets"\."submission"/)
+  assert.match(migration, /UPDATE "timesheets"\."time_entry"/)
+  assert.match(page, /submissionCutoff/)
+  assert.match(page, /entry\.submissionStatus/)
 })

@@ -74,7 +74,9 @@ export const useTimesheets = () => {
 
   const stopTimer = () => $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'DELETE' as never })
 
-  const submitWeek = (id: string) => $fetch(`/api/timesheets/weeks/${id}/submit`, { method: 'POST' })
+  const submitWeek = (id: string, cutoffDate: string) =>
+    $fetch(`/api/timesheets/weeks/${id}/submissions`, { method: 'POST', body: { cutoffDate } })
+  const resubmitSubmission = (id: string) => $fetch(`/api/timesheets/submissions/${id}/resubmit`, { method: 'POST' })
 
   const adminBootstrap = (section?: string) =>
     $fetch<TimesheetsAdminBootstrap>('/api/timesheets/admin/bootstrap', { query: section ? { section } : undefined })
@@ -104,9 +106,9 @@ export const useTimesheets = () => {
     $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
   const reviewClientSlice = (
     workspaceClientId: string,
-    weekId: string,
+    submissionId: string,
     input: { action: 'APPROVE' | 'DISPUTE'; expectedVersion: number; comment?: string | null }
-  ) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${weekId}`, { method: 'POST', body: input })
+  ) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${submissionId}`, { method: 'POST', body: input })
   const clientReviewers = (workspaceClientId: string) =>
     $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
   const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) =>
@@ -155,7 +157,7 @@ export const useTimesheets = () => {
   ) => $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
   const updateSettings = (input: { currency?: string; timezone?: string }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
-  const reviewWeek = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
+  const reviewSubmission = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
     $fetch(`/api/timesheets/internal-approvals/${id}`, {
       method: 'POST',
       body: { action, comment }
@@ -177,6 +179,7 @@ export const useTimesheets = () => {
     startTimer,
     stopTimer,
     submitWeek,
+    resubmitSubmission,
     adminBootstrap,
     createClient,
     getClientDeletionEligibility,
@@ -204,7 +207,7 @@ export const useTimesheets = () => {
     setTeamTariff,
     updateTeamMemberSettings,
     updateSettings,
-    reviewWeek,
+    reviewSubmission,
     getReport
   }
 }

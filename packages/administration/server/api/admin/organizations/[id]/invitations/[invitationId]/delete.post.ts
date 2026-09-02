@@ -7,6 +7,7 @@ import {
 } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser } from '@nuxt-customer-portal/core/shared/types/index'
+import { changePendingInvitation } from '@nuxt-customer-portal/core/server/utils/invitation-management'
 
 defineRouteMeta({
   openAPI: {
@@ -65,8 +66,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Invitation not found' })
   }
 
-  // Delete the invitation directly from database
-  await db.delete(invitationTable).where(eq(invitationTable.id, invitationId))
-
-  return { success: true, message: 'Invitation cancelled successfully' }
+  return changePendingInvitation(organizationId, invitationId, { status: 'canceled' })
 })

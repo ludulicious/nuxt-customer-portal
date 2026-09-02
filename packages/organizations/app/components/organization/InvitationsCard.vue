@@ -45,31 +45,6 @@ const resend = async (invitation: Invitation) => {
     busyInvitationId.value = null
   }
 }
-
-const cancel = async (invitation: Invitation) => {
-  if (!confirm(t('organization.members.confirm.cancelInvitation'))) {
-    return
-  }
-  try {
-    busyInvitationId.value = invitation.id
-    await $fetch(`/api/organizations/${props.organizationId}/invitations/${invitation.id}/delete`, { method: 'POST' })
-    toast.add({
-      title: t('common.success'),
-      description: t('organization.members.invitations.deleteSuccess'),
-      color: 'success'
-    })
-    emit('refresh')
-  } catch (error) {
-    const apiError = error as ApiError
-    toast.add({
-      title: t('common.error'),
-      description: apiError.message || t('organization.members.errors.cancelFailed'),
-      color: 'error'
-    })
-  } finally {
-    busyInvitationId.value = null
-  }
-}
 </script>
 
 <template>
@@ -113,14 +88,14 @@ const cancel = async (invitation: Invitation) => {
               :aria-label="t('organization.members.invitations.resend')"
               @click="resend(invitation)"
             />
-            <UButton
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="ghost"
-              size="sm"
-              :disabled="busyInvitationId !== null"
-              :aria-label="t('organization.members.invitations.delete')"
-              @click="cancel(invitation)"
+            <InvitationActions
+              v-if="invitation.status === 'pending'"
+              :endpoint="`/api/organizations/${organizationId}/invitations/${invitation.id}`"
+              :email="invitation.email"
+              :role="invitation.role ?? null"
+              can-edit
+              can-revoke
+              @refresh="emit('refresh')"
             />
           </template>
         </div>

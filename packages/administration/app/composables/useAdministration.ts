@@ -7,6 +7,18 @@ import type {
 } from '@nuxt-customer-portal/core/shared/types/index'
 
 export const useAdministration = () => {
+  const listInvitations = (page: number, search: string) =>
+    $fetch<{
+      items: Array<{
+        id: string
+        email: string
+        role: string | null
+        organizationId: string
+        organizationName: string
+        expiresAt: string
+      }>
+      total: number
+    }>('/api/admin/invitations', { query: { page, search } })
   const searchUsers = async (search: string) =>
     await $fetch<AdminUsersResponse>('/api/admin/users', {
       query: search.trim() ? { search: search.trim() } : undefined
@@ -20,5 +32,5 @@ export const useAdministration = () => {
   const linkOrganizationMember = async (organizationId: string, input: { userId: string; role: MemberRole }) =>
     await $fetch(`/api/admin/organizations/${organizationId}/members`, { method: 'POST', body: input })
 
-  return { searchUsers, getUser, updateUserRole, linkOrganizationMember }
+  return { searchUsers, getUser, updateUserRole, linkOrganizationMember, listInvitations }
 }

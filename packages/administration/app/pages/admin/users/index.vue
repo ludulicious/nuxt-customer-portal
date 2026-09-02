@@ -324,6 +324,8 @@ await loadUsers()
           </UCard>
         </div>
 
+        <AdminPendingInvitations :search="searchQuery" />
+
         <div v-if="loading" class="grid gap-3" role="status">
           <USkeleton v-for="index in 4" :key="index" class="h-24 w-full rounded-lg" />
           <span class="sr-only">{{ t('admin.user.list.loading') }}</span>

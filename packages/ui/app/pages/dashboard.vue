@@ -5,8 +5,13 @@ const { currentUser } = usePortalSession()
 const { isNotificationsSlideoverOpen } = useDashboard()
 
 const areas = ['attention', 'main', 'aside'] as const
-const widgetsByArea = computed(() =>
-  Object.fromEntries(areas.map((area) => [area, dashboardWidgets.value.filter((widget) => widget.area === area)]))
+const orderedDashboardWidgets = computed(() =>
+  [...dashboardWidgets.value].sort(
+    (left, right) =>
+      left.order - right.order ||
+      areas.indexOf(left.area) - areas.indexOf(right.area) ||
+      left.id.localeCompare(right.id)
+  )
 )
 const sizeClass = (size: 'full' | 'half' | 'third') =>
   ({
@@ -55,15 +60,9 @@ useSeoMeta({ title: () => t('dashboard.seo.title'), description: () => t('dashbo
           <p class="mt-1 text-sm text-muted">{{ t('dashboard.introduction') }}</p>
         </header>
 
-        <section
-          v-for="area in areas"
-          v-show="widgetsByArea[area]?.length"
-          :key="area"
-          :aria-label="t(`dashboard.areas.${area}`)"
-        >
-          <h2 class="sr-only">{{ t(`dashboard.areas.${area}`) }}</h2>
+        <section v-if="orderedDashboardWidgets.length" :aria-label="t('dashboard.title')">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div v-for="widget in widgetsByArea[area]" :key="widget.id" :class="sizeClass(widget.size)">
+            <div v-for="widget in orderedDashboardWidgets" :key="widget.id" :class="sizeClass(widget.size)">
               <DashboardContribution :component="widget.component" />
             </div>
           </div>

@@ -23,7 +23,9 @@ export const useTimesheetMutationError = () => {
           ? 'features.timesheets.errors.entryDisabled'
           : code === TIMESHEET_ERROR_CODES.runningTimer
             ? 'features.timesheets.errors.runningTimer'
-            : 'features.timesheets.errors.generic'
+            : code === TIMESHEET_ERROR_CODES.internalApproverRequired
+              ? 'features.timesheets.errors.internalApproverRequired'
+              : 'features.timesheets.errors.generic'
     toast.add({ title: t(titleKey), description: t(descriptionKey), color: 'error' })
   }
 

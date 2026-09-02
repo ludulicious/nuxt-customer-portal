@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { addDays, getISOWeek, parseISO } from 'date-fns'
+
 const props = defineProps<{ section: 'myWeek' | 'internalApprovals' | 'clientApprovals' }>()
 const { t, locale } = useI18n()
 const { data, pending, error, refresh } = await useTimesheetsDashboard()
@@ -8,6 +10,14 @@ interface DashboardCardValue {
   totalMinutes: number
   rejectionComment: string | null
   hasRunningTimer: boolean
+  batches: Array<{
+    id: string
+    status: string
+    totalMinutes: number
+    periodStartsOn: string
+    periodEndsOn: string
+  }>
+  unsubmitted: { totalMinutes: number; periodStartsOn: string; periodEndsOn: string } | null
   pendingCount: number
   unassignedSupplierCount: number
   items: Array<{
@@ -22,8 +32,43 @@ interface DashboardCardValue {
 }
 const value = computed(() => data.value?.[props.section] as unknown as DashboardCardValue | undefined)
 const minutes = (amount: number) => `${Math.floor(amount / 60)}:${String(amount % 60).padStart(2, '0')}`
+const duration = (amount: number) =>
+  t(amount === 60 ? 'features.timesheets.dashboard.duration.one' : 'features.timesheets.dashboard.duration.other', {
+    value: minutes(amount)
+  })
 const date = (input: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${input}T00:00:00`))
+const weekPeriod = (weekStartsOn: string) => {
+  const start = parseISO(weekStartsOn)
+  const end = addDays(start, 6)
+  const sameYear = start.getFullYear() === end.getFullYear()
+  const startLabel = new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: sameYear ? undefined : 'numeric'
+  }).format(start)
+  const endLabel = new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(end)
+  return t('features.timesheets.dashboard.myWeek.period', {
+    week: getISOWeek(start),
+    start: startLabel,
+    end: endLabel
+  })
+}
+const compactPeriod = (from: string, to: string) => {
+  const start = parseISO(from)
+  const end = parseISO(to)
+  const formatter = new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short' })
+  return from === to
+    ? formatter.format(start)
+    : t('features.timesheets.dashboard.myWeek.compactPeriod', {
+        start: formatter.format(start),
+        end: formatter.format(end)
+      })
+}
 const title = computed(() => t(`features.timesheets.dashboard.${props.section}.title`))
 const icon = computed(
   () =>
@@ -58,10 +103,25 @@ const icon = computed(
     <template v-else-if="section === 'myWeek'">
       <div class="flex items-end justify-between gap-4">
         <div>
-          <p class="text-3xl font-semibold tabular-nums">{{ minutes(value.totalMinutes) }}</p>
+          <p class="text-3xl font-semibold tabular-nums">{{ duration(value.totalMinutes) }}</p>
           <p class="mt-1 text-sm text-muted">
-            {{ date(value.weekStartsOn) }} · {{ t(`features.timesheets.status.${value.status.toLowerCase()}`) }}
+            {{ weekPeriod(value.weekStartsOn) }}
           </p>
+          <div class="mt-2 flex flex-wrap gap-1.5">
+            <UBadge
+              v-for="batch in value.batches"
+              :key="batch.id"
+              :color="batch.status === 'APPROVED' ? 'success' : batch.status === 'REJECTED' ? 'error' : 'warning'"
+              variant="subtle"
+            >
+              {{ t(`features.timesheets.status.${batch.status.toLowerCase()}`) }}: {{ duration(batch.totalMinutes) }} ·
+              {{ compactPeriod(batch.periodStartsOn, batch.periodEndsOn) }}
+            </UBadge>
+            <UBadge v-if="value.unsubmitted" color="neutral" variant="subtle">
+              {{ t('features.timesheets.submissions.none') }}: {{ duration(value.unsubmitted.totalMinutes) }} ·
+              {{ compactPeriod(value.unsubmitted.periodStartsOn, value.unsubmitted.periodEndsOn) }}
+            </UBadge>
+          </div>
         </div>
         <UButton to="/timesheets" variant="outline" trailing-icon="i-lucide-arrow-right">
           {{ t('features.timesheets.dashboard.open') }}
@@ -97,7 +157,7 @@ const icon = computed(
             ><strong>{{ item.userName }}</strong
             ><span class="block text-muted">{{ date(item.weekStartsOn) }}</span></span
           ><span class="shrink-0 text-right"
-            ><strong class="block tabular-nums">{{ minutes(item.totalMinutes) }}</strong
+            ><strong class="block tabular-nums">{{ duration(item.totalMinutes) }}</strong
             ><span class="text-xs text-muted">{{
               t(`features.timesheets.status.${item.status.toLowerCase()}`)
             }}</span></span
@@ -127,7 +187,7 @@ const icon = computed(
           <span class="truncate"
             ><strong>{{ item.person }}</strong
             ><span class="block text-muted">{{ item.supplierName }}</span></span
-          ><span class="shrink-0 text-muted">{{ minutes(item.totalMinutes) }}</span>
+          ><span class="shrink-0 text-muted">{{ duration(item.totalMinutes) }}</span>
         </li>
       </ul>
     </template>

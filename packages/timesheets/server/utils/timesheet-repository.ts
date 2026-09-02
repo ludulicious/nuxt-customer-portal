@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm'
 import {
   db,
   getPortalOrganizationsByIds,
@@ -8,8 +8,7 @@ import {
 import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import {
   getClient as getSharedClient,
-  listSelectableClients,
-  requireClientModuleEnabled
+  listSelectableClients
 } from '@nuxt-customer-portal/clients/server/utils/client-repository'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 import {
@@ -24,11 +23,13 @@ import {
   timesheetClientReview,
   timesheetClientReviewHistory,
   timesheetApprovalHistory,
+  timesheetSubmission,
   weeklyTimesheet,
   workspaceClient,
   workspaceClientReviewer,
   workspaceSettings,
   type TimeEntryRecord,
+  type TimesheetSubmissionRecord,
   type WeeklyTimesheetRecord
 } from '@nuxt-customer-portal/timesheets/server/db/schema/timesheets'
 import type {
@@ -56,7 +57,7 @@ import { hasInvalidProjectActivityAssignments, type ReportQuery } from './timesh
 import { addIsoDays, mondayFor } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { TIMESHEET_ERROR_CODES } from '@nuxt-customer-portal/timesheets/shared/timesheet-errors'
 
-const toEntryDto = (row: TimeEntryRecord): TimeEntryDto => ({
+const toEntryDto = (row: TimeEntryRecord, submissionStatus: TimeEntryDto['submissionStatus'] = null): TimeEntryDto => ({
   id: row.id,
   projectId: row.projectId,
   activityTypeId: row.activityTypeId,
@@ -66,20 +67,46 @@ const toEntryDto = (row: TimeEntryRecord): TimeEntryDto => ({
   billable: row.billableSnapshot,
   hourlyRateMinor: row.hourlyRateMinorSnapshot,
   currency: row.currencySnapshot,
-  timerStartedAt: row.timerStartedAt?.toISOString() ?? null
+  timerStartedAt: row.timerStartedAt?.toISOString() ?? null,
+  submissionId: row.submissionId,
+  submissionStatus
 })
 
-const toWeekDto = (row: WeeklyTimesheetRecord, entries: TimeEntryRecord[]): WeekDto => ({
-  id: row.id,
-  userId: row.userId,
-  weekStartsOn: row.weekStartsOn,
-  status: row.status,
-  submittedAt: row.submittedAt?.toISOString() ?? null,
-  reviewedAt: row.reviewedAt?.toISOString() ?? null,
-  reviewedById: row.reviewedById,
-  rejectionComment: row.rejectionComment,
-  entries: entries.map(toEntryDto)
-})
+const toWeekDto = (
+  row: WeeklyTimesheetRecord,
+  entries: TimeEntryRecord[],
+  submissions: TimesheetSubmissionRecord[],
+  reviewers: Map<string, { name: string; image: string | null }>
+): WeekDto => {
+  const submissionById = new Map(submissions.map((submission) => [submission.id, submission]))
+  return {
+    id: row.id,
+    userId: row.userId,
+    weekStartsOn: row.weekStartsOn,
+    status: row.status,
+    submittedAt: row.submittedAt?.toISOString() ?? null,
+    reviewedAt: row.reviewedAt?.toISOString() ?? null,
+    reviewedById: row.reviewedById,
+    rejectionComment: row.rejectionComment,
+    entries: entries.map((entry) =>
+      toEntryDto(entry, entry.submissionId ? (submissionById.get(entry.submissionId)?.status ?? null) : null)
+    ),
+    submissions: submissions.map((submission) => ({
+      id: submission.id,
+      periodStartsOn: submission.periodStartsOn,
+      periodEndsOn: submission.periodEndsOn,
+      status: submission.status,
+      submittedAt: submission.submittedAt?.toISOString() ?? null,
+      reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+      reviewedById: submission.reviewedById,
+      reviewerName: submission.reviewedById ? (reviewers.get(submission.reviewedById)?.name ?? null) : null,
+      reviewerImage: submission.reviewedById ? (reviewers.get(submission.reviewedById)?.image ?? null) : null,
+      rejectionComment: submission.rejectionComment,
+      version: submission.version,
+      entryIds: entries.filter((entry) => entry.submissionId === submission.id).map((entry) => entry.id)
+    }))
+  }
+}
 
 const hasDatabaseErrorCode = (error: unknown, code: string): boolean => {
   let current = error as { code?: string; cause?: unknown } | undefined
@@ -90,6 +117,17 @@ const hasDatabaseErrorCode = (error: unknown, code: string): boolean => {
     current = current.cause as { code?: string; cause?: unknown } | undefined
   }
   return false
+}
+
+const currentIsoDateInTimezone = (timezone: string) => {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date())
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${value('year')}-${value('month')}-${value('day')}`
 }
 
 const listTeamMemberSettings = async (organizationId: string) => {
@@ -188,6 +226,25 @@ export const ensureWeek = async (organizationId: string, userId: string, dateStr
 }
 
 export const listClients = async (organizationId: string): Promise<ClientDto[]> => {
+  const selectableClients = await listSelectableClients()
+  const existingLinks = await db
+    .select({ clientOrganizationId: workspaceClient.clientOrganizationId })
+    .from(workspaceClient)
+    .where(eq(workspaceClient.workspaceOrganizationId, organizationId))
+  const linkedIds = new Set(existingLinks.map((link) => link.clientOrganizationId))
+  const missingClients = selectableClients.filter((client) => !linkedIds.has(client.id))
+  if (missingClients.length) {
+    await db
+      .insert(workspaceClient)
+      .values(
+        missingClients.map((client) => ({
+          id: nanoid(),
+          workspaceOrganizationId: organizationId,
+          clientOrganizationId: client.id
+        }))
+      )
+      .onConflictDoNothing()
+  }
   const links = await db
     .select()
     .from(workspaceClient)
@@ -195,9 +252,7 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
   if (!links.length) {
     return []
   }
-  const sharedClients = (await Promise.all(links.map((link) => getSharedClient(link.clientOrganizationId)))).filter(
-    Boolean
-  )
+  const sharedClients = selectableClients
   const byId = new Map(sharedClients.map((item) => [item!.organizationId, item!]))
   return links
     .flatMap((link) => {
@@ -224,7 +279,7 @@ export const listAvailableClientOrganizations = async (
   _userId: string,
   _hasSystemAccess: boolean
 ) => {
-  const [accessible, clients] = await Promise.all([listSelectableClients('timesheets'), listClients(organizationId)])
+  const [accessible, clients] = await Promise.all([listSelectableClients(), listClients(organizationId)])
   const linkedIds = new Set(clients.map((client) => client.organizationId))
   return accessible.filter((item) => !linkedIds.has(item.id))
 }
@@ -235,7 +290,6 @@ export const linkClient = async (
   _hasSystemAccess: boolean,
   clientOrganizationId: string
 ) => {
-  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const client = await getSharedClient(clientOrganizationId)
   if (!client) {
     throw createError({ statusCode: 404, message: 'Client organization not found' })
@@ -260,7 +314,6 @@ export const ensureTimesheetClientSettings = async (organizationId: string, clie
     await ensureSettings(organizationId)
     return null
   }
-  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const [existing] = await db
     .select()
     .from(workspaceClient)
@@ -387,13 +440,14 @@ export const listClientReviewerSuppliers = async (
         )
       ),
     db
-      .select({ supplierOrganizationId: weeklyTimesheet.organizationId })
+      .select({ supplierOrganizationId: timesheetSubmission.organizationId })
       .from(timesheetClientReview)
-      .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
+      .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timesheetClientReview.submissionId))
       .where(
         and(
           eq(timesheetClientReview.clientOrganizationId, clientOrganizationId),
-          eq(timesheetClientReview.status, 'PENDING')
+          eq(timesheetClientReview.status, 'PENDING'),
+          eq(timesheetSubmission.status, 'APPROVED')
         )
       ),
     listPortalOrganizationMembers(clientOrganizationId)
@@ -467,10 +521,16 @@ export const listClientApprovals = async (
   const reviews = await db
     .select()
     .from(timesheetClientReview)
-    .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
-    .where(eq(timesheetClientReview.clientOrganizationId, clientOrganizationId))
-  const weekIds = reviews.map((item) => item.client_review.weeklyTimesheetId)
-  if (!weekIds.length) {
+    .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timesheetClientReview.submissionId))
+    .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetSubmission.weeklyTimesheetId))
+    .where(
+      and(
+        eq(timesheetClientReview.clientOrganizationId, clientOrganizationId),
+        eq(timesheetSubmission.status, 'APPROVED')
+      )
+    )
+  const submissionIds = reviews.map((item) => item.client_review.submissionId).filter((id): id is string => Boolean(id))
+  if (!submissionIds.length) {
     return { isAdmin, pendingCount: 0, items: [] }
   }
   const [assignments, acted, entries, internalHistory, clientHistory] = await Promise.all([
@@ -487,7 +547,7 @@ export const listClientApprovals = async (
         )
       ),
     db
-      .select({ weeklyTimesheetId: timesheetClientReviewHistory.weeklyTimesheetId })
+      .select({ submissionId: timesheetClientReviewHistory.submissionId })
       .from(timesheetClientReviewHistory)
       .where(
         and(
@@ -502,7 +562,7 @@ export const listClientApprovals = async (
       .innerJoin(activityType, eq(activityType.id, timeEntry.activityTypeId))
       .innerJoin(user, eq(user.id, timeEntry.userId))
       .where(
-        and(inArray(timeEntry.weeklyTimesheetId, weekIds), eq(timeEntry.clientOrganizationId, clientOrganizationId))
+        and(inArray(timeEntry.submissionId, submissionIds), eq(timeEntry.clientOrganizationId, clientOrganizationId))
       )
       .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt)),
     db
@@ -511,7 +571,7 @@ export const listClientApprovals = async (
       .innerJoin(user, eq(user.id, timesheetApprovalHistory.actorUserId))
       .where(
         and(
-          inArray(timesheetApprovalHistory.weeklyTimesheetId, weekIds),
+          inArray(timesheetApprovalHistory.submissionId, submissionIds),
           inArray(timesheetApprovalHistory.action, ['SUBMITTED', 'APPROVED', 'REOPENED'])
         )
       ),
@@ -521,13 +581,13 @@ export const listClientApprovals = async (
       .innerJoin(user, eq(user.id, timesheetClientReviewHistory.actorUserId))
       .where(
         and(
-          inArray(timesheetClientReviewHistory.weeklyTimesheetId, weekIds),
+          inArray(timesheetClientReviewHistory.submissionId, submissionIds),
           eq(timesheetClientReviewHistory.clientOrganizationId, clientOrganizationId)
         )
       )
   ])
   const assignedLinks = new Set(assignments.map((item) => item.workspaceClientId))
-  const actedWeeks = new Set(acted.map((item) => item.weeklyTimesheetId))
+  const actedSubmissions = new Set(acted.map((item) => item.submissionId))
   const reviewerIds = [
     ...new Set(reviews.map((item) => item.client_review.reviewerUserId).filter((id): id is string => Boolean(id)))
   ]
@@ -545,12 +605,12 @@ export const listClientApprovals = async (
       )
     )
   const items = reviews
-    .flatMap(({ client_review: review, weekly_timesheet: week }) => {
-      const link = links.find((item) => item.link.workspaceOrganizationId === week.organizationId)
-      if (!link || (!isAdmin && !assignedLinks.has(link.link.id) && !actedWeeks.has(week.id))) {
+    .flatMap(({ client_review: review, submission, weekly_timesheet: week }) => {
+      const link = links.find((item) => item.link.workspaceOrganizationId === submission.organizationId)
+      if (!link || (!isAdmin && !assignedLinks.has(link.link.id) && !actedSubmissions.has(submission.id))) {
         return []
       }
-      const rows = entries.filter((item) => item.entry.weeklyTimesheetId === week.id)
+      const rows = entries.filter((item) => item.entry.submissionId === submission.id)
       if (!rows.length) {
         return []
       }
@@ -559,8 +619,11 @@ export const listClientApprovals = async (
           id: review.id,
           workspaceClientId: link.link.id,
           supplierName: link.supplierName,
-          weeklyTimesheetId: week.id,
+          weeklyTimesheetId: submission.id,
+          submissionId: submission.id,
           weekStartsOn: week.weekStartsOn,
+          periodStartsOn: submission.periodStartsOn,
+          periodEndsOn: submission.periodEndsOn,
           person: rows[0]!.personName,
           totalMinutes: rows.reduce((total, item) => total + item.entry.durationMinutes, 0),
           status: review.status,
@@ -582,7 +645,7 @@ export const listClientApprovals = async (
           })),
           history: [
             ...internalHistory
-              .filter((item) => item.history.weeklyTimesheetId === week.id)
+              .filter((item) => item.history.submissionId === submission.id)
               .map((item) => ({
                 id: item.history.id,
                 action:
@@ -596,7 +659,7 @@ export const listClientApprovals = async (
                 createdAt: item.history.createdAt.toISOString()
               })),
             ...clientHistory
-              .filter((item) => item.history.weeklyTimesheetId === week.id)
+              .filter((item) => item.history.submissionId === submission.id)
               .map((item) => ({
                 id: item.history.id,
                 action:
@@ -832,29 +895,39 @@ export const hasInternalApprovalAssignment = async (organizationId: string, appr
 type TimesheetTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId: string, userId?: string) => {
-  const conditions = [eq(weeklyTimesheet.organizationId, organizationId), eq(weeklyTimesheet.status, 'SUBMITTED')]
+  const conditions = [
+    eq(timesheetSubmission.organizationId, organizationId),
+    eq(timesheetSubmission.status, 'SUBMITTED')
+  ]
   if (userId) {
-    conditions.push(eq(weeklyTimesheet.userId, userId))
+    conditions.push(eq(timesheetSubmission.userId, userId))
   }
   const pending = await tx
     .select()
-    .from(weeklyTimesheet)
+    .from(timesheetSubmission)
     .where(and(...conditions))
-  for (const week of pending) {
+  for (const submission of pending) {
     const now = new Date()
     const [approved] = await tx
-      .update(weeklyTimesheet)
-      .set({ status: 'APPROVED', reviewedAt: now, reviewedById: null, rejectionComment: null })
-      .where(and(eq(weeklyTimesheet.id, week.id), eq(weeklyTimesheet.status, 'SUBMITTED')))
-      .returning({ id: weeklyTimesheet.id })
+      .update(timesheetSubmission)
+      .set({
+        status: 'APPROVED',
+        reviewedAt: now,
+        reviewedById: null,
+        rejectionComment: null,
+        version: sql`${timesheetSubmission.version} + 1`
+      })
+      .where(and(eq(timesheetSubmission.id, submission.id), eq(timesheetSubmission.status, 'SUBMITTED')))
+      .returning({ id: timesheetSubmission.id })
     if (!approved) {
       continue
     }
     await tx.insert(timesheetApprovalHistory).values({
       id: nanoid(),
-      weeklyTimesheetId: week.id,
+      weeklyTimesheetId: submission.weeklyTimesheetId,
+      submissionId: submission.id,
       action: 'APPROVED',
-      actorUserId: week.userId,
+      actorUserId: submission.userId,
       comment: 'Automatically approved because internal approval was disabled'
     })
     const representedClients = await tx
@@ -868,14 +941,15 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
           eq(workspaceClient.accessMode, 'REVIEW')
         )
       )
-      .where(eq(timeEntry.weeklyTimesheetId, week.id))
+      .where(eq(timeEntry.submissionId, submission.id))
     if (representedClients.length) {
       await tx
         .insert(timesheetClientReview)
         .values(
           representedClients.map((item) => ({
             id: nanoid(),
-            weeklyTimesheetId: week.id,
+            weeklyTimesheetId: submission.weeklyTimesheetId,
+            submissionId: submission.id,
             clientOrganizationId: item.clientOrganizationId,
             status: 'PENDING' as const
           }))
@@ -1404,8 +1478,16 @@ const resolveEntryContext = async (
   }
 }
 
-const requireEditableWeek = (week: WeeklyTimesheetRecord) => {
-  if (!['DRAFT', 'REJECTED'].includes(week.status)) {
+const requireEditableEntry = async (entry: TimeEntryRecord) => {
+  if (!entry.submissionId) {
+    return
+  }
+  const [submission] = await db
+    .select({ status: timesheetSubmission.status })
+    .from(timesheetSubmission)
+    .where(eq(timesheetSubmission.id, entry.submissionId))
+    .limit(1)
+  if (submission && !['DRAFT', 'REJECTED'].includes(submission.status)) {
     throw createError({ statusCode: 409, message: 'Submitted or approved time cannot be changed' })
   }
 }
@@ -1416,7 +1498,7 @@ export const getBootstrap = async (
   dateString?: string
 ): Promise<TimesheetBootstrapDto> => {
   const week = await ensureWeek(organizationId, userId, dateString)
-  const [settings, clients, projects, activities, team, entries] = await Promise.all([
+  const [settings, clients, projects, activities, team, entries, submissions] = await Promise.all([
     ensureSettings(organizationId),
     listClients(organizationId),
     listProjects(organizationId),
@@ -1426,8 +1508,21 @@ export const getBootstrap = async (
       .select()
       .from(timeEntry)
       .where(eq(timeEntry.weeklyTimesheetId, week.id))
-      .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt))
+      .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt)),
+    db
+      .select()
+      .from(timesheetSubmission)
+      .where(eq(timesheetSubmission.weeklyTimesheetId, week.id))
+      .orderBy(asc(timesheetSubmission.periodStartsOn), asc(timesheetSubmission.createdAt))
   ])
+  const reviewerIds = [...new Set(submissions.flatMap((submission) => submission.reviewedById ?? []))]
+  const reviewerRows = reviewerIds.length
+    ? await db
+        .select({ id: user.id, name: user.name, image: user.image })
+        .from(user)
+        .where(inArray(user.id, reviewerIds))
+    : []
+  const reviewers = new Map(reviewerRows.map((reviewer) => [reviewer.id, reviewer]))
   const canEnterTime = team.find((item) => item.id === userId)?.canEnterTime ?? true
   const setupStatus = calculateTimesheetsSetupStatus(clients, projects, activities, team)
   return {
@@ -1441,7 +1536,7 @@ export const getBootstrap = async (
     projects,
     activities,
     team,
-    week: toWeekDto(week, entries),
+    week: toWeekDto(week, entries, submissions, reviewers),
     canEnterTime,
     setupStatus
   }
@@ -1460,7 +1555,6 @@ export const createEntry = async (
 ) => {
   await requireMemberCanEnterTime(organizationId, userId)
   const week = await ensureWeek(organizationId, userId, input.entryDate)
-  requireEditableWeek(week)
   if (input.entryDate < week.weekStartsOn || input.entryDate > addIsoDays(week.weekStartsOn, 6)) {
     throw createError({ statusCode: 400, message: 'Entry date is outside the selected week' })
   }
@@ -1511,7 +1605,7 @@ export const updateEntry = async (
   if (!week) {
     throw createError({ statusCode: 404, message: 'Timesheet week not found' })
   }
-  requireEditableWeek(week)
+  await requireEditableEntry(current)
   if (current.timerStartedAt) {
     throw createError({ statusCode: 409, message: 'Stop the timer before editing' })
   }
@@ -1551,7 +1645,7 @@ export const deleteEntry = async (organizationId: string, userId: string, id: st
   if (!week) {
     throw createError({ statusCode: 404, message: 'Timesheet week not found' })
   }
-  requireEditableWeek(week)
+  await requireEditableEntry(current)
   await db.delete(timeEntry).where(eq(timeEntry.id, id))
 }
 
@@ -1576,7 +1670,6 @@ export const startTimer = async (
     throw createError({ statusCode: 409, message: 'Another timer is already running' })
   }
   const week = await ensureWeek(organizationId, userId, input.entryDate)
-  requireEditableWeek(week)
   const snapshots = await resolveEntryContext(organizationId, userId, input.projectId, input.activityTypeId)
   const [created] = await db
     .insert(timeEntry)
@@ -1628,9 +1721,10 @@ export const stopTimer = async (organizationId: string, userId: string) => {
   return toEntryDto(updated)
 }
 
-export const submitWeek = async (organizationId: string, userId: string, weekId: string) =>
+export const submitWeek = async (organizationId: string, userId: string, weekId: string, cutoffDate: string) =>
   db.transaction(async (tx) => {
     await requireMemberCanEnterTime(organizationId, userId)
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${weekId}`}))`)
     const [week] = await tx
       .select()
       .from(weeklyTimesheet)
@@ -1645,36 +1739,55 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
     if (!week) {
       throw createError({ statusCode: 404, message: 'Timesheet week not found' })
     }
-    requireEditableWeek(week)
-    const entries = await tx.select().from(timeEntry).where(eq(timeEntry.weeklyTimesheetId, week.id))
+    const [submissionSettings] = await tx
+      .select({ timezone: workspaceSettings.timezone })
+      .from(workspaceSettings)
+      .where(eq(workspaceSettings.organizationId, organizationId))
+      .limit(1)
+    const today = currentIsoDateInTimezone(submissionSettings?.timezone ?? 'UTC')
+    if (cutoffDate < week.weekStartsOn || cutoffDate > addIsoDays(week.weekStartsOn, 6) || cutoffDate > today) {
+      throw createError({
+        statusCode: 400,
+        message: 'Submission cutoff must be within the selected week and not in the future'
+      })
+    }
+    const entries = await tx
+      .select()
+      .from(timeEntry)
+      .where(
+        and(
+          eq(timeEntry.weeklyTimesheetId, week.id),
+          isNull(timeEntry.submissionId),
+          lte(timeEntry.entryDate, cutoffDate)
+        )
+      )
+      .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt))
     if (!entries.length) {
       throw createError({ statusCode: 422, message: 'An empty week cannot be submitted' })
     }
     if (entries.some((entry) => entry.timerStartedAt)) {
       throw createError({ statusCode: 409, message: 'Stop the running timer before submitting' })
     }
-    const [workspace, memberSetting, assignment] = await Promise.all([
-      tx
-        .select({ enabled: workspaceSettings.internalApprovalsEnabled })
-        .from(workspaceSettings)
-        .where(eq(workspaceSettings.organizationId, organizationId))
-        .limit(1),
-      tx
-        .select({ required: teamMemberSettings.internalApprovalRequired })
-        .from(teamMemberSettings)
-        .where(and(eq(teamMemberSettings.organizationId, organizationId), eq(teamMemberSettings.userId, userId)))
-        .limit(1),
-      tx
-        .select({ id: internalApproverAssignment.id })
-        .from(internalApproverAssignment)
-        .where(
-          and(
-            eq(internalApproverAssignment.organizationId, organizationId),
-            eq(internalApproverAssignment.submitterUserId, userId)
-          )
+    const workspace = await tx
+      .select({ enabled: workspaceSettings.internalApprovalsEnabled })
+      .from(workspaceSettings)
+      .where(eq(workspaceSettings.organizationId, organizationId))
+      .limit(1)
+    const memberSetting = await tx
+      .select({ required: teamMemberSettings.internalApprovalRequired })
+      .from(teamMemberSettings)
+      .where(and(eq(teamMemberSettings.organizationId, organizationId), eq(teamMemberSettings.userId, userId)))
+      .limit(1)
+    const assignment = await tx
+      .select({ id: internalApproverAssignment.id })
+      .from(internalApproverAssignment)
+      .where(
+        and(
+          eq(internalApproverAssignment.organizationId, organizationId),
+          eq(internalApproverAssignment.submitterUserId, userId)
         )
-        .limit(1)
-    ])
+      )
+      .limit(1)
     const requiresApproval = (workspace[0]?.enabled ?? true) && (memberSetting[0]?.required ?? true)
     if (requiresApproval && !assignment.length) {
       throw createError({
@@ -1684,20 +1797,34 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
       })
     }
     const now = new Date()
-    const [updated] = await tx
-      .update(weeklyTimesheet)
-      .set({
+    const submissionId = nanoid()
+    const [created] = await tx
+      .insert(timesheetSubmission)
+      .values({
+        id: submissionId,
+        weeklyTimesheetId: week.id,
+        organizationId,
+        userId,
+        periodStartsOn: entries[0]!.entryDate,
+        periodEndsOn: cutoffDate,
         status: requiresApproval ? 'SUBMITTED' : 'APPROVED',
         submittedAt: now,
-        reviewedAt: requiresApproval ? null : now,
-        reviewedById: null,
-        rejectionComment: null
+        reviewedAt: requiresApproval ? null : now
       })
-      .where(eq(weeklyTimesheet.id, week.id))
       .returning()
+    await tx
+      .update(timeEntry)
+      .set({ submissionId })
+      .where(
+        inArray(
+          timeEntry.id,
+          entries.map((entry) => entry.id)
+        )
+      )
     await tx.insert(timesheetApprovalHistory).values({
       id: nanoid(),
       weeklyTimesheetId: week.id,
+      submissionId,
       action: 'SUBMITTED',
       actorUserId: userId
     })
@@ -1705,6 +1832,7 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
       await tx.insert(timesheetApprovalHistory).values({
         id: nanoid(),
         weeklyTimesheetId: week.id,
+        submissionId,
         action: 'APPROVED',
         actorUserId: userId,
         comment: 'Automatically approved because internal approval is disabled'
@@ -1720,7 +1848,7 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
             eq(workspaceClient.accessMode, 'REVIEW')
           )
         )
-        .where(eq(timeEntry.weeklyTimesheetId, week.id))
+        .where(eq(timeEntry.submissionId, submissionId))
       if (representedClients.length) {
         await tx
           .insert(timesheetClientReview)
@@ -1728,6 +1856,122 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
             representedClients.map((item) => ({
               id: nanoid(),
               weeklyTimesheetId: week.id,
+              submissionId,
+              clientOrganizationId: item.clientOrganizationId,
+              status: 'PENDING' as const
+            }))
+          )
+          .onConflictDoNothing()
+      }
+    }
+    return created
+  })
+
+export const resubmitSubmission = async (organizationId: string, userId: string, submissionId: string) =>
+  db.transaction(async (tx) => {
+    await requireMemberCanEnterTime(organizationId, userId)
+    const [submission] = await tx
+      .select()
+      .from(timesheetSubmission)
+      .where(
+        and(
+          eq(timesheetSubmission.id, submissionId),
+          eq(timesheetSubmission.organizationId, organizationId),
+          eq(timesheetSubmission.userId, userId),
+          inArray(timesheetSubmission.status, ['DRAFT', 'REJECTED'])
+        )
+      )
+      .limit(1)
+    if (!submission) {
+      throw createError({ statusCode: 404, message: 'Editable submission not found' })
+    }
+    const entries = await tx.select().from(timeEntry).where(eq(timeEntry.submissionId, submission.id))
+    if (!entries.length) {
+      throw createError({ statusCode: 422, message: 'An empty submission cannot be submitted' })
+    }
+    if (entries.some((entry) => entry.timerStartedAt)) {
+      throw createError({ statusCode: 409, message: 'Stop the running timer before submitting' })
+    }
+    const workspace = await tx
+      .select({ enabled: workspaceSettings.internalApprovalsEnabled })
+      .from(workspaceSettings)
+      .where(eq(workspaceSettings.organizationId, organizationId))
+      .limit(1)
+    const memberSetting = await tx
+      .select({ required: teamMemberSettings.internalApprovalRequired })
+      .from(teamMemberSettings)
+      .where(and(eq(teamMemberSettings.organizationId, organizationId), eq(teamMemberSettings.userId, userId)))
+      .limit(1)
+    const assignment = await tx
+      .select({ id: internalApproverAssignment.id })
+      .from(internalApproverAssignment)
+      .where(
+        and(
+          eq(internalApproverAssignment.organizationId, organizationId),
+          eq(internalApproverAssignment.submitterUserId, userId)
+        )
+      )
+      .limit(1)
+    const requiresApproval = (workspace[0]?.enabled ?? true) && (memberSetting[0]?.required ?? true)
+    if (requiresApproval && !assignment.length) {
+      throw createError({
+        statusCode: 409,
+        message: 'No internal approver is configured for this member',
+        data: { code: TIMESHEET_ERROR_CODES.internalApproverRequired }
+      })
+    }
+    const now = new Date()
+    const entryDates = entries.map((entry) => entry.entryDate).sort()
+    const [updated] = await tx
+      .update(timesheetSubmission)
+      .set({
+        status: requiresApproval ? 'SUBMITTED' : 'APPROVED',
+        submittedAt: now,
+        reviewedAt: requiresApproval ? null : now,
+        reviewedById: null,
+        rejectionComment: null,
+        periodStartsOn: entryDates[0]!,
+        periodEndsOn: entryDates.at(-1)!,
+        version: sql`${timesheetSubmission.version} + 1`
+      })
+      .where(eq(timesheetSubmission.id, submission.id))
+      .returning()
+    await tx.insert(timesheetApprovalHistory).values({
+      id: nanoid(),
+      weeklyTimesheetId: submission.weeklyTimesheetId,
+      submissionId: submission.id,
+      action: 'SUBMITTED',
+      actorUserId: userId
+    })
+    if (!requiresApproval) {
+      await tx.insert(timesheetApprovalHistory).values({
+        id: nanoid(),
+        weeklyTimesheetId: submission.weeklyTimesheetId,
+        submissionId: submission.id,
+        action: 'APPROVED',
+        actorUserId: userId,
+        comment: 'Automatically approved because internal approval is disabled'
+      })
+      const representedClients = await tx
+        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
+        .from(timeEntry)
+        .innerJoin(
+          workspaceClient,
+          and(
+            eq(workspaceClient.workspaceOrganizationId, organizationId),
+            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
+            eq(workspaceClient.accessMode, 'REVIEW')
+          )
+        )
+        .where(eq(timeEntry.submissionId, submission.id))
+      if (representedClients.length) {
+        await tx
+          .insert(timesheetClientReview)
+          .values(
+            representedClients.map((item) => ({
+              id: nanoid(),
+              weeklyTimesheetId: submission.weeklyTimesheetId,
+              submissionId: submission.id,
               clientOrganizationId: item.clientOrganizationId,
               status: 'PENDING' as const
             }))
@@ -1763,22 +2007,23 @@ export const listApprovalQueue = async (
   if (!submitterIds.length) {
     return []
   }
-  const [weeks, members, settings] = await Promise.all([
+  const [submissions, members, settings] = await Promise.all([
     db
-      .select()
-      .from(weeklyTimesheet)
+      .select({ submission: timesheetSubmission, weekStartsOn: weeklyTimesheet.weekStartsOn })
+      .from(timesheetSubmission)
+      .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetSubmission.weeklyTimesheetId))
       .where(
         and(
-          eq(weeklyTimesheet.organizationId, organizationId),
-          inArray(weeklyTimesheet.userId, submitterIds),
-          inArray(weeklyTimesheet.status, ['SUBMITTED', 'APPROVED', 'REJECTED'])
+          eq(timesheetSubmission.organizationId, organizationId),
+          inArray(timesheetSubmission.userId, submitterIds),
+          inArray(timesheetSubmission.status, ['SUBMITTED', 'APPROVED', 'REJECTED'])
         )
       )
-      .orderBy(desc(weeklyTimesheet.weekStartsOn)),
+      .orderBy(desc(timesheetSubmission.periodEndsOn)),
     listPortalOrganizationMembers(organizationId),
     ensureSettings(organizationId)
   ])
-  if (!weeks.length) {
+  if (!submissions.length) {
     return []
   }
   const entries = await db
@@ -1786,8 +2031,8 @@ export const listApprovalQueue = async (
     .from(timeEntry)
     .where(
       inArray(
-        timeEntry.weeklyTimesheetId,
-        weeks.map((week) => week.id)
+        timeEntry.submissionId,
+        submissions.map((item) => item.submission.id)
       )
     )
     .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt))
@@ -1796,32 +2041,34 @@ export const listApprovalQueue = async (
     .from(timesheetClientReview)
     .where(
       inArray(
-        timesheetClientReview.weeklyTimesheetId,
-        weeks.map((week) => week.id)
+        timesheetClientReview.submissionId,
+        submissions.map((item) => item.submission.id)
       )
     )
   const names = new Map(members.map((member) => [member.id, member.name]))
-  return weeks.map((week) => {
-    const weekEntries = entries.filter((entry) => entry.weeklyTimesheetId === week.id)
+  return submissions.map(({ submission, weekStartsOn }) => {
+    const submissionEntries = entries.filter((entry) => entry.submissionId === submission.id)
     return {
-      id: week.id,
-      userId: week.userId,
-      userName: names.get(week.userId) ?? 'Unknown member',
-      weekStartsOn: week.weekStartsOn,
-      status: week.status,
-      totalMinutes: weekEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0),
-      billableMinutes: weekEntries
+      id: submission.id,
+      userId: submission.userId,
+      userName: names.get(submission.userId) ?? 'Unknown member',
+      weekStartsOn,
+      periodStartsOn: submission.periodStartsOn,
+      periodEndsOn: submission.periodEndsOn,
+      status: submission.status,
+      totalMinutes: submissionEntries.reduce((sum, entry) => sum + entry.durationMinutes, 0),
+      billableMinutes: submissionEntries
         .filter((entry) => entry.billableSnapshot)
         .reduce((sum, entry) => sum + entry.durationMinutes, 0),
-      billableAmountMinor: weekEntries.reduce(
+      billableAmountMinor: submissionEntries.reduce(
         (sum, entry) => sum + Math.round((entry.durationMinutes * entry.hourlyRateMinorSnapshot) / 60),
         0
       ),
       currency: settings.currency,
-      submittedAt: week.submittedAt?.toISOString() ?? null,
-      entries: weekEntries.map(toEntryDto),
+      submittedAt: submission.submittedAt?.toISOString() ?? null,
+      entries: submissionEntries.map((entry) => toEntryDto(entry, submission.status)),
       clientReviews: clientReviews
-        .filter((review) => review.weeklyTimesheetId === week.id)
+        .filter((review) => review.submissionId === submission.id)
         .map((review) => ({
           clientOrganizationId: review.clientOrganizationId,
           status: review.status,
@@ -1831,10 +2078,10 @@ export const listApprovalQueue = async (
   })
 }
 
-export const reviewWeek = async (
+export const reviewSubmission = async (
   organizationId: string,
   actorUserId: string,
-  weekId: string,
+  submissionId: string,
   action: 'APPROVE' | 'REJECT' | 'REOPEN',
   comment?: string | null
 ) =>
@@ -1851,13 +2098,13 @@ export const reviewWeek = async (
         data: { code: TIMESHEET_ERROR_CODES.internalApprovalUnauthorized }
       })
     }
-    const [week] = await tx
+    const [submission] = await tx
       .select()
-      .from(weeklyTimesheet)
-      .where(and(eq(weeklyTimesheet.id, weekId), eq(weeklyTimesheet.organizationId, organizationId)))
+      .from(timesheetSubmission)
+      .where(and(eq(timesheetSubmission.id, submissionId), eq(timesheetSubmission.organizationId, organizationId)))
       .limit(1)
-    if (!week) {
-      throw createError({ statusCode: 404, message: 'Timesheet week not found' })
+    if (!submission) {
+      throw createError({ statusCode: 404, message: 'Timesheet submission not found' })
     }
     const [assignment] = await tx
       .select({ id: internalApproverAssignment.id })
@@ -1865,7 +2112,7 @@ export const reviewWeek = async (
       .where(
         and(
           eq(internalApproverAssignment.organizationId, organizationId),
-          eq(internalApproverAssignment.submitterUserId, week.userId),
+          eq(internalApproverAssignment.submitterUserId, submission.userId),
           eq(internalApproverAssignment.approverUserId, actorUserId)
         )
       )
@@ -1877,14 +2124,14 @@ export const reviewWeek = async (
         data: { code: TIMESHEET_ERROR_CODES.internalApprovalUnauthorized }
       })
     }
-    if (action !== 'REOPEN' && week.status !== 'SUBMITTED') {
+    if (action !== 'REOPEN' && submission.status !== 'SUBMITTED') {
       throw createError({
         statusCode: 409,
         message: 'Only submitted weeks can be reviewed',
         data: { code: TIMESHEET_ERROR_CODES.internalApprovalStale }
       })
     }
-    if (action === 'REOPEN' && week.status !== 'APPROVED') {
+    if (action === 'REOPEN' && submission.status !== 'APPROVED') {
       throw createError({
         statusCode: 409,
         message: 'Only approved weeks can be reopened',
@@ -1895,7 +2142,7 @@ export const reviewWeek = async (
       const entries = await tx
         .select({ id: timeEntry.id })
         .from(timeEntry)
-        .where(eq(timeEntry.weeklyTimesheetId, week.id))
+        .where(eq(timeEntry.submissionId, submission.id))
       await assertTimeEntriesReopenable(
         organizationId,
         entries.map((entry) => entry.id)
@@ -1905,14 +2152,15 @@ export const reviewWeek = async (
     const nextStatus = action === 'APPROVE' ? 'APPROVED' : action === 'REJECT' ? 'REJECTED' : 'DRAFT'
     const expectedStatus = action === 'REOPEN' ? 'APPROVED' : 'SUBMITTED'
     const [updated] = await tx
-      .update(weeklyTimesheet)
+      .update(timesheetSubmission)
       .set({
         status: nextStatus,
         reviewedAt: action === 'REOPEN' ? null : now,
         reviewedById: action === 'REOPEN' ? null : actorUserId,
-        rejectionComment: action === 'REJECT' ? comment : null
+        rejectionComment: action === 'REJECT' ? comment : null,
+        version: sql`${timesheetSubmission.version} + 1`
       })
-      .where(and(eq(weeklyTimesheet.id, week.id), eq(weeklyTimesheet.status, expectedStatus)))
+      .where(and(eq(timesheetSubmission.id, submission.id), eq(timesheetSubmission.status, expectedStatus)))
       .returning()
     if (!updated) {
       throw createError({
@@ -1923,7 +2171,8 @@ export const reviewWeek = async (
     }
     await tx.insert(timesheetApprovalHistory).values({
       id: nanoid(),
-      weeklyTimesheetId: week.id,
+      weeklyTimesheetId: submission.weeklyTimesheetId,
+      submissionId: submission.id,
       action: action === 'APPROVE' ? 'APPROVED' : action === 'REJECT' ? 'REJECTED' : 'REOPENED',
       actorUserId,
       comment
@@ -1940,14 +2189,15 @@ export const reviewWeek = async (
             eq(workspaceClient.accessMode, 'REVIEW')
           )
         )
-        .where(eq(timeEntry.weeklyTimesheetId, week.id))
+        .where(eq(timeEntry.submissionId, submission.id))
       if (representedClients.length) {
         await tx
           .insert(timesheetClientReview)
           .values(
             representedClients.map((item) => ({
               id: nanoid(),
-              weeklyTimesheetId: week.id,
+              weeklyTimesheetId: submission.weeklyTimesheetId,
+              submissionId: submission.id,
               clientOrganizationId: item.clientOrganizationId,
               status: 'PENDING' as const
             }))
@@ -1966,7 +2216,7 @@ export const reviewWeek = async (
           version: sql`${timesheetClientReview.version} + 1`,
           updatedAt: now
         })
-        .where(eq(timesheetClientReview.weeklyTimesheetId, week.id))
+        .where(eq(timesheetClientReview.submissionId, submission.id))
     }
     return updated
   })
@@ -1992,7 +2242,7 @@ export const getReport = async (organizationId: string, filters: ReportQuery): P
     conditions.push(eq(timeEntry.billableSnapshot, filters.billable))
   }
 
-  const [entries, projects, activities, members, weeks, settings] = await Promise.all([
+  const [entries, projects, activities, members, submissions, settings] = await Promise.all([
     db
       .select()
       .from(timeEntry)
@@ -2001,23 +2251,24 @@ export const getReport = async (organizationId: string, filters: ReportQuery): P
     listProjects(organizationId),
     listActivities(organizationId),
     listPortalOrganizationMembers(organizationId),
-    db.select().from(weeklyTimesheet).where(eq(weeklyTimesheet.organizationId, organizationId)),
+    db.select().from(timesheetSubmission).where(eq(timesheetSubmission.organizationId, organizationId)),
     ensureSettings(organizationId)
   ])
   const projectMap = new Map(projects.map((item) => [item.id, item]))
   const activityMap = new Map(activities.map((item) => [item.id, item]))
   const memberMap = new Map(members.map((item) => [item.id, item]))
-  const weekMap = new Map(weeks.map((item) => [item.id, item]))
+  const submissionMap = new Map(submissions.map((item) => [item.id, item]))
   const rows: ReportRowDto[] = entries.flatMap((entry) => {
     const selectedProject = projectMap.get(entry.projectId)
-    const selectedWeek = weekMap.get(entry.weeklyTimesheetId)
-    if (!selectedProject || !selectedWeek) {
+    const selectedSubmission = entry.submissionId ? submissionMap.get(entry.submissionId) : undefined
+    if (!selectedProject) {
       return []
     }
     if (filters.clientOrganizationId && selectedProject.clientOrganizationId !== filters.clientOrganizationId) {
       return []
     }
-    if (filters.status && selectedWeek.status !== filters.status) {
+    const entryStatus = selectedSubmission?.status ?? 'DRAFT'
+    if (filters.status && entryStatus !== filters.status) {
       return []
     }
     return [
@@ -2033,7 +2284,7 @@ export const getReport = async (organizationId: string, filters: ReportQuery): P
         hourlyRateMinor: entry.hourlyRateMinorSnapshot,
         amountMinor: Math.round((entry.durationMinutes * entry.hourlyRateMinorSnapshot) / 60),
         currency: entry.currencySnapshot,
-        status: selectedWeek.status,
+        status: entryStatus,
         note: entry.note
       }
     ]
@@ -2081,11 +2332,13 @@ export const getClientTimesheets = async (
     .select({
       entry: timeEntry,
       week: weeklyTimesheet,
+      submission: timesheetSubmission,
       projectName: project.name,
       activityName: activityType.name,
       personName: user.name
     })
     .from(timeEntry)
+    .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timeEntry.submissionId))
     .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timeEntry.weeklyTimesheetId))
     .innerJoin(project, eq(project.id, timeEntry.projectId))
     .innerJoin(activityType, eq(activityType.id, timeEntry.activityTypeId))
@@ -2094,23 +2347,23 @@ export const getClientTimesheets = async (
       and(
         eq(timeEntry.organizationId, workspace.workspaceOrganizationId),
         eq(timeEntry.clientOrganizationId, clientOrganizationId),
-        eq(weeklyTimesheet.status, 'APPROVED')
+        eq(timesheetSubmission.status, 'APPROVED')
       )
     )
     .orderBy(desc(weeklyTimesheet.weekStartsOn), asc(timeEntry.entryDate), asc(timeEntry.createdAt))
-  const weekIds = [...new Set(entries.map((item) => item.week.id))]
-  const reviews = weekIds.length
+  const submissionIds = [...new Set(entries.map((item) => item.submission.id))]
+  const reviews = submissionIds.length
     ? await db
         .select()
         .from(timesheetClientReview)
         .where(
           and(
-            inArray(timesheetClientReview.weeklyTimesheetId, weekIds),
+            inArray(timesheetClientReview.submissionId, submissionIds),
             eq(timesheetClientReview.clientOrganizationId, clientOrganizationId)
           )
         )
     : []
-  const [internalHistory, clientHistory] = weekIds.length
+  const [internalHistory, clientHistory] = submissionIds.length
     ? await Promise.all([
         db
           .select({ history: timesheetApprovalHistory, actorName: user.name })
@@ -2118,7 +2371,7 @@ export const getClientTimesheets = async (
           .innerJoin(user, eq(user.id, timesheetApprovalHistory.actorUserId))
           .where(
             and(
-              inArray(timesheetApprovalHistory.weeklyTimesheetId, weekIds),
+              inArray(timesheetApprovalHistory.submissionId, submissionIds),
               inArray(timesheetApprovalHistory.action, ['SUBMITTED', 'APPROVED', 'REOPENED'])
             )
           ),
@@ -2128,19 +2381,22 @@ export const getClientTimesheets = async (
           .innerJoin(user, eq(user.id, timesheetClientReviewHistory.actorUserId))
           .where(
             and(
-              inArray(timesheetClientReviewHistory.weeklyTimesheetId, weekIds),
+              inArray(timesheetClientReviewHistory.submissionId, submissionIds),
               eq(timesheetClientReviewHistory.clientOrganizationId, clientOrganizationId)
             )
           )
       ])
     : [[], []]
-  const reviewByWeek = new Map(reviews.map((item) => [item.weeklyTimesheetId, item]))
-  const slices = weekIds.map((weekId) => {
-    const rows = entries.filter((item) => item.week.id === weekId)
-    const review = reviewByWeek.get(weekId)
+  const reviewBySubmission = new Map(reviews.map((item) => [item.submissionId, item]))
+  const slices = submissionIds.map((submissionId) => {
+    const rows = entries.filter((item) => item.submission.id === submissionId)
+    const review = reviewBySubmission.get(submissionId)
     return {
-      weeklyTimesheetId: weekId,
+      weeklyTimesheetId: submissionId,
+      submissionId,
       weekStartsOn: rows[0]!.week.weekStartsOn,
+      periodStartsOn: rows[0]!.submission.periodStartsOn,
+      periodEndsOn: rows[0]!.submission.periodEndsOn,
       person: rows[0]!.personName,
       status: review?.status ?? ('PENDING' as const),
       version: review?.version ?? 0,
@@ -2157,7 +2413,7 @@ export const getClientTimesheets = async (
       })),
       history: [
         ...internalHistory
-          .filter((item) => item.history.weeklyTimesheetId === weekId)
+          .filter((item) => item.history.submissionId === submissionId)
           .map((item) => ({
             id: item.history.id,
             action:
@@ -2171,7 +2427,7 @@ export const getClientTimesheets = async (
             createdAt: item.history.createdAt.toISOString()
           })),
         ...clientHistory
-          .filter((item) => item.history.weeklyTimesheetId === weekId)
+          .filter((item) => item.history.submissionId === submissionId)
           .map((item) => ({
             id: item.history.id,
             action: item.history.action === 'APPROVED' ? ('APPROVED_CLIENT' as const) : ('DISPUTED_CLIENT' as const),
@@ -2198,7 +2454,7 @@ export const listClientSupplierTimesheets = async (
       const result = await getClientTimesheets(workspace.id, clientOrganizationId, userId, isAdmin)
       return result.slices.map((slice) => ({
         ...slice,
-        id: slice.weeklyTimesheetId,
+        id: slice.submissionId,
         workspaceClientId: workspace.id,
         supplierName: workspace.workspaceName,
         totalMinutes: slice.entries.reduce((total, entry) => total + entry.minutes, 0)
@@ -2218,7 +2474,7 @@ export const reviewClientTimesheet = async (
   clientOrganizationId: string,
   actorUserId: string,
   isAdmin: boolean,
-  weekId: string,
+  submissionId: string,
   action: 'APPROVE' | 'DISPUTE',
   expectedVersion: number,
   comment?: string | null
@@ -2254,13 +2510,13 @@ export const reviewClientTimesheet = async (
     const [eligible] = await tx
       .select({ id: timeEntry.id })
       .from(timeEntry)
-      .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timeEntry.weeklyTimesheetId))
+      .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timeEntry.submissionId))
       .where(
         and(
-          eq(timeEntry.weeklyTimesheetId, weekId),
+          eq(timeEntry.submissionId, submissionId),
           eq(timeEntry.organizationId, link.workspaceOrganizationId),
           eq(timeEntry.clientOrganizationId, clientOrganizationId),
-          eq(weeklyTimesheet.status, 'APPROVED')
+          eq(timesheetSubmission.status, 'APPROVED')
         )
       )
       .limit(1)
@@ -2280,7 +2536,7 @@ export const reviewClientTimesheet = async (
       })
       .where(
         and(
-          eq(timesheetClientReview.weeklyTimesheetId, weekId),
+          eq(timesheetClientReview.submissionId, submissionId),
           eq(timesheetClientReview.clientOrganizationId, clientOrganizationId),
           eq(timesheetClientReview.status, 'PENDING'),
           eq(timesheetClientReview.version, expectedVersion)
@@ -2292,7 +2548,8 @@ export const reviewClientTimesheet = async (
     }
     await tx.insert(timesheetClientReviewHistory).values({
       id: nanoid(),
-      weeklyTimesheetId: weekId,
+      weeklyTimesheetId: updated.weeklyTimesheetId,
+      submissionId,
       clientOrganizationId,
       action: action === 'APPROVE' ? 'APPROVED' : 'DISPUTED',
       actorUserId,

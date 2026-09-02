@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
-import type { TimeEntryDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
+import type { TimeEntryDto, TimesheetSubmissionDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 defineOptions({ name: 'TimesheetsWorkbenchPage' })
 
@@ -29,7 +29,7 @@ definePageMeta({
   }
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const timesheets = useTimesheets()
 const mutationError = useTimesheetMutationError()
 const { isOrganizationAdmin } = useTimesheetMenu()
@@ -43,6 +43,8 @@ const selectedDay = ref('')
 const modalOpen = ref(false)
 const cellEntriesOpen = ref(false)
 const timerModalOpen = ref(false)
+const submissionModalOpen = ref(false)
+const submissionCutoff = ref('')
 const saving = ref(false)
 const now = ref(Date.now())
 const currentDate = computed(() => format(new Date(now.value), 'yyyy-MM-dd'))
@@ -74,10 +76,16 @@ const lastReusableEntryContext = computed(() => {
   return entry ? { projectId: entry.projectId, activityTypeId: entry.activityTypeId } : null
 })
 const runningEntry = computed(() => week.value?.entries.find((entry) => entry.timerStartedAt) ?? null)
-const editable = computed(
-  () => Boolean(data.value?.canEnterTime) && ['DRAFT', 'REJECTED'].includes(week.value?.status ?? '')
-)
+const editable = computed(() => Boolean(data.value?.canEnterTime))
+const entryEditable = (entry: TimeEntryDto) =>
+  editable.value && (!entry.submissionId || ['DRAFT', 'REJECTED'].includes(entry.submissionStatus ?? ''))
 const currentMember = computed(() => data.value?.team.find((member) => member.id === week.value?.userId))
+const submissionNeedsApprover = computed(
+  () =>
+    Boolean(data.value?.settings.internalApprovalsEnabled) &&
+    Boolean(currentMember.value?.internalApprovalRequired) &&
+    !currentMember.value?.approverUserIds.length
+)
 const selectedActivity = computed(() => activities.value.find((activity) => activity.id === form.activityTypeId))
 const selectedProject = computed(() => projects.value.find((project) => project.id === form.projectId))
 const tariffMissing = computed(() =>
@@ -119,9 +127,10 @@ const weekDays = computed(() => {
   if (!week.value) {
     return []
   }
+  const weekdayFormatter = new Intl.DateTimeFormat(locale.value, { weekday: 'short' })
   return Array.from({ length: 7 }, (_, index) => {
     const date = addDays(parseISO(week.value!.weekStartsOn), index)
-    return { value: format(date, 'yyyy-MM-dd'), label: format(date, 'EEE'), day: format(date, 'd') }
+    return { value: format(date, 'yyyy-MM-dd'), label: weekdayFormatter.format(date), day: format(date, 'd') }
   })
 })
 const selectedDayEntries = computed(() =>
@@ -220,6 +229,61 @@ const totalForDate = (date: string) =>
     .reduce((sum, entry) => sum + entry.durationMinutes, 0) ?? 0
 
 const totalMinutes = computed(() => week.value?.entries.reduce((sum, entry) => sum + entry.durationMinutes, 0) ?? 0)
+const maximumSubmissionDate = computed(() => {
+  if (!week.value) {
+    return currentDate.value
+  }
+  const weekEnd = format(addDays(parseISO(week.value.weekStartsOn), 6), 'yyyy-MM-dd')
+  return weekEnd < currentDate.value ? weekEnd : currentDate.value
+})
+const weekEndsOn = computed(() =>
+  week.value ? format(addDays(parseISO(week.value.weekStartsOn), 6), 'yyyy-MM-dd') : ''
+)
+const formatSubmissionPeriod = (startsOn: string, endsOn: string) =>
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(
+    new Date(`${startsOn}T12:00:00`),
+    new Date(`${endsOn}T12:00:00`)
+  )
+const formatWeekPeriod = (startsOn: string) =>
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(
+    parseISO(startsOn),
+    addDays(parseISO(startsOn), 6)
+  )
+const submissionAlertDescription = (submission: TimesheetSubmissionDto) =>
+  [
+    submission.status === 'REJECTED' ? submission.rejectionComment : undefined,
+    submission.periodEndsOn < weekEndsOn.value
+      ? t('features.timesheets.submissions.remainingWeekUnsubmitted')
+      : undefined
+  ]
+    .filter(Boolean)
+    .join(' · ')
+const eligibleSubmissionEntries = computed(() =>
+  (week.value?.entries ?? []).filter(
+    (entry) => !entry.submissionId && entry.entryDate <= submissionCutoff.value && !entry.timerStartedAt
+  )
+)
+const submissionMinutes = computed(() =>
+  eligibleSubmissionEntries.value.reduce((sum, entry) => sum + entry.durationMinutes, 0)
+)
+const submissionEntryCount = computed(() =>
+  t('features.timesheets.submissions.entryCount', eligibleSubmissionEntries.value.length)
+)
+const submissionRange = computed(() => {
+  const dates = eligibleSubmissionEntries.value.map((entry) => entry.entryDate).sort()
+  return dates.length ? `${dates[0]}–${submissionCutoff.value}` : '—'
+})
+const openSubmission = () => {
+  const eligible = (week.value?.entries ?? []).filter(
+    (entry) => !entry.submissionId && entry.entryDate <= maximumSubmissionDate.value
+  )
+  submissionCutoff.value =
+    eligible
+      .map((entry) => entry.entryDate)
+      .sort()
+      .at(-1) ?? maximumSubmissionDate.value
+  submissionModalOpen.value = true
+}
 
 const groupedRows = computed(() => {
   const groups = new Map<
@@ -281,6 +345,9 @@ const openCreate = (date = format(new Date(), 'yyyy-MM-dd'), projectId?: string,
 }
 
 const openEdit = (entry: TimeEntryDto) => {
+  if (!entryEditable(entry)) {
+    return
+  }
   Object.assign(form, {
     id: entry.id,
     projectId: entry.projectId,
@@ -422,7 +489,17 @@ const submit = async () => {
     return
   }
   try {
-    await timesheets.submitWeek(week.value.id)
+    await timesheets.submitWeek(week.value.id, submissionCutoff.value)
+    submissionModalOpen.value = false
+    await refresh()
+  } catch (error) {
+    mutationError.show(error)
+  }
+}
+
+const resubmit = async (submissionId: string) => {
+  try {
+    await timesheets.resubmitSubmission(submissionId)
     await refresh()
   } catch (error) {
     mutationError.show(error)
@@ -472,7 +549,7 @@ const runningDuration = computed(() => {
         <UBadge color="neutral" variant="subtle" size="lg">
           {{
             week
-              ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${format(parseISO(week.weekStartsOn), 'd MMM')} – ${format(addDays(parseISO(week.weekStartsOn), 6), 'd MMM yyyy')}`
+              ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${formatWeekPeriod(week.weekStartsOn)}`
               : '—'
           }}
         </UBadge>
@@ -509,13 +586,36 @@ const runningDuration = computed(() => {
     </header>
 
     <UAlert
-      v-if="week?.status === 'REJECTED'"
-      color="error"
+      v-for="submission in week?.submissions.filter((item) => ['DRAFT', 'REJECTED'].includes(item.status))"
+      :key="submission.id"
+      :color="submission.status === 'REJECTED' ? 'error' : 'neutral'"
       icon="i-lucide-message-square-warning"
-      :title="t('features.timesheets.status.rejected')"
-      :description="week.rejectionComment ?? undefined"
+      :title="
+        submission.periodEndsOn < weekEndsOn
+          ? t('features.timesheets.submissions.partialStatus', {
+              period: formatSubmissionPeriod(submission.periodStartsOn, submission.periodEndsOn),
+              status: t(`features.timesheets.status.${submission.status.toLowerCase()}`)
+            })
+          : t(`features.timesheets.status.${submission.status.toLowerCase()}`)
+      "
+      :description="submissionAlertDescription(submission) || undefined"
       variant="outline"
-    />
+    >
+      <template v-if="submission.reviewerName" #description>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <UAvatar :src="submission.reviewerImage ?? undefined" :alt="submission.reviewerName" size="xs" />
+            <span>{{ submission.reviewerName }}</span>
+          </div>
+          <p>{{ submissionAlertDescription(submission) }}</p>
+        </div>
+      </template>
+      <template #actions>
+        <UButton size="sm" color="error" variant="outline" icon="i-lucide-send" @click="resubmit(submission.id)">
+          {{ t('features.timesheets.submissions.resubmit') }}
+        </UButton>
+      </template>
+    </UAlert>
 
     <UAlert
       v-if="data && !data.canEnterTime"
@@ -689,7 +789,7 @@ const runningDuration = computed(() => {
             :key="entry.id"
             type="button"
             class="timesheet-mobile__entry timesheet-row-action"
-            :disabled="!editable"
+            :disabled="!entryEditable(entry)"
             :aria-label="`${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}${entry.note ? `, ${entry.note}` : ''}`"
             @click="openEdit(entry)"
           >
@@ -698,6 +798,9 @@ const runningDuration = computed(() => {
               <strong>{{ entry.projectName }}</strong>
               <span>{{ entry.activityName }}</span>
               <span v-if="entry.note" class="timesheet-mobile__entry-note">{{ entry.note }}</span>
+              <UBadge v-if="entry.submissionStatus" color="neutral" variant="subtle" size="sm">
+                {{ t(`features.timesheets.status.${entry.submissionStatus.toLowerCase()}`) }}
+              </UBadge>
             </span>
             <span class="timesheet-mobile__entry-meta">
               <UIcon name="i-lucide-pencil" class="timesheet-mobile__edit-cue" aria-hidden="true" />
@@ -725,16 +828,30 @@ const runningDuration = computed(() => {
     </section>
 
     <footer class="flex items-center gap-3">
-      <UBadge :color="week?.status === 'APPROVED' ? 'success' : week?.status === 'REJECTED' ? 'error' : 'neutral'">
-        {{ t(`features.timesheets.status.${(week?.status ?? 'DRAFT').toLowerCase()}`) }}
-      </UBadge>
+      <div class="flex flex-wrap gap-2">
+        <UBadge v-if="!week?.submissions.length" color="neutral" variant="subtle">
+          {{ t('features.timesheets.submissions.none') }}
+        </UBadge>
+        <UBadge
+          v-for="submission in week?.submissions.filter((item) => !['DRAFT', 'REJECTED'].includes(item.status))"
+          :key="submission.id"
+          :color="submission.status === 'APPROVED' ? 'success' : submission.status === 'REJECTED' ? 'error' : 'warning'"
+          variant="subtle"
+        >
+          {{ submission.periodStartsOn }}–{{ submission.periodEndsOn }} ·
+          {{ t(`features.timesheets.status.${submission.status.toLowerCase()}`) }}
+        </UBadge>
+      </div>
       <div class="ml-auto flex items-center gap-3">
         <UButton
           v-if="editable"
           icon="i-lucide-send"
           size="sm"
-          :disabled="!totalMinutes || !!runningEntry"
-          @click="submit"
+          :disabled="
+            !week?.entries.some((entry) => !entry.submissionId && entry.entryDate <= maximumSubmissionDate) ||
+            !!runningEntry
+          "
+          @click="openSubmission"
         >
           {{ t('features.timesheets.submit') }}
         </UButton>
@@ -850,6 +967,7 @@ const runningDuration = computed(() => {
               :key="entry.id"
               type="button"
               class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-elevated"
+              :disabled="!entryEditable(entry)"
               @click="openEdit(entry)"
             >
               <span class="min-w-0 flex-1">
@@ -859,6 +977,9 @@ const runningDuration = computed(() => {
                 <span class="block truncate text-sm text-muted">
                   {{ entry.note || t('features.timesheets.cellEntries.noNote') }}
                 </span>
+                <UBadge v-if="entry.submissionStatus" class="mt-1" color="neutral" variant="subtle" size="sm">
+                  {{ t(`features.timesheets.status.${entry.submissionStatus.toLowerCase()}`) }}
+                </UBadge>
               </span>
               <strong class="tabular-nums">{{ formatDuration(entry.durationMinutes) }}</strong>
               <UIcon name="i-lucide-pencil" class="size-4 text-muted" aria-hidden="true" />
@@ -870,6 +991,59 @@ const runningDuration = computed(() => {
             </UButton>
           </div>
         </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="submissionModalOpen" :title="t('features.timesheets.submissions.title')">
+      <template #body>
+        <form class="space-y-4" @submit.prevent="submit">
+          <p class="text-sm text-muted">{{ t('features.timesheets.submissions.description') }}</p>
+          <UFormField :label="t('features.timesheets.submissions.cutoff')" required>
+            <UInput
+              v-model="submissionCutoff"
+              type="date"
+              :min="week?.weekStartsOn"
+              :max="maximumSubmissionDate"
+              class="w-full"
+            />
+          </UFormField>
+          <UAlert
+            color="neutral"
+            variant="subtle"
+            :title="
+              t('features.timesheets.submissions.summary', {
+                entries: submissionEntryCount,
+                hours: formatDuration(submissionMinutes),
+                range: submissionRange
+              })
+            "
+          />
+          <UAlert
+            v-if="submissionNeedsApprover"
+            color="warning"
+            icon="i-lucide-user-round-x"
+            :title="t('features.timesheets.errors.internalApproverRequiredTitle')"
+            :description="t('features.timesheets.errors.internalApproverRequired')"
+          >
+            <template v-if="isOrganizationAdmin" #actions>
+              <UButton to="/admin/timesheets/internal-approvals" color="warning" variant="outline" size="sm">
+                {{ t('features.timesheets.errors.configureApprovers') }}
+              </UButton>
+            </template>
+          </UAlert>
+          <div class="flex justify-end gap-2">
+            <UButton type="button" color="neutral" variant="outline" @click="submissionModalOpen = false">
+              {{ t('features.timesheets.cancel') }}
+            </UButton>
+            <UButton
+              type="submit"
+              icon="i-lucide-send"
+              :disabled="!eligibleSubmissionEntries.length || submissionNeedsApprover"
+            >
+              {{ t('features.timesheets.submissions.confirm') }}
+            </UButton>
+          </div>
+        </form>
       </template>
     </UModal>
 

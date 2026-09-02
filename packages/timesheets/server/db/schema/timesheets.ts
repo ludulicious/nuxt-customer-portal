@@ -235,6 +235,36 @@ export const weeklyTimesheet = timesheetsSchema.table(
   ]
 )
 
+export const timesheetSubmission = timesheetsSchema.table(
+  'submission',
+  {
+    id: text('id').primaryKey(),
+    weeklyTimesheetId: text('weekly_timesheet_id')
+      .notNull()
+      .references(() => weeklyTimesheet.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    periodStartsOn: date('period_starts_on', { mode: 'string' }).notNull(),
+    periodEndsOn: date('period_ends_on', { mode: 'string' }).notNull(),
+    status: timesheetStatus('status').default('DRAFT').notNull(),
+    submittedAt: timestamp('submitted_at', { mode: 'date' }),
+    reviewedAt: timestamp('reviewed_at', { mode: 'date' }),
+    reviewedById: text('reviewed_by_id').references(() => user.id, { onDelete: 'set null' }),
+    rejectionComment: text('rejection_comment'),
+    version: integer('version').default(1).notNull(),
+    ...auditColumns
+  },
+  (table) => [
+    index('submission_week_idx').on(table.weeklyTimesheetId),
+    index('submission_org_status_idx').on(table.organizationId, table.status),
+    index('submission_user_period_idx').on(table.userId, table.periodStartsOn, table.periodEndsOn)
+  ]
+)
+
 export const timeEntry = timesheetsSchema.table(
   'time_entry',
   {
@@ -245,6 +275,7 @@ export const timeEntry = timesheetsSchema.table(
     weeklyTimesheetId: text('weekly_timesheet_id')
       .notNull()
       .references(() => weeklyTimesheet.id, { onDelete: 'cascade' }),
+    submissionId: text('submission_id').references(() => timesheetSubmission.id, { onDelete: 'restrict' }),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -269,6 +300,7 @@ export const timeEntry = timesheetsSchema.table(
   (table) => [
     index('time_entry_org_user_date_idx').on(table.organizationId, table.userId, table.entryDate),
     index('time_entry_week_idx').on(table.weeklyTimesheetId),
+    index('time_entry_submission_idx').on(table.submissionId),
     index('time_entry_project_idx').on(table.projectId),
     index('time_entry_client_idx').on(table.clientOrganizationId)
   ]
@@ -281,6 +313,7 @@ export const timesheetClientReview = timesheetsSchema.table(
     weeklyTimesheetId: text('weekly_timesheet_id')
       .notNull()
       .references(() => weeklyTimesheet.id, { onDelete: 'cascade' }),
+    submissionId: text('submission_id').references(() => timesheetSubmission.id, { onDelete: 'cascade' }),
     clientOrganizationId: text('client_organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'restrict' }),
@@ -292,7 +325,7 @@ export const timesheetClientReview = timesheetsSchema.table(
     ...auditColumns
   },
   (table) => [
-    uniqueIndex('client_review_week_client_uidx').on(table.weeklyTimesheetId, table.clientOrganizationId),
+    uniqueIndex('client_review_submission_client_uidx').on(table.submissionId, table.clientOrganizationId),
     index('client_review_client_status_idx').on(table.clientOrganizationId, table.status)
   ]
 )
@@ -304,6 +337,7 @@ export const timesheetClientReviewHistory = timesheetsSchema.table(
     weeklyTimesheetId: text('weekly_timesheet_id')
       .notNull()
       .references(() => weeklyTimesheet.id, { onDelete: 'cascade' }),
+    submissionId: text('submission_id').references(() => timesheetSubmission.id, { onDelete: 'cascade' }),
     clientOrganizationId: text('client_organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'restrict' }),
@@ -330,6 +364,7 @@ export const timesheetApprovalHistory = timesheetsSchema.table(
     weeklyTimesheetId: text('weekly_timesheet_id')
       .notNull()
       .references(() => weeklyTimesheet.id, { onDelete: 'cascade' }),
+    submissionId: text('submission_id').references(() => timesheetSubmission.id, { onDelete: 'cascade' }),
     action: approvalAction('action').notNull(),
     actorUserId: text('actor_user_id')
       .notNull()
@@ -344,3 +379,4 @@ export type ProjectRecord = typeof project.$inferSelect
 export type ActivityTypeRecord = typeof activityType.$inferSelect
 export type TimeEntryRecord = typeof timeEntry.$inferSelect
 export type WeeklyTimesheetRecord = typeof weeklyTimesheet.$inferSelect
+export type TimesheetSubmissionRecord = typeof timesheetSubmission.$inferSelect

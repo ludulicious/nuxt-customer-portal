@@ -10,7 +10,11 @@ import { genericClientInvitationSchema } from '@nuxt-customer-portal/clients/ser
 export default defineEventHandler(async (event) => {
   const organizationId = getRouterParam(event, 'id')!
   const context = await requireClientProfileManager(event, organizationId)
-  const input = genericClientInvitationSchema.parse(await readBody(event))
+  const parsedInput = genericClientInvitationSchema.safeParse(await readBody(event))
+  if (!parsedInput.success) {
+    throw createError({ statusCode: 400, message: 'A valid email address and role are required' })
+  }
+  const input = parsedInput.data
   const [pending] = await db
     .select({ id: invitation.id })
     .from(invitation)

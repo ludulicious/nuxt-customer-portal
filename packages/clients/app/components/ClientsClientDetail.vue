@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { z } from 'zod'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown> }>()
@@ -12,8 +13,13 @@ const editing = ref(false)
 const deleting = ref(false)
 const deleteName = ref('')
 const deletion = ref<{ canDelete: boolean; memberCount: number; moduleCount: number; clientName: string } | null>(null)
-const inviteEmail = ref('')
-const inviteRole = ref('member')
+const invitationForm = reactive({ email: '', role: 'member' as 'member' | 'admin' | 'owner' })
+const invitationSchema = computed(() =>
+  z.object({
+    email: z.string().trim().email(t('features.clients.validation.email')),
+    role: z.enum(['member', 'admin', 'owner'])
+  })
+)
 
 onKeyStroke('Escape', () => {
   editing.value = false
@@ -75,11 +81,13 @@ const confirmDelete = async () => {
 const inviteMember = async () => {
   busy.value = true
   try {
-    await api.invite(props.client.id, inviteEmail.value, inviteRole.value)
-    inviteEmail.value = ''
-    inviteRole.value = 'member'
+    await api.invite(props.client.id, invitationForm.email.trim(), invitationForm.role)
+    invitationForm.email = ''
+    invitationForm.role = 'member'
     await props.refresh()
     toast.add({ title: t('features.clients.invited'), color: 'success' })
+  } catch {
+    toast.add({ title: t('features.clients.inviteFailed'), color: 'error' })
   } finally {
     busy.value = false
   }
@@ -185,13 +193,28 @@ const toggleEditing = () => {
         <h2 class="font-semibold">{{ t('features.clients.members') }}</h2>
       </template>
       <div class="grid gap-4">
-        <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]">
-          <UInput v-model="inviteEmail" type="email" :placeholder="t('features.clients.memberEmail')" />
-          <USelect v-model="inviteRole" :items="['member', 'admin', 'owner']" />
-          <UButton :disabled="!inviteEmail" :loading="busy" @click="inviteMember">
+        <UForm
+          :state="invitationForm"
+          :schema="invitationSchema"
+          novalidate
+          class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]"
+          @submit="inviteMember"
+        >
+          <UFormField name="email">
+            <UInput
+              v-model="invitationForm.email"
+              type="email"
+              :placeholder="t('features.clients.memberEmail')"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField name="role">
+            <USelect v-model="invitationForm.role" :items="['member', 'admin', 'owner']" class="w-full" />
+          </UFormField>
+          <UButton type="submit" :disabled="!invitationForm.email.trim()" :loading="busy">
             {{ t('features.clients.invite') }}
           </UButton>
-        </div>
+        </UForm>
         <div v-if="client.members.length" class="grid gap-2">
           <div
             v-for="item in client.members"
@@ -250,6 +273,14 @@ const toggleEditing = () => {
               <div class="flex items-center gap-2">
                 <UBadge color="warning" variant="soft">{{ t('features.clients.invitationPending') }}</UBadge
                 ><UBadge color="neutral" variant="soft">{{ invitation.role }}</UBadge>
+                <InvitationActions
+                  :endpoint="`/api/clients/${client.id}/invitations/${invitation.id}`"
+                  :email="invitation.email"
+                  :role="invitation.role"
+                  can-edit
+                  can-revoke
+                  @refresh="refresh()"
+                />
               </div>
             </div>
           </div>

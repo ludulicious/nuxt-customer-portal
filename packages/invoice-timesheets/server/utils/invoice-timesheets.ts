@@ -6,7 +6,7 @@ import {
   createInvoiceInTransaction,
   requireInvoicesEnabled
 } from '@nuxt-customer-portal/invoices/server/utils/invoice-repository'
-import { timeEntry, timesheetClientReview, weeklyTimesheet } from '@nuxt-customer-portal/timesheets/schema'
+import { timeEntry, timesheetClientReview, timesheetSubmission } from '@nuxt-customer-portal/timesheets/schema'
 import {
   getReport,
   requireTimesheetWorkspace
@@ -28,7 +28,7 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
     db
       .select({
         entryId: timeEntry.id,
-        weeklyTimesheetId: timeEntry.weeklyTimesheetId,
+        submissionId: timeEntry.submissionId,
         clientOrganizationId: timeEntry.clientOrganizationId,
         projectId: timeEntry.projectId
       })
@@ -41,16 +41,16 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
       .where(and(inArray(invoiceTimeEntry.timeEntryId, ids), inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID']))),
     db
       .select({
-        weeklyTimesheetId: timesheetClientReview.weeklyTimesheetId,
+        submissionId: timesheetClientReview.submissionId,
         clientOrganizationId: timesheetClientReview.clientOrganizationId
       })
       .from(timesheetClientReview)
-      .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
-      .where(and(eq(weeklyTimesheet.organizationId, organizationId), eq(timesheetClientReview.status, 'DISPUTED')))
+      .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timesheetClientReview.submissionId))
+      .where(and(eq(timesheetSubmission.organizationId, organizationId), eq(timesheetClientReview.status, 'DISPUTED')))
   ])
   const context = new Map(contexts.map((item) => [item.entryId, item]))
   const used = new Set(linked.map((item) => item.timeEntryId))
-  const disputes = new Set(disputed.map((item) => `${item.weeklyTimesheetId}:${item.clientOrganizationId}`))
+  const disputes = new Set(disputed.map((item) => `${item.submissionId}:${item.clientOrganizationId}`))
   return {
     enabled: true,
     entries: report.rows.flatMap((row) => {
@@ -58,7 +58,7 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
       return !item ||
         item.clientOrganizationId === organizationId ||
         used.has(row.entryId) ||
-        disputes.has(`${item.weeklyTimesheetId}:${item.clientOrganizationId}`)
+        disputes.has(`${item.submissionId}:${item.clientOrganizationId}`)
         ? []
         : [
             {
@@ -118,9 +118,9 @@ export const createInvoiceFromTimesheets = async (
     }
     const [entries, existing, disputed] = await Promise.all([
       tx
-        .select({ entry: timeEntry, status: weeklyTimesheet.status })
+        .select({ entry: timeEntry, status: timesheetSubmission.status })
         .from(timeEntry)
-        .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timeEntry.weeklyTimesheetId))
+        .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timeEntry.submissionId))
         .where(
           and(
             eq(timeEntry.organizationId, organizationId),
@@ -136,25 +136,25 @@ export const createInvoiceFromTimesheets = async (
           and(inArray(invoiceTimeEntry.timeEntryId, sourceIds), inArray(invoice.status, ['DRAFT', 'ISSUED', 'PAID']))
         ),
       tx
-        .select({ weeklyTimesheetId: timesheetClientReview.weeklyTimesheetId })
+        .select({ submissionId: timesheetClientReview.submissionId })
         .from(timesheetClientReview)
-        .innerJoin(weeklyTimesheet, eq(weeklyTimesheet.id, timesheetClientReview.weeklyTimesheetId))
+        .innerJoin(timesheetSubmission, eq(timesheetSubmission.id, timesheetClientReview.submissionId))
         .where(
           and(
-            eq(weeklyTimesheet.organizationId, organizationId),
+            eq(timesheetSubmission.organizationId, organizationId),
             eq(timesheetClientReview.clientOrganizationId, input.clientOrganizationId),
             eq(timesheetClientReview.status, 'DISPUTED')
           )
         )
     ])
-    const disputedWeeks = new Set(disputed.map((item) => item.weeklyTimesheetId))
+    const disputedSubmissions = new Set(disputed.map((item) => item.submissionId))
     if (
       entries.length !== sourceIds.length ||
       existing.length ||
       entries.some(
         (row) =>
           row.status !== 'APPROVED' ||
-          disputedWeeks.has(row.entry.weeklyTimesheetId) ||
+          disputedSubmissions.has(row.entry.submissionId) ||
           !row.entry.billableSnapshot ||
           row.entry.currencySnapshot !== input.currency
       )

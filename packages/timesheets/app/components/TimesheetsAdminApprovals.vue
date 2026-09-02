@@ -14,7 +14,7 @@ const toast = useToast()
 const timesheets = useTimesheets()
 const busy = ref(false)
 const rejectionOpen = ref(false)
-const rejectionWeekId = ref('')
+const rejectionSubmissionId = ref('')
 const rejectionComment = ref('')
 const rejectionState = computed(() => ({ comment: rejectionComment.value }))
 const rejectionSchema = computed(() =>
@@ -40,6 +40,11 @@ const formatEntryDate = (date: string) =>
     day: 'numeric',
     month: 'short'
   }).format(new Date(`${date}T12:00:00`))
+const formatPeriod = (from: string, to: string) =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).formatRange(
+    new Date(`${from}T12:00:00`),
+    new Date(`${to}T12:00:00`)
+  )
 const projectFor = (projectId: string) => props.data.projects.find((project) => project.id === projectId)
 const activityFor = (activityTypeId: string) => props.data.activities.find((activity) => activity.id === activityTypeId)
 const weekdayTotals = (item: ApprovalQueueItemDto) => {
@@ -74,17 +79,17 @@ const run = async (operation: () => Promise<unknown>) => {
   }
 }
 
-const review = (id: string, action: 'APPROVE' | 'REOPEN') => run(() => timesheets.reviewWeek(id, action))
+const review = (id: string, action: 'APPROVE' | 'REOPEN') => run(() => timesheets.reviewSubmission(id, action))
 
 const openReject = (id: string) => {
-  rejectionWeekId.value = id
+  rejectionSubmissionId.value = id
   rejectionComment.value = ''
   rejectionOpen.value = true
 }
 
 const reject = () =>
   run(async () => {
-    await timesheets.reviewWeek(rejectionWeekId.value, 'REJECT', rejectionComment.value)
+    await timesheets.reviewSubmission(rejectionSubmissionId.value, 'REJECT', rejectionComment.value)
     rejectionOpen.value = false
   })
 </script>
@@ -112,7 +117,8 @@ const reject = () =>
             </UBadge>
           </div>
           <p class="mt-1 text-sm text-muted">
-            {{ item.weekStartsOn }} · {{ formatHours(item.totalMinutes) }} · {{ formatMoney(item.billableAmountMinor) }}
+            {{ formatPeriod(item.periodStartsOn, item.periodEndsOn) }} · {{ formatHours(item.totalMinutes) }} ·
+            {{ formatMoney(item.billableAmountMinor) }}
           </p>
           <div v-if="item.clientReviews.length" class="mt-2 flex flex-wrap gap-2">
             <UBadge

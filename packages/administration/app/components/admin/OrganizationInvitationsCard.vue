@@ -22,9 +22,7 @@ const toast = useToast()
 const isMobile = useBreakpoints({ mobile: 768 }).smaller('mobile')
 const showInviteModal = ref(false)
 const showResendModal = ref(false)
-const showDeleteModal = ref(false)
 const selectedInvitation = ref<{ id: string; email: string; role: string } | null>(null)
-const deleteInvitationId = ref<string | null>(null)
 
 const columns = computed<TableColumn<Invitation>[]>(() =>
   isMobile.value
@@ -45,11 +43,6 @@ const columns = computed<TableColumn<Invitation>[]>(() =>
 const openResendModal = (invitation: Invitation) => {
   selectedInvitation.value = { id: invitation.id, email: invitation.email, role: invitation.role || 'member' }
   showResendModal.value = true
-}
-
-const openDeleteModal = (invitationId: string) => {
-  deleteInvitationId.value = invitationId
-  showDeleteModal.value = true
 }
 
 const handleResendInvitation = async () => {
@@ -75,32 +68,6 @@ const handleResendInvitation = async () => {
     })
   } finally {
     selectedInvitation.value = null
-  }
-}
-
-const handleDeleteInvitation = async () => {
-  if (!deleteInvitationId.value) {
-    return
-  }
-  try {
-    await $fetch(`/api/admin/organizations/${props.organizationId}/invitations/${deleteInvitationId.value}/delete`, {
-      method: 'POST'
-    })
-    emit('refresh')
-    toast.add({
-      title: t('common.success'),
-      description: t('admin.organization.detail.invitations.deleteSuccess'),
-      color: 'success'
-    })
-  } catch (error) {
-    const apiError = error as ApiError
-    toast.add({
-      title: t('common.error'),
-      description: apiError.message || t('admin.organization.detail.errors.cancelFailed'),
-      color: 'error'
-    })
-  } finally {
-    deleteInvitationId.value = null
   }
 }
 </script>
@@ -152,16 +119,15 @@ const handleDeleteInvitation = async () => {
           >
             {{ t('admin.organization.detail.invitations.resend') }}
           </UButton>
-          <UButton
-            v-if="hasPermission('invitation', 'delete')"
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            size="sm"
-            color="error"
-            @click="openDeleteModal(row.original.id)"
-          >
-            {{ t('admin.organization.detail.invitations.delete') }}
-          </UButton>
+          <InvitationActions
+            v-if="row.original.status === 'pending'"
+            :endpoint="`/api/admin/organizations/${organizationId}/invitations/${row.original.id}`"
+            :email="row.original.email"
+            :role="row.original.role ?? null"
+            :can-edit="hasPermission('invitation', 'create')"
+            :can-revoke="hasPermission('invitation', 'cancel')"
+            @refresh="emit('refresh')"
+          />
         </div>
       </template>
     </UTable>
@@ -181,15 +147,6 @@ const handleDeleteInvitation = async () => {
       confirm-text="admin.organization.detail.invitations.confirmResend.confirm"
       confirm-color="primary"
       @confirm="handleResendInvitation"
-    />
-    <ConfirmationModal
-      v-if="showDeleteModal"
-      v-model:open="showDeleteModal"
-      title="admin.organization.detail.invitations.confirmDelete.title"
-      message="admin.organization.detail.invitations.confirmDelete.message"
-      confirm-text="admin.organization.detail.invitations.confirmDelete.confirm"
-      confirm-color="error"
-      @confirm="handleDeleteInvitation"
     />
   </UCard>
 </template>
