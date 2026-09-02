@@ -60,7 +60,7 @@ type PortalEmailBranding = {
   primaryColor: string
 }
 
-const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
+export const resolvePortalEmailBranding = async (): Promise<PortalEmailBranding> => {
   const config = useRuntimeConfig()
   const fallback = {
     brandName: String(config.portalEmail?.brandName || 'Nuxt Customer Portal'),

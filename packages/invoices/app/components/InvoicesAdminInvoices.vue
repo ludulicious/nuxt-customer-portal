@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { createHoursIntroduction } from '@nuxt-customer-portal/invoices/shared/invoice-introduction'
 import type { InvoicesAdminBootstrap } from '@nuxt-customer-portal/invoices/app/composables/useInvoices'
 import type { InvoiceDto, InvoiceableEntryDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
@@ -272,6 +273,12 @@ const next = () => {
     step.value = 5
   } else if (source.value === 'TIME' && step.value === 4) {
     groupEntries(selectedEntries.value)
+    if (!model.subject.trim()) {
+      model.subject = createHoursIntroduction(
+        selectedEntries.value,
+        selectedClient.value?.preferredLocale === 'en' ? 'en' : 'nl'
+      )
+    }
     step.value = 5
   } else {
     step.value++
@@ -548,7 +555,7 @@ if (props.createPage) {
         </div>
 
         <UFormField name="subject" :label="t('features.invoices.admin.subject')">
-          <UInput v-model="model.subject" class="w-full" />
+          <UTextarea v-model="model.subject" :rows="3" class="w-full" />
         </UFormField>
 
         <section class="invoice-ledger" :aria-label="t('features.invoices.admin.invoiceDetails')">

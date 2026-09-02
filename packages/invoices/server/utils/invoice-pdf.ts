@@ -31,12 +31,12 @@ const labels = {
     dueDate: 'Vervaldatum',
     description: 'Omschrijving',
     quantity: 'Aantal',
-    unitPrice: 'Eenheidsprijs',
+    unitPrice: 'Prijs / eenheid',
     vat: 'Btw',
     amount: 'Bedrag',
     subtotal: 'Subtotaal',
     paid: 'Betaald',
-    total: 'Te betalen',
+    total: 'Totaal te betalen',
     notes: 'Opmerkingen',
     page: 'Pagina'
   }
@@ -85,7 +85,9 @@ const wrap = (font: PDFFont, text: string, size: number, maxWidth: number) => {
 }
 
 export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto, requestedLocale?: string) {
-  const locale: InvoicePdfLocale = requestedLocale?.toLowerCase().startsWith('nl') ? 'nl' : 'en'
+  const locale: InvoicePdfLocale = (requestedLocale || invoice.recipientLocale)?.toLowerCase().startsWith('nl')
+    ? 'nl'
+    : 'en'
   const l = labels[locale]
   const pdf = await PDFDocument.create()
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
@@ -125,6 +127,9 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     color = ink
   ) => {
     for (const line of wrap(font, value, size, maxWidth)) {
+      if (y < margin + lineHeight) {
+        addPage()
+      }
       text(line, x, size, font, color)
       y -= lineHeight
     }
@@ -133,10 +138,19 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.7, color: rule })
 
   addPage()
+  const headingTop = y
   let logoDrawn = false
-  if (invoice.senderLogo?.startsWith('data:image/')) {
+  let senderLogo = invoice.senderLogo
+  if (!senderLogo) {
+    const { resolvePortalEmailBranding } = await import('@nuxt-customer-portal/core/server/utils/portal-email')
+    const branding = await resolvePortalEmailBranding()
+    if (branding.brandName.trim().toLowerCase() === invoice.senderName.trim().toLowerCase()) {
+      senderLogo = branding.brandIconLight || branding.brandIconDark || null
+    }
+  }
+  if (senderLogo?.startsWith('data:image/')) {
     try {
-      const [, meta, data] = invoice.senderLogo.match(/^data:(image\/(?:png|jpeg|jpg));base64,(.+)$/i) ?? []
+      const [, meta, data] = senderLogo.match(/^data:(image\/(?:png|jpeg|jpg));base64,(.+)$/i) ?? []
       if (meta && data) {
         const bytes = Buffer.from(data, 'base64')
         const image = meta.toLowerCase() === 'image/png' ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes)
@@ -164,11 +178,32 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     color: ink
   })
   y -= 28
-  const fromX = width - margin - 205
-  page.drawText(l.from, { x: fromX, y, size: 8, font: bold, color: muted })
+  page.drawText(l.from, {
+    x: width - margin - regular.widthOfTextAtSize(l.from, 8),
+    y,
+    size: 8,
+    font: regular,
+    color: muted
+  })
   y -= 14
-  multiline(`${invoice.senderName}\n${invoice.senderAddress}`, fromX, 205, 9, regular, 12)
-  y = Math.min(y - 30, height - 170)
+  for (const line of wrap(regular, `${invoice.senderName}\n${invoice.senderAddress}`, 9, 205)) {
+    text(line, width - margin - regular.widthOfTextAtSize(line, 9))
+    y -= 12
+  }
+  const addressBottom = y
+  y = headingTop - 78
+  const senderDetails = [
+    ['IBAN', invoice.senderIban],
+    ['BIC', invoice.senderBic],
+    [locale === 'nl' ? 'KVK-nr' : 'Registration no.', invoice.senderRegistration],
+    [locale === 'nl' ? 'BTW-nr' : 'VAT no.', invoice.senderVatNumber]
+  ].filter(([, value]) => Boolean(value))
+  const labelWidth = Math.max(0, ...senderDetails.map(([label]) => regular.widthOfTextAtSize(`${label}:`, 8))) + 10
+  for (const [label, value] of senderDetails) {
+    text(`${label}:`, margin, 8, regular, muted)
+    multiline(value!, margin + labelWidth, 245 - labelWidth, 8, regular, 13, muted)
+  }
+  y = Math.min(y, addressBottom) - 55
 
   const partiesY = y
   text(l.to, margin, 8, bold, muted)
@@ -200,9 +235,7 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   }
   y = Math.min(y, partiesY - 85)
   if (invoice.subject) {
-    divider()
-    y -= 16
-    text(invoice.subject, margin, 10, bold)
+    multiline(invoice.subject, margin, width - margin * 2, 10, regular, 14)
     y -= 20
   }
   y -= 8
@@ -244,7 +277,9 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     const values = [
       number(line.quantityMilli),
       money(line.unitPriceMinor),
-      `${line.vatRateBasisPoints / 100}%`,
+      new Intl.NumberFormat(locale, { style: 'percent', minimumFractionDigits: 2 }).format(
+        line.vatRateBasisPoints / 10000
+      ),
       money(line.amountMinor)
     ]
     const rights = [cols[2]! - 8, cols[3]! - 8, cols[4]! - 74, cols[4]!]
@@ -284,7 +319,7 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     })
     y -= 17
   }
-  divider()
+  page.drawLine({ start: { x: summaryX, y }, end: { x: width - margin, y }, thickness: 0.7, color: rule })
   y -= 18
   text(l.total, summaryX, 10, bold)
   const total = money(invoice.outstandingMinor)

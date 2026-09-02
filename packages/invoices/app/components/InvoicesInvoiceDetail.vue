@@ -13,6 +13,22 @@ const props = withDefaults(
 )
 const isClient = computed(() => props.mode === 'client')
 const { t, locale } = useI18n()
+const portalRuntimeSettings = useState<{
+  branding?: { portalName?: string; markLight?: string; markDark?: string }
+} | null>('portal-runtime-settings', () => null)
+const colorMode = useColorMode()
+const senderLogo = computed(() => {
+  if (props.invoice.senderLogo) {
+    return props.invoice.senderLogo
+  }
+  const branding = portalRuntimeSettings.value?.branding
+  if (branding?.portalName?.trim().toLowerCase() !== props.invoice.senderName.trim().toLowerCase()) {
+    return ''
+  }
+  return colorMode.value === 'dark'
+    ? branding?.markDark || branding?.markLight || ''
+    : branding?.markLight || branding?.markDark || ''
+})
 const api = useInvoices()
 const toast = useToast()
 const busy = ref(false)
@@ -518,7 +534,7 @@ onMounted(() => {
           </UFormField>
         </div>
         <UFormField name="subject" :label="t('features.invoices.admin.subject')">
-          <UInput v-model="edit.subject" class="w-full" /> </UFormField
+          <UTextarea v-model="edit.subject" :rows="3" class="w-full" /> </UFormField
         ><UFormField name="notes" :label="t('features.invoices.admin.notes')">
           <UTextarea v-model="edit.notes" :rows="5" class="w-full" />
         </UFormField>
@@ -564,8 +580,26 @@ onMounted(() => {
     <article class="invoice-paper">
       <div class="invoice-paper-heading">
         <div class="invoice-brand">
-          <img v-if="invoice.senderLogo" :src="invoice.senderLogo" :alt="invoice.senderName" class="invoice-logo" />
+          <img v-if="senderLogo" :src="senderLogo" :alt="invoice.senderName" class="invoice-logo" />
           <p v-else class="invoice-wordmark">{{ invoice.senderName }}</p>
+          <dl class="invoice-sender-details mt-3 text-sm text-muted">
+            <div v-if="invoice.senderIban">
+              <dt class="mr-1 inline">IBAN:</dt>
+              <dd class="inline">{{ invoice.senderIban }}</dd>
+            </div>
+            <div v-if="invoice.senderBic">
+              <dt class="mr-1 inline">BIC:</dt>
+              <dd class="inline">{{ invoice.senderBic }}</dd>
+            </div>
+            <div v-if="invoice.senderRegistration">
+              <dt>{{ t('features.invoices.admin.registrationShort') }}:</dt>
+              <dd class="inline">{{ invoice.senderRegistration }}</dd>
+            </div>
+            <div v-if="invoice.senderVatNumber">
+              <dt>{{ t('features.invoices.admin.vatNumberShort') }}:</dt>
+              <dd class="inline">{{ invoice.senderVatNumber }}</dd>
+            </div>
+          </dl>
         </div>
         <div class="text-right">
           <p class="text-xl font-semibold">{{ t('features.invoices.admin.invoiceDocumentTitle') }}</p>
@@ -608,7 +642,7 @@ onMounted(() => {
       </div>
       <div v-if="invoice.subject" class="invoice-subject">
         <span class="invoice-label">{{ t('features.invoices.admin.subject') }}</span>
-        <p>{{ invoice.subject }}</p>
+        <p class="whitespace-pre-line">{{ invoice.subject }}</p>
       </div>
       <div class="invoice-table-wrap">
         <table class="invoice-table">
@@ -885,9 +919,22 @@ onMounted(() => {
 }
 .invoice-brand {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: flex-start;
   gap: 1rem;
+}
+.invoice-sender-details {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  text-align: left;
+}
+.invoice-sender-details > div {
+  display: contents;
+}
+.invoice-sender-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .invoice-logo {
   width: auto;
@@ -946,6 +993,11 @@ onMounted(() => {
 .invoice-table th:first-child,
 .invoice-table td:first-child {
   text-align: left;
+  padding-inline-start: 0;
+}
+.invoice-table th:last-child,
+.invoice-table td:last-child {
+  padding-inline-end: 0;
 }
 .invoice-summary {
   display: flex;
