@@ -16,13 +16,15 @@ const search = defineModel<string>('search', { required: true })
 const { t } = useI18n()
 const showFilters = ref(false)
 const showSort = ref(false)
-const breakpoints = useBreakpoints({ mobile: 768 })
-const isMobile = breakpoints.smaller('mobile')
+const toolbar = ref<HTMLElement | null>(null)
+const { width } = useElementSize(toolbar)
+// Reserve space for search, each filter, sorting, direction and gaps.
+const compact = computed(() => width.value < 240 + props.filters.length * 184 + 232)
 const selectedSort = computed(() => props.sortOptions.find((option) => option.value === props.sortBy)?.label ?? '')
 </script>
 
 <template>
-  <div class="border-y border-default py-2">
+  <div ref="toolbar" class="shrink-0 border-y border-default py-2">
     <div class="flex items-center gap-2">
       <UInput
         v-model="search"
@@ -30,7 +32,7 @@ const selectedSort = computed(() => props.sortOptions.find((option) => option.va
         icon="i-lucide-search"
         class="min-w-0 flex-1 md:max-w-xs"
       />
-      <template v-if="!isMobile">
+      <template v-if="!compact">
         <USelect
           v-for="filter in filters"
           :key="filter.key"
@@ -38,6 +40,7 @@ const selectedSort = computed(() => props.sortOptions.find((option) => option.va
           :items="filter.items"
           value-key="value"
           :placeholder="filter.placeholder"
+          :aria-label="filter.placeholder"
           class="w-44"
           @update:model-value="emit('filter', filter.key, $event)"
         />
@@ -67,6 +70,7 @@ const selectedSort = computed(() => props.sortOptions.find((option) => option.va
         <UButton
           variant="outline"
           icon="i-lucide-filter"
+          :label="t('features.invoices.admin.list.filters')"
           :aria-label="t('features.invoices.admin.list.filters')"
           @click="showFilters = true"
         />

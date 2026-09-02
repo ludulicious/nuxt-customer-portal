@@ -14,7 +14,11 @@ import {
   incrementInvoiceNumber
 } from '@nuxt-customer-portal/invoices/shared/invoice-number'
 import type { InvoiceCreateInput } from './invoice-validation'
-import type { InvoiceDto, InvoiceSettingsDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
+import type {
+  InvoiceDto,
+  InvoiceSettingsDto,
+  InvoiceClientAccessOverviewDto
+} from '@nuxt-customer-portal/invoices/shared/types/invoice'
 import {
   billingContact,
   invoice,
@@ -353,6 +357,49 @@ export const getClientInvoiceAttachment = async (
   return getInvoiceAttachment(access.providerOrganizationId, invoiceId, attachmentId)
 }
 
+export const getClientInvoiceAccessOverview = async (
+  providerOrganizationId: string,
+  clientOrganizationId: string
+): Promise<InvoiceClientAccessOverviewDto> => {
+  const client = await getClient(clientOrganizationId)
+  if (!client) {
+    throw createError({ statusCode: 404, message: 'Client not found' })
+  }
+  const [access] = await db
+    .select()
+    .from(invoiceClientAccess)
+    .where(
+      and(
+        eq(invoiceClientAccess.providerOrganizationId, providerOrganizationId),
+        eq(invoiceClientAccess.clientOrganizationId, clientOrganizationId)
+      )
+    )
+    .limit(1)
+  const assignments = access
+    ? await db.select().from(invoiceClientViewer).where(eq(invoiceClientViewer.accessId, access.id))
+    : []
+  const moduleEnabled = client.modules.some((module) => module.moduleId === 'invoices' && module.enabled)
+  return {
+    configured: Boolean(access),
+    enabled: access?.enabled ?? false,
+    moduleEnabled,
+    members: client.members.map((member) => {
+      const fixedAccess = ['owner', 'admin'].includes(member.role)
+      const assigned = fixedAccess || assignments.some((item) => item.userId === member.userId)
+      return {
+        id: member.userId,
+        name: member.name,
+        email: member.email,
+        image: member.image,
+        role: member.role,
+        fixedAccess,
+        assigned,
+        canView: moduleEnabled && Boolean(access?.enabled) && assigned
+      }
+    })
+  }
+}
+
 export const listClientInvoiceViewers = async (accessId: string, clientOrganizationId: string) => {
   const [access] = await db
     .select()
@@ -609,7 +656,7 @@ export const createInvoiceInTransaction = async (
       recipientName: client.officialName || client.name,
       recipientAddress: client.address,
       recipientContactName: contact?.name ?? null,
-      recipientEmail: contact?.email ?? client.invoiceEmail,
+      recipientEmail: contact?.email ?? null,
       recipientLocale: client.preferredLocale
     })
     .returning()

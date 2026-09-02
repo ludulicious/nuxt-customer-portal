@@ -234,3 +234,18 @@ export interface InvoiceSourceProvider {
   load: (query: { from: string; to: string }) => Promise<{ enabled: boolean; entries: InvoiceSourceEntryDto[] }>
   create: (input: Record<string, unknown>) => Promise<unknown>
 }
+export interface InvoiceClientAccessOverviewDto {
+  configured: boolean
+  enabled: boolean
+  moduleEnabled: boolean
+  members: {
+    id: string
+    name: string
+    email: string
+    image: string | null
+    role: string
+    fixedAccess: boolean
+    assigned: boolean
+    canView: boolean
+  }[]
+}

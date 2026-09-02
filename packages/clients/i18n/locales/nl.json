@@ -32,7 +32,7 @@
       "address": "Adres",
       "registrationNumber": "Registratienummer",
       "vatNumber": "Btw-nummer",
-      "invoiceEmail": "Factuure-mail",
+      "invoiceEmail": "E-mailadres",
       "locale": "Voorkeurstaal",
       "members": "Leden en contactpersonen",
       "memberEmail": "E-mailadres van lid",

@@ -2,6 +2,21 @@
   "features": {
     "invoices": {
       "title": "Invoices",
+      "clientAccess": {
+        "title": "Invoice access",
+        "description": "Who can view this client's issued and paid invoices in the portal? Owners and administrators have automatic access; other members need access assigned by a client administrator.",
+        "error": "Invoice access could not be loaded.",
+        "moduleDisabled": "The invoice module is disabled for this client.",
+        "notConfigured": "Invoice access becomes available when the first invoice is created for this client.",
+        "disabled": "Invoice access for this client is disabled.",
+        "noMembers": "This client has no portal members yet.",
+        "automatic": "Automatic through role",
+        "assigned": "Access assigned",
+        "notAssigned": "No access assigned",
+        "granted": "Can view invoices",
+        "denied": "No invoice access",
+        "contactsExplanation": "The contacts below are for invoice communications. Adding a contact does not automatically create a portal account or grant invoice access."
+      },
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
@@ -43,6 +58,7 @@
         "hasAccess": "Has access"
       },
       "validation": {
+        "maxLength": "Use no more than {count} characters",
         "invoiceNumberSequence": "The invoice number must end with digits",
         "required": "This field is required",
         "validEmail": "Enter a valid email address",

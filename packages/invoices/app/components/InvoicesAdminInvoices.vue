@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { InvoicesAdminBootstrap } from '@nuxt-customer-portal/invoices/app/composables/useInvoices'
 import type { InvoiceDto, InvoiceableEntryDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
-const props = defineProps<{ data: InvoicesAdminBootstrap; refresh: () => Promise<unknown> }>()
+const props = defineProps<{ data: InvoicesAdminBootstrap; refresh: () => Promise<unknown>; createPage?: boolean }>()
 const { t, locale } = useI18n()
 const api = useInvoices()
 const { providers } = useInvoiceSources()
@@ -172,7 +172,6 @@ const missingClientInvoiceDetails = computed(() => {
   }
   const missing = [
     !client.address.trim() && t('features.invoices.admin.address'),
-    !client.invoiceEmail?.trim() && t('features.invoices.admin.invoiceEmail'),
     !client.contacts.length && t('features.invoices.admin.contactPersons')
   ]
   return missing.filter((item): item is string => Boolean(item))
@@ -208,6 +207,10 @@ const reset = () => {
   model.lines = [emptyLine()]
 }
 const openWizard = async () => {
+  if (!props.createPage) {
+    await navigateTo('/admin/invoices/new')
+    return
+  }
   if (!senderInvoiceDetailsComplete.value) {
     await navigateTo('/admin/invoices/settings#sender-invoice-details')
     return
@@ -317,10 +320,8 @@ const save = async () => {
     } else {
       await api.createInvoice(input)
     }
-    reset()
-    await props.refresh()
-    await listing.refresh()
     toast.add({ title: t('features.invoices.admin.invoiceCreated'), color: 'success' })
+    await navigateTo('/admin/invoices')
   } catch (error) {
     toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
   } finally {
@@ -337,15 +338,20 @@ defineExpose({
     () => !formOpen.value && Boolean(listing.pagination.value.total) && senderInvoiceDetailsComplete.value
   )
 })
-await Promise.all([listing.load(), refreshAvailableProviders()])
+if (props.createPage) {
+  await Promise.all([openWizard(), refreshAvailableProviders()])
+} else {
+  await listing.load()
+}
 </script>
 
 <template>
   <section
     class="-mx-1 flex h-full min-h-0 flex-col gap-4 px-1"
-    :class="formOpen ? 'overflow-y-auto' : 'overflow-hidden'"
+    :class="formOpen ? 'overflow-y-auto py-1' : 'overflow-hidden'"
   >
     <InvoicesAdminListToolbar
+      v-if="!createPage"
       v-model:search="listing.search.value"
       :filters="invoiceFilters"
       :filter-values="listing.filters"
@@ -357,7 +363,7 @@ await Promise.all([listing.load(), refreshAvailableProviders()])
       @toggle-direction="listing.toggleSortDir"
     />
     <InvoicesAdminEmptyState
-      v-if="!formOpen && !senderInvoiceDetailsComplete"
+      v-if="!createPage && !formOpen && !senderInvoiceDetailsComplete"
       icon="i-lucide-file-warning"
       :title="t('features.invoices.admin.senderDetailsRequiredTitle')"
       :description="t('features.invoices.admin.senderDetailsRequiredDescription')"
@@ -366,7 +372,7 @@ await Promise.all([listing.load(), refreshAvailableProviders()])
       @action="openWizard"
     />
     <InvoicesAdminEmptyState
-      v-else-if="!formOpen && !listing.items.value.length && !listing.pending.value"
+      v-else-if="!createPage && !formOpen && !listing.items.value.length && !listing.pending.value"
       icon="i-lucide-file-text"
       :title="t('features.invoices.admin.noInvoicesTitle')"
       :description="t('features.invoices.admin.noInvoicesDescription')"
@@ -374,7 +380,7 @@ await Promise.all([listing.load(), refreshAvailableProviders()])
       @action="openWizard"
     />
 
-    <UCard v-if="formOpen" class="scroll-mt-6">
+    <UCard v-if="formOpen" class="shrink-0 scroll-mt-6">
       <template #header>
         <div class="flex items-center justify-between gap-4">
           <h2 class="font-semibold">
@@ -674,7 +680,7 @@ await Promise.all([listing.load(), refreshAvailableProviders()])
       </UForm>
 
       <div v-if="step < 5" class="mt-6 flex justify-between">
-        <UButton color="neutral" variant="outline" @click="step === 1 ? reset() : back()">
+        <UButton color="neutral" variant="outline" @click="step === 1 ? navigateTo('/admin/invoices') : back()">
           {{ t(step === 1 ? 'features.invoices.cancel' : 'features.invoices.admin.previous') }} </UButton
         ><UButton v-if="step > 1" :disabled="!canContinue" @click="next">
           {{ t('features.invoices.admin.next') }}

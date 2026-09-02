@@ -32,7 +32,7 @@
       "address": "Address",
       "registrationNumber": "Registration number",
       "vatNumber": "VAT number",
-      "invoiceEmail": "Invoice email",
+      "invoiceEmail": "Email address",
       "locale": "Preferred language",
       "members": "Members and contacts",
       "memberEmail": "Member email",

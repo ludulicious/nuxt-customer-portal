@@ -11,6 +11,50 @@ import {
 } from '../server/utils/invoice-validation'
 import { firstInvoiceNumber, incrementInvoiceNumber } from '../shared/invoice-number'
 
+test('invoice creation has a dedicated route and a non-shrinking scrollable form', () => {
+  const page = readFileSync(new URL('../app/pages/admin/invoices/new.vue', import.meta.url), 'utf8')
+  const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
+  const toolbar = readFileSync(new URL('../app/components/InvoicesAdminListToolbar.vue', import.meta.url), 'utf8')
+  assert.match(page, /create-page/)
+  assert.match(component, /navigateTo\('\/admin\/invoices\/new'\)/)
+  assert.match(component, /v-if="!createPage"/)
+  assert.match(component, /formOpen \? 'overflow-y-auto py-1'/)
+  assert.match(component, /v-if="formOpen" class="shrink-0 scroll-mt-6"/)
+  assert.match(toolbar, /useElementSize\(toolbar\)/)
+  assert.match(toolbar, /v-model:open="showFilters"/)
+})
+
+test('client general email is not required or used as an invoice recipient fallback', () => {
+  const repository = readFileSync(new URL('../server/utils/invoice-repository.ts', import.meta.url), 'utf8')
+  const form = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
+  assert.match(repository, /recipientEmail: contact\?\.email \?\? null/)
+  assert.doesNotMatch(form, /!client\.invoiceEmail/)
+})
+
+test('provider invoice access overview is scoped and read-only', () => {
+  const repository = readFileSync(new URL('../server/utils/invoice-repository.ts', import.meta.url), 'utf8')
+  const overview = repository
+    .split('export const getClientInvoiceAccessOverview =')[1]!
+    .split('export const listClientInvoiceViewers')[0]!
+  assert.match(overview, /eq\(invoiceClientAccess.providerOrganizationId, providerOrganizationId\)/)
+  assert.match(overview, /eq\(invoiceClientAccess.clientOrganizationId, clientOrganizationId\)/)
+  assert.match(overview, /\['owner', 'admin'\].includes\(member.role\)/)
+  assert.match(overview, /item.userId === member.userId/)
+  assert.match(overview, /canView: moduleEnabled && Boolean\(access\?\.enabled\) && assigned/)
+  assert.doesNotMatch(overview, /\.insert\(|\.update\(|\.delete\(|ensureClientAccess/)
+  const route = readFileSync(
+    new URL('../server/api/invoices/admin/clients/[clientId]/access.get.ts', import.meta.url),
+    'utf8'
+  )
+  assert.match(route, /organizationType !== 'PROVIDER'/)
+  const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8'))
+  const nl = JSON.parse(readFileSync(new URL('../i18n/locales/nl.json', import.meta.url), 'utf8'))
+  assert.deepEqual(
+    Object.keys(en.features.invoices.clientAccess).sort(),
+    Object.keys(nl.features.invoices.clientAccess).sort()
+  )
+})
+
 test('Invoices exposes canonical routes independently', () => {
   const serialized = JSON.stringify(invoicesFeature)
   assert.match(serialized, /\/invoices/)

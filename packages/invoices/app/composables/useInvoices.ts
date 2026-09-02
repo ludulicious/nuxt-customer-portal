@@ -3,6 +3,7 @@ import type {
   ClientInvoiceSupplierDto,
   ClientInvoiceViewerDto,
   InvoiceClientDto,
+  InvoiceClientAccessOverviewDto,
   InvoiceDto,
   InvoiceEmailPreviewDto,
   InvoiceEmailStatusRefreshDto,
@@ -16,6 +17,8 @@ export interface InvoicesAdminBootstrap {
 }
 
 export const useInvoices = () => ({
+  clientAccessOverview: (clientId: string) =>
+    $fetch<InvoiceClientAccessOverviewDto>(`/api/invoices/admin/clients/${clientId}/access`),
   adminBootstrap: () => $fetch<InvoicesAdminBootstrap>('/api/invoices/admin/bootstrap'),
   updateSettings: (input: Omit<InvoiceSettingsDto, 'organizationId'>) =>
     $fetch('/api/invoices/admin/settings', { method: 'PUT', body: input }),

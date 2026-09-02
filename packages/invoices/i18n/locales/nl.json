@@ -2,6 +2,21 @@
   "features": {
     "invoices": {
       "title": "Facturen",
+      "clientAccess": {
+        "title": "Factuurtoegang",
+        "description": "Wie kan de verzonden en betaalde facturen van deze klant in het portaal bekijken? Eigenaren en beheerders hebben automatisch inzage; andere leden alleen na toewijzing door een klantbeheerder.",
+        "error": "Factuurtoegang kon niet worden geladen.",
+        "moduleDisabled": "De factuurmodule is uitgeschakeld voor deze klant.",
+        "notConfigured": "Factuurtoegang wordt beschikbaar zodra de eerste factuur voor deze klant is aangemaakt.",
+        "disabled": "Factuurtoegang voor deze klant is uitgeschakeld.",
+        "noMembers": "Deze klant heeft nog geen leden met portaaltoegang.",
+        "automatic": "Automatisch via rol",
+        "assigned": "Inzage toegewezen",
+        "notAssigned": "Geen inzage toegewezen",
+        "granted": "Kan facturen bekijken",
+        "denied": "Geen factuurtoegang",
+        "contactsExplanation": "Contactpersonen hieronder zijn bedoeld voor factuurcommunicatie. Een contactpersoon krijgt daarmee niet automatisch een account of factuurtoegang in het portaal."
+      },
       "roles": {
         "owner": "Eigenaar",
         "admin": "Beheerder",
@@ -43,6 +58,7 @@
         "hasAccess": "Heeft toegang"
       },
       "validation": {
+        "maxLength": "Gebruik maximaal {count} tekens",
         "invoiceNumberSequence": "Het factuurnummer moet eindigen op cijfers",
         "required": "Dit veld is verplicht",
         "validEmail": "Vul een geldig e-mailadres in",
