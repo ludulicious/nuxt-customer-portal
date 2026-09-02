@@ -232,7 +232,7 @@ export interface InvoiceSourceProvider {
   labelKey: string
   descriptionKey: string
   load: (query: { from: string; to: string }) => Promise<{ enabled: boolean; entries: InvoiceSourceEntryDto[] }>
-  create: (input: Record<string, unknown>) => Promise<unknown>
+  create: (input: Record<string, unknown>) => Promise<{ id: string }>
 }
 export interface InvoiceClientAccessOverviewDto {
   configured: boolean

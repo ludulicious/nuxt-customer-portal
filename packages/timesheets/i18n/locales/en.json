@@ -196,6 +196,7 @@
       "validation": {
         "required": "This field is required",
         "validDate": "Enter a valid date",
+        "periodLocked": "This date falls within a submitted or approved period.",
         "activityNameLength": "Enter at least 2 characters",
         "projectNameLength": "Enter at least 2 characters",
         "clientNameLength": "Enter at least 2 characters",

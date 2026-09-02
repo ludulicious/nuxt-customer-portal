@@ -175,6 +175,14 @@ body {
   font-size: 0.875rem;
 }
 
+.timesheet-mobile__day small {
+  color: var(--ui-text-highlighted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .timesheet-mobile__day--weekend {
   background: var(--timesheets-color-weekend);
 }
@@ -184,7 +192,8 @@ body {
   color: var(--ui-bg);
 }
 
-.timesheet-mobile__day--active strong {
+.timesheet-mobile__day--active strong,
+.timesheet-mobile__day--active small {
   color: var(--ui-bg);
 }
 
@@ -249,13 +258,17 @@ body {
   gap: 0.75rem;
   padding: 0.875rem 1rem;
   border-block-end: 1px solid var(--timesheets-rule);
-  cursor: pointer;
   text-align: start;
+}
+
+button.timesheet-mobile__entry {
+  cursor: pointer;
 }
 
 .timesheet-mobile__entry-copy {
   display: grid;
   min-width: 0;
+  gap: 0.125rem;
 }
 
 .timesheet-mobile__entry-copy small,
@@ -268,17 +281,17 @@ body {
 
 .timesheet-mobile__entry-copy small {
   color: var(--ui-text-muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 .timesheet-mobile__entry-copy strong {
   color: var(--ui-text-highlighted);
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
-.timesheet-mobile__entry-copy span {
-  color: var(--ui-primary);
-  font-size: 0.75rem;
+.timesheet-mobile__entry-activity {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
 }
 
 .timesheet-mobile__entry-copy .timesheet-mobile__entry-note {
@@ -289,8 +302,8 @@ body {
 
 .timesheet-mobile__entry-meta {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.5rem;
 }
 
@@ -302,13 +315,13 @@ body {
 
 .timesheet-mobile__duration {
   color: var(--ui-text-highlighted);
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 650;
 }
 
 .timesheet-mobile__add {
-  margin: 0.75rem;
-  width: calc(100% - 1.5rem);
+  margin: 0.75rem 1rem;
+  justify-self: start;
 }
 
 .timesheet-mobile button:disabled {
@@ -318,7 +331,7 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
   .timesheet-mobile__day:hover,
-  .timesheet-mobile__entry:hover {
+  button.timesheet-mobile__entry:hover {
     background: var(--ui-bg-elevated);
   }
 

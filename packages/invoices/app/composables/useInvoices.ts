@@ -23,7 +23,7 @@ export const useInvoices = () => ({
   updateSettings: (input: Omit<InvoiceSettingsDto, 'organizationId'>) =>
     $fetch('/api/invoices/admin/settings', { method: 'PUT', body: input }),
   createInvoice: (input: Record<string, unknown>) =>
-    $fetch('/api/invoices/admin/invoices', { method: 'POST', body: input }),
+    $fetch<{ id: string }>('/api/invoices/admin/invoices', { method: 'POST', body: input }),
   getNextInvoiceNumber: () => $fetch<{ number: string }>('/api/invoices/admin/invoices/next-number'),
   getInvoice: (id: string) => $fetch<InvoiceDto>(`/api/invoices/admin/invoices/${id}`),
   updateInvoice: (id: string, input: Record<string, unknown>) =>

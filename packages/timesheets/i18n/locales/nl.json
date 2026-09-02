@@ -196,6 +196,7 @@
       "validation": {
         "required": "Dit veld is verplicht",
         "validDate": "Vul een geldige datum in",
+        "periodLocked": "Deze datum valt in een ingediende of goedgekeurde periode.",
         "activityNameLength": "Vul minimaal 2 tekens in",
         "projectNameLength": "Vul minimaal 2 tekens in",
         "clientNameLength": "Vul minimaal 2 tekens in",

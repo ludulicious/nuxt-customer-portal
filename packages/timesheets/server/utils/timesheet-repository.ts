@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { isTimesheetDateLocked } from '@nuxt-customer-portal/timesheets/shared/period-lock'
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm'
 import {
   db,
@@ -1478,6 +1479,21 @@ const resolveEntryContext = async (
   }
 }
 
+const withEditableDates = async <T>(
+  weekId: string,
+  dates: string[],
+  mutate: (tx: TimesheetTransaction) => Promise<T>
+) =>
+  db.transaction(async (tx) => {
+    // Serialize date checks and writes with submission of this week.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${weekId}`}))`)
+    const periods = await tx.select().from(timesheetSubmission).where(eq(timesheetSubmission.weeklyTimesheetId, weekId))
+    if (dates.some((date) => isTimesheetDateLocked(date, periods))) {
+      throw createError({ statusCode: 409, message: 'Submitted or approved periods cannot be changed' })
+    }
+    return mutate(tx)
+  })
+
 const requireEditableEntry = async (entry: TimeEntryRecord) => {
   if (!entry.submissionId) {
     return
@@ -1559,17 +1575,19 @@ export const createEntry = async (
     throw createError({ statusCode: 400, message: 'Entry date is outside the selected week' })
   }
   const snapshots = await resolveEntryContext(organizationId, userId, input.projectId, input.activityTypeId)
-  const [created] = await db
-    .insert(timeEntry)
-    .values({
-      id: nanoid(),
-      organizationId,
-      weeklyTimesheetId: week.id,
-      userId,
-      ...input,
-      ...snapshots
-    })
-    .returning()
+  const [created] = await withEditableDates(week.id, [input.entryDate], (tx) =>
+    tx
+      .insert(timeEntry)
+      .values({
+        id: nanoid(),
+        organizationId,
+        weeklyTimesheetId: week.id,
+        userId,
+        ...input,
+        ...snapshots
+      })
+      .returning()
+  )
   if (!created) {
     throw createError({ statusCode: 500, message: 'Failed to create entry' })
   }
@@ -1616,11 +1634,13 @@ export const updateEntry = async (
     throw createError({ statusCode: 400, message: 'Entry date is outside the selected week' })
   }
   const snapshots = await resolveEntryContext(organizationId, userId, projectId, activityTypeId)
-  const [updated] = await db
-    .update(timeEntry)
-    .set({ ...input, ...snapshots })
-    .where(eq(timeEntry.id, id))
-    .returning()
+  const [updated] = await withEditableDates(week.id, [current.entryDate, entryDate], (tx) =>
+    tx
+      .update(timeEntry)
+      .set({ ...input, ...snapshots })
+      .where(eq(timeEntry.id, id))
+      .returning()
+  )
   if (!updated) {
     throw createError({ statusCode: 500, message: 'Failed to update entry' })
   }
@@ -1646,7 +1666,7 @@ export const deleteEntry = async (organizationId: string, userId: string, id: st
     throw createError({ statusCode: 404, message: 'Timesheet week not found' })
   }
   await requireEditableEntry(current)
-  await db.delete(timeEntry).where(eq(timeEntry.id, id))
+  await withEditableDates(week.id, [current.entryDate], (tx) => tx.delete(timeEntry).where(eq(timeEntry.id, id)))
 }
 
 export const startTimer = async (
@@ -1671,19 +1691,21 @@ export const startTimer = async (
   }
   const week = await ensureWeek(organizationId, userId, input.entryDate)
   const snapshots = await resolveEntryContext(organizationId, userId, input.projectId, input.activityTypeId)
-  const [created] = await db
-    .insert(timeEntry)
-    .values({
-      id: nanoid(),
-      organizationId,
-      weeklyTimesheetId: week.id,
-      userId,
-      ...input,
-      durationMinutes: 0,
-      timerStartedAt: new Date(),
-      ...snapshots
-    })
-    .returning()
+  const [created] = await withEditableDates(week.id, [input.entryDate], (tx) =>
+    tx
+      .insert(timeEntry)
+      .values({
+        id: nanoid(),
+        organizationId,
+        weeklyTimesheetId: week.id,
+        userId,
+        ...input,
+        durationMinutes: 0,
+        timerStartedAt: new Date(),
+        ...snapshots
+      })
+      .returning()
+  )
   if (!created) {
     throw createError({ statusCode: 500, message: 'Failed to start timer' })
   }
@@ -1707,14 +1729,16 @@ export const stopTimer = async (organizationId: string, userId: string) => {
     throw createError({ statusCode: 404, message: 'No timer is running' })
   }
   const elapsed = Math.max(1, Math.round((Date.now() - running.timerStartedAt.getTime()) / 60_000))
-  const [updated] = await db
-    .update(timeEntry)
-    .set({
-      durationMinutes: elapsed,
-      timerStartedAt: null
-    })
-    .where(eq(timeEntry.id, running.id))
-    .returning()
+  const [updated] = await withEditableDates(running.weeklyTimesheetId, [running.entryDate], (tx) =>
+    tx
+      .update(timeEntry)
+      .set({
+        durationMinutes: elapsed,
+        timerStartedAt: null
+      })
+      .where(eq(timeEntry.id, running.id))
+      .returning()
+  )
   if (!updated) {
     throw createError({ statusCode: 500, message: 'Failed to stop timer' })
   }
@@ -1885,6 +1909,7 @@ export const resubmitSubmission = async (organizationId: string, userId: string,
     if (!submission) {
       throw createError({ statusCode: 404, message: 'Editable submission not found' })
     }
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${submission.weeklyTimesheetId}`}))`)
     const entries = await tx.select().from(timeEntry).where(eq(timeEntry.submissionId, submission.id))
     if (!entries.length) {
       throw createError({ statusCode: 422, message: 'An empty submission cannot be submitted' })

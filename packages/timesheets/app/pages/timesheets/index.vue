@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
+import { isTimesheetDateLocked } from '@nuxt-customer-portal/timesheets/shared/period-lock'
 import type { TimeEntryDto, TimesheetSubmissionDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 defineOptions({ name: 'TimesheetsWorkbenchPage' })
@@ -77,8 +78,10 @@ const lastReusableEntryContext = computed(() => {
 })
 const runningEntry = computed(() => week.value?.entries.find((entry) => entry.timerStartedAt) ?? null)
 const editable = computed(() => Boolean(data.value?.canEnterTime))
+const dateLocked = (date: string) => isTimesheetDateLocked(date, week.value?.submissions ?? [])
+const dateEditable = (date: string) => editable.value && !dateLocked(date)
 const entryEditable = (entry: TimeEntryDto) =>
-  editable.value && (!entry.submissionId || ['DRAFT', 'REJECTED'].includes(entry.submissionStatus ?? ''))
+  dateEditable(entry.entryDate) && (!entry.submissionId || ['DRAFT', 'REJECTED'].includes(entry.submissionStatus ?? ''))
 const currentMember = computed(() => data.value?.team.find((member) => member.id === week.value?.userId))
 const submissionNeedsApprover = computed(
   () =>
@@ -175,7 +178,10 @@ const entrySchema = computed(() =>
       id: z.string().nullable(),
       projectId: z.string().min(1, t('features.timesheets.validation.required')),
       activityTypeId: z.string().min(1, t('features.timesheets.validation.required')),
-      entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate')),
+      entryDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, t('features.timesheets.validation.validDate'))
+        .refine(dateEditable, t('features.timesheets.validation.periodLocked')),
       hours: z.number().int().min(0).max(24, t('features.timesheets.validation.hoursRange')),
       minutes: z.number().int().min(0).max(59, t('features.timesheets.validation.minutesRange')),
       note: z.string().trim().max(2000)
@@ -331,6 +337,9 @@ const formatDuration = (minutes: number) => {
 }
 
 const openCreate = (date = format(new Date(), 'yyyy-MM-dd'), projectId?: string, activityTypeId?: string) => {
+  if (!dateEditable(date)) {
+    return
+  }
   const remembered = lastReusableEntryContext.value
   Object.assign(form, {
     id: null,
@@ -568,7 +577,7 @@ const runningDuration = computed(() => {
             size="lg"
             square
             :aria-label="t('features.timesheets.timer.start')"
-            :disabled="!editable"
+            :disabled="!dateEditable(currentDate)"
             @click="openTimer"
           />
         </UTooltip>
@@ -577,7 +586,7 @@ const runningDuration = computed(() => {
           class="hidden sm:ml-auto sm:inline-flex"
           icon="i-lucide-timer"
           color="success"
-          :disabled="!editable"
+          :disabled="!dateEditable(currentDate)"
           @click="openTimer"
         >
           {{ t('features.timesheets.timer.start') }}
@@ -674,7 +683,17 @@ const runningDuration = computed(() => {
             :aria-current="day.value === currentDate ? 'date' : undefined"
           >
             <span class="block text-xs text-muted">{{ day.label }}</span>
-            <span class="font-semibold">{{ day.day }}</span>
+            <span class="inline-flex items-center justify-center gap-1 font-semibold">
+              {{ day.day }}
+              <UIcon
+                v-if="dateLocked(day.value)"
+                name="i-lucide-lock-keyhole"
+                class="size-3 shrink-0"
+                role="img"
+                :aria-label="t('features.timesheets.validation.periodLocked')"
+                :title="t('features.timesheets.validation.periodLocked')"
+              />
+            </span>
           </div>
           <div class="timesheet-grid__cell text-right font-medium">
             {{ t('features.timesheets.total') }}
@@ -692,7 +711,9 @@ const runningDuration = computed(() => {
               type="button"
               class="timesheet-grid__cell timesheet-row-action text-center hover:bg-elevated"
               :class="{ 'timesheet-grid__cell--weekend': index > 4 }"
-              :disabled="!editable"
+              :disabled="
+                !editable || (!dateEditable(day.value) && !row.entries.some((entry) => entry.entryDate === day.value))
+              "
               :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
               @click="openRowCell(row, day.value)"
             >
@@ -719,7 +740,13 @@ const runningDuration = computed(() => {
           </template>
 
           <div class="timesheet-grid__cell">
-            <UButton v-if="editable" size="sm" variant="ghost" icon="i-lucide-plus" @click="openCreate()">
+            <UButton
+              v-if="dateEditable(currentDate)"
+              size="sm"
+              variant="ghost"
+              icon="i-lucide-plus"
+              @click="openCreate()"
+            >
               {{ t('features.timesheets.addEntry') }}
             </UButton>
           </div>
@@ -729,7 +756,7 @@ const runningDuration = computed(() => {
             type="button"
             class="timesheet-grid__cell timesheet-row-action text-center font-semibold hover:bg-elevated"
             :class="{ 'timesheet-grid__cell--weekend': index > 4 }"
-            :disabled="!editable"
+            :disabled="!editable || (!dateEditable(day.value) && !totalForDate(day.value))"
             :aria-label="`${totalForDate(day.value) ? t('features.timesheets.cellEntries.title') : t('features.timesheets.addEntry')}: ${day.label} ${day.day}`"
             @click="openDayCell(day.value)"
           >
@@ -762,7 +789,17 @@ const runningDuration = computed(() => {
             @click="selectedDay = day.value"
           >
             <span>{{ day.label }}</span>
-            <strong>{{ day.day }}</strong>
+            <strong class="inline-flex items-center justify-center gap-1">
+              {{ day.day }}
+              <UIcon
+                v-if="dateLocked(day.value)"
+                name="i-lucide-lock-keyhole"
+                class="size-3 shrink-0"
+                role="img"
+                :aria-label="t('features.timesheets.validation.periodLocked')"
+                :title="t('features.timesheets.validation.periodLocked')"
+              />
+            </strong>
             <small>{{ formatDuration(totalForDate(day.value)) }}</small>
           </button>
         </div>
@@ -784,29 +821,55 @@ const runningDuration = computed(() => {
         </div>
 
         <div v-if="selectedDayEntries.length" class="timesheet-mobile__entries">
-          <button
+          <component
+            :is="entryEditable(entry) ? 'button' : 'div'"
             v-for="entry in selectedDayEntries"
             :key="entry.id"
-            type="button"
-            class="timesheet-mobile__entry timesheet-row-action"
-            :disabled="!entryEditable(entry)"
-            :aria-label="`${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}${entry.note ? `, ${entry.note}` : ''}`"
+            :type="entryEditable(entry) ? 'button' : undefined"
+            class="timesheet-mobile__entry"
+            :class="{ 'timesheet-row-action': entryEditable(entry) }"
+            :aria-label="
+              entryEditable(entry)
+                ? `${t('features.timesheets.editEntry')}: ${entry.projectName}, ${entry.activityName}${entry.note ? `, ${entry.note}` : ''}`
+                : undefined
+            "
             @click="openEdit(entry)"
           >
             <span class="timesheet-mobile__entry-copy">
               <small>{{ entry.clientName }}</small>
               <strong>{{ entry.projectName }}</strong>
-              <span>{{ entry.activityName }}</span>
+              <span class="timesheet-mobile__entry-activity">{{ entry.activityName }}</span>
               <span v-if="entry.note" class="timesheet-mobile__entry-note">{{ entry.note }}</span>
-              <UBadge v-if="entry.submissionStatus" color="neutral" variant="subtle" size="sm">
+            </span>
+            <span class="timesheet-mobile__entry-meta">
+              <span class="flex items-center gap-2">
+                <UIcon
+                  v-if="entryEditable(entry)"
+                  name="i-lucide-pencil"
+                  class="timesheet-mobile__edit-cue"
+                  aria-hidden="true"
+                />
+                <span class="timesheet-mobile__duration">{{ formatDuration(entry.durationMinutes) }}</span>
+              </span>
+              <UBadge
+                v-if="entry.submissionStatus"
+                :color="
+                  entry.submissionStatus === 'APPROVED'
+                    ? 'success'
+                    : entry.submissionStatus === 'SUBMITTED'
+                      ? 'warning'
+                      : entry.submissionStatus === 'REJECTED'
+                        ? 'error'
+                        : 'neutral'
+                "
+                :icon="dateLocked(entry.entryDate) ? 'i-lucide-lock-keyhole' : undefined"
+                variant="subtle"
+                size="sm"
+              >
                 {{ t(`features.timesheets.status.${entry.submissionStatus.toLowerCase()}`) }}
               </UBadge>
             </span>
-            <span class="timesheet-mobile__entry-meta">
-              <UIcon name="i-lucide-pencil" class="timesheet-mobile__edit-cue" aria-hidden="true" />
-              <span class="timesheet-mobile__duration">{{ formatDuration(entry.durationMinutes) }}</span>
-            </span>
-          </button>
+          </component>
         </div>
         <div v-else class="timesheet-mobile__empty">
           <p>{{ t('features.timesheets.mobile.empty') }}</p>
@@ -814,12 +877,11 @@ const runningDuration = computed(() => {
         </div>
 
         <UButton
-          v-if="editable"
+          v-if="dateEditable(selectedDay)"
           class="timesheet-mobile__add"
-          size="lg"
-          variant="soft"
+          color="neutral"
+          variant="outline"
           icon="i-lucide-plus"
-          block
           @click="openCreate(selectedDay)"
         >
           {{ t('features.timesheets.addEntry') }}
@@ -838,7 +900,7 @@ const runningDuration = computed(() => {
           :color="submission.status === 'APPROVED' ? 'success' : submission.status === 'REJECTED' ? 'error' : 'warning'"
           variant="subtle"
         >
-          {{ submission.periodStartsOn }}–{{ submission.periodEndsOn }} ·
+          {{ formatSubmissionPeriod(submission.periodStartsOn, submission.periodEndsOn) }} ·
           {{ t(`features.timesheets.status.${submission.status.toLowerCase()}`) }}
         </UBadge>
       </div>
@@ -982,11 +1044,16 @@ const runningDuration = computed(() => {
                 </UBadge>
               </span>
               <strong class="tabular-nums">{{ formatDuration(entry.durationMinutes) }}</strong>
-              <UIcon name="i-lucide-pencil" class="size-4 text-muted" aria-hidden="true" />
+              <UIcon v-if="entryEditable(entry)" name="i-lucide-pencil" class="size-4 text-muted" aria-hidden="true" />
             </button>
           </div>
           <div class="flex justify-end">
-            <UButton icon="i-lucide-plus" variant="soft" @click="addToSelectedCell">
+            <UButton
+              v-if="selectedCell && dateEditable(selectedCell.date)"
+              icon="i-lucide-plus"
+              variant="soft"
+              @click="addToSelectedCell"
+            >
               {{ t('features.timesheets.cellEntries.addAnother') }}
             </UButton>
           </div>

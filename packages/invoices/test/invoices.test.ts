@@ -24,6 +24,17 @@ test('invoice creation has a dedicated route and a non-shrinking scrollable form
   assert.match(toolbar, /v-model:open="showFilters"/)
 })
 
+test('both invoice creation flows open the newly created invoice detail', () => {
+  const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
+  const save = component.split('const save = async () => {')[1]!.split('const statusColor')[0]!
+  assert.match(
+    save,
+    /const created =[\s\S]*await availableProviders\.value\[0\]\.create\(input\)[\s\S]*await api\.createInvoice\(input\)/
+  )
+  assert.match(save, /await navigateTo\(`\/admin\/invoices\/\$\{created\.id\}`\)/)
+  assert.doesNotMatch(save, /navigateTo\('\/admin\/invoices'\)/)
+})
+
 test('client general email is not required or used as an invoice recipient fallback', () => {
   const repository = readFileSync(new URL('../server/utils/invoice-repository.ts', import.meta.url), 'utf8')
   const form = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')

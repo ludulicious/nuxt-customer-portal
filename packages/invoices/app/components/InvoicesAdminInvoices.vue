@@ -166,6 +166,16 @@ const clientOptions = computed(() =>
 const selectedClient = computed(() =>
   props.data.clients.find((client) => client.organizationId === model.clientOrganizationId)
 )
+watch(
+  () => selectedClient.value?.contacts,
+  (contacts) => {
+    if (contacts?.some((contact) => contact.id === model.contactId)) {
+      return
+    }
+    model.contactId = contacts?.length === 1 ? contacts[0]!.id : ''
+  },
+  { immediate: true }
+)
 const missingClientInvoiceDetails = computed(() => {
   const client = selectedClient.value
   if (!client) {
@@ -322,13 +332,12 @@ const save = async () => {
   busy.value = true
   try {
     const input = { ...model, contactId: model.contactId || null }
-    if (source.value === 'TIME' && availableProviders.value[0]) {
-      await availableProviders.value[0].create(input)
-    } else {
-      await api.createInvoice(input)
-    }
+    const created =
+      source.value === 'TIME' && availableProviders.value[0]
+        ? await availableProviders.value[0].create(input)
+        : await api.createInvoice(input)
     toast.add({ title: t('features.invoices.admin.invoiceCreated'), color: 'success' })
-    await navigateTo('/admin/invoices')
+    await navigateTo(`/admin/invoices/${created.id}`)
   } catch (error) {
     toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
   } finally {
