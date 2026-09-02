@@ -93,6 +93,13 @@ const inviteMember = async () => {
   }
 }
 
+const memberToRemove = ref<{ id: string; name: string; email: string } | null>(null)
+const showRemoveMemberConfirmation = ref(false)
+const requestRemoveMember = (member: { id: string; name: string; email: string }) => {
+  memberToRemove.value = member
+  showRemoveMemberConfirmation.value = true
+}
+
 const changeMemberRole = async (memberId: string, role: string) => {
   busy.value = true
   try {
@@ -103,13 +110,21 @@ const changeMemberRole = async (memberId: string, role: string) => {
   }
 }
 
-const removeMember = async (memberId: string) => {
+const removeMember = async () => {
+  if (!memberToRemove.value || busy.value) {
+return
+}
+  const memberId = memberToRemove.value.id
   busy.value = true
   try {
     await api.removeMember(props.client.id, memberId)
     await props.refresh()
+    toast.add({ title: t('features.clients.memberRemoved'), color: 'success' })
+  } catch {
+    toast.add({ title: t('features.clients.removeMemberFailed'), color: 'error' })
   } finally {
     busy.value = false
+    memberToRemove.value = null
   }
 }
 
@@ -238,13 +253,15 @@ const toggleEditing = () => {
                 @update:model-value="changeMemberRole(item.id, String($event))"
               />
               <UButton
-                icon="i-lucide-user-minus"
+                icon="i-lucide-trash-2"
                 color="error"
-                variant="ghost"
+                variant="outline"
                 size="xs"
+                :disabled="busy"
                 :aria-label="t('features.clients.removeMember')"
-                @click="removeMember(item.id)"
-              />
+                @click.stop="requestRemoveMember(item)"
+                >{{ t('features.clients.removeMember') }}</UButton
+              >
             </div>
           </div>
         </div>
@@ -376,5 +393,15 @@ const toggleEditing = () => {
         </div>
       </div>
     </UCard>
+    <ConfirmationModal
+      v-model:open="showRemoveMemberConfirmation"
+      title="features.clients.removeMember"
+      message="features.clients.confirmRemoveMember"
+      :message-params="{ name: memberToRemove?.name ?? '', email: memberToRemove?.email ?? '', client: client.name }"
+      confirm-text="features.clients.removeMember"
+      confirm-color="error"
+      @confirm="removeMember"
+      @cancel="memberToRemove = null"
+    />
   </div>
 </template>

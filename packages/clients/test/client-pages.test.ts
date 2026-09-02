@@ -7,6 +7,15 @@ const listUrl = new URL('../app/pages/clients/index.vue', import.meta.url)
 const detailPageUrl = new URL('../app/pages/clients/[id].vue', import.meta.url)
 const detailComponentUrl = new URL('../app/components/ClientsClientDetail.vue', import.meta.url)
 
+test('removing a client member requires an explicit confirmation', async () => {
+  const source = await readFile(detailComponentUrl, 'utf8')
+  assert.match(source, /@click\.stop="requestRemoveMember\(item\)"/)
+  assert.doesNotMatch(source, /@click="removeMember\(item\.id\)"/)
+  assert.match(source, /message="features\.clients\.confirmRemoveMember"/)
+  assert.match(source, /@confirm="removeMember"/)
+  assert.match(source, /@cancel="memberToRemove = null"/)
+})
+
 test('client cards open a dedicated detail route and preserve collection state', async () => {
   const [list, detailPage, detailComponent] = await Promise.all([
     readFile(listUrl, 'utf8'),
