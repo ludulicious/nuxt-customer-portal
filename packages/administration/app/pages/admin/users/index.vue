@@ -29,8 +29,9 @@ const listScrollTop = ref(0)
 const scrollRestored = ref(false)
 const showFilters = ref(false)
 const showSort = ref(false)
-const breakpoints = useBreakpoints({ mobile: 768 })
-const isMobile = breakpoints.smaller('mobile')
+const listToolbar = ref<HTMLElement | null>(null)
+const { width: toolbarWidth } = useElementSize(listToolbar)
+const isMobile = computed(() => toolbarWidth.value < 840)
 
 const roleOptions = computed(() => [
   { label: t('admin.user.list.allRoles'), value: 'all' },
@@ -194,7 +195,7 @@ await loadUsers()
           </div>
         </header>
 
-        <div class="border-b border-default pb-4">
+        <div ref="listToolbar" class="shrink-0 border-b border-default pb-4">
           <div class="flex items-center gap-2">
             <UInput
               v-model="searchQuery"
@@ -207,7 +208,14 @@ await loadUsers()
             <template v-if="!isMobile">
               <USelect v-model="roleFilter" :items="roleOptions" value-key="value" class="w-40" />
               <USelect v-model="statusFilter" :items="statusOptions" value-key="value" class="w-40" />
-              <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-44" />
+              <USelect
+                v-model="sortBy"
+                :items="sortOptions"
+                icon="i-lucide-arrow-down-up"
+                :aria-label="t('common.sortBy')"
+                value-key="value"
+                class="ml-auto w-44 shrink-0"
+              />
               <UButton
                 color="neutral"
                 variant="outline"
@@ -219,12 +227,14 @@ await loadUsers()
             <template v-else>
               <UButton
                 variant="outline"
+                color="neutral"
                 icon="i-lucide-filter"
                 :aria-label="t('common.filters')"
                 @click="showFilters = true"
               />
               <UButton
                 variant="outline"
+                color="neutral"
                 icon="i-lucide-arrow-down-up"
                 :aria-label="t('common.sort')"
                 @click="showSort = true"

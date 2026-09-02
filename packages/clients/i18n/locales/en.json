@@ -33,6 +33,7 @@
       "registrationNumber": "Registration number",
       "vatNumber": "VAT number",
       "invoiceEmail": "Email address",
+      "status": "Status",
       "locale": "Preferred language",
       "members": "Members and contacts",
       "memberEmail": "Member email",

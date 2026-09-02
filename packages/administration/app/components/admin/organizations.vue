@@ -5,10 +5,9 @@ const { t } = useI18n()
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 
-const breakpoints = useBreakpoints({
-  mobile: 768
-})
-const isMobile = breakpoints.smaller('mobile')
+const toolbarElement = ref<HTMLElement | null>(null)
+const { width: toolbarWidth } = useElementSize(toolbarElement)
+const isMobile = computed(() => toolbarWidth.value < 500)
 
 if (!isAdmin.value) {
   throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -136,51 +135,53 @@ const listContainerRef = ref<HTMLElement | null>(null)
         </template>
       </UDashboardNavbar>
 
-      <UDashboardToolbar>
-        <template #left>
-          <div class="flex items-center gap-2 w-full">
-            <UInput
-              v-model="searchQuery"
-              :placeholder="t('common.searchPlaceholder')"
-              icon="i-lucide-search"
-              :loading="loading"
-              class="flex-1 max-w-md"
-              clearable
-            />
-          </div>
-        </template>
-        <template #right>
-          <div class="flex items-center gap-2">
-            <UButton
-              v-if="isMobile"
-              icon="i-lucide-arrow-down-up"
-              variant="outline"
-              :title="t('common.sort')"
-              @click="showSortModal = true"
-            >
-              {{ t('common.sort') }}
-            </UButton>
+      <div ref="toolbarElement" class="w-full min-w-0">
+        <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'ml-auto shrink-0' }">
+          <template #left>
+            <div class="flex items-center gap-2 w-full">
+              <UInput
+                v-model="searchQuery"
+                :placeholder="t('common.searchPlaceholder')"
+                icon="i-lucide-search"
+                :loading="loading"
+                class="min-w-0 flex-1 md:max-w-xs"
+                clearable
+              />
+            </div>
+          </template>
+          <template #right>
+            <div class="flex items-center gap-2">
+              <UButton
+                v-if="isMobile"
+                icon="i-lucide-arrow-down-up"
+                color="neutral"
+                variant="outline"
+                :title="t('common.sort')"
+                @click="showSortModal = true"
+              />
 
-            <UDropdownMenu
-              v-if="!isMobile"
-              :items="sortDropdownItems"
-              :content="{ align: 'end', collisionPadding: 12 }"
-            >
-              <UButton icon="i-lucide-arrow-down-up" variant="outline" class="w-48 justify-between">
-                <span class="truncate">{{ currentSortLabel }}</span>
-                <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
-              </UButton>
-            </UDropdownMenu>
-            <UButton
-              v-if="!isMobile"
-              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-              variant="outline"
-              :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
-              @click="toggleSortDir"
-            />
-          </div>
-        </template>
-      </UDashboardToolbar>
+              <UDropdownMenu
+                v-if="!isMobile"
+                :items="sortDropdownItems"
+                :content="{ align: 'end', collisionPadding: 12 }"
+              >
+                <UButton icon="i-lucide-arrow-down-up" color="neutral" variant="outline" class="w-48 justify-between">
+                  <span class="truncate">{{ currentSortLabel }}</span>
+                  <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
+                </UButton>
+              </UDropdownMenu>
+              <UButton
+                v-if="!isMobile"
+                :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
+                color="neutral"
+                variant="outline"
+                :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
+                @click="toggleSortDir"
+              />
+            </div>
+          </template>
+        </UDashboardToolbar>
+      </div>
 
       <!-- Mobile Sort Modal -->
       <UModal v-model:open="showSortModal" :title="t('common.sort')" :ui="{ content: 'w-full sm:max-w-md' }">
@@ -214,7 +215,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="outline" @click="showSortModal = false">
+            <UButton color="neutral" variant="outline" @click="showSortModal = false">
               {{ t('common.close') }}
             </UButton>
           </div>
@@ -251,7 +252,12 @@ const listContainerRef = ref<HTMLElement | null>(null)
                     {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
                   </p>
                 </div>
-                <UButton :to="`/admin/organizations/${org.slug}?from=admin-organizations`" variant="outline" size="sm">
+                <UButton
+                  :to="`/admin/organizations/${org.slug}?from=admin-organizations`"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                >
                   {{ t('admin.organization.list.view') }}
                 </UButton>
               </div>

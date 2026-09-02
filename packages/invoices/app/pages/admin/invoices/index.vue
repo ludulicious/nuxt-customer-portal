@@ -12,15 +12,20 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
 </script>
 
 <template>
-  <section class="invoice-admin flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
-    <header class="mb-6 flex shrink-0 items-end justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold">{{ t('features.invoices.salesInvoices') }}</h1>
-        <p class="mt-1 hidden text-sm text-muted sm:block">
-          {{ t('features.invoices.admin.sectionSubtitles.invoices') }}
-        </p>
+  <section
+    class="invoice-admin mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col overflow-hidden p-4 sm:p-6 lg:p-8"
+  >
+    <header class="mb-4 flex shrink-0 items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
+      <div class="flex min-w-0 gap-3">
+        <UIcon name="i-lucide-send" class="mt-1 size-6 shrink-0 text-primary" />
+        <div class="min-w-0">
+          <h1 class="text-2xl font-semibold">{{ t('features.invoices.salesInvoices') }}</h1>
+          <p class="mt-1 hidden text-sm text-muted sm:block">
+            {{ t('features.invoices.admin.sectionSubtitles.invoices') }}
+          </p>
+        </div>
       </div>
-      <div class="flex gap-1">
+      <div class="flex shrink-0 items-center gap-1">
         <UButton
           v-if="child?.showCreate"
           class="rounded-full sm:hidden"

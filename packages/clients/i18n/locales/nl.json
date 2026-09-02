@@ -33,6 +33,7 @@
       "registrationNumber": "Registratienummer",
       "vatNumber": "Btw-nummer",
       "invoiceEmail": "E-mailadres",
+      "status": "Status",
       "locale": "Voorkeurstaal",
       "members": "Leden en contactpersonen",
       "memberEmail": "E-mailadres van lid",

@@ -25,10 +25,9 @@ const { getStatusColor, getStatusBadgeText, getPriorityBadgeText, getPriorityCol
   useServiceRequests()
 
 // Mobile breakpoint detection
-const breakpoints = useBreakpoints({
-  mobile: 768
-})
-const isMobile = breakpoints.smaller('mobile')
+const toolbarElement = ref<HTMLElement | null>(null)
+const { width: toolbarWidth } = useElementSize(toolbarElement)
+const isMobile = computed(() => toolbarWidth.value < 1060)
 
 // Filter modal state
 const showFiltersModal = ref(false)
@@ -475,103 +474,110 @@ onUnmounted(() => {
         </template>
       </UDashboardNavbar>
 
-      <UDashboardToolbar class="py-2">
-        <template #left>
-          <div class="flex items-center gap-2 w-full">
-            <UInput
-              v-model="searchQuery"
-              :placeholder="t('common.searchPlaceholder')"
-              icon="i-lucide-search"
-              :loading="pending"
-              class="flex-1 max-w-md"
-              clearable
-            />
-            <USelect
-              v-if="!isMobile"
-              v-model="statusFilter"
-              :items="statusOptions"
-              :placeholder="t('features.serviceRequests.filters.status')"
-              class="w-48"
-            >
-              <template #item="{ item }">
-                <div class="flex items-center justify-between w-full gap-2">
-                  <span class="flex-1 truncate">{{ item.label }}</span>
-                  <UBadge
-                    v-if="item.badgeText"
-                    :color="item.badgeColor as any"
-                    size="xs"
-                    class="shrink-0 min-w-[100px] justify-center"
-                  >
-                    {{ item.badgeText }}
-                  </UBadge>
-                </div>
-              </template>
-            </USelect>
-            <USelect
-              v-if="!isMobile"
-              v-model="priorityFilter"
-              :items="priorityOptions"
-              :placeholder="t('features.serviceRequests.filters.priority')"
-              class="w-48"
-            >
-              <template #item="{ item }">
-                <div class="flex items-center justify-between w-full gap-2">
-                  <span class="flex-1 truncate">{{ item.label }}</span>
-                  <UBadge
-                    v-if="item.badgeText"
-                    :color="item.badgeColor as any"
-                    size="xs"
-                    class="shrink-0 min-w-[100px] justify-center"
-                  >
-                    {{ item.badgeText }}
-                  </UBadge>
-                </div>
-              </template>
-            </USelect>
-            <USelect
-              v-if="!isMobile"
-              v-model="categoryFilter"
-              :items="categoryOptions"
-              :placeholder="t('features.serviceRequests.filters.category')"
-              class="w-48"
-            />
-          </div>
-        </template>
-        <template #right>
-          <div class="flex items-center gap-2">
-            <UButton v-if="isMobile" icon="i-lucide-filter" variant="outline" @click="showFiltersModal = true">
-              Filters
-            </UButton>
-            <UButton
-              v-if="isMobile"
-              icon="i-lucide-arrow-down-up"
-              variant="outline"
-              :title="t('common.sort')"
-              @click="showSortModal = true"
-            >
-              {{ t('common.sort') }}
-            </UButton>
+      <div ref="toolbarElement" class="w-full min-w-0">
+        <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'ml-auto shrink-0' }">
+          <template #left>
+            <div class="flex items-center gap-2 w-full">
+              <UInput
+                v-model="searchQuery"
+                :placeholder="t('common.searchPlaceholder')"
+                icon="i-lucide-search"
+                :loading="pending"
+                class="min-w-0 flex-1 md:max-w-xs"
+                clearable
+              />
+              <USelect
+                v-if="!isMobile"
+                v-model="statusFilter"
+                :items="statusOptions"
+                :placeholder="t('features.serviceRequests.filters.status')"
+                class="w-48"
+              >
+                <template #item="{ item }">
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <span class="flex-1 truncate">{{ item.label }}</span>
+                    <UBadge
+                      v-if="item.badgeText"
+                      :color="item.badgeColor as any"
+                      size="xs"
+                      class="shrink-0 min-w-[100px] justify-center"
+                    >
+                      {{ item.badgeText }}
+                    </UBadge>
+                  </div>
+                </template>
+              </USelect>
+              <USelect
+                v-if="!isMobile"
+                v-model="priorityFilter"
+                :items="priorityOptions"
+                :placeholder="t('features.serviceRequests.filters.priority')"
+                class="w-48"
+              >
+                <template #item="{ item }">
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <span class="flex-1 truncate">{{ item.label }}</span>
+                    <UBadge
+                      v-if="item.badgeText"
+                      :color="item.badgeColor as any"
+                      size="xs"
+                      class="shrink-0 min-w-[100px] justify-center"
+                    >
+                      {{ item.badgeText }}
+                    </UBadge>
+                  </div>
+                </template>
+              </USelect>
+              <USelect
+                v-if="!isMobile"
+                v-model="categoryFilter"
+                :items="categoryOptions"
+                :placeholder="t('features.serviceRequests.filters.category')"
+                class="w-48"
+              />
+            </div>
+          </template>
+          <template #right>
+            <div class="flex items-center gap-2">
+              <UButton
+                v-if="isMobile"
+                :aria-label="t('common.filters')"
+                icon="i-lucide-filter"
+                color="neutral"
+                variant="outline"
+                @click="showFiltersModal = true"
+              />
+              <UButton
+                v-if="isMobile"
+                icon="i-lucide-arrow-down-up"
+                color="neutral"
+                variant="outline"
+                :title="t('common.sort')"
+                @click="showSortModal = true"
+              />
 
-            <UDropdownMenu
-              v-if="!isMobile"
-              :items="sortDropdownItems"
-              :content="{ align: 'end', collisionPadding: 12 }"
-            >
-              <UButton icon="i-lucide-arrow-down-up" variant="outline" class="w-48 justify-between">
-                <span class="truncate">{{ currentSortLabel }}</span>
-                <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
-              </UButton>
-            </UDropdownMenu>
-            <UButton
-              v-if="!isMobile"
-              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-              variant="outline"
-              :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
-              @click="toggleSortDir"
-            />
-          </div>
-        </template>
-      </UDashboardToolbar>
+              <UDropdownMenu
+                v-if="!isMobile"
+                :items="sortDropdownItems"
+                :content="{ align: 'end', collisionPadding: 12 }"
+              >
+                <UButton icon="i-lucide-arrow-down-up" color="neutral" variant="outline" class="w-48 justify-between">
+                  <span class="truncate">{{ currentSortLabel }}</span>
+                  <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
+                </UButton>
+              </UDropdownMenu>
+              <UButton
+                v-if="!isMobile"
+                :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
+                color="neutral"
+                variant="outline"
+                :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
+                @click="toggleSortDir"
+              />
+            </div>
+          </template>
+        </UDashboardToolbar>
+      </div>
 
       <!-- Mobile Filters Modal -->
       <UModal
@@ -639,7 +645,7 @@ onUnmounted(() => {
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="outline" @click="showFiltersModal = false"> Close </UButton>
+            <UButton color="neutral" variant="outline" @click="showFiltersModal = false"> Close </UButton>
           </div>
         </template>
       </UModal>
@@ -676,7 +682,7 @@ onUnmounted(() => {
         </template>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="outline" @click="showSortModal = false">
+            <UButton color="neutral" variant="outline" @click="showSortModal = false">
               {{ t('common.close') }}
             </UButton>
           </div>

@@ -22,10 +22,6 @@ const formOpen = ref(false)
 const listContainer = ref<HTMLElement | null>(null)
 const listScrollTop = ref(0)
 const scrollRestored = ref(false)
-const showFilters = ref(false)
-const showSort = ref(false)
-const breakpoints = useBreakpoints({ mobile: 768 })
-const isMobile = breakpoints.smaller('mobile')
 const clients = computed(() => result.value?.items ?? [])
 const statusOptions = computed(() => [
   { label: t('features.clients.all'), value: 'all' },
@@ -192,64 +188,18 @@ onMounted(() => {
           </div>
         </header>
 
-        <div class="border-b border-default pb-4">
-          <div class="flex items-center gap-2">
-            <UInput
-              v-model="search"
-              class="min-w-0 flex-1 md:max-w-xs"
-              icon="i-lucide-search"
-              :placeholder="t('features.clients.search')"
-            />
-            <template v-if="!isMobile">
-              <USelect v-model="status" :items="statusOptions" value-key="value" class="w-44" />
-              <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-44" />
-              <UButton
-                color="neutral"
-                variant="outline"
-                :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-                :aria-label="t('features.clients.direction')"
-                @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
-              />
-            </template>
-            <template v-else>
-              <UButton
-                variant="outline"
-                icon="i-lucide-filter"
-                :aria-label="t('common.filters')"
-                @click="showFilters = true"
-              />
-              <UButton
-                variant="outline"
-                icon="i-lucide-arrow-down-up"
-                :aria-label="t('common.sort')"
-                @click="showSort = true"
-              />
-            </template>
-          </div>
-          <UModal v-model:open="showFilters" :title="t('common.filters')">
-            <template #body>
-              <UFormField :label="t('features.clients.sortStatus')">
-                <USelect v-model="status" :items="statusOptions" value-key="value" class="w-full" />
-              </UFormField>
-            </template>
-          </UModal>
-          <UModal v-model:open="showSort" :title="t('common.sort')">
-            <template #body>
-              <div class="space-y-4">
-                <UFormField :label="t('common.sortBy')">
-                  <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /> </UFormField
-                ><UButton
-                  block
-                  variant="outline"
-                  :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
-                  @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
-                >
-                  {{ t('features.clients.direction') }}
-                </UButton>
-              </div>
-            </template>
-          </UModal>
-        </div>
+        <PortalListToolbar
+          v-model:search="search"
+          :search-placeholder="t('features.clients.search')"
+          :filters="[{ key: 'status', placeholder: t('features.clients.status'), items: statusOptions }]"
+          :filter-values="{ status }"
+          :sort-options="sortOptions"
+          :sort-by="sortBy"
+          :sort-dir="sortDir"
+          @filter="(_key, value) => (status = value || 'all')"
+          @sort="sortBy = $event"
+          @toggle-direction="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
+        />
 
         <ClientsClientForm v-if="formOpen" :busy="busy" @submit="save" @cancel="formOpen = false" />
 

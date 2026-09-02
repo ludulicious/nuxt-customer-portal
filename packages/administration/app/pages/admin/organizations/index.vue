@@ -25,8 +25,9 @@ const listScrollTop = ref(0)
 const listContainerRef = ref<HTMLElement | null>(null)
 const scrollRestored = ref(false)
 const showSort = ref(false)
-const breakpoints = useBreakpoints({ mobile: 768 })
-const isMobile = breakpoints.smaller('mobile')
+const listToolbar = ref<HTMLElement | null>(null)
+const { width: toolbarWidth } = useElementSize(listToolbar)
+const isMobile = computed(() => toolbarWidth.value < 480)
 
 const sortOptions = computed(() => [
   { label: t('admin.organization.list.name'), value: 'name' as const },
@@ -190,6 +191,7 @@ watch(
               class="hidden sm:inline-flex"
               icon="i-lucide-plus"
               size="sm"
+              color="neutral"
               variant="outline"
               to="/admin/organizations/create"
             >
@@ -207,20 +209,25 @@ watch(
           </div>
         </header>
 
-        <div class="border-b border-default pb-4">
+        <div ref="listToolbar" class="shrink-0 border-b border-default pb-4">
           <div class="flex items-center gap-2">
             <UInput
               v-model="searchQuery"
               :placeholder="t('admin.organization.list.searchPlaceholder')"
               icon="i-lucide-search"
               :loading="loading"
-              class="min-w-0 flex-1"
+              class="min-w-0 flex-1 md:max-w-xs"
               clearable
             />
             <template v-if="!isMobile">
-              <div class="w-48 shrink-0">
+              <div class="ml-auto w-44 shrink-0">
                 <UDropdownMenu :items="sortDropdownItems" :content="{ align: 'end', collisionPadding: 12 }">
-                  <UButton icon="i-lucide-arrow-down-up" variant="outline" class="w-full justify-between">
+                  <UButton
+                    icon="i-lucide-arrow-down-up"
+                    color="neutral"
+                    variant="outline"
+                    class="w-full justify-between"
+                  >
                     <span class="truncate">{{ currentSortLabel }}</span>
                     <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
                   </UButton>
@@ -228,6 +235,7 @@ watch(
               </div>
               <UButton
                 :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
+                color="neutral"
                 variant="outline"
                 :aria-label="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
                 @click="toggleSortDir"
@@ -235,6 +243,7 @@ watch(
             </template>
             <UButton
               v-else
+              color="neutral"
               variant="outline"
               icon="i-lucide-arrow-down-up"
               :aria-label="t('common.sort')"
@@ -248,6 +257,7 @@ watch(
                   <USelect v-model="sortBy" :items="sortOptions" value-key="value" class="w-full" /> </UFormField
                 ><UButton
                   block
+                  color="neutral"
                   variant="outline"
                   :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
                   @click="toggleSortDir"
@@ -268,6 +278,7 @@ watch(
           :description="
             searchQuery ? t('admin.organization.list.emptyFiltered') : t('admin.organization.list.emptyDescription')
           "
+          color="neutral"
           variant="outline"
         >
           <template v-if="!searchQuery" #actions>

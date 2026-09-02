@@ -313,8 +313,14 @@ body {
 }
 
 /* Better shadows for elevated surfaces */
-:root [class*='shadow'] {
+:root [class*='shadow']:not(.shadow-xl) {
   box-shadow: var(--ui-shadow);
+}
+:root .shadow-xl {
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 12px 32px -6px rgb(0 0 0 / 20%), 0 4px 10px -4px rgb(0 0 0 / 12%);
+}
+:root.dark .shadow-xl {
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 12px 32px -6px rgb(0 0 0 / 55%);
 }
 
 /* Cards with better depth */

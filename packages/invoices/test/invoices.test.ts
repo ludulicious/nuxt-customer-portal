@@ -14,7 +14,7 @@ import { firstInvoiceNumber, incrementInvoiceNumber } from '../shared/invoice-nu
 test('invoice creation has a dedicated route and a non-shrinking scrollable form', () => {
   const page = readFileSync(new URL('../app/pages/admin/invoices/new.vue', import.meta.url), 'utf8')
   const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
-  const toolbar = readFileSync(new URL('../app/components/InvoicesAdminListToolbar.vue', import.meta.url), 'utf8')
+  const toolbar = readFileSync(new URL('../../ui/app/components/PortalListToolbar.vue', import.meta.url), 'utf8')
   assert.match(page, /create-page/)
   assert.match(component, /navigateTo\('\/admin\/invoices\/new'\)/)
   assert.match(component, /v-if="!createPage"/)
