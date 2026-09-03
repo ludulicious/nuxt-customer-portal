@@ -96,7 +96,8 @@
         "saveReviewers": "Toegang voor beoordelaars wordt direct bijgewerkt"
       },
       "approvals": {
-        "title": "Urenstaten goedkeuren",
+        "pending": "Te beoordelen",
+        "title": "Te beoordelen urenstaten",
         "subtitle": "Beoordeel uren van leveranciers die klaarstaan voor uw besluit.",
         "reviewersTitle": "Beoordelaars voor goedkeuring",
         "reviewersSubtitle": "Kies welke organisatieleden klanturenstaten mogen beoordelen.",
@@ -219,6 +220,7 @@
         "unavailable": "Dit overzicht is niet beschikbaar.",
         "open": "Openen",
         "review": "Beoordelen",
+        "viewAll": "Alles bekijken",
         "myWeek": {
           "title": "Mijn week",
           "period": "Week {week} · {start} t/m {end}",
@@ -231,7 +233,7 @@
           "empty": "Geen recente urenstaten."
         },
         "clientApprovals": {
-          "title": "Klantgoedkeuringen",
+          "title": "Te beoordelen urenstaten",
           "empty": "Er wachten geen klanturenstaten op jouw beoordeling.",
           "noReviewer": "Er is nog geen beoordelaar toegewezen."
         },

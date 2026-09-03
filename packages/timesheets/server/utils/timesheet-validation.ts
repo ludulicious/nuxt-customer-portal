@@ -34,6 +34,13 @@ export const clientApprovalListQuerySchema = z.object({
   sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'status', 'totalMinutes']).default('weekStartsOn'),
   sortDir: z.enum(['asc', 'desc']).default('desc')
 })
+export const internalApprovalListQuerySchema = z.object({
+  ...listBase,
+  status: z.enum(['SUBMITTED', 'APPROVED', 'REJECTED']).optional(),
+  sortBy: z.enum(['weekStartsOn', 'userName', 'status', 'totalMinutes']).default('weekStartsOn'),
+  sortDir: z.enum(['asc', 'desc']).default('desc')
+})
+export type InternalApprovalListQuery = z.infer<typeof internalApprovalListQuerySchema>
 export const clientSupplierTimesheetListQuerySchema = z.object({
   ...listBase,
   workspaceClientId: id.optional(),

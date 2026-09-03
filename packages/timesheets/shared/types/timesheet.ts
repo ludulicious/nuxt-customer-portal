@@ -294,6 +294,7 @@ export interface TimesheetsDashboardDto {
   }
   clientApprovals?: {
     pendingCount: number
+    hasHistory: boolean
     unassignedSupplierCount: number
     items: Array<
       Pick<

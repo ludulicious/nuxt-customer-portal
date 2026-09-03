@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DeepReadonly } from 'vue'
 import { z } from 'zod'
 import type {
   ApprovalQueueItemDto,
@@ -6,7 +7,7 @@ import type {
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 const props = defineProps<{
-  data: InternalApprovalQueueDto
+  data: DeepReadonly<InternalApprovalQueueDto>
   refresh: () => Promise<unknown>
 }>()
 const { t, locale } = useI18n()
@@ -41,13 +42,15 @@ const formatEntryDate = (date: string) =>
     month: 'short'
   }).format(new Date(`${date}T12:00:00`))
 const formatPeriod = (from: string, to: string) =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).formatRange(
-    new Date(`${from}T12:00:00`),
-    new Date(`${to}T12:00:00`)
-  )
+  new Intl.DateTimeFormat(locale.value, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).formatRange(new Date(`${from}T12:00:00`), new Date(`${to}T12:00:00`))
 const projectFor = (projectId: string) => props.data.projects.find((project) => project.id === projectId)
 const activityFor = (activityTypeId: string) => props.data.activities.find((activity) => activity.id === activityTypeId)
-const weekdayTotals = (item: ApprovalQueueItemDto) => {
+const weekdayTotals = (item: DeepReadonly<ApprovalQueueItemDto>) => {
   const weekStart = new Date(`${item.weekStartsOn}T12:00:00`)
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart)
@@ -219,7 +222,7 @@ const reject = () =>
 
     <UModal v-model:open="rejectionOpen" :title="t('features.timesheets.admin.rejectTimesheet')">
       <template #body>
-        <UForm :state="rejectionState" :schema="rejectionSchema" class="space-y-4" @submit="reject">
+        <UForm novalidate :state="rejectionState" :schema="rejectionSchema" class="space-y-4" @submit="reject">
           <UFormField name="comment" :label="t('features.timesheets.admin.rejectionReason')" required>
             <UTextarea v-model="rejectionComment" :rows="4" class="w-full" />
           </UFormField>

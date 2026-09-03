@@ -47,7 +47,7 @@ const filters = computed(() => [
           placeholder: t('features.timesheets.approvals.statusFilter'),
           items: [
             { label: t('features.timesheets.approvals.allStatuses'), value: undefined },
-            { label: t('features.timesheets.clientPortal.pending'), value: 'PENDING' },
+            { label: t('features.timesheets.approvals.pending'), value: 'PENDING' },
             { label: t('features.timesheets.clientPortal.approved'), value: 'APPROVED' },
             { label: t('features.timesheets.clientPortal.disputed'), value: 'DISPUTED' }
           ]
@@ -76,15 +76,21 @@ const formatDate = (value: string) =>
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const batchPeriod = (from: string, to: string) =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric' }).formatRange(
-    new Date(`${from}T12:00:00`),
-    new Date(`${to}T12:00:00`)
-  )
+  new Intl.DateTimeFormat(locale.value, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).formatRange(new Date(`${from}T12:00:00`), new Date(`${to}T12:00:00`))
 const reviewStatusColor = (value: ClientReviewStatus): BadgeColor =>
   value === 'APPROVED' ? 'success' : value === 'DISPUTED' ? 'error' : 'warning'
 const isApprovalItem = (item: ReadonlyItem): item is ReadonlyApprovalItem => 'canAct' in item
 const itemStatus = (item: ReadonlyItem): { label: string; color: BadgeColor } => ({
-  label: t(`features.timesheets.clientPortal.${item.status.toLowerCase()}`),
+  label: t(
+    item.status === 'PENDING'
+      ? 'features.timesheets.approvals.pending'
+      : `features.timesheets.clientPortal.${item.status.toLowerCase()}`
+  ),
   color: reviewStatusColor(item.status)
 })
 const historyKey = (action: string) =>
@@ -269,6 +275,7 @@ await listing.load()
     <section v-else class="flex min-h-0 flex-1 flex-col gap-5 pt-5">
       <TimesheetsAdminListToolbar
         v-model:search="listing.search.value"
+        class="shrink-0"
         :filters="filters"
         :filter-values="listing.filters"
         :sort-options="sortOptions"
@@ -290,8 +297,12 @@ await listing.load()
         @previous="listing.loadPrevious"
         @page="listing.goToPage"
       >
+        <UAlert v-if="listing.error.value" color="error" :title="t('features.timesheets.dashboard.error')" />
+        <div v-else-if="listing.pending.value && !listing.items.value.length" class="space-y-3">
+          <USkeleton v-for="index in 3" :key="index" class="h-24 w-full" />
+        </div>
         <UAlert
-          v-if="!listing.items.value.length && !listing.pending.value"
+          v-else-if="!listing.items.value.length"
           icon="i-lucide-search-x"
           :title="
             t(isReview ? 'features.timesheets.approvals.emptyFiltered' : 'features.timesheets.suppliers.emptyFiltered')
@@ -316,7 +327,9 @@ await listing.load()
             @keydown.enter="openDetail(item)"
             @keydown.space.prevent="openDetail(item)"
           >
-            <div class="grid gap-4 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,1fr)_8rem_auto] sm:items-center">
+            <div
+              class="grid gap-4 sm:grid-cols-2 sm:items-center xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_max-content_auto]"
+            >
               <div class="min-w-0">
                 <p class="flex items-center gap-2 font-medium">
                   <UIcon name="i-lucide-building-2" class="size-4 shrink-0 text-muted" /><span class="truncate">{{
@@ -342,7 +355,9 @@ await listing.load()
                 </p>
               </div>
               <div>
-                <UBadge :color="itemStatus(item).color" variant="subtle">{{ itemStatus(item).label }}</UBadge>
+                <UBadge :color="itemStatus(item).color" variant="subtle" class="whitespace-nowrap">{{
+                  itemStatus(item).label
+                }}</UBadge>
                 <p
                   v-if="isApprovalItem(item) && item.reviewerName"
                   class="mt-2 flex items-center gap-1 text-xs text-muted"

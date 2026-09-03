@@ -109,6 +109,7 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
     ...(reviewWorkspaces.length && {
       clientApprovals: {
         pendingCount: clientApprovals?.pendingCount ?? 0,
+        hasHistory: clientApprovals?.items.some((item) => item.status !== 'PENDING') ?? false,
         unassignedSupplierCount: reviewerSuppliers.filter((item) => item.reviewerCount === 0).length,
         items: actionableClient
           .slice(0, 5)

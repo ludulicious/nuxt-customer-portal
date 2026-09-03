@@ -8,6 +8,7 @@ import type {
 } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 import type {
   ActivityListQuery,
+  InternalApprovalListQuery,
   ClientApprovalListQuery,
   ClientListQuery,
   ClientSupplierTimesheetListQuery,
@@ -15,6 +16,7 @@ import type {
 } from './timesheet-validation'
 import {
   listActivities,
+  listApprovalQueue,
   listClientApprovals,
   listClientSupplierTimesheets,
   listClients,
@@ -34,6 +36,27 @@ const paginate = <T>(items: T[], page: number, pageSize: number): TimesheetsList
     items: items.slice((safePage - 1) * pageSize, safePage * pageSize),
     pagination: { total, page: safePage, pageSize, pageCount }
   }
+}
+
+export const listInternalApprovalsPage = async (
+  organizationId: string,
+  actorUserId: string,
+  query: InternalApprovalListQuery
+) => {
+  const search = query.search?.toLocaleLowerCase() ?? ''
+  const rows = (await listApprovalQueue(organizationId, actorUserId))
+    .filter((item) => !search || includes(item.userName, search))
+    .filter((item) => !query.status || item.status === query.status)
+    .sort(
+      (a, b) =>
+        direction(
+          query.sortBy === 'totalMinutes'
+            ? a.totalMinutes - b.totalMinutes
+            : compareText(a[query.sortBy], b[query.sortBy]),
+          query.sortDir
+        ) || compareText(a.id, b.id)
+    )
+  return paginate(rows, query.page, query.pageSize)
 }
 
 export const listProjectsPage = async (organizationId: string, query: ProjectListQuery) => {

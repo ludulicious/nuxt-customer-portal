@@ -47,7 +47,8 @@ export const useTimesheets = () => {
   }
   const bootstrap = (week?: string) => $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
   const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
-  const internalApprovalQueue = () => $fetch<InternalApprovalQueueDto>('/api/timesheets/internal-approvals')
+  const internalApprovalQueue = (contextOnly = false) =>
+    $fetch<InternalApprovalQueueDto>('/api/timesheets/internal-approvals', { query: { contextOnly } })
   const internalApprovalConfiguration = () =>
     $fetch<InternalApprovalConfigurationDto>('/api/timesheets/admin/internal-approvals')
   const updateInternalApprovalWorkspace = (enabled: boolean) =>

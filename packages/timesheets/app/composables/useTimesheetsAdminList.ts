@@ -14,7 +14,9 @@ export const useTimesheetsAdminList = <Item>(options: {
   const defaultSortDir = options.defaultSortDir ?? 'asc'
   const search = ref(String(route.query.search ?? ''))
   const sortBy = ref(String(route.query.sortBy ?? options.defaultSort))
-  const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'desc' ? 'desc' : defaultSortDir)
+  const sortDir = ref<'asc' | 'desc'>(
+    route.query.sortDir === 'asc' || route.query.sortDir === 'desc' ? route.query.sortDir : defaultSortDir
+  )
   const currentPage = ref(Math.max(1, Number(route.query.page) || 1))
   const filters = reactive<Record<string, string | undefined>>(
     Object.fromEntries(
@@ -85,15 +87,65 @@ export const useTimesheetsAdminList = <Item>(options: {
     sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
   }
   let searchTimer: ReturnType<typeof setTimeout> | undefined
-  watch(search, () => {
-    clearTimeout(searchTimer)
-    searchTimer = setTimeout(() => {
+  let applyingRoute = false
+  watch(
+    search,
+    () => {
+      if (applyingRoute) {
+        return
+      }
+      clearTimeout(searchTimer)
+      searchTimer = setTimeout(() => {
+        void resetAndLoad()
+      }, 300)
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    [sortBy, sortDir, ...Object.keys(filters).map((key) => () => filters[key])],
+    () => {
+      if (applyingRoute) {
+        return
+      }
+      clearTimeout(searchTimer)
       void resetAndLoad()
-    }, 300)
-  })
-  watch([sortBy, sortDir, ...Object.keys(filters).map((key) => () => filters[key])], () => {
-    void resetAndLoad()
-  })
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => route.query,
+    async (routeQuery) => {
+      const nextSearch = String(routeQuery.search ?? '')
+      const nextSort = String(routeQuery.sortBy ?? options.defaultSort)
+      const nextDir =
+        routeQuery.sortDir === 'asc' || routeQuery.sortDir === 'desc' ? routeQuery.sortDir : defaultSortDir
+      const nextPage = Math.max(1, Number(routeQuery.page) || 1)
+      const nextFilters = Object.fromEntries(
+        (options.filterKeys ?? []).map((key) => [
+          key,
+          routeQuery[key] ? String(routeQuery[key]) : options.defaultFilters?.[key]
+        ])
+      )
+      if (
+        nextSearch === search.value.trim() &&
+        nextSort === sortBy.value &&
+        nextDir === sortDir.value &&
+        nextPage === currentPage.value &&
+        Object.keys(nextFilters).every((key) => nextFilters[key] === filters[key])
+      ) {
+        return
+      }
+      clearTimeout(searchTimer)
+      applyingRoute = true
+      search.value = nextSearch
+      sortBy.value = nextSort
+      sortDir.value = nextDir
+      currentPage.value = nextPage
+      Object.assign(filters, nextFilters)
+      applyingRoute = false
+      await load(nextPage)
+    }
+  )
   onScopeDispose(() => clearTimeout(searchTimer))
   return {
     ...resource,

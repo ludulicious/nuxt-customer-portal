@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const { session, organizationId } = await requireActiveOrganizationRole(event)
   const [settings, approvals, clients, projects, activities] = await Promise.all([
     ensureSettings(organizationId),
-    listApprovalQueue(organizationId, session.user.id),
+    getQuery(event).contextOnly === 'true' ? Promise.resolve([]) : listApprovalQueue(organizationId, session.user.id),
     listClients(organizationId),
     listProjects(organizationId),
     listActivities(organizationId)

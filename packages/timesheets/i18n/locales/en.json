@@ -96,7 +96,8 @@
         "saveReviewers": "Reviewer access is updated immediately"
       },
       "approvals": {
-        "title": "Timesheet approvals",
+        "pending": "Awaiting review",
+        "title": "Timesheets to review",
         "subtitle": "Review supplier time that is ready for your decision.",
         "reviewersTitle": "Approval reviewers",
         "reviewersSubtitle": "Choose which organization members may review client timesheets.",
@@ -219,6 +220,7 @@
         "unavailable": "This summary is not available.",
         "open": "Open",
         "review": "Review",
+        "viewAll": "View all",
         "myWeek": {
           "title": "My week",
           "period": "Week {week} · {start} to {end}",
@@ -231,7 +233,7 @@
           "empty": "No recent timesheets."
         },
         "clientApprovals": {
-          "title": "Client approvals",
+          "title": "Timesheets to review",
           "empty": "No client timesheets are waiting for your review.",
           "noReviewer": "No reviewer has been assigned yet."
         },

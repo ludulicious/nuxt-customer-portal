@@ -19,11 +19,14 @@ interface DashboardCardValue {
   }>
   unsubmitted: { totalMinutes: number; periodStartsOn: string; periodEndsOn: string } | null
   pendingCount: number
+  hasHistory: boolean
   unassignedSupplierCount: number
   items: Array<{
     id: string
     userName: string
     weekStartsOn: string
+    periodStartsOn: string
+    periodEndsOn: string
     totalMinutes: number
     person: string
     supplierName: string
@@ -36,8 +39,16 @@ const duration = (amount: number) =>
   t(amount === 60 ? 'features.timesheets.dashboard.duration.one' : 'features.timesheets.dashboard.duration.other', {
     value: minutes(amount)
   })
-const date = (input: string) =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${input}T00:00:00`))
+const submissionPeriod = (from: string, to: string) => {
+  const formatter = new Intl.DateTimeFormat(locale.value, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+  const start = parseISO(from)
+  return from === to ? formatter.format(start) : formatter.formatRange(start, parseISO(to))
+}
 const weekPeriod = (weekStartsOn: string) => {
   const start = parseISO(weekStartsOn)
   const end = addDays(start, 6)
@@ -144,8 +155,18 @@ const icon = computed(
     <template v-else-if="section === 'internalApprovals'">
       <div class="flex items-center justify-between">
         <p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p>
-        <UButton to="/timesheets/internal-approvals" variant="outline">
-          {{ t('features.timesheets.dashboard.review') }}
+        <UButton
+          v-if="value.pendingCount > 0 || value.items.length > 0"
+          :to="
+            value.pendingCount > 0
+              ? '/timesheets/internal-approvals?status=SUBMITTED'
+              : '/timesheets/internal-approvals'
+          "
+          variant="outline"
+        >
+          {{
+            t(value.pendingCount > 0 ? 'features.timesheets.dashboard.review' : 'features.timesheets.dashboard.viewAll')
+          }}
         </UButton>
       </div>
       <p v-if="!value.items.length" class="mt-4 text-sm text-muted">
@@ -155,7 +176,7 @@ const icon = computed(
         <li v-for="item in value.items" :key="item.id" class="flex items-center justify-between gap-3 py-2 text-sm">
           <span class="truncate"
             ><strong>{{ item.userName }}</strong
-            ><span class="block text-muted">{{ date(item.weekStartsOn) }}</span></span
+            ><span class="block text-muted">{{ submissionPeriod(item.periodStartsOn, item.periodEndsOn) }}</span></span
           ><span class="shrink-0 text-right"
             ><strong class="block tabular-nums">{{ duration(item.totalMinutes) }}</strong
             ><span class="text-xs text-muted">{{
@@ -169,7 +190,15 @@ const icon = computed(
     <template v-else-if="section === 'clientApprovals'">
       <div class="flex items-center justify-between">
         <p class="text-3xl font-semibold tabular-nums">{{ value.pendingCount }}</p>
-        <UButton to="/timesheets/approvals" variant="outline">{{ t('features.timesheets.dashboard.review') }}</UButton>
+        <UButton
+          v-if="value.pendingCount > 0 || value.hasHistory"
+          :to="value.pendingCount > 0 ? '/timesheets/approvals?status=PENDING' : '/timesheets/approvals'"
+          variant="outline"
+        >
+          {{
+            t(value.pendingCount > 0 ? 'features.timesheets.dashboard.review' : 'features.timesheets.dashboard.viewAll')
+          }}
+        </UButton>
       </div>
       <UAlert
         v-if="value.unassignedSupplierCount"
