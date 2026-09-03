@@ -631,6 +631,7 @@ export const listClientApprovals = async (
           version: review.version,
           comment: review.comment,
           reviewedAt: review.reviewedAt?.toISOString() ?? null,
+          reviewerUserId: review.reviewerUserId,
           reviewerName: review.reviewerUserId ? (reviewerNames.get(review.reviewerUserId) ?? null) : null,
           hasReviewers: allAssignments.some((item) => item.workspaceClientId === link.link.id),
           canAct: review.status === 'PENDING' && (isAdmin || assignedLinks.has(link.link.id)),

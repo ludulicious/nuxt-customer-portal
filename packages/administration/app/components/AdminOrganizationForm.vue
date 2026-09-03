@@ -18,6 +18,7 @@ const form = useTemplateRef('form')
 const saving = ref(false)
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const selectedFile = ref<File | null>(null)
+const avatarInput = useTemplateRef<HTMLInputElement>('avatarInput')
 const metadata = (() => {
   try {
     return props.organization.metadata ? (JSON.parse(props.organization.metadata) as Record<string, unknown>) : {}
@@ -30,7 +31,8 @@ const state = reactive({
   slug: props.organization.slug,
   officialCompanyName:
     typeof metadata.officialCompanyName === 'string' ? metadata.officialCompanyName : props.organization.name,
-  logo: props.organization.logo ?? ''
+  logo: props.organization.logo ?? '',
+  avatarLogo: typeof metadata.avatarLogo === 'string' ? metadata.avatarLogo : ''
 })
 
 const normalizeSlug = (value: string) =>
@@ -54,6 +56,14 @@ const schema = computed(() =>
       .min(1, t('organization.settings.validation.officialCompanyNameRequired'))
       .max(200),
     logo: z
+      .string()
+      .max(2_800_000, t('organization.settings.validation.logoTooLarge'))
+      .refine(
+        (value) =>
+          !value || /^data:image\/(png|jpeg|gif|webp);base64,/.test(value) || z.string().url().safeParse(value).success,
+        t('organization.settings.validation.logoInvalid')
+      ),
+    avatarLogo: z
       .string()
       .max(2_800_000, t('organization.settings.validation.logoTooLarge'))
       .refine(
@@ -103,27 +113,27 @@ function removeLogo() {
   selectedFile.value = null
 }
 
-function selectLogo(event: Event) {
+function selectLogo(event: Event, field: 'logo' | 'avatarLogo' = 'logo') {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) {
     return
   }
-  form.value?.clear('logo')
+  form.value?.clear(field)
   if (file.size > 2 * 1024 * 1024) {
-    form.value?.setErrors([{ name: 'logo', message: t('organization.settings.validation.logoTooLarge') }])
+    form.value?.setErrors([{ name: field, message: t('organization.settings.validation.logoTooLarge') }])
     return
   }
   selectedFile.value = file
   const reader = new FileReader()
   reader.onload = () => {
-    state.logo = String(reader.result ?? '')
+    state[field] = String(reader.result ?? '')
   }
   reader.readAsDataURL(file)
 }
 </script>
 
 <template>
-  <UForm ref="form" :state="state" :schema="schema" class="space-y-4" @submit="submit">
+  <UForm ref="form" novalidate :state="state" :schema="schema" class="space-y-4" @submit="submit">
     <UFormField name="name" :label="t('organization.settings.nameLabel')" required>
       <UInput v-model="state.name" :placeholder="t('organization.settings.namePlaceholder')" class="w-full" />
     </UFormField>
@@ -187,7 +197,37 @@ function selectLogo(event: Event) {
           type="file"
           class="hidden"
           accept="image/png,image/jpeg,image/gif,image/webp"
-          @change="selectLogo"
+          @change="selectLogo($event)"
+        />
+      </div>
+    </UFormField>
+
+    <UFormField
+      name="avatarLogo"
+      :label="t('organization.settings.avatarLogoLabel')"
+      :hint="t('organization.settings.avatarLogoHint')"
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <UAvatar :src="state.avatarLogo || undefined" :alt="state.name" size="3xl" />
+        <UButton type="button" color="neutral" variant="outline" icon="i-lucide-upload" @click="avatarInput?.click()">
+          {{ t('organization.settings.logoChoose') }}
+        </UButton>
+        <UButton
+          v-if="state.avatarLogo"
+          type="button"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          @click="state.avatarLogo = ''"
+        >
+          {{ t('organization.settings.logoRemove') }}
+        </UButton>
+        <input
+          ref="avatarInput"
+          type="file"
+          class="hidden"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          @change="selectLogo($event, 'avatarLogo')"
         />
       </div>
     </UFormField>

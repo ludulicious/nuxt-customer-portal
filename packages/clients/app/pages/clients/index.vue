@@ -225,7 +225,7 @@ onMounted(() => {
                 :to="clientDetailTo(client)"
                 class="group flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
-                <UAvatar :src="client.logo ?? undefined" :alt="client.name" />
+                <UAvatar :src="client.avatarLogo || client.logo || undefined" :alt="client.name" />
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
                     <p class="truncate font-semibold">{{ client.name }}</p>

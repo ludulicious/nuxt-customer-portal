@@ -37,7 +37,7 @@ export const useOrganization = () => {
 
   const updateAdminOrganization = async (
     organizationId: string,
-    data: { name: string; slug: string; officialCompanyName: string; logo: string }
+    data: { name: string; slug: string; officialCompanyName: string; logo: string; avatarLogo?: string }
   ) => {
     return await $fetch<Organization>(`/api/admin/organizations/${organizationId}`, {
       method: 'PATCH',

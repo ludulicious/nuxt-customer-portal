@@ -112,8 +112,8 @@ const changeMemberRole = async (memberId: string, role: string) => {
 
 const removeMember = async () => {
   if (!memberToRemove.value || busy.value) {
-return
-}
+    return
+  }
   const memberId = memberToRemove.value.id
   busy.value = true
   try {
@@ -138,7 +138,7 @@ const toggleEditing = () => {
   <div class="space-y-6">
     <header class="flex flex-col gap-3 border-b border-default pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div class="flex min-w-0 items-center gap-3">
-        <UAvatar :src="client.logo ?? undefined" :alt="client.name" size="lg" />
+        <UAvatar :src="client.avatarLogo || client.logo || undefined" :alt="client.name" size="lg" />
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
             <h1 class="truncate text-2xl font-semibold">{{ client.name }}</h1>

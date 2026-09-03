@@ -179,9 +179,13 @@ const icon = computed(
             ><span class="block text-muted">{{ submissionPeriod(item.periodStartsOn, item.periodEndsOn) }}</span></span
           ><span class="shrink-0 text-right"
             ><strong class="block tabular-nums">{{ duration(item.totalMinutes) }}</strong
-            ><span class="text-xs text-muted">{{
-              t(`features.timesheets.status.${item.status.toLowerCase()}`)
-            }}</span></span
+            ><UBadge
+              :color="item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'error' : 'warning'"
+              variant="subtle"
+              size="sm"
+              class="mt-1"
+              >{{ t(`features.timesheets.status.${item.status.toLowerCase()}`) }}</UBadge
+            ></span
           >
         </li>
       </ul>
@@ -215,8 +219,24 @@ const icon = computed(
         <li v-for="item in value.items" :key="item.id" class="flex justify-between gap-3 py-2 text-sm">
           <span class="truncate"
             ><strong>{{ item.person }}</strong
-            ><span class="block text-muted">{{ item.supplierName }}</span></span
-          ><span class="shrink-0 text-muted">{{ duration(item.totalMinutes) }}</span>
+            ><span class="block text-muted">{{ item.supplierName }}</span>
+            <span class="block text-muted">{{ submissionPeriod(item.periodStartsOn, item.periodEndsOn) }}</span></span
+          ><span class="shrink-0 text-right">
+            <strong class="block tabular-nums">{{ duration(item.totalMinutes) }}</strong>
+            <UBadge
+              :color="item.status === 'APPROVED' ? 'success' : item.status === 'DISPUTED' ? 'error' : 'warning'"
+              variant="subtle"
+              size="sm"
+              class="mt-1"
+              >{{
+                t(
+                  item.status === 'PENDING'
+                    ? 'features.timesheets.approvals.pending'
+                    : `features.timesheets.clientPortal.${item.status.toLowerCase()}`
+                )
+              }}</UBadge
+            >
+          </span>
         </li>
       </ul>
     </template>

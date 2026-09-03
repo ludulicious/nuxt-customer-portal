@@ -29,7 +29,15 @@ const updateOrganizationSchema = z.object({
     .refine(
       (value) =>
         !value || /^data:image\/(png|jpeg|gif|webp);base64,/.test(value) || z.string().url().safeParse(value).success
+    ),
+  avatarLogo: z
+    .string()
+    .max(2_800_000)
+    .refine(
+      (value) =>
+        !value || /^data:image\/(png|jpeg|gif|webp);base64,/.test(value) || z.string().url().safeParse(value).success
     )
+    .optional()
 })
 
 export default defineEventHandler(async (event): Promise<Organization> => {
@@ -79,6 +87,9 @@ export default defineEventHandler(async (event): Promise<Organization> => {
     metadata = {}
   }
   metadata.officialCompanyName = parsed.data.officialCompanyName
+  if (parsed.data.avatarLogo !== undefined) {
+    metadata.avatarLogo = parsed.data.avatarLogo || null
+  }
 
   const [updated] = await db
     .update(organizationTable)

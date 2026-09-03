@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getOrganizationAvatar } from '@nuxt-customer-portal/core/shared/organization-avatar'
+
 defineOptions({ name: 'AdminOrganizationsPage' })
 
 const route = useRoute()
@@ -300,7 +302,7 @@ watch(
               :aria-label="t('admin.organization.list.viewOrganization', { name: org.name })"
               class="group grid min-h-20 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <UAvatar :src="org.logo ?? undefined" :alt="org.name" size="md" />
+              <UAvatar :src="getOrganizationAvatar(org)" :alt="org.name" size="md" />
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <h2 class="truncate font-semibold text-highlighted">

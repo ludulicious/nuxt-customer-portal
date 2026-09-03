@@ -1,5 +1,6 @@
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
+import { getOrganizationAvatar } from '@nuxt-customer-portal/core/shared/organization-avatar'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { invitation, member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { clientModule, clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
@@ -14,6 +15,7 @@ const clientSelection = {
   name: organization.name,
   slug: organization.slug,
   logo: organization.logo,
+  metadata: organization.metadata,
   createdAt: organization.createdAt,
   officialName: clientProfile.officialName,
   address: clientProfile.address,
@@ -29,6 +31,7 @@ interface ClientRow {
   name: string
   slug: string
   logo: string | null
+  metadata: string | null
   createdAt: Date
   officialName: string
   address: string
@@ -81,6 +84,7 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
     name: row.name,
     slug: row.slug,
     logo: row.logo,
+    avatarLogo: getOrganizationAvatar(row) ?? null,
     officialName: row.officialName,
     address: row.address,
     registrationNumber: row.registrationNumber,

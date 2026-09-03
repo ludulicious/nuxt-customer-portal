@@ -132,6 +132,7 @@ export interface ClientApprovalItemDto {
   comment: string | null
   reviewedAt: string | null
   reviewerName: string | null
+  reviewerUserId: string | null
   hasReviewers: boolean
   canAct: boolean
   canManageReviewers: boolean
@@ -299,7 +300,14 @@ export interface TimesheetsDashboardDto {
     items: Array<
       Pick<
         ClientApprovalItemDto,
-        'id' | 'supplierName' | 'person' | 'weekStartsOn' | 'periodStartsOn' | 'periodEndsOn' | 'totalMinutes'
+        | 'id'
+        | 'supplierName'
+        | 'person'
+        | 'weekStartsOn'
+        | 'periodStartsOn'
+        | 'periodEndsOn'
+        | 'totalMinutes'
+        | 'status'
       >
     >
   }

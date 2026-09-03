@@ -20,6 +20,7 @@ export interface ClientInvitationDto {
 }
 
 export interface GenericClientDto {
+  avatarLogo?: string | null
   id: string
   organizationId: string
   name: string

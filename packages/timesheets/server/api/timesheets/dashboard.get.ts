@@ -1,3 +1,4 @@
+import { selectClientDashboardApprovals } from '@nuxt-customer-portal/timesheets/shared/client-approval-dashboard'
 import { eq } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
 import { workspaceSettings } from '@nuxt-customer-portal/timesheets/server/db/schema/timesheets'
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
   ])
 
   const pendingInternal = approvalQueue.filter((item) => item.status === 'SUBMITTED')
-  const actionableClient = clientApprovals?.items.filter((item) => item.status === 'PENDING' && item.canAct) ?? []
+  const clientDashboard = selectClientDashboardApprovals(clientApprovals?.items ?? [], session.user.id)
   const unsubmittedEntries = bootstrap?.week.entries.filter((entry) => !entry.submissionId) ?? []
   const unsubmittedDates = unsubmittedEntries.map((entry) => entry.entryDate).sort()
 
@@ -108,12 +109,12 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
     }),
     ...(reviewWorkspaces.length && {
       clientApprovals: {
-        pendingCount: clientApprovals?.pendingCount ?? 0,
-        hasHistory: clientApprovals?.items.some((item) => item.status !== 'PENDING') ?? false,
+        pendingCount: clientDashboard.pendingCount,
+        hasHistory: clientDashboard.hasHistory,
         unassignedSupplierCount: reviewerSuppliers.filter((item) => item.reviewerCount === 0).length,
-        items: actionableClient
-          .slice(0, 5)
-          .map(({ id, supplierName, person, weekStartsOn, periodStartsOn, periodEndsOn, totalMinutes }) => ({
+        items: clientDashboard.items.map(
+          ({ id, supplierName, person, weekStartsOn, periodStartsOn, periodEndsOn, totalMinutes, status }) => ({
+            status,
             id,
             supplierName,
             person,
@@ -121,7 +122,8 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
             periodStartsOn,
             periodEndsOn,
             totalMinutes
-          }))
+          })
+        )
       }
     }),
     ...(canViewSupplierTime && {
