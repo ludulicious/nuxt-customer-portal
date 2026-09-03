@@ -250,6 +250,7 @@
         "nameRequired": "Enter a name.",
         "nameMaxLength": "Use no more than 255 characters.",
         "emailInvalid": "Enter a valid email address.",
+        "emailAlreadyExists": "A user with this email address already exists.",
         "passwordMinLength": "Use at least 8 characters.",
         "confirm": "Create User",
         "success": "User created successfully",

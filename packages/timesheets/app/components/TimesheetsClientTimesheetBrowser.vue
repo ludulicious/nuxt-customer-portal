@@ -108,7 +108,6 @@ const act = async (item: ReadonlyApprovalItem, action: 'APPROVE' | 'DISPUTE') =>
     disputeOpen.value = false
     disputeComment.value = ''
     await listing.refresh()
-    window.dispatchEvent(new CustomEvent('timesheets:capabilities-refresh'))
     toast.add({
       title: t(
         action === 'APPROVE'
@@ -169,6 +168,7 @@ await listing.load()
             isReview &&
             isApprovalItem(selected) &&
             selected.status === 'PENDING' &&
+            !selected.canAct &&
             selected.canManageReviewers &&
             !selected.hasReviewers
           "
@@ -343,8 +343,11 @@ await listing.load()
               </div>
               <div>
                 <UBadge :color="itemStatus(item).color" variant="subtle">{{ itemStatus(item).label }}</UBadge>
-                <p v-if="isApprovalItem(item)" class="mt-2 flex items-center gap-1 text-xs text-muted">
-                  <UIcon name="i-lucide-user-check" class="size-3.5 shrink-0" />{{ item.reviewerName ?? '—' }}
+                <p
+                  v-if="isApprovalItem(item) && item.reviewerName"
+                  class="mt-2 flex items-center gap-1 text-xs text-muted"
+                >
+                  <UIcon name="i-lucide-user-check" class="size-3.5 shrink-0" />{{ item.reviewerName }}
                 </p>
               </div>
               <UButton

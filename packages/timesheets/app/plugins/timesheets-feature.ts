@@ -15,10 +15,7 @@ export default defineNuxtPlugin(() => {
         }
       : undefined
   const register = (capabilities: TimesheetCapabilitiesDto) => {
-    const approvalActionCount =
-      capabilities.pendingInternalApprovalCount +
-      capabilities.pendingClientApprovalCount +
-      (capabilities.canManageClientReviewers ? capabilities.unassignedClientReviewerSupplierCount : 0)
+    const approvalActionCount = capabilities.pendingInternalApprovalCount + capabilities.pendingClientApprovalCount
     const keep = (id: string) =>
       id === 'client-approvals'
         ? capabilities.canReviewClientTimesheets

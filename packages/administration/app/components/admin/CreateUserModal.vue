@@ -8,8 +8,13 @@ const emit = defineEmits<{ success: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
+const form = useTemplateRef('form')
 const creating = ref(false)
 const state = reactive({ name: '', email: '', password: '', role: 'user' as UserRole })
+watch(open, () => {
+  state.email = ''
+  state.password = ''
+})
 const schema = computed(() =>
   z.object({
     name: z.string().trim().min(1, t('admin.user.create.nameRequired')).max(255, t('admin.user.create.nameMaxLength')),
@@ -33,6 +38,10 @@ const createUser = async (event: FormSubmitEvent<CreateUserSchema>) => {
       password: event.data.password,
       role: event.data.role
     })
+    if (error?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL' || error?.code === 'USER_ALREADY_EXISTS') {
+      form.value?.setErrors([{ name: 'email', message: t('admin.user.create.emailAlreadyExists') }])
+      return
+    }
     if (error) {
       throw error
     }
@@ -52,12 +61,21 @@ const createUser = async (event: FormSubmitEvent<CreateUserSchema>) => {
 <template>
   <UModal v-model:open="open" :title="t('admin.user.create.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
-      <UForm id="admin-create-user-form" :state="state" :schema="schema" class="space-y-4" @submit="createUser">
+      <UForm
+        id="admin-create-user-form"
+        ref="form"
+        :state="state"
+        :schema="schema"
+        autocomplete="off"
+        novalidate
+        class="space-y-4"
+        @submit="createUser"
+      >
         <UFormField name="name" :label="t('admin.user.create.name')" required>
           <UInput v-model="state.name" class="w-full" />
         </UFormField>
         <UFormField name="email" :label="t('admin.user.create.email')" required>
-          <UInput v-model="state.email" type="email" class="w-full" />
+          <UInput v-model="state.email" type="email" autocomplete="off" class="w-full" />
         </UFormField>
         <UFormField
           name="password"
@@ -65,7 +83,7 @@ const createUser = async (event: FormSubmitEvent<CreateUserSchema>) => {
           :hint="t('admin.user.create.passwordHint')"
           required
         >
-          <UInput v-model="state.password" type="password" class="w-full" />
+          <UInput v-model="state.password" type="password" autocomplete="new-password" class="w-full" />
         </UFormField>
         <UFormField name="role" :label="t('admin.user.list.role')" required>
           <USelect v-model="state.role" :items="roles" value-key="value" class="w-full" />

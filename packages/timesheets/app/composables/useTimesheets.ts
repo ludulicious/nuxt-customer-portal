@@ -37,6 +37,14 @@ export interface OrganizationTimesheetCapabilities {
 }
 
 export const useTimesheets = () => {
+  const refreshApprovalState = async () => {
+    if (import.meta.client) {
+      window.dispatchEvent(new Event('timesheets:capabilities-refresh'))
+    }
+    // Invalidate cached dashboard data even when its widgets are not mounted.
+    clearNuxtData('timesheets-dashboard')
+    await refreshNuxtData('timesheets-dashboard')
+  }
   const bootstrap = (week?: string) => $fetch<TimesheetBootstrapDto>('/api/timesheets/bootstrap', { query: { week } })
   const dashboard = () => $fetch<TimesheetsDashboardDto>('/api/timesheets/dashboard')
   const internalApprovalQueue = () => $fetch<InternalApprovalQueueDto>('/api/timesheets/internal-approvals')
@@ -104,11 +112,18 @@ export const useTimesheets = () => {
   const clientReviewerSuppliers = () => $fetch<ClientReviewerSupplierDto[]>('/api/timesheets/client/reviewer-suppliers')
   const clientTimesheets = (workspaceClientId: string) =>
     $fetch<ClientTimesheetsDto>(`/api/timesheets/client/${workspaceClientId}`)
-  const reviewClientSlice = (
+  const reviewClientSlice = async (
     workspaceClientId: string,
     submissionId: string,
     input: { action: 'APPROVE' | 'DISPUTE'; expectedVersion: number; comment?: string | null }
-  ) => $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${submissionId}`, { method: 'POST', body: input })
+  ) => {
+    const result = await $fetch(`/api/timesheets/client/${workspaceClientId}/reviews/${submissionId}`, {
+      method: 'POST',
+      body: input
+    })
+    await refreshApprovalState()
+    return result
+  }
   const clientReviewers = (workspaceClientId: string) =>
     $fetch<ClientReviewerDto[]>(`/api/timesheets/client/${workspaceClientId}/reviewers`)
   const setClientReviewer = (workspaceClientId: string, userId: string, assigned: boolean) =>
@@ -157,11 +172,14 @@ export const useTimesheets = () => {
   ) => $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
   const updateSettings = (input: { currency?: string; timezone?: string }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
-  const reviewSubmission = (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) =>
-    $fetch(`/api/timesheets/internal-approvals/${id}`, {
+  const reviewSubmission = async (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) => {
+    const result = await $fetch(`/api/timesheets/internal-approvals/${id}`, {
       method: 'POST',
       body: { action, comment }
     })
+    await refreshApprovalState()
+    return result
+  }
   const getReport = (query: Record<string, string | undefined>) =>
     $fetch<TimesheetReportDto>('/api/timesheets/admin/report', { query })
 

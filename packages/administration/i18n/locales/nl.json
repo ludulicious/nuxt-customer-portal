@@ -250,6 +250,7 @@
         "nameRequired": "Vul een naam in.",
         "nameMaxLength": "Gebruik maximaal 255 tekens.",
         "emailInvalid": "Vul een geldig e-mailadres in.",
+        "emailAlreadyExists": "Er bestaat al een gebruiker met dit e-mailadres.",
         "passwordMinLength": "Gebruik minimaal 8 tekens.",
         "confirm": "Gebruiker Aanmaken",
         "success": "Gebruiker succesvol aangemaakt",
