@@ -344,6 +344,16 @@ const formatDuration = (minutes: number) => {
   return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 }
 
+const hoursInput = ref<{ inputRef: HTMLInputElement | null } | null>(null)
+const focusPrefilledHours = () => {
+  if (form.id || !form.projectId || !form.activityTypeId) {
+    return
+  }
+  const input = hoursInput.value?.inputRef
+  input?.focus()
+  input?.select()
+}
+
 const openCreate = (date = format(new Date(), 'yyyy-MM-dd'), projectId?: string, activityTypeId?: string) => {
   if (!dateEditable(date)) {
     return
@@ -733,38 +743,51 @@ const runningDuration = computed(() => {
               <span class="timesheet-grid__project">{{ row.projectName }}</span>
               <span class="timesheet-grid__activity">{{ row.activityName }}</span>
             </button>
-            <button
+            <div
               v-for="(day, index) in weekDays"
               :key="day.value"
-              type="button"
-              class="timesheet-grid__cell timesheet-row-action text-center hover:bg-elevated"
+              class="timesheet-grid__cell group/cell relative !p-0 text-center"
               :class="{
                 'timesheet-grid__cell--weekend': index > 4,
                 'timesheet-grid__cell--locked': !dateEditable(day.value)
               }"
-              :disabled="
-                !editable || (!dateEditable(day.value) && !row.entries.some((entry) => entry.entryDate === day.value))
-              "
-              :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
-              @click="openRowCell(row, day.value)"
             >
-              <span>{{
-                formatDuration(
-                  row.entries
-                    .filter((entry) => entry.entryDate === day.value)
-                    .reduce((sum, entry) => sum + entry.durationMinutes, 0)
-                )
-              }}</span>
-              <UBadge
-                v-if="row.entries.filter((entry) => entry.entryDate === day.value).length > 1"
-                class="ml-1"
-                color="neutral"
-                variant="subtle"
-                size="sm"
+              <button
+                type="button"
+                class="timesheet-row-action h-full w-full p-3 hover:bg-elevated"
+                :disabled="
+                  !editable || (!dateEditable(day.value) && !row.entries.some((entry) => entry.entryDate === day.value))
+                "
+                :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
+                @click="openRowCell(row, day.value)"
               >
-                {{ row.entries.filter((entry) => entry.entryDate === day.value).length }}
-              </UBadge>
-            </button>
+                <span>{{
+                  formatDuration(
+                    row.entries
+                      .filter((entry) => entry.entryDate === day.value)
+                      .reduce((sum, entry) => sum + entry.durationMinutes, 0)
+                  )
+                }}</span>
+                <UBadge
+                  v-if="row.entries.filter((entry) => entry.entryDate === day.value).length > 1"
+                  class="ml-1"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ row.entries.filter((entry) => entry.entryDate === day.value).length }}
+                </UBadge>
+              </button>
+              <UButton
+                v-if="dateEditable(day.value)"
+                class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/cell:opacity-100 group-has-[:focus-visible]/cell:opacity-100 focus-visible:opacity-100"
+                size="xs"
+                variant="soft"
+                icon="i-lucide-plus"
+                :aria-label="`${t('features.timesheets.addEntry')}: ${row.label}, ${day.label} ${day.day}`"
+                @click="openCreate(day.value, row.projectId, row.activityTypeId)"
+              />
+            </div>
             <div class="timesheet-grid__cell text-right font-semibold">
               {{ formatDuration(row.entries.reduce((sum, entry) => sum + entry.durationMinutes, 0)) }}
             </div>
@@ -1128,6 +1151,7 @@ const runningDuration = computed(() => {
     <UModal
       v-model:open="modalOpen"
       :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')"
+      @after:enter="focusPrefilledHours"
     >
       <template #body>
         <UAlert
@@ -1138,7 +1162,7 @@ const runningDuration = computed(() => {
           :description="t('features.timesheets.setup.waitingDescription')"
           variant="outline"
         />
-        <UForm v-else :state="form" :schema="entrySchema" class="space-y-4" @submit="saveEntry">
+        <UForm v-else novalidate :state="form" :schema="entrySchema" class="space-y-4" @submit="saveEntry">
           <UFormField name="projectId" :label="t('features.timesheets.fields.project')" required>
             <USelect
               v-model="form.projectId"
@@ -1176,7 +1200,7 @@ const runningDuration = computed(() => {
           </UFormField>
           <div class="grid grid-cols-2 gap-3">
             <UFormField name="hours" :label="t('features.timesheets.fields.hours')" required>
-              <UInput v-model.number="form.hours" type="number" min="0" max="24" class="w-full" />
+              <UInput ref="hoursInput" v-model.number="form.hours" type="number" min="0" max="24" class="w-full" />
             </UFormField>
             <UFormField name="minutes" :label="t('features.timesheets.fields.minutes')" required>
               <UInput v-model.number="form.minutes" type="number" min="0" max="59" class="w-full" />

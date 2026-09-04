@@ -118,7 +118,8 @@ body {
 }
 
 .timesheet-grid .timesheet-grid__cell--locked,
-.timesheet-grid .timesheet-grid__cell--locked:hover {
+.timesheet-grid .timesheet-grid__cell--locked:hover,
+.timesheet-grid .timesheet-grid__cell--locked > .timesheet-row-action:hover {
   background: color-mix(in srgb, var(--ui-bg-accented) 35%, var(--ui-bg));
 }
 
