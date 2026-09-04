@@ -5,22 +5,9 @@ const toast = useToast()
 const open = ref(false)
 const showFooter = computed(() => route.meta?.public === true)
 
-const { links } = useNavigationLinks(open)
 const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
 const { currentSession } = storeToRefs(useUserStore())
 const isImpersonating = computed(() => Boolean(currentSession.value?.impersonatedBy))
-
-const groups = computed(() => [
-  {
-    id: 'links',
-    label: 'Go to',
-    items: links.value.flat().map((item) => ({
-      label: item.label,
-      icon: item.icon,
-      to: item.to
-    }))
-  }
-])
 
 onMounted(async () => {
   const cookie = useCookie('cookie-consent')
@@ -92,17 +79,6 @@ onMounted(async () => {
           />
         </template>
       </UDashboardSidebar>
-
-      <UDashboardSearch
-        :groups="groups"
-        :fuse="{
-          fuseOptions: {
-            ignoreLocation: true,
-            threshold: 0.1,
-            keys: ['label', 'suffix', '_searchText']
-          }
-        }"
-      />
 
       <NotificationsSlideover />
       <UMain class="flex-1 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
