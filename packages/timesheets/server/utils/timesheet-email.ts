@@ -48,7 +48,7 @@ export const notifyTimesheetEvent = async (
     const baseUrl = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051'
     const send = async (
       id: string,
-      recipient: { id: string; email: string },
+      recipient: { id: string; email: string; name: string },
       path: string,
       clientName = '',
       comment = '',
@@ -63,6 +63,7 @@ export const notifyTimesheetEvent = async (
           to: recipient.email,
           idempotencyKey: `timesheet/${submission.id}/${submission.version}/${id}/${scope}/${recipient.id}`,
           values: {
+            recipient_name: escapeHtml(recipient.name),
             person_name: escapeHtml(person.name),
             organization_name: escapeHtml(workspace.name),
             period: escapeHtml(formatTimesheetPeriod(submission.periodStartsOn, submission.periodEndsOn, emailLocale)),
@@ -95,7 +96,7 @@ export const notifyTimesheetEvent = async (
     }
     if (event === 'submitted' && submission.status === 'SUBMITTED') {
       const reviewers = await db
-        .selectDistinct({ id: user.id, email: user.email })
+        .selectDistinct({ id: user.id, email: user.email, name: user.name })
         .from(internalApproverAssignment)
         .innerJoin(user, eq(user.id, internalApproverAssignment.approverUserId))
         .innerJoin(member, and(eq(member.userId, user.id), eq(member.organizationId, submission.organizationId)))
@@ -140,6 +141,7 @@ export const notifyTimesheetEvent = async (
       .selectDistinct({
         id: user.id,
         email: user.email,
+        name: user.name,
         clientId: organization.id,
         clientName: organization.name,
         reviewId: timesheetClientReview.id,

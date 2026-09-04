@@ -7,14 +7,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Internal approval requested — {{person_name}} ({{period}})',
-        body: 'Please review the timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>Please review the timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Interne goedkeuring gevraagd — {{person_name}} ({{period}})',
-        body: 'Beoordeel de urenstaat.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>Beoordeel de urenstaat.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -59,14 +64,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet approved internally — {{person_name}} ({{period}})',
-        body: 'Your timesheet has been approved internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been approved internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Urenstaat intern goedgekeurd — {{person_name}} ({{period}})',
-        body: 'Uw urenstaat is intern goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is intern goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -111,14 +121,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet rejected internally — {{person_name}} ({{period}})',
-        body: 'Your timesheet has been rejected internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been rejected internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Urenstaat intern afgewezen — {{person_name}} ({{period}})',
-        body: 'Uw urenstaat is intern afgewezen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is intern afgewezen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -163,14 +178,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet reopened — {{person_name}} ({{period}})',
-        body: 'Your timesheet has been reopened for editing.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been reopened for editing.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Urenstaat heropend — {{person_name}} ({{period}})',
-        body: 'Uw urenstaat is heropend voor wijzigingen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is heropend voor wijzigingen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -215,14 +235,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Client approval requested — {{person_name}} ({{period}})',
-        body: 'Please review the timesheet for your organization.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>Please review the timesheet for your organization.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Klantgoedkeuring gevraagd — {{person_name}} ({{period}})',
-        body: 'Beoordeel de urenstaat voor uw organisatie.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>Beoordeel de urenstaat voor uw organisatie.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -267,14 +292,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet approved by client — {{person_name}} ({{period}})',
-        body: 'The client has approved your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>The client has approved your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Urenstaat goedgekeurd door klant — {{person_name}} ({{period}})',
-        body: 'De klant heeft uw urenstaat goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>De klant heeft uw urenstaat goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',
@@ -319,14 +349,19 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet disputed by client — {{person_name}} ({{period}})',
-        body: 'The client has disputed your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},<br><br>The client has disputed your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
       },
       nl: {
         subject: 'Urenstaat betwist door klant — {{person_name}} ({{period}})',
-        body: 'De klant heeft uw urenstaat betwist.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},<br><br>De klant heeft uw urenstaat betwist.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
       }
     },
     placeholders: [
+      {
+        key: 'recipient_name',
+        labelKey: 'features.timesheets.email.placeholders.recipient_name',
+        example: 'Alex Example'
+      },
       { key: 'period', labelKey: 'features.timesheets.email.placeholders.period', example: 'do 3 – vr 4 sep 2026' },
       {
         key: 'person_name',

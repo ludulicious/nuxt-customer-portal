@@ -115,8 +115,8 @@ test('submission notifies reviewers individually and continues after provider fa
       [person],
       [workspace],
       [
-        { id: 'r1', email: 'one@example.com' },
-        { id: 'r2', email: 'two@example.com' }
+        { id: 'r1', name: 'Reviewer One', email: 'one@example.com' },
+        { id: 'r2', name: 'Reviewer Two', email: 'two@example.com' }
       ]
     ],
     'one@example.com'
@@ -140,7 +140,16 @@ test('automatic approval notifies the submitter and client reviewers without lea
     [person],
     [workspace],
     [{ id: 'link', clientId: 'client' }],
-    [{ id: 'r1', email: 'client@example.com', clientName: 'Client A', reviewId: 'review-a', version: 1 }]
+    [
+      {
+        id: 'r1',
+        name: 'Client Reviewer',
+        email: 'client@example.com',
+        clientName: 'Client A',
+        reviewId: 'review-a',
+        version: 1
+      }
+    ]
   ])
   await h.notify({ ...submission, status: 'APPROVED' }, 'submitted')
   assert.deepEqual(
@@ -218,7 +227,7 @@ test('period formatting handles single days and month/year boundaries in both la
 })
 
 test('email periods use the same locale and formatter as the UI', async () => {
-  const h = harness([[person], [workspace], [{ id: 'r1', email: 'reviewer@example.com' }]])
+  const h = harness([[person], [workspace], [{ id: 'r1', name: 'Reviewer', email: 'reviewer@example.com' }]])
   await h.notify({ ...submission, periodStartsOn: '2026-09-03', periodEndsOn: '2026-09-04' }, 'submitted')
   assert.equal(h.sent[0]!.locale, 'nl')
   assert.equal(h.sent[0]!.values.period!.replace(/\s/g, ' '), 'do 3 – vr 4 sep 2026')

@@ -431,7 +431,8 @@
           "period_end": "Einde periode",
           "client_name": "Klant",
           "comment": "Beoordelingsopmerking",
-          "action_url": "Portaallink"
+          "action_url": "Portaallink",
+          "recipient_name": "Naam geadresseerde"
         }
       },
       "clientSubmissionErrors": {

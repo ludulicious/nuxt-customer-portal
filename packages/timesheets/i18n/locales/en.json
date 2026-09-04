@@ -431,7 +431,8 @@
           "period_end": "Period end",
           "client_name": "Client",
           "comment": "Review comment",
-          "action_url": "Portal link"
+          "action_url": "Portal link",
+          "recipient_name": "Addressee name"
         }
       },
       "clientSubmissionErrors": {
