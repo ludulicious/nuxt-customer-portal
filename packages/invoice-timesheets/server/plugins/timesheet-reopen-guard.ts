@@ -4,7 +4,11 @@ import { hasActiveInvoiceSource } from '@nuxt-customer-portal/invoice-timesheets
 export default defineNitroPlugin(() =>
   registerTimeEntryReopenGuard(async (organizationId, entryIds) => {
     if (await hasActiveInvoiceSource(organizationId, entryIds)) {
-      throw createError({ statusCode: 409, message: 'Invoiced timesheets cannot be reopened' })
+      throw createError({
+        statusCode: 409,
+        message: 'Invoiced timesheets cannot be reopened',
+        data: { code: 'TIMESHEET_INVOICED' }
+      })
     }
   })
 )

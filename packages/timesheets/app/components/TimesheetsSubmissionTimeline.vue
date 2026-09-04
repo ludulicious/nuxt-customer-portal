@@ -23,7 +23,7 @@ const formatHistoryDate = (date: string) =>
         <span
           class="z-10 col-start-1 row-start-1 mt-4 size-4 rounded-full border-4 border-default sm:col-start-2"
           :class="
-            event.action === 'APPROVED'
+            ['APPROVED', 'AUTO_APPROVED'].includes(event.action)
               ? 'bg-success'
               : ['REJECTED', 'DISPUTED'].includes(event.action)
                 ? 'bg-error'
@@ -48,7 +48,7 @@ const formatHistoryDate = (date: string) =>
             <p
               class="shrink-0 font-medium"
               :class="
-                event.action === 'APPROVED'
+                ['APPROVED', 'AUTO_APPROVED'].includes(event.action)
                   ? 'text-success'
                   : ['REJECTED', 'DISPUTED'].includes(event.action)
                     ? 'text-error'
@@ -71,7 +71,7 @@ const formatHistoryDate = (date: string) =>
             v-if="event.comment"
             class="mt-3 rounded-r-md border-l-2 bg-default/50 px-3 py-2 text-left italic text-default"
             :class="
-              event.action === 'APPROVED'
+              ['APPROVED', 'AUTO_APPROVED'].includes(event.action)
                 ? 'border-success/50'
                 : ['REJECTED', 'DISPUTED'].includes(event.action)
                   ? 'border-error/50'

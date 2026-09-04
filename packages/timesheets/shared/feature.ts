@@ -90,6 +90,13 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
           audiences: ['authenticated']
         },
         {
+          id: 'provider-client-approvals',
+          labelKey: 'features.timesheets.admin.clientApprovals',
+          icon: 'i-lucide-building-2',
+          to: '/timesheets/client-approvals',
+          audiences: ['providerAdmin']
+        },
+        {
           id: 'internal-approval-settings',
           labelKey: 'features.timesheets.internalApprovals.manageTitle',
           icon: 'i-lucide-user-round-check',

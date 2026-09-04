@@ -10,6 +10,7 @@ import type {
 const props = defineProps<{
   data: DeepReadonly<InternalApprovalQueueDto>
   refresh: () => Promise<unknown>
+  clientMode?: boolean
 }>()
 const { t, locale } = useI18n()
 const toast = useToast()
@@ -24,6 +25,27 @@ const rejectionSchema = computed(() =>
     comment: z.string().trim().min(1, t('features.timesheets.validation.rejectionReason')).max(2000)
   })
 )
+
+const clientReplyOpen = ref(false)
+const clientReplyTarget = ref<{ submissionId: string; clientOrganizationId: string; version: number } | null>(null)
+const clientReplyState = reactive({ reply: '' })
+const clientReplySchema = z.object({ reply: z.string().trim().min(1).max(5000) })
+const openClientReply = (submissionId: string, review: DeepReadonly<ApprovalQueueItemDto['clientReviews'][number]>) => {
+  clientReplyTarget.value = { submissionId, clientOrganizationId: review.clientOrganizationId, version: review.version }
+  clientReplyState.reply = ''
+  clientReplyOpen.value = true
+}
+const sendClientReply = () =>
+  run(async () => {
+    const target = clientReplyTarget.value!
+    await timesheets.replyClientSubmission(
+      target.submissionId,
+      target.clientOrganizationId,
+      target.version,
+      clientReplyState.reply
+    )
+    clientReplyOpen.value = false
+  })
 
 const approvalOpen = ref(false)
 const approvalId = ref('')
@@ -92,6 +114,53 @@ const run = async (operation: () => Promise<unknown>) => {
   }
 }
 
+const requestOpen = ref(false)
+const requestTarget = ref<{ submissionId: string; clientOrganizationId: string } | null>(null)
+const requestState = reactive({ message: '' })
+const requestSchema = z.object({ message: z.string().trim().max(5000) })
+const openRequestApproval = (submissionId: string, clientOrganizationId: string) => {
+  requestTarget.value = { submissionId, clientOrganizationId }
+  requestState.message = ''
+  requestOpen.value = true
+}
+const confirmRequestApproval = () => {
+  if (requestTarget.value) {
+    return requestApproval(requestTarget.value.submissionId, requestTarget.value.clientOrganizationId)
+  }
+}
+const requestApproval = async (submissionId: string, clientOrganizationId: string) => {
+  if (busy.value) {
+    return
+  }
+  busy.value = true
+  try {
+    await $fetch(`/api/timesheets/submissions/${submissionId}/request-client-approval`, {
+      method: 'POST',
+      body: { clientOrganizationId, message: requestState.message }
+    })
+    requestOpen.value = false
+    await props.refresh()
+  } catch (error) {
+    const response = error as { data?: { code?: string; data?: { code?: string } }; statusCode?: number }
+    const code = response.data?.data?.code ?? response.data?.code
+    const reasons: Record<string, string> = {
+      CLIENT_APPROVAL_NOT_READY: 'notReady',
+      CLIENT_APPROVAL_ACCESS_REQUIRED: 'accessRequired',
+      CLIENT_APPROVAL_EMPTY: 'empty',
+      CLIENT_APPROVAL_EXISTS: 'exists',
+      TIMESHEET_INVOICED: 'invoiced'
+    }
+    toast.add({
+      title: t('features.timesheets.clientSubmissionErrors.title'),
+      description: t(
+        `features.timesheets.clientSubmissionErrors.${reasons[code ?? ''] ?? (response.statusCode === 403 ? 'unauthorized' : 'generic')}`
+      ),
+      color: 'error'
+    })
+  } finally {
+    busy.value = false
+  }
+}
 const review = (id: string, action: 'APPROVE' | 'REOPEN') => run(() => timesheets.reviewSubmission(id, action))
 
 const openReject = (id: string) => {
@@ -119,8 +188,8 @@ const reject = () =>
     </UCard>
     <details
       v-for="item in data.approvals"
-      :key="item.id"
-      :open="item.status === 'SUBMITTED'"
+      :key="clientMode ? item.id + item.clientReviews[0]?.clientOrganizationId : item.id"
+      :open="item.status === 'SUBMITTED' || item.clientReviews.some((review) => review.status === 'DISPUTED')"
       class="group rounded-lg border border-default bg-default"
     >
       <summary
@@ -129,8 +198,17 @@ const reject = () =>
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
-              <p class="font-medium">{{ item.userName }}</p>
+              <p class="font-medium">
+                <template v-if="clientMode"
+                  >{{
+                    data.clients.find((client) => client.organizationId === item.clientReviews[0]?.clientOrganizationId)
+                      ?.name
+                  }}
+                  · </template
+                >{{ item.userName }}
+              </p>
               <UBadge
+                v-if="!clientMode"
                 :color="item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'error' : 'warning'"
                 variant="subtle"
               >
@@ -145,12 +223,20 @@ const reject = () =>
               <UBadge
                 v-for="clientReview in item.clientReviews"
                 :key="clientReview.clientOrganizationId"
-                :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'"
+                :color="
+                  clientReview.status === 'DISPUTED'
+                    ? 'error'
+                    : ['APPROVED', 'AUTO_APPROVED'].includes(clientReview.status)
+                      ? 'success'
+                      : 'warning'
+                "
                 variant="subtle"
               >
-                {{ data.clients.find((client) => client.organizationId === clientReview.clientOrganizationId)?.name }} ·
-                {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`)
-                }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
+                <template v-if="!clientMode">
+                  {{ data.clients.find((client) => client.organizationId === clientReview.clientOrganizationId)?.name }}
+                  ·
+                </template>
+                {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`) }}
               </UBadge>
             </div>
             <ul class="mt-3 flex max-w-2xl overflow-hidden rounded-md border border-default">
@@ -167,7 +253,7 @@ const reject = () =>
             </ul>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <template v-if="item.status === 'SUBMITTED'">
+            <template v-if="!clientMode && item.status === 'SUBMITTED'">
               <UButton color="error" variant="outline" icon="i-lucide-undo-2" @click.stop.prevent="openReject(item.id)">
                 {{ t('features.timesheets.admin.reject') }}
               </UButton>
@@ -176,7 +262,7 @@ const reject = () =>
               </UButton>
             </template>
             <UButton
-              v-else-if="item.status === 'APPROVED'"
+              v-else-if="!clientMode && item.status === 'APPROVED'"
               color="neutral"
               variant="outline"
               icon="i-lucide-lock-open"
@@ -211,8 +297,8 @@ const reject = () =>
                   {{ t(entry.billable ? 'features.timesheets.billable' : 'features.timesheets.nonBillable') }}
                 </UBadge>
               </div>
-              <p class="mt-2 text-sm" :class="entry.note ? 'text-muted' : 'text-dimmed'">
-                {{ entry.note || t('features.timesheets.admin.noNote') }}
+              <p v-if="entry.note?.trim()" class="mt-2 whitespace-pre-line text-sm text-muted">
+                {{ entry.note }}
               </p>
             </div>
             <div class="flex items-baseline gap-1.5 whitespace-nowrap text-sm sm:justify-end sm:text-right">
@@ -227,9 +313,104 @@ const reject = () =>
           </article>
         </div>
         <TimesheetsSubmissionTimeline :events="item.history ?? []" />
+        <section
+          v-if="
+            item.clientReviews.length &&
+            (!clientMode ||
+              item.clientReviews.some(
+                (decision) =>
+                  decision.status === 'AUTO_APPROVED' || (decision.canReply && decision.status === 'DISPUTED')
+              ))
+          "
+          :class="clientMode ? 'mt-4 flex justify-end gap-3' : 'mt-4 space-y-3 border-t border-default pt-4'"
+        >
+          <h3 v-if="!clientMode" class="font-semibold">{{ t('features.timesheets.admin.clientApprovals') }}</h3>
+          <div
+            v-for="clientDecision in item.clientReviews"
+            :key="clientDecision.clientOrganizationId"
+            :class="clientMode ? 'flex justify-end gap-3' : 'rounded-md border border-default p-3'"
+          >
+            <div v-if="!clientMode" class="flex flex-wrap items-center justify-between gap-3">
+              <span class="font-medium">{{
+                data.clients.find((client) => client.organizationId === clientDecision.clientOrganizationId)?.name
+              }}</span>
+              <UBadge
+                :color="
+                  clientDecision.status === 'DISPUTED'
+                    ? 'error'
+                    : ['APPROVED', 'AUTO_APPROVED'].includes(clientDecision.status)
+                      ? 'success'
+                      : 'warning'
+                "
+                variant="subtle"
+              >
+                {{ t(`features.timesheets.clientPortal.${clientDecision.status.toLowerCase()}`) }}
+              </UBadge>
+            </div>
+            <p v-if="!clientMode && clientDecision.comment" class="mt-2 whitespace-pre-line text-sm text-muted">
+              {{ clientDecision.comment }}
+            </p>
+            <UButton
+              v-if="clientMode && clientDecision.status === 'AUTO_APPROVED'"
+              class="mt-3"
+              :loading="busy"
+              icon="i-lucide-send"
+              @click="openRequestApproval(item.id, clientDecision.clientOrganizationId)"
+            >
+              {{ t('features.timesheets.submissions.title') }}
+            </UButton>
+            <UButton
+              v-if="clientDecision.canReply && clientDecision.status === 'DISPUTED'"
+              class="mt-3"
+              icon="i-lucide-reply"
+              @click="openClientReply(item.id, clientDecision)"
+            >
+              {{ t('features.timesheets.submissions.resubmit') }}
+            </UButton>
+          </div>
+        </section>
       </div>
     </details>
 
+    <UModal v-model:open="requestOpen" :title="t('features.timesheets.submissions.title')">
+      <template #body>
+        <UForm
+          :schema="requestSchema"
+          :state="requestState"
+          novalidate
+          class="space-y-4"
+          @submit="confirmRequestApproval"
+        >
+          <UFormField name="message" :label="t('features.timesheets.submissions.remark')">
+            <UTextarea v-model="requestState.message" :rows="4" class="w-full" />
+          </UFormField>
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="outline" :disabled="busy" @click="requestOpen = false">{{
+              t('features.timesheets.cancel')
+            }}</UButton>
+            <UButton type="submit" icon="i-lucide-send" :loading="busy">{{
+              t('features.timesheets.submissions.title')
+            }}</UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+    <UModal v-model:open="clientReplyOpen" :title="t('features.timesheets.submissions.reply')">
+      <template #body>
+        <UForm
+          :schema="clientReplySchema"
+          :state="clientReplyState"
+          novalidate
+          class="space-y-4"
+          @submit="sendClientReply"
+        >
+          <UFormField name="reply" :label="t('features.timesheets.submissions.reply')">
+            <UTextarea v-model="clientReplyState.reply" class="w-full" :rows="4" />
+          </UFormField>
+          <UButton type="submit" :loading="busy">{{ t('features.timesheets.submissions.resubmit') }}</UButton>
+        </UForm>
+      </template>
+    </UModal>
     <UModal v-model:open="approvalOpen" :title="t('features.timesheets.admin.approve')">
       <template #body>
         <UForm :state="approvalState" :schema="approvalSchema" novalidate class="space-y-4" @submit="approve">

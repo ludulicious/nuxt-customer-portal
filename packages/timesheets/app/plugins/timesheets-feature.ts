@@ -23,7 +23,7 @@ export default defineNuxtPlugin(() => {
           ? capabilities.canApproveInternalTimesheets
           : id === 'timesheets-admin'
             ? capabilities.canManageTimesheets
-            : id === 'internal-approval-settings'
+            : ['internal-approval-settings', 'provider-client-approvals'].includes(id)
               ? capabilities.canManageTimesheets
               : id === 'approval-reviewers'
                 ? capabilities.canManageClientReviewers

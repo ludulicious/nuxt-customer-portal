@@ -22,7 +22,8 @@
           "REJECTED": "Rejected",
           "APPROVED": "Approved",
           "REOPENED": "Reopened",
-          "DISPUTED": "Disputed"
+          "DISPUTED": "Disputed",
+          "AUTO_APPROVED": "Auto approved"
         },
         "remark": "Remark (optional)",
         "title": "Submit time for approval",
@@ -108,7 +109,8 @@
         "approve": "Approve",
         "dispute": "Dispute",
         "comment": "Reason for dispute",
-        "saveReviewers": "Reviewer access is updated immediately"
+        "saveReviewers": "Reviewer access is updated immediately",
+        "auto_approved": "Auto approved"
       },
       "approvals": {
         "pending": "Awaiting review",
@@ -263,6 +265,7 @@
         }
       },
       "admin": {
+        "clientApprovals": "Client approvals",
         "refresh": "Refresh",
         "clients": "Clients",
         "projects": "Projects",
@@ -396,7 +399,8 @@
         "billableAmount": "Billable amount",
         "person": "Person",
         "hours": "Hours",
-        "amount": "Amount"
+        "amount": "Amount",
+        "clientApprovalsSubtitle": "Track client decisions and respond to disputed timesheets."
       },
       "messages": {
         "saved": "Time saved",
@@ -429,6 +433,16 @@
           "comment": "Review comment",
           "action_url": "Portal link"
         }
+      },
+      "clientSubmissionErrors": {
+        "title": "Timesheet could not be submitted",
+        "accessRequired": "Enable timesheet review access for this client in the client settings, then try again.",
+        "invoiced": "Some of these hours are already linked to an invoice. They cannot be submitted for client approval.",
+        "notReady": "This timesheet must be internally approved first. Refresh the page to see its current status.",
+        "empty": "There are no time entries for this client in this submission.",
+        "exists": "This timesheet has already been sent to the client. Refresh the page to see the latest status.",
+        "unauthorized": "Only a workspace owner or administrator can submit timesheets for client approval.",
+        "generic": "We could not submit this timesheet. Please try again. If the problem continues, contact your administrator."
       }
     }
   }

@@ -2246,12 +2246,16 @@ export const listApprovalQueue = async (
   organizationId: string,
   approverUserId: string
 ): Promise<ApprovalQueueItemDto[]> => {
+  const organizationMembers = await listPortalOrganizationMembers(organizationId)
+  const isAdmin = organizationMembers.some(
+    (member) => member.id === approverUserId && ['owner', 'admin'].includes(member.organizationRole)
+  )
   const [workspace] = await db
     .select({ enabled: workspaceSettings.internalApprovalsEnabled })
     .from(workspaceSettings)
     .where(eq(workspaceSettings.organizationId, organizationId))
     .limit(1)
-  if (!workspace?.enabled) {
+  if (!workspace?.enabled && !isAdmin) {
     return []
   }
   const assignments = await db
@@ -2263,7 +2267,9 @@ export const listApprovalQueue = async (
         eq(internalApproverAssignment.approverUserId, approverUserId)
       )
     )
-  const submitterIds = assignments.map((item) => item.submitterUserId)
+  const submitterIds = isAdmin
+    ? organizationMembers.map((item) => item.id)
+    : assignments.map((item) => item.submitterUserId)
   if (!submitterIds.length) {
     return []
   }
@@ -2313,7 +2319,9 @@ export const listApprovalQueue = async (
     return {
       id: submission.id,
       userId: submission.userId,
-      history: history.filter((event) => event.submissionId === submission.id && !event.clientOrganizationId),
+      history: history.filter(
+        (event) => event.submissionId === submission.id && (isAdmin || !event.clientOrganizationId)
+      ),
       messages: messages.filter((message) => message.submissionId === submission.id),
       userName: names.get(submission.userId) ?? 'Unknown member',
       weekStartsOn,
@@ -2336,6 +2344,9 @@ export const listApprovalQueue = async (
         .map((review) => ({
           clientOrganizationId: review.clientOrganizationId,
           status: review.status,
+          version: review.version,
+          canReply: isAdmin,
+          createdAt: review.createdAt.toISOString(),
           comment: review.comment
         }))
     }
@@ -2883,6 +2894,8 @@ export const replyClientTimesheet = async (
   expectedVersion: number,
   reply?: string
 ) => {
+  const members = await listPortalOrganizationMembers(organizationId)
+  const isAdmin = members.some((member) => member.id === userId && ['owner', 'admin'].includes(member.organizationRole))
   const submission = await db.transaction(async (tx) => {
     const [owned] = await tx
       .select()
@@ -2891,7 +2904,7 @@ export const replyClientTimesheet = async (
         and(
           eq(timesheetSubmission.id, submissionId),
           eq(timesheetSubmission.organizationId, organizationId),
-          eq(timesheetSubmission.userId, userId),
+          isAdmin ? undefined : eq(timesheetSubmission.userId, userId),
           eq(timesheetSubmission.status, 'APPROVED')
         )
       )
@@ -2933,4 +2946,98 @@ export const replyClientTimesheet = async (
     return owned
   })
   await notifyTimesheetEvent(submission, 'approved', undefined, reply, clientOrganizationId)
+}
+
+export const requestClientApproval = async (
+  organizationId: string,
+  submissionId: string,
+  clientOrganizationId: string,
+  actorUserId: string,
+  message?: string
+) => {
+  const submission = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'timesheet-submit:' + submissionId}))`)
+    const [current] = await tx
+      .select()
+      .from(timesheetSubmission)
+      .where(
+        and(
+          eq(timesheetSubmission.id, submissionId),
+          eq(timesheetSubmission.organizationId, organizationId),
+          eq(timesheetSubmission.status, 'APPROVED')
+        )
+      )
+      .limit(1)
+    if (!current) {
+      throw createError({
+        statusCode: 404,
+        message: 'Approved submission not found',
+        data: { code: 'CLIENT_APPROVAL_NOT_READY' }
+      })
+    }
+    const [link] = await tx
+      .select()
+      .from(workspaceClient)
+      .where(
+        and(
+          eq(workspaceClient.workspaceOrganizationId, organizationId),
+          eq(workspaceClient.clientOrganizationId, clientOrganizationId),
+          eq(workspaceClient.accessMode, 'REVIEW')
+        )
+      )
+      .limit(1)
+    if (!link) {
+      throw createError({
+        statusCode: 409,
+        message: 'Enable timesheet review access for this client first',
+        data: { code: 'CLIENT_APPROVAL_ACCESS_REQUIRED' }
+      })
+    }
+    const entries = await tx
+      .select()
+      .from(timeEntry)
+      .where(and(eq(timeEntry.submissionId, submissionId), eq(timeEntry.clientOrganizationId, clientOrganizationId)))
+    if (!entries.length) {
+      throw createError({
+        statusCode: 422,
+        message: 'No hours for this client',
+        data: { code: 'CLIENT_APPROVAL_EMPTY' }
+      })
+    }
+    await assertTimeEntriesReopenable(
+      organizationId,
+      entries.map((entry) => entry.id)
+    )
+    const inserted = await tx
+      .insert(timesheetClientReview)
+      .values({
+        id: nanoid(),
+        weeklyTimesheetId: current.weeklyTimesheetId,
+        submissionId,
+        clientOrganizationId,
+        status: 'PENDING'
+      })
+      .onConflictDoNothing()
+      .returning()
+    if (!inserted.length) {
+      throw createError({
+        statusCode: 409,
+        message: 'Client approval already exists',
+        data: { code: 'CLIENT_APPROVAL_EXISTS' }
+      })
+    }
+    if (message?.trim()) {
+      await tx.insert(timesheetClientReviewHistory).values({
+        weeklyTimesheetId: current.weeklyTimesheetId,
+        id: nanoid(),
+        submissionId,
+        clientOrganizationId,
+        action: 'SUBMITTED',
+        actorUserId,
+        comment: message.trim()
+      })
+    }
+    return current
+  })
+  await notifyTimesheetEvent(submission, 'approved', undefined, message, clientOrganizationId)
 }

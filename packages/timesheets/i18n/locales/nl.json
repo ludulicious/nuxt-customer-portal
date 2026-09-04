@@ -22,7 +22,8 @@
           "REJECTED": "Teruggestuurd",
           "APPROVED": "Goedgekeurd",
           "REOPENED": "Heropend",
-          "DISPUTED": "Betwist"
+          "DISPUTED": "Betwist",
+          "AUTO_APPROVED": "Automatisch goedgekeurd"
         },
         "remark": "Opmerking (optioneel)",
         "title": "Uren indienen ter goedkeuring",
@@ -108,7 +109,8 @@
         "approve": "Goedkeuren",
         "dispute": "Betwisten",
         "comment": "Reden van betwisting",
-        "saveReviewers": "Toegang voor beoordelaars wordt direct bijgewerkt"
+        "saveReviewers": "Toegang voor beoordelaars wordt direct bijgewerkt",
+        "auto_approved": "Automatisch goedgekeurd"
       },
       "approvals": {
         "pending": "Te beoordelen",
@@ -263,6 +265,7 @@
         }
       },
       "admin": {
+        "clientApprovals": "Klantgoedkeuringen",
         "refresh": "Vernieuwen",
         "clients": "Klanten",
         "projects": "Projecten",
@@ -396,7 +399,8 @@
         "billableAmount": "Facturabel bedrag",
         "person": "Persoon",
         "hours": "Uren",
-        "amount": "Bedrag"
+        "amount": "Bedrag",
+        "clientApprovalsSubtitle": "Bekijk klantbeslissingen en reageer op betwiste urenstaten."
       },
       "messages": {
         "saved": "Tijd opgeslagen",
@@ -429,6 +433,16 @@
           "comment": "Beoordelingsopmerking",
           "action_url": "Portaallink"
         }
+      },
+      "clientSubmissionErrors": {
+        "title": "Urenstaat kon niet worden ingediend",
+        "accessRequired": "Schakel goedkeuring van urenstaten in bij de klantinstellingen en probeer het opnieuw.",
+        "invoiced": "Een deel van deze uren is al gekoppeld aan een factuur. Deze kunnen niet ter goedkeuring aan de klant worden voorgelegd.",
+        "notReady": "Deze urenstaat moet eerst intern worden goedgekeurd. Vernieuw de pagina voor de actuele status.",
+        "empty": "Deze indiening bevat geen uren voor deze klant.",
+        "exists": "Deze urenstaat is al naar de klant verstuurd. Vernieuw de pagina voor de actuele status.",
+        "unauthorized": "Alleen een eigenaar of beheerder van de werkruimte kan urenstaten ter goedkeuring aan de klant voorleggen.",
+        "generic": "De urenstaat kon niet worden ingediend. Probeer het opnieuw. Neem contact op met je beheerder als het probleem blijft bestaan."
       }
     }
   }

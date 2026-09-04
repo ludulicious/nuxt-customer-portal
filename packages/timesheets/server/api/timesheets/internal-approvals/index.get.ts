@@ -1,4 +1,4 @@
-import { requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
+import { requireActiveOrganizationRole, listPortalOrganizationMembers } from '@nuxt-customer-portal/core/server/portal'
 import {
   ensureSettings,
   listActivities,
@@ -9,14 +9,16 @@ import {
 } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 
 export default defineEventHandler(async (event) => {
-  const { session, organizationId } = await requireActiveOrganizationRole(event)
+  const { session, organizationId, role } = await requireActiveOrganizationRole(event)
   const [settings, approvals, clients, projects, activities, teamMembers] = await Promise.all([
     ensureSettings(organizationId),
     getQuery(event).contextOnly === 'true' ? Promise.resolve([]) : listApprovalQueue(organizationId, session.user.id),
     listClients(organizationId),
     listProjects(organizationId),
     listActivities(organizationId),
-    listInternalApprovalMembers(organizationId, session.user.id)
+    ['owner', 'admin'].includes(role)
+      ? listPortalOrganizationMembers(organizationId)
+      : listInternalApprovalMembers(organizationId, session.user.id)
   ])
   return {
     settings: {

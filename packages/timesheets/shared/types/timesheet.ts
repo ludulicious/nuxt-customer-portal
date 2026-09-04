@@ -353,7 +353,14 @@ export interface ApprovalQueueItemDto {
   currency: string
   submittedAt: string | null
   entries: TimeEntryDto[]
-  clientReviews: Array<{ clientOrganizationId: string; status: ClientReviewStatus; comment: string | null }>
+  clientReviews: Array<{
+    clientOrganizationId: string
+    status: ClientReviewStatus | 'AUTO_APPROVED'
+    version: number
+    canReply: boolean
+    createdAt: string
+    comment: string | null
+  }>
 }
 
 export interface ReportRowDto {
@@ -402,6 +409,7 @@ export interface ClientSubmissionThreadDto {
 }
 
 export interface SubmissionHistoryEventDto {
+  clientOrganizationId?: string | null
   actorUserId: string
   actorImage: string | null
   comment: string | null

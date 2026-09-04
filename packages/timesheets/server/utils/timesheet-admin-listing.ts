@@ -60,6 +60,102 @@ export const listInternalApprovalsPage = async (
   return paginate(rows, query.page, query.pageSize)
 }
 
+export const listProviderClientApprovalsPage = async (
+  organizationId: string,
+  actorUserId: string,
+  query: Omit<InternalApprovalListQuery, 'status'> & {
+    status?: 'PENDING' | 'APPROVED' | 'DISPUTED' | 'AUTO_APPROVED'
+    clientOrganizationId?: string
+  }
+) => {
+  const search = query.search?.toLocaleLowerCase() ?? ''
+  const [projects, clients] = await Promise.all([listProjects(organizationId), listClients(organizationId)])
+  const rows = (await listApprovalQueue(organizationId, actorUserId))
+    .flatMap((item) =>
+      [
+        ...item.clientReviews,
+        ...(item.status === 'APPROVED'
+          ? clients
+              .filter(
+                (client) =>
+                  !item.clientReviews.some((review) => review.clientOrganizationId === client.organizationId) &&
+                  item.entries.some((entry) =>
+                    projects.some(
+                      (project) =>
+                        project.id === entry.projectId && project.clientOrganizationId === client.organizationId
+                    )
+                  )
+              )
+              .map((client) => ({
+                clientOrganizationId: client.organizationId,
+                status: 'AUTO_APPROVED' as const,
+                version: 0,
+                canReply: false,
+                comment: null,
+                createdAt:
+                  [...(item.history ?? [])]
+                    .reverse()
+                    .find((event) => event.action === 'APPROVED' && !event.clientOrganizationId)?.createdAt ??
+                  item.submittedAt!
+              }))
+          : [])
+      ].map((review) => {
+        const entries = item.entries.filter((entry) =>
+          projects.some(
+            (project) => project.id === entry.projectId && project.clientOrganizationId === review.clientOrganizationId
+          )
+        )
+        return {
+          ...item,
+          clientReviews: [review],
+          messages: [],
+          history: [
+            {
+              id: `client-review-created:${item.id}:${review.clientOrganizationId}`,
+              action: review.status === 'AUTO_APPROVED' ? 'AUTO_APPROVED' : 'CLIENT_SUBMITTED',
+              actorUserId: item.userId,
+              actorName: item.userName,
+              actorImage: null,
+              clientName: null,
+              clientOrganizationId: review.clientOrganizationId,
+              comment: null,
+              createdAt: review.createdAt
+            },
+            ...(item.history ?? []).filter((event) => event.clientOrganizationId === review.clientOrganizationId)
+          ],
+          entries,
+          totalMinutes: entries.reduce((sum, entry) => sum + entry.durationMinutes, 0),
+          billableMinutes: entries
+            .filter((entry) => entry.billable)
+            .reduce((sum, entry) => sum + entry.durationMinutes, 0),
+          billableAmountMinor: entries.reduce(
+            (sum, entry) => sum + Math.round((entry.durationMinutes * entry.hourlyRateMinor) / 60),
+            0
+          )
+        }
+      })
+    )
+    .filter((item) => item.entries.length > 0)
+    .filter(
+      (item) =>
+        !query.clientOrganizationId ||
+        item.clientReviews.some((review) => review.clientOrganizationId === query.clientOrganizationId)
+    )
+    .filter((item) => !query.userId || item.userId === query.userId)
+    .filter((item) => !search || includes(item.userName, search))
+    .filter((item) => !query.status || item.clientReviews.some((review) => review.status === query.status))
+    .sort(
+      (a, b) =>
+        direction(
+          query.sortBy === 'totalMinutes'
+            ? a.totalMinutes - b.totalMinutes
+            : compareText(a[query.sortBy], b[query.sortBy]),
+          query.sortDir
+        ) || compareText(a.id, b.id)
+    )
+  return paginate(rows, query.page, query.pageSize)
+}
+
 export const listProjectsPage = async (organizationId: string, query: ProjectListQuery) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
   const rows = (await listProjects(organizationId))
