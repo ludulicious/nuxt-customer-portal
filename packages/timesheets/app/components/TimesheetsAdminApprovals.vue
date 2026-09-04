@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import type { DeepReadonly } from 'vue'
 import { z } from 'zod'
 import type {
@@ -41,13 +42,7 @@ const formatEntryDate = (date: string) =>
     day: 'numeric',
     month: 'short'
   }).format(new Date(`${date}T12:00:00`))
-const formatPeriod = (from: string, to: string) =>
-  new Intl.DateTimeFormat(locale.value, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).formatRange(new Date(`${from}T12:00:00`), new Date(`${to}T12:00:00`))
+const formatPeriod = (from: string, to: string) => formatTimesheetPeriod(from, to, locale.value)
 const projectFor = (projectId: string) => props.data.projects.find((project) => project.id === projectId)
 const activityFor = (activityTypeId: string) => props.data.activities.find((activity) => activity.id === activityTypeId)
 const weekdayTotals = (item: DeepReadonly<ApprovalQueueItemDto>) => {

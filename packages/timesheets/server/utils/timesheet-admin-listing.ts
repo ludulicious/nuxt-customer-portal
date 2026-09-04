@@ -45,6 +45,7 @@ export const listInternalApprovalsPage = async (
 ) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
   const rows = (await listApprovalQueue(organizationId, actorUserId))
+    .filter((item) => !query.userId || item.userId === query.userId)
     .filter((item) => !search || includes(item.userName, search))
     .filter((item) => !query.status || item.status === query.status)
     .sort(
@@ -117,6 +118,7 @@ export const listClientApprovalsPage = async (
 ) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
   const rows = (await listClientApprovals(clientOrganizationId, actorUserId, isAdmin)).items
+    .filter((item) => !query.userId || item.userId === query.userId)
     .filter(
       (item) =>
         !search ||

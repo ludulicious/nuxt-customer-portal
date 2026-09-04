@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { addDays, getISOWeek, parseISO } from 'date-fns'
 
 const props = defineProps<{ section: 'myWeek' | 'internalApprovals' | 'clientApprovals' }>()
@@ -39,16 +40,7 @@ const duration = (amount: number) =>
   t(amount === 60 ? 'features.timesheets.dashboard.duration.one' : 'features.timesheets.dashboard.duration.other', {
     value: minutes(amount)
   })
-const submissionPeriod = (from: string, to: string) => {
-  const formatter = new Intl.DateTimeFormat(locale.value, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
-  const start = parseISO(from)
-  return from === to ? formatter.format(start) : formatter.formatRange(start, parseISO(to))
-}
+const submissionPeriod = (from: string, to: string) => formatTimesheetPeriod(from, to, locale.value)
 const weekPeriod = (weekStartsOn: string) => {
   const start = parseISO(weekStartsOn)
   const end = addDays(start, 6)

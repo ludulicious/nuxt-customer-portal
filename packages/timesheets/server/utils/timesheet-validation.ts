@@ -29,6 +29,7 @@ export const activityListQuerySchema = z.object({
 })
 export const clientApprovalListQuerySchema = z.object({
   ...listBase,
+  userId: id.optional(),
   workspaceClientId: id.optional(),
   status: z.enum(['PENDING', 'APPROVED', 'DISPUTED']).optional(),
   sortBy: z.enum(['weekStartsOn', 'supplierName', 'person', 'status', 'totalMinutes']).default('weekStartsOn'),
@@ -36,6 +37,7 @@ export const clientApprovalListQuerySchema = z.object({
 })
 export const internalApprovalListQuerySchema = z.object({
   ...listBase,
+  userId: id.optional(),
   status: z.enum(['SUBMITTED', 'APPROVED', 'REJECTED']).optional(),
   sortBy: z.enum(['weekStartsOn', 'userName', 'status', 'totalMinutes']).default('weekStartsOn'),
   sortDir: z.enum(['asc', 'desc']).default('desc')

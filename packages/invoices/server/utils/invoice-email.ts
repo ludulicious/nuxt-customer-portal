@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils/client-email-locale'
 import { and, desc, eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
@@ -37,7 +38,7 @@ const htmlToPlainText = (value: string) =>
 export const getInvoiceEmailPreview = async (
   organizationId: string,
   id: string,
-  localeOverride?: string,
+  _localeOverride?: string,
   purpose: InvoiceEmailPurpose = 'INVOICE'
 ): Promise<InvoiceEmailPreviewDto> => {
   const [selected, sender, files, providerStatus] = await Promise.all([
@@ -52,7 +53,10 @@ export const getInvoiceEmailPreview = async (
   if (purpose === 'REMINDER' && !selected.isOverdue) {
     throw createError({ statusCode: 409, message: 'Only overdue invoices can receive payment reminders' })
   }
-  const locale = localeOverride === 'en' ? 'en' : selected.recipientLocale === 'en' ? 'en' : 'nl'
+  const locale = await getClientEmailLocale(
+    selected.clientOrganizationId,
+    selected.recipientLocale === 'en' ? 'en' : 'nl'
+  )
   const pdf = await generateInvoicePdf(selected, locale)
   const pdfName = `${locale === 'nl' ? 'factuur' : 'invoice'}-${selected.number.replace(/[^a-z0-9._-]+/gi, '-')}.pdf`
   const senderDomain = domainFor(sender.invoiceEmail)
@@ -113,6 +117,7 @@ export const deliverInvoiceEmail = async (
     })
   }
   const preview = await getInvoiceEmailPreview(organizationId, id, input.locale, purpose)
+  input = { ...input, locale: preview.locale === 'en' ? 'en' : 'nl' }
   if (!preview.emailProviderConfigured) {
     throw createError({ statusCode: 409, message: 'The organization email provider is not configured' })
   }

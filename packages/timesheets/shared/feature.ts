@@ -1,3 +1,4 @@
+import { timesheetEmails } from './emails'
 import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/types/feature'
 
 export const timesheetActions = ['read', 'create', 'update', 'submit', 'report', 'approve', 'manage'] as const
@@ -6,6 +7,7 @@ export type TimesheetAction = (typeof timesheetActions)[number]
 
 export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
   id: 'timesheets',
+  emails: timesheetEmails,
   navigation: [
     {
       id: 'timesheets',

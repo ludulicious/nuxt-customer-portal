@@ -1,5 +1,6 @@
 <!-- Hallmark · shared client timesheet collection and detail browser -->
 <script setup lang="ts">
+import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import type { DeepReadonly } from 'vue'
 import type {
   ClientApprovalItemDto,
@@ -25,15 +26,15 @@ const detailQueryKey = computed(() => (isReview.value ? 'review' : 'detail'))
 const endpoint = computed(() =>
   isReview.value ? '/api/timesheets/client/approvals' : '/api/timesheets/client/supplier-timesheets'
 )
-const filterKeys = computed(() => (isReview.value ? ['workspaceClientId', 'status'] : ['workspaceClientId']))
+const filterKeys = computed(() => (isReview.value ? ['userId', 'status'] : ['workspaceClientId']))
 const listing = useTimesheetsAdminList<Item>({
   endpoint: endpoint.value,
   filterKeys: filterKeys.value,
   defaultSort: 'weekStartsOn',
   defaultSortDir: 'desc'
 })
-const { data: supplierOptions } = await useAsyncData(`timesheet-client-${props.mode}-suppliers`, () =>
-  isReview.value ? api.clientApprovalSuppliers() : api.clientSupplierOptions()
+const { data: filterOptions } = await useAsyncData(`timesheet-client-${props.mode}-filter-options`, () =>
+  isReview.value ? api.clientApprovalMembers() : api.clientSupplierOptions()
 )
 const selectedId = computed(() =>
   typeof route.query[detailQueryKey.value] === 'string' ? String(route.query[detailQueryKey.value]) : ''
@@ -55,17 +56,28 @@ const filters = computed(() => [
       ]
     : []),
   {
-    key: 'workspaceClientId',
-    placeholder: t('features.timesheets.approvals.supplierFilter'),
+    key: isReview.value ? 'userId' : 'workspaceClientId',
+    placeholder: t(
+      isReview.value
+        ? 'features.timesheets.internalApprovals.memberFilter'
+        : 'features.timesheets.approvals.supplierFilter'
+    ),
     items: [
-      { label: t('features.timesheets.approvals.allSuppliers'), value: undefined },
-      ...(supplierOptions.value ?? []).map((item) => ({ label: item.name, value: item.id }))
+      {
+        label: t(
+          isReview.value
+            ? 'features.timesheets.internalApprovals.allMembers'
+            : 'features.timesheets.approvals.allSuppliers'
+        ),
+        value: undefined
+      },
+      ...(filterOptions.value ?? []).map((item) => ({ label: item.name, value: item.id }))
     ]
   }
 ])
 const sortOptions = computed(() => [
   { label: t('features.timesheets.approvals.sortNewest'), value: 'weekStartsOn' },
-  { label: t('features.timesheets.approvals.sortSupplier'), value: 'supplierName' },
+  ...(!isReview.value ? [{ label: t('features.timesheets.approvals.sortSupplier'), value: 'supplierName' }] : []),
   { label: t('features.timesheets.approvals.sortPerson'), value: 'person' },
   { label: t('features.timesheets.approvals.sortHours'), value: 'totalMinutes' },
   ...(isReview.value ? [{ label: t('features.timesheets.approvals.sortStatus'), value: 'status' }] : [])
@@ -75,13 +87,7 @@ const formatDate = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`))
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-const batchPeriod = (from: string, to: string) =>
-  new Intl.DateTimeFormat(locale.value, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).formatRange(new Date(`${from}T12:00:00`), new Date(`${to}T12:00:00`))
+const batchPeriod = (from: string, to: string) => formatTimesheetPeriod(from, to, locale.value)
 const reviewStatusColor = (value: ClientReviewStatus): BadgeColor =>
   value === 'APPROVED' ? 'success' : value === 'DISPUTED' ? 'error' : 'warning'
 const isApprovalItem = (item: ReadonlyItem): item is ReadonlyApprovalItem => 'canAct' in item

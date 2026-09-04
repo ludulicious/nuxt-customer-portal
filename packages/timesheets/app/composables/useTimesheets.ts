@@ -106,6 +106,8 @@ export const useTimesheets = () => {
   const updateOrganizationTimesheetCapabilities = (organizationId: string, input: { workspaceEnabled: boolean }) =>
     $fetch(`/api/timesheets/admin/organization-capabilities/${organizationId}`, { method: 'PATCH', body: input })
   const clientWorkspaces = () => $fetch<ClientWorkspaceDto[]>('/api/timesheets/client/workspaces')
+  const clientApprovalMembers = () =>
+    $fetch<Array<{ id: string; name: string }>>('/api/timesheets/client/approval-members')
   const clientApprovalSuppliers = () =>
     $fetch<ClientApprovalSupplierOptionDto[]>('/api/timesheets/client/approval-suppliers')
   const clientSupplierOptions = () =>
@@ -208,6 +210,7 @@ export const useTimesheets = () => {
     updateOrganizationTimesheetCapabilities,
     clientWorkspaces,
     clientApprovalSuppliers,
+    clientApprovalMembers,
     clientSupplierOptions,
     clientReviewerSuppliers,
     clientTimesheets,

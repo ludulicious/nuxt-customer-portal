@@ -23,6 +23,7 @@
         "entryCount": "{count} registratie | {count} registraties",
         "partialStatus": "Gedeeltelijke week: {period} · {status}",
         "remainingWeekUnsubmitted": "Overige uren in deze week zijn nog niet ingediend",
+        "reviewerMessage": "Bericht van beoordelaar",
         "confirm": "Indienen ter goedkeuring",
         "resubmit": "Gecorrigeerde uren opnieuw indienen",
         "none": "Niet ingediend"
@@ -50,6 +51,8 @@
       },
       "timesheetAccess": "Urenstaattoegang",
       "internalApprovals": {
+        "memberFilter": "Teamlid",
+        "allMembers": "Alle teamleden",
         "title": "Interne goedkeuringen",
         "subtitle": "Beoordeel urenstaten van leden die aan jou zijn toegewezen.",
         "manageTitle": "Instellingen interne goedkeuring",
@@ -388,6 +391,27 @@
         "projectDeleted": "Project verwijderd",
         "rateSaved": "Tarief opgeslagen",
         "settingsSaved": "Instellingen opgeslagen"
+      },
+      "email": {
+        "messages": {
+          "internal-requested": "Interne goedkeuring gevraagd",
+          "internal-approved": "Urenstaat intern goedgekeurd",
+          "internal-rejected": "Urenstaat intern afgewezen",
+          "internal-reopened": "Urenstaat heropend",
+          "client-requested": "Klantgoedkeuring gevraagd",
+          "client-approved": "Urenstaat goedgekeurd door klant",
+          "client-disputed": "Urenstaat betwist door klant"
+        },
+        "placeholders": {
+          "person_name": "Indiener",
+          "organization_name": "Organisatie",
+          "period": "Periode",
+          "period_start": "Begin periode",
+          "period_end": "Einde periode",
+          "client_name": "Klant",
+          "comment": "Beoordelingsopmerking",
+          "action_url": "Portaallink"
+        }
       }
     }
   }

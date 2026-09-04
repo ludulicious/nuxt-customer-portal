@@ -107,14 +107,17 @@ const isImpersonating = computed(() => !!currentSession.value?.impersonatedBy)
 // Stop impersonating function
 const stopImpersonating = async () => {
   try {
-    await authClient.admin.stopImpersonating()
+    const { error } = await authClient.admin.stopImpersonating()
+    if (error) {
+      throw new Error(error.message || t('admin.user.impersonate.stopError'))
+    }
     toast.add({
       title: t('common.success'),
       description: t('admin.user.impersonate.stopSuccess'),
       color: 'success'
     })
-    // Reload dashboard page
-    window.location.href = '/dashboard'
+    // Reload with the restored admin session before opening user management.
+    window.location.href = '/admin/users'
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : t('admin.user.impersonate.stopError')
     toast.add({

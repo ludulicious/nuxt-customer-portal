@@ -1,3 +1,4 @@
+import { notifyTimesheetEvent, notifyClientTimesheetEvent } from './timesheet-email'
 import { nanoid } from 'nanoid'
 import { isTimesheetDateLocked } from '@nuxt-customer-portal/timesheets/shared/period-lock'
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm'
@@ -626,6 +627,7 @@ export const listClientApprovals = async (
           periodStartsOn: submission.periodStartsOn,
           periodEndsOn: submission.periodEndsOn,
           person: rows[0]!.personName,
+          userId: submission.userId,
           totalMinutes: rows.reduce((total, item) => total + item.entry.durationMinutes, 0),
           status: review.status,
           version: review.version,
@@ -904,6 +906,7 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
   if (userId) {
     conditions.push(eq(timesheetSubmission.userId, userId))
   }
+  const approvedSubmissions: TimesheetSubmissionRecord[] = []
   const pending = await tx
     .select()
     .from(timesheetSubmission)
@@ -920,10 +923,11 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
         version: sql`${timesheetSubmission.version} + 1`
       })
       .where(and(eq(timesheetSubmission.id, submission.id), eq(timesheetSubmission.status, 'SUBMITTED')))
-      .returning({ id: timesheetSubmission.id })
+      .returning()
     if (!approved) {
       continue
     }
+    approvedSubmissions.push(approved)
     await tx.insert(timesheetApprovalHistory).values({
       id: nanoid(),
       weeklyTimesheetId: submission.weeklyTimesheetId,
@@ -959,19 +963,22 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
         .onConflictDoNothing()
     }
   }
+  return approvedSubmissions
 }
 
 export const updateInternalApprovalWorkspace = async (organizationId: string, enabled: boolean) => {
   await ensureSettings(organizationId)
-  await db.transaction(async (tx) => {
+  const approved = await db.transaction(async (tx) => {
     await tx
       .update(workspaceSettings)
       .set({ internalApprovalsEnabled: enabled })
       .where(eq(workspaceSettings.organizationId, organizationId))
     if (!enabled) {
-      await autoApprovePendingWeeks(tx, organizationId)
+      return autoApprovePendingWeeks(tx, organizationId)
     }
+    return []
   })
+  await Promise.all(approved.map((submission) => notifyTimesheetEvent(submission, 'approved')))
 }
 
 export const updateInternalApprovalMember = async (
@@ -1010,7 +1017,7 @@ export const updateInternalApprovalMember = async (
       data: { code: TIMESHEET_ERROR_CODES.internalApprovalMemberInvalid }
     })
   }
-  await db.transaction(async (tx) => {
+  const approved = await db.transaction(async (tx) => {
     await tx
       .insert(teamMemberSettings)
       .values({
@@ -1044,9 +1051,11 @@ export const updateInternalApprovalMember = async (
       )
     }
     if (!input.required) {
-      await autoApprovePendingWeeks(tx, organizationId, submitterUserId)
+      return autoApprovePendingWeeks(tx, organizationId, submitterUserId)
     }
+    return []
   })
+  await Promise.all(approved.map((submission) => notifyTimesheetEvent(submission, 'approved')))
 }
 
 export const canMemberEnterTime = async (organizationId: string, userId: string) => {
@@ -1746,8 +1755,8 @@ export const stopTimer = async (organizationId: string, userId: string) => {
   return toEntryDto(updated)
 }
 
-export const submitWeek = async (organizationId: string, userId: string, weekId: string, cutoffDate: string) =>
-  db.transaction(async (tx) => {
+export const submitWeek = async (organizationId: string, userId: string, weekId: string, cutoffDate: string) => {
+  const result = await db.transaction(async (tx) => {
     await requireMemberCanEnterTime(organizationId, userId)
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${weekId}`}))`)
     const [week] = await tx
@@ -1891,9 +1900,12 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
     }
     return created
   })
+  await notifyTimesheetEvent(result, 'submitted')
+  return result
+}
 
-export const resubmitSubmission = async (organizationId: string, userId: string, submissionId: string) =>
-  db.transaction(async (tx) => {
+export const resubmitSubmission = async (organizationId: string, userId: string, submissionId: string) => {
+  const result = await db.transaction(async (tx) => {
     await requireMemberCanEnterTime(organizationId, userId)
     const [submission] = await tx
       .select()
@@ -2007,6 +2019,22 @@ export const resubmitSubmission = async (organizationId: string, userId: string,
     }
     return updated
   })
+  await notifyTimesheetEvent(result, 'submitted')
+  return result
+}
+
+export const listInternalApprovalMembers = (organizationId: string, approverUserId: string) =>
+  db
+    .selectDistinct({ id: user.id, name: user.name })
+    .from(internalApproverAssignment)
+    .innerJoin(user, eq(user.id, internalApproverAssignment.submitterUserId))
+    .where(
+      and(
+        eq(internalApproverAssignment.organizationId, organizationId),
+        eq(internalApproverAssignment.approverUserId, approverUserId)
+      )
+    )
+    .orderBy(asc(user.name), asc(user.id))
 
 export const listApprovalQueue = async (
   organizationId: string,
@@ -2110,8 +2138,8 @@ export const reviewSubmission = async (
   submissionId: string,
   action: 'APPROVE' | 'REJECT' | 'REOPEN',
   comment?: string | null
-) =>
-  db.transaction(async (tx) => {
+) => {
+  const result = await db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ enabled: workspaceSettings.internalApprovalsEnabled })
       .from(workspaceSettings)
@@ -2246,6 +2274,9 @@ export const reviewSubmission = async (
     }
     return updated
   })
+  await notifyTimesheetEvent(result, action === 'APPROVE' ? 'approved' : action === 'REJECT' ? 'rejected' : 'reopened')
+  return result
+}
 
 export const getReport = async (organizationId: string, filters: ReportQuery): Promise<TimesheetReportDto> => {
   const conditions = [eq(timeEntry.organizationId, organizationId)]
@@ -2504,8 +2535,8 @@ export const reviewClientTimesheet = async (
   action: 'APPROVE' | 'DISPUTE',
   expectedVersion: number,
   comment?: string | null
-) =>
-  db.transaction(async (tx) => {
+) => {
+  const result = await db.transaction(async (tx) => {
     const [link] = await tx
       .select()
       .from(workspaceClient)
@@ -2584,6 +2615,9 @@ export const reviewClientTimesheet = async (
     })
     return updated
   })
+  await notifyClientTimesheetEvent(result)
+  return result
+}
 
 export const reportToCsv = (report: TimesheetReportDto) => {
   const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`

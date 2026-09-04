@@ -8,11 +8,19 @@ const { data, error } = await useAsyncData('timesheets-internal-approval-context
 )
 const listing = useTimesheetsAdminList<ApprovalQueueItemDto>({
   endpoint: '/api/timesheets/internal-approvals/list',
-  filterKeys: ['status'],
+  filterKeys: ['status', 'userId'],
   defaultSort: 'weekStartsOn',
   defaultSortDir: 'desc'
 })
 const filters = computed(() => [
+  {
+    key: 'userId',
+    placeholder: t('features.timesheets.internalApprovals.memberFilter'),
+    items: [
+      { label: t('features.timesheets.internalApprovals.allMembers'), value: undefined },
+      ...(data.value?.teamMembers ?? []).map((member) => ({ label: member.name, value: member.id }))
+    ]
+  },
   {
     key: 'status',
     placeholder: t('features.timesheets.approvals.statusFilter'),

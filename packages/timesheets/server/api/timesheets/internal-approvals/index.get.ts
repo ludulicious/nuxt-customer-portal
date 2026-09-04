@@ -2,6 +2,7 @@ import { requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server
 import {
   ensureSettings,
   listActivities,
+  listInternalApprovalMembers,
   listApprovalQueue,
   listClients,
   listProjects
@@ -9,12 +10,13 @@ import {
 
 export default defineEventHandler(async (event) => {
   const { session, organizationId } = await requireActiveOrganizationRole(event)
-  const [settings, approvals, clients, projects, activities] = await Promise.all([
+  const [settings, approvals, clients, projects, activities, teamMembers] = await Promise.all([
     ensureSettings(organizationId),
     getQuery(event).contextOnly === 'true' ? Promise.resolve([]) : listApprovalQueue(organizationId, session.user.id),
     listClients(organizationId),
     listProjects(organizationId),
-    listActivities(organizationId)
+    listActivities(organizationId),
+    listInternalApprovalMembers(organizationId, session.user.id)
   ])
   return {
     settings: {
@@ -24,6 +26,7 @@ export default defineEventHandler(async (event) => {
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
     approvals,
+    teamMembers,
     clients,
     projects,
     activities

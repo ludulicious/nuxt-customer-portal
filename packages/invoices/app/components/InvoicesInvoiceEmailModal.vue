@@ -75,13 +75,6 @@ watch(
     }
   }
 )
-const changeLocale = async () => {
-  const recipient = draft.to
-  const cc = draft.cc
-  await loadPreview(draft.locale)
-  draft.to = recipient
-  draft.cc = cc
-}
 const send = async () => {
   busy.value = true
   try {
@@ -119,7 +112,7 @@ const send = async () => {
           t('features.invoices.loading')
         }}</span>
       </div>
-      <UForm v-else :state="draft" :schema="schema" class="space-y-4" @submit="send">
+      <UForm v-else novalidate :state="draft" :schema="schema" class="space-y-4" @submit="send">
         <UAlert
           v-if="preview && !preview.emailProviderConfigured"
           color="error"
@@ -188,16 +181,7 @@ const send = async () => {
           </UFormField>
         </div>
         <UFormField name="locale" :label="t('features.invoices.admin.emailLanguage')">
-          <USelect
-            v-model="draft.locale"
-            :items="[
-              { label: t('features.invoices.languages.nl'), value: 'nl' },
-              { label: t('features.invoices.languages.en'), value: 'en' }
-            ]"
-            value-key="value"
-            class="w-full"
-            @update:model-value="changeLocale"
-          />
+          <p class="text-sm text-muted">{{ t(`features.invoices.languages.${draft.locale}`) }}</p>
         </UFormField>
         <UFormField name="subject" :label="t('features.invoices.admin.emailSubject')">
           <UInput v-model="draft.subject" class="w-full" />

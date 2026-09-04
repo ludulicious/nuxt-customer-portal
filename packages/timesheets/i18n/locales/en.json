@@ -23,6 +23,7 @@
         "entryCount": "{count} entry | {count} entries",
         "partialStatus": "Partial week: {period} · {status}",
         "remainingWeekUnsubmitted": "Other hours in this week have not been submitted yet",
+        "reviewerMessage": "Message from reviewer",
         "confirm": "Submit for approval",
         "resubmit": "Resubmit corrected entries",
         "none": "Unsubmitted"
@@ -50,6 +51,8 @@
       },
       "timesheetAccess": "Timesheet access",
       "internalApprovals": {
+        "memberFilter": "Team member",
+        "allMembers": "All team members",
         "title": "Internal approvals",
         "subtitle": "Review timesheets for members assigned to you.",
         "manageTitle": "Internal approval settings",
@@ -388,6 +391,27 @@
         "projectDeleted": "Project deleted",
         "rateSaved": "Rate saved",
         "settingsSaved": "Settings saved"
+      },
+      "email": {
+        "messages": {
+          "internal-requested": "Internal approval requested",
+          "internal-approved": "Timesheet approved internally",
+          "internal-rejected": "Timesheet rejected internally",
+          "internal-reopened": "Timesheet reopened",
+          "client-requested": "Client approval requested",
+          "client-approved": "Timesheet approved by client",
+          "client-disputed": "Timesheet disputed by client"
+        },
+        "placeholders": {
+          "person_name": "Submitter",
+          "organization_name": "Organization",
+          "period": "Period",
+          "period_start": "Period start",
+          "period_end": "Period end",
+          "client_name": "Client",
+          "comment": "Review comment",
+          "action_url": "Portal link"
+        }
       }
     }
   }

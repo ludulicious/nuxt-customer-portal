@@ -39,6 +39,7 @@ export interface InternalApprovalConfigurationDto {
 }
 
 export interface InternalApprovalQueueDto {
+  teamMembers: Array<{ id: string; name: string }>
   settings: TimesheetSettingsDto
   approvals: ApprovalQueueItemDto[]
   clients: ClientDto[]
@@ -117,6 +118,7 @@ export interface ClientTimesheetsDto {
   slices: ClientTimesheetSliceDto[]
 }
 export interface ClientApprovalItemDto {
+  userId: string
   id: string
   workspaceClientId: string
   supplierName: string

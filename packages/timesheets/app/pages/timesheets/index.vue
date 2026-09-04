@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
 import { isTimesheetDateLocked } from '@nuxt-customer-portal/timesheets/shared/period-lock'
@@ -245,25 +246,27 @@ const maximumSubmissionDate = computed(() => {
 const weekEndsOn = computed(() =>
   week.value ? format(addDays(parseISO(week.value.weekStartsOn), 6), 'yyyy-MM-dd') : ''
 )
-const formatSubmissionPeriod = (startsOn: string, endsOn: string) =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(
-    new Date(`${startsOn}T12:00:00`),
-    new Date(`${endsOn}T12:00:00`)
-  )
+const formatSubmissionPeriod = (from: string, to: string) => formatTimesheetPeriod(from, to, locale.value)
+const formatReviewDateTime = (value: string) =>
+  new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(parseISO(value))
 const formatWeekPeriod = (startsOn: string) =>
   new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(
     parseISO(startsOn),
     addDays(parseISO(startsOn), 6)
   )
-const submissionAlertDescription = (submission: TimesheetSubmissionDto) =>
-  [
-    submission.status === 'REJECTED' ? submission.rejectionComment : undefined,
-    submission.periodEndsOn < weekEndsOn.value
-      ? t('features.timesheets.submissions.remainingWeekUnsubmitted')
-      : undefined
-  ]
-    .filter(Boolean)
-    .join(' · ')
+const hasOtherUnsubmittedHours = (submission: TimesheetSubmissionDto) =>
+  (week.value?.entries ?? []).some(
+    (entry) =>
+      !entry.submissionId &&
+      entry.durationMinutes > 0 &&
+      (entry.entryDate < submission.periodStartsOn || entry.entryDate > submission.periodEndsOn)
+  )
 const eligibleSubmissionEntries = computed(() =>
   (week.value?.entries ?? []).filter(
     (entry) => !entry.submissionId && entry.entryDate <= submissionCutoff.value && !entry.timerStartedAt
@@ -277,7 +280,7 @@ const submissionEntryCount = computed(() =>
 )
 const submissionRange = computed(() => {
   const dates = eligibleSubmissionEntries.value.map((entry) => entry.entryDate).sort()
-  return dates.length ? `${dates[0]}–${submissionCutoff.value}` : '—'
+  return dates.length ? formatSubmissionPeriod(dates[0]!, submissionCutoff.value) : '—'
 })
 const openSubmission = () => {
   const eligible = (week.value?.entries ?? []).filter(
@@ -607,16 +610,34 @@ const runningDuration = computed(() => {
             })
           : t(`features.timesheets.status.${submission.status.toLowerCase()}`)
       "
-      :description="submissionAlertDescription(submission) || undefined"
       variant="outline"
     >
-      <template v-if="submission.reviewerName" #description>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <UAvatar :src="submission.reviewerImage ?? undefined" :alt="submission.reviewerName" size="xs" />
-            <span>{{ submission.reviewerName }}</span>
+      <template #description>
+        <div class="space-y-3">
+          <div
+            v-if="submission.status === 'REJECTED' && submission.rejectionComment"
+            class="mt-2 max-w-2xl space-y-3 rounded-lg border border-default bg-elevated p-3 text-default"
+          >
+            <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-muted">
+              <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
+              <span>{{ t('features.timesheets.submissions.reviewerMessage') }}</span>
+              <time v-if="submission.reviewedAt" :datetime="submission.reviewedAt" class="ml-auto font-normal">
+                {{ formatReviewDateTime(submission.reviewedAt) }}
+              </time>
+            </div>
+            <div v-if="submission.reviewerName" class="flex items-center gap-2">
+              <UAvatar :src="submission.reviewerImage ?? undefined" :alt="submission.reviewerName" size="xs" />
+              <span class="font-medium">{{ submission.reviewerName }}</span>
+            </div>
+            <p class="whitespace-pre-line break-words leading-relaxed">{{ submission.rejectionComment }}</p>
           </div>
-          <p>{{ submissionAlertDescription(submission) }}</p>
+          <div
+            v-if="hasOtherUnsubmittedHours(submission)"
+            class="flex items-start gap-2 border-t border-default pt-3 text-muted"
+          >
+            <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" />
+            <p>{{ t('features.timesheets.submissions.remainingWeekUnsubmitted') }}</p>
+          </div>
         </div>
       </template>
       <template #actions>
