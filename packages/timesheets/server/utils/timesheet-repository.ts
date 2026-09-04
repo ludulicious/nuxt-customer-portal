@@ -1,3 +1,4 @@
+import { roundTimerMinutes } from '../../shared/timer-rounding'
 import { notifyTimesheetEvent, notifyClientTimesheetEvent } from './timesheet-email'
 import { nanoid } from 'nanoid'
 import { isTimesheetDateLocked } from '@nuxt-customer-portal/timesheets/shared/period-lock'
@@ -1684,7 +1685,11 @@ const withEditableDates = async <T>(
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${weekId}`}))`)
     const periods = await tx.select().from(timesheetSubmission).where(eq(timesheetSubmission.weeklyTimesheetId, weekId))
     if (dates.some((date) => isTimesheetDateLocked(date, periods))) {
-      throw createError({ statusCode: 409, message: 'Submitted or approved periods cannot be changed' })
+      throw createError({
+        statusCode: 409,
+        message: 'Submitted or approved periods cannot be changed',
+        data: { code: 'TIMESHEET_PERIOD_LOCKED' }
+      })
     }
     return mutate(tx)
   })
@@ -1736,10 +1741,36 @@ export const getBootstrap = async (
   const reviewers = new Map(reviewerRows.map((reviewer) => [reviewer.id, reviewer]))
   const canEnterTime = team.find((item) => item.id === userId)?.canEnterTime ?? true
   const setupStatus = calculateTimesheetsSetupStatus(clients, projects, activities, team)
+  const [running] = await db
+    .select()
+    .from(timeEntry)
+    .where(
+      and(
+        eq(timeEntry.organizationId, organizationId),
+        eq(timeEntry.userId, userId),
+        isNotNull(timeEntry.timerStartedAt)
+      )
+    )
+    .limit(1)
+  const [todayLocked] = await db
+    .select({ id: timesheetSubmission.id })
+    .from(timesheetSubmission)
+    .where(
+      and(
+        eq(timesheetSubmission.organizationId, organizationId),
+        eq(timesheetSubmission.userId, userId),
+        inArray(timesheetSubmission.status, ['SUBMITTED', 'APPROVED']),
+        sql`current_date between ${timesheetSubmission.periodStartsOn} and ${timesheetSubmission.periodEndsOn}`
+      )
+    )
+    .limit(1)
   return {
+    runningTimer: running ? toEntryDto(running) : null,
+    canStartTimer: canEnterTime && !running && !todayLocked,
     settings: {
       currency: settings.currency,
       timezone: settings.timezone,
+      timerRoundingMinutes: settings.timerRoundingMinutes,
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },
@@ -1894,8 +1925,27 @@ export const startTimer = async (
   }
   const week = await ensureWeek(organizationId, userId, input.entryDate)
   const snapshots = await resolveEntryContext(organizationId, userId, input.projectId, input.activityTypeId)
-  const [created] = await withEditableDates(week.id, [input.entryDate], (tx) =>
-    tx
+  const [created] = await withEditableDates(week.id, [input.entryDate], async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'timesheet-timer:' + organizationId + ':' + userId}))`)
+    const [active] = await tx
+      .select()
+      .from(timeEntry)
+      .where(
+        and(
+          eq(timeEntry.organizationId, organizationId),
+          eq(timeEntry.userId, userId),
+          isNotNull(timeEntry.timerStartedAt)
+        )
+      )
+      .limit(1)
+    if (active) {
+      throw createError({
+        statusCode: 409,
+        message: 'Another timer is already running',
+        data: { code: TIMESHEET_ERROR_CODES.runningTimer }
+      })
+    }
+    return tx
       .insert(timeEntry)
       .values({
         id: nanoid(),
@@ -1908,7 +1958,7 @@ export const startTimer = async (
         ...snapshots
       })
       .returning()
-  )
+  })
   if (!created) {
     throw createError({ statusCode: 500, message: 'Failed to start timer' })
   }
@@ -1931,7 +1981,8 @@ export const stopTimer = async (organizationId: string, userId: string) => {
   if (!running?.timerStartedAt) {
     throw createError({ statusCode: 404, message: 'No timer is running' })
   }
-  const elapsed = Math.max(1, Math.round((Date.now() - running.timerStartedAt.getTime()) / 60_000))
+  const settings = await ensureSettings(organizationId)
+  const elapsed = roundTimerMinutes(Date.now() - running.timerStartedAt.getTime(), settings.timerRoundingMinutes)
   const [updated] = await withEditableDates(running.weeklyTimesheetId, [running.entryDate], (tx) =>
     tx
       .update(timeEntry)
@@ -2586,7 +2637,7 @@ export const getReport = async (organizationId: string, filters: ReportQuery): P
 
 export const updateSettings = async (
   organizationId: string,
-  input: Partial<{ currency: string; timezone: string }>
+  input: Partial<{ currency: string; timezone: string; timerRoundingMinutes: number }>
 ) => {
   await ensureSettings(organizationId)
   const [updated] = await db

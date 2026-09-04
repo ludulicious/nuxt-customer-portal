@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
     settings: {
       currency: settings.currency,
       timezone: settings.timezone,
+      timerRoundingMinutes: settings.timerRoundingMinutes,
       weekStartsOn: settings.weekStartsOn,
       internalApprovalsEnabled: settings.internalApprovalsEnabled
     },

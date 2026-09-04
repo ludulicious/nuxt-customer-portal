@@ -12,11 +12,16 @@ const toast = useToast()
 const timesheets = useTimesheets()
 const busy = ref(false)
 const draft = reactive({
+  timerRoundingMinutes: 1,
   currency: 'EUR',
   timezone: 'Europe/Amsterdam'
 })
+const timezoneOptions = computed(() =>
+  [...new Set(['UTC', ...Intl.supportedValuesOf('timeZone'), draft.timezone])].sort()
+)
 const schema = computed(() =>
   z.object({
+    timerRoundingMinutes: z.number().int().min(1).max(60),
     currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
     timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
   })
@@ -25,6 +30,7 @@ const schema = computed(() =>
 watch(
   () => props.settings,
   (settings) => {
+    draft.timerRoundingMinutes = settings.timerRoundingMinutes ?? 1
     draft.currency = settings.currency
     draft.timezone = settings.timezone
   },
@@ -51,14 +57,22 @@ const save = async () => {
 
 <template>
   <UCard>
-    <UForm :state="draft" :schema="schema" class="space-y-4" @submit="save">
+    <UForm novalidate :state="draft" :schema="schema" class="max-w-xl space-y-4" @submit="save">
       <UFormField name="currency" :label="t('features.timesheets.admin.currency')" required>
-        <UInput v-model="draft.currency" maxlength="3" class="w-full uppercase" />
+        <UInput v-model="draft.currency" maxlength="3" class="w-full uppercase sm:w-28" />
       </UFormField>
       <UFormField name="timezone" :label="t('features.timesheets.admin.timezone')" required>
-        <UInput v-model="draft.timezone" class="w-full" />
+        <USelectMenu v-model="draft.timezone" :items="timezoneOptions" class="w-full sm:w-80" />
       </UFormField>
-      <UButton type="submit" block icon="i-lucide-save" :loading="busy">
+      <UFormField
+        name="timerRoundingMinutes"
+        :label="t('features.timesheets.admin.timerRounding')"
+        :description="t('features.timesheets.admin.timerRoundingHelp')"
+        required
+      >
+        <UInput v-model.number="draft.timerRoundingMinutes" type="number" :min="1" :max="60" class="w-full sm:w-28" />
+      </UFormField>
+      <UButton type="submit" class="w-full justify-center sm:w-auto" icon="i-lucide-save" :loading="busy">
         {{ t('features.timesheets.save') }}
       </UButton>
     </UForm>

@@ -201,7 +201,8 @@
       "timer": {
         "start": "Timer starten",
         "stop": "Stoppen",
-        "running": "Timer loopt"
+        "running": "Timer loopt",
+        "todayLocked": "De timer kan niet worden gestart omdat de uren van vandaag zijn ingediend of goedgekeurd. Heropen de indiening om vandaag meer tijd te registreren."
       },
       "fields": {
         "project": "Project",
@@ -400,7 +401,11 @@
         "person": "Persoon",
         "hours": "Uren",
         "amount": "Bedrag",
-        "clientApprovalsSubtitle": "Bekijk klantbeslissingen en reageer op betwiste urenstaten."
+        "clientApprovalsSubtitle": "Bekijk klantbeslissingen en reageer op betwiste urenstaten.",
+        "timerRounding": "Timer naar boven afronden op (minuten)",
+        "timerRoundingHelp": "Rond gestopte timers naar boven af op dit interval (1–60 minuten). Bijvoorbeeld: 16 minuten wordt 30 bij een interval van 15 minuten.",
+        "noBudget": "Geen budget",
+        "clearBudget": "Budget wissen"
       },
       "messages": {
         "saved": "Tijd opgeslagen",

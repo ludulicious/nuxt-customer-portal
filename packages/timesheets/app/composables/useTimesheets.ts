@@ -22,7 +22,13 @@ import type {
 
 export interface TimesheetsAdminBootstrap {
   providerOrganization: { organizationId: string; name: string }
-  settings: { currency: string; timezone: string; weekStartsOn: number; internalApprovalsEnabled: boolean }
+  settings: {
+    timerRoundingMinutes?: number
+    currency: string
+    timezone: string
+    weekStartsOn: number
+    internalApprovalsEnabled: boolean
+  }
   clients: ClientDto[]
   availableClientOrganizations: ClientOrganizationOptionDto[]
   projects: ProjectDto[]
@@ -179,7 +185,7 @@ export const useTimesheets = () => {
     userId: string,
     input: { canEnterTime: boolean; defaultHourlyRateMinor: number | null }
   ) => $fetch(`/api/timesheets/admin/team/${userId}`, { method: 'PUT', body: input })
-  const updateSettings = (input: { currency?: string; timezone?: string }) =>
+  const updateSettings = (input: { currency?: string; timezone?: string; timerRoundingMinutes?: number }) =>
     $fetch('/api/timesheets/admin/settings', { method: 'PATCH', body: input })
   const reviewSubmission = async (id: string, action: 'APPROVE' | 'REJECT' | 'REOPEN', comment?: string | null) => {
     const result = await $fetch(`/api/timesheets/internal-approvals/${id}`, {

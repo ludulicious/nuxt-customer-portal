@@ -93,7 +93,7 @@ const createActivity = async () => {
         />
       </div>
     </template>
-    <UForm :state="form" :schema="schema" class="space-y-4" @submit="emit('submit')">
+    <UForm novalidate :state="form" :schema="schema" class="space-y-4" @submit="emit('submit')">
       <div>
         <UFormField name="clientOrganizationId" :label="t('features.timesheets.admin.client')" required>
           <USelect v-model="form.clientOrganizationId" :items="clientOptions" value-key="value" class="w-full" />
@@ -157,21 +157,49 @@ const createActivity = async () => {
       <div class="grid grid-cols-2 gap-3">
         <UFormField name="budgetHours" :label="t('features.timesheets.admin.hoursBudget')">
           <UInputNumber
-            v-model="form.budgetHours"
+            :model-value="form.budgetHours"
+            :placeholder="t('features.timesheets.admin.noBudget')"
             :min="0"
             :step="1"
             :format-options="wholeNumberFormat"
             class="w-full"
+            @update:model-value="
+              form.budgetHours = typeof $event === 'number' && Number.isFinite($event) ? $event : null
+            "
           />
+          <UButton
+            v-if="form.budgetHours !== null"
+            type="button"
+            color="neutral"
+            variant="link"
+            size="xs"
+            @click="form.budgetHours = null"
+          >
+            {{ t('features.timesheets.admin.clearBudget') }}
+          </UButton>
         </UFormField>
         <UFormField name="budgetAmount" :label="t('features.timesheets.admin.moneyBudget')">
           <UInputNumber
-            v-model="form.budgetAmount"
+            :model-value="form.budgetAmount"
+            :placeholder="t('features.timesheets.admin.noBudget')"
             :min="0"
             :step="1"
             :format-options="currencyFormat"
             class="w-full"
+            @update:model-value="
+              form.budgetAmount = typeof $event === 'number' && Number.isFinite($event) ? $event : null
+            "
           />
+          <UButton
+            v-if="form.budgetAmount !== null"
+            type="button"
+            color="neutral"
+            variant="link"
+            size="xs"
+            @click="form.budgetAmount = null"
+          >
+            {{ t('features.timesheets.admin.clearBudget') }}
+          </UButton>
         </UFormField>
       </div>
       <div class="flex justify-end gap-2">

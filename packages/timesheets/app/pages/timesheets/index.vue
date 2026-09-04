@@ -35,6 +35,7 @@ definePageMeta({
 const { t, locale } = useI18n()
 const timesheets = useTimesheets()
 const mutationError = useTimesheetMutationError()
+const toast = useToast()
 const { isOrganizationAdmin } = useTimesheetMenu()
 
 useSeoMeta({
@@ -87,7 +88,7 @@ const lastReusableEntryContext = computed(() => {
 
   return entry ? { projectId: entry.projectId, activityTypeId: entry.activityTypeId } : null
 })
-const runningEntry = computed(() => week.value?.entries.find((entry) => entry.timerStartedAt) ?? null)
+const runningEntry = computed(() => data.value?.runningTimer ?? null)
 const editable = computed(() => Boolean(data.value?.canEnterTime))
 const dateLocked = (date: string) => isTimesheetDateLocked(date, week.value?.submissions ?? [])
 const dateEditable = (date: string) => editable.value && !dateLocked(date)
@@ -492,6 +493,9 @@ const removeEntry = async () => {
 }
 
 const changeWeek = (amount: number) => {
+  if (pending.value) {
+    return
+  }
   const anchor = week.value?.weekStartsOn ?? format(new Date(), 'yyyy-MM-dd')
   selectedWeek.value = format(addWeeks(parseISO(anchor), amount), 'yyyy-MM-dd')
 }
@@ -515,6 +519,14 @@ const startTimer = async () => {
 }
 
 const openTimer = () => {
+  if (data.value?.canEnterTime && data.value.canStartTimer === false && !runningEntry.value) {
+    toast.add({
+      title: t('features.timesheets.errors.timerStartTitle'),
+      description: t('features.timesheets.timer.todayLocked'),
+      color: 'error'
+    })
+    return
+  }
   Object.assign(form, {
     id: null,
     projectId: projects.value[0]?.id ?? '',
@@ -611,6 +623,8 @@ const runningDuration = computed(() => {
   <TimesheetsPageShell
     class="timesheet-workbench h-full min-h-0 space-y-5 overflow-y-auto"
     :setup-status="data?.setupStatus"
+    :aria-busy="pending"
+    :inert="pending && !!data"
   >
     <header class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
@@ -629,7 +643,15 @@ const runningDuration = computed(() => {
           :aria-label="t('features.timesheets.previousWeek')"
           @click="changeWeek(-1)"
         />
-        <UBadge color="neutral" variant="subtle" size="lg">
+        <UBadge color="neutral" variant="subtle" size="lg" class="relative">
+          <span
+            v-if="pending && data"
+            class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-full"
+            role="status"
+            :aria-label="t('features.timesheets.loading')"
+          >
+            <span class="block h-full w-full animate-pulse bg-primary" />
+          </span>
           {{
             week
               ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${formatWeekPeriod(week.weekStartsOn)}`
@@ -651,7 +673,7 @@ const runningDuration = computed(() => {
             size="lg"
             square
             :aria-label="t('features.timesheets.timer.start')"
-            :disabled="!dateEditable(currentDate)"
+            :disabled="!data?.canEnterTime || pending"
             @click="openTimer"
           />
         </UTooltip>
@@ -660,7 +682,7 @@ const runningDuration = computed(() => {
           class="hidden sm:ml-auto sm:inline-flex"
           icon="i-lucide-timer"
           color="success"
-          :disabled="!dateEditable(currentDate)"
+          :disabled="!data?.canEnterTime || pending"
           @click="openTimer"
         >
           {{ t('features.timesheets.timer.start') }}
@@ -692,8 +714,8 @@ const runningDuration = computed(() => {
             {{ t('features.timesheets.timer.running') }}
           </p>
           <p class="truncate font-medium">
-            {{ projects.find((item) => item.id === runningEntry?.projectId)?.name }} ·
-            {{ activities.find((item) => item.id === runningEntry?.activityTypeId)?.name }}
+            {{ data?.projects.find((item) => item.id === runningEntry?.projectId)?.name }} ·
+            {{ data?.activities.find((item) => item.id === runningEntry?.activityTypeId)?.name }}
           </p>
         </div>
         <div class="flex items-center gap-3">
@@ -705,8 +727,20 @@ const runningDuration = computed(() => {
       </div>
     </UCard>
 
-    <UCard class="hidden xl:block" :ui="{ body: '!p-0' }">
-      <div v-if="pending" class="p-8 text-center text-muted">
+    <UCard class="relative hidden xl:block" :ui="{ body: '!p-0' }">
+      <div
+        v-if="pending && data"
+        class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-default/60"
+        role="status"
+        :aria-label="t('features.timesheets.loading')"
+      >
+        <div class="flex items-center gap-2 rounded-full border border-default bg-default px-4 py-2 shadow-sm">
+          <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-primary" aria-hidden="true" />
+          <span class="text-sm text-muted">{{ t('features.timesheets.loading') }}</span>
+        </div>
+      </div>
+
+      <div v-if="pending && !data" class="p-8 text-center text-muted">
         {{ t('features.timesheets.loading') }}
       </div>
       <div v-else class="overflow-x-clip">
@@ -910,8 +944,20 @@ const runningDuration = computed(() => {
       </div>
     </section>
 
-    <section class="timesheet-mobile xl:hidden" :aria-label="t('features.timesheets.projectActivity')">
-      <div v-if="pending" class="timesheet-mobile__loading text-muted">
+    <section class="timesheet-mobile relative xl:hidden" :aria-label="t('features.timesheets.projectActivity')">
+      <div
+        v-if="pending && data"
+        class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-default/60"
+        role="status"
+        :aria-label="t('features.timesheets.loading')"
+      >
+        <div class="flex items-center gap-2 rounded-full border border-default bg-default px-4 py-2 shadow-sm">
+          <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-primary" aria-hidden="true" />
+          <span class="text-sm text-muted">{{ t('features.timesheets.loading') }}</span>
+        </div>
+      </div>
+
+      <div v-if="pending && !data" class="timesheet-mobile__loading text-muted">
         {{ t('features.timesheets.loading') }}
       </div>
       <template v-else>

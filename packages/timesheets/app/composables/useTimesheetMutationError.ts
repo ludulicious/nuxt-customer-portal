@@ -17,15 +17,17 @@ export const useTimesheetMutationError = () => {
   const show = (error: unknown, titleKey = 'features.timesheets.messages.saveError') => {
     const code = codeFor(error)
     const descriptionKey =
-      code === TIMESHEET_ERROR_CODES.tariffRequired
-        ? 'features.timesheets.errors.tariffRequired'
-        : code === TIMESHEET_ERROR_CODES.entryDisabled
-          ? 'features.timesheets.errors.entryDisabled'
-          : code === TIMESHEET_ERROR_CODES.runningTimer
-            ? 'features.timesheets.errors.runningTimer'
-            : code === TIMESHEET_ERROR_CODES.internalApproverRequired
-              ? 'features.timesheets.errors.internalApproverRequired'
-              : 'features.timesheets.errors.generic'
+      code === 'TIMESHEET_PERIOD_LOCKED'
+        ? 'features.timesheets.validation.periodLocked'
+        : code === TIMESHEET_ERROR_CODES.tariffRequired
+          ? 'features.timesheets.errors.tariffRequired'
+          : code === TIMESHEET_ERROR_CODES.entryDisabled
+            ? 'features.timesheets.errors.entryDisabled'
+            : code === TIMESHEET_ERROR_CODES.runningTimer
+              ? 'features.timesheets.errors.runningTimer'
+              : code === TIMESHEET_ERROR_CODES.internalApproverRequired
+                ? 'features.timesheets.errors.internalApproverRequired'
+                : 'features.timesheets.errors.generic'
     toast.add({ title: t(titleKey), description: t(descriptionKey), color: 'error' })
   }
 

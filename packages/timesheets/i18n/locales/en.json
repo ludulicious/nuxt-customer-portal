@@ -201,7 +201,8 @@
       "timer": {
         "start": "Start timer",
         "stop": "Stop",
-        "running": "Timer running"
+        "running": "Timer running",
+        "todayLocked": "The timer cannot be started because today’s hours are submitted or approved. Reopen the submission to record more time today."
       },
       "fields": {
         "project": "Project",
@@ -400,7 +401,11 @@
         "person": "Person",
         "hours": "Hours",
         "amount": "Amount",
-        "clientApprovalsSubtitle": "Track client decisions and respond to disputed timesheets."
+        "clientApprovalsSubtitle": "Track client decisions and respond to disputed timesheets.",
+        "timerRounding": "Round timer up to (minutes)",
+        "timerRoundingHelp": "Round stopped timers up to this interval (1–60 minutes). For example, 16 minutes becomes 30 with a 15-minute interval.",
+        "noBudget": "No budget",
+        "clearBudget": "Clear budget"
       },
       "messages": {
         "saved": "Time saved",

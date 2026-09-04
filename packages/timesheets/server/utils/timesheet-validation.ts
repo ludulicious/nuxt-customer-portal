@@ -189,6 +189,7 @@ export const internalApprovalMemberUpdateSchema = z.object({
 })
 
 export const settingsUpdateSchema = z.object({
+  timerRoundingMinutes: z.number().int().min(1).max(60).optional(),
   currency: z
     .string()
     .length(3)

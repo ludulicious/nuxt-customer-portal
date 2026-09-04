@@ -15,6 +15,7 @@ export interface TimesheetsListResponse<T> {
 }
 
 export interface TimesheetSettingsDto {
+  timerRoundingMinutes?: number
   currency: string
   timezone: string
   weekStartsOn: number
@@ -240,6 +241,8 @@ export interface WeekDto {
 }
 
 export interface TimesheetBootstrapDto {
+  runningTimer: TimeEntryDto | null
+  canStartTimer: boolean
   settings: TimesheetSettingsDto
   clients: ClientDto[]
   projects: ProjectDto[]

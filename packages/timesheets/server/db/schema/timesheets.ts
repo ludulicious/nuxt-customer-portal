@@ -29,6 +29,7 @@ export const workspaceSettings = timesheetsSchema.table('workspace_settings', {
     .references(() => organization.id, { onDelete: 'cascade' }),
   currency: text('currency').default('EUR').notNull(),
   timezone: text('timezone').default('Europe/Amsterdam').notNull(),
+  timerRoundingMinutes: integer('timer_rounding_minutes').default(1).notNull(),
   weekStartsOn: integer('week_starts_on').default(1).notNull(),
   workspaceEnabled: boolean('workspace_enabled').default(false).notNull(),
   internalApprovalsEnabled: boolean('internal_approvals_enabled').default(true).notNull(),
