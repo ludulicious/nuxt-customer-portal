@@ -87,6 +87,7 @@ test('Timesheets owns only Timesheets navigation and dashboards', () => {
   assert.deepEqual(
     timesheetsFeature.dashboardWidgets?.map((widget) => widget.id),
     [
+      'timesheets-my-timesheets',
       'timesheets-my-week',
       'timesheets-internal-approvals',
       'timesheets-client-approvals',

@@ -75,7 +75,7 @@ export default defineNuxtPlugin(() => {
             }))
         })),
       dashboardWidgets: timesheetsFeature.dashboardWidgets?.filter((widget) =>
-        widget.id === 'timesheets-my-week'
+        ['timesheets-my-week', 'timesheets-my-timesheets'].includes(widget.id)
           ? capabilities.canEnterTime
           : widget.id === 'timesheets-internal-approvals'
             ? capabilities.canApproveInternalTimesheets

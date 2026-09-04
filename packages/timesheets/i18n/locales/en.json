@@ -236,6 +236,7 @@
         "review": "Review",
         "viewAll": "View all",
         "myWeek": {
+          "previousSubmissions": "Previous submissions",
           "title": "My week",
           "period": "Week {week} · {start} to {end}",
           "compactPeriod": "{start} to {end}",
@@ -243,7 +244,7 @@
           "timerRunning": "A timer is currently running."
         },
         "internalApprovals": {
-          "title": "Timesheets",
+          "title": "Internal timesheet approvals",
           "empty": "No recent timesheets."
         },
         "clientApprovals": {
@@ -254,6 +255,10 @@
         "supplierTimesheets": {
           "title": "Supplier timesheets",
           "empty": "No supplier timesheets are available."
+        },
+        "myTimesheets": {
+          "title": "My submitted timesheets",
+          "empty": "No previous submissions."
         }
       },
       "admin": {

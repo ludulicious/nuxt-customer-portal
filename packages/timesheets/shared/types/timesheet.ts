@@ -266,6 +266,15 @@ export interface TimesheetCapabilitiesDto {
 
 export interface TimesheetsDashboardDto {
   myWeek?: {
+    projects: Array<{ id: string; name: string; clientName: string; totalMinutes: number }>
+    previousSubmissions: Array<{
+      id: string
+      weekStartsOn: string
+      periodStartsOn: string
+      periodEndsOn: string
+      status: TimesheetStatus
+      totalMinutes: number
+    }>
     weekStartsOn: string
     status: TimesheetStatus
     totalMinutes: number

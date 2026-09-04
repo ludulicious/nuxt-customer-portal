@@ -236,6 +236,7 @@
         "review": "Beoordelen",
         "viewAll": "Alles bekijken",
         "myWeek": {
+          "previousSubmissions": "Eerdere indieningen",
           "title": "Mijn week",
           "period": "Week {week} · {start} t/m {end}",
           "compactPeriod": "{start} t/m {end}",
@@ -243,7 +244,7 @@
           "timerRunning": "Er loopt momenteel een timer."
         },
         "internalApprovals": {
-          "title": "Te beoordelen urenstaten",
+          "title": "Interne urenstaatgoedkeuringen",
           "empty": "Geen recente urenstaten."
         },
         "clientApprovals": {
@@ -254,6 +255,10 @@
         "supplierTimesheets": {
           "title": "Urenstaten van leveranciers",
           "empty": "Er zijn geen urenstaten van leveranciers beschikbaar."
+        },
+        "myTimesheets": {
+          "title": "Mijn ingediende urenstaten",
+          "empty": "Geen eerdere indieningen."
         }
       },
       "admin": {

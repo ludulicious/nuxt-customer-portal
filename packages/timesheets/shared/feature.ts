@@ -135,6 +135,13 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
     }
   ],
   dashboardWidgets: [
+    {
+      id: 'timesheets-my-timesheets',
+      component: 'TimesheetsDashboardMyTimesheets',
+      area: 'main',
+      size: 'half',
+      order: 21
+    },
     { id: 'timesheets-my-week', component: 'TimesheetsDashboardMyWeek', area: 'main', size: 'half', order: 20 },
     {
       id: 'timesheets-internal-approvals',

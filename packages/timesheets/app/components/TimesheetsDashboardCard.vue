@@ -2,10 +2,19 @@
 import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { addDays, getISOWeek, parseISO } from 'date-fns'
 
-const props = defineProps<{ section: 'myWeek' | 'internalApprovals' | 'clientApprovals' }>()
+const props = defineProps<{ section: 'myTimesheets' | 'myWeek' | 'internalApprovals' | 'clientApprovals' }>()
 const { t, locale } = useI18n()
 const { data, pending, error, refresh } = await useTimesheetsDashboard()
 interface DashboardCardValue {
+  previousSubmissions?: Array<{
+    id: string
+    weekStartsOn: string
+    periodStartsOn: string
+    periodEndsOn: string
+    status: string
+    totalMinutes: number
+  }>
+  projects: Array<{ id: string; name: string; clientName: string; totalMinutes: number }>
   weekStartsOn: string
   status: string
   totalMinutes: number
@@ -34,7 +43,11 @@ interface DashboardCardValue {
     status: string
   }>
 }
-const value = computed(() => data.value?.[props.section] as unknown as DashboardCardValue | undefined)
+const value = computed(
+  () =>
+    data.value?.[props.section === 'myTimesheets' ? 'myWeek' : props.section] as unknown as
+      DashboardCardValue | undefined
+)
 const minutes = (amount: number) => `${Math.floor(amount / 60)}:${String(amount % 60).padStart(2, '0')}`
 const duration = (amount: number) =>
   t(amount === 60 ? 'features.timesheets.dashboard.duration.one' : 'features.timesheets.dashboard.duration.other', {
@@ -61,23 +74,15 @@ const weekPeriod = (weekStartsOn: string) => {
     end: endLabel
   })
 }
-const compactPeriod = (from: string, to: string) => {
-  const start = parseISO(from)
-  const end = parseISO(to)
-  const formatter = new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short' })
-  return from === to
-    ? formatter.format(start)
-    : t('features.timesheets.dashboard.myWeek.compactPeriod', {
-        start: formatter.format(start),
-        end: formatter.format(end)
-      })
-}
 const title = computed(() => t(`features.timesheets.dashboard.${props.section}.title`))
 const icon = computed(
   () =>
-    ({ myWeek: 'i-lucide-clock-3', internalApprovals: 'i-lucide-stamp', clientApprovals: 'i-lucide-building-2' })[
-      props.section
-    ]
+    ({
+      myTimesheets: 'i-lucide-calendar-check',
+      myWeek: 'i-lucide-clock-3',
+      internalApprovals: 'i-lucide-stamp',
+      clientApprovals: 'i-lucide-building-2'
+    })[props.section]
 )
 </script>
 
@@ -105,43 +110,62 @@ const icon = computed(
 
     <template v-else-if="section === 'myWeek'">
       <div class="flex items-end justify-between gap-4">
-        <div>
+        <div class="min-w-0 flex-1">
           <p class="text-3xl font-semibold tabular-nums">{{ duration(value.totalMinutes) }}</p>
           <p class="mt-1 text-sm text-muted">
             {{ weekPeriod(value.weekStartsOn) }}
           </p>
-          <div class="mt-2 flex flex-wrap gap-1.5">
-            <UBadge
-              v-for="batch in value.batches"
-              :key="batch.id"
-              :color="batch.status === 'APPROVED' ? 'success' : batch.status === 'REJECTED' ? 'error' : 'warning'"
-              variant="subtle"
+          <ul class="mt-3 space-y-2">
+            <li
+              v-for="project in value.projects"
+              :key="project.id"
+              class="flex items-center justify-between gap-4 text-sm"
             >
-              {{ t(`features.timesheets.status.${batch.status.toLowerCase()}`) }}: {{ duration(batch.totalMinutes) }} ·
-              {{ compactPeriod(batch.periodStartsOn, batch.periodEndsOn) }}
-            </UBadge>
-            <UBadge v-if="value.unsubmitted" color="neutral" variant="subtle">
-              {{ t('features.timesheets.submissions.none') }}: {{ duration(value.unsubmitted.totalMinutes) }} ·
-              {{ compactPeriod(value.unsubmitted.periodStartsOn, value.unsubmitted.periodEndsOn) }}
-            </UBadge>
-          </div>
+              <span>{{ project.clientName }} · {{ project.name }}</span>
+              <span class="shrink-0 tabular-nums">{{ duration(project.totalMinutes) }}</span>
+            </li>
+          </ul>
         </div>
         <UButton to="/timesheets" variant="outline" trailing-icon="i-lucide-arrow-right">
           {{ t('features.timesheets.dashboard.open') }}
         </UButton>
       </div>
-      <UAlert
-        v-if="value.rejectionComment"
-        class="mt-4"
-        color="error"
-        variant="subtle"
-        icon="i-lucide-message-circle-warning"
-        :title="t('features.timesheets.dashboard.myWeek.rejected')"
-        :description="value.rejectionComment"
-      />
-      <p v-else-if="value.hasRunningTimer" class="mt-4 text-sm text-primary">
+
+      <p v-if="value.hasRunningTimer" class="mt-4 text-sm text-primary">
         {{ t('features.timesheets.dashboard.myWeek.timerRunning') }}
       </p>
+    </template>
+
+    <template v-else-if="section === 'myTimesheets'">
+      <section v-if="value.previousSubmissions?.length">
+        <ul class="divide-y divide-default">
+          <li v-for="submission in value.previousSubmissions" :key="submission.id">
+            <NuxtLink
+              :to="{ path: '/timesheets', query: { week: submission.weekStartsOn } }"
+              class="flex items-center justify-between gap-3 rounded py-2 hover:bg-elevated"
+            >
+              <span class="text-sm">{{
+                formatTimesheetPeriod(submission.periodStartsOn, submission.periodEndsOn, locale)
+              }}</span>
+              <span class="flex shrink-0 items-center gap-2">
+                <span class="text-sm tabular-nums">{{ duration(submission.totalMinutes) }}</span>
+                <UBadge
+                  :color="
+                    submission.status === 'APPROVED'
+                      ? 'success'
+                      : submission.status === 'REJECTED'
+                        ? 'error'
+                        : 'warning'
+                  "
+                  variant="subtle"
+                  >{{ t(`features.timesheets.status.${submission.status.toLowerCase()}`) }}</UBadge
+                >
+              </span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </section>
+      <p v-else class="text-sm text-muted">{{ t('features.timesheets.dashboard.myTimesheets.empty') }}</p>
     </template>
 
     <template v-else-if="section === 'internalApprovals'">

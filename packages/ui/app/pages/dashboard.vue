@@ -2,7 +2,6 @@
 const { t } = useI18n()
 const { dashboardWidgets } = usePortalFeatures()
 const { currentUser } = usePortalSession()
-const { isNotificationsSlideoverOpen } = useDashboard()
 
 const areas = ['attention', 'main', 'aside'] as const
 const orderedDashboardWidgets = computed(() =>
@@ -31,22 +30,10 @@ useSeoMeta({ title: () => t('dashboard.seo.title'), description: () => t('dashbo
     :ui="{ body: 'flex flex-col flex-1 min-h-0 overflow-y-auto p-4 sm:p-6' }"
   >
     <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }" :toggle="false">
+      <UDashboardNavbar :toggle="false">
         <template #leading>
           <UIcon name="i-lucide-layout-dashboard" class="size-6 shrink-0" />
           <span class="text-lg font-semibold">{{ t('dashboard.title') }}</span>
-        </template>
-        <template #right>
-          <UTooltip :text="t('dashboard.notifications')">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              square
-              icon="i-lucide-bell"
-              :aria-label="t('dashboard.notifications')"
-              @click="isNotificationsSlideoverOpen = true"
-            />
-          </UTooltip>
         </template>
       </UDashboardNavbar>
     </template>

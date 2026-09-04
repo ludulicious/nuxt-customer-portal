@@ -41,7 +41,10 @@ useSeoMeta({
   title: () => t('features.timesheets.title')
 })
 
-const selectedWeek = ref<string>()
+const route = useRoute()
+const selectedWeek = ref<string | undefined>(
+  typeof route.query.week === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(route.query.week) ? route.query.week : undefined
+)
 const selectedDay = ref('')
 const modalOpen = ref(false)
 const cellEntriesOpen = ref(false)
@@ -547,6 +550,7 @@ const submit = async () => {
 }
 
 const replyOpen = ref(false)
+const resubmitting = ref(false)
 const replySubmissionId = ref('')
 const replyClient = ref<{ id: string; version: number } | null>(null)
 const replyState = reactive({ reply: '' })
@@ -557,6 +561,10 @@ const openReply = (id: string, client?: { id: string; version: number }) => {
   replyOpen.value = true
 }
 const resubmit = async () => {
+  if (resubmitting.value) {
+    return
+  }
+  resubmitting.value = true
   try {
     if (replyClient.value) {
       await timesheets.replyClientSubmission(
@@ -569,10 +577,13 @@ const resubmit = async () => {
       await timesheets.resubmitSubmission(replySubmissionId.value, replyState.reply)
     }
     replyOpen.value = false
-    await refresh()
   } catch (error) {
     mutationError.show(error)
+    return
+  } finally {
+    resubmitting.value = false
   }
+  await refresh()
 }
 
 onMounted(() => {
@@ -1143,7 +1154,9 @@ const runningDuration = computed(() => {
           <UFormField name="reply" :label="t('features.timesheets.submissions.reply')">
             <UTextarea v-model="replyState.reply" :rows="4" class="w-full" />
           </UFormField>
-          <UButton type="submit" icon="i-lucide-send">{{ t('features.timesheets.submissions.resubmit') }}</UButton>
+          <UButton type="submit" icon="i-lucide-send" :loading="resubmitting" :disabled="resubmitting">
+            {{ t('features.timesheets.submissions.resubmit') }}
+          </UButton>
         </UForm>
       </template>
     </UModal>
