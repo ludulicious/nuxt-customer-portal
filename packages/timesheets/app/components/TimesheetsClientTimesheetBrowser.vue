@@ -306,7 +306,13 @@ await listing.load()
           >
             <UFormField
               name="comment"
-              :label="t('features.timesheets.clientPortal.comment')"
+              :label="
+                t(
+                  reviewAction === 'APPROVE'
+                    ? 'features.timesheets.submissions.remark'
+                    : 'features.timesheets.clientPortal.comment'
+                )
+              "
               :required="reviewAction === 'DISPUTE'"
             >
               <UTextarea v-model="disputeComment" :rows="4" class="w-full" />
