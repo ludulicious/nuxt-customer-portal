@@ -25,6 +25,21 @@ const rejectionSchema = computed(() =>
   })
 )
 
+const approvalOpen = ref(false)
+const approvalId = ref('')
+const approvalState = reactive({ comment: '' })
+const approvalSchema = z.object({ comment: z.string().trim().max(2000) })
+const openApprove = (id: string) => {
+  approvalId.value = id
+  approvalState.comment = ''
+  approvalOpen.value = true
+}
+const approve = () =>
+  run(async () => {
+    await timesheets.reviewSubmission(approvalId.value, 'APPROVE', approvalState.comment)
+    approvalOpen.value = false
+  })
+
 const formatHours = (minutes: number) => `${(minutes / 60).toFixed(2)} h`
 const formatMoney = (minor: number) =>
   new Intl.NumberFormat(locale.value, {
@@ -102,82 +117,81 @@ const reject = () =>
         </p>
       </div>
     </UCard>
-    <UCard v-for="item in data.approvals" :key="item.id">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div class="min-w-0 flex-1">
+    <details
+      v-for="item in data.approvals"
+      :key="item.id"
+      :open="item.status === 'SUBMITTED'"
+      class="group rounded-lg border border-default bg-default"
+    >
+      <summary
+        class="relative cursor-pointer list-none rounded-lg p-4 pr-12 focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
+      >
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-medium">{{ item.userName }}</p>
+              <UBadge
+                :color="item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'error' : 'warning'"
+                variant="subtle"
+              >
+                {{ t(`features.timesheets.status.${item.status.toLowerCase()}`) }}
+              </UBadge>
+            </div>
+            <p class="mt-1 text-sm text-muted">
+              {{ formatPeriod(item.periodStartsOn, item.periodEndsOn) }} · {{ formatHours(item.totalMinutes) }} ·
+              {{ formatMoney(item.billableAmountMinor) }}
+            </p>
+            <div v-if="item.clientReviews.length" class="mt-2 flex flex-wrap gap-2">
+              <UBadge
+                v-for="clientReview in item.clientReviews"
+                :key="clientReview.clientOrganizationId"
+                :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'"
+                variant="subtle"
+              >
+                {{ data.clients.find((client) => client.organizationId === clientReview.clientOrganizationId)?.name }} ·
+                {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`)
+                }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
+              </UBadge>
+            </div>
+            <ul class="mt-3 flex max-w-2xl overflow-hidden rounded-md border border-default">
+              <li
+                v-for="day in weekdayTotals(item)"
+                :key="day.value"
+                class="flex min-w-0 flex-1 items-baseline justify-center gap-1 border-r border-default px-2 py-2 last:border-r-0"
+              >
+                <span class="text-xs text-muted">{{ day.label }}</span>
+                <span class="text-sm font-semibold" :class="day.minutes ? 'text-highlighted' : 'text-dimmed'">
+                  {{ formatHours(day.minutes) }}
+                </span>
+              </li>
+            </ul>
+          </div>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="font-medium">{{ item.userName }}</p>
-            <UBadge
-              :color="item.status === 'APPROVED' ? 'success' : item.status === 'REJECTED' ? 'error' : 'warning'"
-              variant="subtle"
+            <template v-if="item.status === 'SUBMITTED'">
+              <UButton color="error" variant="outline" icon="i-lucide-undo-2" @click.stop.prevent="openReject(item.id)">
+                {{ t('features.timesheets.admin.reject') }}
+              </UButton>
+              <UButton color="success" icon="i-lucide-check" :loading="busy" @click.stop.prevent="openApprove(item.id)">
+                {{ t('features.timesheets.admin.approve') }}
+              </UButton>
+            </template>
+            <UButton
+              v-else-if="item.status === 'APPROVED'"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-lock-open"
+              @click.stop.prevent="review(item.id, 'REOPEN')"
             >
-              {{ t(`features.timesheets.status.${item.status.toLowerCase()}`) }}
-            </UBadge>
-          </div>
-          <p class="mt-1 text-sm text-muted">
-            {{ formatPeriod(item.periodStartsOn, item.periodEndsOn) }} · {{ formatHours(item.totalMinutes) }} ·
-            {{ formatMoney(item.billableAmountMinor) }}
-          </p>
-          <div v-if="item.clientReviews.length" class="mt-2 flex flex-wrap gap-2">
-            <UBadge
-              v-for="clientReview in item.clientReviews"
-              :key="clientReview.clientOrganizationId"
-              :color="clientReview.status === 'DISPUTED' ? 'error' : 'success'"
-              variant="subtle"
-            >
-              {{ data.clients.find((client) => client.organizationId === clientReview.clientOrganizationId)?.name }} ·
-              {{ t(`features.timesheets.clientPortal.${clientReview.status.toLowerCase()}`)
-              }}<template v-if="clientReview.comment">: {{ clientReview.comment }}</template>
-            </UBadge>
-          </div>
-          <ul class="mt-3 flex max-w-2xl overflow-hidden rounded-md border border-default">
-            <li
-              v-for="day in weekdayTotals(item)"
-              :key="day.value"
-              class="flex min-w-0 flex-1 items-baseline justify-center gap-1 border-r border-default px-2 py-2 last:border-r-0"
-            >
-              <span class="text-xs text-muted">{{ day.label }}</span>
-              <span class="text-sm font-semibold" :class="day.minutes ? 'text-highlighted' : 'text-dimmed'">
-                {{ formatHours(day.minutes) }}
-              </span>
-            </li>
-          </ul>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <template v-if="item.status === 'SUBMITTED'">
-            <UButton color="error" variant="outline" icon="i-lucide-undo-2" @click="openReject(item.id)">
-              {{ t('features.timesheets.admin.reject') }}
+              {{ t('features.timesheets.admin.reopen') }}
             </UButton>
-            <UButton color="success" icon="i-lucide-check" :loading="busy" @click="review(item.id, 'APPROVE')">
-              {{ t('features.timesheets.admin.approve') }}
-            </UButton>
-          </template>
-          <UButton
-            v-else-if="item.status === 'APPROVED'"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-lock-open"
-            @click="review(item.id, 'REOPEN')"
-          >
-            {{ t('features.timesheets.admin.reopen') }}
-          </UButton>
+            <UIcon
+              name="i-lucide-chevron-down"
+              class="absolute top-4 right-4 size-4 text-muted transition-transform group-open:rotate-180"
+            />
+          </div>
         </div>
-      </div>
-
-      <details class="group mt-4 border-t border-default" :open="item.status === 'SUBMITTED'">
-        <summary
-          class="flex cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          <span class="flex items-center gap-2">
-            <UIcon name="i-lucide-list-checks" class="size-4 text-primary" />
-            {{ t('features.timesheets.admin.reviewDetails') }}
-            <span class="font-normal text-muted">{{
-              t('features.timesheets.admin.entryCount', item.entries.length)
-            }}</span>
-          </span>
-          <UIcon name="i-lucide-chevron-down" class="size-4 text-muted transition-transform group-open:rotate-180" />
-        </summary>
-
+      </summary>
+      <div class="px-4 pb-4">
         <div class="divide-y divide-default border-t border-default">
           <article
             v-for="entry in item.entries"
@@ -212,9 +226,27 @@ const reject = () =>
             </div>
           </article>
         </div>
-      </details>
-    </UCard>
+        <TimesheetsSubmissionTimeline :events="item.history ?? []" />
+      </div>
+    </details>
 
+    <UModal v-model:open="approvalOpen" :title="t('features.timesheets.admin.approve')">
+      <template #body>
+        <UForm :state="approvalState" :schema="approvalSchema" novalidate class="space-y-4" @submit="approve">
+          <UFormField name="comment" :label="t('features.timesheets.submissions.remark')">
+            <UTextarea v-model="approvalState.comment" :rows="3" class="w-full" />
+          </UFormField>
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" variant="outline" @click="approvalOpen = false">{{
+              t('features.timesheets.cancel')
+            }}</UButton>
+            <UButton type="submit" color="success" :loading="busy">{{
+              t('features.timesheets.admin.approve')
+            }}</UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
     <UModal v-model:open="rejectionOpen" :title="t('features.timesheets.admin.rejectTimesheet')">
       <template #body>
         <UForm novalidate :state="rejectionState" :schema="rejectionSchema" class="space-y-4" @submit="reject">

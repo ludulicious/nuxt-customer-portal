@@ -118,6 +118,8 @@ export interface ClientTimesheetsDto {
   slices: ClientTimesheetSliceDto[]
 }
 export interface ClientApprovalItemDto {
+  timeline?: SubmissionHistoryEventDto[]
+  messages?: SubmissionMessageDto[]
   userId: string
   id: string
   workspaceClientId: string
@@ -207,6 +209,9 @@ export interface TimeEntryDto {
 }
 
 export interface TimesheetSubmissionDto {
+  history?: SubmissionHistoryEventDto[]
+  clientThreads?: ClientSubmissionThreadDto[]
+  messages?: SubmissionMessageDto[]
   id: string
   periodStartsOn: string
   periodEndsOn: string
@@ -324,6 +329,8 @@ export interface TimesheetsDashboardDto {
 }
 
 export interface ApprovalQueueItemDto {
+  history?: SubmissionHistoryEventDto[]
+  messages?: SubmissionMessageDto[]
   id: string
   userId: string
   userName: string
@@ -365,4 +372,33 @@ export interface TimesheetReportDto {
     billableAmountMinor: number
     currency: string
   }
+}
+
+export interface SubmissionMessageDto {
+  id: string
+  authorUserId: string | null
+  authorName: string | null
+  authorImage: string | null
+  role: 'submitter' | 'reviewer'
+  comment: string
+  createdAt: string
+}
+
+export interface ClientSubmissionThreadDto {
+  clientOrganizationId: string
+  clientName: string
+  status: ClientReviewStatus
+  version: number
+  messages: SubmissionMessageDto[]
+}
+
+export interface SubmissionHistoryEventDto {
+  actorUserId: string
+  actorImage: string | null
+  comment: string | null
+  id: string
+  action: string
+  actorName: string | null
+  clientName: string | null
+  createdAt: string
 }

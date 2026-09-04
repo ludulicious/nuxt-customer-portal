@@ -15,5 +15,5 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const { session, organizationId } = await requireFeatureAccess(event, timesheetsFeature.policy, 'submit')
   const input = submissionCreateSchema.parse(await readBody(event))
-  return submitWeek(organizationId, session.user.id, getRouterParam(event, 'id')!, input.cutoffDate)
+  return submitWeek(organizationId, session.user.id, getRouterParam(event, 'id')!, input.cutoffDate, input.comment)
 })

@@ -13,7 +13,7 @@ export const approvalAction = timesheetsSchema.enum('approval_action', [
 ])
 export const clientAccessMode = timesheetsSchema.enum('client_access_mode', ['DISABLED', 'VIEW', 'REVIEW'])
 export const clientReviewStatus = timesheetsSchema.enum('client_review_status', ['PENDING', 'APPROVED', 'DISPUTED'])
-export const clientReviewAction = timesheetsSchema.enum('client_review_action', ['APPROVED', 'DISPUTED'])
+export const clientReviewAction = timesheetsSchema.enum('client_review_action', ['APPROVED', 'DISPUTED', 'SUBMITTED'])
 
 const auditColumns = {
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),

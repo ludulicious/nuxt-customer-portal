@@ -209,7 +209,8 @@ export const reviewSchema = z
   })
 
 export const submissionCreateSchema = z.object({
-  cutoffDate: isoDate
+  cutoffDate: isoDate,
+  comment: z.string().trim().max(2000).optional()
 })
 
 export const reportQuerySchema = z.object({

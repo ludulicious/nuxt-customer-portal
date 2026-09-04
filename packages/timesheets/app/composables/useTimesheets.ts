@@ -83,9 +83,15 @@ export const useTimesheets = () => {
 
   const stopTimer = () => $fetch<TimeEntryDto>('/api/timesheets/timer', { method: 'DELETE' as never })
 
-  const submitWeek = (id: string, cutoffDate: string) =>
-    $fetch(`/api/timesheets/weeks/${id}/submissions`, { method: 'POST', body: { cutoffDate } })
-  const resubmitSubmission = (id: string) => $fetch(`/api/timesheets/submissions/${id}/resubmit`, { method: 'POST' })
+  const submitWeek = (id: string, cutoffDate: string, comment?: string) =>
+    $fetch(`/api/timesheets/weeks/${id}/submissions`, { method: 'POST', body: { cutoffDate, comment } })
+  const replyClientSubmission = (id: string, clientOrganizationId: string, expectedVersion: number, reply?: string) =>
+    $fetch(`/api/timesheets/submissions/${id}/client-reply`, {
+      method: 'POST',
+      body: { clientOrganizationId, expectedVersion, reply }
+    })
+  const resubmitSubmission = (id: string, reply?: string) =>
+    $fetch(`/api/timesheets/submissions/${id}/resubmit`, { method: 'POST', body: { reply } })
 
   const adminBootstrap = (section?: string) =>
     $fetch<TimesheetsAdminBootstrap>('/api/timesheets/admin/bootstrap', { query: section ? { section } : undefined })
@@ -201,6 +207,7 @@ export const useTimesheets = () => {
     stopTimer,
     submitWeek,
     resubmitSubmission,
+    replyClientSubmission,
     adminBootstrap,
     createClient,
     getClientDeletionEligibility,

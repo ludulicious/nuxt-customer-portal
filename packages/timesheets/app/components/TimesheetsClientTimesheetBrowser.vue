@@ -1,5 +1,6 @@
 <!-- Hallmark · shared client timesheet collection and detail browser -->
 <script setup lang="ts">
+import { z } from 'zod'
 import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import type { DeepReadonly } from 'vue'
 import type {
@@ -20,6 +21,18 @@ const route = useRoute()
 const router = useRouter()
 const disputeOpen = ref(false)
 const disputeComment = ref('')
+const reviewAction = ref<'APPROVE' | 'DISPUTE'>('DISPUTE')
+const reviewState = computed(() => ({ comment: disputeComment.value }))
+const reviewSchema = computed(() =>
+  z.object({
+    comment: reviewAction.value === 'DISPUTE' ? z.string().trim().min(1).max(2000) : z.string().trim().max(2000)
+  })
+)
+const openReview = (action: 'APPROVE' | 'DISPUTE') => {
+  reviewAction.value = action
+  disputeComment.value = ''
+  disputeOpen.value = true
+}
 const saving = ref(false)
 const isReview = computed(() => props.mode === 'review')
 const detailQueryKey = computed(() => (isReview.value ? 'review' : 'detail'))
@@ -115,7 +128,7 @@ const act = async (item: ReadonlyApprovalItem, action: 'APPROVE' | 'DISPUTE') =>
     await api.reviewClientSlice(item.workspaceClientId, item.submissionId, {
       action,
       expectedVersion: item.version,
-      comment: action === 'DISPUTE' ? disputeComment.value : null
+      comment: disputeComment.value
     })
     disputeOpen.value = false
     disputeComment.value = ''
@@ -215,7 +228,8 @@ await listing.load()
             <strong class="text-sm sm:text-right">{{ hours(entry.minutes) }}</strong>
           </div>
         </div>
-        <section v-if="selected.history.length" class="border-t border-default p-5">
+        <TimesheetsSubmissionTimeline v-if="isApprovalItem(selected)" class="p-5" :events="selected.timeline ?? []" />
+        <section v-if="!isReview && selected.history.length" class="border-t border-default p-5">
           <h3 class="text-sm font-semibold">{{ t('features.timesheets.clientPortal.history') }}</h3>
           <ol class="mt-4 space-y-4">
             <li
@@ -233,7 +247,7 @@ await listing.load()
                   }}
                 </p>
                 <p class="text-xs text-muted">{{ formatDateTime(item.createdAt) }}</p>
-                <p v-if="item.comment" class="mt-1 text-muted">{{ item.comment }}</p>
+                <p v-if="!isReview && item.comment" class="mt-1 text-muted">{{ item.comment }}</p>
               </div>
             </li>
           </ol>
@@ -242,9 +256,9 @@ await listing.load()
           v-if="isReview && isApprovalItem(selected) && selected.canAct"
           class="flex justify-end gap-2 border-t border-default bg-elevated/40 p-5"
         >
-          <UButton color="neutral" variant="outline" :disabled="saving" @click="disputeOpen = true">
+          <UButton color="neutral" variant="outline" :disabled="saving" @click="openReview('DISPUTE')">
             {{ t('features.timesheets.clientPortal.dispute') }} </UButton
-          ><UButton icon="i-lucide-check" :loading="saving" @click="act(selected, 'APPROVE')">
+          ><UButton icon="i-lucide-check" :loading="saving" @click="openReview('APPROVE')">
             {{ t('features.timesheets.clientPortal.approve') }}
           </UButton>
         </footer>
@@ -252,29 +266,27 @@ await listing.load()
       <UModal
         v-if="isReview && selected && isApprovalItem(selected)"
         v-model:open="disputeOpen"
-        :title="t('features.timesheets.approvals.disputeTitle')"
-        :description="t('features.timesheets.approvals.disputeDescription')"
+        :title="t(`features.timesheets.clientPortal.${reviewAction === 'APPROVE' ? 'approve' : 'dispute'}`)"
       >
         <template #body>
-          <UTextarea
-            v-model="disputeComment"
-            autofocus
-            :placeholder="t('features.timesheets.clientPortal.comment')"
-            class="w-full"
-          /> </template
-        ><template #footer>
-          <div class="flex w-full justify-end gap-2">
-            <UButton color="neutral" variant="ghost" @click="disputeOpen = false">
-              {{ t('features.timesheets.cancel') }} </UButton
-            ><UButton
-              color="error"
-              :loading="saving"
-              :disabled="!disputeComment.trim()"
-              @click="act(selected, 'DISPUTE')"
+          <UForm
+            :schema="reviewSchema"
+            :state="reviewState"
+            novalidate
+            class="space-y-4"
+            @submit="act(selected, reviewAction)"
+          >
+            <UFormField
+              name="comment"
+              :label="t('features.timesheets.clientPortal.comment')"
+              :required="reviewAction === 'DISPUTE'"
             >
-              {{ t('features.timesheets.clientPortal.dispute') }}
-            </UButton>
-          </div>
+              <UTextarea v-model="disputeComment" :rows="4" class="w-full" />
+            </UFormField>
+            <UButton type="submit" :loading="saving" :color="reviewAction === 'APPROVE' ? 'success' : 'error'">{{
+              t(`features.timesheets.clientPortal.${reviewAction === 'APPROVE' ? 'approve' : 'dispute'}`)
+            }}</UButton>
+          </UForm>
         </template>
       </UModal>
     </div>

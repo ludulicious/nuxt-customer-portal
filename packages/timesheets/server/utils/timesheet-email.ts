@@ -27,7 +27,9 @@ type NotificationEvent = 'submitted' | 'approved' | 'rejected' | 'reopened'
 export const notifyTimesheetEvent = async (
   submission: TimesheetSubmissionRecord | undefined,
   event: NotificationEvent,
-  client?: { id: string; version: number; status: string; comment: string | null }
+  client?: { id: string; version: number; status: string; comment: string | null },
+  reply?: string,
+  replyClientId?: string
 ) => {
   if (!submission) {
     return
@@ -108,14 +110,18 @@ export const notifyTimesheetEvent = async (
           send(
             'internal-requested',
             reviewer,
-            `/timesheets/internal-approvals?${new URLSearchParams({ status: 'SUBMITTED', userId: submission.userId })}`
+            `/timesheets/internal-approvals?${new URLSearchParams({ status: 'SUBMITTED', userId: submission.userId })}`,
+            '',
+            reply ?? ''
           )
         )
       )
       return
     }
     const outcome = event === 'submitted' ? 'approved' : event
-    await send(`internal-${outcome}`, person, '/timesheets', '', submission.rejectionComment ?? '')
+    if (!replyClientId) {
+await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission.rejectionComment ?? '')
+}
     if (submission.status !== 'APPROVED') {
       return
     }
@@ -146,17 +152,19 @@ export const notifyTimesheetEvent = async (
       .innerJoin(organization, eq(organization.id, workspaceClient.clientOrganizationId))
       .where(and(eq(timesheetClientReview.submissionId, submission.id), eq(timesheetClientReview.status, 'PENDING')))
     await Promise.all(
-      reviewers.map(async (reviewer) =>
-        send(
-          'client-requested',
-          reviewer,
-          `/timesheets/approvals?${new URLSearchParams({ status: 'PENDING', userId: submission.userId })}`,
-          reviewer.clientName,
-          '',
-          `${reviewer.reviewId}/${reviewer.version}`,
-          await getClientEmailLocale(reviewer.clientId)
+      reviewers
+        .filter((reviewer) => !replyClientId || reviewer.clientId === replyClientId)
+        .map(async (reviewer) =>
+          send(
+            'client-requested',
+            reviewer,
+            `/timesheets/approvals?${new URLSearchParams({ status: 'PENDING', userId: submission.userId })}`,
+            reviewer.clientName,
+            replyClientId ? (reply ?? '') : '',
+            `${reviewer.reviewId}/${reviewer.version}`,
+            await getClientEmailLocale(reviewer.clientId)
+          )
         )
-      )
     )
   } catch (error) {
     console.error('Timesheet email notification failed', { submissionId: submission.id, event }, error)

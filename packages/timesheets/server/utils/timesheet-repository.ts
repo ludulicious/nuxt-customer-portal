@@ -74,11 +74,137 @@ const toEntryDto = (row: TimeEntryRecord, submissionStatus: TimeEntryDto['submis
   submissionStatus
 })
 
+const submissionMessages = async (ids: string[]) => {
+  if (!ids.length) {
+    return []
+  }
+  const rows = await db
+    .select({ history: timesheetApprovalHistory, name: user.name, image: user.image })
+    .from(timesheetApprovalHistory)
+    .leftJoin(user, eq(user.id, timesheetApprovalHistory.actorUserId))
+    .where(
+      and(
+        inArray(timesheetApprovalHistory.submissionId, ids),
+        inArray(timesheetApprovalHistory.action, ['SUBMITTED', 'REJECTED', 'APPROVED'])
+      )
+    )
+    .orderBy(asc(timesheetApprovalHistory.createdAt), asc(timesheetApprovalHistory.id))
+  return rows
+    .filter(
+      (row) =>
+        row.history.comment?.trim() &&
+        row.history.comment !== 'Automatically approved because internal approval is disabled'
+    )
+    .map((row) => ({
+      id: row.history.id,
+      submissionId: row.history.submissionId,
+      authorUserId: row.history.actorUserId,
+      authorName: row.name,
+      authorImage: row.image,
+      role: row.history.action === 'SUBMITTED' ? ('submitter' as const) : ('reviewer' as const),
+      comment: row.history.comment!,
+      createdAt: row.history.createdAt.toISOString()
+    }))
+}
+
+const clientSubmissionThreads = async (ids: string[]) => {
+  if (!ids.length) {
+    return []
+  }
+  const reviews = await db
+    .select({ review: timesheetClientReview, clientName: organization.name })
+    .from(timesheetClientReview)
+    .innerJoin(organization, eq(organization.id, timesheetClientReview.clientOrganizationId))
+    .where(inArray(timesheetClientReview.submissionId, ids))
+  const history = await db
+    .select({ history: timesheetClientReviewHistory, name: user.name })
+    .from(timesheetClientReviewHistory)
+    .innerJoin(user, eq(user.id, timesheetClientReviewHistory.actorUserId))
+    .where(inArray(timesheetClientReviewHistory.submissionId, ids))
+    .orderBy(asc(timesheetClientReviewHistory.createdAt), asc(timesheetClientReviewHistory.id))
+  return reviews.map(({ review, clientName }) => ({
+    submissionId: review.submissionId,
+    clientOrganizationId: review.clientOrganizationId,
+    clientName,
+    status: review.status,
+    version: review.version,
+    messages: history
+      .filter(
+        (item) =>
+          item.history.submissionId === review.submissionId &&
+          item.history.clientOrganizationId === review.clientOrganizationId &&
+          item.history.comment?.trim()
+      )
+      .map(({ history: item, name }) => ({
+        id: item.id,
+        authorUserId: item.actorUserId,
+        authorName: name,
+        authorImage: null,
+        role: item.action === 'SUBMITTED' ? ('submitter' as const) : ('reviewer' as const),
+        comment: item.comment!,
+        createdAt: item.createdAt.toISOString()
+      }))
+  }))
+}
+
+const submissionHistory = async (ids: string[]) => {
+  if (!ids.length) {
+    return []
+  }
+  const [internal, client] = await Promise.all([
+    db
+      .select({ event: timesheetApprovalHistory, name: user.name, image: user.image })
+      .from(timesheetApprovalHistory)
+      .leftJoin(user, eq(user.id, timesheetApprovalHistory.actorUserId))
+      .where(inArray(timesheetApprovalHistory.submissionId, ids)),
+    db
+      .select({
+        event: timesheetClientReviewHistory,
+        name: user.name,
+        image: user.image,
+        clientName: organization.name
+      })
+      .from(timesheetClientReviewHistory)
+      .leftJoin(user, eq(user.id, timesheetClientReviewHistory.actorUserId))
+      .innerJoin(organization, eq(organization.id, timesheetClientReviewHistory.clientOrganizationId))
+      .where(inArray(timesheetClientReviewHistory.submissionId, ids))
+  ])
+  return [
+    ...internal.map(({ event, name, image }) => ({
+      id: event.id,
+      submissionId: event.submissionId,
+      action: event.action,
+      actorName: name,
+      actorImage: image,
+      actorUserId: event.actorUserId,
+      clientName: null,
+      clientOrganizationId: null,
+      comment: event.comment?.startsWith('Automatically approved because internal approval') ? null : event.comment,
+      createdAt: event.createdAt.toISOString()
+    })),
+    ...client.map(({ event, name, image, clientName }) => ({
+      id: event.id,
+      submissionId: event.submissionId,
+      action: event.action,
+      actorName: name,
+      actorImage: image,
+      actorUserId: event.actorUserId,
+      clientName,
+      clientOrganizationId: event.clientOrganizationId,
+      comment: event.comment?.startsWith('Automatically approved because internal approval') ? null : event.comment,
+      createdAt: event.createdAt.toISOString()
+    }))
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
+}
+
 const toWeekDto = (
   row: WeeklyTimesheetRecord,
   entries: TimeEntryRecord[],
   submissions: TimesheetSubmissionRecord[],
-  reviewers: Map<string, { name: string; image: string | null }>
+  reviewers: Map<string, { name: string; image: string | null }>,
+  messages: Awaited<ReturnType<typeof submissionMessages>>,
+  clientThreads: Awaited<ReturnType<typeof clientSubmissionThreads>>,
+  history: Awaited<ReturnType<typeof submissionHistory>>
 ): WeekDto => {
   const submissionById = new Map(submissions.map((submission) => [submission.id, submission]))
   return {
@@ -95,6 +221,9 @@ const toWeekDto = (
     ),
     submissions: submissions.map((submission) => ({
       id: submission.id,
+      history: history.filter((event) => event.submissionId === submission.id),
+      messages: messages.filter((message) => message.submissionId === submission.id),
+      clientThreads: clientThreads.filter((thread) => thread.submissionId === submission.id),
       periodStartsOn: submission.periodStartsOn,
       periodEndsOn: submission.periodEndsOn,
       status: submission.status,
@@ -535,6 +664,8 @@ export const listClientApprovals = async (
   if (!submissionIds.length) {
     return { isAdmin, pendingCount: 0, items: [] }
   }
+  const timeline = await submissionHistory(submissionIds)
+  const clientThreads = await clientSubmissionThreads(submissionIds)
   const [assignments, acted, entries, internalHistory, clientHistory] = await Promise.all([
     db
       .select()
@@ -635,6 +766,17 @@ export const listClientApprovals = async (
           reviewedAt: review.reviewedAt?.toISOString() ?? null,
           reviewerUserId: review.reviewerUserId,
           reviewerName: review.reviewerUserId ? (reviewerNames.get(review.reviewerUserId) ?? null) : null,
+          messages:
+            clientThreads.find(
+              (thread) => thread.submissionId === submission.id && thread.clientOrganizationId === clientOrganizationId
+            )?.messages ?? [],
+          timeline: timeline
+            .filter(
+              (event) =>
+                event.submissionId === submission.id &&
+                (!event.clientOrganizationId || event.clientOrganizationId === clientOrganizationId)
+            )
+            .map((event) => ({ ...event, comment: event.clientOrganizationId ? event.comment : null })),
           hasReviewers: allAssignments.some((item) => item.workspaceClientId === link.link.id),
           canAct: review.status === 'PENDING' && (isAdmin || assignedLinks.has(link.link.id)),
           canManageReviewers: isAdmin,
@@ -659,7 +801,7 @@ export const listClientApprovals = async (
                       ? ('REOPENED' as const)
                       : ('APPROVED_INTERNAL' as const),
                 actorName: item.actorName,
-                comment: item.history.comment,
+                comment: null,
                 createdAt: item.history.createdAt.toISOString()
               })),
             ...clientHistory
@@ -667,7 +809,11 @@ export const listClientApprovals = async (
               .map((item) => ({
                 id: item.history.id,
                 action:
-                  item.history.action === 'APPROVED' ? ('APPROVED_CLIENT' as const) : ('DISPUTED_CLIENT' as const),
+                  item.history.action === 'SUBMITTED'
+                    ? ('SUBMITTED' as const)
+                    : item.history.action === 'APPROVED'
+                      ? ('APPROVED_CLIENT' as const)
+                      : ('DISPUTED_CLIENT' as const),
                 actorName: item.actorName,
                 comment: item.history.comment,
                 createdAt: item.history.createdAt.toISOString()
@@ -1562,7 +1708,15 @@ export const getBootstrap = async (
     projects,
     activities,
     team,
-    week: toWeekDto(week, entries, submissions, reviewers),
+    week: toWeekDto(
+      week,
+      entries,
+      submissions,
+      reviewers,
+      await submissionMessages(submissions.map((item) => item.id)),
+      await clientSubmissionThreads(submissions.map((item) => item.id)),
+      await submissionHistory(submissions.map((item) => item.id))
+    ),
     canEnterTime,
     setupStatus
   }
@@ -1755,7 +1909,13 @@ export const stopTimer = async (organizationId: string, userId: string) => {
   return toEntryDto(updated)
 }
 
-export const submitWeek = async (organizationId: string, userId: string, weekId: string, cutoffDate: string) => {
+export const submitWeek = async (
+  organizationId: string,
+  userId: string,
+  weekId: string,
+  cutoffDate: string,
+  comment?: string
+) => {
   const result = await db.transaction(async (tx) => {
     await requireMemberCanEnterTime(organizationId, userId)
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`timesheet-submit:${weekId}`}))`)
@@ -1860,7 +2020,8 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
       weeklyTimesheetId: week.id,
       submissionId,
       action: 'SUBMITTED',
-      actorUserId: userId
+      actorUserId: userId,
+      comment: comment?.trim() || null
     })
     if (!requiresApproval) {
       await tx.insert(timesheetApprovalHistory).values({
@@ -1900,11 +2061,16 @@ export const submitWeek = async (organizationId: string, userId: string, weekId:
     }
     return created
   })
-  await notifyTimesheetEvent(result, 'submitted')
+  await notifyTimesheetEvent(result, 'submitted', undefined, comment)
   return result
 }
 
-export const resubmitSubmission = async (organizationId: string, userId: string, submissionId: string) => {
+export const resubmitSubmission = async (
+  organizationId: string,
+  userId: string,
+  submissionId: string,
+  reply?: string
+) => {
   const result = await db.transaction(async (tx) => {
     await requireMemberCanEnterTime(organizationId, userId)
     const [submission] = await tx
@@ -1979,7 +2145,8 @@ export const resubmitSubmission = async (organizationId: string, userId: string,
       weeklyTimesheetId: submission.weeklyTimesheetId,
       submissionId: submission.id,
       action: 'SUBMITTED',
-      actorUserId: userId
+      actorUserId: userId,
+      comment: reply?.trim() || null
     })
     if (!requiresApproval) {
       await tx.insert(timesheetApprovalHistory).values({
@@ -2019,7 +2186,7 @@ export const resubmitSubmission = async (organizationId: string, userId: string,
     }
     return updated
   })
-  await notifyTimesheetEvent(result, 'submitted')
+  await notifyTimesheetEvent(result, 'submitted', undefined, reply)
   return result
 }
 
@@ -2099,12 +2266,16 @@ export const listApprovalQueue = async (
         submissions.map((item) => item.submission.id)
       )
     )
+  const history = await submissionHistory(submissions.map((item) => item.submission.id))
+  const messages = await submissionMessages(submissions.map((item) => item.submission.id))
   const names = new Map(members.map((member) => [member.id, member.name]))
   return submissions.map(({ submission, weekStartsOn }) => {
     const submissionEntries = entries.filter((entry) => entry.submissionId === submission.id)
     return {
       id: submission.id,
       userId: submission.userId,
+      history: history.filter((event) => event.submissionId === submission.id && !event.clientOrganizationId),
+      messages: messages.filter((message) => message.submissionId === submission.id),
       userName: names.get(submission.userId) ?? 'Unknown member',
       weekStartsOn,
       periodStartsOn: submission.periodStartsOn,
@@ -2274,7 +2445,12 @@ export const reviewSubmission = async (
     }
     return updated
   })
-  await notifyTimesheetEvent(result, action === 'APPROVE' ? 'approved' : action === 'REJECT' ? 'rejected' : 'reopened')
+  await notifyTimesheetEvent(
+    result,
+    action === 'APPROVE' ? 'approved' : action === 'REJECT' ? 'rejected' : 'reopened',
+    undefined,
+    comment ?? undefined
+  )
   return result
 }
 
@@ -2487,7 +2663,12 @@ export const getClientTimesheets = async (
           .filter((item) => item.history.submissionId === submissionId)
           .map((item) => ({
             id: item.history.id,
-            action: item.history.action === 'APPROVED' ? ('APPROVED_CLIENT' as const) : ('DISPUTED_CLIENT' as const),
+            action:
+              item.history.action === 'SUBMITTED'
+                ? ('SUBMITTED' as const)
+                : item.history.action === 'APPROVED'
+                  ? ('APPROVED_CLIENT' as const)
+                  : ('DISPUTED_CLIENT' as const),
             actorName: item.actorName,
             comment: item.history.comment,
             createdAt: item.history.createdAt.toISOString()
@@ -2653,4 +2834,64 @@ export const reportToCsv = (report: TimesheetReportDto) => {
   ]
     .map((row) => row.map(quote).join(','))
     .join('\n')
+}
+
+export const replyClientTimesheet = async (
+  organizationId: string,
+  userId: string,
+  submissionId: string,
+  clientOrganizationId: string,
+  expectedVersion: number,
+  reply?: string
+) => {
+  const submission = await db.transaction(async (tx) => {
+    const [owned] = await tx
+      .select()
+      .from(timesheetSubmission)
+      .where(
+        and(
+          eq(timesheetSubmission.id, submissionId),
+          eq(timesheetSubmission.organizationId, organizationId),
+          eq(timesheetSubmission.userId, userId),
+          eq(timesheetSubmission.status, 'APPROVED')
+        )
+      )
+      .limit(1)
+    if (!owned) {
+      throw createError({ statusCode: 404, message: 'Approved submission not found' })
+    }
+    const [review] = await tx
+      .update(timesheetClientReview)
+      .set({
+        status: 'PENDING',
+        comment: null,
+        reviewerUserId: null,
+        reviewedAt: null,
+        version: expectedVersion + 1,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(timesheetClientReview.submissionId, submissionId),
+          eq(timesheetClientReview.clientOrganizationId, clientOrganizationId),
+          eq(timesheetClientReview.status, 'DISPUTED'),
+          eq(timesheetClientReview.version, expectedVersion)
+        )
+      )
+      .returning()
+    if (!review) {
+      throw createError({ statusCode: 409, message: 'Client review changed; refresh and try again' })
+    }
+    await tx.insert(timesheetClientReviewHistory).values({
+      id: nanoid(),
+      weeklyTimesheetId: owned.weeklyTimesheetId,
+      submissionId,
+      clientOrganizationId,
+      action: 'SUBMITTED',
+      actorUserId: userId,
+      comment: reply?.trim() || null
+    })
+    return owned
+  })
+  await notifyTimesheetEvent(submission, 'approved', undefined, reply, clientOrganizationId)
 }

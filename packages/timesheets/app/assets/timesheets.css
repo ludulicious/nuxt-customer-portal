@@ -35,6 +35,14 @@ body {
   background: var(--timesheets-color-weekend);
 }
 
+.timesheet-grid button:not(:disabled) {
+  cursor: pointer;
+}
+
+.timesheet-grid button:disabled {
+  cursor: not-allowed;
+}
+
 .timesheet-grid__cell--today {
   background: var(--ui-primary);
   color: var(--portal-on-primary, var(--ui-bg));
@@ -100,13 +108,18 @@ body {
 
 .timesheet-grid .timesheet-row-action:disabled {
   cursor: not-allowed;
-  background: var(--ui-bg-accented);
+  background: color-mix(in srgb, var(--ui-bg-accented) 35%, var(--ui-bg));
   color: var(--ui-text-dimmed);
   opacity: 1;
 }
 
 .timesheet-grid .timesheet-row-action:disabled:hover {
-  background: var(--ui-bg-accented);
+  background: color-mix(in srgb, var(--ui-bg-accented) 35%, var(--ui-bg));
+}
+
+.timesheet-grid .timesheet-grid__cell--locked,
+.timesheet-grid .timesheet-grid__cell--locked:hover {
+  background: color-mix(in srgb, var(--ui-bg-accented) 35%, var(--ui-bg));
 }
 
 .timesheet-mobile {
