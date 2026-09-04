@@ -17,6 +17,7 @@
       "weekTotal": "Week total",
       "submissions": {
         "events": {
+          "CLIENT_SUBMITTED": "Timesheet submitted for approval",
           "SUBMITTED": "Submitted",
           "REJECTED": "Rejected",
           "APPROVED": "Approved",
@@ -90,7 +91,7 @@
         "supplier": "Supplier",
         "noAccess": "No supplier has enabled client timesheet access.",
         "reviewers": "Reviewers",
-        "reviewerHelp": "Select the members who may approve or dispute time.",
+        "reviewerHelp": "Select who receives approval emails and reviews time. At least one reviewer must remain assigned.",
         "weekPeriod": "Week {week} · {period}",
         "history": "History",
         "historyActions": {

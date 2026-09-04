@@ -11,13 +11,14 @@ const supplier = computed(() => suppliers.value?.[0] ?? null)
 const { data: reviewers, refresh } = await useAsyncData('timesheet-approval-reviewers', async () =>
   supplier.value ? api.clientReviewers(supplier.value.id) : []
 )
-const fixedReviewers = computed(() => reviewers.value?.filter((person) => person.fixedAccess) ?? [])
-const configurableReviewers = computed(() => reviewers.value?.filter((person) => !person.fixedAccess) ?? [])
+const saving = ref(false)
+const configurableReviewers = computed(() => reviewers.value ?? [])
 const reviewerCount = computed(() => reviewers.value?.filter((person) => person.assigned).length ?? 0)
 const toggle = async (userId: string, assigned: boolean) => {
-  if (!supplier.value) {
+  if (!supplier.value || saving.value) {
     return
   }
+  saving.value = true
   try {
     await api.setClientReviewer(supplier.value.id, userId, assigned)
     await Promise.all([refresh(), refreshSuppliers()])
@@ -27,6 +28,8 @@ const toggle = async (userId: string, assigned: boolean) => {
       title: t('features.timesheets.messages.saveError'),
       color: 'error'
     })
+  } finally {
+    saving.value = false
   }
 }
 useSeoMeta({ title: () => t('features.timesheets.approvals.reviewersTitle') })
@@ -65,45 +68,24 @@ useSeoMeta({ title: () => t('features.timesheets.approvals.reviewersTitle') })
           </UBadge>
         </div>
       </header>
-      <div v-if="fixedReviewers.length" class="border-b border-default">
-        <h3 class="bg-elevated/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          {{ t('features.timesheets.approvals.alwaysAccess') }}
-        </h3>
-        <div class="divide-y divide-default">
-          <div v-for="person in fixedReviewers" :key="person.id" class="flex items-center justify-between gap-3 p-4">
-            <span class="min-w-0"
-              ><strong class="block text-sm">{{ person.name }}</strong
-              ><span class="block truncate text-xs text-muted">{{ person.email }}</span></span
-            >
-            <div class="flex items-center gap-2">
-              <UBadge color="neutral" variant="soft">
-                {{ t(`features.timesheets.roles.${person.role}`) }}
-              </UBadge>
-              <UBadge color="success" variant="soft">
-                {{ t('features.timesheets.approvals.hasAccess') }}
-              </UBadge>
-            </div>
-          </div>
-        </div>
-      </div>
       <div v-if="configurableReviewers.length">
-        <h3 class="bg-elevated/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          {{ t('features.timesheets.approvals.additionalAccess') }}
-        </h3>
         <div class="divide-y divide-default">
           <label
             v-for="person in configurableReviewers"
             :key="person.id"
             class="flex items-center gap-3 p-4 hover:bg-elevated/40"
-            ><USwitch :model-value="person.assigned" @update:model-value="toggle(person.id, $event)" /><span
-              class="min-w-0"
+            ><USwitch
+              :model-value="person.assigned"
+              :disabled="saving || (person.assigned && reviewerCount <= 1)"
+              @update:model-value="toggle(person.id, $event)"
+            /><span class="min-w-0"
               ><strong class="block text-sm">{{ person.name }}</strong
               ><span class="block truncate text-xs text-muted">{{ person.email }}</span></span
             ></label
           >
         </div>
       </div>
-      <p v-if="!fixedReviewers.length && !configurableReviewers.length" class="p-5 text-sm text-muted">
+      <p v-if="!configurableReviewers.length" class="p-5 text-sm text-muted">
         {{ t('features.timesheets.approvals.noEligibleReviewers') }}
       </p>
       <footer class="border-t border-default p-4 text-xs text-muted">

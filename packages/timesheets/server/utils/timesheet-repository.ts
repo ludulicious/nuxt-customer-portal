@@ -518,6 +518,33 @@ export const listClientWorkspaces = async (
   }))
 }
 
+export const ensureClientReviewers = async (workspaceClientId: string, clientOrganizationId: string) => {
+  const members = await listPortalOrganizationMembers(clientOrganizationId)
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'client-reviewers:' + workspaceClientId}))`)
+    const assigned = await tx
+      .select()
+      .from(workspaceClientReviewer)
+      .where(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId))
+    if (!assigned.length) {
+      const admins = members.filter((item) => ['owner', 'admin'].includes(item.organizationRole))
+      if (admins.length) {
+        await tx
+          .insert(workspaceClientReviewer)
+          .values(
+            admins.map((item) => ({
+              id: nanoid(),
+              workspaceClientId,
+              userId: item.id,
+              createdById: item.id
+            }))
+          )
+          .onConflictDoNothing()
+      }
+    }
+  })
+}
+
 export const listClientReviewers = async (
   workspaceClientId: string,
   clientOrganizationId: string
@@ -532,19 +559,20 @@ export const listClientReviewers = async (
   if (!link || link.accessMode === 'DISABLED') {
     throw createError({ statusCode: 404, message: 'Client workspace not found' })
   }
+  await ensureClientReviewers(workspaceClientId, clientOrganizationId)
   const [members, assigned] = await Promise.all([
     listPortalOrganizationMembers(clientOrganizationId),
     db.select().from(workspaceClientReviewer).where(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId))
   ])
   const assignedIds = new Set(assigned.map((item) => item.userId))
   return members.map((item) => {
-    const fixedAccess = item.organizationRole === 'owner' || item.organizationRole === 'admin'
+    const fixedAccess = false
     return {
       id: item.id,
       name: item.name,
       email: item.email,
       role: item.organizationRole,
-      assigned: fixedAccess || assignedIds.has(item.id),
+      assigned: assignedIds.has(item.id),
       fixedAccess
     }
   })
@@ -560,7 +588,8 @@ export const listClientReviewerSuppliers = async (
   if (!workspaces.length) {
     return []
   }
-  const [reviewers, pending, members] = await Promise.all([
+  await Promise.all(workspaces.map((workspace) => ensureClientReviewers(workspace.id, clientOrganizationId)))
+  const [reviewers, pending] = await Promise.all([
     db
       .select()
       .from(workspaceClientReviewer)
@@ -580,19 +609,12 @@ export const listClientReviewerSuppliers = async (
           eq(timesheetClientReview.status, 'PENDING'),
           eq(timesheetSubmission.status, 'APPROVED')
         )
-      ),
-    listPortalOrganizationMembers(clientOrganizationId)
+      )
   ])
-  const fixedIds = new Set(
-    members
-      .filter((item) => item.organizationRole === 'owner' || item.organizationRole === 'admin')
-      .map((item) => item.id)
-  )
   return workspaces.map((workspace) => {
     const reviewerIds = new Set(
       reviewers.filter((item) => item.workspaceClientId === workspace.id).map((item) => item.userId)
     )
-    fixedIds.forEach((id) => reviewerIds.add(id))
     return {
       ...workspace,
       reviewerCount: reviewerIds.size,
@@ -613,25 +635,33 @@ export const setClientReviewer = async (
   if (!selected) {
     throw createError({ statusCode: 400, message: 'Reviewer must be a current client member' })
   }
-  if (selected.fixedAccess) {
-    throw createError({ statusCode: 400, message: 'Organization owners and admins can always review timesheets' })
-  }
-  if (!assigned) {
-    await db
-      .delete(workspaceClientReviewer)
-      .where(
-        and(
-          eq(workspaceClientReviewer.workspaceClientId, workspaceClientId),
-          eq(workspaceClientReviewer.userId, userId)
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'client-reviewers:' + workspaceClientId}))`)
+    if (!assigned) {
+      const current = await tx
+        .select()
+        .from(workspaceClientReviewer)
+        .where(eq(workspaceClientReviewer.workspaceClientId, workspaceClientId))
+      const memberIds = new Set(eligible.map((item) => item.id))
+      if (!current.some((item) => item.userId !== userId && memberIds.has(item.userId))) {
+        throw createError({ statusCode: 409, message: 'At least one reviewer must remain assigned' })
+      }
+      await tx
+        .delete(workspaceClientReviewer)
+        .where(
+          and(
+            eq(workspaceClientReviewer.workspaceClientId, workspaceClientId),
+            eq(workspaceClientReviewer.userId, userId)
+          )
         )
-      )
-    return { assigned: false }
-  }
-  await db
-    .insert(workspaceClientReviewer)
-    .values({ id: nanoid(), workspaceClientId, userId, createdById: actorUserId })
-    .onConflictDoNothing()
-  return { assigned: true }
+    } else {
+      await tx
+        .insert(workspaceClientReviewer)
+        .values({ id: nanoid(), workspaceClientId, userId, createdById: actorUserId })
+        .onConflictDoNothing()
+    }
+    return { assigned }
+  })
 }
 
 export const listClientApprovals = async (
@@ -770,13 +800,22 @@ export const listClientApprovals = async (
             clientThreads.find(
               (thread) => thread.submissionId === submission.id && thread.clientOrganizationId === clientOrganizationId
             )?.messages ?? [],
-          timeline: timeline
-            .filter(
-              (event) =>
-                event.submissionId === submission.id &&
-                (!event.clientOrganizationId || event.clientOrganizationId === clientOrganizationId)
+          timeline: [
+            {
+              id: `client-review-created:${review.id}`,
+              action: 'CLIENT_SUBMITTED',
+              actorUserId: submission.userId,
+              actorName: rows[0]!.personName,
+              actorImage: null,
+              clientName: null,
+              comment: null,
+              // A client review is created only when time is released after internal approval.
+              createdAt: review.createdAt.toISOString()
+            },
+            ...timeline.filter(
+              (event) => event.submissionId === submission.id && event.clientOrganizationId === clientOrganizationId
             )
-            .map((event) => ({ ...event, comment: event.clientOrganizationId ? event.comment : null })),
+          ],
           hasReviewers: allAssignments.some((item) => item.workspaceClientId === link.link.id),
           canAct: review.status === 'PENDING' && (isAdmin || assignedLinks.has(link.link.id)),
           canManageReviewers: isAdmin,

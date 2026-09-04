@@ -27,7 +27,7 @@ const formatHistoryDate = (date: string) =>
               ? 'bg-success'
               : ['REJECTED', 'DISPUTED'].includes(event.action)
                 ? 'bg-error'
-                : event.action === 'SUBMITTED'
+                : ['SUBMITTED', 'CLIENT_SUBMITTED'].includes(event.action)
                   ? 'bg-primary'
                   : 'bg-warning'
           "
@@ -75,7 +75,7 @@ const formatHistoryDate = (date: string) =>
                 ? 'border-success/50'
                 : ['REJECTED', 'DISPUTED'].includes(event.action)
                   ? 'border-error/50'
-                  : event.action === 'SUBMITTED'
+                  : ['SUBMITTED', 'CLIENT_SUBMITTED'].includes(event.action)
                     ? 'border-primary/50'
                     : 'border-warning/50'
             "

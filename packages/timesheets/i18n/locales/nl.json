@@ -17,6 +17,7 @@
       "weekTotal": "Weektotaal",
       "submissions": {
         "events": {
+          "CLIENT_SUBMITTED": "Urenstaat ingediend ter goedkeuring",
           "SUBMITTED": "Ingediend",
           "REJECTED": "Teruggestuurd",
           "APPROVED": "Goedgekeurd",
@@ -90,7 +91,7 @@
         "supplier": "Leverancier",
         "noAccess": "Geen leverancier heeft toegang tot urenstaten ingeschakeld.",
         "reviewers": "Beoordelaars",
-        "reviewerHelp": "Selecteer de leden die uren mogen goedkeuren of betwisten.",
+        "reviewerHelp": "Selecteer wie goedkeuringsmails ontvangt en uren beoordeelt. Er moet minstens één beoordelaar toegewezen blijven.",
         "weekPeriod": "Week {week} · {period}",
         "history": "Geschiedenis",
         "historyActions": {

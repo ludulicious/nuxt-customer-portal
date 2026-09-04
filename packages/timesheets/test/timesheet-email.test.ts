@@ -43,7 +43,7 @@ const harness = (rows: unknown[][], failRecipient?: string) => {
     const result = rows.shift()
     assert.ok(result, 'Unexpected database query')
     const builder: Record<string, unknown> = {}
-    for (const method of ['from', 'where', 'innerJoin', 'limit']) {
+    for (const method of ['from', 'where', 'innerJoin', 'leftJoin', 'limit']) {
       builder[method] = () => builder
     }
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve)
@@ -57,6 +57,9 @@ const harness = (rows: unknown[][], failRecipient?: string) => {
     process: { env: { PUBLIC_URL: 'https://portal.example.com' } },
     console: { error: (...args: unknown[]) => errors.push(args) },
     require: (id: string) => {
+      if (id === './timesheet-repository') {
+        return { ensureClientReviewers: async () => {} }
+      }
       if (id.endsWith('/client-email-locale')) {
         return { getClientEmailLocale: async () => 'en' }
       }
@@ -136,6 +139,7 @@ test('automatic approval notifies the submitter and client reviewers without lea
   const h = harness([
     [person],
     [workspace],
+    [{ id: 'link', clientId: 'client' }],
     [{ id: 'r1', email: 'client@example.com', clientName: 'Client A', reviewId: 'review-a', version: 1 }]
   ])
   await h.notify({ ...submission, status: 'APPROVED' }, 'submitted')

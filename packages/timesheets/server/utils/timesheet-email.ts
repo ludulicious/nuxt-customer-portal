@@ -1,6 +1,6 @@
 import { formatTimesheetPeriod } from '../../shared/timesheet-dates'
 import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils/client-email-locale'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { getPortalEmailSettings, sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
@@ -120,11 +120,22 @@ export const notifyTimesheetEvent = async (
     }
     const outcome = event === 'submitted' ? 'approved' : event
     if (!replyClientId) {
-await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission.rejectionComment ?? '')
-}
+      await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission.rejectionComment ?? '')
+    }
     if (submission.status !== 'APPROVED') {
       return
     }
+    const links = await db
+      .select({ id: workspaceClient.id, clientId: workspaceClient.clientOrganizationId })
+      .from(workspaceClient)
+      .where(
+        and(
+          eq(workspaceClient.workspaceOrganizationId, submission.organizationId),
+          eq(workspaceClient.accessMode, 'REVIEW')
+        )
+      )
+    const { ensureClientReviewers } = await import('./timesheet-repository')
+    await Promise.all(links.map((link) => ensureClientReviewers(link.id, link.clientId)))
     const reviewers = await db
       .selectDistinct({
         id: user.id,
@@ -143,14 +154,23 @@ await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission
           eq(workspaceClient.accessMode, 'REVIEW')
         )
       )
-      .innerJoin(workspaceClientReviewer, eq(workspaceClientReviewer.workspaceClientId, workspaceClient.id))
-      .innerJoin(user, eq(user.id, workspaceClientReviewer.userId))
-      .innerJoin(
-        member,
-        and(eq(member.userId, user.id), eq(member.organizationId, workspaceClient.clientOrganizationId))
+      .innerJoin(member, eq(member.organizationId, workspaceClient.clientOrganizationId))
+      .innerJoin(user, eq(user.id, member.userId))
+      .leftJoin(
+        workspaceClientReviewer,
+        and(
+          eq(workspaceClientReviewer.workspaceClientId, workspaceClient.id),
+          eq(workspaceClientReviewer.userId, member.userId)
+        )
       )
       .innerJoin(organization, eq(organization.id, workspaceClient.clientOrganizationId))
-      .where(and(eq(timesheetClientReview.submissionId, submission.id), eq(timesheetClientReview.status, 'PENDING')))
+      .where(
+        and(
+          eq(timesheetClientReview.submissionId, submission.id),
+          eq(timesheetClientReview.status, 'PENDING'),
+          isNotNull(workspaceClientReviewer.userId)
+        )
+      )
     await Promise.all(
       reviewers
         .filter((reviewer) => !replyClientId || reviewer.clientId === replyClientId)

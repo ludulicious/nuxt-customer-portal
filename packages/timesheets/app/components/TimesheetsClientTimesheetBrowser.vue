@@ -53,6 +53,28 @@ const selectedId = computed(() =>
   typeof route.query[detailQueryKey.value] === 'string' ? String(route.query[detailQueryKey.value]) : ''
 )
 const selected = computed(() => listing.items.value.find((item) => item.id === selectedId.value) ?? null)
+const entryGroups = computed(() => {
+  type Entry = ReadonlyItem['entries'][number]
+  const groups = new Map<
+    string,
+    { key: string; date: string; project: string; activity: string; minutes: number; entries: Entry[] }
+  >()
+  for (const entry of selected.value?.entries ?? []) {
+    const key = JSON.stringify([entry.date, entry.project, entry.activity, entry.person])
+    const group = groups.get(key) ?? {
+      key,
+      date: entry.date,
+      project: entry.project,
+      activity: entry.activity,
+      minutes: 0,
+      entries: []
+    }
+    group.minutes += entry.minutes
+    group.entries.push(entry)
+    groups.set(key, group)
+  }
+  return [...groups.values()]
+})
 const filters = computed(() => [
   ...(isReview.value
     ? [
@@ -216,16 +238,22 @@ await listing.load()
         </UAlert>
         <div class="divide-y divide-default px-5">
           <div
-            v-for="entry in selected.entries"
-            :key="entry.id"
+            v-for="group in entryGroups"
+            :key="group.key"
             class="grid gap-2 py-4 sm:grid-cols-[7rem_minmax(0,1fr)_5rem]"
           >
-            <span class="text-sm text-muted">{{ formatDate(entry.date) }}</span>
-            <div>
-              <p class="text-sm font-medium">{{ entry.project }} · {{ entry.activity }}</p>
-              <p v-if="entry.note" class="mt-1 text-sm text-muted">{{ entry.note }}</p>
-            </div>
-            <strong class="text-sm sm:text-right">{{ hours(entry.minutes) }}</strong>
+            <span class="text-sm text-muted">{{ formatDate(group.date) }}</span>
+            <p class="text-sm font-medium">{{ group.project }} · {{ group.activity }}</p>
+            <strong class="text-sm sm:text-right">{{ hours(group.minutes) }}</strong>
+            <ul
+              v-if="group.entries.length > 1 || group.entries.some((entry) => entry.note?.trim())"
+              class="space-y-2 border-l-2 border-default pl-3 sm:col-start-2 sm:col-span-2"
+            >
+              <li v-for="entry in group.entries" :key="entry.id" class="flex items-start justify-between gap-4 text-sm">
+                <p class="whitespace-pre-line break-words text-muted">{{ entry.note }}</p>
+                <span class="shrink-0 tabular-nums">{{ hours(entry.minutes) }}</span>
+              </li>
+            </ul>
           </div>
         </div>
         <TimesheetsSubmissionTimeline v-if="isApprovalItem(selected)" class="p-5" :events="selected.timeline ?? []" />
