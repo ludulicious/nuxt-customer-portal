@@ -7,14 +7,26 @@ export type DocumentationCatalogEntry = {
 }
 export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
+    path: '/getting-started/first-workflow',
+    title: 'Your first portal workflow',
+    description: 'Set up a client, record and approve time, create an invoice, and check what your client can access.'
+  },
+  {
+    path: '/guides/client-access',
+    title: 'Give clients portal access',
+    description: 'Invite client members and control their access to shared timesheets, reviews, and issued invoices.'
+  },
+  {
     path: '/getting-started',
     title: 'Introduction',
-    description: 'Understand what Customer Portal provides, how it is structured, and where to begin.'
+    description:
+      'Start with client access, timesheets, and invoicing, then extend your Nuxt customer portal with your own modules.'
   },
   {
     path: '/getting-started/installation',
     title: 'Installation',
-    description: 'Install the Nuxt Customer Portal packages, configure PostgreSQL, and run the provider migrations.'
+    description:
+      'Create a Nuxt portal with client access, timesheets, approvals, and invoicing, then sign in as its owner.'
   },
   {
     path: '/getting-started/usage',
@@ -79,7 +91,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   },
   {
     path: '/modules/service-requests',
-    title: 'Service requests',
+    title: 'Service Requests example',
     description: 'A compact reference feature showing the complete Customer Portal layer lifecycle.'
   },
   {
@@ -177,14 +189,13 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   },
   {
     path: '/guides/service-requests',
-    title: 'Use service requests',
+    title: 'Use the Service Requests example',
     description: 'Create, find, update, and manage tenant-scoped service requests in Customer Portal.'
   },
   {
     path: '/guides/timesheet-setup',
     title: 'Set up a timesheet workspace',
-    description:
-      'Configure clients, activities, projects, team rates, approvals, and invoice defaults before work begins.'
+    description: 'Configure clients, activities, projects, team rates, and approvals before recording time.'
   },
   {
     path: '/guides/time-entry',

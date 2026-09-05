@@ -6,7 +6,8 @@ The site covers:
 
 - evaluating and installing Customer Portal;
 - understanding portal core and the feature registry;
-- using the timesheets, invoices, and service-request modules;
+- completing a first workflow with timesheets, approvals, invoicing, and client access;
+- studying Service Requests as an optional example extension;
 - looking up configuration, extension contracts, deployed APIs, and compatibility expectations;
 - building a business module as a Nuxt layer;
 - contributing code and documentation.
@@ -65,3 +66,26 @@ The production build uses the Nitro Node server. Marketing and documentation pag
 Every documentation page shows the immutable Customer Portal commit against which its behavior was reviewed. Defaults live in `shared/documentation.ts` and can be overridden with the public runtime variables in `.env.example`.
 
 When documentation moves to a newer product revision, update `NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT`, review affected guides and references, then run the complete verification suite. Documentation reports open in this repository with the page URL and verified Customer Portal revision prefilled; product bugs and module proposals remain in the Customer Portal repository.
+
+## Release checklist
+
+Prepare documentation changes on a branch. Publish the matching npm packages and verify the registry installation before deploying the updated installation guide or announcing the release.
+
+1. Confirm the intended package version in `content/1.getting-started/2.installation.md` matches every public package it installs. The current draft targets `0.1.0-alpha.0`; this is not a claim that those packages have been published.
+2. Run the docs checks below and `pnpm pack:check` from the repository root. Use `pnpm pack:consumer:pnpm` (and the other supported package-manager consumer checks) to verify tarballs outside workspace links. These checks do not replace the manual workflow.
+3. Follow the installation guide in an empty directory against locally packed packages and a disposable PostgreSQL database. Use exactly the direct dependencies from the guide: the broad consumer checks install every public package and can hide missing dependency declarations. Check the layout, owner login, client creation, time entry, approvals, and an invoice. Test client access using a separate client account and a test email recipient.
+4. Publish the package release using the repository's release process. Verify that all required package versions and their dependencies are available from npm.
+5. Repeat the exact registry installation commands from the guide in a fresh directory without workspace links or tarball overrides. Record the package versions and any setup corrections before publishing the docs.
+6. Check the deployment host's branch and auto-deploy settings before merging. The repository's GitHub workflows cover CI, npm publication, and portal images; they do not establish the docs host's deployment behavior. Keep this documentation branch unpublished until the registry verification passes.
+7. Deploy the matching docs and README, verify the public links, and then announce the release.
+
+Run from the repository root:
+
+```bash
+pnpm test:docs
+pnpm --filter @nuxt-customer-portal/docs lint
+pnpm --filter @nuxt-customer-portal/docs typecheck
+pnpm test:e2e:docs
+```
+
+The content tests check metadata, source links, internal routes, and the MCP catalog. Playwright builds the documentation and checks its rendered journeys and accessibility. Review new or changed pages at desktop and mobile widths as well.

@@ -98,6 +98,12 @@ export default defineNuxtConfig({
       scan: true,
       icons: [
         'lucide:terminal',
+        'lucide:waypoints',
+        'vscode-icons:file-type-css',
+        'vscode-icons:file-type-pnpm',
+        'vscode-icons:file-type-npm',
+        'vscode-icons:file-type-yarn',
+        'vscode-icons:file-type-bun',
         'vscode-icons:file-type-dotenv',
         'vscode-icons:file-type-typescript',
         'vscode-icons:file-type-json',

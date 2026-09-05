@@ -8,10 +8,10 @@ test.describe('marketing homepage', () => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/', { waitUntil: 'networkidle' })
 
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build your portal, layer by layer.')
-    await expect(page.getByRole('heading', { name: 'See your own portal take shape.' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('A customer portal you can make your own.')
+    await expect(page.getByRole('heading', { name: 'Try it with your own organization.' })).toBeVisible()
     await expect(page.getByTestId('hosted-evaluation-cta')).toHaveAttribute('href', 'https://portalnuxt.com')
-    await expect(page.getByRole('heading', { name: 'Help shape the portal.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Extend it around your business.' })).toBeVisible()
     await expect(page.getByRole('note', { name: 'Open-source license' })).toContainText(
       'open source under the MIT License'
     )
