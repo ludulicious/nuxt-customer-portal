@@ -143,7 +143,7 @@ test('configuration journey exposes the required production auth secret', async 
     'https://better-auth.com/docs/reference/options#secret'
   )
 
-  await page.goto('/getting-started/installation')
+  await page.goto('/getting-started/manual-installation')
   await expect(page.getByText('openssl rand -base64 32', { exact: false }).first()).toBeVisible()
   await expect(
     page.getByText('BETTER_AUTH_SECRET=<paste-the-generated-secret>', { exact: false }).first()

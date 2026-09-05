@@ -1,7 +1,6 @@
 {
   "name": "@nuxt-customer-portal/saas-configuration",
   "version": "0.1.0-alpha.0",
-  "private": true,
   "type": "module",
   "main": "./nuxt.config.ts",
   "exports": {
@@ -16,7 +15,8 @@
     "@nuxtjs/i18n": "^10.6.0",
     "drizzle-orm": "^0.45.2",
     "sharp": "^0.34.5",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@nuxt/ui": "^4.10.0"
   },
   "peerDependencies": {
     "nuxt": "^4.5.1",
@@ -25,5 +25,25 @@
   "devDependencies": {
     "nuxt": "^4.5.1",
     "vue": "^3.5.0"
+  },
+  "license": "MIT",
+  "homepage": "https://nuxt-customer-portal.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "app",
+    "server",
+    "shared",
+    "i18n",
+    "migrations",
+    "nuxt.config.ts",
+    "portal.manifest.mjs"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

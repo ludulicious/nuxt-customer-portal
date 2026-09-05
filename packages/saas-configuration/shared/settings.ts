@@ -135,7 +135,7 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     logoDark: ''
   },
   appearance: { theme: 'apex', colorMode: 'user-choice', primaryLight: '#ea580c', primaryDark: '#fb923c' },
-  enabledModules: [...portalModuleIds],
+  enabledModules: ['timesheets', 'invoices', 'invoice-timesheets'],
   content: { en: defaultLocaleContent('en'), nl: defaultLocaleContent('nl') }
 })
 

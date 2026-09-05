@@ -558,6 +558,9 @@ importers:
 
   packages/kit:
     dependencies:
+      '@clack/prompts':
+        specifier: ^1.7.0
+        version: 1.7.0
       better-auth:
         specifier: 1.6.25
         version: 1.6.25(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(better-sqlite3@12.11.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0))(pg@8.22.0)(prisma@5.22.0)(vitest@4.1.10(@opentelemetry/api@1.9.0)(@types/node@26.1.2)(happy-dom@20.11.2)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.5)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
@@ -630,6 +633,9 @@ importers:
 
   packages/saas-configuration:
     dependencies:
+      '@nuxt/ui':
+        specifier: ^4.10.0
+        version: 4.10.0(1646603f26f2c6c9f3e54282178b6ca9)
       '@nuxt-customer-portal/core':
         specifier: workspace:^
         version: link:../core

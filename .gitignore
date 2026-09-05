@@ -29,3 +29,6 @@ logs
 .history
 
 Secret Notes.md
+
+# Generated from the configurable host when packing the CLI
+/packages/kit/templates/

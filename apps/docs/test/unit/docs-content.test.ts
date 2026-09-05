@@ -192,11 +192,11 @@ describe('documentation content', () => {
     expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('@nuxt-customer-portal/preset')
-    expect(installation).toContain('pnpm add')
+    expect(installation).toContain('@nuxt-customer-portal/kit@0.1.0-alpha.0 init my-portal')
+    expect(installation).toContain('pnpm dlx')
     expect(installation).toContain('npm install')
-    expect(installation).toContain('yarn add')
-    expect(installation).toContain('bun add')
+    expect(installation).toContain('yarn dlx')
+    expect(installation).toContain('bunx')
   })
 
   it('maps documented product internals to source-backed monorepo links', () => {
@@ -287,7 +287,7 @@ describe('documentation content', () => {
       knownExampleOmissions: string[]
     }
     const configuration = readFileSync(join(contentRoot, '4.reference/2.configuration.md'), 'utf8')
-    const installation = readFileSync(join(contentRoot, '1.getting-started/2.installation.md'), 'utf8')
+    const installation = readFileSync(join(contentRoot, '1.getting-started/8.manual-installation.md'), 'utf8')
     const variables = [...environment.directVariables, ...environment.libraryVariables, ...environment.runtimeVariables]
 
     expect(new Set(variables).size).toBe(variables.length)

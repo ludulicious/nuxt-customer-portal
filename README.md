@@ -6,6 +6,18 @@ Start with client access, timesheets, approvals, and invoicing. Extend it with m
 
 [Documentation](https://nuxt-customer-portal.com) · [Try the demo](https://demo.nuxt-customer-portal.com) · [Installation](https://nuxt-customer-portal.com/getting-started/installation) · [Build a module](https://nuxt-customer-portal.com/contributing/create-a-layer)
 
+## Create your portal
+
+```bash
+npx @nuxt-customer-portal/kit@0.1.0-alpha.0 init my-portal
+```
+
+The wizard creates the configurable application, generates secrets, installs
+packages, prepares a new database, and creates your administrator. Then start the
+app and finish branding and module setup in your browser. The command requires
+matching published packages; see [Installation](https://nuxt-customer-portal.com/getting-started/installation)
+for prerequisites and the source-checkout option before publication.
+
 ## Start with a working workflow
 
 - **Your team** records time against client projects, submits weeks, and reviews approvals.

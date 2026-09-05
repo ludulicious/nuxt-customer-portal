@@ -379,13 +379,13 @@ export const assertCompatiblePortalVersions = (manifests) => {
 }
 
 export const resolvePortalManifests = async (config, cwd = process.cwd()) => {
-  const pending = [...config.layers]
+  const pending = config.layers.map((layer) => ({ layer, from: cwd }))
   const manifests = []
   const expandedSources = new Set()
 
   while (pending.length) {
-    const layer = pending.shift()
-    const manifest = typeof layer === 'string' ? await packageManifest(layer, cwd) : localManifest(layer, cwd)
+    const { layer, from } = pending.shift()
+    const manifest = typeof layer === 'string' ? await packageManifest(layer, from) : localManifest(layer, from)
     const existing = manifests.find((item) => item.id === manifest.id)
     if (existing) {
       if (existing.source !== manifest.source || existing.version !== manifest.version) {
@@ -394,10 +394,12 @@ export const resolvePortalManifests = async (config, cwd = process.cwd()) => {
     } else {
       manifests.push(manifest)
     }
-    for (const included of manifest.includes ?? []) {
-      if (!expandedSources.has(included)) {
-        expandedSources.add(included)
-        pending.push(included)
+    // Resolve a preset's includes from that package, including under pnpm's
+    // isolated layout. Consumers need not directly install every preset member.
+    if (!expandedSources.has(manifest.root)) {
+      expandedSources.add(manifest.root)
+      for (const included of manifest.includes ?? []) {
+        pending.push({ layer: included, from: manifest.root })
       }
     }
   }

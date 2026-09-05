@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { en, nl } from '@nuxt/ui/locale'
 import type { PortalSettings } from '@nuxt-customer-portal/saas-configuration/shared/settings'
-import { resolvePortalTheme } from '../../demo-apex/app/themes/portal-theme'
+import { resolvePortalTheme } from '@nuxt-customer-portal/saas-configuration/shared/theme'
 
 const { locale } = useI18n()
 const colorMode = useColorMode()

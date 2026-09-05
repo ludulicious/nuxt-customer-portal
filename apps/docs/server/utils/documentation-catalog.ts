@@ -7,6 +7,12 @@ export type DocumentationCatalogEntry = {
 }
 export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
+    path: '/getting-started/manual-installation',
+    title: 'Manual installation',
+    description:
+      'Create a Nuxt portal with client access, timesheets, approvals, and invoicing, then sign in as its owner.'
+  },
+  {
     path: '/getting-started/first-workflow',
     title: 'Your first portal workflow',
     description: 'Set up a client, record and approve time, create an invoice, and check what your client can access.'
@@ -26,7 +32,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     path: '/getting-started/installation',
     title: 'Installation',
     description:
-      'Create a Nuxt portal with client access, timesheets, approvals, and invoicing, then sign in as its owner.'
+      'Run the interactive setup command to create your own configurable portal, database, and administrator account.'
   },
   {
     path: '/getting-started/usage',

@@ -28,7 +28,9 @@
     "pack:consumer:bun": "node --import tsx scripts/verify-packages.ts --consumers --manager=bun",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release-packages": "changeset publish"
+    "release-packages": "changeset publish",
+    "test:starter": "node --import tsx --test packages/kit/test/starter.test.ts",
+    "pack:starter": "node --import tsx scripts/verify-packages.ts --starter --manager=pnpm"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",

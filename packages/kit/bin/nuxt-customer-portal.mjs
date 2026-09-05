@@ -16,6 +16,24 @@ import {
 
 const cwd = process.cwd()
 const args = process.argv.slice(2)
+
+if (['init', 'setup'].includes(args[0])) {
+  const { runStarterCommand } = await import('../src/setup.mjs')
+  await runStarterCommand(args[0], args.slice(1))
+  process.exit(process.exitCode || 0)
+}
+
+if (!args.length || ['--help', '-h'].includes(args[0])) {
+  console.log(`Usage: nuxt-customer-portal <command>
+  init [directory] [--no-install]  Create a configurable portal interactively
+  setup                          Prepare a generated portal's database and owner
+  doctor                         Check the installed portal providers
+  db status|migrate               Inspect or apply package migrations
+  provider seed|bootstrap         Prepare a provider organization
+  admin grant --email <email>      Grant an existing user's platform admin role`)
+  process.exit(0)
+}
+
 const configPath = ['portal.config.ts', 'portal.config.mjs', 'portal.config.js']
   .map((file) => resolve(cwd, file))
   .find(existsSync)
@@ -110,6 +128,8 @@ try {
     process.exit(result.status ?? 1)
   } else {
     console.log(`Usage:
+  nuxt-customer-portal init [directory] [--no-install]
+  nuxt-customer-portal setup
   nuxt-customer-portal doctor
   nuxt-customer-portal db status
   nuxt-customer-portal db migrate

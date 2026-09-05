@@ -4,15 +4,19 @@
   "commit": false,
   "fixed": [
     [
-      "@nuxt-customer-portal/core",
-      "@nuxt-customer-portal/ui",
-      "@nuxt-customer-portal/authentication",
-      "@nuxt-customer-portal/organizations",
       "@nuxt-customer-portal/administration",
+      "@nuxt-customer-portal/authentication",
+      "@nuxt-customer-portal/clients",
+      "@nuxt-customer-portal/core",
+      "@nuxt-customer-portal/invoice-timesheets",
+      "@nuxt-customer-portal/invoices",
+      "@nuxt-customer-portal/kit",
+      "@nuxt-customer-portal/organizations",
+      "@nuxt-customer-portal/preset",
+      "@nuxt-customer-portal/saas-configuration",
       "@nuxt-customer-portal/service-requests",
       "@nuxt-customer-portal/timesheets",
-      "@nuxt-customer-portal/preset",
-      "@nuxt-customer-portal/kit"
+      "@nuxt-customer-portal/ui"
     ]
   ],
   "access": "public",

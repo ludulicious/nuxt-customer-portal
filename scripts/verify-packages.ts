@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
+import { createStarter } from '../packages/kit/src/starter.mjs'
 
 const workspaceRoot = resolve(import.meta.dirname, '..')
 const packageDirectories = [
@@ -16,6 +17,7 @@ const packageDirectories = [
   'invoices',
   'invoice-timesheets',
   'preset',
+  'saas-configuration',
   'kit'
 ]
 const layerPackages = new Set(packageDirectories.filter((name) => name !== 'kit'))
@@ -45,6 +47,7 @@ const exportTargets = (value: unknown): string[] => {
 }
 
 const tarballs = new Map<string, string>()
+const starter = process.argv.includes('--starter')
 
 try {
   for (const directory of packageDirectories) {
@@ -119,6 +122,12 @@ try {
     if (directory === 'kit' && !existsSync(join(contents, 'bin', 'nuxt-customer-portal.mjs'))) {
       throw new Error(`${manifest.name} is missing its CLI`)
     }
+    if (directory === 'kit' && !existsSync(join(contents, 'templates', 'saas-portal', 'app', 'app.vue'))) {
+      throw new Error(`${manifest.name} is missing its configurable portal template`)
+    }
+    if (directory === 'saas-configuration' && !existsSync(join(contents, 'migrations', '0000_portal_settings.sql'))) {
+      throw new Error(`${manifest.name} is missing its settings migration`)
+    }
 
     const forbidden = /(?:#portal|#types|#layers\/|\/Users\/|\.\.\/\.\.\/packages\/)/
     for (const file of walk(contents).filter((file) => /\.(?:ts|vue|mjs|js|json|md)$/.test(file))) {
@@ -130,11 +139,12 @@ try {
   }
 
   const requestedManager = process.argv.find((argument) => argument.startsWith('--manager='))?.split('=')[1]
-  const requestedManagers = process.argv.includes('--consumers')
-    ? requestedManager
-      ? [requestedManager]
-      : ['pnpm', 'npm', 'yarn', 'bun']
-    : []
+  const requestedManagers =
+    process.argv.includes('--consumers') || starter
+      ? requestedManager
+        ? [requestedManager]
+        : ['pnpm', 'npm', 'yarn', 'bun']
+      : []
   for (const manager of requestedManagers) {
     try {
       execFileSync('sh', ['-c', `command -v ${manager}`], { stdio: 'ignore' })
@@ -143,9 +153,11 @@ try {
       continue
     }
     const fixture = join(temporaryRoot, `consumer-${manager}`)
-    mkdirSync(join(fixture, 'app'), { recursive: true })
+    if (!starter) {
+      mkdirSync(join(fixture, 'app'), { recursive: true })
+    }
     const dependencies = Object.fromEntries([...tarballs].map(([name, tarball]) => [name, `file:${tarball}`]))
-    const fixtureManifest: Record<string, unknown> = {
+    let fixtureManifest: Record<string, unknown> = {
       name: `portal-tarball-consumer-${manager}`,
       private: true,
       type: 'module',
@@ -157,6 +169,34 @@ try {
       },
       dependencies: { ...dependencies, nuxt: '4.5.1', vue: '3.5.40' },
       devDependencies: { '@types/node': '22.14.0', typescript: '6.0.3', 'vue-tsc': '3.3.9' }
+    }
+    if (starter) {
+      await createStarter(
+        {
+          directory: fixture,
+          organizationName: 'Starter Verification',
+          userName: 'Test Owner',
+          userEmail: 'owner@example.com',
+          packageManager: manager,
+          database: 'existing',
+          databaseUrl: 'postgresql://postgres:postgres@localhost:5432/portal_fixture',
+          port: 3000,
+          databasePort: 5433
+        },
+        { templateRoot: join(temporaryRoot, 'extracted', 'kit', 'package', 'templates', 'saas-portal') }
+      )
+      fixtureManifest = JSON.parse(readFileSync(join(fixture, 'package.json'), 'utf8'))
+      const declared = fixtureManifest.dependencies as Record<string, string>
+      for (const name of Object.keys(declared)) {
+        if (dependencies[name]) {
+          declared[name] = dependencies[name]
+        }
+      }
+      fixtureManifest.scripts = {
+        ...(fixtureManifest.scripts as Record<string, string>),
+        prepare: 'nuxt prepare',
+        doctor: 'nuxt-customer-portal doctor'
+      }
     }
     if (manager === 'pnpm') {
       fixtureManifest.pnpm = {
@@ -176,6 +216,7 @@ try {
     }
     if (manager === 'npm') {
       fixtureManifest.overrides = {
+        ...(starter ? dependencies : {}),
         '@unhead/vue': '3.2.3',
         '@nuxt/devtools': '3.4.0',
         '@vue/compiler-sfc': '3.5.40',
@@ -194,19 +235,21 @@ try {
       fixtureManifest.overrides = dependencies
     }
     writeFileSync(join(fixture, 'package.json'), JSON.stringify(fixtureManifest, null, 2))
-    if (manager === 'pnpm') {
+    if (manager === 'pnpm' && !starter) {
       writeFileSync(join(fixture, 'pnpm-workspace.yaml'), "packages:\n  - '.'\nminimumReleaseAge: 1440\n")
     }
-    writeFileSync(
-      join(fixture, 'portal.config.mjs'),
-      `import { definePortalConfig } from '@nuxt-customer-portal/kit'\nexport default definePortalConfig({ layers: ['@nuxt-customer-portal/preset', '@nuxt-customer-portal/service-requests', '@nuxt-customer-portal/timesheets', '@nuxt-customer-portal/invoices', '@nuxt-customer-portal/invoice-timesheets'] })\n`
-    )
-    writeFileSync(
-      join(fixture, 'nuxt.config.ts'),
-      `import portal from './portal.config.mjs'\nexport default defineNuxtConfig({ extends: portal.nuxtLayers })\n`
-    )
-    writeFileSync(join(fixture, 'tsconfig.json'), JSON.stringify({ extends: './.nuxt/tsconfig.json' }, null, 2))
-    writeFileSync(join(fixture, 'app', 'app.vue'), '<template><NuxtPage /></template>\n')
+    if (!starter) {
+      writeFileSync(
+        join(fixture, 'portal.config.mjs'),
+        `import { definePortalConfig } from '@nuxt-customer-portal/kit'\nexport default definePortalConfig({ layers: ['@nuxt-customer-portal/preset', '@nuxt-customer-portal/service-requests', '@nuxt-customer-portal/timesheets', '@nuxt-customer-portal/invoices', '@nuxt-customer-portal/invoice-timesheets'] })\n`
+      )
+      writeFileSync(
+        join(fixture, 'nuxt.config.ts'),
+        `import portal from './portal.config.mjs'\nexport default defineNuxtConfig({ extends: portal.nuxtLayers })\n`
+      )
+      writeFileSync(join(fixture, 'tsconfig.json'), JSON.stringify({ extends: './.nuxt/tsconfig.json' }, null, 2))
+      writeFileSync(join(fixture, 'app', 'app.vue'), '<template><NuxtPage /></template>\n')
+    }
 
     const installArgs: Record<string, string[]> = {
       pnpm: ['install'],
@@ -228,8 +271,12 @@ try {
   }
 
   console.log(
-    `Verified ${tarballs.size} public package tarballs${process.argv.includes('--consumers') ? ' and available clean consumers' : ''}.`
+    `Verified ${tarballs.size} public package tarballs${starter ? ' and the generated starter' : process.argv.includes('--consumers') ? ' and available clean consumers' : ''}.`
   )
 } finally {
-  rmSync(temporaryRoot, { recursive: true, force: true })
+  if (process.argv.includes('--keep-fixture')) {
+    console.log(`Kept verification files at ${temporaryRoot}`)
+  } else {
+    rmSync(temporaryRoot, { recursive: true, force: true })
+  }
 }
