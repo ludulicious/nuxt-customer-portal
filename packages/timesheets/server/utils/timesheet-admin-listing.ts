@@ -70,7 +70,7 @@ export const listProviderClientApprovalsPage = async (
 ) => {
   const search = query.search?.toLocaleLowerCase() ?? ''
   const [projects, clients] = await Promise.all([listProjects(organizationId), listClients(organizationId)])
-  const rows = (await listApprovalQueue(organizationId, actorUserId))
+  const rows = (await listApprovalQueue(organizationId, actorUserId, 'provider'))
     .flatMap((item) =>
       [
         ...item.clientReviews,

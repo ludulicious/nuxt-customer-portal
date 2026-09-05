@@ -27,6 +27,8 @@
       "body": "Inhoud (HTML ondersteund)",
       "footer": "Voettekst",
       "preview": "Voorbeeld",
+      "previewFailed": "Het e-mailvoorbeeld kon niet worden gemaakt",
+      "previewFailedHelp": "Probeer het opnieuw. Neem contact op met de portaalbeheerder als het probleem aanhoudt.",
       "testAddress": "Testontvanger",
       "sendTest": "Test verzenden",
       "testSent": "Test-e-mail verzonden",
@@ -41,7 +43,8 @@
       "validation": {
         "apiKey": "Vul minimaal 8 tekens in of laat de API-sleutel leeg",
         "fromEmail": "Vul een geldig e-mailadres voor de afzender in",
-        "templatePlaceholders": "Het sjabloon moet de velden subject, brand_name, body, footer en current_year bevatten",
+        "templatePlaceholders": "De template moet de body-placeholder bevatten.",
+        "unknownTemplatePlaceholder": "De template bevat een onbekende placeholder. Gebruik de beschikbare placeholders hieronder.",
         "subject": "Vul een onderwerp in",
         "body": "Vul de inhoud van de e-mail in"
       },

@@ -72,12 +72,21 @@ const save = async () => {
   }
 }
 const preview = async () => {
+  previewHtml.value = ''
   try {
     previewHtml.value = (
       await $fetch<{ html: string }>('/api/admin/email/preview', { method: 'POST', body: payload() })
     ).html
   } catch (error) {
-    toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
+    const response = error as { data?: { statusCode?: number; message?: string } }
+    toast.add({
+      title: t('admin.email.previewFailed'),
+      description:
+        response.data?.statusCode === 422 && response.data.message
+          ? response.data.message
+          : t('admin.email.previewFailedHelp'),
+      color: 'error'
+    })
   }
 }
 const sendTest = async () => {

@@ -27,6 +27,8 @@
       "body": "Body (HTML supported)",
       "footer": "Footer",
       "preview": "Preview",
+      "previewFailed": "Email preview could not be generated",
+      "previewFailedHelp": "Please try again. If the problem persists, contact your portal administrator.",
       "testAddress": "Test recipient",
       "sendTest": "Send test",
       "testSent": "Test email sent",
@@ -41,7 +43,8 @@
       "validation": {
         "apiKey": "Enter at least 8 characters or leave the API key empty",
         "fromEmail": "Enter a valid sender email address",
-        "templatePlaceholders": "The template must contain subject, brand_name, body, footer, and current_year placeholders",
+        "templatePlaceholders": "The template must contain the body placeholder.",
+        "unknownTemplatePlaceholder": "The template contains an unknown placeholder. Use the available placeholders listed below.",
         "subject": "Enter a subject",
         "body": "Enter the email body"
       },

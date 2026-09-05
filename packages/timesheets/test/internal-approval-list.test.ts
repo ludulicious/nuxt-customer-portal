@@ -95,3 +95,56 @@ test('client approvals filter by member ID before pagination even when names mat
   assert.equal(result.pagination.total, 5)
   assert.ok(result.items.every((item) => item.userId === 'member-b'))
 })
+
+test('admin internal queues use assignments while provider oversight retains all members', async () => {
+  const repository = readFileSync(new URL('../server/utils/timesheet-repository.ts', import.meta.url), 'utf8')
+  const queueCode = ts.transpileModule(
+    repository.slice(
+      repository.indexOf('export const listApprovalQueue ='),
+      repository.indexOf('export const reviewSubmission =')
+    ),
+    { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  for (const scope of [undefined, 'provider'] as const) {
+    let selection = 0
+    let selectedUsers: string[] = []
+    const context = {
+      exports: {} as { listApprovalQueue: (...args: unknown[]) => Promise<unknown[]> },
+      listPortalOrganizationMembers: async () => [
+        { id: 'me', organizationRole: 'admin' },
+        { id: 'coworker', organizationRole: 'member' }
+      ],
+      ensureSettings: async () => ({}),
+      workspaceSettings: {},
+      internalApproverAssignment: {},
+      timesheetSubmission: { userId: 'submission-user' },
+      weeklyTimesheet: {},
+      eq: () => ({}),
+      and: () => ({}),
+      desc: () => ({}),
+      inArray: (column: string, values: string[]) => {
+        if (column === 'submission-user') {
+selectedUsers = values
+}
+        return {}
+      },
+      db: {
+        select: () => {
+          const rows = [[{ enabled: true }], [{ submitterUserId: 'coworker' }], []][selection++]!
+          const query = {
+            from: () => query,
+            where: () => query,
+            innerJoin: () => query,
+            limit: async () => rows,
+            orderBy: async () => rows,
+            then: (resolve: (value: unknown) => unknown) => Promise.resolve(rows).then(resolve)
+          }
+          return query
+        }
+      }
+    }
+    runInNewContext(queueCode, context)
+    await context.exports.listApprovalQueue('org', 'me', scope)
+    assert.deepEqual(selectedUsers, scope === 'provider' ? ['me', 'coworker'] : ['coworker'])
+  }
+})

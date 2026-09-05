@@ -2295,7 +2295,8 @@ export const listInternalApprovalMembers = (organizationId: string, approverUser
 
 export const listApprovalQueue = async (
   organizationId: string,
-  approverUserId: string
+  approverUserId: string,
+  scope: 'assigned' | 'provider' = 'assigned'
 ): Promise<ApprovalQueueItemDto[]> => {
   const organizationMembers = await listPortalOrganizationMembers(organizationId)
   const isAdmin = organizationMembers.some(
@@ -2306,7 +2307,7 @@ export const listApprovalQueue = async (
     .from(workspaceSettings)
     .where(eq(workspaceSettings.organizationId, organizationId))
     .limit(1)
-  if (!workspace?.enabled && !isAdmin) {
+  if (!workspace?.enabled && !(scope === 'provider' && isAdmin)) {
     return []
   }
   const assignments = await db
@@ -2318,7 +2319,7 @@ export const listApprovalQueue = async (
         eq(internalApproverAssignment.approverUserId, approverUserId)
       )
     )
-  const submitterIds = isAdmin
+  const submitterIds = scope === 'provider' && isAdmin
     ? organizationMembers.map((item) => item.id)
     : assignments.map((item) => item.submitterUserId)
   if (!submitterIds.length) {

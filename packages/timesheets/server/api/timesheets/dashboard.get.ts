@@ -1,5 +1,5 @@
 import { selectClientDashboardApprovals } from '@nuxt-customer-portal/timesheets/shared/client-approval-dashboard'
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
 import {
   workspaceSettings,
@@ -78,7 +78,6 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
           and(
             eq(timesheetSubmission.organizationId, organizationId),
             eq(timesheetSubmission.userId, session.user.id),
-            lt(weeklyTimesheet.weekStartsOn, bootstrap.week.weekStartsOn),
             inArray(timesheetSubmission.status, ['SUBMITTED', 'REJECTED', 'APPROVED'])
           )
         )

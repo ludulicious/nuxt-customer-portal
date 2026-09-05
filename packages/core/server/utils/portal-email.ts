@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
+import { createError } from 'h3'
 import { Resend } from 'resend'
 import type {
   PortalEmailDefinition,
@@ -189,11 +190,11 @@ const replacePlaceholders = (input: string, values: Record<string, string>, allo
 export const validatePortalEmailTemplate = (template: string) => {
   const found = [...template.matchAll(placeholderPattern)].map((match) => match[1]!)
   if (!found.includes('body')) {
-    throw new Error('The email template must contain {{body}}')
+    throw createError({ statusCode: 422, message: 'The email template must contain {{body}}' })
   }
   const unknown = found.find((key) => !TEMPLATE_PLACEHOLDERS.has(key))
   if (unknown) {
-    throw new Error(`Unknown template placeholder: ${unknown}`)
+    throw createError({ statusCode: 422, message: `Unknown template placeholder: ${unknown}` })
   }
 }
 
@@ -202,7 +203,7 @@ export const validatePortalEmailText = (definition: PortalEmailDefinition, text:
   for (const value of [text.subject, text.body, text.footer ?? '']) {
     const unknown = [...value.matchAll(placeholderPattern)].map((match) => match[1]!).find((key) => !allowed.has(key))
     if (unknown) {
-      throw new Error(`Unknown ${definition.id} placeholder: ${unknown}`)
+      throw createError({ statusCode: 422, message: `Unknown ${definition.id} placeholder: ${unknown}` })
     }
   }
 }

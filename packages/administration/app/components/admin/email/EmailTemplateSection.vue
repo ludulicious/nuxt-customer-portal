@@ -28,9 +28,13 @@ const schema = z.object({
     .string()
     .max(100_000)
     .refine(
-      (value) =>
-        ['subject', 'brand_name', 'body', 'footer', 'current_year'].every((key) => value.includes(`{{${key}}}`)),
+      (value) => [...value.matchAll(/{{\s*([a-z0-9_]+)\s*}}/gi)].some((match) => match[1] === 'body'),
       t('admin.email.validation.templatePlaceholders')
+    )
+    .refine(
+      (value) =>
+        [...value.matchAll(/{{\s*([a-z0-9_]+)\s*}}/gi)].every((match) => templatePlaceholders.includes(match[1]!)),
+      t('admin.email.validation.unknownTemplatePlaceholder')
     )
 })
 const save = async () => {
@@ -65,7 +69,7 @@ const reset = async () => {
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" class="space-y-6" @submit="save">
+  <UForm novalidate :schema="schema" :state="state" class="space-y-6" @submit="save">
     <UCard>
       <template #header>
         <div class="flex items-center justify-between gap-3">
