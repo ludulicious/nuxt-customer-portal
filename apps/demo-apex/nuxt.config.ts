@@ -83,9 +83,9 @@ export default defineNuxtConfig({
     openAPI: {
       production: 'runtime',
       meta: {
-        title: 'ApexPro API',
+        title: 'Northstar Studio API',
         description:
-          'Interactive API documentation for the ApexPro customer portal. Requests are made using your current authenticated session and permissions.',
+          'Interactive API documentation for the Northstar Studio customer portal. Requests are made using your current authenticated session and permissions.',
         version: '1.0.0'
       },
       route: '/api-docs/openapi.raw.json',

@@ -4,6 +4,15 @@ import { resolvePortalTheme, resolvePortalThemeName } from './themes/portal-them
 
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
+useState('portal-runtime-settings', () => ({
+  branding: {
+    portalName: 'Northstar Studio',
+    tagline: 'Customer workspace',
+    markLight: '/brand/northstar-studio.svg',
+    markDark: '/brand/northstar-studio.svg'
+  },
+  appearance: { colorMode: 'user-choice' }
+}))
 const { locale } = useI18n()
 const uiLocale = computed(() => (locale.value === 'nl' ? nl : en))
 const activeThemeName = computed(() => resolvePortalThemeName(appConfig.portal.theme))
@@ -45,7 +54,7 @@ if (import.meta.client) {
 }
 
 useSeoMeta({
-  titleTemplate: '%s - ApexPro',
+  titleTemplate: '%s - Northstar Studio',
   ogImage: '/images/ogimage.png',
   twitterImage: '/images/ogimage.png',
   twitterCard: 'summary_large_image'

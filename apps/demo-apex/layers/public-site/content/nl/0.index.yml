@@ -1,7 +1,7 @@
-title: 'ApexPro Portaal voor Facilitaire Diensten'
+title: 'Northstar Studio Portaal voor Facilitaire Diensten'
 description: Beheer serviceorders, facturen, serviceverzoeken en SLA’s in één veilig portaal.
 seo:
-  title: ApexPro Facilitaire Diensten
+  title: Northstar Studio Facilitaire Diensten
   description: Eén portaal voor bedrijven om orders, facturen, verzoeken en SLA-prestaties te beheren.
 navigation: false
 hero:
@@ -19,7 +19,7 @@ hero:
       variant: subtle
 sections:
   - title: Gemaakt voor facility teams
-    description: ApexPro levert betrouwbare schoonmaak-, onderhouds- en coördinatiediensten, ondersteund door een transparant klantenportaal.
+    description: Northstar Studio levert betrouwbare schoonmaak-, onderhouds- en coördinatiediensten, ondersteund door een transparant klantenportaal.
     id: features
     orientation: horizontal
     features:
@@ -32,7 +32,7 @@ sections:
       - title: Serviceverzoeken
         description: Dien verzoeken in en volg ze op met duidelijke termijnen.
         icon: i-lucide-life-buoy
-  - title: Waarom ApexPro
+  - title: Waarom Northstar Studio
     description: Operationele betrouwbaarheid, duidelijke communicatie en meetbare resultaten.
     orientation: horizontal
     reverse: true
@@ -67,7 +67,7 @@ features:
       icon: i-lucide-bell
 cta:
   title: Klaar om te starten?
-  description: Log in om uw diensten te beheren of maak een account aan bij ApexPro.
+  description: Log in om uw diensten te beheren of maak een account aan bij Northstar Studio.
   links:
     - label: Aanmelden
       to: '/signup'
