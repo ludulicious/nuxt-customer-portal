@@ -41,14 +41,14 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       component: 'ServiceRequestsDashboardAttention',
       area: 'attention',
       size: 'half',
-      order: 30
+      order: 60
     },
     {
       id: 'service-requests-overview',
       component: 'ServiceRequestsDashboardOverview',
       area: 'aside',
       size: 'full',
-      order: 10
+      order: 50
     }
   ],
   clientIntegration: { moduleId: 'service-requests', labelKey: 'features.serviceRequests.navigation.myRequests' },
