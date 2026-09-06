@@ -35,6 +35,7 @@
     "title": "Contact Northstar Studio"
   },
   "home": {
+    "heroImageAlt": "Illustration of a software development workspace with application designs, code and connected systems",
     "links": {
       "dashboard": "My Dashboard"
     }

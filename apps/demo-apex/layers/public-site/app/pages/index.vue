@@ -77,8 +77,9 @@ definePageMeta({
         </template>
         <div class="relative flex justify-center items-center">
           <NuxtImg
-            src="/images/home/office.png"
-            alt="Our fake office"
+            src="/images/home/northstar-development.png"
+            :alt="t('home.heroImageAlt')"
+            format="webp"
             class="public-home-hero-image rounded-lg"
             height="600"
             width="1200"
