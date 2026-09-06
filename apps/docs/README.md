@@ -61,6 +61,16 @@ pnpm preview
 
 The production build uses the Nitro Node server. Marketing and documentation pages are prerendered for fast delivery, while raw Markdown, `llms.txt`, sitemap, robots, social images, and MCP endpoints remain available through the same deployment. Use a Nuxt/Nitro-compatible Node host rather than publishing only the generated static directory.
 
+The Docker deployment builds `apps/docs` independently and uses its own `pnpm-lock.yaml`. After changing the docs dependencies, update both the workspace lockfile and this standalone lockfile. From the repository root:
+
+```bash
+pnpm install --lockfile-only
+pnpm --dir apps/docs install --lockfile-only --ignore-workspace --ignore-scripts
+docker build --tag customer-portal-docs:local apps/docs
+```
+
+Keep `--frozen-lockfile` enabled in the Dockerfile. CI also builds this image to catch differences between the workspace and the deployment dependency graph.
+
 ## Source verification
 
 Every documentation page shows the immutable Customer Portal commit against which its behavior was reviewed. Defaults live in `shared/documentation.ts` and can be overridden with the public runtime variables in `.env.example`.
@@ -80,7 +90,7 @@ package after this initial release; subsequent GitHub releases can then publish
 without a local npm login. The workflow uses `release-npm-packages.yml`, owner
 `ludulicious`, repository `nuxt-customer-portal`, and permission to publish directly.
 
-1. Confirm the intended package version in `content/1.getting-started/2.installation.md` matches every public package it installs. The current guide uses the published `0.3.0` release, including the kit and the configurable portal package.
+1. Confirm the intended package version in `content/1.getting-started/2.installation.md` matches every public package it installs. The current guide uses the published `0.3.1` release, including the kit and the configurable portal package.
 2. Run the docs checks below and `pnpm pack:check` from the repository root. Use `pnpm pack:consumer:pnpm` (and the other supported package-manager consumer checks) to verify tarballs outside workspace links. These checks do not replace the manual workflow.
 3. Follow the installation guide in an empty directory against locally packed packages and a disposable PostgreSQL database. Generate the project with `init` and use exactly its declared dependencies: broad consumer checks that install every public package can hide missing dependency declarations. Verify both Docker and an existing empty PostgreSQL database, cancellation, and resuming setup. Check the layout, owner login, client creation, time entry, approvals, and an invoice. Test client access using a separate client account and a test email recipient.
 4. Publish the package release using the repository's release process. Verify that all required package versions and their dependencies are available from npm.

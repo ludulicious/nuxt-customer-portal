@@ -42,6 +42,14 @@ jobs:
       - run: pnpm test:e2e:demos
       - run: pnpm test:e2e:docs
 
+  docs-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build standalone documentation image
+        run: docker build --tag customer-portal-docs:ci apps/docs
+
   consumers:
     runs-on: ubuntu-latest
     timeout-minutes: 30

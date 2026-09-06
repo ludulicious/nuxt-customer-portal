@@ -3,5 +3,5 @@ export const documentationDefaults = {
   docsRepositoryBranch: 'master',
   feedbackRepositoryUrl: 'https://github.com/ludulicious/nuxt-customer-portal',
   productRepositoryUrl: 'https://github.com/ludulicious/nuxt-customer-portal',
-  productSourceCommit: 'c910d71e961798225617ea8cd4e4961166bdf20d'
+  productSourceCommit: '6141cb79867eb6338ec35ca8bc2ff953bce09da0'
 } as const
