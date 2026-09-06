@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     ]
   },
   runtimeConfig: {
+    portalDemo: { enabled: false },
     portalEmail: {
       templateStorage: 'assets:portal-core',
       brandingSource: 'runtime',

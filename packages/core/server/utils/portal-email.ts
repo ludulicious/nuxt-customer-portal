@@ -1,3 +1,4 @@
+import { isPortalDemo, rejectDemoAction } from './demo'
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { createError } from 'h3'
@@ -302,6 +303,9 @@ const providerConfiguration = async () => {
 }
 
 export const getPortalEmailProviderStatus = async () => {
+  if (isPortalDemo()) {
+    rejectDemoAction()
+  }
   const settings = await getPortalEmailSettings()
   if (!settings.configured) {
     return { ...settings, verifiedDomains: [] as string[] }
@@ -389,6 +393,9 @@ export const sendPortalEmail = async (input: {
   attachments?: PortalEmailAttachment[]
   idempotencyKey?: string
 }) => {
+  if (isPortalDemo()) {
+    rejectDemoAction()
+  }
   const [rendered, provider] = await Promise.all([
     renderPortalEmail({ ...input, inlineBrandAssets: true }),
     providerConfiguration()
@@ -415,6 +422,9 @@ export const sendPortalEmail = async (input: {
 }
 
 export const retrievePortalEmail = async (providerMessageId: string) => {
+  if (isPortalDemo()) {
+    rejectDemoAction()
+  }
   const provider = await providerConfiguration()
   const { data, error } = await new Resend(provider.apiKey).emails.get(providerMessageId)
   if (error) {

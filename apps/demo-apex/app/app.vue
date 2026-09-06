@@ -60,6 +60,7 @@ provide('navigation', navigation)
 <template>
   <UTheme :props="activeTheme.props" :ui="activeTheme.ui">
     <UApp :locale="uiLocale">
+      <DemoBanner />
       <NuxtLoadingIndicator />
       <NuxtLayout>
         <NuxtPage />

@@ -85,3 +85,5 @@ Run `pnpm dev:apex`, `pnpm dev:brutal`, `pnpm --filter @nuxt-customer-portal/saa
 The unchanged combined migration history is under `legacy/drizzle`. Use `db adopt-legacy` to verify and map a recognized installation before stamping package baselines.
 
 Copyright © 2026 Nuxt Customer Portal contributors. Distributed under the [MIT License](LICENSE).
+
+The example apps support an optional [anonymous shared demo](apps/demo-layer/README.md) with sample identities, six months of business history, and daily resets. Use a dedicated demo database and follow the deployment instructions before enabling it.

@@ -2,7 +2,7 @@
 import portal from './portal.config'
 
 export default defineNuxtConfig({
-  extends: portal.nuxtLayers,
+  extends: ['../demo-layer', ...portal.nuxtLayers],
   ssr: false,
   modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/ui', '@nuxt/content', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
   image: {

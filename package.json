@@ -14,6 +14,7 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm test:packages && pnpm test:docs",
+    "test:demo": "node --import tsx --test packages/core/test/demo-policy.test.ts apps/demo-layer/test/reset.test.ts",
     "test:packages": "node --import tsx --test packages/*/test/*.test.ts",
     "test:docs": "pnpm --filter @nuxt-customer-portal/docs test:docs",
     "test:e2e:docs": "pnpm --filter @nuxt-customer-portal/docs test:e2e",
