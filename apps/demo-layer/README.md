@@ -1,5 +1,7 @@
 # Shared interactive demo
 
+See the [PR screenshot guide](../../docs/issue-4-demo-screenshots.md) for the dashboard, user switcher, timesheets, invoices, and service-request screens.
+
 This private Nuxt layer is used only by `demo-apex` and `demo-brutal`. It is disabled by default. Regular portal installations retain normal authentication and email delivery.
 
 ## Deployment
