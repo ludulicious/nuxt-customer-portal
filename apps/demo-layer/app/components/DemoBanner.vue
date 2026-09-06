@@ -38,6 +38,14 @@ async function switchUser(id: string) {
       :model-value="userStore.currentUser?.id"
       :items="users.map((user) => ({ label: `${user.name} · ${nl ? user.labelNl : user.label}`, value: user.id }))"
       :disabled="pending"
+      variant="none"
+      :ui="{
+        base: 'rounded-md bg-amber-50 text-amber-950 font-medium ring ring-amber-400 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800',
+        trailingIcon: 'text-amber-800',
+        content: 'z-[110] rounded-md bg-amber-50 ring-amber-400',
+        item: 'text-amber-950 data-highlighted:not-data-disabled:text-amber-950 data-highlighted:not-data-disabled:before:bg-amber-200',
+        itemTrailingIcon: 'text-amber-800'
+      }"
       aria-labelledby="demo-user-label"
       class="w-80"
       @update:model-value="switchUser"
