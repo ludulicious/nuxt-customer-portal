@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/kit
 
+## 0.3.2
+
+### Patch Changes
+
+- 5f60571: Make the PostgreSQL connection URL visible and editable during interactive setup, and show its format, an example, and guidance for database credentials and connection options.
+
 ## 0.3.1
 
 ### Patch Changes

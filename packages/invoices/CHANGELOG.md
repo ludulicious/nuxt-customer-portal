@@ -1,5 +1,19 @@
 # @nuxt-customer-portal/invoices
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [d8c40f1]
+- Updated dependencies [5dcf164]
+- Updated dependencies [8815843]
+- Updated dependencies [6994c36]
+- Updated dependencies [f23f664]
+  - @nuxt-customer-portal/ui@0.3.2
+  - @nuxt-customer-portal/core@0.3.2
+  - @nuxt-customer-portal/clients@0.3.2
+  - @nuxt-customer-portal/organizations@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes
