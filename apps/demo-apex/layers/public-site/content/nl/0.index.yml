@@ -1,8 +1,8 @@
-title: 'Northstar Studio Portaal voor Facilitaire Diensten'
-description: Beheer serviceorders, facturen, serviceverzoeken en SLA’s in één veilig portaal.
+title: 'Software die past bij uw bedrijf'
+description: Northstar Studio ontwerpt en ontwikkelt webapplicaties, klantenportalen en integraties. Van het eerste idee tot verdere verbeteringen werken we samen met uw team.
 seo:
-  title: Northstar Studio Facilitaire Diensten
-  description: Eén portaal voor bedrijven om orders, facturen, verzoeken en SLA-prestaties te beheren.
+  title: Northstar Studio — Bureau voor softwareontwikkeling
+  description: Software op maat van Northstar Studio. Webapplicaties, klantenportalen en integraties, met een gedeelde werkruimte voor verzoeken, uren en facturen.
 navigation: false
 hero:
   links:
@@ -18,56 +18,56 @@ hero:
       color: neutral
       variant: subtle
 sections:
-  - title: Gemaakt voor facility teams
-    description: Northstar Studio levert betrouwbare schoonmaak-, onderhouds- en coördinatiediensten, ondersteund door een transparant klantenportaal.
+  - title: Van idee naar werkende software
+    description: We vertalen complexe werkprocessen naar software die prettig werkt en goed te onderhouden is. Samen bepalen we wat belangrijk is, bouwen we het en verbeteren we het.
     id: features
     orientation: horizontal
     features:
-      - title: Orders volgen
-        description: Volg serviceorders van aanvraag tot oplevering met realtime status.
-        icon: i-lucide-clipboard-list
-      - title: Facturen bekijken
-        description: Raadpleeg facturen en download PDF’s wanneer u wilt.
-        icon: i-lucide-receipt-text
-      - title: Serviceverzoeken
-        description: Dien verzoeken in en volg ze op met duidelijke termijnen.
-        icon: i-lucide-life-buoy
+      - title: Webapplicaties
+        description: Applicaties op maat voor uw manier van werken, van interne hulpmiddelen tot digitale producten voor uw klanten.
+        icon: i-lucide-code
+      - title: Klantenportalen
+        description: Geef uw klanten één plek om met uw team samen te werken en hun zaken te regelen.
+        icon: i-lucide-panels-top-left
+      - title: Integraties
+        description: Verbind bestaande systemen en automatiseer terugkerende taken met betrouwbare API’s.
+        icon: i-lucide-plug
   - title: Waarom Northstar Studio
-    description: Operationele betrouwbaarheid, duidelijke communicatie en meetbare resultaten.
+    description: Een ontwikkelpartner die u betrekt bij het werk, technische keuzes uitlegt en inzicht geeft in de voortgang.
     orientation: horizontal
     reverse: true
     features:
-      - title: Betrouwbare levering
-        description: Teams ingepland en gemonitord om uw servicevensters te halen.
+      - title: Bouwen in kleine stappen
+        description: Bekijk regelmatig werkende software en bepaal samen de volgende stap op basis van wat u leert.
         icon: i-lucide-calendar-check
-      - title: Transparante rapportage
-        description: SLA-dashboards en exporteerbare rapporten.
+      - title: Inzicht in het werk
+        description: Bekijk geregistreerde uren en facturen in dezelfde werkruimte als uw verzoeken.
         icon: i-lucide-chart-line
-      - title: Toegewijde support
-        description: Snelle reacties van ons portaalondersteuningsteam.
+      - title: Blijven verbeteren
+        description: Bespreek fouten, vragen en nieuwe ideeën terwijl uw product en bedrijf zich ontwikkelen.
         icon: i-lucide-headset
 features:
-  title: Wat u in het portaal kunt doen
-  description: Alles om uw facilitaire diensten op één plek te beheren.
+  title: Uw gedeelde projectwerkruimte
+  description: Werk samen met het team dat uw software bouwt, met verzoeken, geregistreerde uren en facturen op één plek.
   items:
-    - title: Orders
-      description: Maak, keur goed en volg werkbonnen met status en notities.
+    - title: Nieuwe functionaliteit
+      description: Deel een idee, beschrijf het probleem en volg de voortgang samen met ons team.
       icon: i-lucide-clipboard-check
     - title: Facturen
       description: Bekijk factuurhistorie, download PDF’s en beheer facturatiegegevens.
       icon: i-lucide-file-text
-    - title: Verzoeken
-      description: Dien nieuwe serviceverzoeken in met prioriteit en bijlagen.
+    - title: Fouten en ondersteuning
+      description: Meld een probleem met de context en prioriteit die we nodig hebben om het te onderzoeken.
       icon: i-lucide-mail-plus
-    - title: SLA-monitoring
-      description: Volg KPI’s met duidelijke dashboards en exports.
-      icon: i-lucide-gauge
+    - title: Urenstaten
+      description: Bekijk de uren die zijn geregistreerd op uw projecten en activiteiten.
+      icon: i-lucide-clock
     - title: Meldingen
-      description: Ontvang proactieve updates over geplande bezoeken en wijzigingen.
+      description: Blijf op de hoogte van wijzigingen in uw verzoeken en lopend werk.
       icon: i-lucide-bell
 cta:
-  title: Klaar om te starten?
-  description: Log in om uw diensten te beheren of maak een account aan bij Northstar Studio.
+  title: Samen uw volgende applicatie bouwen
+  description: Heeft u een project in gedachten? Neem contact op met Northstar Studio. Werkt u al met ons? Open uw werkruimte en ga verder waar u gebleven was.
   links:
     - label: Aanmelden
       to: '/signup'

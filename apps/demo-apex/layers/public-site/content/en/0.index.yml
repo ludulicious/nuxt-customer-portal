@@ -1,8 +1,8 @@
-title: 'Northstar Studio Facility Services Portal'
-description: Manage service orders, invoices, service requests and SLAs in one secure portal.
+title: 'Software built around your business'
+description: Northstar Studio designs and develops web applications, customer portals and integrations. From the first idea to ongoing improvements, we work alongside your team.
 seo:
-  title: Northstar Studio Facility Services
-  description: A unified portal for businesses to manage service orders, invoices, requests and SLA performance.
+  title: Northstar Studio — Software Development Agency
+  description: Custom software development by Northstar Studio. Web applications, customer portals and integrations, with a shared workspace for requests, hours and invoices.
 navigation: false
 hero:
   links:
@@ -18,56 +18,56 @@ hero:
       color: neutral
       variant: subtle
 sections:
-  - title: Built for facilities teams
-    description: Northstar Studio delivers reliable cleaning, maintenance and coordination services, backed by a transparent customer portal.
+  - title: From an idea to working software
+    description: We turn complex workflows into software that is clear to use and practical to maintain. Together, we define what matters, build it and improve it.
     id: features
     orientation: horizontal
     features:
-      - title: Track orders
-        description: Follow service orders from request to completion with real‑time status.
-        icon: i-lucide-clipboard-list
-      - title: View invoices
-        description: Access invoices and download PDFs anytime.
-        icon: i-lucide-receipt-text
-      - title: Service requests
-        description: Open and follow up requests with clear timelines.
-        icon: i-lucide-life-buoy
+      - title: Web applications
+        description: Custom applications for the way your business works, from internal tools to customer-facing products.
+        icon: i-lucide-code
+      - title: Customer portals
+        description: Give your customers one place to collaborate with your team and manage their work.
+        icon: i-lucide-panels-top-left
+      - title: Integrations
+        description: Connect your existing systems and automate repetitive tasks with dependable APIs.
+        icon: i-lucide-plug
   - title: Why Northstar Studio
-    description: Operational reliability, clear communication and measurable outcomes.
+    description: A development partner who keeps you involved, makes technical choices understandable and gives you visibility into the work.
     orientation: horizontal
     reverse: true
     features:
-      - title: Reliable delivery
-        description: Teams scheduled and monitored to meet your service windows.
+      - title: Build in small steps
+        description: Review working software regularly and use what you learn to decide what comes next.
         icon: i-lucide-calendar-check
-      - title: Transparent reporting
-        description: SLA dashboards and exportable reports.
+      - title: Understand the work
+        description: See recorded hours and invoices in the same workspace as your requests.
         icon: i-lucide-chart-line
-      - title: Dedicated support
-        description: Fast responses from our portal support team.
+      - title: Keep improving
+        description: Bring us bugs, questions and new ideas as your product and business evolve.
         icon: i-lucide-headset
 features:
-  title: What you can do in the portal
-  description: Everything you need to manage your facility services in one place.
+  title: Your shared project workspace
+  description: Stay connected to the team building your software, with requests, recorded hours and billing in one place.
   items:
-    - title: Orders
-      description: Create, approve and track work orders with statuses and notes.
+    - title: Feature requests
+      description: Share an idea, explain the problem and follow its progress with our team.
       icon: i-lucide-clipboard-check
     - title: Invoices
       description: View invoice history, download PDFs and manage billing details.
       icon: i-lucide-file-text
-    - title: Requests
-      description: Raise new service requests with priority and attachments.
+    - title: Bugs and support
+      description: Report an issue with the context and priority we need to investigate it.
       icon: i-lucide-mail-plus
-    - title: SLA Monitoring
-      description: Track KPIs with clear dashboards and exports.
-      icon: i-lucide-gauge
+    - title: Timesheets
+      description: Review hours recorded against your projects and activities.
+      icon: i-lucide-clock
     - title: Notifications
-      description: Receive proactive updates about planned visits and changes.
+      description: Keep track of updates to your requests and ongoing work.
       icon: i-lucide-bell
 cta:
-  title: Ready to get started?
-  description: Log in to manage your services, or create an account to join Northstar Studio.
+  title: Let’s build your next application
+  description: Have a project in mind? Talk to Northstar Studio. Already working with us? Open your workspace to pick up where you left off.
   links:
     - label: Sign up
       to: '/signup'
