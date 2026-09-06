@@ -28,6 +28,8 @@ BETTER_AUTH_URL=https://your-demo.example
 BETTER_AUTH_SECRET=your-unique-random-secret-at-least-32-characters
 ```
 
+The `apps/demo-apex/Dockerfile` sets `PORTAL_DEMO=true` before the Nuxt build and retains it in the image, so its server and public demo flags default to enabled. Its entrypoint checks the configuration, reports migration status, and applies pending migrations before starting Nuxt. A failed migration prevents the server from starting. Supply the dedicated demo database URL and authentication settings when starting the container; a separate manual migration step is not needed for this image. To override demo mode in a built image, set both `NUXT_PORTAL_DEMO_ENABLED` and `NUXT_PUBLIC_PORTAL_DEMO_ENABLED`; changing only `PORTAL_DEMO` at runtime does not change the compiled defaults.
+
 The server flag enforces restrictions independently of the public UI flag. Both flags must be enabled for the intended interactive experience. Use `localhost` for local URLs, for example `http://localhost:3052` for Brutal Works. Start with `PORTAL_DEMO=true pnpm dev:brutal` after migrating its database.
 
 The public home page remains accessible through the header brand link. Login and signup pages redirect to the populated dashboard. The persistent notice includes a selector for all seven fictional identities: system administrator; provider owner, administrator and member; and client owner, administrator and member. Switching creates a visitor-specific Better Auth session and reloads the dashboard, letting the existing permission system determine access. The selected identity survives a dataset reset. Business records are shared between all visitors.
