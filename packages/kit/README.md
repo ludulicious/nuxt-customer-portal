@@ -17,6 +17,12 @@ uses an empty database), and creates a verified administrator. Choose the passwo
 in the masked prompt; it is never stored in generated files or passed as a shell
 argument. Finish branding, modules, homepage, and legal settings in the browser.
 
+For your own PostgreSQL database, use a connection URL in the form
+`postgresql://username:password@host:5432/database`. Replace each part with your
+database details, or paste the URL from your database provider, including any
+connection options such as `?sslmode=require`. Percent-encode special characters
+in credentials (`@` becomes `%40`, for example). Setup saves the URL in `.env`.
+
 Use `--no-install` to generate files only. Run the generated project's `setup`
 script to resume after fixing an installation or database problem. Setup refuses
 non-empty unrelated databases, preserves existing files, and never resets an

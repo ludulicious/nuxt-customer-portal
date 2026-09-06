@@ -93,12 +93,28 @@ Use --no-install to generate files and run the printed setup commands later.`)
       ]
     })
   )
-  const databaseUrl =
-    database === 'existing'
-      ? await answer(
-          prompts.password({ message: 'PostgreSQL connection URL (kept in .env)', validate: validateDatabaseUrl })
-        )
-      : undefined
+  let databaseUrl
+  if (database === 'existing') {
+    prompts.note(
+      [
+        'Format: postgresql://username:password@host:5432/database',
+        'Example: postgresql://portal:my-password@localhost:5432/my_portal',
+        '',
+        'Replace the username, password, host, port, and database with your own.',
+        'Use an empty database. Your database provider may supply the full URL;',
+        'keep any options at the end, such as ?sslmode=require.',
+        'In usernames and passwords, encode special characters: @ becomes %40, # becomes %23.'
+      ].join('\n'),
+      'Connect to your PostgreSQL database'
+    )
+    databaseUrl = await answer(
+      prompts.text({
+        message: 'PostgreSQL connection URL (visible while editing; saved in .env)',
+        placeholder: 'postgresql://username:password@localhost:5432/my_portal',
+        validate: validateDatabaseUrl
+      })
+    )
+  }
   const port = await availablePort(3000)
   const databasePort = database === 'docker' ? await availablePort(5433) : 5433
   const generated = await createStarter({
