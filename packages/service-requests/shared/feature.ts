@@ -12,7 +12,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       icon: 'i-lucide-ticket',
       to: '/requests',
       audiences: ['authenticated'],
-      order: 20
+      order: 40
     }
   ],
   modules: [
@@ -23,7 +23,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       to: '/requests',
       routePrefixes: ['/requests', '/admin/requests'],
       audiences: ['authenticated'],
-      order: 20,
+      order: 40,
       menuItems: [
         {
           id: 'requests',
