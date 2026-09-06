@@ -51,12 +51,20 @@ export async function seedDemoData(client: PoolClient, day: string) {
     ['demo-garden', 'Greenhouse Collective', 'CLIENT'],
     ['demo-cycle', 'Canal Cycle Company', 'CLIENT']
   ]) {
-    await insert('public.organization', { id, name, slug: id, organization_type: type, created_at: ago(190) })
+    await insert('public.organization', {
+      id,
+      name,
+      slug: id,
+      logo: `/demo/logos/${id}.svg`,
+      organization_type: type,
+      created_at: ago(190)
+    })
   }
   for (const person of demoIdentities) {
     await insert('public."user"', {
       id: person.id,
       name: person.name,
+      image: `/demo/avatars/${person.id}.svg`,
       email: `${person.id}@example.test`,
       email_verified: true,
       role: person.role,

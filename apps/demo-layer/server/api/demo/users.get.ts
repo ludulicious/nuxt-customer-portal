@@ -5,5 +5,5 @@ export default defineEventHandler(() => {
   if (!isPortalDemo()) {
     throw createError({ statusCode: 404 })
   }
-  return demoIdentities
+  return demoIdentities.map((person) => ({ ...person, image: `/demo/avatars/${person.id}.svg` }))
 })
