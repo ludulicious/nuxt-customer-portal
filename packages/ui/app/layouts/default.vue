@@ -85,7 +85,7 @@ onMounted(async () => {
       </UDashboardSidebar>
 
       <NotificationsSlideover />
-      <UMain class="flex-1 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
+      <UMain class="flex-1 min-h-0 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
         <slot />
       </UMain>
     </UDashboardGroup>

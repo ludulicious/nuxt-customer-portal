@@ -13,15 +13,6 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       to: '/requests',
       audiences: ['authenticated'],
       order: 20
-    },
-    {
-      id: 'service-requests-admin',
-      labelKey: 'features.serviceRequests.navigation.manageRequests',
-      icon: 'i-lucide-list-checks',
-      to: '/admin/requests',
-      audiences: ['providerAdmin'],
-      location: 'admin',
-      order: 120
     }
   ],
   modules: [
@@ -40,20 +31,6 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
           icon: 'i-lucide-inbox',
           to: '/requests',
           audiences: ['authenticated']
-        },
-        {
-          id: 'new-request',
-          labelKey: 'features.serviceRequests.navigation.newRequest',
-          icon: 'i-lucide-plus',
-          to: '/requests/new',
-          audiences: ['authenticated']
-        },
-        {
-          id: 'manage-requests',
-          labelKey: 'features.serviceRequests.navigation.manageRequests',
-          icon: 'i-lucide-list-checks',
-          to: '/admin/requests',
-          audiences: ['providerAdmin']
         }
       ]
     }

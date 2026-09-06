@@ -2,18 +2,18 @@ import { z } from 'zod'
 
 export const createServiceRequestSchema = z.object({
   clientOrganizationId: z.string().min(1).max(128).optional(),
-  title: z.string().min(3).max(200),
-  description: z.string().min(10).max(5000),
+  title: z.string().trim().min(3).max(200),
+  description: z.string().trim().min(10).max(5000),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-  category: z.string().max(100).optional()
+  category: z.string().trim().max(100).optional()
 })
 
 export const updateServiceRequestSchema = z.object({
-  title: z.string().min(3).max(200).optional(),
-  description: z.string().min(10).max(5000).optional(),
+  title: z.string().trim().min(3).max(200).optional(),
+  description: z.string().trim().min(10).max(5000).optional(),
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-  category: z.string().max(100).optional()
+  category: z.string().trim().max(100).optional()
 })
 
 export const adminUpdateServiceRequestSchema = updateServiceRequestSchema.extend({

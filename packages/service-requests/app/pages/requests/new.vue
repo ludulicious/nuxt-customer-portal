@@ -29,9 +29,15 @@ const handleSubmit = async (data: ServiceRequestCreateInput) => {
 </script>
 
 <template>
-  <div class="container mx-auto py-8 max-w-2xl">
-    <h1 class="text-3xl font-bold mb-6">{{ t('features.serviceRequests.create') }}</h1>
+  <div class="mx-auto h-full min-h-0 w-full max-w-3xl overflow-y-auto px-4 py-5 sm:px-6">
+    <UButton to="/requests" icon="i-lucide-arrow-left" color="neutral" variant="ghost" class="mb-4">{{
+      t('features.serviceRequests.actions.back')
+    }}</UButton>
+    <h1 class="mb-2 flex items-center gap-3 text-xl font-semibold">
+      <UIcon name="i-lucide-ticket" class="size-5 text-primary" />{{ t('features.serviceRequests.create') }}
+    </h1>
 
-    <CustomerRequestForm :loading="loading" @submit="handleSubmit" @cancel="navigateTo('/requests')" />
+    <p class="mb-6 text-sm text-muted">{{ t('features.serviceRequests.list.createDescription') }}</p>
+    <UCard><CustomerRequestForm :loading="loading" @submit="handleSubmit" @cancel="navigateTo('/requests')" /></UCard>
   </div>
 </template>

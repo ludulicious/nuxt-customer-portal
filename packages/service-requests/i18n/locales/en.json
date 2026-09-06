@@ -91,7 +91,28 @@
         "empty": "No service requests found",
         "endOfList": "You've reached the end"
       },
-      "confirmDelete": "Are you sure you want to delete this service request? This action cannot be undone."
+      "confirmDelete": "Are you sure you want to delete this service request? This action cannot be undone.",
+      "list": {
+        "description": "Share requests, follow progress and keep track of the work for your organization.",
+        "adminDescription": "Triage requests, set priorities and coordinate the work across your clients.",
+        "search": "Search requests…",
+        "noMatches": "No matching requests",
+        "noMatchesDescription": "Try another search or adjust your filters.",
+        "emptyTitle": "No service requests yet",
+        "emptyDescription": "Create a request to share a question, report an issue or suggest an improvement.",
+        "createFirst": "Create your first request",
+        "createDescription": "Describe what you need and add enough context for the team to get started.",
+        "loadPrevious": "Load previous requests",
+        "unassigned": "Unassigned",
+        "previousAssignee": "Previously assigned team member"
+      },
+      "validation": {
+        "client": "Select a client.",
+        "title": "Enter a title between 3 and 200 characters.",
+        "description": "Enter a description between 10 and 5,000 characters.",
+        "category": "Use no more than 100 characters.",
+        "notes": "Use no more than 5,000 characters."
+      }
     }
   }
 }

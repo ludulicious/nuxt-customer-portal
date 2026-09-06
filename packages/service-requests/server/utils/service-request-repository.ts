@@ -5,7 +5,7 @@ import {
   type NewServiceRequestRecord,
   type ServiceRequestRecord
 } from '@nuxt-customer-portal/service-requests/server/db/schema/service-requests'
-import { organization } from '@nuxt-customer-portal/core/schema'
+import { organization, member, user } from '@nuxt-customer-portal/core/schema'
 import { alias } from 'drizzle-orm/pg-core'
 import type {
   ServiceRequestDashboardDto,
@@ -97,7 +97,7 @@ export const listServiceRequests = async (
         ? priorityRank
         : serviceRequest.createdAt
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, categories] = await Promise.all([
     db
       .select({ request: serviceRequest, clientName: clientOrganization.name })
       .from(serviceRequest)
@@ -106,11 +106,25 @@ export const listServiceRequests = async (
       .orderBy(filters.sortDir === 'asc' ? asc(orderExpression) : desc(orderExpression), asc(serviceRequest.id))
       .offset(filters.offset)
       .limit(filters.pageSize),
-    db.$count(serviceRequest, where)
+    db.$count(serviceRequest, where),
+    db
+      .selectDistinct({ category: serviceRequest.category })
+      .from(serviceRequest)
+      .where(
+        and(
+          ...filterConditions(
+            organizationId,
+            { page: 1, pageSize: 20, offset: 0, sortBy: 'createdAt', sortDir: 'desc' },
+            scope
+          )
+        )
+      )
+      .orderBy(asc(serviceRequest.category))
   ])
 
   return {
     items: rows.map((row) => toServiceRequestDto(row.request, row.clientName)),
+    categories: categories.flatMap((row) => (row.category ? [row.category] : [])),
     pagination: {
       total,
       page: filters.page,
@@ -183,3 +197,11 @@ export const updateServiceRequest = async (id: string, values: Partial<NewServic
 }
 
 export const deleteServiceRequest = (id: string) => db.delete(serviceRequest).where(eq(serviceRequest.id, id))
+
+export const listServiceRequestAssignees = (organizationId: string) =>
+  db
+    .select({ id: user.id, name: user.name, image: user.image })
+    .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
+    .where(eq(member.organizationId, organizationId))
+    .orderBy(asc(user.name), asc(user.id))

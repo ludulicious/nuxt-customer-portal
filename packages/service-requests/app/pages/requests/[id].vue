@@ -16,17 +16,19 @@ const request = ref<ServiceRequestWithRelations | null>(null)
 const loading = ref(true)
 const updating = ref(false)
 const showEditModal = ref(false)
+const showDeleteConfirm = ref(false)
+const { can } = useServiceRequestAccess()
 
 useSeoMeta({
   title: () => request.value?.title || t('features.serviceRequests.title')
 })
 
 const canEdit = computed(() => {
-  return request.value?.createdById === currentUser.value?.id
+  return request.value?.createdById === currentUser.value?.id || can('update')
 })
 
 const canDelete = computed(() => {
-  return request.value?.createdById === currentUser.value?.id
+  return request.value?.createdById === currentUser.value?.id || can('delete')
 })
 
 const backRoute = computed(() => {
@@ -93,10 +95,6 @@ const handleUpdate = async (data: ServiceRequestUpdateInput) => {
 }
 
 const handleDelete = async () => {
-  if (!confirm('Are you sure you want to delete this request?')) {
-    return
-  }
-
   try {
     await deleteRequest(requestId)
     toast.add({
@@ -115,7 +113,7 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <div class="container mx-auto py-8 max-w-4xl">
+  <div class="mx-auto h-full min-h-0 w-full max-w-5xl overflow-y-auto px-4 py-5 sm:px-6">
     <div class="mb-4">
       <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" :to="backRoute">
         {{ t('features.serviceRequests.actions.back') }}
@@ -132,30 +130,34 @@ const handleDelete = async () => {
       <UButton :to="backRoute">{{ t('features.serviceRequests.actions.back') }}</UButton>
     </div>
 
-    <div v-else>
+    <div v-else class="space-y-5">
       <CustomerRequestDetail
-        :request-id="request.id"
+        :request="request"
         :can-edit="canEdit"
         :can-delete="canDelete"
         @edit="showEditModal = true"
-        @delete="handleDelete"
+        @delete="showDeleteConfirm = true"
       />
 
-      <!-- Edit Modal -->
-      <UModal v-model="showEditModal">
-        <UCard>
-          <template #header>
-            <h2 class="text-xl font-bold">{{ t('features.serviceRequests.edit') }}</h2>
-          </template>
-
+      <ServiceRequestManagement v-if="can('manage')" :request="request" @updated="request = $event" />
+      <UModal v-model:open="showEditModal" :title="t('features.serviceRequests.edit')">
+        <template #body>
           <CustomerRequestForm
             :initial-data="request"
             :loading="updating"
             @submit="handleUpdate"
             @cancel="showEditModal = false"
           />
-        </UCard>
+        </template>
       </UModal>
+      <ConfirmationModal
+        v-model:open="showDeleteConfirm"
+        title="features.serviceRequests.delete"
+        message="features.serviceRequests.confirmDelete"
+        confirm-color="error"
+        confirm-text="common.delete"
+        @confirm="handleDelete"
+      />
     </div>
   </div>
 </template>

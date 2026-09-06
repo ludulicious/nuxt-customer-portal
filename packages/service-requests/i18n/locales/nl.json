@@ -91,7 +91,28 @@
         "empty": "Geen serviceaanvragen gevonden",
         "endOfList": "Je hebt het einde bereikt"
       },
-      "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+      "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      "list": {
+        "description": "Deel verzoeken, volg de voortgang en houd overzicht over het werk voor uw organisatie.",
+        "adminDescription": "Beoordeel verzoeken, stel prioriteiten en coördineer het werk voor uw klanten.",
+        "search": "Zoek verzoeken…",
+        "noMatches": "Geen overeenkomende verzoeken",
+        "noMatchesDescription": "Probeer een andere zoekterm of pas uw filters aan.",
+        "emptyTitle": "Nog geen serviceverzoeken",
+        "emptyDescription": "Maak een verzoek aan om een vraag te stellen, een probleem te melden of een verbetering voor te stellen.",
+        "createFirst": "Maak uw eerste verzoek",
+        "createDescription": "Beschrijf wat u nodig heeft en geef het team voldoende informatie om te beginnen.",
+        "loadPrevious": "Eerdere verzoeken laden",
+        "unassigned": "Niet toegewezen",
+        "previousAssignee": "Eerder toegewezen teamlid"
+      },
+      "validation": {
+        "client": "Selecteer een klant.",
+        "title": "Voer een titel van 3 tot 200 tekens in.",
+        "description": "Voer een beschrijving van 10 tot 5.000 tekens in.",
+        "category": "Gebruik maximaal 100 tekens.",
+        "notes": "Gebruik maximaal 5.000 tekens."
+      }
     }
   }
 }
