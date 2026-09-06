@@ -3,11 +3,23 @@ const config = useRuntimeConfig()
 const { locale } = useI18n()
 const userStore = useUserStore()
 const pending = ref(false)
-useHead({ style: [{ textContent: 'body:has([data-demo-banner]) { padding-bottom: 7rem; }' }] })
+const banner = ref<HTMLElement | null>(null)
+const bannerHeight = ref(0)
+let resizeObserver: ResizeObserver | undefined
+useHead(() => ({
+  style: [{ textContent: `:root { --portal-top-bar-height: ${bannerHeight.value}px; }` }]
+}))
+onBeforeUnmount(() => resizeObserver?.disconnect())
 const users = ref<Array<{ id: string; name: string; label: string; labelNl: string; image: string }>>([])
 const nl = computed(() => locale.value === 'nl')
 onMounted(async () => {
   if (config.public.portalDemo?.enabled) {
+    if (banner.value) {
+      const updateHeight = () => (bannerHeight.value = banner.value?.getBoundingClientRect().height ?? 0)
+      updateHeight()
+      resizeObserver = new ResizeObserver(updateHeight)
+      resizeObserver.observe(banner.value)
+    }
     users.value = await $fetch('/api/demo/users')
   }
 })
@@ -25,8 +37,9 @@ async function switchUser(id: string) {
 <template>
   <aside
     v-if="config.public.portalDemo?.enabled"
+    ref="banner"
     data-demo-banner
-    class="fixed inset-x-0 bottom-0 z-[100] flex flex-wrap items-center justify-center gap-3 border-t-2 border-amber-400 bg-amber-100 px-4 py-3 text-sm text-amber-950 shadow-[0_-4px_20px_rgb(0_0_0/0.15)]"
+    class="fixed inset-x-0 top-0 z-[100] flex flex-wrap items-center justify-center gap-3 border-b-2 border-amber-400 bg-amber-100 px-4 py-3 text-sm text-amber-950"
     aria-label="Demo"
   >
     <span class="rounded-md bg-amber-950 px-2 py-1 text-xs font-bold tracking-wider text-amber-100">DEMO</span>
@@ -54,7 +67,7 @@ async function switchUser(id: string) {
         itemTrailingIcon: 'text-amber-800'
       }"
       aria-labelledby="demo-user-label"
-      class="w-80"
+      class="w-80 max-w-full"
       @update:model-value="switchUser"
     />
   </aside>
