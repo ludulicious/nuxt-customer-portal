@@ -1,3 +1,5 @@
+import { isPortalDemo } from './demo'
+import { demoMessage, isDemoRequestAllowed } from '../../shared/demo-policy'
 import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
@@ -35,7 +37,7 @@ const registrationMode = ['open', 'invitation-only', 'disabled'].includes(proces
   : portalAuthConfig.registrationMode
 const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED, portalAuthConfig.githubEnabled)
 const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED, portalAuthConfig.googleEnabled)
-const systemAdminEmails = parseSystemAdminEmails(process.env.ADMIN_EMAILS)
+const systemAdminEmails = isPortalDemo() ? new Set<string>() : parseSystemAdminEmails(process.env.ADMIN_EMAILS)
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
@@ -55,6 +57,15 @@ export const auth = betterAuth({
   }),
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      if (
+        isPortalDemo() &&
+        !isDemoRequestAllowed(ctx.request?.method || (ctx.body ? 'POST' : 'GET'), `/api/auth${ctx.path}`)
+      ) {
+        throw new APIError('FORBIDDEN', {
+          code: 'DEMO_RESTRICTED',
+          message: demoMessage(ctx.headers?.get('accept-language') || '')
+        })
+      }
       if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') {
         return
       }

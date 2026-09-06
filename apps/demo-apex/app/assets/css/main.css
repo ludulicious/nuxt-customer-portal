@@ -113,7 +113,7 @@
   --color-accent-950: #450a0a;
 }
 
-/* Keep the ApexPro identity on one line inside the dense desktop module bar. */
+/* Keep the Northstar Studio identity on one line inside the dense desktop module bar. */
 html[data-portal-theme='apex'] .portal-header .portal-wordmark {
   font-size: 1.25rem;
   line-height: 1.25;

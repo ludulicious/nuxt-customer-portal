@@ -41,13 +41,17 @@ onMounted(async () => {
 <template>
   <div class="dashboard-layout relative min-h-screen">
     <!-- AppHeader - fixed at top -->
-    <div class="fixed top-0 left-0 right-0 z-50">
+    <div class="fixed left-0 right-0 z-50" style="top: var(--portal-top-bar-height, 0px)">
       <div class="mx-auto w-full max-w-[1600px] px-4">
         <AppHeader />
       </div>
     </div>
 
-    <UDashboardGroup unit="rem" class="px-4 mx-auto max-w-[1600px]! w-full!">
+    <UDashboardGroup
+      unit="rem"
+      class="px-4 mx-auto max-w-[1600px]! w-full!"
+      style="top: var(--portal-top-bar-height, 0px)"
+    >
       <UDashboardSidebar
         id="default"
         v-model:open="open"
@@ -81,7 +85,7 @@ onMounted(async () => {
       </UDashboardSidebar>
 
       <NotificationsSlideover />
-      <UMain class="flex-1 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
+      <UMain class="flex-1 min-h-0 min-w-0" :class="isImpersonating ? 'pt-32 lg:pt-28' : 'pt-20 lg:pt-16'">
         <slot />
       </UMain>
     </UDashboardGroup>

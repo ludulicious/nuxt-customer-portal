@@ -16,14 +16,6 @@ export const useServiceRequestMenu = () => {
       }
     ]
 
-    if (isOrganizationAdmin.value) {
-      items.push({
-        label: t('features.serviceRequests.navigation.manageRequests'),
-        to: '/admin/requests',
-        icon: 'i-lucide-settings'
-      })
-    }
-
     return items
   })
 

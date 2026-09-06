@@ -1,5 +1,6 @@
 import {
   findServiceRequest,
+  listServiceRequestAssignees,
   toServiceRequestDto,
   updateServiceRequest
 } from '@nuxt-customer-portal/service-requests/server/utils/service-request-repository'
@@ -31,8 +32,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = adminUpdateServiceRequestSchema.parse(await readBody(event))
+  if (data.assignedToId && data.assignedToId !== existing.assignedToId) {
+    const assignees = await listServiceRequestAssignees(scope.providerOrganizationId)
+    if (!assignees.some((user) => user.id === data.assignedToId)) {
+      throw createError({ statusCode: 400, message: 'Assignee must belong to the provider organization' })
+    }
+  }
   const row = await updateServiceRequest(id, {
     ...data,
+    ...(data.assignedToId !== undefined ? { assignedToId: data.assignedToId || null } : {}),
     resolvedAt: data.status === 'RESOLVED' ? new Date() : existing.resolvedAt,
     closedAt: data.status === 'CLOSED' ? new Date() : existing.closedAt
   })

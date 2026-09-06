@@ -27,8 +27,13 @@ definePageMeta({
           :ui="{ leading: 'bg-primary/10 p-3 rounded-lg' }"
         >
           <template #footer>
-            <UButton to="mailto:support@apexpro.example" variant="ghost" color="primary" icon="i-lucide-external-link">
-              support@apexpro.example
+            <UButton
+              to="mailto:support@northstar.example"
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-external-link"
+            >
+              support@northstar.example
             </UButton>
           </template>
         </UPageCard>
@@ -94,13 +99,13 @@ definePageMeta({
       :links="[
         {
           label: t('contact.cta.sales'),
-          to: 'mailto:sales@apexpro.example',
+          to: 'mailto:sales@northstar.example',
           color: 'primary',
           size: 'lg'
         },
         {
           label: t('contact.cta.support'),
-          to: 'mailto:support@apexpro.example',
+          to: 'mailto:support@northstar.example',
           variant: 'outline',
           size: 'lg'
         }

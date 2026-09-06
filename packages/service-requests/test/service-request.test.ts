@@ -8,7 +8,11 @@ import layerNl from '../i18n/locales/nl.json' with { type: 'json' }
 import coreEn from '../../core/i18n/locales/en.json' with { type: 'json' }
 import coreNl from '../../core/i18n/locales/nl.json' with { type: 'json' }
 import { serviceRequestFeature } from '../shared/feature'
-import { filterServiceRequestSchema } from '../server/utils/service-request-validation'
+import {
+  createServiceRequestSchema,
+  updateServiceRequestSchema,
+  filterServiceRequestSchema
+} from '../server/utils/service-request-validation'
 
 const objectKeys = (value: unknown, prefix = ''): string[] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -91,3 +95,20 @@ function sourceFiles(directory: URL): URL[] {
     return /\.(?:ts|vue)$/.test(entry.name) ? [url] : []
   })
 }
+
+test('request validation trims input and rejects blank titles and descriptions', () => {
+  assert.equal(createServiceRequestSchema.safeParse({ title: '   ', description: '          ' }).success, false)
+  assert.equal(updateServiceRequestSchema.safeParse({ title: '   ' }).success, false)
+  assert.deepEqual(
+    createServiceRequestSchema.parse({
+      title: '  A request  ',
+      description: '  Enough detail to investigate.  ',
+      category: '  Support  '
+    }),
+    {
+      title: 'A request',
+      description: 'Enough detail to investigate.',
+      category: 'Support'
+    }
+  )
+})

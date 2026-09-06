@@ -12,16 +12,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       icon: 'i-lucide-ticket',
       to: '/requests',
       audiences: ['authenticated'],
-      order: 20
-    },
-    {
-      id: 'service-requests-admin',
-      labelKey: 'features.serviceRequests.navigation.manageRequests',
-      icon: 'i-lucide-list-checks',
-      to: '/admin/requests',
-      audiences: ['providerAdmin'],
-      location: 'admin',
-      order: 120
+      order: 40
     }
   ],
   modules: [
@@ -32,7 +23,7 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       to: '/requests',
       routePrefixes: ['/requests', '/admin/requests'],
       audiences: ['authenticated'],
-      order: 20,
+      order: 40,
       menuItems: [
         {
           id: 'requests',
@@ -40,20 +31,6 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
           icon: 'i-lucide-inbox',
           to: '/requests',
           audiences: ['authenticated']
-        },
-        {
-          id: 'new-request',
-          labelKey: 'features.serviceRequests.navigation.newRequest',
-          icon: 'i-lucide-plus',
-          to: '/requests/new',
-          audiences: ['authenticated']
-        },
-        {
-          id: 'manage-requests',
-          labelKey: 'features.serviceRequests.navigation.manageRequests',
-          icon: 'i-lucide-list-checks',
-          to: '/admin/requests',
-          audiences: ['providerAdmin']
         }
       ]
     }
@@ -64,14 +41,14 @@ export const serviceRequestFeature: PortalFeatureDefinition<ServiceRequestAction
       component: 'ServiceRequestsDashboardAttention',
       area: 'attention',
       size: 'half',
-      order: 30
+      order: 60
     },
     {
       id: 'service-requests-overview',
       component: 'ServiceRequestsDashboardOverview',
       area: 'aside',
       size: 'full',
-      order: 10
+      order: 50
     }
   ],
   clientIntegration: { moduleId: 'service-requests', labelKey: 'features.serviceRequests.navigation.myRequests' },

@@ -56,6 +56,7 @@ export interface ServiceRequestPagination {
 export interface ServiceRequestListResponse {
   items: ServiceRequestDto[]
   pagination: ServiceRequestPagination
+  categories?: string[]
 }
 
 export interface ServiceRequestDashboardDto {

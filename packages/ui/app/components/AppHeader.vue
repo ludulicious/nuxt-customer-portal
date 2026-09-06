@@ -168,7 +168,11 @@ const stopImpersonating = async () => {
     <template #left>
       <div class="flex items-center gap-3">
         <!-- Logo Icon -->
-        <NuxtLink to="/" class="shrink-0" :aria-label="runtimeBrandName">
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          :aria-label="runtimeBrandName"
+        >
           <div class="relative">
             <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain" />
             <svg
@@ -193,31 +197,31 @@ const stopImpersonating = async () => {
               <rect x="18" y="20" width="2" height="5" fill="var(--portal-logo-surface)" />
             </svg>
           </div>
-        </NuxtLink>
 
-        <!-- Neutral fallback wordmark; host shells can replace the layout entirely. -->
-        <div class="hidden flex-col sm:flex">
-          <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-            {{ runtimeBrandName }}
-          </span>
-          <div class="-mt-1 flex items-center gap-1">
-            <span class="text-sm leading-tight text-gray-600 dark:text-gray-400">
-              {{ runtimeTagline }}
+          <!-- Neutral fallback wordmark; host shells can replace the layout entirely. -->
+          <div class="hidden flex-col sm:flex">
+            <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+              {{ runtimeBrandName }}
             </span>
-            <UButton
-              v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
-              :aria-label="t('menu.switchOrganization')"
-              :title="t('menu.switchOrganization')"
-              icon="i-lucide-arrow-left-right"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              square
-              class="hidden size-6 text-muted hover:text-highlighted lg:inline-flex"
-              @click="showOrgSwitcherModal = true"
-            />
+            <div class="-mt-1 flex items-center gap-1">
+              <span class="text-sm leading-tight text-gray-600 dark:text-gray-400">
+                {{ runtimeTagline }}
+              </span>
+            </div>
           </div>
-        </div>
+        </NuxtLink>
+        <UButton
+          v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
+          :aria-label="t('menu.switchOrganization')"
+          :title="t('menu.switchOrganization')"
+          icon="i-lucide-arrow-left-right"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          square
+          class="hidden size-6 text-muted hover:text-highlighted lg:inline-flex"
+          @click="showOrgSwitcherModal = true"
+        />
       </div>
     </template>
 

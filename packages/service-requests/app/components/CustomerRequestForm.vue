@@ -39,13 +39,26 @@ watch(
   }
 )
 
-const schema = z.object({
-  clientOrganizationId: activeOrganizationType.value === 'PROVIDER' ? z.string().min(1) : z.string().optional(),
-  title: z.string().min(3).max(200),
-  description: z.string().min(10).max(5000),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
-  category: z.string().max(100).optional()
-})
+const schema = computed(() =>
+  z.object({
+    clientOrganizationId:
+      activeOrganizationType.value === 'PROVIDER'
+        ? z.string().min(1, t('features.serviceRequests.validation.client'))
+        : z.string().optional(),
+    title: z
+      .string()
+      .trim()
+      .min(3, t('features.serviceRequests.validation.title'))
+      .max(200, t('features.serviceRequests.validation.title')),
+    description: z
+      .string()
+      .trim()
+      .min(10, t('features.serviceRequests.validation.description'))
+      .max(5000, t('features.serviceRequests.validation.description')),
+    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+    category: z.string().trim().max(100, t('features.serviceRequests.validation.category')).optional()
+  })
+)
 
 const { priorityOptions, getStatusBadgeText, getStatusColor } = useServiceRequests()
 
@@ -55,7 +68,7 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <UForm :state="state" :schema="schema" class="w-full" @submit="handleSubmit">
+  <UForm :state="state" :schema="schema" novalidate class="w-full" @submit="handleSubmit">
     <!-- Wrap in real DOM nodes so spacing is guaranteed -->
     <div class="space-y-6">
       <ClientsClientPicker
@@ -130,7 +143,14 @@ const handleSubmit = () => {
 
       <div class="pt-4 border-t border-default">
         <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-          <UButton type="button" variant="outline" size="lg" :disabled="loading" @click="$emit('cancel')">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            :disabled="loading"
+            @click="$emit('cancel')"
+          >
             {{ t('common.cancel') }}
           </UButton>
           <UButton type="submit" color="primary" size="lg" :loading="loading">

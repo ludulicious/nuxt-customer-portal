@@ -4,7 +4,7 @@ const showFooter = computed(() => route.meta?.public === true)
 </script>
 
 <template>
-  <div class="portal-layout min-h-screen">
+  <div class="portal-layout min-h-screen" style="padding-top: var(--portal-top-bar-height, 0px)">
     <div class="mx-auto w-full max-w-[1600px] px-4">
       <AppHeader />
     </div>

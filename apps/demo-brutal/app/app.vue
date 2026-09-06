@@ -12,6 +12,7 @@ useHead({
 
 <template>
   <UApp :locale="uiLocale">
+    <DemoBanner />
     <NuxtLoadingIndicator color="oklch(48% 0.22 28)" />
     <NuxtLayout>
       <NuxtPage />

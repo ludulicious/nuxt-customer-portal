@@ -1,76 +1,64 @@
 <script setup lang="ts">
 import type { ServiceRequest } from '@nuxt-customer-portal/service-requests/shared/types/service-request'
 
-const props = defineProps<{
-  requestId: string
-  canEdit?: boolean
-  canDelete?: boolean
-}>()
-const { t } = useI18n()
-const { getPriorityColor } = useServiceRequests()
-defineEmits<{
-  edit: []
-  delete: []
-}>()
-const { getRequest } = useServiceRequests()
-const request = ref<ServiceRequest | null>(await getRequest(props.requestId))
-
-const formatDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString()
-}
+defineProps<{ request: ServiceRequest; canEdit?: boolean; canDelete?: boolean }>()
+defineEmits<{ edit: []; delete: [] }>()
+const { t, locale } = useI18n()
+const { getPriorityColor, getPriorityBadgeText, getStatusColor, getStatusBadgeText } = useServiceRequests()
+const formatDate = (date: string) =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(date))
 </script>
 
 <template>
-  <div v-if="request" class="space-y-6">
-    <div class="flex justify-between items-start">
-      <div>
-        <div class="flex gap-2 mt-2">
-          <UBadge :color="getPriorityColor(request.priority)">
-            {{ request.priority }}
-          </UBadge>
-          <StatusBadge :status="request.status" />
-          <UBadge v-if="request.category" variant="soft">
-            {{ request.category }}
-          </UBadge>
+  <UCard>
+    <template #header>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <h1 class="break-words text-xl font-semibold text-highlighted">{{ request.title }}</h1>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <UBadge :color="getStatusColor(request.status)" variant="subtle">{{
+              getStatusBadgeText(request.status)
+            }}</UBadge>
+            <UBadge :color="getPriorityColor(request.priority)" variant="subtle">{{
+              getPriorityBadgeText(request.priority)
+            }}</UBadge>
+            <UBadge v-if="request.category" color="neutral" variant="subtle">{{ request.category }}</UBadge>
+          </div>
+        </div>
+        <div v-if="canEdit || canDelete" class="flex gap-2">
+          <UButton v-if="canEdit" icon="i-lucide-pencil" color="neutral" variant="outline" @click="$emit('edit')">{{
+            t('common.edit')
+          }}</UButton>
+          <UButton
+            v-if="canDelete"
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            :aria-label="t('features.serviceRequests.delete')"
+            @click="$emit('delete')"
+          />
         </div>
       </div>
-
-      <div class="flex gap-2">
-        <UButton v-if="canEdit" variant="ghost" @click="$emit('edit')">
-          {{ t('features.serviceRequests.edit') }}
-        </UButton>
-        <UButton v-if="canDelete" variant="ghost" color="error" @click="$emit('delete')">
-          {{ t('features.serviceRequests.delete') }}
-        </UButton>
-      </div>
-    </div>
-
-    <USeparator />
-
-    <div class="prose dark:prose-invert max-w-none">
-      <h3>{{ t('features.serviceRequests.fields.description') }}</h3>
-      <p>{{ request.description }}</p>
-    </div>
-
-    <USeparator />
-
-    <div class="grid grid-cols-2 gap-4 text-sm">
-      <!-- <div>
-        <span class="font-semibold">{{ t('features.serviceRequests.fields.createdBy') }}:</span>
-        {{ request.createdBy?.name || request.createdBy?.email }}
-      </div> -->
+    </template>
+    <div class="space-y-6">
       <div>
-        <span class="font-semibold">{{ t('features.serviceRequests.fields.createdAt') }}:</span>
-        {{ formatDate(request.createdAt) }}
+        <h2 class="text-sm font-semibold text-highlighted">{{ t('features.serviceRequests.fields.description') }}</h2>
+        <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted">{{ request.description }}</p>
       </div>
-      <!-- <div v-if="request.assignedTo">
-        <span class="font-semibold">{{ t('features.serviceRequests.fields.assignedTo') }}:</span>
-        {{ request.assignedTo.name || request.assignedTo.email }}
-      </div> -->
-      <div v-if="request.resolvedAt">
-        <span class="font-semibold">{{ t('features.serviceRequests.fields.resolvedAt') }}:</span>
-        {{ formatDate(request.resolvedAt) }}
-      </div>
+      <dl class="grid grid-cols-1 gap-4 border-t border-default pt-4 text-sm sm:grid-cols-3">
+        <div v-if="request.clientName">
+          <dt class="text-muted">{{ t('features.serviceRequests.fields.client') }}</dt>
+          <dd class="mt-1 font-medium">{{ request.clientName }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">{{ t('features.serviceRequests.fields.createdAt') }}</dt>
+          <dd class="mt-1 font-medium">{{ formatDate(request.createdAt) }}</dd>
+        </div>
+        <div v-if="request.resolvedAt">
+          <dt class="text-muted">{{ t('features.serviceRequests.fields.resolvedAt') }}</dt>
+          <dd class="mt-1 font-medium">{{ formatDate(request.resolvedAt) }}</dd>
+        </div>
+      </dl>
     </div>
-  </div>
+  </UCard>
 </template>

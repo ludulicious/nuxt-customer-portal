@@ -23,6 +23,10 @@ RUN pnpm install --frozen-lockfile
 # Rebuild native modules for the target platform
 RUN pnpm rebuild
 
+# Enable the server and public demo defaults when Nuxt builds runtimeConfig.
+# Keep the flag in the image environment for container startup too.
+ENV PORTAL_DEMO=true
+
 RUN pnpm --filter @nuxt-customer-portal/demo-apex build
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
@@ -38,7 +42,7 @@ RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=5 \
-  CMD curl --fail --silent http://127.0.0.1:3000/api/health || exit 1
+  CMD curl --fail --silent http://localhost:3000/api/health || exit 1
 
 # Set the entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

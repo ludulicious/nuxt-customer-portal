@@ -45,6 +45,8 @@ export const useAdminServiceRequests = () => {
   }
 
   return {
+    getAssignees: () =>
+      $fetch<Array<{ id: string; name: string; image: string | null }>>('/api/service-requests/admin/assignees'),
     requests: readonly(requests),
     loading: readonly(loading),
     error: readonly(error),
