@@ -10,6 +10,12 @@ const b = await request.newContext({ baseURL })
 const session = await (await a.get('/api/auth/get-session')).json()
 assert.equal(session.user.id, 'demo-admin')
 assert.equal((await (await a.get('/api/auth/permissions')).json()).role, 'admin')
+const invoiceBootstrap = await a.get('/api/invoices/admin/bootstrap')
+assert.equal(invoiceBootstrap.status(), 200)
+const { organizationProfile } = await invoiceBootstrap.json()
+for (const field of ['address', 'registrationNumber', 'vatNumber', 'iban', 'bic', 'invoiceEmail']) {
+  assert.ok(organizationProfile[field]?.trim(), `Demo sender must include ${field} so invoice creation is available`)
+}
 for (const [method, path] of [
   ['POST', '/api/auth/admin/ban-user'],
   ['POST', '/api/auth/admin/unban-user'],

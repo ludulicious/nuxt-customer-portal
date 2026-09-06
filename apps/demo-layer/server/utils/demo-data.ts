@@ -1,6 +1,16 @@
 import type { PoolClient } from 'pg'
 import { demoIdentities } from './identities'
 
+// Deliberately fictional identifiers, never usable for real payments or tax reporting.
+export const demoInvoiceSender = {
+  address: 'Example Street 12\n1000 AA Amsterdam\nNetherlands',
+  registrationNumber: '00000000',
+  vatNumber: 'NL000000000B00',
+  iban: 'NL00DEMO0000000000',
+  bic: 'DEMONL2A',
+  invoiceEmail: 'billing@example.test'
+} as const
+
 export const demoDay = (date = new Date()) =>
   new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Amsterdam',
@@ -82,8 +92,12 @@ export async function seedDemoData(client: PoolClient, day: string) {
   await insert('invoices.settings', {
     organization_id: 'demo-studio',
     enabled: true,
-    address: 'Example Street 12, Amsterdam',
-    invoice_email: 'billing@example.test'
+    address: demoInvoiceSender.address,
+    registration_number: demoInvoiceSender.registrationNumber,
+    vat_number: demoInvoiceSender.vatNumber,
+    iban: demoInvoiceSender.iban,
+    bic: demoInvoiceSender.bic,
+    invoice_email: demoInvoiceSender.invoiceEmail
   })
   for (const [id, name, address] of [
     ['demo-garden', 'Greenhouse Collective', 'Sample Lane 8, Utrecht'],
@@ -281,7 +295,11 @@ export async function seedDemoData(client: PoolClient, day: string) {
         due_date: date(days - 30),
         subject: 'Monthly design and development',
         sender_name: 'Northstar Studio',
-        sender_address: 'Example Street 12, Amsterdam',
+        sender_address: demoInvoiceSender.address,
+        sender_registration: demoInvoiceSender.registrationNumber,
+        sender_vat_number: demoInvoiceSender.vatNumber,
+        sender_iban: demoInvoiceSender.iban,
+        sender_bic: demoInvoiceSender.bic,
         recipient_name: clientId === 'demo-garden' ? 'Greenhouse Collective' : 'Canal Cycle Company',
         recipient_address: 'Sample Lane 8, Netherlands',
         recipient_email: `${clientId}@example.test`,
