@@ -114,7 +114,13 @@ export async function createStarter(input, options = {}) {
     )
   }
   await mkdir(directory, { recursive: true })
-  await cp(template, directory, { recursive: true, force: false, errorOnExist: true })
+  for (const entry of await readdir(template)) {
+    await cp(join(template, entry), join(directory, entry), {
+      recursive: true,
+      force: false,
+      errorOnExist: true
+    })
+  }
   const cli = 'node --env-file=.env ./node_modules/@nuxt-customer-portal/kit/bin/nuxt-customer-portal.mjs'
   const projectName = slugify(basename(directory))
   const metadata = {

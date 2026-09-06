@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/kit
 
+## 0.3.1
+
+### Patch Changes
+
+- Fix starter generation on Node 24 by copying template entries into the empty destination without trying to copy over the destination directory itself. Existing files remain protected from overwriting.
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # Nuxt Customer Portal
 
+## 0.3.1
+
+Fix starter generation on Node 24. Template files now copy into new or existing
+empty project directories without triggering `ERR_FS_CP_EEXIST`; existing user
+files remain protected. CI checks the starter on Node 22 and Node 24.
+
+All official packages use `0.3.1` to preserve matching versions.
+
 ## 0.3.0
 
 The first npm release of the configurable customer portal and its 13 public

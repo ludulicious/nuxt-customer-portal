@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/organizations
 
+## 0.3.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.3.1
+- @nuxt-customer-portal/ui@0.3.1
+
 ## 0.3.0
 
 Declare the Nuxt UI dependency used by the package's public components and types,

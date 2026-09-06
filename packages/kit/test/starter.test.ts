@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -28,6 +28,7 @@ test('starter generates a portable host with unique private secrets and no works
     const templateRoot = join(temp, 'template')
     await prepareTemplate(templateRoot)
     const first = await createStarter({ ...input, directory: join(temp, 'first') }, { templateRoot })
+    await mkdir(join(temp, 'second'))
     const second = await createStarter({ ...input, directory: join(temp, 'second') }, { templateRoot })
     const manifest = JSON.parse(await readFile(join(first.directory, 'package.json'), 'utf8'))
     const env = await readFile(join(first.directory, '.env'), 'utf8')
@@ -55,6 +56,10 @@ test('starter generates a portable host with unique private secrets and no works
     assert.doesNotMatch(await readFile(join(first.directory, '.env.example'), 'utf8'), /[a-f0-9]{48}/)
     assert.equal(first.metadata.userEmail, input.userEmail)
     assert.equal('userPassword' in first.metadata, false)
+    assert.equal(
+      await readFile(join(second.directory, 'app/app.vue'), 'utf8'),
+      await readFile(join(first.directory, 'app/app.vue'), 'utf8')
+    )
   } finally {
     await rm(temp, { recursive: true, force: true })
   }

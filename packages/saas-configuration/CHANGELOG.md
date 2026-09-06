@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.3.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.3.1
+- @nuxt-customer-portal/ui@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
