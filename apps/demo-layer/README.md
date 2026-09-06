@@ -28,7 +28,7 @@ BETTER_AUTH_SECRET=your-unique-random-secret-at-least-32-characters
 
 The server flag enforces restrictions independently of the public UI flag. Both flags must be enabled for the intended interactive experience. Use `localhost` for local URLs, for example `http://localhost:3052` for Brutal Works. Start with `PORTAL_DEMO=true pnpm dev:brutal` after migrating its database.
 
-The app redirects its entry and login pages to the populated dashboard. The persistent notice includes a selector for all seven fictional identities: system administrator; provider owner, administrator and member; and client owner, administrator and member. Switching creates a visitor-specific Better Auth session and reloads the dashboard, letting the existing permission system determine access. The selected identity survives a dataset reset. Business records are shared between all visitors.
+The public home page remains accessible through the header brand link. Login and signup pages redirect to the populated dashboard. The persistent notice includes a selector for all seven fictional identities: system administrator; provider owner, administrator and member; and client owner, administrator and member. Switching creates a visitor-specific Better Auth session and reloads the dashboard, letting the existing permission system determine access. The selected identity survives a dataset reset. Business records are shared between all visitors.
 
 ## Restrictions and external effects
 
