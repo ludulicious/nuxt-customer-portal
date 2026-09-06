@@ -9,7 +9,10 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "db:doctor": "node --env-file=.env ../../packages/kit/bin/nuxt-customer-portal.mjs doctor",
+    "db:status": "node --env-file=.env ../../packages/kit/bin/nuxt-customer-portal.mjs db status",
+    "db:migrate": "node --env-file=.env ../../packages/kit/bin/nuxt-customer-portal.mjs db migrate"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.121",

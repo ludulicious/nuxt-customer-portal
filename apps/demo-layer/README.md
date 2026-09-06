@@ -6,6 +6,16 @@ This private Nuxt layer is used only by `demo-apex` and `demo-brutal`. It is dis
 
 Provision a **new, dedicated PostgreSQL database with a name ending in `_demo`**. Apply the selected demo app's usual portal migrations. Do not bootstrap real users or configure production email/OAuth credentials. The first initialization refuses databases containing users. Never point a demo at a regular deployment's database.
 
+From either `apps/demo-apex` or `apps/demo-brutal`, configure its `.env` and run:
+
+```sh
+pnpm run db:doctor
+pnpm run db:status
+pnpm run db:migrate
+```
+
+These scripts load `.env` from the selected app. `db:doctor` checks the portal configuration, `db:status` reports migration status, and `db:migrate` applies pending migrations.
+
 For local development or a build, set `PORTAL_DEMO=true`. For an already-built image, set both Nuxt runtime variables:
 
 ```dotenv
