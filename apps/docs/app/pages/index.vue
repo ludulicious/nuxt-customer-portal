@@ -57,7 +57,8 @@ defineOgImage('DocsSatori', {
             <UIcon name="i-lucide-scale" class="size-4 shrink-0" aria-hidden="true" />
             <p>
               {{ page.hero.license.text }}
-              <NuxtLink :to="page.hero.license.linkTo">{{ page.hero.license.linkLabel }}</NuxtLink>.
+              <NuxtLink :to="page.hero.license.linkTo">{{ page.hero.license.linkLabel }}</NuxtLink
+              >.
             </p>
           </div>
         </div>
@@ -144,6 +145,5 @@ defineOgImage('DocsSatori', {
         </ol>
       </UContainer>
     </section>
-
   </div>
 </template>

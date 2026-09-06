@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-customer-portal/kit",
-  "version": "0.1.0-alpha.0",
+  "version": "0.3.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -12,6 +12,7 @@
   "types": "./src/runtime.d.ts",
   "files": [
     "LICENSE",
+    "CHANGELOG.md",
     "bin",
     "src",
     "README.md",

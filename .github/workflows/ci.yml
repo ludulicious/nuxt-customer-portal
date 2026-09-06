@@ -14,8 +14,8 @@ concurrency:
 
 env:
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
-  PUBLIC_URL: http://127.0.0.1:3000
-  BETTER_AUTH_URL: http://127.0.0.1:3000
+  PUBLIC_URL: http://localhost:3000
+  BETTER_AUTH_URL: http://localhost:3000
   BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
   PORTAL_REGISTRATION_MODE: open
 

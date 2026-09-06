@@ -71,7 +71,16 @@ When documentation moves to a newer product revision, update `NUXT_PUBLIC_PRODUC
 
 Prepare documentation changes on a branch. Publish the matching npm packages and verify the registry installation before deploying the updated installation guide or announcing the release.
 
-1. Confirm the intended package version in `content/1.getting-started/2.installation.md` matches every public package it installs. The current draft targets `0.1.0-alpha.0`, including the kit and the now-public configurable portal package; this is not a claim that those packages have been published.
+For the first npm publication, sign in with `npm login` using an account that can
+publish under `@nuxt-customer-portal`. Run `pnpm release-packages --dry-run`, then
+`pnpm release-packages` from the reviewed release commit. This packs with pnpm and
+publishes the resulting tarballs with npm. It skips versions already published,
+so a partial publication can be resumed. Configure trusted publishing for each
+package after this initial release; subsequent GitHub releases can then publish
+without a local npm login. The workflow uses `release-npm-packages.yml`, owner
+`ludulicious`, repository `nuxt-customer-portal`, and permission to publish directly.
+
+1. Confirm the intended package version in `content/1.getting-started/2.installation.md` matches every public package it installs. The current draft targets `0.3.0`, including the kit and the now-public configurable portal package; this is not a claim that those packages have been published.
 2. Run the docs checks below and `pnpm pack:check` from the repository root. Use `pnpm pack:consumer:pnpm` (and the other supported package-manager consumer checks) to verify tarballs outside workspace links. These checks do not replace the manual workflow.
 3. Follow the installation guide in an empty directory against locally packed packages and a disposable PostgreSQL database. Generate the project with `init` and use exactly its declared dependencies: broad consumer checks that install every public package can hide missing dependency declarations. Verify both Docker and an existing empty PostgreSQL database, cancellation, and resuming setup. Check the layout, owner login, client creation, time entry, approvals, and an invoice. Test client access using a separate client account and a test email recipient.
 4. Publish the package release using the repository's release process. Verify that all required package versions and their dependencies are available from npm.

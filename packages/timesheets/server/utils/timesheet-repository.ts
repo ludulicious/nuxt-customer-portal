@@ -2319,9 +2319,10 @@ export const listApprovalQueue = async (
         eq(internalApproverAssignment.approverUserId, approverUserId)
       )
     )
-  const submitterIds = scope === 'provider' && isAdmin
-    ? organizationMembers.map((item) => item.id)
-    : assignments.map((item) => item.submitterUserId)
+  const submitterIds =
+    scope === 'provider' && isAdmin
+      ? organizationMembers.map((item) => item.id)
+      : assignments.map((item) => item.submitterUserId)
   if (!submitterIds.length) {
     return []
   }

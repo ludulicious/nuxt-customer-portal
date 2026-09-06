@@ -45,3 +45,5 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Publish unpublished package versions
         run: pnpm release-packages
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}

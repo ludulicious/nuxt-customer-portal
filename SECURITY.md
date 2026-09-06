@@ -24,6 +24,6 @@ Vulnerabilities specific to the documentation site or its deployment use the sam
 
 ## Supported versions and disclosure
 
-The packages are currently `0.1.0-alpha.0` and do not yet have security-support windows. Pin exact prerelease versions and review the [compatibility and release policy](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before upgrading.
+The packages are currently `0.3.0` and do not yet have security-support windows. Pin exact package versions and review the [compatibility and release policy](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before upgrading.
 
 The project does not currently promise an acknowledgement or remediation time. Please allow maintainers a reasonable opportunity to investigate and coordinate a fix before any public disclosure.

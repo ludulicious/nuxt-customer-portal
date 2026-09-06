@@ -5,8 +5,8 @@ import { changePendingInvitation } from '@nuxt-customer-portal/core/server/utils
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
-throw createError({ statusCode: 401, message: 'Unauthorized' })
-}
+    throw createError({ statusCode: 401, message: 'Unauthorized' })
+  }
   const organizationId = getRouterParam(event, 'id')!
   if (
     !(await checkOrganizationPermission(session, organizationId, 'invitation', 'create')) ||

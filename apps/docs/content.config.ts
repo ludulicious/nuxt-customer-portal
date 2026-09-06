@@ -47,9 +47,7 @@ export default defineContentConfig({
           title: z.string(),
           description: z.string(),
           link: z.object({ label: z.string(), to: z.string() }),
-          paths: z.array(
-            z.object({ number: z.string(), title: z.string(), description: z.string(), to: z.string() })
-          )
+          paths: z.array(z.object({ number: z.string(), title: z.string(), description: z.string(), to: z.string() }))
         }),
         technology: z.object({
           title: z.string(),

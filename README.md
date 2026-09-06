@@ -9,7 +9,7 @@ Start with client access, timesheets, approvals, and invoicing. Extend it with m
 ## Create your portal
 
 ```bash
-npx @nuxt-customer-portal/kit@0.1.0-alpha.0 init my-portal
+npx @nuxt-customer-portal/kit@0.3.0 init my-portal
 ```
 
 The wizard creates the configurable application, generates secrets, installs
@@ -50,7 +50,7 @@ Service Requests is an optional example extension for developers. It demonstrate
 | Configure the included application | [`apps/saas-portal`](apps/saas-portal) and [customization](https://nuxt-customer-portal.com/getting-started/customization) |
 | Work on the project itself         | [Contributing](CONTRIBUTING.md)                                                                                            |
 
-The packages are in alpha. Read the [compatibility and release guidance](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before adopting or upgrading.
+The current release series is `0.3.x`. Read the [compatibility and release guidance](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before adopting or upgrading.
 
 ## Packages
 

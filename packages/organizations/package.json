@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-customer-portal/organizations",
-  "version": "0.1.0-alpha.0",
+  "version": "0.3.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -11,6 +11,7 @@
   "main": "./nuxt.config.ts",
   "files": [
     "LICENSE",
+    "CHANGELOG.md",
     "app",
     "i18n",
     "server",
@@ -38,7 +39,8 @@
     "drizzle-orm": "^0.45.2",
     "h3": "^1.15.4",
     "pg": "^8.22.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@nuxt/ui": "^4.10.0"
   },
   "peerDependencies": {
     "nuxt": "^4.5.1"

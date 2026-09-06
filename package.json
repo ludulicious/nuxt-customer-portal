@@ -1,6 +1,6 @@
 {
   "name": "nuxt-customer-portal-monorepo",
-  "version": "0.1.0-alpha.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,8 +27,8 @@
     "pack:consumer:yarn": "node --import tsx scripts/verify-packages.ts --consumers --manager=yarn",
     "pack:consumer:bun": "node --import tsx scripts/verify-packages.ts --consumers --manager=bun",
     "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release-packages": "changeset publish",
+    "version-packages": "changeset version && node scripts/sync-package-versions.mjs",
+    "release-packages": "node scripts/publish-packages.mjs",
     "test:starter": "node --import tsx --test packages/kit/test/starter.test.ts",
     "pack:starter": "node --import tsx scripts/verify-packages.ts --starter --manager=pnpm"
   },

@@ -124,8 +124,8 @@ test('admin internal queues use assignments while provider oversight retains all
       desc: () => ({}),
       inArray: (column: string, values: string[]) => {
         if (column === 'submission-user') {
-selectedUsers = values
-}
+          selectedUsers = values
+        }
         return {}
       },
       db: {

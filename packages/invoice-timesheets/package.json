@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-customer-portal/invoice-timesheets",
-  "version": "0.1.0-alpha.0",
+  "version": "0.3.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -11,6 +11,7 @@
   "main": "./nuxt.config.ts",
   "files": [
     "LICENSE",
+    "CHANGELOG.md",
     "README.md",
     "app",
     "migrations",

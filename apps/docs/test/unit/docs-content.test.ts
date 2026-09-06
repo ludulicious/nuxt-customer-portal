@@ -192,7 +192,7 @@ describe('documentation content', () => {
     expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('@nuxt-customer-portal/kit@0.1.0-alpha.0 init my-portal')
+    expect(installation).toContain('@nuxt-customer-portal/kit@0.3.0 init my-portal')
     expect(installation).toContain('pnpm dlx')
     expect(installation).toContain('npm install')
     expect(installation).toContain('yarn dlx')

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createStarter } from '../packages/kit/src/starter.mjs'
 
 const workspaceRoot = resolve(import.meta.dirname, '..')
@@ -94,6 +95,9 @@ try {
     if (!existsSync(join(contents, 'README.md'))) {
       throw new Error(`${manifest.name} is missing its README`)
     }
+    if (!existsSync(join(contents, 'CHANGELOG.md'))) {
+      throw new Error(`${manifest.name} is missing its release notes`)
+    }
 
     for (const target of exportTargets(manifest.exports)) {
       if (target.includes('*')) {
@@ -114,6 +118,10 @@ try {
         if (!existsSync(join(contents, required))) {
           throw new Error(`${manifest.name} is missing ${required}`)
         }
+      }
+      const { default: portalManifest } = await import(pathToFileURL(join(contents, 'portal.manifest.mjs')).href)
+      if (portalManifest.version !== manifest.version) {
+        throw new Error(`${manifest.name} portal manifest version does not match its package version`)
       }
     }
     if (migrationPackages.has(directory) && !existsSync(join(contents, 'migrations', '0000_baseline.sql'))) {

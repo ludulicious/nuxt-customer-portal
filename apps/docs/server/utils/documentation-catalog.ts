@@ -129,7 +129,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
     path: '/reference/compatibility-and-releases',
     title: 'Compatibility and releases',
-    description: 'Alpha package compatibility, linked versioning, migrations, and MIT licensing.'
+    description: 'Package compatibility, linked versioning, migrations, and MIT licensing.'
   },
   {
     path: '/reference/glossary',

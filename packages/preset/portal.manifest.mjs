@@ -1,6 +1,6 @@
 export default {
   id: 'preset',
-  version: '0.1.0-alpha.0',
+  version: '0.3.0',
   source: '@nuxt-customer-portal/preset',
   dependsOn: ['core', 'ui', 'authentication', 'organizations', 'administration', 'clients'],
   includes: [

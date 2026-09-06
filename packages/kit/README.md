@@ -8,7 +8,7 @@ provider receives its own journal table.
 ## Create a portal
 
 ```sh
-npx @nuxt-customer-portal/kit@0.1.0-alpha.0 init my-portal
+npx @nuxt-customer-portal/kit@0.3.0 init my-portal
 ```
 
 The interactive wizard creates a standalone copy of the configurable SaaS portal,
