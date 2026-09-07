@@ -33,24 +33,40 @@
       "id": "organizations",
       "kind": "platform",
       "documentationPath": "/modules/platform-layers",
-      "pageCount": 6,
-      "apiHandlerCount": 10,
+      "pageCount": 5,
+      "apiHandlerCount": 8,
       "apiFamilies": ["/api/organizations/**", "/api/profile"]
     },
     {
       "id": "clients",
       "kind": "platform",
       "documentationPath": "/modules/platform-layers",
-      "pageCount": 1,
-      "apiHandlerCount": 12,
+      "pageCount": 2,
+      "apiHandlerCount": 13,
       "apiFamilies": ["/api/clients/**"]
+    },
+    {
+      "id": "administration",
+      "kind": "platform",
+      "documentationPath": "/modules/platform-layers",
+      "pageCount": 7,
+      "apiHandlerCount": 27,
+      "apiFamilies": ["/api/admin/**"]
+    },
+    {
+      "id": "saas-configuration",
+      "kind": "platform",
+      "documentationPath": "/modules/platform-layers",
+      "pageCount": 5,
+      "apiHandlerCount": 5,
+      "apiFamilies": ["/api/admin/portal-settings/**", "/api/portal/**"]
     },
     {
       "id": "service-requests",
       "kind": "business",
       "documentationPath": "/modules/service-requests",
       "pageCount": 5,
-      "apiHandlerCount": 8,
+      "apiHandlerCount": 9,
       "apiFamilies": ["/api/service-requests/**"]
     },
     {
@@ -58,15 +74,15 @@
       "kind": "business",
       "documentationPath": "/modules/timesheets",
       "pageCount": 16,
-      "apiHandlerCount": 51,
+      "apiHandlerCount": 57,
       "apiFamilies": ["/api/timesheets/**"]
     },
     {
       "id": "invoices",
       "kind": "business",
       "documentationPath": "/modules/invoices",
-      "pageCount": 6,
-      "apiHandlerCount": 31,
+      "pageCount": 7,
+      "apiHandlerCount": 32,
       "apiFamilies": ["/api/invoices/**"]
     },
     {

@@ -6,7 +6,7 @@
       "public": true,
       "defaultBranch": "master",
       "issues": true,
-      "discussions": false,
+      "discussions": true,
       "template": false,
       "archived": false
     },
@@ -15,7 +15,7 @@
       "public": true,
       "defaultBranch": "master",
       "issues": true,
-      "discussions": false,
+      "discussions": true,
       "template": false,
       "archived": false
     }

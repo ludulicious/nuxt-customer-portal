@@ -265,6 +265,7 @@ const expectedExampleVariables = [
     ...productEnvironment.directVariables.filter(
       (variable) => !productEnvironment.exampleExclusions.includes(variable)
     ),
+    ...productEnvironment.exampleOnlyVariables,
     ...productEnvironment.libraryVariables.filter(
       (variable) => !productEnvironment.knownExampleOmissions.includes(variable)
     )

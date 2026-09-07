@@ -172,7 +172,7 @@ describe('documentation content', () => {
       public: true,
       defaultBranch: 'master',
       issues: true,
-      discussions: false,
+      discussions: true,
       template: false,
       archived: false
     })
@@ -180,19 +180,18 @@ describe('documentation content', () => {
       public: true,
       defaultBranch: 'master',
       issues: true,
-      discussions: false,
+      discussions: true,
       template: false,
       archived: false
     })
-    expect(community).toContain('GitHub Discussions are not currently enabled')
+    expect(community).toContain('github.com/ludulicious/nuxt-customer-portal/discussions')
     expect(community).toContain('nuxt-customer-portal/issues/new?template=bug-report.yml')
-    expect(community).toContain('nuxt-customer-portal/issues/new?template=question.yml')
     expect(community).toContain('nuxt-customer-portal/issues/new?template=feature-request.yml')
     expect(community).toContain('nuxt-customer-portal/issues/new?template=module-proposal.yml')
     expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('@nuxt-customer-portal/kit@0.3.1 init my-portal')
+    expect(installation).toContain('@nuxt-customer-portal/kit@0.3.3 init my-portal')
     expect(installation).toContain('pnpm dlx')
     expect(installation).toContain('npm install')
     expect(installation).toContain('yarn dlx')
@@ -283,19 +282,34 @@ describe('documentation content', () => {
       directVariables: string[]
       libraryVariables: string[]
       runtimeVariables: string[]
+      exampleOnlyVariables: string[]
       exampleExclusions: string[]
       knownExampleOmissions: string[]
     }
     const configuration = readFileSync(join(contentRoot, '4.reference/2.configuration.md'), 'utf8')
     const installation = readFileSync(join(contentRoot, '1.getting-started/8.manual-installation.md'), 'utf8')
-    const variables = [...environment.directVariables, ...environment.libraryVariables, ...environment.runtimeVariables]
+    const variables = [
+      ...environment.directVariables,
+      ...environment.libraryVariables,
+      ...environment.runtimeVariables,
+      ...environment.exampleOnlyVariables
+    ]
 
     expect(new Set(variables).size).toBe(variables.length)
     expect(routes.has(environment.documentationPath)).toBe(true)
     variables.forEach((variable) => expect(configuration).toContain(`\`${variable}\``))
     expect(environment.libraryVariables).toEqual(['BETTER_AUTH_SECRET'])
-    expect(environment.knownExampleOmissions).toEqual(['BETTER_AUTH_SECRET'])
-    expect(environment.exampleExclusions).toEqual(['NODE_ENV'])
+    expect(environment.knownExampleOmissions).toEqual([])
+    expect(environment.exampleOnlyVariables).toEqual(['PORTAL_PROVIDER_SLUG'])
+    expect(environment.exampleExclusions).toEqual([
+      'CI',
+      'DEMO_TEST_URL',
+      'GITHUB_TOKEN',
+      'NODE_ENV',
+      'PORTAL_DEMO',
+      'PORTAL_STARTER_TEST_DATABASE_URL',
+      'RELEASE_TAG'
+    ])
     expect(configuration).toContain('Better Auth secret reference')
     expect(installation).toContain('openssl rand -base64 32')
     expect(installation).toContain('BETTER_AUTH_SECRET=<paste-the-generated-secret>')
