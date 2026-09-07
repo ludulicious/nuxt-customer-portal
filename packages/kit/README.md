@@ -33,6 +33,13 @@ When running init from a source checkout, first run `pnpm --filter
 @nuxt-customer-portal/kit build:template`. This keeps generated projects aligned
 with the maintained configurable application.
 
+Generated projects include local Prettier and ESLint configuration. Run
+`pnpm format` to apply formatting and lint fixes, `pnpm format:check` to verify
+without changing files, and `pnpm lint` to check code with zero warnings allowed.
+Use the equivalent `run` commands for your chosen package manager. Generated
+outputs, local environment files, and package-manager lockfiles are excluded
+from formatting.
+
 ## Manage an existing portal
 
 Grant the global system-administrator role to an existing user with:

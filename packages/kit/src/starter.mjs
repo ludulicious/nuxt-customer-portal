@@ -203,11 +203,11 @@ export async function createStarter(input, options = {}) {
       POSTGRES_USER: portal
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
-      - "127.0.0.1:${input.databasePort}:5432"
+      - '127.0.0.1:${input.databasePort}:5432'
     volumes:
       - portal-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      test: ['CMD-SHELL', 'pg_isready -U portal -d portal']
       interval: 2s
       timeout: 5s
       retries: 30
@@ -242,6 +242,13 @@ Configure email delivery before inviting clients or sending invoices. Review the
 [deployment guide](https://nuxt-customer-portal.com/getting-started/deployment)
 before exposing the portal publicly. Keep .env private and supply secrets through
 your deployment environment. This development setup does not deploy the portal.
+
+## Code quality
+
+Run \`${input.packageManager} run lint\` to check code with zero warnings allowed.
+Run \`${input.packageManager} run format\` to apply Prettier formatting and ESLint fixes.
+Run \`${input.packageManager} run format:check\` to check both without modifying files.
+Formatting settings are included in this project; no global tooling is required.
 
 Add your modules in portal.config.ts. The host's app, assets, and configuration
 are yours to customize; business modules remain versioned package dependencies.

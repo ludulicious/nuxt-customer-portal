@@ -34,6 +34,37 @@ test('starter generates a portable host with unique private secrets and no works
     const env = await readFile(join(first.directory, '.env'), 'utf8')
     const secondEnv = await readFile(join(second.directory, '.env'), 'utf8')
     assert.equal(manifest.private, true)
+    assert.ok(manifest.devDependencies.prettier)
+    assert.ok(manifest.devDependencies['eslint-config-prettier'])
+    assert.match(manifest.scripts.lint, /--max-warnings=0/)
+    assert.match(manifest.scripts.format, /prettier --write/)
+    assert.match(manifest.scripts.format, /eslint .*--fix/)
+    assert.match(manifest.scripts['format:check'], /prettier --check/)
+    assert.doesNotMatch(manifest.scripts['format:check'], /--write|--fix/)
+    const eslintConfig = await readFile(join(first.directory, 'eslint.config.mjs'), 'utf8')
+    assert.match(eslintConfig, /from '\.\/eslint-formatting.config.mjs'/)
+    assert.match(eslintConfig, /\n\nexport default/)
+    assert.equal(
+      await readFile(join(first.directory, 'eslint-formatting.config.mjs'), 'utf8'),
+      await readFile(resolve(root, '../eslint-formatting.config.mjs'), 'utf8')
+    )
+    assert.equal(
+      await readFile(join(first.directory, '.prettierrc.json'), 'utf8'),
+      await readFile(resolve(root, '../.prettierrc.json'), 'utf8')
+    )
+    const prettierIgnore = await readFile(join(first.directory, '.prettierignore'), 'utf8')
+    for (const entry of [
+      '.nuxt/',
+      '.output/',
+      '.data/',
+      '.env',
+      'pnpm-lock.yaml',
+      'package-lock.json',
+      'yarn.lock',
+      'bun.lock'
+    ]) {
+      assert.ok(prettierIgnore.split('\n').includes(entry))
+    }
     const configurationPackage = JSON.parse(await readFile(resolve(root, 'saas-configuration/package.json'), 'utf8'))
     assert.equal(manifest.dependencies['@nuxt-customer-portal/saas-configuration'], configurationPackage.version)
     assert.doesNotMatch(JSON.stringify(manifest), /workspace:/)
@@ -60,6 +91,29 @@ test('starter generates a portable host with unique private secrets and no works
       await readFile(join(second.directory, 'app/app.vue'), 'utf8'),
       await readFile(join(first.directory, 'app/app.vue'), 'utf8')
     )
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+test('untouched starters are Prettier-clean for every package manager and database mode', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'portal-starter-format-'))
+  try {
+    const templateRoot = join(temp, 'template')
+    await prepareTemplate(templateRoot)
+    for (const packageManager of ['pnpm', 'npm', 'yarn', 'bun']) {
+      for (const database of ['docker', 'existing']) {
+        const directory = join(temp, packageManager + '-' + database)
+        await createStarter(
+          { ...input, directory, packageManager, database, databaseUrl: 'postgresql://localhost/portal' },
+          { templateRoot }
+        )
+        execFileSync(process.execPath, [resolve(root, '../node_modules/prettier/bin/prettier.cjs'), '--check', '.'], {
+          cwd: directory,
+          encoding: 'utf8'
+        })
+      }
+    }
   } finally {
     await rm(temp, { recursive: true, force: true })
   }
