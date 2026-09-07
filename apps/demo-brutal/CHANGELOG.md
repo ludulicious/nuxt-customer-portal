@@ -1,5 +1,18 @@
 # @nuxt-customer-portal/demo-brutal
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [17432a1]
+- Updated dependencies [8496fe7]
+  - @nuxt-customer-portal/kit@0.3.3
+  - @nuxt-customer-portal/invoice-timesheets@0.3.3
+  - @nuxt-customer-portal/invoices@0.3.3
+  - @nuxt-customer-portal/preset@0.3.3
+  - @nuxt-customer-portal/service-requests@0.3.3
+  - @nuxt-customer-portal/timesheets@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes

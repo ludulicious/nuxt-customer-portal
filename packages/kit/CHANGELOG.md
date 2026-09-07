@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/kit
 
+## 0.3.3
+
+### Patch Changes
+
+- 17432a1: Include standalone ESLint and Prettier configuration, dependencies, and working format commands in generated portals. Verify starter lint, formatting checks, and repeatable fixes when testing packed packages.
+- 8496fe7: Add optional host-owned website pages during interactive setup and a safe `page copy` command for copying individual package-provided pages later.
+
 ## 0.3.2
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # Nuxt Customer Portal
 
+## 0.3.3
+
+Generate lint-clean standalone portals with ESLint and Prettier configuration,
+dependencies, and working format commands. Packed starter verification now
+checks linting, formatting, and repeatable formatting fixes.
+
+Allow interactive setup to copy optional website pages into the host project,
+where they can be customized independently of package updates. A safe
+`page copy` command can copy individual package-provided pages later without
+overwriting existing files.
+
+All 13 official packages use `0.3.3`.
+
 ## 0.3.2
 
 Add the shared interactive demo with seven sample identities, avatars, seeded
