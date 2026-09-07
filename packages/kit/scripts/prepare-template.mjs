@@ -40,6 +40,18 @@ export async function prepareTemplate(destination = join(kitRoot, 'templates/saa
     join(destination, 'eslint.config.mjs'),
     "import withNuxt from './.nuxt/eslint.config.mjs'\nimport { formattingConfigs } from './eslint-formatting.config.mjs'\n\nexport default withNuxt().append(...formattingConfigs)\n"
   )
+
+  const pages = resolve(destination, '../pages')
+  await rm(pages, { recursive: true, force: true })
+  await mkdir(join(pages, 'saas-configuration'), { recursive: true })
+  await mkdir(join(pages, 'authentication'), { recursive: true })
+  for (const page of ['index.vue', 'privacy.vue', 'terms.vue']) {
+    await cp(
+      join(repositoryRoot, 'packages/saas-configuration/app/pages', page),
+      join(pages, 'saas-configuration', page)
+    )
+  }
+  await cp(join(repositoryRoot, 'packages/authentication/app/pages/login.vue'), join(pages, 'authentication/login.vue'))
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

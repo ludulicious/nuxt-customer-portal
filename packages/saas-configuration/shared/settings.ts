@@ -82,6 +82,12 @@ export const portalSettingsSchema = z
 export type PortalBranding = z.infer<typeof portalBrandingSchema>
 export type PortalContent = z.infer<typeof localizedContentSchema>
 export type PortalSettings = z.infer<typeof portalSettingsSchema>
+export interface PublicPortalSettings extends Pick<
+  PortalSettings,
+  'branding' | 'appearance' | 'enabledModules' | 'content'
+> {
+  completed: boolean
+}
 export interface PortalOnboardingState {
   adminExists: boolean
   completed: boolean

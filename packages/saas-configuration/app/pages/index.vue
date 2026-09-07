@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import type { PublicPortalSettings } from '../composables/usePortalSettings'
+import type { PublicPortalSettings } from '@nuxt-customer-portal/saas-configuration/shared/settings'
 
 definePageMeta({ layout: 'portal', public: true })
 const { locale, t } = useI18n()

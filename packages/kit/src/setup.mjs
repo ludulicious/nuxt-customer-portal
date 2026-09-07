@@ -93,6 +93,12 @@ Use --no-install to generate files and run the printed setup commands later.`)
       ]
     })
   )
+  const customizeWebsite = await answer(
+    prompts.confirm({
+      message: 'Customize website pages in the host application?',
+      initialValue: false
+    })
+  )
   let databaseUrl
   if (database === 'existing') {
     prompts.note(
@@ -126,7 +132,8 @@ Use --no-install to generate files and run the printed setup commands later.`)
     database,
     databaseUrl,
     port,
-    databasePort
+    databasePort,
+    customizeWebsite
   })
   prompts.log.success(`Created ${generated.directory}`)
   if (values['no-install']) {

@@ -8,6 +8,7 @@ import test from 'node:test'
 import pg from 'pg'
 import { prepareTemplate } from '../scripts/prepare-template.mjs'
 import { createStarter, claimDatabase, initializeStarter, validateDatabaseUrl } from '../src/starter.mjs'
+import { copyPortalPages } from '../src/pages.mjs'
 import { definePortalConfig, resolvePortalManifests } from '../src/runtime.mjs'
 import { defaultPortalSettings } from '../../saas-configuration/shared/settings'
 
@@ -138,6 +139,60 @@ test('starter refuses existing files, symlink targets, and malformed connection 
       assert.ok(validateDatabaseUrl(url))
     }
     assert.equal(validateDatabaseUrl('postgresql://portal:encoded%27password@localhost:5432/portal'), undefined)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+test('starter optionally copies only the customizable website pages', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'portal-starter-pages-'))
+  try {
+    const templateRoot = join(temp, 'template')
+    await prepareTemplate(templateRoot)
+    const pageTemplateRoot = join(temp, 'pages')
+    const standard = await createStarter(
+      { ...input, directory: join(temp, 'standard'), customizeWebsite: false },
+      { templateRoot, pageTemplateRoot }
+    )
+    await assert.rejects(stat(join(standard.directory, 'app/pages/index.vue')), { code: 'ENOENT' })
+
+    const customized = await createStarter(
+      { ...input, directory: join(temp, 'customized'), customizeWebsite: true },
+      { templateRoot, pageTemplateRoot }
+    )
+    for (const page of ['index.vue', 'privacy.vue', 'terms.vue']) {
+      assert.ok((await stat(join(customized.directory, 'app/pages', page))).isFile())
+    }
+    await assert.rejects(stat(join(customized.directory, 'app/pages/onboarding.vue')), { code: 'ENOENT' })
+    await assert.rejects(stat(join(customized.directory, 'app/pages/login.vue')), { code: 'ENOENT' })
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+test('page copy preserves conflicts and adds supporting dependencies', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'portal-copy-pages-'))
+  try {
+    const templateRoot = join(temp, 'template')
+    await prepareTemplate(templateRoot)
+    const pageTemplateRoot = join(temp, 'pages')
+    const host = join(temp, 'host')
+    await mkdir(join(host, 'app/pages'), { recursive: true })
+    await writeFile(join(host, 'package.json'), JSON.stringify({ private: true, dependencies: {} }, null, 2) + '\n')
+
+    const result = await copyPortalPages({ cwd: host, pages: ['login'], templateRoot: pageTemplateRoot })
+    assert.deepEqual(result.files, ['app/pages/login.vue'])
+    assert.equal(result.dependenciesAdded.zod, '^4.4.3')
+    const manifest = JSON.parse(await readFile(join(host, 'package.json'), 'utf8'))
+    assert.equal(manifest.dependencies.zod, '^4.4.3')
+
+    await writeFile(join(host, 'app/pages/privacy.vue'), 'keep me\n')
+    await assert.rejects(
+      copyPortalPages({ cwd: host, pages: ['home', 'privacy'], templateRoot: pageTemplateRoot }),
+      /No files were changed.*app\/pages\/privacy\.vue/
+    )
+    assert.equal(await readFile(join(host, 'app/pages/privacy.vue'), 'utf8'), 'keep me\n')
+    await assert.rejects(stat(join(host, 'app/pages/index.vue')), { code: 'ENOENT' })
   } finally {
     await rm(temp, { recursive: true, force: true })
   }
