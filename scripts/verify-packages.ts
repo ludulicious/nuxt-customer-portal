@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -242,7 +243,7 @@ try {
     if (manager === 'bun') {
       fixtureManifest.overrides = dependencies
     }
-    writeFileSync(join(fixture, 'package.json'), JSON.stringify(fixtureManifest, null, 2))
+    writeFileSync(join(fixture, 'package.json'), JSON.stringify(fixtureManifest, null, 2) + '\n')
     if (manager === 'pnpm' && !starter) {
       writeFileSync(join(fixture, 'pnpm-workspace.yaml'), "packages:\n  - '.'\nminimumReleaseAge: 1440\n")
     }
@@ -267,7 +268,7 @@ try {
     }
     command(manager, installArgs[manager]!, fixture)
     const run = manager === 'npm' ? ['run'] : ['run']
-    for (const script of ['prepare', 'typecheck', 'build', 'doctor']) {
+    for (const script of ['prepare', ...(starter ? ['lint', 'format:check'] : []), 'typecheck', 'build', 'doctor']) {
       command(manager, [...run, script], fixture, {
         ...process.env,
         DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/portal_fixture',
@@ -275,6 +276,40 @@ try {
         BETTER_AUTH_URL: 'http://localhost:3000',
         BETTER_AUTH_SECRET: 'package-fixture-secret-at-least-32-characters'
       })
+    }
+    if (starter) {
+      // Snapshot every project file, including ignored files and lockfiles.
+      const snapshot = (directory = fixture): Record<string, string> =>
+        Object.fromEntries(
+          readdirSync(directory)
+            .filter((entry) => !['node_modules', '.nuxt', '.output', '.git'].includes(entry))
+            .flatMap((entry) => {
+              const path = join(directory, entry)
+              return statSync(path).isDirectory()
+                ? Object.entries(snapshot(path))
+                : [[path, readFileSync(path).toString('base64')]]
+            })
+        )
+      const original = snapshot()
+      command(manager, [...run, 'format'], fixture)
+      assert.deepEqual(snapshot(), original, 'Formatting must leave untouched generated output unchanged')
+
+      const probe = join(fixture, 'app', 'formatting-probe.ts')
+      const violation = 'export function formattingProbe(value: boolean){if(value)return "format me";return ""}\n'
+      writeFileSync(probe, violation)
+      const beforeCheck = snapshot()
+      assert.throws(
+        () => command(manager, [...run, 'format:check'], fixture),
+        'format:check must reject formatting violations'
+      )
+      assert.deepEqual(snapshot(), beforeCheck, 'format:check must not modify any files')
+      command(manager, [...run, 'format'], fixture)
+      assert.match(readFileSync(probe, 'utf8'), /if \(value\) \{/, 'format must apply ESLint curly fixes')
+      command(manager, [...run, 'format:check'], fixture)
+      const formatted = snapshot()
+      command(manager, [...run, 'format'], fixture)
+      assert.deepEqual(snapshot(), formatted, 'A second formatting pass must not change files')
+      rmSync(probe)
     }
   }
 

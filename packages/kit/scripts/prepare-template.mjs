@@ -20,11 +20,25 @@ export async function prepareTemplate(destination = join(kitRoot, 'templates/saa
       ).version
     }
   }
+  const repositoryManifest = JSON.parse(await readFile(join(repositoryRoot, 'package.json'), 'utf8'))
+  source.scripts.lint = 'eslint . --max-warnings=0'
+  source.scripts.format = repositoryManifest.scripts.format.replace(/eslint \./g, 'eslint . --max-warnings=0')
+  source.scripts['format:check'] = 'prettier --check . && eslint . --max-warnings=0'
+  for (const name of ['prettier', 'eslint-config-prettier']) {
+    source.devDependencies[name] = repositoryManifest.devDependencies[name]
+  }
+  for (const entry of ['eslint-formatting.config.mjs', '.prettierrc.json']) {
+    await cp(join(repositoryRoot, entry), join(destination, entry))
+  }
+  await writeFile(
+    join(destination, '.prettierignore'),
+    '# Generated outputs and local data\nnode_modules/\n.nuxt/\n.output/\n.data/\n.nitro/\n.cache/\ndist/\ncoverage/\n.env\n.env.*\n# Package-manager lockfiles retain their native formatting.\npnpm-lock.yaml\npackage-lock.json\nyarn.lock\nbun.lock\nbun.lockb\n'
+  )
   source.dependencies.vue = '^3.5.0'
   await writeFile(join(destination, 'package.json'), JSON.stringify(source, null, 2) + '\n')
   await writeFile(
     join(destination, 'eslint.config.mjs'),
-    "import withNuxt from './.nuxt/eslint.config.mjs'\nexport default withNuxt()\n"
+    "import withNuxt from './.nuxt/eslint.config.mjs'\nimport { formattingConfigs } from './eslint-formatting.config.mjs'\n\nexport default withNuxt().append(...formattingConfigs)\n"
   )
 }
 
