@@ -1,5 +1,13 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.3.3
+
+### Patch Changes
+
+- 8496fe7: Add optional host-owned website pages during interactive setup and a safe `page copy` command for copying individual package-provided pages later.
+  - @nuxt-customer-portal/core@0.3.3
+  - @nuxt-customer-portal/ui@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes
