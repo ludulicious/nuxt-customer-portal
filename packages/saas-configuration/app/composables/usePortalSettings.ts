@@ -1,11 +1,4 @@
-import type { PortalOnboardingState, PortalSettings } from '../../shared/settings'
-
-export interface PublicPortalSettings extends Pick<
-  PortalSettings,
-  'branding' | 'appearance' | 'enabledModules' | 'content'
-> {
-  completed: boolean
-}
+import type { PortalOnboardingState, PublicPortalSettings } from '../../shared/settings'
 
 export const usePortalSettings = () => {
   const settings = useState<PublicPortalSettings | null>('portal-runtime-settings', () => null)

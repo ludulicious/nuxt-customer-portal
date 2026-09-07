@@ -28,6 +28,21 @@ script to resume after fixing an installation or database problem. Setup refuses
 non-empty unrelated databases, preserves existing files, and never resets an
 existing account's password. The generated app uses invitation-only registration.
 
+The wizard can optionally copy the homepage, privacy page, and terms page into
+the generated host under `app/pages/`. Leave that option off to keep every page
+package-provided. To customize one page later, run for example:
+
+```sh
+pnpm portal page copy login
+```
+
+Available page names are `home`, `privacy`, `terms`, and `login`. The command
+copies the selected source and adds any direct dependency it needs. It refuses
+the operation before changing files when the destination already exists. Local
+Nuxt pages override the package layer route, so there is no duplicate route.
+Copied pages are owned by the host: edit them normally, and review upstream
+package changes yourself because upgrades do not update local copies.
+
 The npm tarball contains a template prepared from `apps/saas-portal` by `prepack`.
 When running init from a source checkout, first run `pnpm --filter
 @nuxt-customer-portal/kit build:template`. This keeps generated projects aligned

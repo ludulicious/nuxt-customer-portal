@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { assignPortalSystemAdmin, migratePortalDatabase, seedPortalProvider } from './runtime.mjs'
+import { copyPortalPages } from './pages.mjs'
 
 const templateRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../templates/saas-portal')
 export const packageManagers = ['npm', 'pnpm', 'yarn', 'bun']
@@ -254,6 +255,13 @@ Add your modules in portal.config.ts. The host's app, assets, and configuration
 are yours to customize; business modules remain versioned package dependencies.
 `
   )
+  if (input.customizeWebsite) {
+    await copyPortalPages({
+      cwd: directory,
+      pages: ['home', 'privacy', 'terms'],
+      templateRoot: options.pageTemplateRoot
+    })
+  }
   return { directory, metadata }
 }
 

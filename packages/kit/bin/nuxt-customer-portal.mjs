@@ -13,6 +13,7 @@ import {
   migratePortalDatabase,
   resolvePortalManifests
 } from '../src/runtime.mjs'
+import { copyPortalPages, portalPages } from '../src/pages.mjs'
 
 const cwd = process.cwd()
 const args = process.argv.slice(2)
@@ -27,6 +28,7 @@ if (!args.length || ['--help', '-h'].includes(args[0])) {
   console.log(`Usage: nuxt-customer-portal <command>
   init [directory] [--no-install]  Create a configurable portal interactively
   setup                          Prepare a generated portal's database and owner
+  page copy <page>               Copy a package page into the host application
   doctor                         Check the installed portal providers
   db status|migrate               Inspect or apply package migrations
   provider seed|bootstrap         Prepare a provider organization
@@ -48,7 +50,13 @@ const config = await jiti.import(configPath, { default: true })
 const print = (value) => console.log(JSON.stringify(value, null, 2))
 
 try {
-  if (args[0] === 'doctor') {
+  if (args[0] === 'page' && args[1] === 'copy') {
+    const page = args[2]
+    if (!page || args.length !== 3) {
+      throw new Error(`page copy requires one page: ${Object.keys(portalPages).join(', ')}`)
+    }
+    print(await copyPortalPages({ cwd, pages: [page] }))
+  } else if (args[0] === 'doctor') {
     const manifests = await resolvePortalManifests(config, cwd)
     print({
       ok: true,
@@ -130,6 +138,7 @@ try {
     console.log(`Usage:
   nuxt-customer-portal init [directory] [--no-install]
   nuxt-customer-portal setup
+  nuxt-customer-portal page copy <home|privacy|terms|login>
   nuxt-customer-portal doctor
   nuxt-customer-portal db status
   nuxt-customer-portal db migrate
