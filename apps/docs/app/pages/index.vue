@@ -21,9 +21,9 @@ useHead({
 })
 
 defineOgImage('DocsSatori', {
-  headline: page.value.seo.headline,
-  pageTitle: page.value.seo.title,
-  pageDescription: page.value.seo.description
+  siteName: 'Nuxt Customer Portal',
+  pageTitle: 'Nuxt Customer Portal',
+  tagline: 'An open-source customer portal for Nuxt.'
 })
 </script>
 
