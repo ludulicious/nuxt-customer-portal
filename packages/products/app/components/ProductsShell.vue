@@ -7,6 +7,7 @@ defineProps<{ title: string; subtitle?: string }>()
     <div class="mx-auto max-w-6xl space-y-6">
       <header class="flex items-start justify-between gap-4">
         <div>
+          <slot name="back" />
           <h1 class="flex items-center gap-3 text-2xl font-semibold">
             <UIcon name="i-lucide-shopping-bag" />{{ title }}
           </h1>

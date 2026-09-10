@@ -126,6 +126,24 @@
     "download": "Download",
     "createAccount": "Create an account",
     "billingClient": "Billing client",
-    "newBusiness": "New business"
+    "newBusiness": "New business",
+    "contentLanguage": "Content language",
+    "storeLanguage": "Store language",
+    "languageLoadFailed": "Could not load the store language. English is shown; you can select another language.",
+    "backToProducts": "Back to products",
+    "categories": "Categories",
+    "manageCategories": "Manage categories",
+    "categoriesHelp": "Add or rename categories here. Renaming updates linked products. Categories in use cannot be deleted.",
+    "categoryName": "Category name",
+    "addCategory": "Add category",
+    "noCategories": "No categories yet.",
+    "noCategory": "No category",
+    "selectCategory": "Select a category",
+    "categoryUsage": "{count} products",
+    "editCategory": "Edit {name}",
+    "deleteCategory": "Delete {name}",
+    "categoryDeleteConfirm": "Permanently delete “{name}”? Type its name to confirm.",
+    "categoryDuplicate": "A category with this name already exists.",
+    "categoryDeleteFailed": "Could not delete this category. Check the name and make sure no products use it."
   }
 }

@@ -97,3 +97,9 @@ export interface Page<T> {
   items: T[]
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number }
 }
+
+export interface ProductCategory {
+  id: string
+  name: string
+  productCount: number
+}

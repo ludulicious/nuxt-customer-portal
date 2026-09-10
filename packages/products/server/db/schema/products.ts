@@ -129,3 +129,15 @@ export const rateLimit = schema.table('rate_limit', {
   window: bigint('bucket_minute', { mode: 'number' }).notNull(),
   count: integer('count').notNull()
 })
+
+export const category = schema.table(
+  'category',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    name: text('name').notNull()
+  },
+  (t) => [uniqueIndex('category_store_name').on(t.storeId, sql`lower(${t.name})`)]
+)

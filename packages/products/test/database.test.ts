@@ -240,6 +240,28 @@ test(
       const removable = await catalog.saveProduct('store', { ...source, slug: 'unused', status: 'draft' })
       await catalog.deleteProduct('store', removable.id, 'Coaching')
       await assert.rejects(catalog.getProduct('store', removable.id), { statusCode: 404 })
+      const categories = await import('../server/utils/categories')
+      const category = await categories.saveCategory('store', { name: 'Coaching' })
+      await assert.rejects(categories.saveCategory('store', { name: ' coaching ' }), { statusCode: 409 })
+      assert.deepEqual(await categories.listCategories('other'), [])
+      await assert.rejects(categories.saveCategory('other', { name: 'Foreign' }, category.id), { statusCode: 404 })
+      await assert.rejects(catalog.saveProduct('store', { ...source, slug: 'invalid-category', category: 'Missing' }), {
+        statusCode: 409
+      })
+      const categorized = await catalog.saveProduct('store', {
+        ...source,
+        slug: 'categorized',
+        status: 'draft',
+        category: 'Coaching'
+      })
+      await categories.saveCategory('store', { name: 'Sessions' }, category.id)
+      assert.equal((await catalog.getProduct('store', categorized.id)).category, 'Sessions')
+      assert.equal((await categories.listCategories('store'))[0]?.productCount, 1)
+      await assert.rejects(categories.deleteCategory('store', category.id, { name: 'Sessions' }), { statusCode: 409 })
+      await catalog.deleteProduct('store', categorized.id, 'Coaching')
+      await assert.rejects(categories.deleteCategory('store', category.id, { name: 'Wrong' }), { statusCode: 400 })
+      await categories.deleteCategory('store', category.id, { name: 'Sessions' })
+      assert.deepEqual(await categories.listCategories('store'), [])
     } finally {
       await db.end()
       await pool?.end()

@@ -89,6 +89,10 @@ async function revoke() {
       <p class="text-sm text-muted">{{ t('products.configHelp') }}</p>
       <UButton type="submit" :loading="busy">{{ t('products.save') }}</UButton></UForm
     >
+    <section class="space-y-4 rounded-lg border p-5">
+      <h2 class="text-xl font-semibold">{{ t('products.categories') }}</h2>
+      <ProductsCategories />
+    </section>
     <h2 class="text-xl font-semibold">{{ t('products.apiKeys') }}</h2>
     <p class="text-muted">{{ t('products.keyHelp') }}</p>
     <UAlert v-if="shownKey" :title="t('products.copyKey')"

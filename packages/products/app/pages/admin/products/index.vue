@@ -11,8 +11,6 @@ const result = ref<Page<Product>>(),
   items = ref<Product[]>([]),
   pending = ref(false),
   error = ref(''),
-  editing = ref<Product>(),
-  creating = ref(false),
   deleting = ref<Product>(),
   eligible = ref(false),
   deleteState = reactive({ name: '' })
@@ -71,9 +69,6 @@ async function load(force = false) {
     if (prepend && scroll) {
       scroll.scrollTop += scroll.scrollHeight - height
     }
-    if (editing.value && !items.value.some((p) => p.id === editing.value?.id)) {
-      editing.value = undefined
-    }
   } catch {
     if (!active.signal.aborted) {
       error.value = t('products.loadFailed')
@@ -118,30 +113,16 @@ onBeforeUnmount(() => {
   observer?.disconnect()
 })
 function startCreate() {
-  creating.value = true
-  editing.value = undefined
-  deleting.value = undefined
+  return navigateTo({ path: '/admin/products/new', query: route.query })
 }
 function edit(product: Product) {
-  editing.value = editing.value?.id === product.id ? undefined : product
-  creating.value = false
-  deleting.value = undefined
-}
-async function saved(product: Product) {
-  creating.value = false
-  editing.value = undefined
-  await load(true)
-  if (!product.fileIds.length && product.type === 'digital') {
-    editing.value = product
-  }
+  return navigateTo({ path: `/admin/products/${product.id}/edit`, query: route.query })
 }
 async function confirmDelete(product: Product) {
   if (deleting.value?.id === product.id) {
     deleting.value = undefined
     return
   }
-  editing.value = undefined
-  creating.value = false
   deleting.value = product
   deleteState.name = ''
   eligible.value = false
@@ -192,12 +173,11 @@ async function remove() {
         :aria-label="t('products.sort')"
       /><USelect v-model="sortDir" :items="options(['asc', 'desc'])" :aria-label="t('products.sortDirection')" />
     </div>
-    <ProductsForm v-if="creating" @saved="saved" @cancel="creating = false" />
-    <div v-if="!items.length && !pending && !creating" class="rounded-lg border p-10 text-center">
+    <div v-if="!items.length && !pending" class="rounded-lg border p-10 text-center">
       <UIcon name="i-lucide-shopping-bag" class="size-10" />
       <h2 class="mt-3 text-xl">{{ t(search || status !== 'all' ? 'products.noResults' : 'products.empty') }}</h2>
       <p class="my-3 text-muted">{{ t('products.emptyHelp') }}</p>
-      <UButton icon="i-lucide-plus" @click="creating = true">{{ t('products.createFirst') }}</UButton>
+      <UButton icon="i-lucide-plus" @click="startCreate">{{ t('products.createFirst') }}</UButton>
     </div>
     <div ref="listRoot">
       <div ref="topBoundary" class="h-px" aria-hidden="true" />
@@ -207,7 +187,6 @@ async function remove() {
             role="button"
             tabindex="0"
             class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-4"
-            :aria-expanded="editing?.id === product.id"
             @click="edit(product)"
             @keydown.enter.prevent="edit(product)"
             @keydown.space.prevent="edit(product)"
@@ -232,7 +211,6 @@ async function remove() {
                 icon="i-lucide-pencil"
                 variant="ghost"
                 :aria-label="t('products.edit')"
-                :aria-expanded="editing?.id === product.id"
                 @click="edit(product)"
               /><UButton
                 icon="i-lucide-trash-2"
@@ -244,13 +222,7 @@ async function remove() {
               />
             </div>
           </article>
-          <ProductsForm
-            v-if="editing?.id === product.id"
-            :key="`edit-${product.id}`"
-            :product="product"
-            @saved="saved"
-            @cancel="editing = undefined"
-          /><UForm
+          <UForm
             v-if="deleting?.id === product.id"
             :state="deleteState"
             :schema="deleteSchema"

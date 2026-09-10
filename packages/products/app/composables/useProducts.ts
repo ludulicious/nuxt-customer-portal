@@ -1,12 +1,21 @@
-import type { Product, Page, Asset, CatalogProduct, Order } from '../../shared/types'
+import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory } from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema } from '../../shared/validation'
 
 type ProductInput = z.infer<typeof productSchema>
 export const useProducts = () => ({
+  categories: () => $fetch<ProductCategory[]>('/api/products/admin/categories'),
+  saveCategory: (name: string, id?: string) =>
+    $fetch<{ id: string; name: string }>(
+      id ? `/api/products/admin/categories/${id}` : '/api/products/admin/categories',
+      { method: id ? 'PUT' : 'POST', body: { name } }
+    ),
+  deleteCategory: (id: string, name: string) =>
+    $fetch(`/api/products/admin/categories/${id}`, { method: 'DELETE', body: { name } }),
   checkoutClients: () => $fetch<Array<{ id: string; name: string }>>('/api/products/checkout-clients'),
   list: (query: Record<string, unknown>, signal?: AbortSignal) =>
     $fetch<Page<Product>>('/api/products/admin/products', { query, signal }),
+  get: (id: string) => $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}`),
   save: (input: ProductInput, id?: string) =>
     $fetch<Product>(id ? `/api/products/admin/products/${id}` : '/api/products/admin/products', {
       method: id ? 'PUT' : 'POST',

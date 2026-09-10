@@ -8,6 +8,8 @@ Add `@nuxt-customer-portal/products`, `@nuxt-customer-portal/invoices`, and `@nu
 
 The provider organization's owners and administrators manage Products, Orders, and Store settings. Customer access is always checked against the purchaser's verified account, independently of company membership and invoice-viewing permissions.
 
+Categories are maintained in Store settings or from the product form. Renaming updates the catalog; purchased snapshots remain unchanged. Categories used by any product cannot be deleted. Existing free-text categories are imported by the category migration.
+
 ## Deployment configuration
 
 Configure these server-only environment variables; never put them in public runtime config:

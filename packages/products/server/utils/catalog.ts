@@ -114,6 +114,17 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
   }
   try {
     await transaction(async (tx) => {
+      await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`categories:${storeId}`])
+      if (data.category) {
+        const [category] = await rows<{ name: string }>(
+          'SELECT name FROM products.category WHERE store_id=$1 AND name=$2',
+          [storeId, data.category],
+          tx
+        )
+        if (!category) {
+          throw createError({ statusCode: 409, message: 'Select an existing category', data: { field: 'category' } })
+        }
+      }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${id}`])
       const [existing] = await rows<ProductRow>('SELECT * FROM products.product WHERE id=$1', [id], tx)
       if (

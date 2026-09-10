@@ -126,6 +126,24 @@
     "download": "Downloaden",
     "createAccount": "Maak een account",
     "billingClient": "Factuurklant",
-    "newBusiness": "Nieuw bedrijf"
+    "newBusiness": "Nieuw bedrijf",
+    "contentLanguage": "Taal van de inhoud",
+    "storeLanguage": "Winkeltaal",
+    "languageLoadFailed": "De winkeltaal kon niet worden geladen. Engels wordt getoond; je kunt een andere taal kiezen.",
+    "backToProducts": "Terug naar producten",
+    "categories": "Categorieën",
+    "manageCategories": "Categorieën beheren",
+    "categoriesHelp": "Voeg categorieën toe of wijzig hun naam. Een naamswijziging werkt gekoppelde producten bij. Categorieën die in gebruik zijn, kunnen niet worden verwijderd.",
+    "categoryName": "Categorienaam",
+    "addCategory": "Categorie toevoegen",
+    "noCategories": "Nog geen categorieën.",
+    "noCategory": "Geen categorie",
+    "selectCategory": "Selecteer een categorie",
+    "categoryUsage": "{count} producten",
+    "editCategory": "{name} bewerken",
+    "deleteCategory": "{name} verwijderen",
+    "categoryDeleteConfirm": "“{name}” definitief verwijderen? Typ de naam ter bevestiging.",
+    "categoryDuplicate": "Er bestaat al een categorie met deze naam.",
+    "categoryDeleteFailed": "De categorie kon niet worden verwijderd. Controleer de naam en zorg dat geen producten deze gebruiken."
   }
 }
