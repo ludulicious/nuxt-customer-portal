@@ -1,3 +1,6 @@
-import { clientsFeature } from '@nuxt-customer-portal/clients/shared/feature'
+import { createClientsFeature } from '@nuxt-customer-portal/clients/shared/feature'
 
-export default defineNuxtPlugin(() => usePortalFeatures().registerFeature(clientsFeature))
+export default defineNuxtPlugin(() => {
+  const allowedTypes = useRuntimeConfig().public.clients?.allowedTypes ?? ['organization']
+  usePortalFeatures().registerFeature(createClientsFeature(allowedTypes))
+})

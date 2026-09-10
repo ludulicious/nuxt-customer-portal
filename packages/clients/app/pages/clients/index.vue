@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { clientsIcon } from '@nuxt-customer-portal/clients/shared/feature'
 import type { ClientListResponse, GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const { t } = useI18n()
@@ -204,7 +205,10 @@ onMounted(() => {
       <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
         <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
           <div class="flex min-w-0 gap-3">
-            <UIcon name="i-lucide-building-2" class="mt-1 size-6 shrink-0 text-primary" />
+            <UIcon
+              :name="clientsIcon(runtimeConfig.public.clients?.allowedTypes)"
+              class="mt-1 size-6 shrink-0 text-primary"
+            />
             <div class="min-w-0">
               <h1 class="text-2xl font-semibold">{{ t('features.clients.title') }}</h1>
               <p class="hidden text-sm text-muted sm:block">{{ t('features.clients.description') }}</p>
@@ -294,14 +298,26 @@ onMounted(() => {
                 <UAvatar :src="client.avatarLogo || client.logo || undefined" :alt="client.name" />
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
+                    <UTooltip :text="t(`features.clients.types.${client.clientType}`)">
+                      <span
+                        tabindex="0"
+                        role="img"
+                        :aria-label="t(`features.clients.types.${client.clientType}`)"
+                        class="inline-flex shrink-0 rounded text-muted focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        <UIcon
+                          :name="client.clientType === 'person' ? 'i-lucide-user-round' : 'i-lucide-building-2'"
+                          class="size-4"
+                        />
+                      </span>
+                    </UTooltip>
                     <p class="truncate font-semibold">{{ client.name }}</p>
                     <UBadge :color="client.archivedAt ? 'neutral' : 'success'" variant="subtle">{{
                       t(client.archivedAt ? 'features.clients.archived' : 'features.clients.active')
                     }}</UBadge>
                   </div>
-                  <p class="mt-1 truncate text-sm text-muted">
-                    {{ t(`features.clients.types.${client.clientType}`)
-                    }}<template v-if="client.clientType === 'organization'"> · {{ client.slug }}</template>
+                  <p v-if="client.clientType === 'organization'" class="mt-1 truncate text-sm text-muted">
+                    {{ client.slug }}
                   </p>
                 </div>
               </NuxtLink>

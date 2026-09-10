@@ -2,7 +2,7 @@
   "features": {
     "clients": {
       "title": "Clients",
-      "description": "Manage client companies, members, profiles, and module access.",
+      "description": "Manage clients, profiles, members, and module access.",
       "backToClients": "Back to clients",
       "openClient": "Open {name}",
       "loading": "Loading client",

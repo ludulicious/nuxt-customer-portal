@@ -2,7 +2,7 @@
   "features": {
     "clients": {
       "title": "Klanten",
-      "description": "Beheer klantbedrijven, leden, profielen en moduletoegang.",
+      "description": "Beheer klanten, profielen, leden en moduletoegang.",
       "backToClients": "Terug naar klanten",
       "openClient": "Open {name}",
       "loading": "Klant laden",
