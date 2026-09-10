@@ -1,7 +1,11 @@
 import { definePortalConfig } from '@nuxt-customer-portal/kit'
 
 export default definePortalConfig({
-  clients: { defaultModules: ['timesheets', 'invoices'] },
+  clients: {
+    allowedTypes: ['organization', 'person'],
+    personalSelfRegistration: true,
+    defaultModules: ['timesheets', 'invoices']
+  },
   layers: [
     '@nuxt-customer-portal/preset',
     '@nuxt-customer-portal/service-requests',
