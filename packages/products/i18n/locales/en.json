@@ -64,7 +64,7 @@
     "archiveInstead": "This product has orders. Archive it to stop new sales.",
     "typeName": "Type the exact product name",
     "loading": "Loading…",
-    "results": "{count} results",
+    "results": "{n} result | {n} results",
     "ordersIntro": "Track payments, invoices, delivery, and service fulfillment.",
     "pending": "Pending payment",
     "paid": "Paid",
@@ -144,6 +144,12 @@
     "deleteCategory": "Delete {name}",
     "categoryDeleteConfirm": "Permanently delete “{name}”? Type its name to confirm.",
     "categoryDuplicate": "A category with this name already exists.",
-    "categoryDeleteFailed": "Could not delete this category. Check the name and make sure no products use it."
+    "categoryDeleteFailed": "Could not delete this category. Check the name and make sure no products use it.",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "allCategories": "All categories",
+    "noResultsHelp": "Try a different search or clear your filters.",
+    "clearFilters": "Clear filters",
+    "openProduct": "Open {name}"
   }
 }

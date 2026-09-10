@@ -64,7 +64,7 @@
     "archiveInstead": "Dit product heeft bestellingen. Archiveer het om nieuwe verkopen te stoppen.",
     "typeName": "Typ de exacte productnaam",
     "loading": "Laden…",
-    "results": "{count} resultaten",
+    "results": "{n} resultaat | {n} resultaten",
     "ordersIntro": "Volg betalingen, facturen, levering en uitvoering van diensten.",
     "pending": "Wacht op betaling",
     "paid": "Betaald",
@@ -144,6 +144,12 @@
     "deleteCategory": "{name} verwijderen",
     "categoryDeleteConfirm": "“{name}” definitief verwijderen? Typ de naam ter bevestiging.",
     "categoryDuplicate": "Er bestaat al een categorie met deze naam.",
-    "categoryDeleteFailed": "De categorie kon niet worden verwijderd. Controleer de naam en zorg dat geen producten deze gebruiken."
+    "categoryDeleteFailed": "De categorie kon niet worden verwijderd. Controleer de naam en zorg dat geen producten deze gebruiken.",
+    "allStatuses": "Alle statussen",
+    "allTypes": "Alle typen",
+    "allCategories": "Alle categorieën",
+    "noResultsHelp": "Probeer een andere zoekopdracht of wis je filters.",
+    "clearFilters": "Filters wissen",
+    "openProduct": "{name} openen"
   }
 }

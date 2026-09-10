@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { Product, Page } from '../../../../shared/types'
+import type { Product, Page, ProductCategory } from '../../../../shared/types'
 import { formatMoney } from '../../../../shared/money'
 
 const { t, locale } = useI18n(),
   api = useProducts(),
   route = useRoute(),
   router = useRouter()
+const categories = ref<ProductCategory[]>([])
+const deletingBusy = ref(false)
+const searchInput = ref(String(route.query.search || ''))
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(searchInput, (value) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => filter('search', value.trim()), 300)
+})
+watch(
+  () => route.query.search,
+  (value) => {
+    if (String(value || '') !== searchInput.value.trim()) {
+      clearTimeout(searchTimer)
+      searchInput.value = String(value || '')
+    }
+  }
+)
 const result = ref<Page<Product>>(),
   items = ref<Product[]>([]),
   pending = ref(false),
@@ -18,6 +35,7 @@ const listRoot = useTemplateRef('listRoot'),
   topBoundary = useTemplateRef('topBoundary'),
   bottomBoundary = useTemplateRef('bottomBoundary')
 let observer: IntersectionObserver | undefined
+let restoredScroll = false
 const deleteSchema = useProductFormSchema(z.object({ name: z.string().min(1) }))
 const page = computed(() => Math.max(1, Number(route.query.page) || 1)),
   search = computed({ get: () => String(route.query.search || ''), set: (v) => filter('search', v) }),
@@ -28,10 +46,33 @@ const page = computed(() => Math.max(1, Number(route.query.page) || 1)),
   kind = computed({ get: () => String(route.query.type || 'all'), set: (v) => filter('type', v === 'all' ? '' : v) }),
   category = computed({ get: () => String(route.query.category || ''), set: (v) => filter('category', v) })
 const sortBy = computed({ get: () => String(route.query.sortBy || 'updatedAt'), set: (v) => filter('sortBy', v) }),
-  sortDir = computed({ get: () => String(route.query.sortDir || 'desc'), set: (v) => filter('sortDir', v) })
+  sortDir = computed<'asc' | 'desc'>({
+    get: () => (route.query.sortDir === 'asc' ? 'asc' : 'desc'),
+    set: (v) => filter('sortDir', v)
+  })
 const options = (values: string[]) => values.map((value) => ({ value, label: t(`products.${value}`) }))
+const filtered = computed(() => !!(search.value || status.value !== 'all' || kind.value !== 'all' || category.value))
+const title = (product: Product) =>
+  product.content[locale.value === 'nl' ? 'nl' : 'en'].title || product.content.en.title || product.content.nl.title
+function toolbarFilter(key: string, value: string | undefined) {
+  filter(
+    key,
+    key === 'category'
+      ? value === 'all'
+        ? ''
+        : (value || '').slice('category:'.length)
+      : value === 'all'
+        ? ''
+        : value || ''
+  )
+}
+function clearFilters() {
+  clearTimeout(searchTimer)
+  searchInput.value = ''
+  return router.replace({ query: {} })
+}
 function filter(key: string, value: string) {
-  router.replace({ query: { ...route.query, [key]: value || undefined, page: undefined } })
+  router.replace({ query: { ...route.query, [key]: value || undefined, page: undefined, scroll: undefined } })
 }
 let controller: AbortController | undefined,
   previousSignature = '',
@@ -64,10 +105,17 @@ async function load(force = false) {
       loaded = new Set()
     }
     loaded.add(page.value)
+    if (deleting.value && !items.value.some((product) => product.id === deleting.value?.id)) {
+      deleting.value = undefined
+    }
     previousSignature = signature
     await nextTick()
     if (prepend && scroll) {
       scroll.scrollTop += scroll.scrollHeight - height
+    }
+    if (!restoredScroll && scroll) {
+      scroll.scrollTop = Math.max(0, Number(route.query.scroll) || 0)
+      restoredScroll = true
     }
   } catch {
     if (!active.signal.aborted) {
@@ -80,11 +128,23 @@ async function load(force = false) {
   }
 }
 watch(
-  () => route.fullPath,
-  () => load(),
+  () => [route.fullPath, locale.value],
+  () => {
+    if (route.path === '/admin/products') {
+      return load()
+    }
+  },
   { immediate: true }
 )
 onMounted(() => {
+  api
+    .categories()
+    .then((value) => {
+      categories.value = value
+    })
+    .catch(() => {
+      error.value = t('products.loadFailed')
+    })
   observer = new IntersectionObserver(
     (entries) => {
       if (pending.value || !loaded.size || !result.value) {
@@ -109,14 +169,23 @@ onMounted(() => {
   }
 })
 onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
   controller?.abort()
   observer?.disconnect()
 })
+const returnQuery = () => ({
+  ...route.query,
+  scroll: String(Math.round(listRoot.value?.closest('section')?.scrollTop || 0))
+})
+async function goToPage(value: number) {
+  await router.replace({ query: { ...route.query, page: value, scroll: undefined } })
+  listRoot.value?.closest('section')?.scrollTo({ top: 0, behavior: 'smooth' })
+}
 function startCreate() {
-  return navigateTo({ path: '/admin/products/new', query: route.query })
+  return navigateTo({ path: '/admin/products/new', query: returnQuery() })
 }
 function edit(product: Product) {
-  return navigateTo({ path: `/admin/products/${product.id}/edit`, query: route.query })
+  return navigateTo({ path: `/admin/products/${product.id}/edit`, query: returnQuery() })
 }
 async function confirmDelete(product: Product) {
   if (deleting.value?.id === product.id) {
@@ -136,98 +205,145 @@ async function remove() {
   if (!deleting.value) {
     return
   }
+  deletingBusy.value = true
   try {
     await api.remove(deleting.value.id, deleteState.name)
     deleting.value = undefined
     await load(true)
   } catch {
     error.value = t('products.deleteFailed')
+  } finally {
+    deletingBusy.value = false
   }
 }
 </script>
 
 <template>
   <ProductsShell :title="t('products.catalog')" :subtitle="t('products.catalogIntro')"
-    ><template #actions
-      ><UButton v-if="items.length" icon="i-lucide-plus" variant="outline" size="sm" @click="startCreate">{{
-        t('products.new')
-      }}</UButton></template
-    ><UAlert v-if="error" color="error" :title="error" />
-    <div class="flex flex-wrap gap-3">
-      <UInput
-        v-model="search"
-        :placeholder="t('products.search')"
-        :aria-label="t('products.search')"
-        icon="i-lucide-search"
-      /><USelect
-        v-model="status"
-        :items="options(['all', 'draft', 'published', 'archived'])"
-        :aria-label="t('products.status')"
-      /><USelect
-        v-model="kind"
-        :items="options(['all', 'digital', 'service'])"
-        :aria-label="t('products.type')"
-      /><UInput v-model="category" :placeholder="t('products.category')" :aria-label="t('products.category')" /><USelect
-        v-model="sortBy"
-        :items="options(['updatedAt', 'title'])"
-        :aria-label="t('products.sort')"
-      /><USelect v-model="sortDir" :items="options(['asc', 'desc'])" :aria-label="t('products.sortDirection')" />
-    </div>
-    <div v-if="!items.length && !pending" class="rounded-lg border p-10 text-center">
-      <UIcon name="i-lucide-shopping-bag" class="size-10" />
-      <h2 class="mt-3 text-xl">{{ t(search || status !== 'all' ? 'products.noResults' : 'products.empty') }}</h2>
-      <p class="my-3 text-muted">{{ t('products.emptyHelp') }}</p>
-      <UButton icon="i-lucide-plus" @click="startCreate">{{ t('products.createFirst') }}</UButton>
-    </div>
+    ><template #actions>
+      <UButton
+        v-if="items.length || filtered"
+        class="rounded-full sm:hidden"
+        icon="i-lucide-plus"
+        :aria-label="t('products.new')"
+        @click="startCreate"
+      />
+      <UButton
+        v-if="items.length || filtered"
+        class="hidden sm:inline-flex"
+        icon="i-lucide-plus"
+        variant="outline"
+        size="sm"
+        @click="startCreate"
+        >{{ t('products.new') }}</UButton
+      >
+      <UButton
+        icon="i-lucide-refresh-cw"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        :loading="pending"
+        :aria-label="t('common.refresh')"
+        @click="load(true)"
+      />
+    </template>
+    <UAlert v-if="error" color="error" :title="error" />
+    <PortalListToolbar
+      v-model:search="searchInput"
+      :search-placeholder="t('products.search')"
+      :filters="[
+        {
+          key: 'status',
+          placeholder: t('products.status'),
+          items: [{ value: 'all', label: t('products.allStatuses') }, ...options(['draft', 'published', 'archived'])]
+        },
+        {
+          key: 'type',
+          placeholder: t('products.type'),
+          items: [{ value: 'all', label: t('products.allTypes') }, ...options(['digital', 'service'])]
+        },
+        {
+          key: 'category',
+          placeholder: t('products.category'),
+          items: [
+            { value: 'all', label: t('products.allCategories') },
+            ...categories.map((c) => ({ value: `category:${c.name}`, label: c.name }))
+          ]
+        }
+      ]"
+      :filter-values="{ status, type: kind, category: category ? `category:${category}` : 'all' }"
+      :sort-options="options(['updatedAt', 'title'])"
+      :sort-by="sortBy"
+      :sort-dir="sortDir"
+      @filter="toolbarFilter"
+      @sort="sortBy = $event"
+      @toggle-direction="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
+    />
+    <ProductsEmptyState
+      v-if="!items.length && !pending && !error"
+      :filtered="filtered"
+      @create="startCreate"
+      @reset="clearFilters"
+    />
     <div ref="listRoot">
       <div ref="topBoundary" class="h-px" aria-hidden="true" />
       <div class="grid gap-3">
         <template v-for="product in items" :key="product.id"
-          ><article
+          ><UCard
+            class="cursor-pointer transition-colors hover:ring-1 hover:ring-primary/50 focus-visible:outline-2 focus-visible:outline-primary"
             role="button"
             tabindex="0"
-            class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-4"
+            :aria-label="t('products.openProduct', { name: title(product) })"
             @click="edit(product)"
             @keydown.enter.prevent="edit(product)"
             @keydown.space.prevent="edit(product)"
           >
-            <div>
-              <h2 class="font-semibold">
-                {{
-                  product.content[locale === 'nl' ? 'nl' : 'en'].title ||
-                  product.content.en.title ||
-                  product.content.nl.title
-                }}
-              </h2>
-              <p class="text-sm text-muted">
-                {{ t(`products.${product.type}`) }} · {{ t(`products.${product.status}`) }} · {{ product.category }}
-              </p>
-              <p class="mt-2 text-sm">
-                {{ product.prices.map((p) => formatMoney(p.amount, p.currency, locale)).join(' · ') }}
-              </p>
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <UAvatar
+                  :icon="product.type === 'digital' ? 'i-lucide-file-down' : 'i-lucide-calendar-check'"
+                  class="shrink-0"
+                />
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="truncate font-semibold">{{ title(product) }}</h2>
+                    <UBadge :color="product.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{
+                      t(`products.${product.status}`)
+                    }}</UBadge>
+                  </div>
+                  <p class="mt-1 text-sm text-muted">
+                    {{ t(`products.${product.type}`) }}<span v-if="product.category"> · {{ product.category }}</span>
+                  </p>
+                  <p class="mt-1 text-sm">
+                    {{ product.prices.map((p) => formatMoney(p.amount, p.currency, locale)).join(' · ') }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex shrink-0 gap-1" @click.stop @keydown.stop>
+                <UButton
+                  icon="i-lucide-pencil"
+                  variant="ghost"
+                  color="neutral"
+                  :aria-label="t('products.edit')"
+                  @click="edit(product)"
+                />
+                <UButton
+                  icon="i-lucide-trash-2"
+                  variant="ghost"
+                  color="neutral"
+                  :aria-label="t('products.delete')"
+                  :aria-expanded="deleting?.id === product.id"
+                  @click="confirmDelete(product)"
+                />
+              </div>
             </div>
-            <div class="flex gap-1" @click.stop @keydown.stop>
-              <UButton
-                icon="i-lucide-pencil"
-                variant="ghost"
-                :aria-label="t('products.edit')"
-                @click="edit(product)"
-              /><UButton
-                icon="i-lucide-trash-2"
-                color="neutral"
-                variant="ghost"
-                :aria-label="t('products.delete')"
-                :aria-expanded="deleting?.id === product.id"
-                @click="confirmDelete(product)"
-              />
-            </div>
-          </article>
+          </UCard>
           <UForm
             v-if="deleting?.id === product.id"
             :state="deleteState"
             :schema="deleteSchema"
             novalidate
-            class="space-y-3 rounded-lg border p-4"
+            class="space-y-3 rounded-lg border border-default bg-default p-4"
             @submit="remove"
             ><p>
               {{
@@ -243,7 +359,9 @@ async function remove() {
               <UButton color="neutral" variant="outline" @click="deleting = undefined">{{
                 t('products.cancel')
               }}</UButton
-              ><UButton v-if="eligible" type="submit" color="error">{{ t('products.delete') }}</UButton>
+              ><UButton v-if="eligible" type="submit" color="error" icon="i-lucide-trash-2" :loading="deletingBusy">{{
+                t('products.delete')
+              }}</UButton>
             </div></UForm
           ></template
         >
@@ -251,13 +369,15 @@ async function remove() {
       <div ref="bottomBoundary" class="h-px" aria-hidden="true" />
     </div>
     <p v-if="pending" role="status">{{ t('products.loading') }}</p>
-    <div v-if="result" class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-sm text-muted">{{ t('products.results', { count: result.pagination.totalItems }) }}</p>
+    <template v-if="result" #footer>
+      <span>{{ t('products.results', result.pagination.totalItems) }}</span>
       <UPagination
+        v-if="result.pagination.totalPages > 1"
         :page="page"
         :items-per-page="20"
         :total="result.pagination.totalItems"
-        @update:page="router.replace({ query: { ...route.query, page: $event } })"
-      /></div
-  ></ProductsShell>
+        @update:page="goToPage"
+      />
+    </template>
+  </ProductsShell>
 </template>
