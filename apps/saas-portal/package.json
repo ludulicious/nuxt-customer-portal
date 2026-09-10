@@ -25,7 +25,9 @@
     "@pinia/nuxt": "^1.0.1",
     "@vueuse/nuxt": "^14.4.0",
     "h3": "^1.15.11",
-    "nuxt": "^4.5.1"
+    "nuxt": "^4.5.1",
+    "@nuxt-customer-portal/products": "workspace:*",
+    "@nuxt-customer-portal/invoice-products": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",

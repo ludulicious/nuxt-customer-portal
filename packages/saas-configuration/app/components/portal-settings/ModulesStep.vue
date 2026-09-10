@@ -5,6 +5,16 @@ import { portalModuleIds } from '../../../shared/settings'
 const state = defineModel<PortalSettings>({ required: true })
 const { t } = useI18n()
 const modules = computed<Record<PortalModuleId, { label: string; description: string; icon: string }>>(() => ({
+  products: {
+    label: t('saasSettings.editor.modules.products'),
+    description: t('saasSettings.editor.modules.productsDescription'),
+    icon: 'i-lucide-shopping-bag'
+  },
+  'invoice-products': {
+    label: t('saasSettings.editor.modules.invoiceProducts'),
+    description: t('saasSettings.editor.modules.invoiceProductsDescription'),
+    icon: 'i-lucide-receipt-text'
+  },
   timesheets: {
     label: t('saasSettings.editor.modules.timesheets'),
     description: t('saasSettings.editor.modules.timesheetsDescription'),

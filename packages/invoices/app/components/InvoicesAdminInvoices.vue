@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { z } from 'zod'
 import { createHoursIntroduction } from '@nuxt-customer-portal/invoices/shared/invoice-introduction'
 import type { InvoicesAdminBootstrap } from '@nuxt-customer-portal/invoices/app/composables/useInvoices'
@@ -121,7 +122,7 @@ const invoiceSchema = computed(() =>
     })
 )
 const money = (minor: unknown, currency = props.data.settings.currency) =>
-  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(Number(minor) / 100)
+  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(Number(minor) / currencyScale(currency))
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const quantityFormat: Intl.NumberFormatOptions = { minimumFractionDigits: 2, maximumFractionDigits: 3 }
@@ -140,7 +141,7 @@ const updateQuantity = (line: (typeof model.lines)[number], value: number | null
   line.quantityMilli = Math.round(Number(value ?? 0) * 1000)
 }
 const updateUnitPrice = (line: (typeof model.lines)[number], value: number | null | undefined) => {
-  line.unitPriceMinor = Math.round(Number(value ?? 0) * 100)
+  line.unitPriceMinor = Math.round(Number(value ?? 0) * currencyScale(model.currency))
 }
 const updateVatRate = (line: (typeof model.lines)[number], value: number | null | undefined) => {
   line.vatRateBasisPoints = Math.round(Number(value ?? 0) * 10_000)
@@ -617,7 +618,7 @@ if (props.createPage) {
               :label="t('features.invoices.admin.unitPrice')"
             >
               <UInputNumber
-                :model-value="line.unitPriceMinor / 100"
+                :model-value="line.unitPriceMinor / currencyScale(model.currency)"
                 :min="0"
                 :step="0.01"
                 :format-options="currencyFormat"

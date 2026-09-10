@@ -1,3 +1,4 @@
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import type { ClientInvoiceDto, InvoiceDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
@@ -6,6 +7,7 @@ type InvoicePdfLocale = 'en' | 'nl'
 const labels = {
   en: {
     title: 'INVOICE',
+    creditTitle: 'CREDIT NOTE',
     from: 'From',
     to: 'Invoice to',
     number: 'Invoice number',
@@ -24,6 +26,7 @@ const labels = {
   },
   nl: {
     title: 'FACTUUR',
+    creditTitle: 'CREDITNOTA',
     from: 'Van',
     to: 'Factuur aan',
     number: 'Factuurnummer',
@@ -96,7 +99,7 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
       style: 'currency',
       currency: invoice.currency
-    }).format(minor / 100)
+    }).format(minor / currencyScale(invoice.currency))
   const number = (milli: number) =>
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
       minimumFractionDigits: 2,
@@ -170,8 +173,8 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   if (!logoDrawn) {
     text(invoice.senderName, margin, 16, bold, accent)
   }
-  page.drawText(l.title, {
-    x: width - margin - bold.widthOfTextAtSize(l.title, 22),
+  page.drawText(invoice.documentType === 'credit' ? l.creditTitle : l.title, {
+    x: width - margin - bold.widthOfTextAtSize(invoice.documentType === 'credit' ? l.creditTitle : l.title, 22),
     y,
     size: 22,
     font: bold,

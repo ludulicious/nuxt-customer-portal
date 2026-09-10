@@ -214,7 +214,7 @@ export const listSelectableClients = async (moduleId?: string) => {
   return page.items
 }
 
-type ClientTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+type ClientTransaction = Pick<typeof db, 'select' | 'insert' | 'execute'>
 export const createClientInTransaction = async (
   tx: ClientTransaction,
   actorUserId: string,

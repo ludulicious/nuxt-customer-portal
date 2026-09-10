@@ -76,7 +76,11 @@
         "serviceRequestsDescription": "Laat klanten verzoeken indienen en de voortgang volgen.",
         "invoiceTimesheets": "Factuur uit urenregistratie",
         "invoiceTimesheetsDescription": "Zet goedgekeurde uren om in factuurregels; vereist Urenregistratie en Facturen.",
-        "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt."
+        "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt.",
+        "products": "Producten",
+        "productsDescription": "Verkoop digitale producten en diensten.",
+        "invoiceProducts": "Productfacturen",
+        "invoiceProductsDescription": "Maak portaalfacturen voor productaankopen."
       },
       "actions": {
         "remove": "Verwijderen",

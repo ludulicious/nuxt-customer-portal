@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { z } from 'zod'
 import type {
   ClientInvoiceDto,
@@ -44,7 +45,12 @@ const attachmentDeleteOpen = ref(false)
 const statusConfirmation = ref<'VOID' | 'UNVOID' | null>(null)
 const statusConfirmationOpen = ref(false)
 const today = new Date().toISOString().slice(0, 10)
-const payment = reactive({ paidOn: today, amount: props.invoice.outstandingMinor / 100, reference: '', note: '' })
+const payment = reactive({
+  paidOn: today,
+  amount: props.invoice.outstandingMinor / currencyScale(props.invoice.currency),
+  reference: '',
+  note: ''
+})
 const edit = reactive({
   number: props.invoice.number,
   issueDate: props.invoice.issueDate,
@@ -64,7 +70,7 @@ const paymentSchema = computed(() =>
     amount: z
       .number()
       .positive(t('features.invoices.validation.positiveAmount'))
-      .max(props.invoice.outstandingMinor / 100),
+      .max(props.invoice.outstandingMinor / currencyScale(props.invoice.currency)),
     reference: z.string().trim().max(200),
     note: z.string().trim().max(1000)
   })
@@ -89,7 +95,9 @@ const editSchema = computed(() =>
     })
 )
 const money = (minor: number) =>
-  new Intl.NumberFormat(locale.value, { style: 'currency', currency: props.invoice.currency }).format(minor / 100)
+  new Intl.NumberFormat(locale.value, { style: 'currency', currency: props.invoice.currency }).format(
+    minor / currencyScale(props.invoice.currency)
+  )
 const number = (value: number) =>
   new Intl.NumberFormat(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(value / 1000)
 const percentage = (basisPoints: number) =>
@@ -230,7 +238,7 @@ const savePayment = async () => {
     () =>
       api.registerInvoicePayment(props.invoice.id, {
         paidOn: payment.paidOn,
-        amountMinor: Math.round(payment.amount * 100),
+        amountMinor: Math.round(payment.amount * currencyScale(props.invoice.currency)),
         reference: payment.reference || null,
         note: payment.note || null
       }),
@@ -377,7 +385,14 @@ onMounted(() => {
         </UButton>
         <div class="invoice-title-line">
           <h1 class="text-2xl font-semibold text-highlighted">
-            {{ t('features.invoices.admin.invoiceTitle', { number: invoice.number }) }}
+            {{
+              t(
+                invoice.documentType === 'credit'
+                  ? 'features.invoices.admin.creditTitle'
+                  : 'features.invoices.admin.invoiceTitle',
+                { number: invoice.number }
+              )
+            }}
           </h1>
           <div class="invoice-status-badges">
             <UBadge :color="statusColor" variant="subtle">
@@ -560,7 +575,7 @@ onMounted(() => {
           <UInputNumber
             v-model="payment.amount"
             :min="0.01"
-            :max="invoice.outstandingMinor / 100"
+            :max="invoice.outstandingMinor / currencyScale(invoice.currency)"
             :step="0.01"
             :increment="false"
             :decrement="false"

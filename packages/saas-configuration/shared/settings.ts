@@ -1,6 +1,13 @@
 import { z } from 'zod'
 
-export const portalModuleIds = ['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'] as const
+export const portalModuleIds = [
+  'timesheets',
+  'invoices',
+  'service-requests',
+  'invoice-timesheets',
+  'products',
+  'invoice-products'
+] as const
 export type PortalModuleId = (typeof portalModuleIds)[number]
 export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
@@ -78,6 +85,17 @@ export const portalSettingsSchema = z
     content: z.object({ en: localizedContentSchema, nl: localizedContentSchema })
   })
   .superRefine((value, context) => {
+    if (
+      (value.enabledModules.includes('products') && !value.enabledModules.includes('invoice-products')) ||
+      (value.enabledModules.includes('invoice-products') &&
+        (!value.enabledModules.includes('products') || !value.enabledModules.includes('invoices')))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['enabledModules'],
+        message: 'Products requires Invoices and the product invoice integration'
+      })
+    }
     if (
       value.enabledModules.includes('invoice-timesheets') &&
       (!value.enabledModules.includes('timesheets') || !value.enabledModules.includes('invoices'))

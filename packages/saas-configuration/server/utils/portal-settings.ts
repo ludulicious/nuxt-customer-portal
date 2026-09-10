@@ -1,4 +1,3 @@
-import type { PoolClient } from 'pg'
 import type { H3Event } from 'h3'
 import sharp from 'sharp'
 import { getSession } from '@nuxt-customer-portal/core/server'
@@ -11,6 +10,8 @@ import {
   type PortalOnboardingStep,
   type PortalSettings
 } from '../../shared/settings'
+
+type PoolClient = Pick<typeof pool, 'query'>
 
 interface SettingsRow {
   settings: PortalSettings

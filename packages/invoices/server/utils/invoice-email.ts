@@ -1,3 +1,4 @@
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { createHash } from 'node:crypto'
 import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils/client-email-locale'
 import { and, desc, eq } from 'drizzle-orm'
@@ -64,7 +65,7 @@ export const getInvoiceEmailPreview = async (
     new Date(`${selected.dueDate}T12:00:00Z`)
   )
   const outstanding = new Intl.NumberFormat(locale, { style: 'currency', currency: selected.currency }).format(
-    selected.outstandingMinor / 100
+    selected.outstandingMinor / currencyScale(selected.currency)
   )
   const values = {
     invoice_number: selected.number,
@@ -175,7 +176,7 @@ export const deliverInvoiceEmail = async (
     const outstandingAmount = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currentInvoice.currency
-    }).format(currentInvoice.outstandingMinor / 100)
+    }).format(currentInvoice.outstandingMinor / currencyScale(currentInvoice.currency))
     result = await sendPortalEmail({
       moduleId: invoicesFeature.id,
       definition: emailDefinition(purpose),

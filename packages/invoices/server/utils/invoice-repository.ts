@@ -473,7 +473,12 @@ export const setClientInvoiceViewer = async (
 }
 
 const totals = (
-  lines: Array<{ quantityMilli: number; unitPriceMinor: number; vatRateBasisPoints: number }>,
+  lines: Array<{
+    quantityMilli: number
+    unitPriceMinor: number
+    vatRateBasisPoints: number
+    exactTaxMinor?: number | null
+  }>,
   payments: Array<{ amountMinor: number }>
 ) => {
   const subtotalMinor = lines.reduce(
@@ -482,7 +487,7 @@ const totals = (
   )
   const vatMinor = lines.reduce((sum, line) => {
     const amount = Math.round((line.quantityMilli * line.unitPriceMinor) / 1000)
-    return sum + Math.round((amount * line.vatRateBasisPoints) / 10_000)
+    return sum + (line.exactTaxMinor ?? Math.round((amount * line.vatRateBasisPoints) / 10_000))
   }, 0)
   const totalMinor = subtotalMinor + vatMinor
   const paidMinor = payments.reduce((sum, payment) => sum + payment.amountMinor, 0)

@@ -40,6 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const settings = useState<{ enabledModules?: string[] } | null>('portal-runtime-settings')
   const routeModules: Record<string, string[]> = {
+    products: ['/admin/products', '/store'],
     timesheets: ['/timesheets', '/admin/timesheets'],
     invoices: ['/invoices', '/admin/invoices'],
     'service-requests': ['/requests', '/admin/requests']

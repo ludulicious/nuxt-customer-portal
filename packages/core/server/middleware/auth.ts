@@ -17,6 +17,16 @@ export default defineEventHandler(async (event) => {
   if (!url || !url.startsWith('/api/')) {
     return
   }
+  // Products routes implement their own catalog-key, signature, or public-entry checks.
+  const pathname = new URL(url, 'http://localhost').pathname
+  const storeRoute =
+    (event.method === 'GET' &&
+      (/^\/api\/store\/v1\/products(?:\/[^/]+)?$/.test(pathname) ||
+        /^\/api\/store\/(product|media)\/[^/]+$/.test(pathname))) ||
+    (event.method === 'POST' && ['/api/store/checkout', '/api/store/webhooks/stripe'].includes(pathname))
+  if (storeRoute) {
+    return
+  }
   const unprotectedPaths = [
     '/api/auth/',
     '/api/_nuxt_icon',
