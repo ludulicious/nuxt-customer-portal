@@ -1,3 +1,4 @@
+import { runUserDisplayNameChangedHooks } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { defineEventHandler, createError, readBody } from 'h3'
 import { z } from 'zod'
 import { timezoneSchema } from '@nuxt-customer-portal/core/server/utils/timezone-validation'
@@ -20,6 +21,8 @@ defineRouteMeta({
 // Zod schema for profile update request
 const updateProfileSchema = z
   .object({
+    firstName: z.string().trim().min(1).max(80).optional(),
+    lastName: z.string().trim().min(1).max(80).optional(),
     timezone: timezoneSchema.nullable().optional(),
     name: z
       .string()
@@ -31,9 +34,19 @@ const updateProfileSchema = z
       .union([z.string().url('Image must be a valid URL'), z.literal('').transform(() => null), z.null()])
       .optional()
   })
-  .refine((data) => data.name !== undefined || data.image !== undefined || data.timezone !== undefined, {
-    message: 'At least one field (name or image) must be provided'
+  .refine((data) => (data.firstName === undefined) === (data.lastName === undefined), {
+    message: 'Provide both first and last name'
   })
+  .refine(
+    (data) =>
+      data.firstName !== undefined ||
+      data.name !== undefined ||
+      data.image !== undefined ||
+      data.timezone !== undefined,
+    {
+      message: 'At least one field (name or image) must be provided'
+    }
+  )
 
 interface UpdateProfileResponse {
   success: boolean
@@ -41,6 +54,8 @@ interface UpdateProfileResponse {
   user?: {
     id: string
     name: string
+    firstName: string | null
+    lastName: string | null
     email: string
     image: string | null
     timezone: string | null
@@ -69,24 +84,42 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
   const validatedData = validationResult.data
 
   // Build update object
-  const updateData: { name?: string; image?: string | null; timezone?: string | null } = {}
+  const updateData: {
+    name?: string
+    firstName?: string | null
+    lastName?: string | null
+    image?: string | null
+    timezone?: string | null
+  } = {}
   if (validatedData.timezone !== undefined) {
     updateData.timezone = validatedData.timezone
   }
   if (validatedData.name !== undefined) {
     updateData.name = validatedData.name.trim()
   }
+  if (validatedData.firstName !== undefined && validatedData.lastName !== undefined) {
+    updateData.firstName = validatedData.firstName
+    updateData.lastName = validatedData.lastName
+  }
   if (validatedData.image !== undefined) {
     updateData.image = validatedData.image
   }
 
-  // Update user in database
-  const [updatedUser] = await db.update(userTable).set(updateData).where(eq(userTable.id, user.id)).returning({
-    id: userTable.id,
-    name: userTable.name,
-    email: userTable.email,
-    image: userTable.image,
-    timezone: userTable.timezone
+  // Save the profile and linked private client names atomically.
+  const updatedUser = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(userTable).set(updateData).where(eq(userTable.id, user.id)).returning({
+      id: userTable.id,
+      name: userTable.name,
+      firstName: userTable.firstName,
+      lastName: userTable.lastName,
+      email: userTable.email,
+      image: userTable.image,
+      timezone: userTable.timezone
+    })
+    if (updated && updateData.name !== undefined) {
+      await runUserDisplayNameChangedHooks(tx, user.id, updated.name)
+    }
+    return updated
   })
 
   if (!updatedUser) {
@@ -99,6 +132,8 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
     user: {
       id: updatedUser.id,
       name: updatedUser.name,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
       email: updatedUser.email,
       image: updatedUser.image,
       timezone: updatedUser.timezone

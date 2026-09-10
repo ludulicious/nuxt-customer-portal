@@ -223,7 +223,8 @@
         "notAvailable": "N/A",
         "role": "Role",
         "status": "Status",
-        "verified": "Verified"
+        "verified": "Verified",
+        "invitePrivateClient": "Invite private client"
       },
       "detail": {
         "title": "User details",

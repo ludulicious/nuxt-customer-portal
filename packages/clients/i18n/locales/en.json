@@ -81,7 +81,18 @@
       "editPersonalProfile": "Edit personal profile",
       "allTypes": "All client types",
       "firstName": "First name",
-      "lastName": "Last name"
+      "lastName": "Last name",
+      "personalAddress": "Personal address",
+      "personalAddressDescription": "The address on your private client profile, used for billing.",
+      "addressTooLong": "Use at most 1,000 characters",
+      "addressSaved": "Address saved",
+      "addressLoadFailed": "Could not load your personal address",
+      "invitePrivateClient": "Invite private client",
+      "choosePrivateClient": "Choose a private client",
+      "useExistingPrivateClient": "Invite an existing private client",
+      "privateInviteDescription": "Invite someone to their private client account. They will create or sign in to their own login to accept.",
+      "invitationCreated": "Invitation created",
+      "invitationDeliveryFailed": "Invitation saved, but the email could not be sent. Revoke it from Pending invitations, then invite the existing private client again."
     }
   }
 }

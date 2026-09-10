@@ -58,10 +58,16 @@ Run package tests with `node --import tsx --test packages/*/test/*.test.ts`. The
 
 The optional Playwright suite uses `test/e2e/personal-clients.config.ts`. It requires an isolated migrated portal at `http://localhost:4193` (override with `PORTAL_PERSONAL_E2E_URL`), both client types and personal registration enabled, and verified credential test accounts `coach@example.test` and `person@example.test` with password `Portal-test-password-2026!`. The coach must own provider organization ID `provider`. Run with `PORTAL_PERSONAL_E2E=1`. These credentials are test fixtures only.
 
-Registration and personal onboarding collect first and last names separately on the user account. The combined name is used for display and initializes the personal client billing name. Existing names are preserved without guessing how to split them; existing users supply the separate fields when completing onboarding.
+Registration and personal onboarding collect first and last names separately on the user account. Signup initializes the display name from the combined first and last name. Display name can subsequently be edited independently in profile settings. Personal onboarding preserves an existing display name. Display-name edits also update the linked private client name and current billing name atomically; historical invoice snapshots remain unchanged. Existing names are preserved without guessing how to split them; existing users supply the separate fields when completing onboarding.
 
 ## SaaS Portal Settings
 
 In the SaaS portal, system administrators can change **Portal Settings → Clients** to allow organizations, private persons, or both, and enable personal self-registration. Saved settings override the client-type and self-registration defaults in `portal.config.ts`; existing portals inherit those defaults until their settings are saved. Default module activations remain in the application configuration. Changes apply to client APIs, registration, forms, and navigation without a restart.
 
 At least one client type must remain enabled. Disabling a type is rejected while any client of that type exists, including archived clients. Personal self-registration also requires private clients and open authentication registration; the settings UI cannot override an authentication-level registration restriction. Client creation and settings writes share a transaction lock so concurrent requests cannot create a client of a newly disabled type.
+
+Private clients can edit their own address under Profile settings, including when an organization is selected. Address updates resolve ownership from the authenticated user and cannot target another client; archived personal accounts are read-only.
+
+Private clients do not use billing contact persons. Invoice creation requires their own address and invoice email, snapshots that email as the recipient, and rejects a separate contact selection. Contact management is available only for organizations. Existing invoice recipient snapshots remain unchanged.
+
+System administrators can use **Users → Invite private client** when private clients are enabled. They can create a private client without a login or select an existing unlinked client. The invitation grants only personal-client access after acceptance. Pending invitations appear on the Users page; if delivery fails, revoke the saved invitation there and invite the existing private client again. Request retries reuse the same invitation and client.

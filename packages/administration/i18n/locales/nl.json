@@ -223,7 +223,8 @@
         "notAvailable": "N.v.t.",
         "role": "Rol",
         "status": "Status",
-        "verified": "Geverifieerd"
+        "verified": "Geverifieerd",
+        "invitePrivateClient": "Particuliere klant uitnodigen"
       },
       "detail": {
         "title": "Gebruikersdetails",

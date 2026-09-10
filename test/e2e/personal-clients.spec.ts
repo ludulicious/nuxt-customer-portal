@@ -37,6 +37,40 @@ test('personal onboarding, saved timezone, access isolation and company compatib
   const session = await (await page.request.get('/api/auth/get-session')).json()
   expect(session.user.firstName).toBe('Personal')
   expect(session.user.lastName).toBe('Client')
+  const updatedProfile = await page.request.patch('/api/profile', {
+    data: { firstName: '  Updated  ', lastName: '  van Example  ' }
+  })
+  expect(updatedProfile.ok(), await updatedProfile.text()).toBeTruthy()
+  expect((await updatedProfile.json()).user).toMatchObject({
+    firstName: 'Updated',
+    lastName: 'van Example',
+    name: 'Personal Client'
+  })
+  expect((await page.request.patch('/api/profile', { data: { firstName: '', lastName: 'Example' } })).status()).toBe(
+    400
+  )
+  expect((await page.request.patch('/api/profile', { data: { firstName: 'Incomplete' } })).status()).toBe(400)
+  expect((await page.request.patch('/api/profile', { data: { name: 'Preferred name' } })).ok()).toBeTruthy()
+  const reloadedSession = await (await page.request.get('/api/auth/get-session')).json()
+  expect(reloadedSession.user).toMatchObject({
+    firstName: 'Updated',
+    lastName: 'van Example',
+    name: 'Preferred name'
+  })
+
+  const renamedClient = await (await page.request.get(`/api/clients/${personal.organizationId}`)).json()
+  expect(renamedClient).toMatchObject({ name: 'Preferred name', officialName: 'Preferred name' })
+  const address = 'Street 12\n1234 AB Amsterdam'
+  expect((await page.request.patch('/api/personal-client/address', { data: { address } })).ok()).toBeTruthy()
+  expect(await (await page.request.get('/api/personal-client/address')).json()).toMatchObject({ address })
+  expect((await coach.patch('/api/personal-client/address', { data: { address: 'Not mine' } })).status()).toBe(404)
+  expect(
+    (await page.request.patch('/api/personal-client/address', { data: { address, clientId: company.id } })).status()
+  ).toBe(400)
+  expect(
+    (await page.request.patch('/api/personal-client/address', { data: { address: 'x'.repeat(1001) } })).status()
+  ).toBe(400)
+
   const repeat = await page.request.post('/api/personal-client', {
     data: { firstName: 'Personal', lastName: 'Client', preferredLocale: 'en', timezone: 'UTC' }
   })

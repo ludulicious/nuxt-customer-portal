@@ -15,6 +15,7 @@ export const useAdministration = () => {
         role: string | null
         organizationId: string
         organizationName: string
+        isPersonalClient: boolean
         expiresAt: string
       }>
       total: number

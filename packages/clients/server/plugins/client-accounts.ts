@@ -1,13 +1,29 @@
+import { registerUserDisplayNameChangedHook } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { and, eq, inArray } from 'drizzle-orm'
 import { createError } from 'h3'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
-import { member } from '@nuxt-customer-portal/core/schema'
+import { member, organization } from '@nuxt-customer-portal/core/schema'
 import { registerClientAccountPolicy } from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 import { registerClientTimezoneResolver } from '@nuxt-customer-portal/core/server/utils/timezones'
 import { clientProfile } from '../db/schema/clients'
 import { getClientConfiguration, setClientConfigurationValidation } from '../utils/client-configuration'
 
 export default defineNitroPlugin(() => {
+  registerUserDisplayNameChangedHook(async (transaction, userId, name) => {
+    const tx = transaction as Parameters<Parameters<typeof db.transaction>[0]>[0]
+    const personalClients = await tx
+      .select({ id: clientProfile.organizationId })
+      .from(clientProfile)
+      .innerJoin(member, eq(member.organizationId, clientProfile.organizationId))
+      .where(and(eq(member.userId, userId), eq(clientProfile.clientType, 'person')))
+    for (const client of personalClients) {
+      await tx.update(organization).set({ name }).where(eq(organization.id, client.id))
+      await tx
+        .update(clientProfile)
+        .set({ officialName: name, updatedAt: new Date() })
+        .where(eq(clientProfile.organizationId, client.id))
+    }
+  })
   // Nitro does not await plugin return values. Register policies synchronously,
   // and gate requests on database validation instead of leaving a startup gap.
   const configurationReady = Promise.resolve()

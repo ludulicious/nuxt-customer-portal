@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
       }
       const id = await createClientInTransaction(tx, account.id, {
         ...input,
-        name: `${input.firstName} ${input.lastName}`,
+        name: account.name || `${input.firstName} ${input.lastName}`,
         clientType: 'person',
         address: '',
         invoiceEmail: account.email,
@@ -62,8 +62,7 @@ export default defineEventHandler(async (event) => {
         .set({
           timezone: input.timezone,
           firstName: input.firstName,
-          lastName: input.lastName,
-          name: `${input.firstName} ${input.lastName}`
+          lastName: input.lastName
         })
         .where(eq(user.id, account.id))
       return id

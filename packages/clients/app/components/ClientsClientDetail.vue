@@ -2,14 +2,14 @@
 import { z } from 'zod'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
-const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown> }>()
+const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown>; startEditing?: boolean }>()
 const emit = defineEmits<{ deleted: [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const api = useClients()
 const { clientIntegrations } = usePortalFeatures()
 const busy = ref(false)
-const editing = ref(false)
+const editing = ref(props.startEditing ?? false)
 const deleting = ref(false)
 const deleteName = ref('')
 const deletion = ref<{ canDelete: boolean; memberCount: number; moduleCount: number; clientName: string } | null>(null)
@@ -146,7 +146,7 @@ const toggleEditing = () => {
               {{ t(client.archivedAt ? 'features.clients.archived' : 'features.clients.active') }}
             </UBadge>
           </div>
-          <p class="text-sm text-muted">{{ client.officialName }}</p>
+          <p v-if="client.officialName !== client.name" class="text-sm text-muted">{{ client.officialName }}</p>
         </div>
       </div>
       <UButton size="sm" variant="outline" icon="i-lucide-pencil" @click="toggleEditing">
@@ -211,17 +211,24 @@ const toggleEditing = () => {
       </dl>
     </UCard>
 
-    <UCard>
+    <UCard v-if="client.clientType !== 'person' || !client.members.length">
       <template #header>
-        <h2 class="font-semibold">{{ t('features.clients.members') }}</h2>
+        <h2 class="font-semibold">
+          {{ t(client.clientType === 'person' ? 'features.clients.invitePrivateClient' : 'features.clients.members') }}
+        </h2>
       </template>
       <div class="grid gap-4">
         <UForm
-          v-if="client.clientType !== 'person' || !client.members.length"
+          v-if="client.clientType !== 'person' || !client.invitations.length"
           :state="invitationForm"
           :schema="invitationSchema"
           novalidate
-          class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]"
+          :class="[
+            'grid items-start gap-2',
+            client.clientType === 'person'
+              ? 'sm:grid-cols-[minmax(0,1fr)_auto]'
+              : 'sm:grid-cols-[minmax(0,1fr)_150px_auto]'
+          ]"
           @submit="inviteMember"
         >
           <UFormField name="email">
@@ -275,9 +282,11 @@ const toggleEditing = () => {
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-muted">{{ t('features.clients.noMembers') }}</p>
+        <p v-else-if="client.clientType !== 'person'" class="text-sm text-muted">
+          {{ t('features.clients.noMembers') }}
+        </p>
 
-        <div class="border-t border-default pt-4">
+        <div v-if="client.clientType !== 'person' || client.invitations.length" class="border-t border-default pt-4">
           <h3 class="mb-3 text-sm font-semibold">
             {{ t('features.clients.pendingInvitations') }} ({{ client.invitations.length }})
           </h3>
@@ -299,7 +308,9 @@ const toggleEditing = () => {
               </div>
               <div class="flex items-center gap-2">
                 <UBadge color="warning" variant="soft">{{ t('features.clients.invitationPending') }}</UBadge
-                ><UBadge color="neutral" variant="soft">{{ invitation.role }}</UBadge>
+                ><UBadge v-if="client.clientType !== 'person'" color="neutral" variant="soft">{{
+                  invitation.role
+                }}</UBadge>
                 <InvitationActions
                   :endpoint="`/api/clients/${client.id}/invitations/${invitation.id}`"
                   :email="invitation.email"
