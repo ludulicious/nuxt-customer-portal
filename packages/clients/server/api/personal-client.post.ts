@@ -16,7 +16,7 @@ const schema = z.object({
 })
 export default defineEventHandler(async (event) => {
   const session = await requireSession(event)
-  const config = getClientConfiguration()
+  const config = await getClientConfiguration()
   if (!config.personalSelfRegistration || !config.allowedTypes.includes('person')) {
     throw createError({ statusCode: 403, message: 'Personal registration is disabled' })
   }
@@ -27,6 +27,10 @@ export default defineEventHandler(async (event) => {
   const input = parsed.data
   const id = await db
     .transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('portal-client-configuration'))`)
+      if (!(await getClientConfiguration()).personalSelfRegistration) {
+        throw createError({ statusCode: 403, message: 'Personal registration is disabled' })
+      }
       // Per-user lock makes retries and concurrent onboarding idempotent.
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`)
       const [account] = await tx.select().from(user).where(eq(user.id, session.user.id)).limit(1)

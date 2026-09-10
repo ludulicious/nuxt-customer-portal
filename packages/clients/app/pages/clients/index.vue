@@ -8,6 +8,7 @@ const router = useRouter()
 const toast = useToast()
 const api = useClients()
 const runtimeConfig = useRuntimeConfig()
+const clientConfiguration = useClientConfiguration()
 const defaultModules = (runtimeConfig.public.clients as { defaultModules?: string[] } | undefined)?.defaultModules ?? []
 const clientType = ref(
   ['organization', 'person'].includes(String(route.query.clientType)) ? String(route.query.clientType) : 'all'
@@ -205,10 +206,7 @@ onMounted(() => {
       <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
         <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
           <div class="flex min-w-0 gap-3">
-            <UIcon
-              :name="clientsIcon(runtimeConfig.public.clients?.allowedTypes)"
-              class="mt-1 size-6 shrink-0 text-primary"
-            />
+            <UIcon :name="clientsIcon(clientConfiguration.allowedTypes)" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
               <h1 class="text-2xl font-semibold">{{ t('features.clients.title') }}</h1>
               <p class="hidden text-sm text-muted sm:block">{{ t('features.clients.description') }}</p>
@@ -249,7 +247,7 @@ onMounted(() => {
           :search-placeholder="t('features.clients.search')"
           :filters="[
             { key: 'status', placeholder: t('features.clients.status'), items: statusOptions },
-            ...((runtimeConfig.public.clients.allowedTypes?.length ?? 1) > 1
+            ...((clientConfiguration.allowedTypes?.length ?? 1) > 1
               ? [
                   {
                     key: 'clientType',

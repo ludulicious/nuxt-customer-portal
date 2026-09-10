@@ -1,8 +1,9 @@
+import { resolveClientConfigurationOverride } from '@nuxt-customer-portal/core/server/utils/client-configuration'
 import { createError } from 'h3'
 
-export const getClientConfiguration = () => {
+export const getClientConfiguration = async () => {
   const config = useRuntimeConfig()
-  const clients = config.public.clients as {
+  const clients = { ...config.public.clients, ...(await resolveClientConfigurationOverride()) } as {
     allowedTypes?: string[]
     personalSelfRegistration?: boolean
     defaultModules?: string[]
@@ -17,8 +18,8 @@ export const getClientConfiguration = () => {
   }
   return { ...clients, allowedTypes }
 }
-export const requireAllowedClientType = (type: string) => {
-  if (!getClientConfiguration().allowedTypes.includes(type)) {
+export const requireAllowedClientType = async (type: string) => {
+  if (!(await getClientConfiguration()).allowedTypes.includes(type)) {
     throw createError({ statusCode: 403, message: 'This client type is not enabled' })
   }
 }

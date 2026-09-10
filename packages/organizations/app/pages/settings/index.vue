@@ -8,6 +8,7 @@ const userStore = useUserStore()
 const { currentUser } = storeToRefs(userStore)
 const { setCurrentUser } = userStore
 const toast = useToast()
+const clientConfiguration = useClientConfiguration()
 
 const fileRef = ref<HTMLInputElement>()
 
@@ -193,7 +194,7 @@ onUnmounted(() => {
 
 <template>
   <UButton
-    v-if="useRuntimeConfig().public.clients?.personalSelfRegistration"
+    v-if="clientConfiguration.personalSelfRegistration"
     to="/personal-onboarding"
     class="mb-4"
     variant="outline"

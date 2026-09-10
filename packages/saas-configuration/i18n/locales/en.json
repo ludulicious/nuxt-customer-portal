@@ -3,7 +3,9 @@
     "navigation": "Portal settings",
     "title": "Portal settings",
     "onboardingTitle": "Set up your portal",
-    "public": { "myDashboard": "My dashboard" },
+    "public": {
+      "myDashboard": "My dashboard"
+    },
     "bootstrap": {
       "title": "Create the portal administrator",
       "description": "This new portal is reserved for its designated administrator. Create that account first; you will configure the portal after signing in."
@@ -19,7 +21,8 @@
         "modules": "Modules",
         "home": "Home page",
         "legal": "Legal pages",
-        "review": "Review"
+        "review": "Review",
+        "clients": "Clients"
       },
       "appearanceSection": "Appearance",
       "logoSection": "Logos for the selected color mode",
@@ -55,8 +58,15 @@
         "logoLight": "Wide logo for headers and pages with a light background.",
         "logoDark": "Wide logo for headers and pages with a dark background."
       },
-      "themes": { "apex": "Apex", "brutal": "Brutal" },
-      "colorModes": { "userChoice": "User choice", "lightOnly": "Light only", "darkOnly": "Dark only" },
+      "themes": {
+        "apex": "Apex",
+        "brutal": "Brutal"
+      },
+      "colorModes": {
+        "userChoice": "User choice",
+        "lightOnly": "Light only",
+        "darkOnly": "Dark only"
+      },
       "modules": {
         "timesheets": "Timesheets",
         "timesheetsDescription": "Register hours by employee, client, project, and activity.",
@@ -95,6 +105,16 @@
         "invalidImage": "Use a valid PNG, JPEG, or WebP image smaller than 2 MB.",
         "imageTooLarge": "The image dimensions must not exceed 2400×2400 pixels.",
         "markTooSmall": "Compact icons must be at least 64×64 pixels."
+      },
+      "clients": {
+        "description": "Choose whether this portal serves organizations, private persons, or both.",
+        "allowedTypes": "Allowed client types",
+        "existing": "A type cannot be disabled while clients of that type exist, including archived clients.",
+        "organization": "Organizations (B2B)",
+        "person": "Private persons (B2C)",
+        "registration": "Allow personal self-registration",
+        "registrationDescription": "Verified users can complete personal onboarding and open their own client account. When disabled, you can still create and invite private clients.",
+        "registrationDisabled": "Self-registration requires open registration in the authentication configuration."
       }
     }
   }

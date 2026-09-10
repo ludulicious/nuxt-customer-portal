@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { getOrganizationAvatar } from '@nuxt-customer-portal/core/shared/organization-avatar'
 import { db } from '@nuxt-customer-portal/core/server/portal'
@@ -221,7 +221,8 @@ export const createClientInTransaction = async (
   input: ClientCreateInput
 ) => {
   const type = input.clientType ?? 'organization'
-  requireAllowedClientType(type)
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('portal-client-configuration'))`)
+  await requireAllowedClientType(type)
   const clientSlug =
     type === 'person'
       ? `person-${nanoid()

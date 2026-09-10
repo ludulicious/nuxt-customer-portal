@@ -8,17 +8,20 @@ import { clientProfile } from '../db/schema/clients'
 import { getClientConfiguration, setClientConfigurationValidation } from '../utils/client-configuration'
 
 export default defineNitroPlugin(() => {
-  const config = getClientConfiguration()
   // Nitro does not await plugin return values. Register policies synchronously,
   // and gate requests on database validation instead of leaving a startup gap.
-  const configurationReady = db
-    .selectDistinct({ clientType: clientProfile.clientType })
-    .from(clientProfile)
-    .then((profiles) =>
-      profiles.some((row) => !config.allowedTypes.includes(row.clientType))
-        ? 'Cannot disable a client type while clients of that type exist'
-        : null
-    )
+  const configurationReady = Promise.resolve()
+    .then(async () => {
+      const config = await getClientConfiguration()
+      return db
+        .selectDistinct({ clientType: clientProfile.clientType })
+        .from(clientProfile)
+        .then((profiles) =>
+          profiles.some((row) => !config.allowedTypes.includes(row.clientType))
+            ? 'Cannot disable a client type while clients of that type exist'
+            : null
+        )
+    })
     .catch(() => 'Client configuration could not be validated. Check database migrations and connectivity.')
   setClientConfigurationValidation(configurationReady)
   const profile = async (id: string) =>

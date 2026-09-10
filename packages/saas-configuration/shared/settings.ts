@@ -6,7 +6,7 @@ export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
 export const portalColorModePolicies = ['light-only', 'dark-only', 'user-choice'] as const
 export type PortalColorModePolicy = (typeof portalColorModePolicies)[number]
-export const portalOnboardingSteps = ['branding', 'modules', 'home', 'legal', 'review'] as const
+export const portalOnboardingSteps = ['branding', 'clients', 'modules', 'home', 'legal', 'review'] as const
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
 
 const text = (maximum: number) => z.string().trim().max(maximum)
@@ -51,8 +51,19 @@ const homeSchema = z.object({
 const legalSchema = z.object({ title: text(160), body: text(30000) })
 const localizedContentSchema = z.object({ home: homeSchema, terms: legalSchema, privacy: legalSchema })
 
+export const portalClientsSchema = z
+  .object({
+    allowedTypes: z.array(z.enum(['organization', 'person'])).min(1),
+    personalSelfRegistration: z.boolean()
+  })
+  .refine((value) => !value.personalSelfRegistration || value.allowedTypes.includes('person'), {
+    path: ['personalSelfRegistration'],
+    message: 'Personal self-registration requires private clients'
+  })
+
 export const portalSettingsSchema = z
   .object({
+    clients: portalClientsSchema.default({ allowedTypes: ['organization'], personalSelfRegistration: false }),
     branding: portalBrandingSchema,
     appearance: z.object({
       theme: z.enum(portalThemeNames),
@@ -84,7 +95,7 @@ export type PortalContent = z.infer<typeof localizedContentSchema>
 export type PortalSettings = z.infer<typeof portalSettingsSchema>
 export interface PublicPortalSettings extends Pick<
   PortalSettings,
-  'branding' | 'appearance' | 'enabledModules' | 'content'
+  'branding' | 'appearance' | 'enabledModules' | 'content' | 'clients'
 > {
   completed: boolean
 }
@@ -141,6 +152,7 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     logoDark: ''
   },
   appearance: { theme: 'apex', colorMode: 'user-choice', primaryLight: '#ea580c', primaryDark: '#fb923c' },
+  clients: { allowedTypes: ['organization'], personalSelfRegistration: false },
   enabledModules: ['timesheets', 'invoices', 'invoice-timesheets'],
   content: { en: defaultLocaleContent('en'), nl: defaultLocaleContent('nl') }
 })

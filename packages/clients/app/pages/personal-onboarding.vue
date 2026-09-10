@@ -4,8 +4,8 @@ import { isValidTimezone } from '@nuxt-customer-portal/core/shared/timezone'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 
 const { t, locale } = useI18n()
-const config = useRuntimeConfig().public.clients
-if (!config.personalSelfRegistration) {
+const config = useClientConfiguration()
+if (!config.value.personalSelfRegistration) {
   throw createError({ statusCode: 404 })
 }
 const { data: session } = await authClient.getSession()

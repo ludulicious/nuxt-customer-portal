@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (
     to.meta.public ||
     to.path === '/personal-onboarding' ||
-    !useRuntimeConfig().public.clients?.personalSelfRegistration
+    !useClientConfiguration().value.personalSelfRegistration
   ) {
     return
   }

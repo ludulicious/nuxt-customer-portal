@@ -60,14 +60,14 @@ test('runtime rejects B2B personal creation and incompatible authentication regi
   delete process.env.PORTAL_REGISTRATION_MODE
   try {
     globals.useRuntimeConfig = () => ({ public: { clients: {} }, portalAuth: { registrationMode: 'open' } })
-    assert.throws(() => requireAllowedClientType('person'), { statusCode: 403 })
-    requireAllowedClientType('organization')
+    await assert.rejects(() => requireAllowedClientType('person'), { statusCode: 403 })
+    await requireAllowedClientType('organization')
     for (const registrationMode of ['invitation-only', 'disabled']) {
       globals.useRuntimeConfig = () => ({
         public: { clients: { allowedTypes: ['organization', 'person'], personalSelfRegistration: true } },
         portalAuth: { registrationMode }
       })
-      assert.throws(getClientConfiguration, /open authentication/)
+      await assert.rejects(getClientConfiguration, /open authentication/)
     }
   } finally {
     globals.useRuntimeConfig = original

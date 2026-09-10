@@ -20,8 +20,9 @@ const toast = useToast()
 const runtimeConfig = useRuntimeConfig()
 const portalAuth = runtimeConfig.public.portalAuth
 const route = useRoute()
+const clientConfiguration = useClientConfiguration()
 const personalSignup = computed(
-  () => Boolean(runtimeConfig.public.clients?.personalSelfRegistration) && !route.query.invitationId
+  () => Boolean(clientConfiguration.value.personalSelfRegistration) && !route.query.invitationId
 )
 
 const invitationId = useRoute().query.invitationId

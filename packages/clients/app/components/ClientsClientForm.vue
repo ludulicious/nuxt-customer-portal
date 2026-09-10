@@ -6,12 +6,11 @@ import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/type
 const props = defineProps<{ client?: GenericClientDto | null; busy?: boolean; editing?: boolean }>()
 const emit = defineEmits<{ submit: [value: Record<string, unknown>]; cancel: [] }>()
 const { t } = useI18n()
-const allowedTypes = (useRuntimeConfig().public.clients as { allowedTypes?: string[] })?.allowedTypes ?? [
-  'organization'
-]
+const configuration = useClientConfiguration()
+const allowedTypes = computed(() => configuration.value.allowedTypes ?? ['organization'])
 const { data: timezones } = await useFetch<{ providerTimezone: string }>('/api/timezones')
 const form = reactive({
-  clientType: (allowedTypes[0] ?? 'organization') as 'organization' | 'person',
+  clientType: (allowedTypes.value[0] ?? 'organization') as 'organization' | 'person',
   timezone: null as string | null,
   name: '',
   slug: '',
@@ -66,7 +65,7 @@ const reset = () =>
           preferredLocale: props.client.preferredLocale
         }
       : {
-          clientType: allowedTypes[0] ?? 'organization',
+          clientType: allowedTypes.value[0] ?? 'organization',
           timezone: null,
           name: '',
           slug: '',

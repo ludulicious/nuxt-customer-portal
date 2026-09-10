@@ -6,7 +6,7 @@ import { needsPersonalOnboarding } from '../../shared/personal-onboarding'
 
 export default defineEventHandler(async (event) => {
   const session = await requireSession(event)
-  const config = getClientConfiguration()
+  const config = await getClientConfiguration()
   if (!config.personalSelfRegistration) {
     return { onboardingRequired: false }
   }

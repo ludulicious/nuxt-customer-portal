@@ -59,3 +59,9 @@ Run package tests with `node --import tsx --test packages/*/test/*.test.ts`. The
 The optional Playwright suite uses `test/e2e/personal-clients.config.ts`. It requires an isolated migrated portal at `http://localhost:4193` (override with `PORTAL_PERSONAL_E2E_URL`), both client types and personal registration enabled, and verified credential test accounts `coach@example.test` and `person@example.test` with password `Portal-test-password-2026!`. The coach must own provider organization ID `provider`. Run with `PORTAL_PERSONAL_E2E=1`. These credentials are test fixtures only.
 
 Registration and personal onboarding collect first and last names separately on the user account. The combined name is used for display and initializes the personal client billing name. Existing names are preserved without guessing how to split them; existing users supply the separate fields when completing onboarding.
+
+## SaaS Portal Settings
+
+In the SaaS portal, system administrators can change **Portal Settings → Clients** to allow organizations, private persons, or both, and enable personal self-registration. Saved settings override the client-type and self-registration defaults in `portal.config.ts`; existing portals inherit those defaults until their settings are saved. Default module activations remain in the application configuration. Changes apply to client APIs, registration, forms, and navigation without a restart.
+
+At least one client type must remain enabled. Disabling a type is rejected while any client of that type exists, including archived clients. Personal self-registration also requires private clients and open authentication registration; the settings UI cannot override an authentication-level registration restriction. Client creation and settings writes share a transaction lock so concurrent requests cannot create a client of a newly disabled type.
