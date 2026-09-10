@@ -62,6 +62,7 @@ const submit = async () => {
       <UFormField name="preferredLocale" :label="t('features.clients.locale')"
         ><USelect
           v-model="state.preferredLocale"
+          class="w-full"
           :items="[
             { label: 'Nederlands', value: 'nl' },
             { label: 'English', value: 'en' }
