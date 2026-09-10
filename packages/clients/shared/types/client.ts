@@ -26,6 +26,9 @@ export interface GenericClientDto {
   name: string
   slug: string
   logo: string | null
+  clientType: 'organization' | 'person'
+  timezone: string | null
+  schedulingTimezone: string
   officialName: string
   address: string
   registrationNumber: string | null

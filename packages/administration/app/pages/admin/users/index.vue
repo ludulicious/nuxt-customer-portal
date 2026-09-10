@@ -17,6 +17,8 @@ const users = ref<AdminUserResponse[]>([])
 const loading = ref(true)
 const error = ref('')
 const showCreateModal = ref(false)
+const showPrivateInvitation = ref(false)
+const clientConfiguration = useClientConfiguration()
 const searchQuery = ref(String(route.query.search ?? ''))
 const roleFilter = ref(['admin', 'user'].includes(String(route.query.role)) ? String(route.query.role) : 'all')
 const statusFilter = ref(['active', 'banned'].includes(String(route.query.status)) ? String(route.query.status) : 'all')
@@ -168,6 +170,16 @@ await loadUsers()
             </div>
           </div>
           <div class="flex shrink-0 items-center gap-1">
+            <UButton
+              v-if="clientConfiguration.allowedTypes?.includes('person')"
+              icon="i-lucide-mail-plus"
+              size="sm"
+              variant="outline"
+              :aria-label="t('admin.user.list.invitePrivateClient')"
+              @click="showPrivateInvitation = true"
+            >
+              <span class="hidden sm:inline">{{ t('admin.user.list.invitePrivateClient') }}</span>
+            </UButton>
             <UButton
               class="rounded-full sm:hidden"
               icon="i-lucide-plus"
@@ -351,6 +363,12 @@ await loadUsers()
       }}</span>
     </footer>
 
+    <component
+      :is="resolveComponent('ClientsPrivateInvitation')"
+      v-if="clientConfiguration.allowedTypes?.includes('person')"
+      v-model:open="showPrivateInvitation"
+      @success="loadUsers"
+    />
     <AdminCreateUserModal v-model:open="showCreateModal" @success="loadUsers" />
   </div>
 </template>

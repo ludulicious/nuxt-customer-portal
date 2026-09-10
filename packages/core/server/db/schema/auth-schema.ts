@@ -9,6 +9,9 @@ export const user = pgTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
+    timezone: text('timezone'),
+    firstName: text('first_name'),
+    lastName: text('last_name'),
     emailVerified: boolean('email_verified').default(false).notNull(),
     image: text('image'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -114,6 +117,13 @@ export const organization = pgTable(
       .where(sql`${table.organizationType} = 'PROVIDER'`)
   ]
 )
+
+export const organizationSettings = pgTable('organization_settings', {
+  organizationId: text('organization_id')
+    .primaryKey()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  timezone: text('timezone').default('Europe/Amsterdam').notNull()
+})
 
 export const member = pgTable(
   'member',

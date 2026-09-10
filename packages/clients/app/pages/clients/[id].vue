@@ -41,7 +41,13 @@ const handleDeleted = async () => {
         :title="t('features.clients.notFound')"
         variant="outline"
       />
-      <ClientsClientDetail v-else-if="client" :client="client" :refresh="refresh" @deleted="handleDeleted" />
+      <ClientsClientDetail
+        v-else-if="client"
+        :client="client"
+        :refresh="refresh"
+        :start-editing="route.query.edit === 'true'"
+        @deleted="handleDeleted"
+      />
     </div>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { isValidTimezone } from '@nuxt-customer-portal/core/shared/timezone'
 import type { TimesheetsAdminBootstrap } from '@nuxt-customer-portal/timesheets/app/composables/useTimesheets'
 
 const props = defineProps<{
@@ -23,7 +24,7 @@ const schema = computed(() =>
   z.object({
     timerRoundingMinutes: z.number().int().min(1).max(60),
     currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
-    timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
+    timezone: z.string().trim().max(100).refine(isValidTimezone, t('timezones.invalid'))
   })
 )
 

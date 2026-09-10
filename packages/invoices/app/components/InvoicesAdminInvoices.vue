@@ -183,7 +183,9 @@ const missingClientInvoiceDetails = computed(() => {
   }
   const missing = [
     !client.address.trim() && t('features.invoices.admin.address'),
-    !client.contacts.length && t('features.invoices.admin.contactPersons')
+    client.clientType === 'person'
+      ? !client.invoiceEmail?.trim() && t('features.invoices.admin.email')
+      : !client.contacts.length && t('features.invoices.admin.contactPersons')
   ]
   return missing.filter((item): item is string => Boolean(item))
 })
@@ -250,7 +252,8 @@ const chooseClient = (id: string) => {
 }
 const editSelectedClient = async () => {
   await navigateTo({
-    path: `/clients/${selectedClient.value?.organizationId}`
+    path: `/clients/${selectedClient.value?.organizationId}`,
+    query: { edit: 'true' }
   })
 }
 const groupEntries = (entries: InvoiceableEntryDto[]) => {
@@ -554,7 +557,11 @@ if (props.createPage) {
             <UFormField :label="t('features.invoices.admin.client')">
               <UInput :model-value="selectedClient?.name" disabled class="w-full" />
             </UFormField>
-            <UFormField name="contactId" :label="t('features.invoices.admin.contact')">
+            <UFormField
+              v-if="selectedClient?.clientType !== 'person'"
+              name="contactId"
+              :label="t('features.invoices.admin.contact')"
+            >
               <USelect
                 v-model="model.contactId"
                 :items="
@@ -564,6 +571,9 @@ if (props.createPage) {
                 value-key="value"
                 class="w-full"
               />
+            </UFormField>
+            <UFormField v-if="selectedClient?.clientType === 'person'" :label="t('features.invoices.admin.email')">
+              <UInput :model-value="selectedClient.invoiceEmail ?? ''" disabled class="w-full" />
             </UFormField>
             <UFormField :label="t('features.invoices.admin.currency')">
               <UInput v-model="model.currency" disabled class="w-full" />

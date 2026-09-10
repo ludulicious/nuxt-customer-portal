@@ -2,6 +2,7 @@ export default defineEventHandler(async () => {
   const { settings, completed } = await readPortalSettings()
   return {
     completed,
+    clients: settings.clients,
     branding: settings.branding,
     appearance: settings.appearance,
     enabledModules: settings.enabledModules,

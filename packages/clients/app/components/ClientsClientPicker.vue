@@ -6,7 +6,13 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const { data: clients, status } = await useFetch<GenericClientDto[]>('/api/clients/selectable', {
   query: computed(() => ({ moduleId: props.moduleId }))
 })
-const items = computed(() => (clients.value ?? []).map((client) => ({ label: client.name, value: client.id })))
+const { t } = useI18n()
+const items = computed(() =>
+  (clients.value ?? []).map((client) => ({
+    label: `${client.name} · ${t(`features.clients.types.${client.clientType}`)}`,
+    value: client.id
+  }))
+)
 </script>
 
 <template>

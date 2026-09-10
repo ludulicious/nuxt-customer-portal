@@ -26,3 +26,16 @@ export const assertTimeEntriesReopenable = async (organizationId: string, entryI
     await guard(organizationId, entryIds)
   }
 }
+
+type UserDisplayNameChangedHook = (transaction: unknown, userId: string, name: string) => Promise<void>
+const userDisplayNameChangedHooks: UserDisplayNameChangedHook[] = []
+export const registerUserDisplayNameChangedHook = (hook: UserDisplayNameChangedHook) => {
+  if (!userDisplayNameChangedHooks.includes(hook)) {
+    userDisplayNameChangedHooks.push(hook)
+  }
+}
+export const runUserDisplayNameChangedHooks = async (transaction: unknown, userId: string, name: string) => {
+  for (const hook of userDisplayNameChangedHooks) {
+    await hook(transaction, userId, name)
+  }
+}

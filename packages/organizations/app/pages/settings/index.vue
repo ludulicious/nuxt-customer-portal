@@ -8,30 +8,35 @@ const userStore = useUserStore()
 const { currentUser } = storeToRefs(userStore)
 const { setCurrentUser } = userStore
 const toast = useToast()
+const clientConfiguration = useClientConfiguration()
 
 const fileRef = ref<HTMLInputElement>()
 
 // Zod schema for profile form validation
-const schema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, t('profile.validation.nameRequired'))
-      .max(255, t('profile.validation.nameMaxLength')),
-    image: z
-      .union([z.string().url(t('profile.validation.imageInvalidUrl')), z.literal('').transform(() => null), z.null()])
-      .optional()
-  })
-  .refine((data) => data.name !== undefined || data.image !== undefined, {
-    message: t('profile.validation.atLeastOneField')
-  })
+const schema = z.object({
+  name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength')),
+  firstName: z
+    .string()
+    .trim()
+    .min(1, t('profile.validation.firstNameRequired'))
+    .max(80, t('profile.validation.namePartMaxLength')),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, t('profile.validation.lastNameRequired'))
+    .max(80, t('profile.validation.namePartMaxLength')),
+  image: z
+    .union([z.string().url(t('profile.validation.imageInvalidUrl')), z.literal('').transform(() => null), z.null()])
+    .optional()
+})
 
 type Schema = z.output<typeof schema>
 
 // Form state
 const form = reactive<Partial<Schema>>({
   name: '',
+  firstName: '',
+  lastName: '',
   image: ''
 })
 
@@ -43,6 +48,8 @@ const selectedFile = ref<File | null>(null)
 watchEffect(() => {
   if (currentUser.value) {
     form.name = currentUser.value.name || ''
+    form.firstName = currentUser.value.firstName || ''
+    form.lastName = currentUser.value.lastName || ''
     form.image = currentUser.value.image || ''
     isDirty.value = false
   }
@@ -50,10 +57,13 @@ watchEffect(() => {
 
 // Watch for form changes
 watch(
-  () => [form.name, form.image],
+  () => [form.name, form.firstName, form.lastName, form.image],
   () => {
     if (currentUser.value) {
-      const nameChanged = form.name !== (currentUser.value.name || '')
+      const nameChanged =
+        form.name !== (currentUser.value.name || '') ||
+        form.firstName !== (currentUser.value.firstName || '') ||
+        form.lastName !== (currentUser.value.lastName || '')
       const imageChanged = form.image !== (currentUser.value.image || '')
       isDirty.value = nameChanged || imageChanged
     }
@@ -92,13 +102,17 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
       user?: {
         id: string
         name: string
+        firstName: string
+        lastName: string
         email: string
         image: string | null
       }
     }>('/api/profile', {
       method: 'PATCH',
       body: {
-        name: event.data.name?.trim(),
+        name: event.data.name,
+        firstName: event.data.firstName,
+        lastName: event.data.lastName,
         image: imageUrl
       }
     })
@@ -108,9 +122,12 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
       setCurrentUser({
         ...currentUser.value,
         name: response.user.name,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
         image: response.user.image || undefined
       })
 
+      await userStore.refreshOrganizations()
       toast.add({
         title: t('profile.messages.success'),
         description: t('profile.messages.profileUpdated'),
@@ -149,6 +166,8 @@ const handleReset = () => {
       URL.revokeObjectURL(form.image)
     }
     form.name = currentUser.value.name || ''
+    form.firstName = currentUser.value.firstName || ''
+    form.lastName = currentUser.value.lastName || ''
     form.image = currentUser.value.image || ''
     isDirty.value = false
     selectedFile.value = null
@@ -192,8 +211,17 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <UButton
+    v-if="clientConfiguration.personalSelfRegistration"
+    to="/personal-onboarding"
+    class="mb-4"
+    variant="outline"
+    >{{ t('timezones.openPersonalAccount') }}</UButton
+  >
+  <TimezonePreferences />
+  <component :is="resolveComponent('ClientsPersonalAddress')" v-if="useRuntimeConfig().public.clients" />
   <AppCard class="mb-8" :title="$t('profile.sections.profileInfo')">
-    <UForm :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
+    <UForm novalidate :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
       <!-- Profile Picture Section -->
       <UFormField
         :label="$t('profile.fields.profilePicture')"
@@ -215,19 +243,18 @@ onUnmounted(() => {
       </UFormField>
 
       <UFormField
-        :label="$t('profile.fields.name')"
-        :description="$t('profile.fields.nameDescription')"
+        :label="$t('profile.fields.displayName')"
+        :description="$t('profile.fields.displayNameDescription')"
         name="name"
         required
       >
-        <UInput
-          v-model="form.name"
-          type="text"
-          :placeholder="$t('profile.fields.namePlaceholder')"
-          icon="i-lucide-user"
-          class="w-full"
-          required
-        />
+        <UInput v-model="form.name" autocomplete="nickname" icon="i-lucide-user" class="w-full" />
+      </UFormField>
+      <UFormField :label="$t('profile.fields.firstName')" name="firstName" required>
+        <UInput v-model="form.firstName" autocomplete="given-name" icon="i-lucide-user" class="w-full" />
+      </UFormField>
+      <UFormField :label="$t('profile.fields.lastName')" name="lastName" required>
+        <UInput v-model="form.lastName" autocomplete="family-name" icon="i-lucide-user" class="w-full" />
       </UFormField>
 
       <UFormField :label="$t('profile.fields.email')" :description="$t('profile.fields.emailDescription')" name="email">

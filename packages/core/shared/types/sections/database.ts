@@ -7,6 +7,7 @@ export interface User {
   id: string
   name: string
   email: string
+  timezone?: string | null
   emailVerified: boolean
   image?: string
   createdAt: Date

@@ -1,3 +1,4 @@
+import { isPersonalClient } from './client-account-policy'
 import { db } from './db'
 import { member as memberTable, organization as organizationTable } from '../db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
@@ -113,6 +114,9 @@ export const hasPermission = async (
   subject: string,
   action: string
 ): Promise<boolean> => {
+  if (organizationId && ['member', 'invitation'].includes(subject) && (await isPersonalClient(organizationId))) {
+    return false
+  }
   const { permissions } = await getUserPermissions(userId, systemRole, organizationId)
   const subjectPermissions = permissions[subject] || []
   return Array.isArray(subjectPermissions) && subjectPermissions.includes(action)

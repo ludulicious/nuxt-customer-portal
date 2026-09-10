@@ -1,3 +1,5 @@
+import { z } from 'zod'
+import { isPersonalClient, assertClientInvitationAcceptance } from './client-account-policy'
 import { isPortalDemo } from './demo'
 import { demoMessage, isDemoRequestAllowed } from '../../shared/demo-policy'
 import { betterAuth } from 'better-auth'
@@ -66,6 +68,52 @@ export const auth = betterAuth({
           message: demoMessage(ctx.headers?.get('accept-language') || '')
         })
       }
+      if (ctx.path.startsWith('/organization/') && ctx.body) {
+        const current = await getSessionFromCtx(ctx)
+        const body = ctx.body as Record<string, unknown>
+        let target = body.organizationId as string | undefined
+        if (typeof body.invitationId === 'string') {
+          const [invite] = await db
+            .select()
+            .from(organizationInvitationTable)
+            .where(eq(organizationInvitationTable.id, body.invitationId))
+            .limit(1)
+          target = invite?.organizationId
+        }
+        const memberId = body.memberId ?? body.memberIdOrEmail
+        if (typeof memberId === 'string') {
+          const [selected] = await db
+            .select()
+            .from(organizationMemberTable)
+            .where(eq(organizationMemberTable.id, memberId))
+            .limit(1)
+          target = selected?.organizationId ?? target
+        }
+        target ||= current?.session.activeOrganizationId ?? undefined
+        if (target && (await isPersonalClient(target))) {
+          if (ctx.path === '/organization/accept-invitation') {
+            if (!current?.user.emailVerified) {
+              throw new APIError('FORBIDDEN', { message: 'Verify your email first' })
+            }
+            try {
+              await assertClientInvitationAcceptance(target, current.user.id)
+            } catch {
+              throw new APIError('CONFLICT', { message: 'Personal account already exists. Contact your coach.' })
+            }
+          } else if (
+            ![
+              '/organization/set-active',
+              '/organization/reject-invitation',
+              '/organization/check-slug',
+              '/organization/has-permission'
+            ].includes(ctx.path)
+          ) {
+            throw new APIError('FORBIDDEN', {
+              message: 'Personal account membership and organization settings cannot be changed through this route'
+            })
+          }
+        }
+      }
       if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') {
         return
       }
@@ -101,6 +149,11 @@ export const auth = betterAuth({
     requireEmailVerification: true
   },
   user: {
+    additionalFields: {
+      timezone: { type: 'string', required: false, input: false },
+      firstName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } },
+      lastName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } }
+    },
     deleteUser: {
       enabled: true,
       sendDeleteAccountVerification: async ({ user, url, token: _token }, _request) => {

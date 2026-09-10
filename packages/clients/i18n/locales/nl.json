@@ -2,7 +2,7 @@
   "features": {
     "clients": {
       "title": "Klanten",
-      "description": "Beheer klantbedrijven, leden, profielen en moduletoegang.",
+      "description": "Beheer klanten, profielen, leden en moduletoegang.",
       "backToClients": "Terug naar klanten",
       "openClient": "Open {name}",
       "loading": "Klant laden",
@@ -68,7 +68,31 @@
         "slug": "Gebruik alleen kleine letters, cijfers en enkele koppeltekens.",
         "officialName": "Voer de officiële bedrijfsnaam in.",
         "email": "Voer een geldig e-mailadres in."
-      }
+      },
+      "clientType": "Type klant",
+      "types": {
+        "organization": "Organisatie",
+        "person": "Privépersoon"
+      },
+      "fullName": "Volledige naam",
+      "personalAccount": "Persoonlijk account",
+      "openPersonalAccount": "Persoonlijk account openen",
+      "onboardingFailed": "Je persoonlijke account kon niet worden geopend. Verifieer je e-mail of neem contact op met je coach als je al een account hebt.",
+      "editPersonalProfile": "Persoonlijk profiel bewerken",
+      "allTypes": "Alle klanttypen",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "personalAddress": "Persoonlijk adres",
+      "personalAddressDescription": "Het adres op je particuliere klantprofiel, gebruikt voor facturatie.",
+      "addressTooLong": "Gebruik maximaal 1.000 tekens",
+      "addressSaved": "Adres opgeslagen",
+      "addressLoadFailed": "Je persoonlijke adres kon niet worden geladen",
+      "invitePrivateClient": "Particuliere klant uitnodigen",
+      "choosePrivateClient": "Kies een particuliere klant",
+      "useExistingPrivateClient": "Een bestaande particuliere klant uitnodigen",
+      "privateInviteDescription": "Nodig iemand uit voor hun particuliere klantaccount. De ontvanger maakt een login aan of logt in om te accepteren.",
+      "invitationCreated": "Uitnodiging aangemaakt",
+      "invitationDeliveryFailed": "Uitnodiging opgeslagen, maar de e-mail kon niet worden verstuurd. Trek deze in via Openstaande uitnodigingen en nodig daarna de bestaande privécliënt opnieuw uit."
     }
   }
 }

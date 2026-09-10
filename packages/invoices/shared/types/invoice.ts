@@ -190,6 +190,7 @@ export interface InvoiceContactDto {
   jobTitle: string | null
 }
 export interface InvoiceClientDto {
+  clientType: 'organization' | 'person'
   id: string
   organizationId: string
   name: string

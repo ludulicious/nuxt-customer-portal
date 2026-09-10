@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, readBody, getRouterParam } from 'h3'
 import { auth, generateId } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
+import { isPersonalClient } from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 import {
   invitation as invitationTable,
   member as memberTable
@@ -56,6 +57,10 @@ export default defineEventHandler(async (event) => {
         message: 'Access denied. Only organization owners and admins can create invitations.'
       })
     }
+  }
+
+  if (await isPersonalClient(organizationId)) {
+    throw createError({ statusCode: 403, message: 'Use the private-client invitation flow for personal clients' })
   }
 
   const body = await readBody(event)
