@@ -1,6 +1,5 @@
 <script setup lang="ts">
 defineProps<{ title: string; subtitle?: string }>()
-const { t } = useI18n()
 </script>
 
 <template>
@@ -15,11 +14,6 @@ const { t } = useI18n()
         </div>
         <slot name="actions" />
       </header>
-      <nav class="flex flex-wrap gap-2">
-        <UButton to="/admin/products" variant="ghost">{{ t('products.catalog') }}</UButton
-        ><UButton to="/admin/products/orders" variant="ghost">{{ t('products.orders') }}</UButton
-        ><UButton to="/admin/products/settings" variant="ghost">{{ t('products.settings') }}</UButton>
-      </nav>
       <slot />
     </div>
   </section>
