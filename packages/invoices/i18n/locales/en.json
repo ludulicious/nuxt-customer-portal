@@ -299,6 +299,7 @@
       "messages": {
         "saved": "Time saved",
         "saveError": "The change could not be saved",
+        "fetchError": "Invoices could not be loaded",
         "senderInvoiceDetailsSaved": "Sender invoice details saved"
       }
     }

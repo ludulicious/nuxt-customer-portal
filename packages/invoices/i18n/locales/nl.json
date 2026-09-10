@@ -299,6 +299,7 @@
       "messages": {
         "saved": "Tijd opgeslagen",
         "saveError": "De wijziging kon niet worden opgeslagen",
+        "fetchError": "Facturen konden niet worden geladen",
         "senderInvoiceDetailsSaved": "Factuurgegevens afzender opgeslagen"
       }
     }

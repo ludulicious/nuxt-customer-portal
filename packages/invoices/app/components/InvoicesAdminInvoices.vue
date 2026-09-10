@@ -378,8 +378,16 @@ if (props.createPage) {
       @sort="listing.sortBy.value = $event"
       @toggle-direction="listing.toggleSortDir"
     />
+    <UAlert
+      v-if="!createPage && !formOpen && listing.error.value"
+      color="error"
+      variant="outline"
+      icon="i-lucide-circle-alert"
+      :title="t('features.invoices.messages.fetchError')"
+      :description="String(listing.error.value.message)"
+    />
     <InvoicesAdminEmptyState
-      v-if="!createPage && !formOpen && !senderInvoiceDetailsComplete"
+      v-else-if="!createPage && !formOpen && !senderInvoiceDetailsComplete"
       icon="i-lucide-file-warning"
       :title="t('features.invoices.admin.senderDetailsRequiredTitle')"
       :description="t('features.invoices.admin.senderDetailsRequiredDescription')"

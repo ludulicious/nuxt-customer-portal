@@ -88,7 +88,15 @@ await listing.load()
         @page="listing.goToPage"
       >
         <UAlert
-          v-if="!listing.items.value.length && !listing.pending.value"
+          v-if="listing.error.value"
+          color="error"
+          variant="outline"
+          icon="i-lucide-circle-alert"
+          :title="t('features.invoices.messages.fetchError')"
+          :description="String(listing.error.value.message)"
+        />
+        <UAlert
+          v-else-if="!listing.items.value.length && !listing.pending.value"
           icon="i-lucide-receipt-text"
           :title="t('features.invoices.clientInvoices.empty')"
           :description="t('features.invoices.clientInvoices.emptyDescription')"
