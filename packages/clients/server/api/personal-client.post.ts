@@ -9,7 +9,8 @@ import { getClientConfiguration } from '../utils/client-configuration'
 import { createClientInTransaction, getClient } from '../utils/client-repository'
 
 const schema = z.object({
-  name: z.string().trim().min(2).max(160),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
   preferredLocale: z.enum(['nl', 'en']),
   timezone: timezoneSchema.nullable()
 })
@@ -43,6 +44,7 @@ export default defineEventHandler(async (event) => {
       }
       const id = await createClientInTransaction(tx, account.id, {
         ...input,
+        name: `${input.firstName} ${input.lastName}`,
         clientType: 'person',
         address: '',
         invoiceEmail: account.email,
@@ -51,7 +53,15 @@ export default defineEventHandler(async (event) => {
       await tx
         .insert(member)
         .values({ id: nanoid(), organizationId: id, userId: account.id, role: 'owner', createdAt: new Date() })
-      await tx.update(user).set({ timezone: input.timezone }).where(eq(user.id, account.id))
+      await tx
+        .update(user)
+        .set({
+          timezone: input.timezone,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          name: `${input.firstName} ${input.lastName}`
+        })
+        .where(eq(user.id, account.id))
       return id
     })
     .catch((error: { code?: string; cause?: { code?: string } }) => {

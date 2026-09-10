@@ -79,7 +79,9 @@
       "openPersonalAccount": "Open personal account",
       "onboardingFailed": "Could not open your personal account. Verify your email or contact your coach if you already have an account.",
       "editPersonalProfile": "Edit personal profile",
-      "allTypes": "All client types"
+      "allTypes": "All client types",
+      "firstName": "First name",
+      "lastName": "Last name"
     }
   }
 }

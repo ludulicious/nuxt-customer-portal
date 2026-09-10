@@ -24,16 +24,21 @@ test('personal onboarding, saved timezone, access isolation and company compatib
   const company = await companyResponse.json()
   expect(company.clientType).toBe('organization')
   await login(page.request, 'person@example.test')
-  await page.goto('/personal-onboarding')
+  await page.goto('/dashboard')
+  await expect(page).toHaveURL(/\/personal-onboarding/)
   await expect(page.getByRole('heading', { name: 'Personal account' })).toBeVisible()
-  await expect(page.locator('input').first()).toHaveValue('Personal Client')
+  await page.getByLabel('First name', { exact: true }).fill('Personal')
+  await page.getByLabel('Last name', { exact: true }).fill('Client')
   await page.getByRole('button', { name: 'Open personal account', exact: true }).click()
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 })
   const accounts = await (await page.request.get('/api/client-account')).json()
   const personal = accounts.find((account: { clientType: string }) => account.clientType === 'person')
   expect(personal).toBeTruthy()
+  const session = await (await page.request.get('/api/auth/get-session')).json()
+  expect(session.user.firstName).toBe('Personal')
+  expect(session.user.lastName).toBe('Client')
   const repeat = await page.request.post('/api/personal-client', {
-    data: { name: 'Personal Client', preferredLocale: 'en', timezone: 'UTC' }
+    data: { firstName: 'Personal', lastName: 'Client', preferredLocale: 'en', timezone: 'UTC' }
   })
   expect(repeat.ok(), await repeat.text()).toBeTruthy()
   expect((await repeat.json()).id).toBe(personal.organizationId)
@@ -100,7 +105,7 @@ test('personal invitations enforce verification, one account, and archive bounda
     expect(
       (
         await invited.post('/api/personal-client', {
-          data: { name: 'Other Client', preferredLocale: 'en', timezone: 'UTC' }
+          data: { firstName: 'Other', lastName: 'Client', preferredLocale: 'en', timezone: 'UTC' }
         })
       ).status()
     ).toBe(403)
@@ -187,8 +192,9 @@ test('private signup preserves the email-verification flow and onboarding destin
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' })
   })
-  await page.goto('/signup?redirect=/personal-onboarding')
-  await page.getByLabel('Name', { exact: true }).fill('New Person')
+  await page.goto('/signup')
+  await page.getByLabel('First name', { exact: true }).fill('New')
+  await page.getByLabel('Last name', { exact: true }).fill('Person')
   await page.getByLabel('Email', { exact: true }).fill('signup@example.test')
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Create account', exact: true }).click()

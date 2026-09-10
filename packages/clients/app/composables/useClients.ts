@@ -1,7 +1,7 @@
 import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
 
 export const useClients = () => ({
-  onboard: (input: { name: string; preferredLocale: 'nl' | 'en'; timezone: string | null }) =>
+  onboard: (input: { firstName: string; lastName: string; preferredLocale: 'nl' | 'en'; timezone: string | null }) =>
     $fetch<GenericClientDto>('/api/personal-client', { method: 'POST', body: input }),
   list: (query: Record<string, string | number | undefined>) => $fetch<ClientListResponse>('/api/clients', { query }),
   get: (id: string) => $fetch<GenericClientDto>(`/api/clients/${id}`),

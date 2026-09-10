@@ -79,7 +79,9 @@
       "openPersonalAccount": "Persoonlijk account openen",
       "onboardingFailed": "Je persoonlijke account kon niet worden geopend. Verifieer je e-mail of neem contact op met je coach als je al een account hebt.",
       "editPersonalProfile": "Persoonlijk profiel bewerken",
-      "allTypes": "Alle klanttypen"
+      "allTypes": "Alle klanttypen",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam"
     }
   }
 }

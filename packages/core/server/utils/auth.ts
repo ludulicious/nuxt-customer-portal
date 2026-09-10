@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { isPersonalClient, assertClientInvitationAcceptance } from './client-account-policy'
 import { isPortalDemo } from './demo'
 import { demoMessage, isDemoRequestAllowed } from '../../shared/demo-policy'
@@ -148,7 +149,11 @@ export const auth = betterAuth({
     requireEmailVerification: true
   },
   user: {
-    additionalFields: { timezone: { type: 'string', required: false, input: false } },
+    additionalFields: {
+      timezone: { type: 'string', required: false, input: false },
+      firstName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } },
+      lastName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } }
+    },
     deleteUser: {
       enabled: true,
       sendDeleteAccountVerification: async ({ user, url, token: _token }, _request) => {

@@ -10,7 +10,8 @@ if (!config.personalSelfRegistration) {
 }
 const { data: session } = await authClient.getSession()
 const state = reactive({
-  name: session?.user.name ?? '',
+  firstName: session?.user.firstName ?? '',
+  lastName: session?.user.lastName ?? '',
   preferredLocale: (locale.value === 'nl' ? 'nl' : 'en') as 'nl' | 'en',
   timezone: null as string | null
 })
@@ -19,7 +20,8 @@ onMounted(() => {
 })
 const schema = computed(() =>
   z.object({
-    name: z.string().trim().min(2, t('features.clients.validation.name')).max(160),
+    firstName: z.string().trim().min(1, t('features.clients.validation.name')).max(80),
+    lastName: z.string().trim().min(1, t('features.clients.validation.name')).max(80),
     preferredLocale: z.enum(['nl', 'en']),
     timezone: z
       .string()
@@ -51,8 +53,11 @@ const submit = async () => {
   <div class="mx-auto max-w-xl p-6">
     <h1 class="mb-4 text-2xl font-semibold">{{ t('features.clients.personalAccount') }}</h1>
     <UForm :schema="schema" :state="state" novalidate class="space-y-4" @submit="submit">
-      <UFormField name="name" :label="t('features.clients.fullName')"
-        ><UInput v-model="state.name" class="w-full"
+      <UFormField name="firstName" :label="t('features.clients.firstName')"
+        ><UInput v-model="state.firstName" autocomplete="given-name" class="w-full"
+      /></UFormField>
+      <UFormField name="lastName" :label="t('features.clients.lastName')"
+        ><UInput v-model="state.lastName" autocomplete="family-name" class="w-full"
       /></UFormField>
       <UFormField name="preferredLocale" :label="t('features.clients.locale')"
         ><USelect
