@@ -68,7 +68,18 @@
         "slug": "Gebruik alleen kleine letters, cijfers en enkele koppeltekens.",
         "officialName": "Voer de officiële bedrijfsnaam in.",
         "email": "Voer een geldig e-mailadres in."
-      }
+      },
+      "clientType": "Type klant",
+      "types": {
+        "organization": "Organisatie",
+        "person": "Privépersoon"
+      },
+      "fullName": "Volledige naam",
+      "personalAccount": "Persoonlijk account",
+      "openPersonalAccount": "Persoonlijk account openen",
+      "onboardingFailed": "Je persoonlijke account kon niet worden geopend. Verifieer je e-mail of neem contact op met je coach als je al een account hebt.",
+      "editPersonalProfile": "Persoonlijk profiel bewerken",
+      "allTypes": "Alle klanttypen"
     }
   }
 }

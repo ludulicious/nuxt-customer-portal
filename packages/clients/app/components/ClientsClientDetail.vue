@@ -169,22 +169,30 @@ const toggleEditing = () => {
       </template>
       <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
+          <dt class="text-sm text-muted">{{ t('features.clients.clientType') }}</dt>
+          <dd>{{ t(`features.clients.types.${client.clientType}`) }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-muted">{{ t('timezones.label') }}</dt>
+          <dd>{{ client.timezone || t('timezones.inherit', { timezone: client.schedulingTimezone }) }}</dd>
+        </div>
+        <div>
           <dt class="text-sm text-muted">{{ t('features.clients.name') }}</dt>
           <dd class="font-medium">{{ client.name }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.officialName') }}</dt>
           <dd>{{ client.officialName }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.slug') }}</dt>
           <dd class="font-mono text-sm">{{ client.slug }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.registrationNumber') }}</dt>
           <dd>{{ client.registrationNumber || '—' }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.vatNumber') }}</dt>
           <dd>{{ client.vatNumber || '—' }}</dd>
         </div>
@@ -209,6 +217,7 @@ const toggleEditing = () => {
       </template>
       <div class="grid gap-4">
         <UForm
+          v-if="client.clientType !== 'person' || !client.members.length"
           :state="invitationForm"
           :schema="invitationSchema"
           novalidate
@@ -223,7 +232,7 @@ const toggleEditing = () => {
               class="w-full"
             />
           </UFormField>
-          <UFormField name="role">
+          <UFormField v-if="client.clientType !== 'person'" name="role">
             <USelect v-model="invitationForm.role" :items="['member', 'admin', 'owner']" class="w-full" />
           </UFormField>
           <UButton type="submit" :disabled="!invitationForm.email.trim()" :loading="busy">
@@ -247,6 +256,7 @@ const toggleEditing = () => {
             </div>
             <div class="flex items-center gap-2">
               <USelect
+                v-if="client.clientType !== 'person'"
                 :model-value="item.role"
                 :items="['member', 'admin', 'owner']"
                 size="xs"
@@ -294,7 +304,7 @@ const toggleEditing = () => {
                   :endpoint="`/api/clients/${client.id}/invitations/${invitation.id}`"
                   :email="invitation.email"
                   :role="invitation.role"
-                  can-edit
+                  :can-edit="client.clientType !== 'person'"
                   can-revoke
                   @refresh="refresh()"
                 />

@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { isValidTimezone } from '@nuxt-customer-portal/core/shared/timezone'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const props = defineProps<{ client?: GenericClientDto | null; busy?: boolean; editing?: boolean }>()
 const emit = defineEmits<{ submit: [value: Record<string, unknown>]; cancel: [] }>()
 const { t } = useI18n()
+const allowedTypes = (useRuntimeConfig().public.clients as { allowedTypes?: string[] })?.allowedTypes ?? [
+  'organization'
+]
+const { data: timezones } = await useFetch<{ providerTimezone: string }>('/api/timezones')
 const form = reactive({
+  clientType: (allowedTypes[0] ?? 'organization') as 'organization' | 'person',
+  timezone: null as string | null,
   name: '',
   slug: '',
   officialName: '',
@@ -17,15 +24,24 @@ const form = reactive({
 })
 const schema = computed(() =>
   z.object({
+    clientType: z.enum(['organization', 'person']),
+    timezone: z
+      .string()
+      .nullable()
+      .refine((value) => value === null || isValidTimezone(value), t('timezones.invalid')),
     name: z.string().trim().min(2, t('features.clients.validation.name')).max(160),
-    slug: props.editing
-      ? z.string()
-      : z
-          .string()
-          .trim()
-          .min(1, t('features.clients.validation.slug'))
-          .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t('features.clients.validation.slug')),
-    officialName: z.string().trim().min(2, t('features.clients.validation.officialName')).max(200),
+    slug:
+      props.editing || form.clientType === 'person'
+        ? z.string()
+        : z
+            .string()
+            .trim()
+            .min(1, t('features.clients.validation.slug'))
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t('features.clients.validation.slug')),
+    officialName:
+      form.clientType === 'person'
+        ? z.string()
+        : z.string().trim().min(2, t('features.clients.validation.officialName')).max(200),
     address: z.string().trim().max(1000),
     registrationNumber: z.string().trim().max(200),
     vatNumber: z.string().trim().max(100),
@@ -38,6 +54,8 @@ const reset = () =>
     form,
     props.client
       ? {
+          clientType: props.client.clientType,
+          timezone: props.client.timezone,
           name: props.client.name,
           slug: props.client.slug,
           officialName: props.client.officialName,
@@ -48,6 +66,8 @@ const reset = () =>
           preferredLocale: props.client.preferredLocale
         }
       : {
+          clientType: allowedTypes[0] ?? 'organization',
+          timezone: null,
           name: '',
           slug: '',
           officialName: '',
@@ -62,11 +82,14 @@ watch(() => props.client, reset, { immediate: true })
 const submit = () =>
   emit('submit', {
     name: form.name.trim(),
-    ...(props.editing ? {} : { slug: form.slug.trim() }),
-    officialName: form.officialName.trim(),
+    ...(props.editing
+      ? {}
+      : { clientType: form.clientType, ...(form.clientType === 'organization' ? { slug: form.slug.trim() } : {}) }),
+    timezone: form.timezone,
+    officialName: form.clientType === 'person' ? form.name.trim() : form.officialName.trim(),
     address: form.address.trim(),
-    registrationNumber: form.registrationNumber.trim() || null,
-    vatNumber: form.vatNumber.trim() || null,
+    registrationNumber: form.clientType === 'person' ? null : form.registrationNumber.trim() || null,
+    vatNumber: form.clientType === 'person' ? null : form.vatNumber.trim() || null,
     invoiceEmail: form.invoiceEmail.trim().toLowerCase() || null,
     preferredLocale: form.preferredLocale
   })
@@ -76,7 +99,17 @@ const submit = () =>
   <UCard class="scroll-mt-24">
     <template #header>
       <div class="flex items-center justify-between gap-3">
-        <h2 class="font-semibold">{{ t(editing ? 'features.clients.editTitle' : 'features.clients.createTitle') }}</h2>
+        <h2 class="font-semibold">
+          {{
+            t(
+              editing
+                ? form.clientType === 'person'
+                  ? 'features.clients.editPersonalProfile'
+                  : 'features.clients.editTitle'
+                : 'features.clients.createTitle'
+            )
+          }}
+        </h2>
         <UButton
           type="button"
           color="neutral"
@@ -87,24 +120,53 @@ const submit = () =>
         />
       </div>
     </template>
-    <UForm :state="form" :schema="schema" class="space-y-4" @submit="submit">
+    <UForm novalidate :state="form" :schema="schema" class="space-y-4" @submit="submit">
+      <UFormField
+        v-if="!editing && allowedTypes.length > 1"
+        name="clientType"
+        :label="t('features.clients.clientType')"
+      >
+        <USelect
+          v-model="form.clientType"
+          :items="allowedTypes.map((value) => ({ value, label: t(`features.clients.types.${value}`) }))"
+          value-key="value"
+        />
+      </UFormField>
       <div class="grid gap-4 md:grid-cols-2">
-        <UFormField name="name" :label="t('features.clients.name')" required>
+        <UFormField
+          name="name"
+          :label="t(form.clientType === 'person' ? 'features.clients.fullName' : 'features.clients.name')"
+          required
+        >
           <UInput v-model="form.name" class="w-full" />
         </UFormField>
-        <UFormField name="slug" :label="t('features.clients.slug')" :required="!editing">
+        <UFormField
+          v-if="form.clientType === 'organization'"
+          name="slug"
+          :label="t('features.clients.slug')"
+          :required="!editing"
+        >
           <UInput v-model="form.slug" :disabled="editing" class="w-full" />
         </UFormField>
-        <UFormField name="officialName" :label="t('features.clients.officialName')" required>
+        <UFormField
+          v-if="form.clientType === 'organization'"
+          name="officialName"
+          :label="t('features.clients.officialName')"
+          required
+        >
           <UInput v-model="form.officialName" class="w-full" />
         </UFormField>
         <UFormField name="invoiceEmail" :label="t('features.clients.invoiceEmail')">
           <UInput v-model="form.invoiceEmail" type="email" class="w-full" />
         </UFormField>
-        <UFormField name="registrationNumber" :label="t('features.clients.registrationNumber')">
+        <UFormField
+          v-if="form.clientType === 'organization'"
+          name="registrationNumber"
+          :label="t('features.clients.registrationNumber')"
+        >
           <UInput v-model="form.registrationNumber" class="w-full" />
         </UFormField>
-        <UFormField name="vatNumber" :label="t('features.clients.vatNumber')">
+        <UFormField v-if="form.clientType === 'organization'" name="vatNumber" :label="t('features.clients.vatNumber')">
           <UInput v-model="form.vatNumber" class="w-full" />
         </UFormField>
         <UFormField name="preferredLocale" :label="t('features.clients.locale')">
@@ -119,6 +181,9 @@ const submit = () =>
           />
         </UFormField>
       </div>
+      <UFormField name="timezone" :label="t('timezones.label')">
+        <PortalTimezoneSelect v-model="form.timezone" :inherited-timezone="timezones?.providerTimezone" />
+      </UFormField>
       <UFormField name="address" :label="t('features.clients.address')">
         <UTextarea v-model="form.address" class="w-full" />
       </UFormField>

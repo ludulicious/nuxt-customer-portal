@@ -192,8 +192,16 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <UButton
+    v-if="useRuntimeConfig().public.clients?.personalSelfRegistration"
+    to="/personal-onboarding"
+    class="mb-4"
+    variant="outline"
+    >{{ t('timezones.openPersonalAccount') }}</UButton
+  >
+  <TimezonePreferences />
   <AppCard class="mb-8" :title="$t('profile.sections.profileInfo')">
-    <UForm :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
+    <UForm novalidate :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
       <!-- Profile Picture Section -->
       <UFormField
         :label="$t('profile.fields.profilePicture')"

@@ -8,6 +8,9 @@ import { runClientCreatedHooks } from '@nuxt-customer-portal/core/server/utils/b
 import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
 import type { ClientCreateInput, GenericClientListQuery, ClientUpdateInput } from './client-validation'
 
+import { getProviderTimezone } from '@nuxt-customer-portal/core/server/utils/timezones'
+import { requireAllowedClientType } from './client-configuration'
+
 const normalizeNullable = (value: string | null | undefined) => value?.trim() || null
 
 const clientSelection = {
@@ -17,6 +20,8 @@ const clientSelection = {
   logo: organization.logo,
   metadata: organization.metadata,
   createdAt: organization.createdAt,
+  clientType: clientProfile.clientType,
+  timezone: clientProfile.timezone,
   officialName: clientProfile.officialName,
   address: clientProfile.address,
   registrationNumber: clientProfile.registrationNumber,
@@ -33,6 +38,8 @@ interface ClientRow {
   logo: string | null
   metadata: string | null
   createdAt: Date
+  clientType: 'organization' | 'person'
+  timezone: string | null
   officialName: string
   address: string
   registrationNumber: string | null
@@ -46,6 +53,7 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
   if (!rows.length) {
     return []
   }
+  const providerTimezone = await getProviderTimezone()
   const ids = rows.map((row) => row.organizationId as string)
   const [modules, members, invitations] = await Promise.all([
     db.select().from(clientModule).where(inArray(clientModule.organizationId, ids)),
@@ -85,6 +93,9 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
     slug: row.slug,
     logo: row.logo,
     avatarLogo: getOrganizationAvatar(row) ?? null,
+    clientType: row.clientType,
+    timezone: row.timezone,
+    schedulingTimezone: row.timezone || providerTimezone,
     officialName: row.officialName,
     address: row.address,
     registrationNumber: row.registrationNumber,
@@ -121,6 +132,7 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
 
 export const listGenericClientsPage = async (query: GenericClientListQuery): Promise<ClientListResponse> => {
   const conditions = [
+    query.clientType ? eq(clientProfile.clientType, query.clientType) : undefined,
     eq(organization.organizationType, 'CLIENT'),
     query.status === 'archived'
       ? isNotNull(clientProfile.archivedAt)
@@ -202,39 +214,56 @@ export const listSelectableClients = async (moduleId?: string) => {
   return page.items
 }
 
-export const createClient = async (actorUserId: string, input: ClientCreateInput) =>
-  db.transaction(async (tx) => {
-    const [existingSlug] = await tx
-      .select({ id: organization.id })
-      .from(organization)
-      .where(eq(organization.slug, input.slug))
-      .limit(1)
-    if (existingSlug) {
-      throw createError({ statusCode: 409, message: 'Organization slug already exists', data: { field: 'slug' } })
-    }
-    const organizationId = nanoid()
-    await tx.insert(organization).values({
-      id: organizationId,
-      name: input.name,
-      slug: input.slug,
-      organizationType: 'CLIENT',
-      createdAt: new Date()
-    })
-    await tx.insert(clientProfile).values({
-      organizationId,
-      officialName: input.officialName,
-      address: input.address,
-      registrationNumber: normalizeNullable(input.registrationNumber),
-      vatNumber: normalizeNullable(input.vatNumber),
-      invoiceEmail: normalizeNullable(input.invoiceEmail),
-      preferredLocale: input.preferredLocale
-    })
-    await runClientCreatedHooks(tx, organizationId)
-    for (const moduleId of [...new Set(input.moduleIds ?? [])]) {
-      await tx.insert(clientModule).values({ id: nanoid(), organizationId, moduleId, enabledById: actorUserId })
-    }
-    return organizationId
+type ClientTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+export const createClientInTransaction = async (
+  tx: ClientTransaction,
+  actorUserId: string,
+  input: ClientCreateInput
+) => {
+  const type = input.clientType ?? 'organization'
+  requireAllowedClientType(type)
+  const clientSlug =
+    type === 'person'
+      ? `person-${nanoid()
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')}`
+      : input.slug!
+
+  const [existingSlug] = await tx
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.slug, clientSlug))
+    .limit(1)
+  if (existingSlug) {
+    throw createError({ statusCode: 409, message: 'Organization slug already exists', data: { field: 'slug' } })
+  }
+  const organizationId = nanoid()
+  await tx.insert(organization).values({
+    id: organizationId,
+    name: input.name,
+    slug: clientSlug,
+    organizationType: 'CLIENT',
+    createdAt: new Date()
   })
+  await tx.insert(clientProfile).values({
+    organizationId,
+    clientType: type,
+    timezone: input.timezone ?? null,
+    officialName: type === 'person' ? input.name : input.officialName!,
+    address: input.address,
+    registrationNumber: normalizeNullable(input.registrationNumber),
+    vatNumber: normalizeNullable(input.vatNumber),
+    invoiceEmail: normalizeNullable(input.invoiceEmail),
+    preferredLocale: input.preferredLocale
+  })
+  await runClientCreatedHooks(tx, organizationId)
+  for (const moduleId of [...new Set(input.moduleIds ?? [])]) {
+    await tx.insert(clientModule).values({ id: nanoid(), organizationId, moduleId, enabledById: actorUserId })
+  }
+  return organizationId
+}
+export const createClient = async (actorUserId: string, input: ClientCreateInput) =>
+  db.transaction((tx) => createClientInTransaction(tx, actorUserId, input))
 
 export const updateClient = async (organizationId: string, input: ClientUpdateInput) =>
   db.transaction(async (tx) => {
@@ -246,6 +275,10 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
     if (!selected) {
       throw createError({ statusCode: 404, message: 'Client not found' })
     }
+    const [profile] = await tx.select().from(clientProfile).where(eq(clientProfile.organizationId, organizationId))
+    if (profile?.clientType === 'person' && (input.registrationNumber || input.vatNumber)) {
+      throw createError({ statusCode: 400, message: 'Personal clients cannot have company fields' })
+    }
     const orgValues: Record<string, unknown> = {}
     if (input.name !== undefined) {
       orgValues.name = input.name
@@ -256,6 +289,12 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
     const values: Record<string, unknown> = { updatedAt: new Date() }
     if (input.officialName !== undefined) {
       values.officialName = input.officialName
+    }
+    if (input.timezone !== undefined) {
+      values.timezone = input.timezone
+    }
+    if (profile?.clientType === 'person' && input.name !== undefined) {
+      values.officialName = input.name
     }
     if (input.address !== undefined) {
       values.address = input.address

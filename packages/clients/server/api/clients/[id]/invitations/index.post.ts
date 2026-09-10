@@ -1,20 +1,32 @@
+import { isPersonalClient } from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 import { and, eq } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { generateId } from '@nuxt-customer-portal/core/server/utils/auth'
-import { invitation, organization } from '@nuxt-customer-portal/core/schema'
+import { invitation, organization, member } from '@nuxt-customer-portal/core/schema'
 import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
 import { getInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
-import { requireClientProfileManager } from '@nuxt-customer-portal/clients/server/utils/client-access'
+import { requireClientMemberManager } from '@nuxt-customer-portal/clients/server/utils/client-access'
 import { genericClientInvitationSchema } from '@nuxt-customer-portal/clients/server/utils/client-validation'
 
 export default defineEventHandler(async (event) => {
   const organizationId = getRouterParam(event, 'id')!
-  const context = await requireClientProfileManager(event, organizationId)
+  const context = await requireClientMemberManager(event, organizationId)
   const parsedInput = genericClientInvitationSchema.safeParse(await readBody(event))
   if (!parsedInput.success) {
     throw createError({ statusCode: 400, message: 'A valid email address and role are required' })
   }
   const input = parsedInput.data
+  if (await isPersonalClient(organizationId)) {
+    input.role = 'owner'
+    const existing = await db
+      .select({ id: member.id })
+      .from(member)
+      .where(eq(member.organizationId, organizationId))
+      .limit(1)
+    if (existing.length) {
+      throw createError({ statusCode: 409, message: 'Personal client already has an account' })
+    }
+  }
   const [pending] = await db
     .select({ id: invitation.id })
     .from(invitation)

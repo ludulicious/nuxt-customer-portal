@@ -8,6 +8,7 @@ const registrationMode = ['open', 'invitation-only', 'disabled'].includes(proces
 export default defineNuxtConfig({
   $meta: { name: 'nuxt-customer-portal-core' },
   compatibilityDate: '2025-10-24',
+  components: [{ path: fileURLToPath(new URL('./app/components', import.meta.url)), global: true }],
   modules: ['@nuxtjs/i18n', '@vueuse/nuxt'],
   i18n: {
     defaultLocale: 'en',

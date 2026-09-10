@@ -4,6 +4,8 @@ export interface PortalSession {
     name?: string | null
     email?: string
     role?: string | null
+    emailVerified?: boolean
+    timezone?: string | null
   }
   session?: {
     activeOrganizationId?: string | null

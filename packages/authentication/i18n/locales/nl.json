@@ -111,5 +111,6 @@
     "subtitle": "Voer de 6-cijferige code in die is verzonden naar {email}",
     "success": "E-mail succesvol geverifieerd!",
     "title": "Verifieer Je E-mail"
-  }
+  },
+  "personalRegistration": "Registreren als particuliere klant"
 }

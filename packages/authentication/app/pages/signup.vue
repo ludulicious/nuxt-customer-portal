@@ -17,7 +17,8 @@ useSeoMeta({
 })
 
 const toast = useToast()
-const portalAuth = useRuntimeConfig().public.portalAuth
+const runtimeConfig = useRuntimeConfig()
+const portalAuth = runtimeConfig.public.portalAuth
 
 const invitationId = useRoute().query.invitationId
 if (
@@ -271,7 +272,11 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
     } else {
       // Redirect to OTP verification page with email parameter and invitation ID if present
-      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}`
+      const personal =
+        !invId &&
+        route.query.redirect === '/personal-onboarding' &&
+        runtimeConfig.public.clients?.personalSelfRegistration
+      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}${personal ? '&redirect=%2Fpersonal-onboarding&purpose=personal' : ''}`
       navigateTo(verifyUrl)
     }
   } catch (err) {
@@ -328,6 +333,17 @@ const handleGoogleLogin = async () => {
 </script>
 
 <template>
+  <UButton
+    v-if="
+      runtimeConfig.public.clients?.personalSelfRegistration &&
+      !route.query.invitationId &&
+      route.query.redirect !== '/personal-onboarding'
+    "
+    to="/signup?redirect=/personal-onboarding"
+    class="mb-4"
+    variant="outline"
+    >{{ t('personalRegistration') }}</UButton
+  >
   <div>
     <UAlert v-if="errorMessage" color="error" :description="errorMessage" variant="outline" />
     <!-- Company Logo -->

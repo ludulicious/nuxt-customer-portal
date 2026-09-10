@@ -1,5 +1,6 @@
 import { defineEventHandler, createError, readBody } from 'h3'
 import { z } from 'zod'
+import { timezoneSchema } from '@nuxt-customer-portal/core/server/utils/timezone-validation'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
 import { user as userTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
@@ -19,6 +20,7 @@ defineRouteMeta({
 // Zod schema for profile update request
 const updateProfileSchema = z
   .object({
+    timezone: timezoneSchema.nullable().optional(),
     name: z
       .string()
       .trim()
@@ -29,7 +31,7 @@ const updateProfileSchema = z
       .union([z.string().url('Image must be a valid URL'), z.literal('').transform(() => null), z.null()])
       .optional()
   })
-  .refine((data) => data.name !== undefined || data.image !== undefined, {
+  .refine((data) => data.name !== undefined || data.image !== undefined || data.timezone !== undefined, {
     message: 'At least one field (name or image) must be provided'
   })
 
@@ -41,6 +43,7 @@ interface UpdateProfileResponse {
     name: string
     email: string
     image: string | null
+    timezone: string | null
   }
 }
 
@@ -66,7 +69,10 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
   const validatedData = validationResult.data
 
   // Build update object
-  const updateData: { name?: string; image?: string | null } = {}
+  const updateData: { name?: string; image?: string | null; timezone?: string | null } = {}
+  if (validatedData.timezone !== undefined) {
+    updateData.timezone = validatedData.timezone
+  }
   if (validatedData.name !== undefined) {
     updateData.name = validatedData.name.trim()
   }
@@ -79,7 +85,8 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
     id: userTable.id,
     name: userTable.name,
     email: userTable.email,
-    image: userTable.image
+    image: userTable.image,
+    timezone: userTable.timezone
   })
 
   if (!updatedUser) {
@@ -93,7 +100,8 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
       id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
-      image: updatedUser.image
+      image: updatedUser.image,
+      timezone: updatedUser.timezone
     }
   }
 })

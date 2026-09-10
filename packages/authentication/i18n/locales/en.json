@@ -111,5 +111,6 @@
     "subtitle": "Enter the 6-digit code sent to {email}",
     "success": "Email verified successfully!",
     "title": "Verify Your Email"
-  }
+  },
+  "personalRegistration": "Register as a private client"
 }
