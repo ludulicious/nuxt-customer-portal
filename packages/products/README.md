@@ -8,7 +8,7 @@ Add `@nuxt-customer-portal/products`, `@nuxt-customer-portal/invoices`, and `@nu
 
 The provider organization's owners and administrators manage Products, Orders, and Store settings. Customer access is always checked against the purchaser's verified account, independently of company membership and invoice-viewing permissions.
 
-Categories are maintained in Store settings or from the product form. Renaming updates the catalog; purchased snapshots remain unchanged. Categories used by any product cannot be deleted. Existing free-text categories are imported by the category migration.
+Categories are maintained on the Categories page and can be created from the product form. Renaming updates the catalog; purchased snapshots remain unchanged. Categories used by any product cannot be deleted. Existing free-text categories are imported by the category migration.
 
 ## Deployment configuration
 
@@ -63,9 +63,9 @@ const { items, pagination } = await response.json()
 // prices and purchaseUrl. Link your Buy button to purchaseUrl.
 ```
 
-- `GET /api/store/v1/products`: query `locale`, `currency`, `search`, `category`, `type`, `page`, `sortBy`, `sortDir`. Pages contain 20 products and `pagination` with `page`, `pageSize`, `totalItems`, `totalPages`.
+- `GET /api/store/v1/products`: query `locale`, `currency`, `search`, `category` (code), `categoryId`, `type`, `page`, `sortBy`, `sortDir`. Pages contain 20 products and `pagination` with `page`, `pageSize`, `totalItems`, `totalPages`.
 - `GET /api/store/v1/products/{slug}`: one published product, optionally filtered by `locale` and `currency`.
-- Products include `id`, `slug`, `type`, `category`, `title`, `summary`, `descriptionHtml`, `images`, `videoUrl`, `prices`, `purchaseUrl`, `locale`. Prices include a stable version `id`, `currency`, integer minor-unit `amount`, and `taxBehavior`.
+- Products include `id`, `slug`, `type`, `categoryId`, `category` (code), `categoryDetails`, `title`, `summary`, `descriptionHtml`, `images`, `videoUrl`, `prices`, `purchaseUrl`, `locale`. Prices include a stable version `id`, `currency`, integer minor-unit `amount`, and `taxBehavior`.
 - Errors: 400 invalid query; 401 missing, revoked, or expired key; 404 unavailable product; 429 rate limit; 503 store closed/unconfigured.
 - No private assets, order details, customer information, or unpublished products are included. Catalog responses are not shared-cacheable.
 
@@ -86,3 +86,7 @@ Run `pnpm test:packages` and the host's Nuxt typecheck. To include the Products 
 Store Settings defines supported currencies (at least one). Paid product saves require positive prices in every supported currency. Adding a currency preserves existing prices; existing products must be updated before checkout is available again. Removed currencies are excluded from public pricing; historical orders retain their original prices. The migration initializes the store currencies from existing active prices, or EUR for an empty store.
 
 Mark a product as free to skip price entry. Internally a zero-value price preserves order references. Free acquisition uses the normal client, delivery, and purchase email flow without Stripe or an invoice. Store activation prerequisites still apply.
+
+Store Settings selects supported product languages from the same bundled language list as the portal UI. The default store language must be selected. Editors and previews show enabled languages with the default first; disabled translations remain stored. Public catalog requests for a disabled language fall back to the store default. SaaS UI language availability is configured separately in Portal Settings → Languages.
+
+Categories have a dedicated admin page with searchable, sorted, paginated cards and inline create/edit forms. Each category has a unique store-scoped code and localized names/descriptions for store languages. The category migrations generate editable codes, preserve existing names in both language slots, migrate assignments to `category_id`, and remove the category from product JSON. Product assignments use the dedicated `product.category_id` foreign key, scoped to the store. Changing a category code or translation leaves product assignments unchanged. Purchase snapshots remain unchanged. Linked categories cannot be deleted. The catalog API includes localized `categoryDetails` alongside the category code.

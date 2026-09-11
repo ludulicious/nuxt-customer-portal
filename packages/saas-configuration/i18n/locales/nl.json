@@ -22,7 +22,8 @@
         "home": "Homepage",
         "legal": "Juridische pagina's",
         "review": "Controleren",
-        "clients": "Klanten"
+        "clients": "Klanten",
+        "languages": "Talen"
       },
       "appearanceSection": "Weergave",
       "logoSection": "Logo's voor de gekozen kleurmodus",
@@ -119,6 +120,10 @@
         "registration": "Persoonlijke zelfregistratie toestaan",
         "registrationDescription": "Geverifieerde gebruikers kunnen de persoonlijke onboarding voltooien en een eigen klantaccount openen. Als dit is uitgeschakeld, kun je nog steeds particuliere klanten aanmaken en uitnodigen.",
         "registrationDisabled": "Zelfregistratie vereist open registratie in de authenticatieconfiguratie."
+      },
+      "languages": {
+        "label": "Ondersteunde interfacetalen",
+        "help": "Kies minstens één taal voor de portaalinterface. Als de huidige taal wordt uitgeschakeld, schakelt het portaal over naar de eerste ondersteunde taal."
       }
     }
   }

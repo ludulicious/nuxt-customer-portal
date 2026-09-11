@@ -120,3 +120,13 @@ test('store currencies are required and paid products cover every currency', () 
   assert.equal(hasPurchaseAccess({ status: 'paid', total: 0, refunded: 0, disputed: false }), true)
   assert.equal(hasPurchaseAccess({ status: 'pending', total: 0, refunded: 0, disputed: false }), false)
 })
+
+test('store languages require a supported default and preserve bilingual defaults', () => {
+  const settings = { enabled: false, defaultLocale: 'en', currencies: ['EUR'] }
+  assert.deepEqual(settingsSchema.parse(settings).languages, ['en', 'nl'])
+  assert.equal(settingsSchema.safeParse({ ...settings, languages: [] }).success, false)
+  assert.equal(settingsSchema.safeParse({ ...settings, languages: ['en', 'en'] }).success, false)
+  assert.equal(settingsSchema.safeParse({ ...settings, languages: ['fr'] }).success, false)
+  assert.equal(settingsSchema.safeParse({ ...settings, languages: ['nl'] }).success, false)
+  assert.equal(settingsSchema.safeParse({ ...settings, defaultLocale: 'nl', languages: ['nl'] }).success, true)
+})

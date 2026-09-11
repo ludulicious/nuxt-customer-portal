@@ -20,17 +20,17 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           exact: true
         },
         {
+          id: 'categories',
+          icon: 'i-lucide-tags',
+          labelKey: 'products.categories',
+          to: '/admin/products/categories',
+          audiences: ['providerAdmin']
+        },
+        {
           id: 'orders',
           icon: 'i-lucide-receipt-text',
           labelKey: 'products.orders',
           to: '/admin/products/orders',
-          audiences: ['providerAdmin']
-        },
-        {
-          id: 'store-settings',
-          icon: 'i-lucide-settings',
-          labelKey: 'products.settings',
-          to: '/admin/products/settings',
           audiences: ['providerAdmin']
         },
         {
@@ -39,6 +39,13 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           labelKey: 'products.purchases',
           to: '/purchases',
           audiences: ['authenticated']
+        },
+        {
+          id: 'store-settings',
+          icon: 'i-lucide-settings',
+          labelKey: 'products.settings',
+          to: '/admin/products/settings',
+          audiences: ['providerAdmin']
         }
       ]
     }

@@ -10,6 +10,7 @@ import { rows, transaction } from './database'
 import { baseUrl, getStore } from './access'
 
 interface ProductRow {
+  category_id: string | null
   id: string
   data: ProductData
   updated_at: string
@@ -55,7 +56,21 @@ export async function getProduct(storeId: string, id: string, bySlug = false): P
     'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active ORDER BY currency',
     [row.id]
   )
-  return { ...row.data, id: row.id, prices, updatedAt: row.updated_at }
+  const [category] = row.category_id
+    ? await rows<{ name: string; content: Record<Locale, { name: string; description: string }> }>(
+        'SELECT name,content FROM products.category WHERE store_id=$1 AND id=$2',
+        [storeId, row.category_id]
+      )
+    : []
+  return {
+    ...row.data,
+    categoryId: row.category_id,
+    categoryName: category?.name,
+    categoryContent: category?.content,
+    id: row.id,
+    prices,
+    updatedAt: row.updated_at
+  }
 }
 export async function listProducts(storeId: string, input: unknown, published = false): Promise<Page<Product>> {
   const q = parseInput(listSchema, input),
@@ -73,8 +88,14 @@ export async function listProducts(storeId: string, input: unknown, published = 
   if (q.type) {
     add("data->>'type'=?", q.type)
   }
+  if (q.categoryId) {
+    add('category_id=?', q.categoryId)
+  }
   if (q.category) {
-    add("data->>'category'=?", q.category)
+    add(
+      'EXISTS(SELECT 1 FROM products.category c WHERE c.id=products.product.category_id AND c.store_id=products.product.store_id AND c.code=?)',
+      q.category
+    )
   }
   if (q.search) {
     add("concat_ws(' ',data->'content'->'en'->>'title',data->'content'->'nl'->>'title',slug) ILIKE ?", `%${q.search}%`)
@@ -104,7 +125,7 @@ export async function listProducts(storeId: string, input: unknown, published = 
   }
 }
 export async function saveProduct(storeId: string, input: unknown, id: string = randomUUID()): Promise<Product> {
-  const { prices: inputPrices, ...data } = parseInput(productSchema, input)
+  const { prices: inputPrices, categoryId, ...data } = parseInput(productSchema, input)
   const store = await getStore()
   if (store.organization_id !== storeId) {
     throw createError({ statusCode: 403, message: 'Store access denied' })
@@ -130,14 +151,14 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         })
       }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`categories:${storeId}`])
-      if (data.category) {
+      if (categoryId) {
         const [category] = await rows<{ name: string }>(
-          'SELECT name FROM products.category WHERE store_id=$1 AND name=$2',
-          [storeId, data.category],
+          'SELECT name FROM products.category WHERE store_id=$1 AND id=$2',
+          [storeId, categoryId],
           tx
         )
         if (!category) {
-          throw createError({ statusCode: 409, message: 'Select an existing category', data: { field: 'category' } })
+          throw createError({ statusCode: 409, message: 'Select an existing category', data: { field: 'categoryId' } })
         }
       }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${id}`])
@@ -165,8 +186,8 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         }
       }
       await tx.query(
-        'INSERT INTO products.product(id,store_id,slug,data) VALUES($1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET slug=$3,data=$4,updated_at=now()',
-        [id, storeId, data.slug, data]
+        'INSERT INTO products.product(id,store_id,slug,data,category_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET slug=$3,data=$4,category_id=$5,updated_at=now()',
+        [id, storeId, data.slug, data, categoryId]
       )
       const active = await rows<Price>(
         'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active',
@@ -227,14 +248,26 @@ export async function deleteProduct(storeId: string, id: string, name: string) {
 }
 export async function publicProduct(product: Product, locale: Locale, currency?: string): Promise<CatalogProduct> {
   const store = await getStore()
+  locale = store.languages.includes(locale) ? locale : store.default_locale
   const copy = selectCopy(product, locale, store.default_locale)
+  const [category] = product.categoryId
+    ? await rows<{ code: string; content: Record<Locale, { name: string; description: string }> }>(
+        'SELECT code,content FROM products.category WHERE store_id=$1 AND id=$2',
+        [store.organization_id, product.categoryId]
+      )
+    : []
+  const categoryCopy = category?.content[locale].name
+    ? category.content[locale]
+    : category?.content[store.default_locale]
   return {
+    categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
     isFree: !!product.isFree,
     pricingComplete: !!hasRequiredPrices(product, store.currencies),
     id: product.id,
     slug: product.slug,
     type: product.type,
-    category: product.category,
+    categoryId: product.categoryId,
+    category: category?.code || '',
     title: copy.title,
     summary: copy.summary,
     descriptionHtml: renderDescription(copy.description),

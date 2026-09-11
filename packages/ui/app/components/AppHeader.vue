@@ -20,7 +20,14 @@ const toast = useToast()
 const portalRuntimeSettings = useState<{
   branding?: { portalName?: string; tagline?: string; markLight?: string; markDark?: string }
   appearance?: { colorMode?: string }
+  languages?: string[]
 } | null>('portal-runtime-settings', () => null)
+const availableLanguages = computed(() =>
+  [en, nl].filter(
+    (language) =>
+      !portalRuntimeSettings.value?.languages || portalRuntimeSettings.value.languages.includes(language.code)
+  )
+)
 const colorMode = useColorMode()
 const runtimeBrandName = computed(() => portalRuntimeSettings.value?.branding?.portalName || props.brandName)
 const runtimeTagline = computed(() => portalRuntimeSettings.value?.branding?.tagline || props.brandTagline)
@@ -246,7 +253,7 @@ const stopImpersonating = async () => {
         <UButton icon="i-lucide-search" color="neutral" variant="ghost" size="sm" square @click="searchOpen = true" />
         <ULocaleSelect
           v-model="currentLocale"
-          :locales="[en, nl]"
+          :locales="availableLanguages"
           :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
         />
         <UColorModeButton v-if="showColorModeControl" />
@@ -284,7 +291,7 @@ const stopImpersonating = async () => {
           />
           <ULocaleSelect
             v-model="currentLocale"
-            :locales="[en, nl]"
+            :locales="availableLanguages"
             class="w-32"
             :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
           />

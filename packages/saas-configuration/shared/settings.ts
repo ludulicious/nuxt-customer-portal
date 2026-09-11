@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
 
 export const portalModuleIds = [
   'timesheets',
@@ -13,7 +14,7 @@ export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
 export const portalColorModePolicies = ['light-only', 'dark-only', 'user-choice'] as const
 export type PortalColorModePolicy = (typeof portalColorModePolicies)[number]
-export const portalOnboardingSteps = ['branding', 'clients', 'modules', 'home', 'legal', 'review'] as const
+export const portalOnboardingSteps = ['branding', 'languages', 'clients', 'modules', 'home', 'legal', 'review'] as const
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
 
 const text = (maximum: number) => z.string().trim().max(maximum)
@@ -70,6 +71,11 @@ export const portalClientsSchema = z
 
 export const portalSettingsSchema = z
   .object({
+    languages: z
+      .array(z.enum(portalLanguageCodes))
+      .min(1)
+      .refine((values) => new Set(values).size === values.length)
+      .default([...portalLanguageCodes]),
     clients: portalClientsSchema.default({ allowedTypes: ['organization'], personalSelfRegistration: false }),
     branding: portalBrandingSchema,
     appearance: z.object({
@@ -113,7 +119,7 @@ export type PortalContent = z.infer<typeof localizedContentSchema>
 export type PortalSettings = z.infer<typeof portalSettingsSchema>
 export interface PublicPortalSettings extends Pick<
   PortalSettings,
-  'branding' | 'appearance' | 'enabledModules' | 'content' | 'clients'
+  'branding' | 'appearance' | 'enabledModules' | 'content' | 'clients' | 'languages'
 > {
   completed: boolean
 }
@@ -159,6 +165,7 @@ const defaultLocaleContent = (locale: 'en' | 'nl'): PortalContent =>
       }
 
 export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings => ({
+  languages: [...portalLanguageCodes],
   branding: {
     portalName: name,
     tagline: 'Customer workspace',

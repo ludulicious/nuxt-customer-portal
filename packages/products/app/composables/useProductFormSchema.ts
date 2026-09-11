@@ -1,6 +1,9 @@
 import type { z } from 'zod'
 
-export function useProductFormSchema<T extends z.ZodType>(schema: T) {
+export function useProductFormSchema<T extends z.ZodType>(
+  schema: T,
+  message?: (issue: z.ZodIssue) => string | undefined
+) {
   const { t } = useI18n()
   return {
     '~standard': {
@@ -12,7 +15,7 @@ export function useProductFormSchema<T extends z.ZodType>(schema: T) {
           ? { value: parsed.data }
           : {
               issues: parsed.error.issues.map((issue) => ({
-                message: t('products.invalid'),
+                message: message?.(issue) || t('products.invalid'),
                 path: issue.path.filter((p): p is string | number => typeof p !== 'symbol')
               }))
             }

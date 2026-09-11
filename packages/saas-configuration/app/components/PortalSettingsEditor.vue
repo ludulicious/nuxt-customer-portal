@@ -72,6 +72,7 @@ const primaryColorStyle = computed<Record<string, string>>(() => {
 const stepIndex = computed(() => portalOnboardingSteps.indexOf(step.value))
 const stepLabels = computed<Record<PortalOnboardingStep, string>>(() => ({
   branding: t('saasSettings.editor.steps.branding'),
+  languages: t('saasSettings.editor.steps.languages'),
   modules: t('saasSettings.editor.steps.modules'),
   clients: t('saasSettings.editor.steps.clients'),
   home: t('saasSettings.editor.steps.home'),
@@ -190,10 +191,12 @@ async function submitForm() {
             class="settings-form"
             :state="state"
             :schema="portalSettingsSchema"
+            novalidate
             @submit="submitForm"
             @error="showError(t('saasSettings.editor.messages.reviewSettings'))"
           >
             <PortalSettingsBrandingStep v-if="step === 'branding'" v-model="state" @error="showError" />
+            <PortalSettingsLanguagesStep v-else-if="step === 'languages'" v-model="state" />
             <PortalSettingsClientsStep v-else-if="step === 'clients'" v-model="state" />
             <PortalSettingsModulesStep v-else-if="step === 'modules'" v-model="state" />
             <PortalSettingsHomeStep v-else-if="step === 'home'" v-model="state" />

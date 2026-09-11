@@ -1,4 +1,15 @@
-import { pgSchema, text, boolean, integer, bigint, jsonb, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core'
+import {
+  foreignKey,
+  pgSchema,
+  text,
+  boolean,
+  integer,
+  bigint,
+  jsonb,
+  timestamp,
+  uniqueIndex,
+  index
+} from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 import type { ProductData, OrderSnapshot } from '../../../shared/types'
@@ -15,6 +26,10 @@ export const store = schema.table('store', {
     .references(() => user.id),
   enabled: boolean('enabled').default(false).notNull(),
   defaultLocale: text('default_locale').default('en').notNull(),
+  languages: text('languages')
+    .array()
+    .notNull()
+    .default(sql`ARRAY['en','nl']::text[]`),
   currencies: text('currencies')
     .array()
     .notNull()
@@ -27,12 +42,21 @@ export const product = schema.table(
     storeId: text('store_id')
       .notNull()
       .references(() => organization.id),
+    categoryId: text('category_id'),
     slug: text('slug').notNull(),
     data: jsonb('data').$type<ProductData>().notNull(),
     createdAt: stamp('created_at'),
     updatedAt: stamp('updated_at')
   },
-  (t) => [uniqueIndex('product_store_slug').on(t.storeId, t.slug)]
+  (t) => [
+    uniqueIndex('product_store_slug').on(t.storeId, t.slug),
+    index('product_category_id').on(t.categoryId),
+    foreignKey({
+      name: 'product_category_fk',
+      columns: [t.storeId, t.categoryId],
+      foreignColumns: [category.storeId, category.id]
+    }).onDelete('restrict')
+  ]
 )
 export const price = schema.table(
   'price',
@@ -141,7 +165,12 @@ export const category = schema.table(
     storeId: text('store_id')
       .notNull()
       .references(() => organization.id),
-    name: text('name').notNull()
+    name: text('name').notNull(),
+    code: text('code').notNull(),
+    content: jsonb('content').notNull()
   },
-  (t) => [uniqueIndex('category_store_name').on(t.storeId, sql`lower(${t.name})`)]
+  (t) => [
+    uniqueIndex('category_store_code').on(t.storeId, sql`lower(${t.code})`),
+    uniqueIndex('category_store_id').on(t.storeId, t.id)
+  ]
 )

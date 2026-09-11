@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
 
-export const localeSchema = z.enum(['en', 'nl']).default('en')
+export const localeSchema = z.enum(portalLanguageCodes).default('en')
 const text = (max: number) => z.string().trim().max(max)
 const copy = z.object({ title: text(200), summary: text(1000), description: text(50000) })
 export const productCurrencies = [
@@ -33,7 +34,7 @@ export const productSchema = z
     isFree: z.boolean().default(false),
     slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     type: z.enum(['digital', 'service']),
-    category: text(100),
+    categoryId: text(100).min(1).nullable().default(null),
     status: z.enum(['draft', 'published', 'archived']),
     content: z.object({ en: copy, nl: copy }),
     taxCode: z.string().regex(/^txcd_\d{8}$/),
@@ -101,6 +102,7 @@ export const listSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']).optional(),
   type: z.enum(['digital', 'service']).optional(),
   category: text(100).optional(),
+  categoryId: text(100).min(1).optional(),
   sortBy: z.enum(['title', 'updatedAt']).default('updatedAt'),
   sortDir: z.enum(['asc', 'desc']).default('desc'),
   locale: localeSchema,
@@ -110,14 +112,24 @@ export const listSchema = z.object({
     .optional()
 })
 export const keySchema = z.object({ name: text(100).min(1), expiresAt: z.iso.datetime().nullable().default(null) })
-export const settingsSchema = z.object({
-  enabled: z.boolean(),
-  defaultLocale: z.enum(['en', 'nl']),
-  currencies: z
-    .array(z.enum(productCurrencies))
-    .min(1)
-    .refine((v) => new Set(v).size === v.length)
-})
+export const settingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    defaultLocale: z.enum(portalLanguageCodes),
+    languages: z
+      .array(z.enum(portalLanguageCodes))
+      .min(1)
+      .refine((values) => new Set(values).size === values.length)
+      .default([...portalLanguageCodes]),
+    currencies: z
+      .array(z.enum(productCurrencies))
+      .min(1)
+      .refine((v) => new Set(v).size === v.length)
+  })
+  .refine((settings) => settings.languages.includes(settings.defaultLocale), {
+    path: ['defaultLocale'],
+    message: 'Choose a supported store language'
+  })
 export const hasRequiredPrices = (
   product: { isFree?: boolean; prices: { currency: string; amount: number }[] },
   currencies: readonly string[]
@@ -129,7 +141,7 @@ export const emptyProduct = () => ({
   isFree: false,
   slug: '',
   type: 'digital' as const,
-  category: '',
+  categoryId: null as string | null,
   status: 'draft' as const,
   content: { en: { title: '', summary: '', description: '' }, nl: { title: '', summary: '', description: '' } },
   taxCode: 'txcd_10000000',
@@ -140,4 +152,19 @@ export const emptyProduct = () => ({
   prices: [{ currency: 'EUR', amount: 1000, taxBehavior: 'inclusive' as const }]
 })
 
-export const categorySchema = z.object({ name: z.string().trim().min(1).max(100) })
+const categoryCopy = z.object({ name: text(100), description: text(5000) })
+export const categorySchema = z.object({
+  code: text(80)
+    .min(1)
+    .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/)
+    .transform((value) => value.toLowerCase()),
+  content: z.object({ en: categoryCopy, nl: categoryCopy })
+})
+export const categoryDeleteSchema = z.object({ name: text(100).min(1) })
+export const categoryListSchema = z.object({
+  page: z.coerce.number().int().min(1).max(100000).default(1),
+  search: text(200).default(''),
+  sortBy: z.enum(['name', 'code']).default('name'),
+  sortDir: z.enum(['asc', 'desc']).default('asc'),
+  locale: localeSchema
+})

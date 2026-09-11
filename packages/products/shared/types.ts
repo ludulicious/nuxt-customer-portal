@@ -8,7 +8,6 @@ export interface ProductData {
   isFree?: boolean
   slug: string
   type: 'digital' | 'service'
-  category: string
   status: 'draft' | 'published' | 'archived'
   content: Record<Locale, ProductCopy>
   taxCode: string
@@ -24,6 +23,9 @@ export interface Price {
   taxBehavior: 'inclusive' | 'exclusive'
 }
 export interface Product extends ProductData {
+  categoryId: string | null
+  categoryName?: string
+  categoryContent?: Record<Locale, { name: string; description: string }>
   id: string
   prices: Price[]
   updatedAt: string
@@ -81,6 +83,8 @@ export interface Order {
   processing: string
 }
 export interface CatalogProduct {
+  categoryId: string | null
+  categoryDetails?: { code: string; name: string; description: string }
   isFree: boolean
   pricingComplete: boolean
   id: string
@@ -102,12 +106,15 @@ export interface Page<T> {
 }
 
 export interface ProductCategory {
+  code: string
+  content: Record<Locale, { name: string; description: string }>
   id: string
   name: string
   productCount: number
 }
 
 export interface ProductPreview {
+  languages: Locale[]
   currencies: string[]
   product: Product
   defaultLocale: Locale

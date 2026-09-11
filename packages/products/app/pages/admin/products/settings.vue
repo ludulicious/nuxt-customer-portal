@@ -1,25 +1,43 @@
 <script setup lang="ts">
+import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { settingsSchema, keySchema, productCurrencies } from '../../../../shared/validation'
 
 const currencyOptions: string[] = [...productCurrencies]
 const { t } = useI18n(),
   api = useProducts(),
-  settings = reactive({ currencies: ['EUR'] as string[], enabled: false, defaultLocale: 'en' as 'en' | 'nl' }),
+  toast = useToast(),
+  settings = reactive({
+    languages: ['en', 'nl'] as ('en' | 'nl')[],
+    currencies: ['EUR'] as string[],
+    enabled: false,
+    defaultLocale: 'en' as 'en' | 'nl'
+  }),
   keyState = reactive({ name: '', expiresAt: null as string | null }),
   expiry = ref(''),
   shownKey = ref(''),
   error = ref(''),
-  saved = ref(false),
   busy = ref(false),
   revoking = ref('')
 const schema = useProductFormSchema(settingsSchema),
   apiSchema = useProductFormSchema(keySchema),
   keys = ref<Awaited<ReturnType<typeof api.keys>>>([]),
   health = ref<Awaited<ReturnType<typeof api.settings>>>()
+const defaultLanguageOptions = computed(() =>
+  portalLanguages.filter((language) => settings.languages.includes(language.value))
+)
+watch(
+  () => settings.languages,
+  (languages) => {
+    if (languages.length && !languages.includes(settings.defaultLocale)) {
+      settings.defaultLocale = languages[0]!
+    }
+  }
+)
 async function load() {
   try {
     health.value = await api.settings()
     Object.assign(settings, {
+      languages: health.value.languages,
       currencies: health.value.currencies,
       enabled: health.value.enabled,
       defaultLocale: health.value.defaultLocale
@@ -33,10 +51,9 @@ onMounted(load)
 async function save() {
   busy.value = true
   error.value = ''
-  saved.value = false
   try {
     await api.saveSettings(settings)
-    saved.value = true
+    toast.add({ title: t('products.saved'), color: 'success' })
     await load()
   } catch (e) {
     error.value = (e as { data?: { message?: string } }).data?.message || t('products.saveFailed')
@@ -68,19 +85,26 @@ async function revoke() {
 
 <template>
   <ProductsShell :title="t('products.settings')" :subtitle="t('products.settingsIntro')"
-    ><UAlert v-if="error" color="error" :title="error" /><UAlert
-      v-if="saved"
-      color="success"
-      :title="t('products.saved')"
-    /><UForm :state="settings" :schema="schema" novalidate class="space-y-4 rounded-lg border p-5" @submit="save"
-      ><UFormField name="enabled" :label="t('products.storeEnabled')"><USwitch v-model="settings.enabled" /></UFormField
-      ><UFormField name="defaultLocale" :label="t('products.defaultLanguage')"
-        ><USelect
-          v-model="settings.defaultLocale"
-          :items="[
-            { label: 'English', value: 'en' },
-            { label: 'Nederlands', value: 'nl' }
-          ]"
+    ><UAlert v-if="error" color="error" :title="error" /><UForm
+      :state="settings"
+      :schema="schema"
+      novalidate
+      class="space-y-4 rounded-lg border p-5"
+      @submit="save"
+      ><UFormField name="enabled" :label="t('products.storeEnabled')"
+        ><USwitch v-model="settings.enabled"
+      /></UFormField>
+      <UFormField name="languages" :label="t('products.supportedLanguages')" :help="t('products.languagesHelp')">
+        <USelectMenu
+          v-model="settings.languages"
+          :items="portalLanguages"
+          value-key="value"
+          multiple
+          class="w-full sm:w-80"
+        />
+      </UFormField>
+      <UFormField name="defaultLocale" :label="t('products.defaultLanguage')"
+        ><USelect v-model="settings.defaultLocale" :items="defaultLanguageOptions" class="w-full sm:w-80"
       /></UFormField>
       <UFormField name="currencies" :label="t('products.supportedCurrencies')" :help="t('products.currenciesHelp')">
         <USelectMenu v-model="settings.currencies" :items="currencyOptions" multiple class="w-full sm:w-80" />
@@ -97,10 +121,6 @@ async function revoke() {
       <p class="text-sm text-muted">{{ t('products.configHelp') }}</p>
       <UButton type="submit" :loading="busy">{{ t('products.save') }}</UButton></UForm
     >
-    <section class="space-y-4 rounded-lg border p-5">
-      <h2 class="text-xl font-semibold">{{ t('products.categories') }}</h2>
-      <ProductsCategories />
-    </section>
     <h2 class="text-xl font-semibold">{{ t('products.apiKeys') }}</h2>
     <p class="text-muted">{{ t('products.keyHelp') }}</p>
     <UAlert v-if="shownKey" :title="t('products.copyKey')"

@@ -1,6 +1,6 @@
 import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory, ProductPreview } from '../../shared/types'
 import type { z } from 'zod'
-import type { productSchema } from '../../shared/validation'
+import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.infer<typeof productSchema>
 export const useProducts = () => ({
@@ -9,11 +9,14 @@ export const useProducts = () => ({
     `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}`,
 
   categories: () => $fetch<ProductCategory[]>('/api/products/admin/categories'),
-  saveCategory: (name: string, id?: string) =>
-    $fetch<{ id: string; name: string }>(
-      id ? `/api/products/admin/categories/${id}` : '/api/products/admin/categories',
-      { method: id ? 'PUT' : 'POST', body: { name } }
-    ),
+  categoryPage: (query: Record<string, unknown>, signal?: AbortSignal) =>
+    $fetch<Page<ProductCategory>>('/api/products/admin/categories/list', { query, signal }),
+  categoryDeletion: (id: string) => $fetch<{ eligible: boolean }>(`/api/products/admin/categories/${id}/deletion`),
+  saveCategory: (body: z.infer<typeof categorySchema>, id?: string) =>
+    $fetch<ProductCategory>(id ? `/api/products/admin/categories/${id}` : '/api/products/admin/categories', {
+      method: id ? 'PUT' : 'POST',
+      body
+    }),
   deleteCategory: (id: string, name: string) =>
     $fetch(`/api/products/admin/categories/${id}`, { method: 'DELETE', body: { name } }),
   checkoutClients: () => $fetch<Array<{ id: string; name: string }>>('/api/products/checkout-clients'),
@@ -54,6 +57,7 @@ export const useProducts = () => ({
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
   settings: () =>
     $fetch<{
+      languages: ('en' | 'nl')[]
       currencies: string[]
       enabled: boolean
       defaultLocale: 'en' | 'nl'

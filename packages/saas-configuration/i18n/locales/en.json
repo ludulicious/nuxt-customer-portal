@@ -22,7 +22,8 @@
         "home": "Home page",
         "legal": "Legal pages",
         "review": "Review",
-        "clients": "Clients"
+        "clients": "Clients",
+        "languages": "Languages"
       },
       "appearanceSection": "Appearance",
       "logoSection": "Logos for the selected color mode",
@@ -119,6 +120,10 @@
         "registration": "Allow personal self-registration",
         "registrationDescription": "Verified users can complete personal onboarding and open their own client account. When disabled, you can still create and invite private clients.",
         "registrationDisabled": "Self-registration requires open registration in the authentication configuration."
+      },
+      "languages": {
+        "label": "Supported UI languages",
+        "help": "Choose at least one language for the portal interface. If the current language is disabled, the portal switches to the first supported language."
       }
     }
   }

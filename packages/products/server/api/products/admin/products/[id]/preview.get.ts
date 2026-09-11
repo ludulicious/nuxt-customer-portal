@@ -16,5 +16,11 @@ export default defineEventHandler(async (event): Promise<ProductPreview> => {
     })
   ) as ProductPreview['content']
   setHeader(event, 'Cache-Control', 'no-store')
-  return { product, content, currencies: store.currencies, defaultLocale: store.default_locale }
+  return {
+    product,
+    content,
+    languages: store.languages,
+    currencies: store.currencies,
+    defaultLocale: store.default_locale
+  }
 })

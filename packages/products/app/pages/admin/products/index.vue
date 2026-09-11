@@ -38,7 +38,7 @@ const page = computed(() => Math.max(1, Number(route.query.page) || 1)),
     set: (v) => filter('status', v === 'all' ? '' : v)
   }),
   kind = computed({ get: () => String(route.query.type || 'all'), set: (v) => filter('type', v === 'all' ? '' : v) }),
-  category = computed({ get: () => String(route.query.category || ''), set: (v) => filter('category', v) })
+  category = computed({ get: () => String(route.query.categoryId || ''), set: (v) => filter('categoryId', v) })
 const sortBy = computed({ get: () => String(route.query.sortBy || 'updatedAt'), set: (v) => filter('sortBy', v) }),
   sortDir = computed<'asc' | 'desc'>({
     get: () => (route.query.sortDir === 'asc' ? 'asc' : 'desc'),
@@ -51,7 +51,7 @@ const title = (product: Product) =>
 function toolbarFilter(key: string, value: string | undefined) {
   filter(
     key,
-    key === 'category'
+    key === 'categoryId'
       ? value === 'all'
         ? ''
         : (value || '').slice('category:'.length)
@@ -225,15 +225,18 @@ function edit(product: Product) {
           items: [{ value: 'all', label: t('products.allTypes') }, ...options(['digital', 'service'])]
         },
         {
-          key: 'category',
+          key: 'categoryId',
           placeholder: t('products.category'),
           items: [
             { value: 'all', label: t('products.allCategories') },
-            ...categories.map((c) => ({ value: `category:${c.name}`, label: c.name }))
+            ...categories.map((c) => ({
+              value: `category:${c.id}`,
+              label: c.content[locale === 'nl' ? 'nl' : 'en'].name || c.name
+            }))
           ]
         }
       ]"
-      :filter-values="{ status, type: kind, category: category ? `category:${category}` : 'all' }"
+      :filter-values="{ status, type: kind, categoryId: category ? `category:${category}` : 'all' }"
       :sort-options="options(['updatedAt', 'title'])"
       :sort-by="sortBy"
       :sort-dir="sortDir"
@@ -274,7 +277,15 @@ function edit(product: Product) {
                     }}</UBadge>
                   </div>
                   <p class="mt-1 text-sm text-muted">
-                    {{ t(`products.${product.type}`) }}<span v-if="product.category"> · {{ product.category }}</span>
+                    {{ t(`products.${product.type}`)
+                    }}<span v-if="product.categoryId">
+                      ·
+                      {{
+                        product.categoryContent?.[locale === 'nl' ? 'nl' : 'en']?.name ||
+                        product.categoryName ||
+                        product.categoryId
+                      }}</span
+                    >
                   </p>
                   <p class="mt-1 text-sm">
                     {{

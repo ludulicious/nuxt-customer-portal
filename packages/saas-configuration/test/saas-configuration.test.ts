@@ -36,3 +36,13 @@ test('the deployable app includes its settings migration and image contract', as
   assert.doesNotMatch(releaseWorkflow, /file: apps\/demo-apex\/Dockerfile/)
   assert.match(migration, /CHECK \("id" = true\)/)
 })
+
+test('UI languages use the bundled language set with at least one selected', () => {
+  const settings = defaultPortalSettings()
+  assert.deepEqual(settings.languages, ['en', 'nl'])
+  assert.deepEqual(portalSettingsSchema.parse({ ...settings, languages: undefined }).languages, ['en', 'nl'])
+  assert.equal(portalSettingsSchema.safeParse({ ...settings, languages: [] }).success, false)
+  assert.equal(portalSettingsSchema.safeParse({ ...settings, languages: ['en', 'en'] }).success, false)
+  assert.equal(portalSettingsSchema.safeParse({ ...settings, languages: ['fr'] }).success, false)
+  assert.equal(portalSettingsSchema.safeParse({ ...settings, languages: ['nl'] }).success, true)
+})

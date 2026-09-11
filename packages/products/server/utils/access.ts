@@ -11,6 +11,7 @@ export interface Store {
   actor_id: string
   enabled: boolean
   currencies: string[]
+  languages: ('en' | 'nl')[]
   default_locale: 'en' | 'nl'
 }
 export async function getStore(active = false) {

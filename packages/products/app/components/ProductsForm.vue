@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import type { z } from 'zod'
 import type { Product, Asset, ProductCategory } from '../../shared/types'
 import { emptyProduct, productSchema, hasRequiredPrices } from '../../shared/validation'
@@ -29,29 +30,37 @@ const categories = ref<ProductCategory[]>([])
 const categoriesOpen = ref(false)
 const categoryOptions = computed(() => [
   { label: t('products.noCategory'), value: 'none' },
-  ...categories.value.map((category) => ({ label: category.name, value: `category:${category.name}` }))
+  ...categories.value.map((category) => ({
+    label: category.content[defaultLanguage.value].name || category.name,
+    value: `category:${category.id}`
+  }))
 ])
 const selectedCategory = computed({
-  get: () => (state.category ? `category:${state.category}` : 'none'),
+  get: () => (state.categoryId ? `category:${state.categoryId}` : 'none'),
   set: (value: string) => {
-    state.category = value === 'none' ? '' : value.slice('category:'.length)
+    state.categoryId = value === 'none' ? null : value.slice('category:'.length)
   }
 })
 async function loadCategories() {
   categories.value = await api.categories()
 }
-function categorySaved(category: { name: string }) {
-  state.category = category.name
+async function categorySaved(category: ProductCategory) {
+  state.categoryId = category.id
+  categoriesOpen.value = false
+  await loadCategories()
 }
 const selectedLanguage = ref<'en' | 'nl'>('en')
 const defaultLanguage = ref<'en' | 'nl'>('en')
+const supportedLanguages = ref<('en' | 'nl')[]>([])
 const languageReady = ref(false)
 const languageOptions = computed(() =>
-  ([defaultLanguage.value, defaultLanguage.value === 'en' ? 'nl' : 'en'] as const).map((value) => ({
-    value,
-    disabled: !languageReady.value,
-    label: value === 'en' ? '🇺🇸 English' : '🇳🇱 Nederlands'
-  }))
+  [defaultLanguage.value, ...supportedLanguages.value.filter((value) => value !== defaultLanguage.value)].map(
+    (value) => ({
+      value,
+      disabled: !languageReady.value,
+      label: portalLanguages.find((language) => language.value === value)!.label
+    })
+  )
 )
 async function showInvalidLanguage(event: { errors: Array<{ name?: string }> }) {
   const field = event.errors.find(({ name }) => /^(content|nextSteps)\.(en|nl)(\.|$)/.test(name || ''))
@@ -101,6 +110,7 @@ onMounted(async () => {
       )
     }
     settingsReady.value = true
+    supportedLanguages.value = settings.languages
     defaultLanguage.value = settings.defaultLocale
     selectedLanguage.value = settings.defaultLocale
   } catch {
@@ -180,7 +190,7 @@ function move(ids: string[], index: number, delta: number) {
       <template v-if="section === 'all' || section === 'basic'">
         <div class="grid gap-4 sm:grid-cols-2">
           <UFormField name="slug" :label="t('products.slug')"><UInput v-model="state.slug" class="w-full" /></UFormField
-          ><UFormField name="category" :label="t('products.category')"
+          ><UFormField name="categoryId" :label="t('products.category')"
             ><div class="flex gap-2">
               <USelectMenu
                 v-model="selectedCategory"
@@ -192,7 +202,7 @@ function move(ids: string[], index: number, delta: number) {
               <UButton
                 icon="i-lucide-plus"
                 variant="outline"
-                :aria-label="t('products.manageCategories')"
+                :aria-label="t('products.addCategory')"
                 @click="categoriesOpen = true"
               /></div></UFormField
           ><UFormField name="type" :label="t('products.type')"
@@ -304,11 +314,7 @@ function move(ids: string[], index: number, delta: number) {
       </div></UForm
     >
   </div>
-  <UModal
-    v-model:open="categoriesOpen"
-    :title="t('products.manageCategories')"
-    :ui="{ content: 'pointer-events-auto' }"
-  >
-    <template #body><ProductsCategories @saved="categorySaved" @changed="loadCategories" /></template>
+  <UModal v-model:open="categoriesOpen" :title="t('products.addCategory')" :ui="{ content: 'pointer-events-auto' }">
+    <template #body><ProductsCategoryForm embedded @saved="categorySaved" @cancel="categoriesOpen = false" /></template>
   </UModal>
 </template>

@@ -18,7 +18,7 @@ const copy = computed(() => preview.value?.content[language.value])
 const languageOptions = computed(() => {
   const first = preview.value?.defaultLocale || 'en'
   return ([first, first === 'en' ? 'nl' : 'en'] as Locale[])
-    .filter((value) => product.value?.content[value].title.trim())
+    .filter((value) => preview.value?.languages.includes(value) && product.value?.content[value].title.trim())
     .map((value) => ({
       value,
       label: value === 'en' ? '🇺🇸 English' : '🇳🇱 Nederlands'
@@ -108,7 +108,10 @@ onMounted(async () => {
           t(`products.${product.status}`)
         }}</UBadge>
         <span class="text-sm text-muted"
-          >{{ t(`products.${product.type}`) }}<span v-if="product.category"> · {{ product.category }}</span></span
+          >{{ t(`products.${product.type}`)
+          }}<span v-if="product.categoryId">
+            · {{ product.categoryContent?.[language]?.name || product.categoryName || product.categoryId }}</span
+          ></span
         >
         <div v-if="languageOptions.length > 1 || currencyOptions.length > 1" class="ml-auto flex items-center gap-2">
           <USelect

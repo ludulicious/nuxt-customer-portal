@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ title: string; subtitle?: string }>()
+defineProps<{ title: string; subtitle?: string; icon?: string }>()
 </script>
 
 <template>
@@ -9,7 +9,7 @@ defineProps<{ title: string; subtitle?: string }>()
         <slot name="back" />
         <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
           <div class="flex min-w-0 gap-3">
-            <UIcon name="i-lucide-shopping-bag" class="mt-1 size-6 shrink-0 text-primary" />
+            <UIcon :name="icon || 'i-lucide-shopping-bag'" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
               <h1 class="text-2xl font-semibold">{{ title }}</h1>
               <p v-if="subtitle" class="hidden text-sm text-muted sm:block">{{ subtitle }}</p>
