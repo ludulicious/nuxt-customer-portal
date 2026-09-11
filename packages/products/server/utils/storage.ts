@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import { Readable } from 'node:stream'
-import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { createError, readRawBody, sendRedirect, sendStream, setResponseHeader, type H3Event } from 'h3'
@@ -14,6 +20,7 @@ import { getProduct } from './catalog'
 import { createStorageClient, resolveStorageConfiguration } from './storage-configuration'
 import { cropSchema } from '../../shared/validation'
 import { storageExtension } from '../../shared/storage'
+import { withFileExtension } from '../../shared/file-name'
 import type { Asset, ImagePolicy, ImagePurpose } from '../../shared/types'
 
 const defaultImagePolicy: ImagePolicy = {
@@ -91,9 +98,10 @@ export async function startUpload(storeId: string, productId: string, input: unk
     extension = storageExtension(data.contentType),
     key = `products/staging/${storeId}/${productId}/${id}.${extension}`
   const { config, bucket, client } = await storage()
-  const objectKey = config.provider === 'bunny' && data.visibility === 'private'
-    ? `products/private/${storeId}/${productId}/${id}.${extension}`
-    : key
+  const objectKey =
+    config.provider === 'bunny' && data.visibility === 'private'
+      ? `products/private/${storeId}/${productId}/${id}.${extension}`
+      : key
   await rows(
     "INSERT INTO products.asset(id,product_id,name,content_type,size,visibility,object_key,source_object_key,status,image_purpose) VALUES($1,$2,$3,$4,$5,$6,$7,$7,'uploading',$8)",
     [id, productId, data.name, data.contentType, data.size, data.visibility, objectKey, data.purpose || null]
@@ -149,19 +157,25 @@ export async function uploadBunnyObject(event: H3Event, storeId: string, product
   }
   const target = new URL(bunnyUrl(config, asset.source_object_key))
   await new Promise<void>((resolve, reject) => {
-    const request = (target.protocol === 'https:' ? httpsRequest : httpRequest)(target, {
-      method: 'PUT',
-      headers: {
-        AccessKey: config.credentials!.secretAccessKey,
-        'Content-Type': asset.content_type,
-        'Content-Length': String(asset.size)
+    const request = (target.protocol === 'https:' ? httpsRequest : httpRequest)(
+      target,
+      {
+        method: 'PUT',
+        headers: {
+          AccessKey: config.credentials!.secretAccessKey,
+          'Content-Type': asset.content_type,
+          'Content-Length': String(asset.size)
+        }
+      },
+      (response) => {
+        response.resume()
+        response.on('end', () =>
+          response.statusCode && response.statusCode >= 200 && response.statusCode < 300
+            ? resolve()
+            : reject(new Error(`Bunny Storage upload failed (${response.statusCode || 500})`))
+        )
       }
-    }, (response) => {
-      response.resume()
-      response.on('end', () => response.statusCode && response.statusCode >= 200 && response.statusCode < 300
-        ? resolve()
-        : reject(new Error(`Bunny Storage upload failed (${response.statusCode || 500})`)))
-    })
+    )
     request.on('error', reject)
     event.node.req.pipe(request)
   })
@@ -171,10 +185,9 @@ const bodyBuffer = async (body: unknown) =>
   Buffer.from(await (body as { transformToByteArray(): Promise<Uint8Array> }).transformToByteArray())
 export async function finishUpload(storeId: string, productId: string, id: string, input: unknown = {}) {
   await getProduct(storeId, productId)
-  const [asset] = await rows<Asset & { object_key: string; source_object_key: string; image_purpose: ImagePurpose | null }>(
-    'SELECT * FROM products.asset WHERE id=$1 AND product_id=$2',
-    [id, productId]
-  )
+  const [asset] = await rows<
+    Asset & { object_key: string; source_object_key: string; image_purpose: ImagePurpose | null }
+  >('SELECT * FROM products.asset WHERE id=$1 AND product_id=$2', [id, productId])
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
@@ -185,11 +198,14 @@ export async function finishUpload(storeId: string, productId: string, id: strin
     await bunnyObject.body?.cancel()
     throw createError({ statusCode: 400, message: 'Uploaded file was not found' })
   }
-  const head = config.provider === 's3'
-    ? await client!.send(new HeadObjectCommand({ Bucket: bucket, Key: sourceKey }))
-    : { ContentLength: Number(bunnyObject!.headers.get('content-length')), ContentType: bunnyObject!.headers.get('content-type') }
-  const contentTypeMismatch =
-    config.provider === 's3' && head.ContentType?.split(';')[0] !== asset.content_type
+  const head =
+    config.provider === 's3'
+      ? await client!.send(new HeadObjectCommand({ Bucket: bucket, Key: sourceKey }))
+      : {
+          ContentLength: Number(bunnyObject!.headers.get('content-length')),
+          ContentType: bunnyObject!.headers.get('content-type')
+        }
+  const contentTypeMismatch = config.provider === 's3' && head.ContentType?.split(';')[0] !== asset.content_type
   if (head.ContentLength !== Number(asset.size) || contentTypeMismatch) {
     await bunnyObject?.body?.cancel()
     throw createError({ statusCode: 400, message: 'Upload does not match the expected file' })
@@ -216,9 +232,10 @@ export async function finishUpload(storeId: string, productId: string, id: strin
   await rows("UPDATE products.asset SET status='processing',failure_reason=NULL WHERE id=$1", [id])
   try {
     const crop = parseInput(cropSchema, input)
-    const original = config.provider === 'bunny'
-      ? Buffer.from(await bunnyObject!.arrayBuffer())
-      : await bodyBuffer((await client!.send(new GetObjectCommand({ Bucket: bucket, Key: sourceKey }))).Body)
+    const original =
+      config.provider === 'bunny'
+        ? Buffer.from(await bunnyObject!.arrayBuffer())
+        : await bodyBuffer((await client!.send(new GetObjectCommand({ Bucket: bucket, Key: sourceKey }))).Body)
     const metadata = await sharp(original, { limitInputPixels: 40_000_000 }).metadata()
     const expectedContentType = metadata.format === 'jpg' ? 'image/jpeg' : `image/${metadata.format}`
     if (!metadata.format || expectedContentType !== asset.content_type) {
@@ -292,7 +309,9 @@ export async function finishUpload(storeId: string, productId: string, id: strin
     return { id, status: 'ready', width: outputWidth, height: outputHeight }
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
-    const reason = ['invalid_image', 'image_too_small', 'invalid_aspect_ratio', 'invalid_image_purpose'].includes(message)
+    const reason = ['invalid_image', 'image_too_small', 'invalid_aspect_ratio', 'invalid_image_purpose'].includes(
+      message
+    )
       ? message
       : 'processing_failed'
     await rows("UPDATE products.asset SET ready=false,status='failed',failure_reason=$2 WHERE id=$1", [id, reason])
@@ -328,10 +347,7 @@ export async function sendAsset(event: H3Event, id: string, download = false, fi
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
-  const extension = asset.name.match(/\.[a-z0-9]+$/i)?.[0] || ''
-  const responseFileName = fileName
-    ? `${fileName}${extension && !fileName.toLowerCase().endsWith(extension.toLowerCase()) ? extension : ''}`
-    : asset.name
+  const responseFileName = fileName ? withFileExtension(fileName, asset.name) : asset.name
   if (asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
     return sendRedirect(event, `${process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '')}/${asset.object_key}`)
   }

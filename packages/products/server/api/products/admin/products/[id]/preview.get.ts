@@ -15,6 +15,7 @@ export default defineEventHandler(async (event): Promise<ProductPreview> => {
         {
           title: copy.title,
           subtitle: copy.subtitle || '',
+          buyButtonLabel: copy.buyButtonLabel || '',
           secondaryCta: copy.secondaryCta || '',
           summary: copy.summary,
           summaryHtml: renderDescription(copy.summary),

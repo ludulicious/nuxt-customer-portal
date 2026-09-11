@@ -10,6 +10,7 @@ import {
   settingsSchema,
   hasRequiredPrices
 } from '../shared/validation'
+import { fileExtension, withoutFileExtension, withFileExtension } from '../shared/file-name'
 import { currencyScale, formatMoney } from '../shared/money'
 import { hasPurchaseAccess } from '../shared/access'
 
@@ -169,7 +170,19 @@ test('subtitles are optional, localized and limited to 200 characters', () => {
   assert.equal(parsed.content.en.subtitle, 'Your next step')
   assert.equal(parsed.content.nl.subtitle, 'Jouw volgende stap')
   const { subtitle: _subtitle, ...legacyCopy } = product.content.en
-  assert.equal(productSchema.parse({ ...product, content: { ...product.content, en: legacyCopy } }).content.en.subtitle, '')
+  assert.equal(
+    productSchema.parse({ ...product, content: { ...product.content, en: legacyCopy } }).content.en.subtitle,
+    ''
+  )
   product.content.en.subtitle = 'a'.repeat(201)
   assert.equal(productSchema.safeParse(product).success, false)
+})
+
+test('customer-facing file names omit the source extension', () => {
+  assert.equal(fileExtension('document.final.PDF'), '.PDF')
+  assert.equal(withoutFileExtension('My document.pdf', 'original.pdf'), 'My document')
+  assert.equal(withoutFileExtension('My document.PDF', 'original.pdf'), 'My document')
+  assert.equal(withoutFileExtension('My document', 'original.pdf'), 'My document')
+  assert.equal(withFileExtension('My document.pdf', 'original.pdf'), 'My document.pdf')
+  assert.equal(withFileExtension('My document', 'original.pdf'), 'My document.pdf')
 })

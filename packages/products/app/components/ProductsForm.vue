@@ -4,11 +4,14 @@ import { z } from 'zod'
 import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
 import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
+import { fileExtension, withoutFileExtension } from '../../shared/file-name'
 
 const props = withDefaults(
     defineProps<{
       product?: Product
       section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media' | 'images' | 'files'
+      filesMode?: 'add' | 'edit'
+      fileId?: string
       currency?: string
       language?: 'en' | 'nl'
     }>(),
@@ -30,11 +33,13 @@ const state = reactive<z.infer<typeof productSchema>>(
           en: {
             ...structuredClone(toRaw(props.product.content.en)),
             subtitle: props.product.content.en.subtitle || '',
+            buyButtonLabel: props.product.content.en.buyButtonLabel || '',
             secondaryCta: props.product.content.en.secondaryCta || ''
           },
           nl: {
             ...structuredClone(toRaw(props.product.content.nl)),
             subtitle: props.product.content.nl.subtitle || '',
+            buyButtonLabel: props.product.content.nl.buyButtonLabel || '',
             secondaryCta: props.product.content.nl.secondaryCta || ''
           }
         },
@@ -45,6 +50,14 @@ const state = reactive<z.infer<typeof productSchema>>(
 for (const id of state.fileIds) {
   state.fileNames[id] ||= { en: '', nl: '' }
 }
+const initialFileIds = new Set(state.fileIds)
+const editableFileIds = computed(() =>
+  props.section === 'files' && props.filesMode === 'add'
+    ? state.fileIds.filter((id) => !initialFileIds.has(id))
+    : props.section === 'files' && props.filesMode === 'edit'
+      ? state.fileIds.filter((id) => id === props.fileId)
+      : state.fileIds
+)
 const busy = ref(false),
   saving = ref(false),
   error = ref(''),
@@ -55,6 +68,21 @@ function syncThumbnailImageId() {
   if (!state.thumbnailImageId) {
     state.thumbnailImageId =
       state.imageIds.find((id) => assets.value.find((asset) => asset.id === id)?.image_purpose === 'thumbnail') || null
+  }
+}
+function purchasedFile(id: string) {
+  return assets.value.find((asset) => asset.id === id)
+}
+function setFileName(id: string, language: 'en' | 'nl', value: string) {
+  const sourceName = purchasedFile(id)?.name || ''
+  state.fileNames[id]![language] = withoutFileExtension(value, sourceName)
+}
+function normalizeFileNames() {
+  for (const id of state.fileIds) {
+    const sourceName = purchasedFile(id)?.name || ''
+    for (const language of ['en', 'nl'] as const) {
+      state.fileNames[id]![language] = withoutFileExtension(state.fileNames[id]![language], sourceName)
+    }
   }
 }
 const categories = ref<ProductCategory[]>([])
@@ -296,6 +324,7 @@ onMounted(async () => {
   if (props.product && ['all', 'media', 'images', 'files'].includes(props.section)) {
     assets.value = await api.assets(props.product!.id)
     syncThumbnailImageId()
+    normalizeFileNames()
   }
   await nextTick()
   root.value?.querySelector('input')?.focus({ preventScroll: true })
@@ -516,6 +545,11 @@ function removeFile(id: string, index: number) {
                   v-model="state.content[item.value].secondaryCta"
                   :placeholder="t('products.secondaryCtaPlaceholder')"
                   class="w-full" /></UFormField
+              ><UFormField :name="`content.${item.value}.buyButtonLabel`" :label="t('products.buyButtonLabel')"
+                ><UInput
+                  v-model="state.content[item.value].buyButtonLabel"
+                  :placeholder="t('products.buyButtonLabelPlaceholder')"
+                  class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
                 ><UTextarea
                   v-model="state.content[item.value].summary"
@@ -607,11 +641,7 @@ function removeFile(id: string, index: number) {
           <div v-if="section === 'all' || section === 'files'" class="space-y-3">
             <UFormField name="fileIds">
               <div class="space-y-2">
-                <div
-                  v-for="(id, index) in state.fileIds"
-                  :key="id"
-                  class="space-y-3 rounded-lg border border-default p-3"
-                >
+                <div v-for="id in editableFileIds" :key="id" class="space-y-3 rounded-lg border border-default p-3">
                   <div class="flex items-center gap-2">
                     <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
                     <span class="min-w-0 flex-1 truncate text-sm text-muted">{{
@@ -622,23 +652,23 @@ function removeFile(id: string, index: number) {
                       color="neutral"
                       variant="ghost"
                       :aria-label="t('products.moveUp')"
-                      :disabled="index === 0"
-                      @click="move(state.fileIds, index, -1)"
+                      :disabled="state.fileIds.indexOf(id) === 0"
+                      @click="move(state.fileIds, state.fileIds.indexOf(id), -1)"
                     />
                     <UButton
                       icon="i-lucide-arrow-down"
                       color="neutral"
                       variant="ghost"
                       :aria-label="t('products.moveDown')"
-                      :disabled="index === state.fileIds.length - 1"
-                      @click="move(state.fileIds, index, 1)"
+                      :disabled="state.fileIds.indexOf(id) === state.fileIds.length - 1"
+                      @click="move(state.fileIds, state.fileIds.indexOf(id), 1)"
                     />
                     <UButton
                       icon="i-lucide-x"
                       color="error"
                       variant="ghost"
                       :aria-label="t('products.removeFile')"
-                      @click="removeFile(id, index)"
+                      @click="removeFile(id, state.fileIds.indexOf(id))"
                     />
                   </div>
                   <div class="grid gap-3 sm:grid-cols-2">
@@ -647,14 +677,24 @@ function removeFile(id: string, index: number) {
                       :key="languageOption.value"
                       :name="`fileNames.${id}.${languageOption.value}`"
                       :label="t('products.fileNameInLanguage', { language: languageOption.label })"
+                      :help="
+                        t('products.fileExtensionAddedAutomatically', {
+                          extension: fileExtension(purchasedFile(id)?.name || '')
+                        })
+                      "
                     >
-                      <UInput v-model="state.fileNames[id]![languageOption.value]" class="w-full" />
+                      <UInput
+                        :model-value="state.fileNames[id]![languageOption.value]"
+                        class="w-full"
+                        @update:model-value="setFileName(id, languageOption.value, String($event))"
+                      />
                     </UFormField>
                   </div>
                 </div>
               </div>
             </UFormField>
             <ProductsPurchasedFileUpload
+              v-if="section !== 'files' || filesMode === 'add'"
               :disabled="saving"
               :upload="(file) => performUpload(file, 'private', undefined, undefined, false)"
               @update:uploading="purchasedFilesUploading = $event"

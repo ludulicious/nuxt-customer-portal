@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Asset, Product } from '../../shared/types'
+import { withoutFileExtension } from '../../shared/file-name'
 
 interface PurchasedFileRow {
   id: string
@@ -21,6 +22,8 @@ const assets = ref<Asset[]>([])
 const loading = ref(false)
 const removing = ref(false)
 const selectedFile = ref<PurchasedFileRow>()
+const editingMode = ref<'add' | 'edit'>('add')
+const editingFileId = ref<string>()
 const columns = computed<TableColumn<PurchasedFileRow>[]>(() => [
   { accessorKey: 'name', header: t('products.fileTableName') },
   { accessorKey: 'type', header: t('products.fileTableType') },
@@ -34,8 +37,8 @@ const rows = computed<PurchasedFileRow[]>(() =>
     return {
       id,
       name: asset?.name || id,
-      englishName: props.product.fileNames[id]?.en || '—',
-      dutchName: props.product.fileNames[id]?.nl || '—',
+      englishName: withoutFileExtension(props.product.fileNames[id]?.en || '', asset?.name || '') || '—',
+      dutchName: withoutFileExtension(props.product.fileNames[id]?.nl || '', asset?.name || '') || '—',
       type: asset?.content_type.split('/').pop()?.toUpperCase() || '—',
       size: asset ? formatFileSize(asset.size) : '—',
       status: asset?.status || 'ready'
@@ -53,6 +56,16 @@ function downloadUrl(id: string, name?: string) {
 function confirmRemove(file: PurchasedFileRow) {
   selectedFile.value = file
   removing.value = true
+}
+function startAdding() {
+  editingFileId.value = undefined
+  editingMode.value = 'add'
+  emit('edit')
+}
+function startEditing(file: PurchasedFileRow) {
+  editingFileId.value = file.id
+  editingMode.value = 'edit'
+  emit('edit')
 }
 async function removeFile() {
   const file = selectedFile.value
@@ -77,11 +90,13 @@ async function removeFile() {
           en: {
             ...input.content.en,
             subtitle: input.content.en.subtitle || '',
+            buyButtonLabel: input.content.en.buyButtonLabel || '',
             secondaryCta: input.content.en.secondaryCta || ''
           },
           nl: {
             ...input.content.nl,
             subtitle: input.content.nl.subtitle || '',
+            buyButtonLabel: input.content.nl.buyButtonLabel || '',
             secondaryCta: input.content.nl.secondaryCta || ''
           }
         }
@@ -120,9 +135,11 @@ watch(() => props.product.updatedAt, loadAssets)
     <template #header>
       <div class="flex items-center justify-between gap-3">
         <h2 class="font-semibold">{{ t('products.purchasedFiles') }}</h2>
-        <UButton v-if="!editing" icon="i-lucide-plus" variant="outline" :aria-expanded="false" @click="emit('edit')">
-          {{ t('products.addPurchasedFile') }}
-        </UButton>
+        <div v-if="!editing" class="flex items-center gap-2">
+          <UButton icon="i-lucide-plus" variant="outline" @click="startAdding">
+            {{ t('products.addPurchasedFile') }}
+          </UButton>
+        </div>
       </div>
     </template>
     <ProductsForm
@@ -130,6 +147,8 @@ watch(() => props.product.updatedAt, loadAssets)
       :key="`files-${product.updatedAt}`"
       :product="product"
       section="files"
+      :files-mode="editingMode"
+      :file-id="editingFileId"
       @saved="emit('saved')"
       @cancel="emit('cancel')"
     />
@@ -173,14 +192,24 @@ watch(() => props.product.updatedAt, loadAssets)
           </UBadge>
         </template>
         <template #actions-cell="{ row }">
-          <UButton
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            size="xs"
-            :aria-label="t('products.removePurchasedFile')"
-            @click="confirmRemove(row.original)"
-          />
+          <div class="flex items-center justify-end gap-1">
+            <UButton
+              icon="i-lucide-pencil"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              :aria-label="t('products.editPurchasedFile')"
+              @click="startEditing(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              size="xs"
+              :aria-label="t('products.removePurchasedFile')"
+              @click="confirmRemove(row.original)"
+            />
+          </div>
         </template>
       </UTable>
       <p v-else class="text-sm text-muted">{{ t('products.noPurchasedFiles') }}</p>

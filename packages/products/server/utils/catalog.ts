@@ -8,6 +8,7 @@ import type { z } from 'zod'
 import type { Product, ProductData, Price, Locale, CatalogProduct, Page } from '../../shared/types'
 import { productSchema, listSchema, hasRequiredPrices } from '../../shared/validation'
 import { publishChecks } from '../../shared/publish'
+import { withoutFileExtension } from '../../shared/file-name'
 import { rows, transaction } from './database'
 import { baseUrl, getStore } from './access'
 import { assetUrl } from './storage'
@@ -179,9 +180,19 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
           throw createError({ statusCode: 400, message: 'Complete the publish checklist', data: { checks: failed } })
         }
       }
+      const purchasedFiles = data.fileIds.length
+        ? await rows<{ id: string; name: string }>(
+            'SELECT id,name FROM products.asset WHERE product_id=$1 AND id=ANY($2::text[]) AND visibility=$3 AND ready',
+            [id, data.fileIds, 'private'],
+            tx
+          )
+        : []
       for (const fileId of data.fileIds) {
+        const sourceName = purchasedFiles.find((file) => file.id === fileId)?.name || ''
+        const localizedNames = (data.fileNames[fileId] ||= { en: '', nl: '' })
         for (const language of currentStore!.languages) {
-          if (!data.fileNames[fileId]?.[language]?.trim()) {
+          localizedNames[language] = withoutFileExtension(localizedNames[language], sourceName)
+          if (!localizedNames[language]) {
             throw createError({
               statusCode: 400,
               message: 'Add a customer-facing file name in every store language',
@@ -347,6 +358,7 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     category: category?.code || '',
     title: copy.title,
     subtitle: copy.subtitle || '',
+    buyButtonLabel: copy.buyButtonLabel || '',
     secondaryCta: copy.secondaryCta || '',
     summary: copy.summary,
     summaryHtml: renderDescription(copy.summary),

@@ -4,6 +4,7 @@ export type Locale = 'en' | 'nl'
 export interface ProductCopy {
   title: string
   subtitle?: string
+  buyButtonLabel?: string
   secondaryCta?: string
   summary: string
   description: string
@@ -130,6 +131,7 @@ export interface CatalogProduct {
   category: string
   title: string
   subtitle?: string
+  buyButtonLabel: string
   secondaryCta: string
   summary: string
   descriptionHtml: string
@@ -165,6 +167,7 @@ export interface ProductPreview {
     {
       title: string
       subtitle?: string
+      buyButtonLabel: string
       secondaryCta: string
       summary: string
       summaryHtml: string

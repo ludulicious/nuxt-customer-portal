@@ -7,6 +7,7 @@ const text = (max: number) => z.string().trim().max(max)
 const copy = z.object({
   title: text(200),
   subtitle: text(200).default(''),
+  buyButtonLabel: text(80).default(''),
   secondaryCta: text(200).default(''),
   summary: text(1000),
   description: text(50000)
@@ -231,8 +232,8 @@ export const emptyProduct = () => ({
   categoryId: null as string | null,
   status: 'draft' as const,
   content: {
-    en: { title: '', subtitle: '', secondaryCta: '', summary: '', description: '' },
-    nl: { title: '', subtitle: '', secondaryCta: '', summary: '', description: '' }
+    en: { title: '', subtitle: '', buyButtonLabel: '', secondaryCta: '', summary: '', description: '' },
+    nl: { title: '', subtitle: '', buyButtonLabel: '', secondaryCta: '', summary: '', description: '' }
   },
   taxCode: 'txcd_10000000',
   nextSteps: { en: '', nl: '' },

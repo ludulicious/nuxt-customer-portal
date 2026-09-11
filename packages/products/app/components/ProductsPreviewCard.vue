@@ -106,6 +106,10 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
           <h4 class="text-sm font-medium text-muted">{{ t('products.secondaryCta') }}</h4>
           <p class="mt-1 font-medium">{{ copy.secondaryCta }}</p>
         </div>
+        <div v-if="copy.buyButtonLabel?.trim()" class="border-t border-default pt-4">
+          <h4 class="text-sm font-medium text-muted">{{ t('products.buyButtonLabel') }}</h4>
+          <UButton class="mt-2" icon="i-lucide-shopping-bag">{{ copy.buyButtonLabel }}</UButton>
+        </div>
         <UButton
           v-if="product.videoUrl"
           :to="product.videoUrl"
