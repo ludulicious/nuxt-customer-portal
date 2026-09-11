@@ -13,6 +13,7 @@ import { rows } from './database'
 import { getProduct } from './catalog'
 import { createStorageClient, resolveStorageConfiguration } from './storage-configuration'
 import { cropSchema } from '../../shared/validation'
+import { storageExtension } from '../../shared/storage'
 import type { Asset, ImagePolicy, ImagePurpose } from '../../shared/types'
 
 const defaultImagePolicy: ImagePolicy = {
@@ -87,11 +88,11 @@ export async function startUpload(storeId: string, productId: string, input: unk
   await getProduct(storeId, productId)
   const data = parseInput(uploadSchema, input),
     id = randomUUID(),
-    imageExtension = data.contentType === 'image/jpeg' ? 'jpg' : data.contentType.split('/')[1],
-    key = `products/staging/${storeId}/${productId}/${id}${data.visibility === 'public' ? `.${imageExtension}` : ''}`
+    extension = storageExtension(data.contentType),
+    key = `products/staging/${storeId}/${productId}/${id}.${extension}`
   const { config, bucket, client } = await storage()
   const objectKey = config.provider === 'bunny' && data.visibility === 'private'
-    ? `products/private/${storeId}/${productId}/${id}`
+    ? `products/private/${storeId}/${productId}/${id}.${extension}`
     : key
   await rows(
     "INSERT INTO products.asset(id,product_id,name,content_type,size,visibility,object_key,source_object_key,status,image_purpose) VALUES($1,$2,$3,$4,$5,$6,$7,$7,'uploading',$8)",
@@ -194,7 +195,7 @@ export async function finishUpload(storeId: string, productId: string, id: strin
     throw createError({ statusCode: 400, message: 'Upload does not match the expected file' })
   }
   if (asset.visibility === 'private') {
-    const finalKey = `products/private/${storeId}/${productId}/${id}`
+    const finalKey = `products/private/${storeId}/${productId}/${id}.${storageExtension(asset.content_type)}`
     if (config.provider === 'bunny') {
       await bunnyObject!.body?.cancel()
     } else {
