@@ -120,19 +120,6 @@ export const asset = schema.table('asset', {
   sourceObjectKey: text('source_object_key'),
   createdAt: stamp('created_at')
 })
-export const apiKey = schema.table('api_key', {
-  id: text('id').primaryKey(),
-  storeId: text('store_id')
-    .notNull()
-    .references(() => organization.id),
-  name: text('name').notNull(),
-  hash: text('hash').notNull().unique(),
-  prefix: text('prefix').notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  createdAt: stamp('created_at')
-})
 export const purchase = schema.table(
   'purchase',
   {

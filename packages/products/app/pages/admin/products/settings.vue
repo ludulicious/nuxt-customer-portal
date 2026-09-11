@@ -69,8 +69,7 @@ const activeTab = ref('general')
 const tabs = computed(() => [
   { label: t('products.generalSettings'), value: 'general', slot: 'general' },
   { label: t('products.styles'), value: 'styles', slot: 'styles' },
-  { label: t('products.storageTab'), value: 'storage', slot: 'storage' },
-  { label: t('products.apiKeysTab'), value: 'api-keys', slot: 'api-keys' }
+  { label: t('products.storageTab'), value: 'storage', slot: 'storage' }
 ])
 </script>
 
@@ -98,9 +97,6 @@ const tabs = computed(() => [
       </template>
       <template #storage>
         <ProductsStorageSettings v-if="health" :storage="health.storage" @changed="load" />
-      </template>
-      <template #api-keys>
-        <ProductsApiKeySettings class="mt-4" />
       </template>
     </UTabs>
   </ProductsShell>

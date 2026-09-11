@@ -1,0 +1,9 @@
+Generated with the built-in image generation tool.
+
+Shared prompt: Create a refined photographic image for a coaching service called Discover Yourself — A Reconnection Session. The session offers a gentle pause from outside noise, self-reflection, reconnection, feeling supported and at peace. Visual direction: quiet natural editorial photography, a solitary adult seen from behind sitting on a pale limestone shore facing still water at early morning, soft sage foliage, warm ivory and muted blue-green palette, subtle golden sunlight, realistic texture, emotionally grounded and welcoming, no spiritual clichés, no text, no logos, no borders.
+
+Thumbnail: square composition, focus on seated person's upper back and peaceful water, strong silhouette legible at small size.
+Gallery: portrait 4:5, person small in lower third, tall framing of foliage and water, contemplative breathing room.
+Detail: landscape 4:3, person on left third, expansive reflective water and morning mist to right.
+
+Final files resized to exact required dimensions: 400x400, 800x1000, 1200x900.

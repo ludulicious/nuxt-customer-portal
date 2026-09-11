@@ -2,6 +2,27 @@ import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/
 
 export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   id: 'products',
+  apiScopes: [
+    {
+      id: 'products.catalog',
+      action: 'read',
+      labelKey: 'products.catalogReadScope',
+      descriptionKey: 'products.catalogReadScopeHelp'
+    }
+  ],
+  moduleMenuItems: [
+    {
+      moduleId: 'admin',
+      item: {
+        id: 'admin-api-keys',
+        labelKey: 'products.apiKeys',
+        icon: 'i-lucide-key-round',
+        to: '/admin/api-keys',
+        audiences: ['admin'],
+        order: 30
+      }
+    }
+  ],
   modules: [
     {
       id: 'products',

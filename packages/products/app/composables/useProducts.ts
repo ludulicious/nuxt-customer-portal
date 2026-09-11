@@ -107,16 +107,18 @@ export const useProducts = () => ({
     $fetch<
       Array<{
         id: string
-        name: string
-        prefix: string
-        expires_at: string | null
-        revoked_at: string | null
-        last_used_at: string | null
+        name: string | null
+        prefix: string | null
+        expiresAt: string | null
+        enabled: boolean
+        lastUsedAt: string | null
+        createdAt: string
+        permissions: Record<string, string[]>
       }>
-    >('/api/products/admin/keys'),
+    >('/api/admin/api-keys'),
   createKey: (body: Record<string, unknown>) =>
-    $fetch<{ key: string }>('/api/products/admin/keys', { method: 'POST', body }),
-  revoke: (id: string) => $fetch(`/api/products/admin/keys/${id}`, { method: 'DELETE' }),
+    $fetch<{ key: string }>('/api/admin/api-keys', { method: 'POST', body }),
+  revoke: (id: string) => $fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' }),
   purchases: () =>
     $fetch<
       Array<{

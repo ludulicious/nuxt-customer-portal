@@ -65,7 +65,9 @@ Refunds are initiated in Stripe in v1. Refund webhooks create incremental credit
 
 ## External website API
 
-Create a key in Store settings. Keep it exclusively on the external website's server. Keys are shown once, stored as SHA-256 hashes, revocable, and optionally expiring. Rotate by creating a replacement, switching the website, then revoking the old key. Keys are scoped to published catalog reads and limited to 120 requests/minute; requests from one source IP also share a 120/minute authentication limit. Portal purchase entry points are limited to 30/minute per source IP.
+System administrators create keys in **Admin → API keys** for the provider organization. Client organizations cannot own or administer API keys. Keep a key exclusively on the external website's server. Better Auth shows it once, stores only its SHA-256 hash, and handles expiry, revocation, usage timestamps, and per-key rate limiting. Rotate by creating a replacement, switching the website, then revoking the old key.
+
+Each portal module explicitly declares the API capabilities it exposes. Administrators select from those scopes when creating a key; a key cannot access unselected or internal module functionality. Products currently exposes `products.catalog:read`, limited to 120 requests/minute. Requests from one source IP also share a 120/minute authentication limit. Portal purchase entry points are limited to 30/minute per source IP.
 
 ```ts
 // Runs on your external website's server, never in a browser bundle.

@@ -144,7 +144,12 @@ export const listSchema = z.object({
     .regex(/^[A-Z]{3}$/)
     .optional()
 })
-export const keySchema = z.object({ name: text(100).min(1), expiresAt: z.iso.datetime().nullable().default(null) })
+export const productApiScopeIds = ['products.catalog:read'] as const
+export const keySchema = z.object({
+  name: text(32).min(1),
+  expiresAt: z.iso.datetime().nullable().default(null),
+  scopes: z.array(z.enum(productApiScopeIds)).min(1)
+})
 export const settingsSchema = z
   .object({
     markdownStyle: markdownStyleSchema.optional(),

@@ -48,6 +48,11 @@ const options = (values: string[]) => values.map((value) => ({ value, label: t(`
 const filtered = computed(() => !!(search.value || status.value !== 'all' || kind.value !== 'all' || category.value))
 const title = (product: Product) =>
   product.content[locale.value === 'nl' ? 'nl' : 'en'].title || product.content.en.title || product.content.nl.title
+const cardImageId = (product: Product) => product.thumbnailImageId || product.imageIds[0]
+const cardImageUrl = (product: Product) => {
+  const imageId = cardImageId(product)
+  return imageId ? api.previewImageUrl(product.id, imageId) : undefined
+}
 function toolbarFilter(key: string, value: string | undefined) {
   filter(
     key,
@@ -265,7 +270,15 @@ function edit(product: Product) {
           >
             <div class="flex items-center justify-between gap-3">
               <div class="flex min-w-0 items-center gap-3">
+                <img
+                  v-if="cardImageUrl(product)"
+                  :src="cardImageUrl(product)"
+                  :alt="title(product)"
+                  class="size-16 shrink-0 rounded-sm object-cover"
+                  loading="lazy"
+                />
                 <UAvatar
+                  v-else
                   :icon="product.type === 'digital' ? 'i-lucide-file-down' : 'i-lucide-calendar-check'"
                   class="shrink-0"
                 />

@@ -46,6 +46,12 @@ const busy = ref(false),
   assets = ref<Asset[]>([]),
   form = useTemplateRef('form'),
   root = useTemplateRef('root')
+function syncThumbnailImageId() {
+  if (!state.thumbnailImageId) {
+    state.thumbnailImageId =
+      state.imageIds.find((id) => assets.value.find((asset) => asset.id === id)?.image_purpose === 'thumbnail') || null
+  }
+}
 const categories = ref<ProductCategory[]>([])
 const categoriesOpen = ref(false)
 const categoryOptions = computed(() => [
@@ -284,11 +290,13 @@ onMounted(async () => {
   }
   if (props.product && ['all', 'media', 'images', 'files'].includes(props.section)) {
     assets.value = await api.assets(props.product!.id)
+    syncThumbnailImageId()
   }
   await nextTick()
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
+  syncThumbnailImageId()
   const missingFileName = state.fileIds.flatMap((id) =>
     supportedLanguages.value
       .filter((language) => !state.fileNames[id]?.[language]?.trim())

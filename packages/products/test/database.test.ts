@@ -39,6 +39,9 @@ test(
       await db.query(
         `INSERT INTO public."user"(id,name,email,email_verified) VALUES('owner','Owner','owner@example.test',true),('buyer','Buyer','buyer@example.test',true)`
       )
+      await db.query(
+        `INSERT INTO public.member(id,organization_id,user_id,role,created_at) VALUES('owner-membership','store','owner','owner',now())`
+      )
       await db.query(`INSERT INTO products.store(organization_id,actor_id,enabled) VALUES('store','owner',true)`)
       const catalog = await import('../server/utils/catalog')
       pool = (await import('@nuxt-customer-portal/core/server/utils/db')).pool
@@ -149,21 +152,23 @@ test(
         [product.id, old.id, snapshot]
       )
 
-      const { catalogAccess, newKey, hash, rateLimit } = await import('../server/utils/access')
-      const key = newKey()
-      await db.query('INSERT INTO products.api_key(id,store_id,name,hash,prefix) VALUES($1,$2,$3,$4,$5)', [
-        'key',
-        'store',
-        'Test',
-        hash(key),
-        key.slice(0, 12)
-      ])
+      const { catalogAccess, rateLimit } = await import('../server/utils/access')
+      const { auth } = await import('@nuxt-customer-portal/core/server/utils/auth')
+      const createdKey = await auth.api.createApiKey({
+        body: {
+          name: 'Test',
+          organizationId: 'store',
+          userId: 'owner',
+          permissions: { 'products.catalog': ['read'] }
+        }
+      })
+      const key = createdKey.key
       const event = {
         context: {},
         node: { req: { headers: { authorization: `Bearer ${key}` }, socket: { remoteAddress: 'localhost' } } }
       } as never
       assert.equal((await catalogAccess(event)).organization_id, 'store')
-      await db.query("UPDATE products.api_key SET revoked_at=now() WHERE id='key'")
+      await db.query('UPDATE public.apikey SET enabled=false WHERE id=$1', [createdKey.id])
       await assert.rejects(catalogAccess(event), { statusCode: 401 })
       await rateLimit('limited', 1)
       await assert.rejects(rateLimit('limited', 1), { statusCode: 429 })

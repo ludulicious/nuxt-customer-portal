@@ -8,6 +8,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
 import { admin as adminPlugin, customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
+import { apiKey } from '@better-auth/api-key'
 import { db } from './db'
 import { and, eq, gt } from 'drizzle-orm'
 import {
@@ -17,10 +18,19 @@ import {
   verification as verificationTable,
   organization as organizationTable,
   member as organizationMemberTable,
-  invitation as organizationInvitationTable
+  invitation as organizationInvitationTable,
+  apiKey as apiKeyTable
 } from '../db/schema/auth-schema'
 import { nanoid } from 'nanoid'
-import { ac, user, admin as adminRole } from '../../shared/permissions'
+import {
+  ac,
+  user,
+  admin as adminRole,
+  organizationAc,
+  organizationOwner,
+  organizationAdmin,
+  organizationMember
+} from '../../shared/permissions'
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
 
@@ -52,7 +62,8 @@ export const auth = betterAuth({
       member: organizationMemberTable,
       verification: verificationTable,
       organization: organizationTable,
-      invitation: organizationInvitationTable
+      invitation: organizationInvitationTable,
+      apikey: apiKeyTable
     },
     usePlural: false
     // Tables are singular (e.g., "user"), so no need for usePlural
@@ -67,6 +78,43 @@ export const auth = betterAuth({
           code: 'DEMO_RESTRICTED',
           message: demoMessage(ctx.headers?.get('accept-language') || '')
         })
+      }
+      if (['/api-key/create', '/api-key/list', '/api-key/get', '/api-key/update', '/api-key/delete'].includes(ctx.path)) {
+        const body = (ctx.body ?? {}) as Record<string, unknown>
+        const query = (ctx.query ?? {}) as Record<string, unknown>
+        const current = await getSessionFromCtx(ctx)
+        const actorId = (body.userId as string | undefined) ?? current?.user.id
+        if (actorId) {
+          const [actor] = await db.select({ role: userTable.role }).from(userTable).where(eq(userTable.id, actorId)).limit(1)
+          if (actor?.role !== 'admin') {
+            throw new APIError('FORBIDDEN', { message: 'System administrator access is required to manage API keys' })
+          }
+        }
+        let organizationId = (body.organizationId ?? query.organizationId) as string | undefined
+        const keyId = (body.keyId ?? query.id) as string | undefined
+        if (!organizationId && !keyId) {
+          organizationId = current?.session.activeOrganizationId ?? undefined
+        }
+        if (!organizationId && keyId) {
+          const [key] = await db
+            .select({ referenceId: apiKeyTable.referenceId })
+            .from(apiKeyTable)
+            .where(eq(apiKeyTable.id, keyId))
+            .limit(1)
+          organizationId = key?.referenceId
+        }
+        if (organizationId) {
+          const [selected] = await db
+            .select({ organizationType: organizationTable.organizationType })
+            .from(organizationTable)
+            .where(eq(organizationTable.id, organizationId))
+            .limit(1)
+          if (selected?.organizationType !== 'PROVIDER') {
+            throw new APIError('FORBIDDEN', {
+              message: 'API keys are only available to provider organizations'
+            })
+          }
+        }
       }
       if (ctx.path.startsWith('/organization/') && ctx.body) {
         const current = await getSessionFromCtx(ctx)
@@ -291,6 +339,12 @@ export const auth = betterAuth({
     }),
     organization({
       allowUserToCreateOrganization: false,
+      ac: organizationAc,
+      roles: {
+        owner: organizationOwner,
+        admin: organizationAdmin,
+        member: organizationMember
+      },
       schema: {
         organization: {
           additionalFields: {
@@ -342,6 +396,14 @@ export const auth = betterAuth({
           console.log(`User ${user.email} accepted invitation to ${organization.name} with role ${member.role}`)
         }
       }
+    }),
+    apiKey({
+      references: 'organization',
+      defaultPrefix: 'portal_',
+      requireName: true,
+      startingCharactersConfig: { shouldStore: true, charactersLength: 12 },
+      keyExpiration: { minExpiresIn: 1 / 24, maxExpiresIn: 365 },
+      rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 }
     }),
     emailOTP({
       overrideDefaultEmailVerification: true,

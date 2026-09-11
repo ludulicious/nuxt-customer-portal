@@ -1,13 +1,14 @@
 import type { MarkdownStyle } from '../../shared/markdown-style'
 import type { ImagePolicy } from '../../shared/types'
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { createError, getHeader, getRequestIP, type H3Event } from 'h3'
-import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
+import { getPortalOrganization, requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
+import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { productsFeature } from '../../shared/feature'
 import { rows } from './database'
 
 export const hash = (value: string) => createHash('sha256').update(value).digest('hex')
-export const newKey = () => `store_${randomBytes(32).toString('base64url')}`
+
 export interface Store {
   organization_id: string
   actor_id: string
@@ -28,9 +29,19 @@ export async function getStore(active = false) {
 }
 export async function admin(event: H3Event) {
   const context = await requireFeatureAccess(event, productsFeature.policy, 'manage')
+  if (context.organizationType !== 'PROVIDER' || (context.role !== 'owner' && context.role !== 'admin')) {
+    throw createError({ statusCode: 403, message: 'API keys are only available to provider organization administrators' })
+  }
   const [store] = await rows<Store>('SELECT * FROM products.store WHERE id=true')
   if (store && store.organization_id !== context.organizationId) {
     throw createError({ statusCode: 403, message: 'This organization does not own the store' })
+  }
+  return context
+}
+export async function apiKeyAdmin(event: H3Event) {
+  const context = await admin(event)
+  if (context.session.user.role !== 'admin') {
+    throw createError({ statusCode: 403, message: 'System administrator access is required to manage API keys' })
   }
   return context
 }
@@ -49,22 +60,21 @@ export async function publicLimit(event: H3Event) {
 }
 export async function catalogAccess(event: H3Event) {
   await rateLimit(`auth:${getRequestIP(event) || 'unknown'}`, 120)
-  const token = getHeader(event, 'authorization')?.match(/^Bearer (store_[A-Za-z0-9_-]{43})$/)?.[1]
+  const token = getHeader(event, 'authorization')?.match(/^Bearer\s+([^\s]+)$/)?.[1]
   if (!token) {
     throw createError({ statusCode: 401, message: 'A catalog API key is required' })
   }
-  const [key] = await rows<{ id: string; store_id: string }>(
-    `UPDATE products.api_key SET last_used_at=now() WHERE hash=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now()) RETURNING id,store_id`,
-    [hash(token)]
-  )
-  if (!key) {
+  const result = await auth.api.verifyApiKey({
+    body: { key: token, permissions: { 'products.catalog': ['read'] } }
+  })
+  if (!result.valid || !result.key) {
     throw createError({ statusCode: 401, message: 'Invalid or expired API key' })
   }
   const store = await getStore(true)
-  if (store.organization_id !== key.store_id) {
+  const organization = await getPortalOrganization(result.key.referenceId)
+  if (organization?.organizationType !== 'PROVIDER' || store.organization_id !== result.key.referenceId) {
     throw createError({ statusCode: 403, message: 'Store access denied' })
   }
-  await rateLimit(`key:${key.id}`, 120)
   return store
 }
 export const baseUrl = () => {
