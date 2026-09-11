@@ -12,7 +12,12 @@ const { t } = useI18n(),
     currencies: ['EUR'],
     currencyTaxBehavior: {} as Record<string, 'inclusive' | 'exclusive'>,
     enabled: false,
-    defaultLocale: 'en' as 'en' | 'nl'
+    defaultLocale: 'en' as 'en' | 'nl',
+    imagePolicy: {
+      thumbnail: { width: 400, height: 400 },
+      gallery: { width: 800, height: 1000 },
+      detail: { width: 1200, height: 900 }
+    }
   }),
   error = ref(''),
   busy = ref(false)
@@ -26,7 +31,8 @@ async function load() {
       currencies: health.value.currencies,
       currencyTaxBehavior: health.value.currencyTaxBehavior,
       enabled: health.value.enabled,
-      defaultLocale: health.value.defaultLocale
+      defaultLocale: health.value.defaultLocale,
+      imagePolicy: health.value.imagePolicy
     })
   } catch {
     error.value = t('products.loadFailed')
@@ -43,7 +49,8 @@ async function save(tab: 'general' | 'styles') {
       languages: latest.languages,
       defaultLocale: latest.defaultLocale,
       currencies: latest.currencies,
-      currencyTaxBehavior: latest.currencyTaxBehavior
+      currencyTaxBehavior: latest.currencyTaxBehavior,
+      imagePolicy: latest.imagePolicy
     }
     await api.saveSettings(
       tab === 'styles'
@@ -62,6 +69,7 @@ const activeTab = ref('general')
 const tabs = computed(() => [
   { label: t('products.generalSettings'), value: 'general', slot: 'general' },
   { label: t('products.styles'), value: 'styles', slot: 'styles' },
+  { label: t('products.storageTab'), value: 'storage', slot: 'storage' },
   { label: t('products.apiKeysTab'), value: 'api-keys', slot: 'api-keys' }
 ])
 </script>
@@ -87,6 +95,9 @@ const tabs = computed(() => [
       </template>
       <template #styles>
         <ProductsStyleSettings :model-value="settings" :saving="busy" class="mt-4" @save="save('styles')" />
+      </template>
+      <template #storage>
+        <ProductsStorageSettings v-if="health" :storage="health.storage" @changed="load" />
       </template>
       <template #api-keys>
         <ProductsApiKeySettings class="mt-4" />

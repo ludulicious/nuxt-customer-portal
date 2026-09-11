@@ -1,6 +1,6 @@
 # Products
 
-Publishing opens a confirmation checklist. Each supported store language requires a name, summary, and description; at least one product image is required. Paid products need a positive price in every supported store currency. Digital products also require a purchased file. Required failures block publishing and are enforced by the API. A closed store appears as a nonblocking warning: publishing does not open the store for purchases.
+Publishing opens a confirmation checklist. Each supported store language requires a name, summary, and description. Images require one thumbnail plus at least one gallery and product-details assignment. Paid products need a positive price in every supported store currency. Digital products also require a purchased file. Required failures block publishing and are enforced by the API. A closed store appears as a nonblocking warning: publishing does not open the store for purchases.
 
 A single provider-owned store for digital files and services. Includes English/Dutch product content, versioned one-time currency prices, published catalog access, Stripe Checkout, purchaser-only downloads/playback, and a purchase library. Install `@nuxt-customer-portal/invoice-products` and `@nuxt-customer-portal/invoices` for checkout and invoice delivery.
 
@@ -24,7 +24,14 @@ Configure these server-only environment variables; never put them in public runt
 | `PRODUCTS_S3_BUCKET`                         | Private S3-compatible bucket                                                    |
 | `PRODUCTS_S3_REGION`                         | Bucket region, default `us-east-1`                                              |
 | `PRODUCTS_S3_ENDPOINT`                       | Optional endpoint for compatible storage                                        |
+| `PRODUCTS_S3_PATH_STYLE`                     | Use path-style addressing for environment-managed compatible storage            |
+| `PRODUCTS_STORAGE_PROVIDER`                  | Set to `bunny` to use Bunny's proprietary Storage API                            |
+| `PRODUCTS_BUNNY_STORAGE_ZONE`                | Bunny Storage Zone name                                                          |
+| `PRODUCTS_BUNNY_STORAGE_PASSWORD`            | Bunny Storage Zone password                                                      |
+| `PRODUCTS_BUNNY_STORAGE_ENDPOINT`            | Regional Storage API endpoint, default `https://storage.bunnycdn.com`             |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Standard AWS credentials, or use the SDK's role-based credential chain          |
+| `PRODUCTS_STORAGE_ENCRYPTION_KEY`            | Encrypts S3 credentials saved through Store settings                            |
+| `PRODUCTS_IMAGEKIT_URL_ENDPOINT`             | ImageKit URL endpoint for optimized public product-image delivery               |
 
 Configure Stripe Tax and the seller's registrations in Stripe. Assign the appropriate Stripe tax code to each product. The initial catalog supports EUR, USD, GBP, CAD, AUD, NZD, CHF, DKK, NOK, SEK, PLN, CZK, HUF, RON, JPY, HKD, SGD, and AED. Availability still depends on the Stripe account and payment method. Other currencies require an adapter/validation extension; currencies with special Stripe amount representations are deliberately excluded. See [Stripe currency rules](https://docs.stripe.com/currencies). Prices are explicitly entered per currency; no exchange-rate conversion occurs. Store settings defines whether tax is included or added for each supported currency. Product saves use that setting. Changing it creates new active price versions and preserves historical prices and orders. The migration seeds settings from the most recently updated product with an active price in each currency, defaulting to tax included when none exists. Checkout confirms the final tax and total. Portal invoices preserve that exact tax amount rather than reconstructing it from a rounded percentage.
 
@@ -34,9 +41,15 @@ Complete the invoice sender profile and the portal email provider configuration 
 
 ### Storage
 
-Keep the entire bucket private; public promotional images are exposed through checked portal redirects, not public bucket ACLs. Permit presigned POST uploads and GET/HEAD downloads from the exact portal origin in bucket CORS. Allow the `Content-Type` and `Range` request headers and expose `Content-Length`, `Content-Range`, `Accept-Ranges`, and `ETag`. Give the server permission to create uploads, inspect objects, and read objects in the `products/` prefix.
+Storage can be supplied by deployment environment variables or configured in **Store settings → Storage**. Environment configuration takes precedence and locks the form. Saved access credentials are encrypted with `PRODUCTS_STORAGE_ENCRYPTION_KEY`, are never returned to the browser, and must pass a write/head/delete connection probe before they replace a working configuration.
 
-Images support JPEG, PNG, WebP, and AVIF up to 10 MB. Purchased files support PDF, ZIP, DOCX, text, MP3, M4A, WAV, OGG, MP4, and WebM up to 2 GB. Upload requests constrain size and declared content type, and completion verifies the stored metadata. Object URLs expire after five minutes. Browser-compatible audio/video uses native playback; there is no transcoding, adaptive streaming, DRM, or malware scanner. Save a draft first, upload its files, then save their ordering and publish.
+The Storage tab supports Amazon S3, generic S3-compatible services, and Bunny's proprietary HTTP Storage API. Bunny configuration needs the regional API endpoint, Storage Zone name, and Storage Zone password. Browser uploads stream through an authenticated portal endpoint, keeping that password server-side; downloads of purchased files are streamed through the existing purchaser-authorized route. Set `PRODUCTS_STORAGE_PROVIDER=bunny` together with the `PRODUCTS_BUNNY_STORAGE_*` variables when Bunny is deployment-managed.
+
+Keep the entire bucket private. Permit presigned POST uploads from the exact portal origin in bucket CORS. Allow the `Content-Type` and `Range` request headers and expose `Content-Length`, `Content-Range`, `Accept-Ranges`, and `ETag`. Give the portal server create/read/head/delete access under `products/staging/`, `products/private/`, `products/public/`, and `products/health/`. Health probes are removed immediately.
+
+Connect ImageKit to the S3-compatible bucket or a Bunny Pull Zone that exposes only `products/public/`. Set `PRODUCTS_IMAGEKIT_URL_ENDPOINT` to its URL endpoint. ImageKit must not receive access to `products/private/`, which remains available only through purchaser-authorized downloads.
+
+Images support JPEG, PNG, WebP, and AVIF up to 10 MB. Store settings defines exact output dimensions for square thumbnails, portrait product cards/gallery images, and landscape product-detail images. The editor chooses a purpose before selecting and cropping a file. Completion verifies the decoded format, limits source pixels, applies orientation and the purpose-specific crop, removes metadata, and stores an exact-size sRGB WebP source. At most one image can be the thumbnail; published products also require at least one gallery and product-detail image. Purchased files support PDF, ZIP, DOCX, text, MP3, M4A, WAV, OGG, MP4, and WebM up to 2 GB. Private object URLs expire after five minutes. Browser-compatible audio/video uses native playback; there is no transcoding, adaptive streaming, DRM, or malware scanner. Save a draft first, upload its files, then save their ordering and publish.
 
 Files removed from a product remain available to previous purchasers through their order snapshot. Bucket retention must preserve purchased files. Orphaned uploads are retained for administrator-managed cleanup; do not apply a blanket expiry policy to completed product objects.
 
@@ -67,7 +80,7 @@ const { items, pagination } = await response.json()
 
 - `GET /api/store/v1/products`: query `locale`, `currency`, `search`, `category` (code), `categoryId`, `type`, `page`, `sortBy`, `sortDir`. Pages contain 20 products and `pagination` with `page`, `pageSize`, `totalItems`, `totalPages`.
 - `GET /api/store/v1/products/{slug}`: one published product, optionally filtered by `locale` and `currency`.
-- Products include `id`, `slug`, `type`, `categoryId`, `category` (code), `categoryDetails`, `title`, `summary`, `descriptionHtml`, `images`, `videoUrl`, `prices`, `purchaseUrl`, `locale`. Prices include a stable version `id`, `currency`, integer minor-unit `amount`, and `taxBehavior`.
+- Products include `id`, `slug`, `type`, `categoryId`, `category` (code), `categoryDetails`, `title`, `summary`, `descriptionHtml`, gallery `images`, `thumbnailImage`, `detailImages`, `videoUrl`, `prices`, `purchaseUrl`, and `locale`. Prices include a stable version `id`, `currency`, integer minor-unit `amount`, and `taxBehavior`.
 - Errors: 400 invalid query; 401 missing, revoked, or expired key; 404 unavailable product; 429 rate limit; 503 store closed/unconfigured.
 - No private assets, order details, customer information, or unpublished products are included. Catalog responses are not shared-cacheable.
 

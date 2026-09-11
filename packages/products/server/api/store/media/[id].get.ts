@@ -1,6 +1,6 @@
 import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
-import { assetUrl } from '@nuxt-customer-portal/products/server/utils/storage'
+import { sendAsset } from '@nuxt-customer-portal/products/server/utils/storage'
 
 export default defineEventHandler(async (event) => {
   const store = await getStore(true),
@@ -13,5 +13,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  return sendRedirect(event, await assetUrl(id))
+  return sendAsset(event, id)
 })

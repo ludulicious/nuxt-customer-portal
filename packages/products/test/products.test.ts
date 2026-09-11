@@ -17,6 +17,10 @@ test('publishing requires translated identity, a price and digital delivery', ()
   const product = emptyProduct()
   product.slug = 'audio'
   product.content.en.title = 'Audio'
+  product.imageIds = ['image']
+  product.thumbnailImageId = 'image'
+  product.galleryImageIds = ['image']
+  product.detailImageIds = ['image']
   assert.equal(productSchema.safeParse(product).success, true)
   assert.equal(productSchema.safeParse({ ...product, status: 'published' }).success, false)
   assert.equal(productSchema.safeParse({ ...product, status: 'published', fileIds: ['file'] }).success, true)

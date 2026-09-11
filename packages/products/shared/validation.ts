@@ -4,7 +4,12 @@ import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages
 
 export const localeSchema = z.enum(portalLanguageCodes).default('en')
 const text = (max: number) => z.string().trim().max(max)
-const copy = z.object({ title: text(200), subtitle: text(200).default(''), summary: text(1000), description: text(50000) })
+const copy = z.object({
+  title: text(200),
+  subtitle: text(200).default(''),
+  summary: text(1000),
+  description: text(50000)
+})
 export const productCurrencies = [
   'EUR',
   'USD',
@@ -41,6 +46,9 @@ export const productSchema = z
     taxCode: z.string().regex(/^txcd_\d{8}$/),
     nextSteps: z.object({ en: text(5000), nl: text(5000) }),
     imageIds: z.array(text(100).min(1)).max(20),
+    thumbnailImageId: text(100).min(1).nullable().default(null),
+    galleryImageIds: z.array(text(100).min(1)).max(20).default([]),
+    detailImageIds: z.array(text(100).min(1)).max(20).default([]),
     fileIds: z.array(text(100).min(1)).max(100),
     videoUrl: z
       .string()
@@ -49,6 +57,18 @@ export const productSchema = z
     prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
   })
   .superRefine((v, ctx) => {
+    const imageIds = new Set(v.imageIds)
+    for (const [field, ids] of [
+      ['galleryImageIds', v.galleryImageIds],
+      ['detailImageIds', v.detailImageIds]
+    ] as const) {
+      if (new Set(ids).size !== ids.length || ids.some((id) => !imageIds.has(id))) {
+        ctx.addIssue({ code: 'custom', path: [field], message: 'Select images from this product library' })
+      }
+    }
+    if (v.thumbnailImageId && !imageIds.has(v.thumbnailImageId)) {
+      ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Select an image from this product library' })
+    }
     if (!v.content.en.title && !v.content.nl.title) {
       ctx.addIssue({ code: 'custom', path: ['content.en.title'], message: 'A title is required' })
     }
@@ -71,6 +91,15 @@ export const productSchema = z
     }
     if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
       ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
+    }
+    if (v.status === 'published' && !v.thumbnailImageId) {
+      ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Choose a thumbnail image' })
+    }
+    if (v.status === 'published' && !v.galleryImageIds.length) {
+      ctx.addIssue({ code: 'custom', path: ['galleryImageIds'], message: 'Choose at least one gallery image' })
+    }
+    if (v.status === 'published' && !v.detailImageIds.length) {
+      ctx.addIssue({ code: 'custom', path: ['detailImageIds'], message: 'Choose at least one product details image' })
     }
   })
 export const productCreateSchema = productSchema.safeExtend({ categoryId: text(100).min(1) })
@@ -129,12 +158,56 @@ export const settingsSchema = z
     currencies: z
       .array(z.enum(productCurrencies))
       .min(1)
-      .refine((v) => new Set(v).size === v.length)
+      .refine((v) => new Set(v).size === v.length),
+    imagePolicy: z
+      .object({
+        thumbnail: imageSizeSchema({ width: 400, height: 400 }),
+        gallery: imageSizeSchema({ width: 800, height: 1000 }),
+        detail: imageSizeSchema({ width: 1200, height: 900 })
+      })
+      .default({
+        thumbnail: { width: 400, height: 400 },
+        gallery: { width: 800, height: 1000 },
+        detail: { width: 1200, height: 900 }
+      })
   })
   .refine((settings) => settings.languages.includes(settings.defaultLocale), {
     path: ['defaultLocale'],
     message: 'Choose a supported store language'
   })
+function imageSizeSchema(defaultValue: { width: number; height: number }) {
+  return z
+    .object({
+      width: z.coerce.number().int().min(200).max(2400),
+      height: z.coerce.number().int().min(200).max(2400)
+    })
+    .default(defaultValue)
+}
+export const storageSettingsSchema = z.object({
+  provider: z.enum(['s3', 'bunny']).default('s3'),
+  endpoint: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((value) => !value || /^https?:\/\//.test(value), 'Use a valid HTTP(S) endpoint'),
+  region: z.string().trim().max(100),
+  bucket: z.string().trim().min(3).max(255),
+  accessKeyId: z.string().trim().max(256).optional(),
+  secretAccessKey: z.string().min(8).max(500).optional(),
+  pathStyle: z.boolean().default(false)
+}).superRefine((value, context) => {
+  if (value.provider === 's3' && !value.region) {
+    context.addIssue({ code: 'custom', path: ['region'], message: 'S3 region is required' })
+  }
+})
+export const cropSchema = z
+  .object({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+    width: z.number().positive().max(1),
+    height: z.number().positive().max(1)
+  })
+  .refine((v) => v.x + v.width <= 1.000001 && v.y + v.height <= 1.000001, 'Crop exceeds image bounds')
 export const hasRequiredPrices = (
   product: { isFree?: boolean; prices: { currency: string; amount: number }[] },
   currencies: readonly string[]
@@ -148,10 +221,16 @@ export const emptyProduct = () => ({
   type: 'digital' as const,
   categoryId: null as string | null,
   status: 'draft' as const,
-  content: { en: { title: '', subtitle: '', summary: '', description: '' }, nl: { title: '', subtitle: '', summary: '', description: '' } },
+  content: {
+    en: { title: '', subtitle: '', summary: '', description: '' },
+    nl: { title: '', subtitle: '', summary: '', description: '' }
+  },
   taxCode: 'txcd_10000000',
   nextSteps: { en: '', nl: '' },
   imageIds: [] as string[],
+  thumbnailImageId: null as string | null,
+  galleryImageIds: [] as string[],
+  detailImageIds: [] as string[],
   fileIds: [] as string[],
   videoUrl: '',
   prices: [{ currency: 'EUR', amount: 1000, taxBehavior: 'inclusive' as const }]

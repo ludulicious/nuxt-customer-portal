@@ -1,4 +1,5 @@
 import type { MarkdownStyle } from '../../shared/markdown-style'
+import type { ImagePolicy } from '../../shared/types'
 import { createHash, randomBytes } from 'node:crypto'
 import { createError, getHeader, getRequestIP, type H3Event } from 'h3'
 import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
@@ -16,6 +17,7 @@ export interface Store {
   currencies: string[]
   languages: ('en' | 'nl')[]
   default_locale: 'en' | 'nl'
+  image_policy: ImagePolicy
 }
 export async function getStore(active = false) {
   const [store] = await rows<Store>('SELECT * FROM products.store WHERE id=true')

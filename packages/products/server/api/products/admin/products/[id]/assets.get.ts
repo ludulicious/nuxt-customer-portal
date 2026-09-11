@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   await getProduct(organizationId, id)
   return rows(
-    'SELECT id,product_id,name,content_type,size,visibility,ready FROM products.asset WHERE product_id=$1 ORDER BY name',
+    'SELECT id,product_id,name,content_type,size,visibility,ready,status,width,height,failure_reason,image_purpose FROM products.asset WHERE product_id=$1 ORDER BY name',
     [id]
   )
 })

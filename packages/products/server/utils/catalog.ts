@@ -17,6 +17,22 @@ interface ProductRow {
   data: ProductData
   updated_at: string
 }
+export function normalizeProductImages(data: ProductData): ProductData {
+  const imageIds = [...new Set(data.imageIds || [])]
+  const hasPlacements = 'thumbnailImageId' in data || 'galleryImageIds' in data || 'detailImageIds' in data
+  const ordered = (ids: string[] | undefined) => imageIds.filter((id) => ids?.includes(id))
+  return {
+    ...data,
+    imageIds,
+    thumbnailImageId: imageIds.includes(data.thumbnailImageId || '')
+      ? data.thumbnailImageId
+      : hasPlacements
+        ? null
+        : imageIds[0] || null,
+    galleryImageIds: hasPlacements ? ordered(data.galleryImageIds) : [...imageIds],
+    detailImageIds: hasPlacements ? ordered(data.detailImageIds) : [...imageIds]
+  }
+}
 export const renderDescription = (source: string) =>
   sanitizeHtml(marked.parse(source, { async: false }), {
     allowedTags: [
@@ -68,7 +84,7 @@ export async function getProduct(storeId: string, id: string, bySlug = false): P
       )
     : []
   return {
-    ...row.data,
+    ...normalizeProductImages(row.data),
     categoryId: row.category_id,
     categoryName: category?.name,
     categoryContent: category?.content,
@@ -287,6 +303,18 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
   const categoryCopy = category?.content[locale].name
     ? category.content[locale]
     : category?.content[store.default_locale]
+  const imageAssets = product.imageIds.length
+    ? await rows<{ id: string; object_key: string }>(
+        'SELECT id,object_key FROM products.asset WHERE ready AND visibility=\'public\' AND id=ANY($1::text[])',
+        [product.imageIds]
+      )
+    : []
+  const imageKeys = new Map(imageAssets.map((asset) => [asset.id, asset.object_key]))
+  const imageKitEndpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
+  const imageUrl = (id: string) =>
+    imageKitEndpoint && imageKeys.get(id)
+      ? `${imageKitEndpoint}/${imageKeys.get(id)}`
+      : `${baseUrl()}/api/store/media/${id}`
   return {
     categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
     isFree: !!product.isFree,
@@ -301,8 +329,15 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     summary: copy.summary,
     summaryHtml: renderDescription(copy.summary),
     markdownStyle: markdownStyleSchema.parse(store.markdown_style || {}),
+    imagePolicy: store.image_policy || {
+      thumbnail: { width: 400, height: 400 },
+      gallery: { width: 800, height: 1000 },
+      detail: { width: 1200, height: 900 }
+    },
     descriptionHtml: renderDescription(copy.description),
-    images: product.imageIds.map((id) => `${baseUrl()}/api/store/media/${id}`),
+    images: product.galleryImageIds.map(imageUrl),
+    thumbnailImage: product.thumbnailImageId ? imageUrl(product.thumbnailImageId) : null,
+    detailImages: product.detailImageIds.map(imageUrl),
     videoUrl: product.videoUrl,
     prices: product.prices.filter(
       (p) => product.isFree || (store.currencies.includes(p.currency) && (!currency || p.currency === currency))

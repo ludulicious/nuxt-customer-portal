@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     input = parseInput(settingsSchema, await readBody(event))
   if (input.enabled) {
     stripeClient()
-    storage()
+    await storage()
     if (!process.env.PRODUCTS_STRIPE_WEBHOOK_SECRET) {
       throw createError({ statusCode: 409, message: 'Configure Stripe webhooks' })
     }
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       input.currencies.map((currency) => [currency, input.currencyTaxBehavior[currency] || 'inclusive'])
     )
     await rows(
-      `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale,currencies,languages,currency_tax_behavior,markdown_style) VALUES(true,$1,$2,$3,$4,$5,$6,$7,COALESCE($8::jsonb,'{}'::jsonb)) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2,currencies=$5,languages=$6,currency_tax_behavior=$7,markdown_style=COALESCE($8::jsonb,products.store.markdown_style) WHERE products.store.organization_id=$1`,
+      `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale,currencies,languages,currency_tax_behavior,markdown_style,image_policy) VALUES(true,$1,$2,$3,$4,$5,$6,$7,COALESCE($8::jsonb,'{}'::jsonb),$9) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2,currencies=$5,languages=$6,currency_tax_behavior=$7,markdown_style=COALESCE($8::jsonb,products.store.markdown_style),image_policy=$9 WHERE products.store.organization_id=$1`,
       [
         context.organizationId,
         context.session.user.id,
@@ -41,7 +41,8 @@ export default defineEventHandler(async (event) => {
         input.currencies,
         input.languages,
         currencyTaxBehavior,
-        input.markdownStyle || null
+        input.markdownStyle || null,
+        input.imagePolicy
       ],
       tx
     )

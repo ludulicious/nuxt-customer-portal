@@ -3,6 +3,7 @@ import { reconcileCheckout, processOrder } from '../../utils/orders'
 import { handleWebhook } from '../../utils/webhooks'
 import { stripeClient } from '../../utils/payments'
 import type { Order } from '../../../shared/types'
+import { cleanupOrphanedAssets } from '../../utils/storage'
 
 export default defineTask({
   meta: { name: 'products:reconcile', description: 'Retry unfinished purchases and failed payment notifications' },
@@ -41,6 +42,7 @@ export default defineTask({
       }
     }
     await rows('DELETE FROM products.rate_limit WHERE bucket_minute<$1', [Math.floor(Date.now() / 60000) - 60])
+    await cleanupOrphanedAssets().catch(() => 0)
     return { result: { processed, failed } }
   }
 })

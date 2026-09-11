@@ -38,7 +38,27 @@ export const store = schema.table('store', {
   currencies: text('currencies')
     .array()
     .notNull()
-    .default(sql`ARRAY['EUR']::text[]`)
+    .default(sql`ARRAY['EUR']::text[]`),
+  storageProvider: text('storage_provider').default('s3').notNull(),
+  storageEndpoint: text('storage_endpoint'),
+  storageRegion: text('storage_region'),
+  storageBucket: text('storage_bucket'),
+  storageAccessKeyId: text('storage_access_key_id'),
+  storageSecretAccessKey: text('storage_secret_access_key'),
+  storagePathStyle: boolean('storage_path_style').default(false).notNull(),
+  storageTestedAt: timestamp('storage_tested_at', { withTimezone: true }),
+  imagePolicy: jsonb('image_policy')
+    .$type<{
+      thumbnail: { width: number; height: number }
+      gallery: { width: number; height: number }
+      detail: { width: number; height: number }
+    }>()
+    .notNull()
+    .default({
+      thumbnail: { width: 400, height: 400 },
+      gallery: { width: 800, height: 1000 },
+      detail: { width: 1200, height: 900 }
+    })
 })
 export const product = schema.table(
   'product',
@@ -91,7 +111,14 @@ export const asset = schema.table('asset', {
   size: bigint('size', { mode: 'number' }).notNull(),
   visibility: text('visibility').notNull(),
   objectKey: text('object_key').notNull().unique(),
-  ready: boolean('ready').default(false).notNull()
+  ready: boolean('ready').default(false).notNull(),
+  status: text('status').default('uploading').notNull(),
+  width: integer('width'),
+  height: integer('height'),
+  failureReason: text('failure_reason'),
+  imagePurpose: text('image_purpose').$type<'thumbnail' | 'gallery' | 'detail'>(),
+  sourceObjectKey: text('source_object_key'),
+  createdAt: stamp('created_at')
 })
 export const apiKey = schema.table('api_key', {
   id: text('id').primaryKey(),

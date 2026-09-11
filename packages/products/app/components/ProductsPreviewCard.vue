@@ -15,7 +15,7 @@ const titleHtml = computed(() => {
   return `<h1>${escape(props.copy.title)}</h1>${subtitle ? `<h2>${escape(subtitle)}</h2>` : ''}`
 })
 const language = defineModel<Locale>('language', { required: true })
-const emit = defineEmits<{ edit: [] }>()
+const emit = defineEmits<{ edit: []; editMedia: [] }>()
 const { t } = useI18n()
 const api = useProducts()
 </script>
@@ -37,15 +37,26 @@ const api = useProducts()
       </div>
     </template>
     <div class="space-y-6">
-      <div v-if="product.imageIds.length" class="grid gap-3 sm:grid-cols-2">
-        <img
-          v-for="id in product.imageIds"
-          :key="id"
-          :src="api.previewImageUrl(product.id, id)"
-          :alt="copy.title"
-          class="w-full rounded-lg object-contain"
-          loading="lazy"
-        />
+      <div v-if="product.imageIds.length" class="space-y-3">
+        <div class="flex justify-end">
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-pencil"
+            @click="emit('editMedia')"
+          >{{ t('products.editImages') }}</UButton>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <img
+            v-for="id in product.imageIds"
+            :key="id"
+            :src="api.previewImageUrl(product.id, id)"
+            :alt="copy.title"
+            class="w-full rounded-lg object-contain"
+            loading="lazy"
+          />
+        </div>
       </div>
       <div
         v-else
@@ -53,6 +64,13 @@ const api = useProducts()
       >
         <UIcon name="i-lucide-image" class="size-8" />
         <p class="text-sm">{{ t('products.noImages') }}</p>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-plus"
+          class="mt-1"
+          @click="emit('editMedia')"
+        >{{ t('products.addImages') }}</UButton>
       </div>
       <slot v-if="editing" name="editor" />
       <template v-else>

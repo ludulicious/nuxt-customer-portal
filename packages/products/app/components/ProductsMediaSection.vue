@@ -26,6 +26,9 @@ const { t } = useI18n()
     />
     <div v-else class="space-y-2 text-sm text-muted">
       <p>{{ t('products.images') }}: {{ product.imageIds.length }}</p>
+      <p>{{ t('products.thumbnail') }}: {{ product.thumbnailImageId ? 1 : 0 }}</p>
+      <p>{{ t('products.gallery') }}: {{ product.galleryImageIds.length }}</p>
+      <p>{{ t('products.productDetails') }}: {{ product.detailImageIds.length }}</p>
       <p>{{ t('products.files') }}: {{ product.fileIds.length }}</p>
       <p v-if="product.videoUrl">{{ product.videoUrl }}</p>
     </div>

@@ -1,6 +1,6 @@
 import { claimPurchases, hasAccess } from '@nuxt-customer-portal/products/server/utils/orders'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
-import { assetUrl } from '@nuxt-customer-portal/products/server/utils/storage'
+import { sendAsset } from '@nuxt-customer-portal/products/server/utils/storage'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
 
 export default defineEventHandler(async (event) => {
@@ -14,5 +14,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  return sendRedirect(event, await assetUrl(assetId, getQuery(event).download === '1'))
+  return sendAsset(event, assetId, getQuery(event).download === '1')
 })

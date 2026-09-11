@@ -13,7 +13,9 @@ export function publishChecks(
       ),
       warning: false
     })),
-    { key: 'publishImage', value: '', passed: product.imageIds.length > 0, warning: false },
+    { key: 'publishThumbnail', value: '', passed: !!product.thumbnailImageId, warning: false },
+    { key: 'publishGallery', value: '', passed: product.galleryImageIds.length > 0, warning: false },
+    { key: 'publishDetailsImage', value: '', passed: product.detailImageIds.length > 0, warning: false },
     ...(product.isFree
       ? [{ key: 'publishFree', value: '', passed: true, warning: false }]
       : settings.currencies.map((currency) => ({

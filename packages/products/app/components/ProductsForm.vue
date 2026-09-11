@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
-import type { Product, Asset, ProductCategory } from '../../shared/types'
+import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
 import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
 
 const props = withDefaults(
     defineProps<{
       product?: Product
-      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media'
+      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media' | 'images'
       currency?: string
       language?: 'en' | 'nl'
     }>(),
@@ -19,14 +19,18 @@ const props = withDefaults(
   emit = defineEmits<{ saved: [product: Product]; cancel: [] }>()
 const { t } = useI18n(),
   api = useProducts(),
-  schema = useProductFormSchema(productSchema)
+  schema = useProductFormSchema(productSchema),
+  toast = useToast()
 const state = reactive<z.infer<typeof productSchema>>(
   props.product
     ? {
         isFree: false,
         ...structuredClone(toRaw(props.product)),
         content: {
-          en: { ...structuredClone(toRaw(props.product.content.en)), subtitle: props.product.content.en.subtitle || '' },
+          en: {
+            ...structuredClone(toRaw(props.product.content.en)),
+            subtitle: props.product.content.en.subtitle || ''
+          },
           nl: { ...structuredClone(toRaw(props.product.content.nl)), subtitle: props.product.content.nl.subtitle || '' }
         },
         prices: props.product.isFree ? [] : structuredClone(toRaw(props.product.prices))
@@ -104,6 +108,58 @@ async function showInvalidLanguage(event: { errors: Array<{ name?: string }> }) 
 }
 const currencies = ref<string[]>([])
 const settingsReady = ref(false)
+const imagePolicy = ref<ImagePolicy>({
+  thumbnail: { width: 400, height: 400 },
+  gallery: { width: 800, height: 1000 },
+  detail: { width: 1200, height: 900 }
+})
+const pendingImage = ref<{ file: File; url: string; width: number; height: number; purpose: ImagePurpose }>()
+const imageQueue = ref<Array<{ file: File; purpose: ImagePurpose }>>([])
+const cropTarget = computed(() => imagePolicy.value[pendingImage.value?.purpose || 'gallery'])
+const cropFocus = reactive({ x: 50, y: 50 })
+const zoom = ref(1)
+const cropViewport = useTemplateRef('cropViewport')
+const pointers = new Map<number, { x: number; y: number }>()
+let pinchDistance = 0
+const baseCrop = computed(() => {
+  if (!pendingImage.value) {
+    return { x: 0, y: 0, width: 1, height: 1 }
+  }
+  const sourceRatio = pendingImage.value.width / pendingImage.value.height
+  const targetRatio = cropTarget.value.width / cropTarget.value.height
+  const width = sourceRatio > targetRatio ? targetRatio / sourceRatio : 1
+  const height = sourceRatio > targetRatio ? 1 : sourceRatio / targetRatio
+  return { width, height }
+})
+const maximumZoom = computed(() => {
+  if (!pendingImage.value) {
+    return 1
+  }
+  return Math.max(
+    1,
+    Math.min(
+      3,
+      (baseCrop.value.width * pendingImage.value.width) / cropTarget.value.width,
+      (baseCrop.value.height * pendingImage.value.height) / cropTarget.value.height
+    )
+  )
+})
+const crop = computed(() => {
+  const width = baseCrop.value.width / zoom.value
+  const height = baseCrop.value.height / zoom.value
+  return {
+    x: ((1 - width) * cropFocus.x) / 100,
+    y: ((1 - height) * cropFocus.y) / 100,
+    width,
+    height
+  }
+})
+const cropLargeEnough = computed(
+  () =>
+    !!pendingImage.value &&
+    crop.value.width * pendingImage.value.width >= cropTarget.value.width &&
+    crop.value.height * pendingImage.value.height >= cropTarget.value.height
+)
 const visiblePrices = computed(() =>
   state.prices
     .map((price, index) => ({ price, index }))
@@ -113,6 +169,61 @@ const pricingErrors = () =>
   state.status === 'published' && !state.isFree && !hasRequiredPrices(state, currencies.value)
     ? [{ name: 'prices', message: t('products.requiredPrices') }]
     : []
+const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value))
+function setZoom(value: number) {
+  zoom.value = clamp(value, 1, maximumZoom.value)
+}
+function pointerDown(event: PointerEvent) {
+  cropViewport.value?.setPointerCapture(event.pointerId)
+  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+  if (pointers.size === 2) {
+    const [first, second] = [...pointers.values()]
+    pinchDistance = Math.hypot(second!.x - first!.x, second!.y - first!.y)
+  }
+}
+function pointerMove(event: PointerEvent) {
+  const previous = pointers.get(event.pointerId)
+  if (!previous) {
+    return
+  }
+  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+  if (pointers.size === 2) {
+    const [first, second] = [...pointers.values()]
+    const distance = Math.hypot(second!.x - first!.x, second!.y - first!.y)
+    if (pinchDistance) {
+      setZoom(zoom.value * (distance / pinchDistance))
+    }
+    pinchDistance = distance
+    return
+  }
+  const bounds = cropViewport.value?.getBoundingClientRect()
+  if (!bounds) {
+    return
+  }
+  cropFocus.x = clamp(cropFocus.x - ((event.clientX - previous.x) / bounds.width) * 100, 0, 100)
+  cropFocus.y = clamp(cropFocus.y - ((event.clientY - previous.y) / bounds.height) * 100, 0, 100)
+}
+function pointerUp(event: PointerEvent) {
+  pointers.delete(event.pointerId)
+  pinchDistance = 0
+}
+function cropKeyboard(event: KeyboardEvent) {
+  const movements: Record<string, [number, number]> = {
+    ArrowLeft: [-2, 0],
+    ArrowRight: [2, 0],
+    ArrowUp: [0, -2],
+    ArrowDown: [0, 2]
+  }
+  if (movements[event.key]) {
+    event.preventDefault()
+    cropFocus.x = clamp(cropFocus.x + movements[event.key]![0], 0, 100)
+    cropFocus.y = clamp(cropFocus.y + movements[event.key]![1], 0, 100)
+  } else if (event.key === '+' || event.key === '=') {
+    setZoom(zoom.value + 0.1)
+  } else if (event.key === '-') {
+    setZoom(zoom.value - 0.1)
+  }
+}
 watch(
   () => state.isFree,
   (free) => {
@@ -150,6 +261,7 @@ onMounted(async () => {
   try {
     const settings = await api.settings()
     currencies.value = settings.currencies
+    imagePolicy.value = settings.imagePolicy
     if (!state.isFree && (props.section === 'create' || props.section === 'all' || props.section === 'pricing')) {
       state.prices = settings.currencies.map(
         (currency) =>
@@ -165,8 +277,8 @@ onMounted(async () => {
   } finally {
     languageReady.value = true
   }
-  if (props.product && (props.section === 'all' || props.section === 'media')) {
-    assets.value = await api.assets(props.product.id)
+  if (props.product && (props.section === 'all' || props.section === 'media' || props.section === 'images')) {
+    assets.value = await api.assets(props.product!.id)
   }
   await nextTick()
   root.value?.querySelector('input')?.focus({ preventScroll: true })
@@ -188,23 +300,95 @@ async function save() {
     busy.value = false
   }
 }
-async function upload(event: Event, visibility: 'public' | 'private') {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file || !props.product) {
+async function upload(event: Event, visibility: 'public' | 'private', purpose?: ImagePurpose) {
+  const input = event.target as HTMLInputElement
+  const files = [...(input.files || [])]
+  if (!files.length || !props.product) {
     return
   }
+  input.value = ''
+  if (visibility === 'public') {
+    if (!purpose) {
+      return
+    }
+    imageQueue.value.push(...files.map((file) => ({ file, purpose })))
+    openNextImage()
+    return
+  }
+  await performUpload(files[0]!, visibility)
+}
+function openNextImage() {
+  if (pendingImage.value) {
+    return
+  }
+  const queued = imageQueue.value.shift()
+  if (!queued) {
+    return
+  }
+  const url = URL.createObjectURL(queued.file),
+    image = new Image()
+  image.onload = () => {
+    pendingImage.value = { ...queued, url, width: image.naturalWidth, height: image.naturalHeight }
+    cropFocus.x = 50
+    cropFocus.y = 50
+    zoom.value = 1
+  }
+  image.onerror = () => {
+    URL.revokeObjectURL(url)
+    error.value = t('products.invalidImage')
+    openNextImage()
+  }
+  image.src = url
+}
+async function performUpload(
+  file: File,
+  visibility: 'public' | 'private',
+  selectedCrop?: { x: number; y: number; width: number; height: number },
+  purpose?: ImagePurpose
+) {
   busy.value = true
   error.value = ''
   try {
-    const id = await api.upload(props.product.id, file, visibility)
-    ;(visibility === 'public' ? state.imageIds : state.fileIds).push(id)
-    assets.value = await api.assets(props.product.id)
-  } catch {
-    error.value = t('products.uploadFailed')
+    const id = await api.upload(props.product!.id, file, visibility, selectedCrop, purpose)
+    if (visibility === 'public') {
+      state.imageIds.push(id)
+      if (purpose === 'thumbnail') {
+        state.thumbnailImageId = id
+      } else if (purpose === 'gallery') {
+        state.galleryImageIds.push(id)
+      } else if (purpose === 'detail') {
+        state.detailImageIds.push(id)
+      }
+    } else {
+      state.fileIds.push(id)
+    }
+    assets.value = await api.assets(props.product!.id)
+  } catch (uploadError) {
+    toast.add({
+      title: t('products.uploadFailed'),
+      description: uploadError instanceof Error ? uploadError.message : undefined,
+      color: 'error'
+    })
   } finally {
     busy.value = false
-    ;(event.target as HTMLInputElement).value = ''
   }
+}
+async function confirmCrop() {
+  if (!pendingImage.value || !cropLargeEnough.value) {
+    return
+  }
+  const current = pendingImage.value
+  await performUpload(current.file, 'public', crop.value, current.purpose)
+  URL.revokeObjectURL(current.url)
+  pendingImage.value = undefined
+  openNextImage()
+}
+function cancelCrop() {
+  if (pendingImage.value) {
+    URL.revokeObjectURL(pendingImage.value.url)
+  }
+  pendingImage.value = undefined
+  imageQueue.value = []
 }
 function move(ids: string[], index: number, delta: number) {
   const target = index + delta
@@ -284,12 +468,20 @@ function move(ids: string[], index: number, delta: number) {
               ><UFormField :name="`content.${item.value}.subtitle`" :label="t('products.subtitle')"
                 ><UInput v-model="state.content[item.value].subtitle" class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
-                ><UTextarea v-model="state.content[item.value].summary" class="w-full" /></UFormField
+                ><UTextarea
+                  v-model="state.content[item.value].summary"
+                  :rows="4"
+                  autoresize
+                  class="w-full" /></UFormField
               ><UFormField
                 :name="`content.${item.value}.description`"
                 :label="t('products.description')"
                 :help="t('products.markdownHelp')"
-                ><UTextarea v-model="state.content[item.value].description" :rows="8" class="w-full" /></UFormField
+                ><UTextarea
+                  v-model="state.content[item.value].description"
+                  :rows="15"
+                  autoresize
+                  class="w-full" /></UFormField
               ><UFormField :name="`nextSteps.${item.value}`" :label="t('products.nextSteps')"
                 ><UTextarea v-model="state.nextSteps[item.value]" class="w-full"
               /></UFormField>
@@ -347,48 +539,63 @@ function move(ids: string[], index: number, delta: number) {
         <UFormField name="videoUrl" :label="t('products.videoUrl')"
           ><UInput v-model="state.videoUrl" class="w-full"
         /></UFormField>
+      </template>
+      <template v-if="section === 'all' || section === 'media' || section === 'images'">
         <p v-if="!product" class="text-muted">{{ t('products.saveBeforeUpload') }}</p>
-        <template v-else
-          ><fieldset v-for="visibility in ['public', 'private'] as const" :key="visibility" class="space-y-3">
-            <legend class="font-medium">{{ t(visibility === 'public' ? 'products.images' : 'products.files') }}</legend>
-            <UFormField :name="visibility === 'public' ? 'imageIds' : 'fileIds'"
-              ><div class="space-y-2">
-                <div
-                  v-for="(id, index) in visibility === 'public' ? state.imageIds : state.fileIds"
-                  :key="id"
-                  class="flex items-center gap-2"
-                >
-                  <span class="min-w-0 flex-1 truncate">{{ assets.find((a) => a.id === id)?.name || id }}</span
-                  ><UButton
+        <template v-else>
+          <ProductsImageLibrary
+            v-model:image-ids="state.imageIds"
+            v-model:thumbnail-image-id="state.thumbnailImageId"
+            v-model:gallery-image-ids="state.galleryImageIds"
+            v-model:detail-image-ids="state.detailImageIds"
+            :product-id="product.id"
+            :assets="assets"
+            :busy="busy"
+            :image-policy="imagePolicy"
+            @upload="(event, purpose) => upload(event, 'public', purpose)"
+          />
+          <fieldset v-if="section !== 'images'" class="space-y-3 rounded-lg border border-default p-4">
+            <legend class="px-1 font-medium">{{ t('products.purchasedFiles') }}</legend>
+            <UFormField name="fileIds">
+              <div class="space-y-2">
+                <div v-for="(id, index) in state.fileIds" :key="id" class="flex items-center gap-2">
+                  <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
+                  <span class="min-w-0 flex-1 truncate">{{ assets.find((a) => a.id === id)?.name || id }}</span>
+                  <UButton
                     icon="i-lucide-arrow-up"
+                    color="neutral"
                     variant="ghost"
                     :aria-label="t('products.moveUp')"
-                    @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, -1)"
-                  /><UButton
+                    @click="move(state.fileIds, index, -1)"
+                  />
+                  <UButton
                     icon="i-lucide-arrow-down"
+                    color="neutral"
                     variant="ghost"
                     :aria-label="t('products.moveDown')"
-                    @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, 1)"
-                  /><UButton
+                    @click="move(state.fileIds, index, 1)"
+                  />
+                  <UButton
                     icon="i-lucide-x"
+                    color="error"
                     variant="ghost"
                     :aria-label="t('products.removeFile')"
-                    @click="(visibility === 'public' ? state.imageIds : state.fileIds).splice(index, 1)"
+                    @click="state.fileIds.splice(index, 1)"
                   />
-                </div></div></UFormField
-            ><label class="block"
-              ><span class="mb-2 block text-sm">{{ t('products.upload') }}</span
-              ><UInput
+                </div>
+              </div>
+            </UFormField>
+            <label class="block">
+              <span class="mb-2 block text-sm">{{ t('products.uploadFile') }}</span>
+              <UInput
                 type="file"
                 :disabled="busy"
-                :accept="
-                  visibility === 'public'
-                    ? 'image/png,image/jpeg,image/webp,image/avif'
-                    : '.pdf,.zip,.mp3,.m4a,.wav,.ogg,.mp4,.webm,.txt,.docx'
-                "
-                @change="upload($event, visibility)"
-            /></label></fieldset
-        ></template>
+                accept=".pdf,.zip,.mp3,.m4a,.wav,.ogg,.mp4,.webm,.txt,.docx"
+                @change="upload($event, 'private')"
+              />
+            </label>
+          </fieldset>
+        </template>
       </template>
       <div class="flex justify-end gap-3">
         <UButton variant="outline" color="neutral" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
@@ -398,5 +605,74 @@ function move(ids: string[], index: number, delta: number) {
   </div>
   <UModal v-model:open="categoriesOpen" :title="t('products.addCategory')" :ui="{ content: 'pointer-events-auto' }">
     <template #body><ProductsCategoryForm embedded @saved="categorySaved" @cancel="categoriesOpen = false" /></template>
+  </UModal>
+  <UModal
+    :open="!!pendingImage"
+    :title="t('products.cropImage')"
+    :dismissible="!busy"
+    @update:open="(open) => !open && cancelCrop()"
+  >
+    <template #body
+      ><div v-if="pendingImage" class="space-y-4">
+        <p class="text-sm text-muted">
+          {{ t('products.cropPurposeHelp', { purpose: t(`products.imagePurpose${pendingImage.purpose}`), width: cropTarget.width, height: cropTarget.height }) }}
+        </p>
+        <div
+          ref="cropViewport"
+          class="mx-auto w-full max-w-xl cursor-grab touch-none overflow-hidden rounded-lg bg-muted active:cursor-grabbing"
+          :style="{ aspectRatio: `${cropTarget.width}/${cropTarget.height}` }"
+          role="application"
+          tabindex="0"
+          :aria-label="t('products.cropInteraction')"
+          @pointerdown="pointerDown"
+          @pointermove="pointerMove"
+          @pointerup="pointerUp"
+          @pointercancel="pointerUp"
+          @wheel.prevent="setZoom(zoom + ($event.deltaY < 0 ? 0.1 : -0.1))"
+          @keydown="cropKeyboard"
+        >
+          <img
+            :src="pendingImage.url"
+            :alt="t('products.cropPreview')"
+            class="size-full touch-none select-none object-cover"
+            :style="{
+              objectPosition: `${cropFocus.x}% ${cropFocus.y}%`,
+              transform: `scale(${zoom})`,
+              transformOrigin: `${cropFocus.x}% ${cropFocus.y}%`
+            }"
+            draggable="false"
+          />
+        </div>
+        <p class="flex items-center gap-2 text-xs text-muted">
+          <UIcon name="i-lucide-move" class="size-4" />{{ t('products.cropGestureHelp') }}
+        </p>
+        <UAlert v-if="!cropLargeEnough" color="error" :title="t('products.imageTooSmall')" />
+        <UFormField :label="t('products.zoom')">
+          <input
+            :value="zoom"
+            type="range"
+            min="1"
+            :max="maximumZoom"
+            step="0.01"
+            class="w-full"
+            @input="setZoom(Number(($event.target as HTMLInputElement).value))"
+          />
+        </UFormField>
+        <UFormField :label="t('products.horizontalPosition')"
+          ><input v-model.number="cropFocus.x" type="range" min="0" max="100" class="w-full"
+        /></UFormField>
+        <UFormField :label="t('products.verticalPosition')"
+          ><input v-model.number="cropFocus.y" type="range" min="0" max="100" class="w-full"
+        /></UFormField>
+        <div class="flex justify-end gap-3">
+          <UButton variant="outline" color="neutral" :disabled="busy" @click="cancelCrop">{{
+            t('products.cancel')
+          }}</UButton>
+          <UButton :loading="busy" :disabled="!cropLargeEnough" @click="confirmCrop">{{
+            t('products.uploadImage')
+          }}</UButton>
+        </div>
+      </div></template
+    >
   </UModal>
 </template>

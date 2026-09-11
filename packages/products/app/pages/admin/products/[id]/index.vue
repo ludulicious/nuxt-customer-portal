@@ -7,7 +7,9 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'details' | 'pricing' | 'media' | null>(route.query.edit === 'true' ? 'basic' : null)
+const editing = ref<'basic' | 'details' | 'pricing' | 'media' | 'images' | null>(
+  route.query.edit === 'true' ? 'basic' : null
+)
 const toast = useToast()
 const pending = ref(true),
   error = ref('')
@@ -61,6 +63,9 @@ const selectedPrice = computed(() => product.value?.prices.find((price) => price
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
 function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'media') {
   editing.value = editing.value === section ? null : section
+}
+function openMediaEditor() {
+  editing.value = 'images'
 }
 async function saved() {
   editing.value = null
@@ -126,6 +131,19 @@ onMounted(async () => {
         icon="i-lucide-circle-alert"
         :title="t('products.requiredPrices')"
       />
+      <UCard v-if="editing === 'images'">
+        <template #header>
+          <h2 class="font-semibold">{{ t('products.productImageLibrary') }}</h2>
+        </template>
+        <ProductsForm
+          :key="`images-${product.updatedAt}`"
+          :product="product"
+          section="images"
+          @saved="saved"
+          @cancel="editing = null"
+        />
+      </UCard>
+      <template v-else>
       <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <ProductsPreviewCard
           v-model:language="language"
@@ -136,6 +154,7 @@ onMounted(async () => {
           :markdown-style="preview?.markdownStyle"
           :editing="editing === 'basic'"
           @edit="toggleEdit('basic')"
+          @edit-media="openMediaEditor"
         >
           <template #editor>
             <ProductsForm
@@ -189,12 +208,15 @@ onMounted(async () => {
         </div>
       </div>
       <ProductsMediaSection
+        id="product-media-section"
+        class="scroll-mt-24"
         :product="product"
         :editing="editing === 'media'"
         @edit="toggleEdit('media')"
         @saved="saved"
         @cancel="editing = null"
       />
+      </template>
     </template>
   </ProductsShell>
 </template>

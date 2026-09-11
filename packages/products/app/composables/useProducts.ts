@@ -1,5 +1,16 @@
 import type { MarkdownStyle } from '../../shared/markdown-style'
-import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory, ProductPreview } from '../../shared/types'
+import type {
+  Product,
+  Page,
+  Asset,
+  CatalogProduct,
+  Order,
+  ProductCategory,
+  ProductPreview,
+  ImagePolicy,
+  ImagePurpose,
+  StorageSettings
+} from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
 
@@ -33,21 +44,37 @@ export const useProducts = () => ({
   remove: (id: string, name: string) =>
     $fetch(`/api/products/admin/products/${id}`, { method: 'DELETE', body: { name } }),
   assets: (id: string) => $fetch<Asset[]>(`/api/products/admin/products/${id}/assets`),
-  async upload(id: string, file: File, visibility: 'public' | 'private') {
-    const signed = await $fetch<{ id: string; url: string; fields: Record<string, string> }>(
+  async upload(
+    id: string,
+    file: File,
+    visibility: 'public' | 'private',
+    crop?: { x: number; y: number; width: number; height: number },
+    purpose?: ImagePurpose
+  ) {
+    const signed = await $fetch<{ id: string; url: string; fields: Record<string, string>; method: 'POST' | 'PUT' }>(
       `/api/products/admin/products/${id}/uploads`,
-      { method: 'POST', body: { name: file.name, size: file.size, contentType: file.type, visibility } }
+      { method: 'POST', body: { name: file.name, size: file.size, contentType: file.type, visibility, purpose } }
     )
-    const body = new FormData()
-    for (const [key, value] of Object.entries(signed.fields)) {
-      body.append(key, value)
+    let response: Response
+    if (signed.method === 'PUT') {
+      response = await fetch(signed.url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file
+      })
+    } else {
+      const body = new FormData()
+      for (const [key, value] of Object.entries(signed.fields)) {
+        body.append(key, value)
+      }
+      body.append('file', file)
+      response = await fetch(signed.url, { method: 'POST', body })
     }
-    body.append('file', file)
-    const response = await fetch(signed.url, { method: 'POST', body })
     if (!response.ok) {
-      throw new Error('Upload failed')
+      const failure = await response.json().catch(() => undefined) as { statusMessage?: string; message?: string } | undefined
+      throw new Error(failure?.statusMessage || failure?.message || `Upload failed (${response.status})`)
     }
-    await $fetch(`/api/products/admin/products/${id}/uploads/${signed.id}`, { method: 'POST' })
+    await $fetch(`/api/products/admin/products/${id}/uploads/${signed.id}`, { method: 'POST', body: crop || {} })
     return signed.id
   },
   catalog: (slug: string, locale: string) =>
@@ -67,8 +94,15 @@ export const useProducts = () => ({
       stripeConfigured: boolean
       webhookConfigured: boolean
       storageConfigured: boolean
+      storage: StorageSettings
+      imagePolicy: ImagePolicy
     }>('/api/products/admin/settings'),
   saveSettings: (body: Record<string, unknown>) => $fetch('/api/products/admin/settings', { method: 'PUT', body }),
+  saveStorage: (body: Record<string, unknown>) =>
+    $fetch('/api/products/admin/settings/storage', { method: 'PUT', body }),
+  testStorage: (body: Record<string, unknown>) =>
+    $fetch('/api/products/admin/settings/storage/test', { method: 'POST', body }),
+  removeStorage: () => $fetch('/api/products/admin/settings/storage', { method: 'DELETE' }),
   keys: () =>
     $fetch<
       Array<{

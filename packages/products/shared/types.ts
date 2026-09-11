@@ -16,6 +16,9 @@ export interface ProductData {
   taxCode: string
   nextSteps: Record<Locale, string>
   imageIds: string[]
+  thumbnailImageId: string | null
+  galleryImageIds: string[]
+  detailImageIds: string[]
   fileIds: string[]
   videoUrl: string
 }
@@ -41,6 +44,32 @@ export interface Asset {
   size: number
   visibility: 'public' | 'private'
   ready: boolean
+  status: 'uploading' | 'processing' | 'ready' | 'failed'
+  width: number | null
+  height: number | null
+  failure_reason?: string | null
+  image_purpose?: ImagePurpose | null
+}
+export type ImagePurpose = 'thumbnail' | 'gallery' | 'detail'
+export interface ImageSize {
+  width: number
+  height: number
+}
+export interface ImagePolicy {
+  thumbnail: ImageSize
+  gallery: ImageSize
+  detail: ImageSize
+}
+export interface StorageSettings {
+  provider: 's3' | 'bunny'
+  source: 'environment' | 'store' | 'missing'
+  configured: boolean
+  tested: boolean
+  endpoint: string
+  region: string
+  bucket: string
+  pathStyle: boolean
+  accessKeySuffix: string
 }
 export interface Billing {
   type: 'person' | 'organization'
@@ -87,6 +116,7 @@ export interface Order {
 }
 export interface CatalogProduct {
   markdownStyle: MarkdownStyle
+  imagePolicy: ImagePolicy
   summaryHtml: string
   categoryId: string | null
   categoryDetails?: { code: string; name: string; description: string }
@@ -101,6 +131,8 @@ export interface CatalogProduct {
   summary: string
   descriptionHtml: string
   images: string[]
+  thumbnailImage: string | null
+  detailImages: string[]
   videoUrl: string
   prices: Price[]
   purchaseUrl: string
@@ -125,5 +157,8 @@ export interface ProductPreview {
   currencies: string[]
   product: Product
   defaultLocale: Locale
-  content: Record<Locale, { title: string; subtitle?: string; summary: string; summaryHtml: string; descriptionHtml: string }>
+  content: Record<
+    Locale,
+    { title: string; subtitle?: string; summary: string; summaryHtml: string; descriptionHtml: string }
+  >
 }

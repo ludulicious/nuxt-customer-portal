@@ -38,6 +38,7 @@
     "@nuxt-customer-portal/core": "workspace:^",
     "@nuxt-customer-portal/ui": "workspace:^",
     "@nuxtjs/i18n": "^10.6.0",
+    "@nuxt/image": "^2.1.0",
     "@types/pg": "8.15.5",
     "drizzle-orm": "^0.45.2",
     "nanoid": "^5.1.6",
@@ -49,7 +50,8 @@
     "@aws-sdk/s3-request-presigner": "^3.883.0",
     "@aws-sdk/s3-presigned-post": "^3.883.0",
     "marked": "^16.2.1",
-    "sanitize-html": "^2.17.0"
+    "sanitize-html": "^2.17.0",
+    "sharp": "^0.35.3"
   },
   "peerDependencies": {
     "nuxt": "^4.5.1",

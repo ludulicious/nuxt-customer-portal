@@ -7,10 +7,13 @@ test('publish checklist requires every enabled translation, image, currency and 
   const product = emptyProduct()
   const settings = { languages: ['en', 'nl'] as ('en' | 'nl')[], currencies: ['EUR', 'USD'], enabled: true }
   let checks = publishChecks(product, settings)
-  assert.equal(checks.filter((c) => !c.passed && !c.warning).length, 5)
+  assert.equal(checks.filter((c) => !c.passed && !c.warning).length, 7)
   product.content.en = { title: 'Audio', summary: 'Summary', description: 'Description' }
   product.content.nl = { title: 'Audio', summary: 'Samenvatting', description: 'Beschrijving' }
   product.imageIds = ['image']
+  product.thumbnailImageId = 'image'
+  product.galleryImageIds = ['image']
+  product.detailImageIds = ['image']
   product.fileIds = ['file']
   product.prices = settings.currencies.map((currency) => ({
     currency,
@@ -31,7 +34,16 @@ test('publish checklist requires every enabled translation, image, currency and 
 })
 
 test('free services skip currency and file checks; closed store is a nonblocking warning', () => {
-  const product = { ...emptyProduct(), type: 'service' as const, isFree: true, prices: [], imageIds: ['image'] }
+  const product = {
+    ...emptyProduct(),
+    type: 'service' as const,
+    isFree: true,
+    prices: [],
+    imageIds: ['image'],
+    thumbnailImageId: 'image',
+    galleryImageIds: ['image'],
+    detailImageIds: ['image']
+  }
   product.content.en = { title: 'Coaching', summary: 'Summary', description: 'Description' }
   const checks = publishChecks(product, { languages: ['en'], currencies: ['EUR', 'USD'], enabled: false })
   assert.equal(

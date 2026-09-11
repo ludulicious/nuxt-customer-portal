@@ -69,6 +69,11 @@ async function buy() {
   }
 }
 const canRegister = useRuntimeConfig().public.portalAuth.registrationMode === 'open'
+const imageKitEndpoint = String(useRuntimeConfig().public.productsImageKitUrlEndpoint || '').replace(/\/$/, '')
+const imageSource = (url: string) =>
+  imageKitEndpoint && url.startsWith(`${imageKitEndpoint}/`) ? url.slice(imageKitEndpoint.length) : url
+const imageProvider = (url: string) =>
+  imageKitEndpoint && url.startsWith(`${imageKitEndpoint}/`) ? 'imagekit' : undefined
 const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.fullPath)}`)
 </script>
 
@@ -79,16 +84,36 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
       <p v-if="product.subtitle" class="text-lg text-muted">{{ product.subtitle }}</p>
       <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
       <div class="grid gap-3 sm:grid-cols-2">
-        <img
+        <NuxtImg
           v-for="image in product.images"
           :key="image"
-          :src="image"
+          :provider="imageProvider(image)"
+          :src="imageSource(image)"
           :alt="product.title"
+          preset="productGallery"
+          :width="product.imagePolicy.gallery.width"
+          :height="product.imagePolicy.gallery.height"
+          sizes="sm:100vw md:50vw lg:640px"
           class="w-full rounded-lg"
           loading="lazy"
         />
       </div>
       <ProductsMarkdown :html="product.descriptionHtml" :theme="product.markdownStyle" />
+      <div v-if="product.detailImages.length" class="grid gap-3 sm:grid-cols-2">
+        <NuxtImg
+          v-for="image in product.detailImages"
+          :key="`detail-${image}`"
+          :provider="imageProvider(image)"
+          :src="imageSource(image)"
+          :alt="product.title"
+          preset="productGallery"
+          :width="product.imagePolicy.detail.width"
+          :height="product.imagePolicy.detail.height"
+          sizes="sm:100vw md:50vw lg:640px"
+          class="w-full rounded-lg"
+          loading="lazy"
+        />
+      </div>
       <UButton v-if="product.videoUrl" :to="product.videoUrl" target="_blank" variant="outline" icon="i-lucide-play">{{
         t('products.watchPreview')
       }}</UButton
