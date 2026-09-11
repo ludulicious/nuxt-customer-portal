@@ -71,7 +71,7 @@ async function save() {
     const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
     if (field) {
       form.value?.setErrors([
-        { name: field, message: t(field === 'code' ? 'products.categoryDuplicate' : 'products.invalid') }
+        { name: field, message: t(field === 'code' ? 'products.categoryDuplicate' : 'products.categoryNameRequired') }
       ])
       invalid({ errors: [{ name: field }] })
     } else {

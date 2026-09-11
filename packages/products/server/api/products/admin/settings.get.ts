@@ -1,12 +1,14 @@
+import { markdownStyleSchema } from '@nuxt-customer-portal/products/shared/markdown-style'
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 
 export default defineEventHandler(async (event) => {
   await admin(event)
   const [store] = await rows(
-    'SELECT currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
+    'SELECT markdown_style,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
   )
   return {
+    markdownStyle: markdownStyleSchema.parse(store?.markdown_style || {}),
     enabled: store?.enabled || false,
     languages: store?.languages || ['en', 'nl'],
     currencyTaxBehavior: store?.currencyTaxBehavior || {},

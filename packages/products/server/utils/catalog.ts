@@ -1,3 +1,4 @@
+import { markdownStyleSchema } from '../../shared/markdown-style'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
@@ -23,9 +24,12 @@ export const renderDescription = (source: string) =>
       'br',
       'strong',
       'em',
+      'h1',
       'h2',
       'h3',
       'h4',
+      'h5',
+      'h6',
       'ul',
       'ol',
       'li',
@@ -293,7 +297,10 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     categoryId: product.categoryId,
     category: category?.code || '',
     title: copy.title,
+          subtitle: copy.subtitle || '',
     summary: copy.summary,
+    summaryHtml: renderDescription(copy.summary),
+    markdownStyle: markdownStyleSchema.parse(store.markdown_style || {}),
     descriptionHtml: renderDescription(copy.description),
     images: product.imageIds.map((id) => `${baseUrl()}/api/store/media/${id}`),
     videoUrl: product.videoUrl,

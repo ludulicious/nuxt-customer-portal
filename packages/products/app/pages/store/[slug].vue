@@ -76,7 +76,8 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
   <main class="mx-auto max-w-4xl space-y-6 p-6">
     <UAlert v-if="error" color="error" :title="error" /><template v-if="product"
       ><h1 class="text-3xl font-semibold">{{ product.title }}</h1>
-      <p class="text-lg text-muted">{{ product.summary }}</p>
+      <p v-if="product.subtitle" class="text-lg text-muted">{{ product.subtitle }}</p>
+      <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
       <div class="grid gap-3 sm:grid-cols-2">
         <img
           v-for="image in product.images"
@@ -87,9 +88,7 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
           loading="lazy"
         />
       </div>
-      <!-- Description HTML is sanitized with an explicit server-side allowlist. -->
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="prose max-w-none dark:prose-invert" v-html="product.descriptionHtml" />
+      <ProductsMarkdown :html="product.descriptionHtml" :theme="product.markdownStyle" />
       <UButton v-if="product.videoUrl" :to="product.videoUrl" target="_blank" variant="outline" icon="i-lucide-play">{{
         t('products.watchPreview')
       }}</UButton

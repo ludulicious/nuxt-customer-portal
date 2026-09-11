@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import { productValidationMessage } from '../../shared/validation-messages'
 
 export function useProductFormSchema<T extends z.ZodType>(
   schema: T,
@@ -14,10 +15,13 @@ export function useProductFormSchema<T extends z.ZodType>(
         return parsed.success
           ? { value: parsed.data }
           : {
-              issues: parsed.error.issues.map((issue) => ({
-                message: message?.(issue) || t('products.invalid'),
-                path: issue.path.filter((p): p is string | number => typeof p !== 'symbol')
-              }))
+              issues: parsed.error.issues.map((issue) => {
+                const text = productValidationMessage(issue, value)
+                return {
+                  message: message?.(issue) || t(text.key, text.params),
+                  path: issue.path.filter((p): p is string | number => typeof p !== 'symbol')
+                }
+              })
             }
       }
     }

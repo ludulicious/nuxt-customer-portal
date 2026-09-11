@@ -1,9 +1,10 @@
 import { z } from 'zod'
+import { markdownStyleSchema } from './markdown-style'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
 
 export const localeSchema = z.enum(portalLanguageCodes).default('en')
 const text = (max: number) => z.string().trim().max(max)
-const copy = z.object({ title: text(200), summary: text(1000), description: text(50000) })
+const copy = z.object({ title: text(200), subtitle: text(200).default(''), summary: text(1000), description: text(50000) })
 export const productCurrencies = [
   'EUR',
   'USD',
@@ -72,6 +73,8 @@ export const productSchema = z
       ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
     }
   })
+export const productCreateSchema = productSchema.safeExtend({ categoryId: text(100).min(1) })
+
 export const billingSchema = z
   .object({
     type: z.enum(['person', 'organization']),
@@ -114,6 +117,7 @@ export const listSchema = z.object({
 export const keySchema = z.object({ name: text(100).min(1), expiresAt: z.iso.datetime().nullable().default(null) })
 export const settingsSchema = z
   .object({
+    markdownStyle: markdownStyleSchema.optional(),
     currencyTaxBehavior: z.partialRecord(z.enum(productCurrencies), z.enum(['inclusive', 'exclusive'])).default({}),
     enabled: z.boolean(),
     defaultLocale: z.enum(portalLanguageCodes),
@@ -144,7 +148,7 @@ export const emptyProduct = () => ({
   type: 'digital' as const,
   categoryId: null as string | null,
   status: 'draft' as const,
-  content: { en: { title: '', summary: '', description: '' }, nl: { title: '', summary: '', description: '' } },
+  content: { en: { title: '', subtitle: '', summary: '', description: '' }, nl: { title: '', subtitle: '', summary: '', description: '' } },
   taxCode: 'txcd_10000000',
   nextSteps: { en: '', nl: '' },
   imageIds: [] as string[],

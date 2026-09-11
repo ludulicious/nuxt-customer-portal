@@ -1,6 +1,9 @@
+import type { MarkdownStyle } from './markdown-style'
+
 export type Locale = 'en' | 'nl'
 export interface ProductCopy {
   title: string
+  subtitle?: string
   summary: string
   description: string
 }
@@ -83,6 +86,8 @@ export interface Order {
   processing: string
 }
 export interface CatalogProduct {
+  markdownStyle: MarkdownStyle
+  summaryHtml: string
   categoryId: string | null
   categoryDetails?: { code: string; name: string; description: string }
   isFree: boolean
@@ -92,6 +97,7 @@ export interface CatalogProduct {
   type: string
   category: string
   title: string
+  subtitle?: string
   summary: string
   descriptionHtml: string
   images: string[]
@@ -114,9 +120,10 @@ export interface ProductCategory {
 }
 
 export interface ProductPreview {
+  markdownStyle: MarkdownStyle
   languages: Locale[]
   currencies: string[]
   product: Product
   defaultLocale: Locale
-  content: Record<Locale, { title: string; summary: string; descriptionHtml: string }>
+  content: Record<Locale, { title: string; subtitle?: string; summary: string; summaryHtml: string; descriptionHtml: string }>
 }

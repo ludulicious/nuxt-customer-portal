@@ -50,6 +50,13 @@
       "when": 1789588800000,
       "tag": "0006_currency_tax_behavior",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789675200000,
+      "tag": "0007_markdown_style",
+      "breakpoints": true
     }
   ]
 }

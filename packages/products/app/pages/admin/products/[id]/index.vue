@@ -133,6 +133,7 @@ onMounted(async () => {
           :languages="languageOptions"
           :product="product"
           :copy="copy"
+          :markdown-style="preview?.markdownStyle"
           :editing="editing === 'basic'"
           @edit="toggleEdit('basic')"
         >

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import {
   emptyProduct,
   productSchema,
+  productCreateSchema,
   priceSchema,
   checkoutSchema,
   settingsSchema,
@@ -144,4 +145,27 @@ test('store tax treatment accepts independent settings per supported currency', 
   )
   assert.equal(settingsSchema.safeParse({ ...settings, currencyTaxBehavior: { EUR: 'invalid' } }).success, false)
   assert.equal(settingsSchema.safeParse({ ...settings, currencyTaxBehavior: { XXX: 'inclusive' } }).success, false)
+})
+
+test('new products require a category, while existing uncategorized drafts remain editable', () => {
+  const product = { ...emptyProduct(), slug: 'new-product' }
+  product.content.en.title = 'New product'
+  assert.equal(productCreateSchema.safeParse(product).success, false)
+  assert.equal(productCreateSchema.safeParse({ ...product, categoryId: 'category-id' }).success, true)
+  assert.equal(productSchema.safeParse(product).success, true)
+})
+
+test('subtitles are optional, localized and limited to 200 characters', () => {
+  const product = emptyProduct()
+  product.slug = 'subtitle-example'
+  product.content.en.title = 'Example'
+  product.content.en.subtitle = 'Your next step'
+  product.content.nl.subtitle = 'Jouw volgende stap'
+  const parsed = productSchema.parse(product)
+  assert.equal(parsed.content.en.subtitle, 'Your next step')
+  assert.equal(parsed.content.nl.subtitle, 'Jouw volgende stap')
+  const { subtitle: _subtitle, ...legacyCopy } = product.content.en
+  assert.equal(productSchema.parse({ ...product, content: { ...product.content, en: legacyCopy } }).content.en.subtitle, '')
+  product.content.en.subtitle = 'a'.repeat(201)
+  assert.equal(productSchema.safeParse(product).success, false)
 })

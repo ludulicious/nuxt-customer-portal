@@ -30,6 +30,7 @@ export const store = schema.table('store', {
     .array()
     .notNull()
     .default(sql`ARRAY['en','nl']::text[]`),
+  markdownStyle: jsonb('markdown_style').notNull().default({}),
   currencyTaxBehavior: jsonb('currency_tax_behavior')
     .$type<Record<string, 'inclusive' | 'exclusive'>>()
     .notNull()

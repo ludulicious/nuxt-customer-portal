@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
-import type { z } from 'zod'
+import { z } from 'zod'
 import type { Product, Asset, ProductCategory } from '../../shared/types'
-import { emptyProduct, productSchema, hasRequiredPrices } from '../../shared/validation'
+import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
 
 const props = withDefaults(
     defineProps<{
       product?: Product
-      section?: 'all' | 'basic' | 'details' | 'pricing' | 'media'
+      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media'
       currency?: string
       language?: 'en' | 'nl'
     }>(),
@@ -25,9 +25,13 @@ const state = reactive<z.infer<typeof productSchema>>(
     ? {
         isFree: false,
         ...structuredClone(toRaw(props.product)),
+        content: {
+          en: { ...structuredClone(toRaw(props.product.content.en)), subtitle: props.product.content.en.subtitle || '' },
+          nl: { ...structuredClone(toRaw(props.product.content.nl)), subtitle: props.product.content.nl.subtitle || '' }
+        },
         prices: props.product.isFree ? [] : structuredClone(toRaw(props.product.prices))
       }
-    : emptyProduct()
+    : { ...emptyProduct(), prices: [] }
 )
 const busy = ref(false),
   error = ref(''),
@@ -37,16 +41,16 @@ const busy = ref(false),
 const categories = ref<ProductCategory[]>([])
 const categoriesOpen = ref(false)
 const categoryOptions = computed(() => [
-  { label: t('products.noCategory'), value: 'none' },
+  ...(props.section === 'create' ? [] : [{ label: t('products.noCategory'), value: 'none' }]),
   ...categories.value.map((category) => ({
     label: category.content[defaultLanguage.value].name || category.name,
     value: `category:${category.id}`
   }))
 ])
 const selectedCategory = computed({
-  get: () => (state.categoryId ? `category:${state.categoryId}` : 'none'),
-  set: (value: string) => {
-    state.categoryId = value === 'none' ? null : value.slice('category:'.length)
+  get: () => (state.categoryId ? `category:${state.categoryId}` : props.section === 'create' ? undefined : 'none'),
+  set: (value: string | undefined) => {
+    state.categoryId = !value || value === 'none' ? null : value.slice('category:'.length)
   }
 })
 async function loadCategories() {
@@ -59,6 +63,23 @@ async function categorySaved(category: ProductCategory) {
 }
 const selectedLanguage = ref<'en' | 'nl'>(props.language || 'en')
 const defaultLanguage = ref<'en' | 'nl'>('en')
+const createSchema = computed(() =>
+  useProductFormSchema(
+    z.object({ ...productCreateSchema.shape }).superRefine((value, context) => {
+      if (!value.content[defaultLanguage.value].title.trim()) {
+        context.addIssue({ code: 'custom', path: ['content', defaultLanguage.value, 'title'], message: 'required' })
+      }
+    }),
+    (issue) => {
+      if (issue.path[0] === 'content' && issue.code === 'custom') {
+        return t('products.productNameRequired')
+      }
+      if (issue.path[0] === 'slug' && !state.slug.trim()) {
+        return t('products.slugRequired')
+      }
+    }
+  )
+)
 const supportedLanguages = ref<('en' | 'nl')[]>([])
 const languageReady = ref(false)
 const languageOptions = computed(() =>
@@ -102,9 +123,26 @@ watch(
     }
   }
 )
+const slugManuallyEdited = ref(false)
+const createName = computed({
+  get: () => state.content[defaultLanguage.value].title,
+  set: (value: string) => {
+    state.content[defaultLanguage.value].title = value
+    if (!slugManuallyEdited.value) {
+      state.slug = value
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 120)
+        .replace(/-$/g, '')
+    }
+  }
+})
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
 onMounted(async () => {
-  if (props.section === 'all' || props.section === 'details') {
+  if (props.section === 'create' || props.section === 'all' || props.section === 'details') {
     await loadCategories().catch(() => {
       error.value = t('products.loadFailed')
     })
@@ -112,7 +150,7 @@ onMounted(async () => {
   try {
     const settings = await api.settings()
     currencies.value = settings.currencies
-    if (!state.isFree && (props.section === 'all' || props.section === 'pricing')) {
+    if (!state.isFree && (props.section === 'create' || props.section === 'all' || props.section === 'pricing')) {
       state.prices = settings.currencies.map(
         (currency) =>
           state.prices.find((price) => price.currency === currency) || { currency, amount: 0, taxBehavior: 'inclusive' }
@@ -183,7 +221,7 @@ function move(ids: string[], index: number, delta: number) {
     <UForm
       ref="form"
       :state="state"
-      :schema="schema"
+      :schema="section === 'create' ? createSchema : schema"
       :validate="pricingErrors"
       novalidate
       class="space-y-5"
@@ -196,10 +234,19 @@ function move(ids: string[], index: number, delta: number) {
         color="warning"
         :title="t('products.requiredPrices')"
       />
-      <template v-if="section === 'all' || section === 'details'">
+      <UFormField
+        v-if="section === 'create'"
+        :name="`content.${defaultLanguage}.title`"
+        :label="t('products.name')"
+        required
+      >
+        <UInput v-model="createName" :disabled="!settingsReady" class="w-full" />
+      </UFormField>
+      <template v-if="section === 'create' || section === 'all' || section === 'details'">
         <div :class="section === 'details' ? 'grid gap-4' : 'grid gap-4 sm:grid-cols-2'">
-          <UFormField name="slug" :label="t('products.slug')"><UInput v-model="state.slug" class="w-full" /></UFormField
-          ><UFormField name="categoryId" :label="t('products.category')"
+          <UFormField name="slug" :label="t('products.slug')" :required="section === 'create'"
+            ><UInput v-model="state.slug" class="w-full" @update:model-value="slugManuallyEdited = true" /></UFormField
+          ><UFormField name="categoryId" :label="t('products.category')" :required="section === 'create'"
             ><div class="flex gap-2">
               <USelectMenu
                 v-model="selectedCategory"
@@ -214,9 +261,9 @@ function move(ids: string[], index: number, delta: number) {
                 :aria-label="t('products.addCategory')"
                 @click="categoriesOpen = true"
               /></div></UFormField
-          ><UFormField name="type" :label="t('products.type')"
+          ><UFormField name="type" :label="t('products.type')" :required="section === 'create'"
             ><USelect v-model="state.type" :items="types" class="w-full" /></UFormField
-          ><UFormField name="status" :label="t('products.status')"
+          ><UFormField v-if="section !== 'create'" name="status" :label="t('products.status')"
             ><div class="flex min-h-8 items-center gap-3">
               <UBadge color="neutral" variant="subtle">{{ t(`products.${state.status}`) }}</UBadge>
             </div></UFormField
@@ -234,6 +281,8 @@ function move(ids: string[], index: number, delta: number) {
             <div class="space-y-3 pt-4">
               <UFormField :name="`content.${item.value}.title`" :label="t('products.name')"
                 ><UInput v-model="state.content[item.value].title" class="w-full" /></UFormField
+              ><UFormField :name="`content.${item.value}.subtitle`" :label="t('products.subtitle')"
+                ><UInput v-model="state.content[item.value].subtitle" class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
                 ><UTextarea v-model="state.content[item.value].summary" class="w-full" /></UFormField
               ><UFormField
@@ -248,7 +297,7 @@ function move(ids: string[], index: number, delta: number) {
           </template>
         </UTabs>
       </template>
-      <template v-if="section === 'all' || section === 'details'">
+      <template v-if="section === 'create' || section === 'all' || section === 'details'">
         <UFormField
           name="isFree"
           :label="t('products.freeProduct')"
@@ -256,7 +305,7 @@ function move(ids: string[], index: number, delta: number) {
         >
           <USwitch v-model="state.isFree" :disabled="product?.status === 'published'" />
         </UFormField>
-        <UFormField name="taxCode" :label="t('products.taxCode')"
+        <UFormField v-if="section !== 'create'" name="taxCode" :label="t('products.taxCode')"
           ><UInput v-model="state.taxCode" class="w-full sm:max-w-xs"
         /></UFormField>
       </template>

@@ -46,6 +46,13 @@ async function saved(value: Product) {
     </template>
     <p v-if="pending" role="status">{{ t('products.loading') }}</p>
     <UAlert v-else-if="error" color="error" :title="error" />
-    <ProductsForm v-else :key="product?.id || 'new'" :product="product" @saved="saved" @cancel="back" />
+    <ProductsForm
+      v-else
+      :key="product?.id || 'new'"
+      :product="product"
+      :section="productId ? 'all' : 'create'"
+      @saved="saved"
+      @cancel="back"
+    />
   </ProductsShell>
 </template>

@@ -1,3 +1,4 @@
+import type { MarkdownStyle } from '../../shared/markdown-style'
 import { createHash, randomBytes } from 'node:crypto'
 import { createError, getHeader, getRequestIP, type H3Event } from 'h3'
 import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
@@ -10,6 +11,7 @@ export interface Store {
   organization_id: string
   actor_id: string
   enabled: boolean
+  markdown_style: MarkdownStyle
   currency_tax_behavior: Record<string, 'inclusive' | 'exclusive'>
   currencies: string[]
   languages: ('en' | 'nl')[]

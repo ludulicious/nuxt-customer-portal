@@ -1,3 +1,4 @@
+import type { MarkdownStyle } from '../../shared/markdown-style'
 import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory, ProductPreview } from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
@@ -59,6 +60,7 @@ export const useProducts = () => ({
     $fetch<{
       languages: ('en' | 'nl')[]
       currencies: string[]
+      markdownStyle: MarkdownStyle
       currencyTaxBehavior: Record<string, 'inclusive' | 'exclusive'>
       enabled: boolean
       defaultLocale: 'en' | 'nl'
