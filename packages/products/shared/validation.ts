@@ -30,6 +30,7 @@ export const priceSchema = z.object({
 })
 export const productSchema = z
   .object({
+    isFree: z.boolean().default(false),
     slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     type: z.enum(['digital', 'service']),
     category: text(100),
@@ -43,7 +44,7 @@ export const productSchema = z
       .string()
       .max(2000)
       .refine((v) => !v || (/^https:\/\//.test(v) && z.url().safeParse(v).success)),
-    prices: z.array(priceSchema).max(30)
+    prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
   })
   .superRefine((v, ctx) => {
     if (!v.content.en.title && !v.content.nl.title) {
@@ -52,8 +53,19 @@ export const productSchema = z
     if (new Set(v.prices.map((p) => p.currency)).size !== v.prices.length) {
       ctx.addIssue({ code: 'custom', path: ['prices'], message: 'Only one price per currency' })
     }
-    if (v.status === 'published' && !v.prices.length) {
-      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A published product needs a price' })
+    if (!v.isFree) {
+      v.prices.forEach((price, index) => {
+        if (price.amount <= 0) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['prices', index, 'amount'],
+            message: 'Paid products need a positive price'
+          })
+        }
+      })
+    }
+    if (!v.isFree && !v.prices.length) {
+      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
     }
     if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
       ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
@@ -98,8 +110,23 @@ export const listSchema = z.object({
     .optional()
 })
 export const keySchema = z.object({ name: text(100).min(1), expiresAt: z.iso.datetime().nullable().default(null) })
-export const settingsSchema = z.object({ enabled: z.boolean(), defaultLocale: z.enum(['en', 'nl']) })
+export const settingsSchema = z.object({
+  enabled: z.boolean(),
+  defaultLocale: z.enum(['en', 'nl']),
+  currencies: z
+    .array(z.enum(productCurrencies))
+    .min(1)
+    .refine((v) => new Set(v).size === v.length)
+})
+export const hasRequiredPrices = (
+  product: { isFree?: boolean; prices: { currency: string; amount: number }[] },
+  currencies: readonly string[]
+) =>
+  product.isFree ||
+  currencies.every((currency) => product.prices.some((price) => price.currency === currency && price.amount > 0))
+
 export const emptyProduct = () => ({
+  isFree: false,
   slug: '',
   type: 'digital' as const,
   category: '',

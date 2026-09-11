@@ -150,6 +150,20 @@
     "allCategories": "All categories",
     "noResultsHelp": "Try a different search or clear your filters.",
     "clearFilters": "Clear filters",
-    "openProduct": "Open {name}"
+    "openProduct": "Open {name}",
+    "preview": "Product preview",
+    "previewIntro": "Preview your product content and pricing.",
+    "backToProduct": "Back to product",
+    "noImages": "No product images yet.",
+    "noDescription": "No description yet.",
+    "basicDetails": "Basic details",
+    "editPrices": "Edit prices",
+    "mediaAndFiles": "Images, video and files",
+    "manageMedia": "Manage media and files",
+    "supportedCurrencies": "Supported currencies",
+    "currenciesHelp": "Paid products need a price in every selected currency. After adding a currency, update existing products before they can be purchased.",
+    "requiredPrices": "Enter a price for every store currency, or mark the product as free.",
+    "freeProduct": "Free product",
+    "getFree": "Get free product"
   }
 }

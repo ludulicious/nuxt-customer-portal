@@ -1,9 +1,13 @@
-import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory } from '../../shared/types'
+import type { Product, Page, Asset, CatalogProduct, Order, ProductCategory, ProductPreview } from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema } from '../../shared/validation'
 
 type ProductInput = z.infer<typeof productSchema>
 export const useProducts = () => ({
+  preview: (id: string) => $fetch<ProductPreview>(`/api/products/admin/products/${encodeURIComponent(id)}/preview`),
+  previewImageUrl: (id: string, assetId: string) =>
+    `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}`,
+
   categories: () => $fetch<ProductCategory[]>('/api/products/admin/categories'),
   saveCategory: (name: string, id?: string) =>
     $fetch<{ id: string; name: string }>(
@@ -50,6 +54,7 @@ export const useProducts = () => ({
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
   settings: () =>
     $fetch<{
+      currencies: string[]
       enabled: boolean
       defaultLocale: 'en' | 'nl'
       stripeConfigured: boolean

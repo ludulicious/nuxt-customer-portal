@@ -11,20 +11,34 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       routePrefixes: ['/purchases', '/admin/products'],
       audiences: ['authenticated'],
       menuItems: [
-        { id: 'purchases', labelKey: 'products.purchases', to: '/purchases', audiences: ['authenticated'] },
         {
           id: 'catalog',
+          icon: 'i-lucide-shopping-bag',
           labelKey: 'products.catalog',
           to: '/admin/products',
           audiences: ['providerAdmin'],
           exact: true
         },
-        { id: 'orders', labelKey: 'products.orders', to: '/admin/products/orders', audiences: ['providerAdmin'] },
+        {
+          id: 'orders',
+          icon: 'i-lucide-receipt-text',
+          labelKey: 'products.orders',
+          to: '/admin/products/orders',
+          audiences: ['providerAdmin']
+        },
         {
           id: 'store-settings',
+          icon: 'i-lucide-settings',
           labelKey: 'products.settings',
           to: '/admin/products/settings',
           audiences: ['providerAdmin']
+        },
+        {
+          id: 'purchases',
+          icon: 'i-lucide-library',
+          labelKey: 'products.purchases',
+          to: '/purchases',
+          audiences: ['authenticated']
         }
       ]
     }

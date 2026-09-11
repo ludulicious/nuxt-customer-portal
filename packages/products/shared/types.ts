@@ -5,6 +5,7 @@ export interface ProductCopy {
   description: string
 }
 export interface ProductData {
+  isFree?: boolean
   slug: string
   type: 'digital' | 'service'
   category: string
@@ -80,6 +81,8 @@ export interface Order {
   processing: string
 }
 export interface CatalogProduct {
+  isFree: boolean
+  pricingComplete: boolean
   id: string
   slug: string
   type: string
@@ -102,4 +105,11 @@ export interface ProductCategory {
   id: string
   name: string
   productCount: number
+}
+
+export interface ProductPreview {
+  currencies: string[]
+  product: Product
+  defaultLocale: Locale
+  content: Record<Locale, { title: string; summary: string; descriptionHtml: string }>
 }

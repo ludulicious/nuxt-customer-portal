@@ -109,7 +109,10 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
             :items="
               product.prices.map((p) => ({
                 value: p.id,
-                label: `${formatMoney(p.amount, p.currency, locale)} · ${t(`products.${p.taxBehavior}`)}`
+                label:
+                  p.amount === 0
+                    ? t('products.freeProduct')
+                    : `${formatMoney(p.amount, p.currency, locale)} · ${t(`products.${p.taxBehavior}`)}`
               }))
             " /></UFormField
         ><UFormField name="billing.type" :label="t('products.buyingAs')"
@@ -152,8 +155,11 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
               ><UInput v-model="state.billing.vatNumber" class="w-full" /></UFormField
           ></template>
         </div>
-        <p class="text-sm text-muted">{{ t('products.finalTax') }}</p>
-        <UButton type="submit" :loading="busy" icon="i-lucide-lock-keyhole">{{ t('products.pay') }}</UButton></UForm
+        <p v-if="!product.isFree" class="text-sm text-muted">{{ t('products.finalTax') }}</p>
+        <UAlert v-if="!product.pricingComplete" color="warning" :title="t('products.unavailable')" />
+        <UButton type="submit" :disabled="!product.pricingComplete" :loading="busy" icon="i-lucide-lock-keyhole">{{
+          t(product.prices.find((p) => p.id === state.priceId)?.amount === 0 ? 'products.getFree' : 'products.pay')
+        }}</UButton></UForm
       ></template
     >
   </main>

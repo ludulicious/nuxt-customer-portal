@@ -5,7 +5,7 @@ import { marked } from 'marked'
 import sanitizeHtml from 'sanitize-html'
 import type { z } from 'zod'
 import type { Product, ProductData, Price, Locale, CatalogProduct, Page } from '../../shared/types'
-import { productSchema, listSchema } from '../../shared/validation'
+import { productSchema, listSchema, hasRequiredPrices } from '../../shared/validation'
 import { rows, transaction } from './database'
 import { baseUrl, getStore } from './access'
 
@@ -104,7 +104,7 @@ export async function listProducts(storeId: string, input: unknown, published = 
   }
 }
 export async function saveProduct(storeId: string, input: unknown, id: string = randomUUID()): Promise<Product> {
-  const { prices, ...data } = parseInput(productSchema, input)
+  const { prices: inputPrices, ...data } = parseInput(productSchema, input)
   const store = await getStore()
   if (store.organization_id !== storeId) {
     throw createError({ statusCode: 403, message: 'Store access denied' })
@@ -112,8 +112,23 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
   if (data.status === 'published' && !data.content[store.default_locale].title) {
     throw createError({ statusCode: 400, message: 'A title in the store default language is required' })
   }
+  const prices = data.isFree
+    ? [{ currency: store.currencies[0]!, amount: 0, taxBehavior: 'inclusive' as const }]
+    : inputPrices
   try {
     await transaction(async (tx) => {
+      const [currentStore] = await rows<{ currencies: string[] }>(
+        'SELECT currencies FROM products.store WHERE id=true FOR SHARE',
+        [],
+        tx
+      )
+      if (!hasRequiredPrices({ ...data, prices }, currentStore!.currencies)) {
+        throw createError({
+          statusCode: 400,
+          message: 'Enter a price for every store currency',
+          data: { field: 'prices' }
+        })
+      }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`categories:${storeId}`])
       if (data.category) {
         const [category] = await rows<{ name: string }>(
@@ -214,6 +229,8 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
   const store = await getStore()
   const copy = selectCopy(product, locale, store.default_locale)
   return {
+    isFree: !!product.isFree,
+    pricingComplete: !!hasRequiredPrices(product, store.currencies),
     id: product.id,
     slug: product.slug,
     type: product.type,
@@ -223,7 +240,9 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     descriptionHtml: renderDescription(copy.description),
     images: product.imageIds.map((id) => `${baseUrl()}/api/store/media/${id}`),
     videoUrl: product.videoUrl,
-    prices: product.prices.filter((p) => !currency || p.currency === currency),
+    prices: product.prices.filter(
+      (p) => product.isFree || (store.currencies.includes(p.currency) && (!currency || p.currency === currency))
+    ),
     purchaseUrl: `${baseUrl()}/store/${product.slug}`,
     locale
   } as CatalogProduct

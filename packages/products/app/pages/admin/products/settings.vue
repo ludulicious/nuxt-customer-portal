@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { settingsSchema, keySchema } from '../../../../shared/validation'
+import { settingsSchema, keySchema, productCurrencies } from '../../../../shared/validation'
 
+const currencyOptions: string[] = [...productCurrencies]
 const { t } = useI18n(),
   api = useProducts(),
-  settings = reactive({ enabled: false, defaultLocale: 'en' as 'en' | 'nl' }),
+  settings = reactive({ currencies: ['EUR'] as string[], enabled: false, defaultLocale: 'en' as 'en' | 'nl' }),
   keyState = reactive({ name: '', expiresAt: null as string | null }),
   expiry = ref(''),
   shownKey = ref(''),
@@ -18,7 +19,11 @@ const schema = useProductFormSchema(settingsSchema),
 async function load() {
   try {
     health.value = await api.settings()
-    Object.assign(settings, { enabled: health.value.enabled, defaultLocale: health.value.defaultLocale })
+    Object.assign(settings, {
+      currencies: health.value.currencies,
+      enabled: health.value.enabled,
+      defaultLocale: health.value.defaultLocale
+    })
     keys.value = await api.keys()
   } catch {
     error.value = t('products.loadFailed')
@@ -77,6 +82,9 @@ async function revoke() {
             { label: 'Nederlands', value: 'nl' }
           ]"
       /></UFormField>
+      <UFormField name="currencies" :label="t('products.supportedCurrencies')" :help="t('products.currenciesHelp')">
+        <USelectMenu v-model="settings.currencies" :items="currencyOptions" multiple class="w-full sm:w-80" />
+      </UFormField>
       <ul class="space-y-1 text-sm">
         <li>Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}</li>
         <li>

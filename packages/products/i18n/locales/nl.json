@@ -150,6 +150,20 @@
     "allCategories": "Alle categorieën",
     "noResultsHelp": "Probeer een andere zoekopdracht of wis je filters.",
     "clearFilters": "Filters wissen",
-    "openProduct": "{name} openen"
+    "openProduct": "{name} openen",
+    "preview": "Productvoorbeeld",
+    "previewIntro": "Bekijk de inhoud en prijzen van je product.",
+    "backToProduct": "Terug naar product",
+    "noImages": "Nog geen productafbeeldingen.",
+    "noDescription": "Nog geen beschrijving.",
+    "basicDetails": "Basisgegevens",
+    "editPrices": "Prijzen bewerken",
+    "mediaAndFiles": "Afbeeldingen, video en bestanden",
+    "manageMedia": "Media en bestanden beheren",
+    "supportedCurrencies": "Ondersteunde valuta",
+    "currenciesHelp": "Betaalde producten hebben een prijs nodig in elke geselecteerde valuta. Werk na het toevoegen van een valuta bestaande producten bij voordat ze kunnen worden gekocht.",
+    "requiredPrices": "Vul voor elke winkelvaluta een prijs in, of markeer het product als gratis.",
+    "freeProduct": "Gratis product",
+    "getFree": "Gratis product verkrijgen"
   }
 }

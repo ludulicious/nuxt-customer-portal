@@ -1,8 +1,9 @@
 <script setup lang="ts">
-definePageMeta({ key: (route) => route.path })
 const route = useRoute()
+await navigateTo(
+  { path: `/admin/products/${route.params.id}`, query: { ...route.query, edit: 'true' } },
+  { replace: true }
+)
 </script>
 
-<template>
-  <ProductsEditorPage :key="String(route.params.id)" :product-id="String(route.params.id)" />
-</template>
+<template><div /></template>

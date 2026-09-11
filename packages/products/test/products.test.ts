@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
-import { emptyProduct, productSchema, priceSchema, checkoutSchema } from '../shared/validation'
+import {
+  emptyProduct,
+  productSchema,
+  priceSchema,
+  checkoutSchema,
+  settingsSchema,
+  hasRequiredPrices
+} from '../shared/validation'
 import { currencyScale, formatMoney } from '../shared/money'
 import { hasPurchaseAccess } from '../shared/access'
 
@@ -63,4 +70,53 @@ test('English and Dutch provide matching interface translations', () => {
   const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8')).products
   const nl = JSON.parse(readFileSync(new URL('../i18n/locales/nl.json', import.meta.url), 'utf8')).products
   assert.deepEqual(Object.keys(en).sort(), Object.keys(nl).sort())
+})
+
+test('store currencies are required and paid products cover every currency', () => {
+  assert.equal(settingsSchema.safeParse({ enabled: false, defaultLocale: 'en', currencies: [] }).success, false)
+  assert.equal(
+    settingsSchema.safeParse({ enabled: false, defaultLocale: 'en', currencies: ['EUR', 'EUR'] }).success,
+    false
+  )
+  assert.equal(
+    settingsSchema.safeParse({ enabled: false, defaultLocale: 'en', currencies: ['EUR', 'USD'] }).success,
+    true
+  )
+  assert.equal(hasRequiredPrices(emptyProduct(), ['EUR', 'USD']), false)
+  assert.equal(
+    hasRequiredPrices(
+      {
+        prices: [
+          { currency: 'EUR', amount: 100 },
+          { currency: 'USD', amount: 0 }
+        ]
+      },
+      ['EUR', 'USD']
+    ),
+    false
+  )
+  assert.equal(
+    hasRequiredPrices(
+      {
+        prices: [
+          { currency: 'EUR', amount: 100 },
+          { currency: 'USD', amount: 200 }
+        ]
+      },
+      ['EUR', 'USD']
+    ),
+    true
+  )
+  const free = {
+    ...emptyProduct(),
+    slug: 'free',
+    content: { en: { title: 'Free', summary: '', description: '' }, nl: { title: '', summary: '', description: '' } },
+    isFree: true,
+    prices: []
+  }
+  assert.equal(productSchema.safeParse(free).success, true)
+  assert.equal(hasRequiredPrices(free, ['EUR', 'USD']), true)
+  assert.equal(productSchema.safeParse({ ...free, isFree: false }).success, false)
+  assert.equal(hasPurchaseAccess({ status: 'paid', total: 0, refunded: 0, disputed: false }), true)
+  assert.equal(hasPurchaseAccess({ status: 'pending', total: 0, refunded: 0, disputed: false }), false)
 })

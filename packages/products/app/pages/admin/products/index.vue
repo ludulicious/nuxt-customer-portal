@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod'
 import type { Product, Page, ProductCategory } from '../../../../shared/types'
 import { formatMoney } from '../../../../shared/money'
 
@@ -8,7 +7,6 @@ const { t, locale } = useI18n(),
   route = useRoute(),
   router = useRouter()
 const categories = ref<ProductCategory[]>([])
-const deletingBusy = ref(false)
 const searchInput = ref(String(route.query.search || ''))
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 watch(searchInput, (value) => {
@@ -27,16 +25,12 @@ watch(
 const result = ref<Page<Product>>(),
   items = ref<Product[]>([]),
   pending = ref(false),
-  error = ref(''),
-  deleting = ref<Product>(),
-  eligible = ref(false),
-  deleteState = reactive({ name: '' })
+  error = ref('')
 const listRoot = useTemplateRef('listRoot'),
   topBoundary = useTemplateRef('topBoundary'),
   bottomBoundary = useTemplateRef('bottomBoundary')
 let observer: IntersectionObserver | undefined
 let restoredScroll = false
-const deleteSchema = useProductFormSchema(z.object({ name: z.string().min(1) }))
 const page = computed(() => Math.max(1, Number(route.query.page) || 1)),
   search = computed({ get: () => String(route.query.search || ''), set: (v) => filter('search', v) }),
   status = computed({
@@ -105,9 +99,6 @@ async function load(force = false) {
       loaded = new Set()
     }
     loaded.add(page.value)
-    if (deleting.value && !items.value.some((product) => product.id === deleting.value?.id)) {
-      deleting.value = undefined
-    }
     previousSignature = signature
     await nextTick()
     if (prepend && scroll) {
@@ -185,36 +176,7 @@ function startCreate() {
   return navigateTo({ path: '/admin/products/new', query: returnQuery() })
 }
 function edit(product: Product) {
-  return navigateTo({ path: `/admin/products/${product.id}/edit`, query: returnQuery() })
-}
-async function confirmDelete(product: Product) {
-  if (deleting.value?.id === product.id) {
-    deleting.value = undefined
-    return
-  }
-  deleting.value = product
-  deleteState.name = ''
-  eligible.value = false
-  try {
-    eligible.value = (await api.deletion(product.id)).eligible
-  } catch {
-    error.value = t('products.loadFailed')
-  }
-}
-async function remove() {
-  if (!deleting.value) {
-    return
-  }
-  deletingBusy.value = true
-  try {
-    await api.remove(deleting.value.id, deleteState.name)
-    deleting.value = undefined
-    await load(true)
-  } catch {
-    error.value = t('products.deleteFailed')
-  } finally {
-    deletingBusy.value = false
-  }
+  return navigateTo({ path: `/admin/products/${product.id}`, query: returnQuery() })
 }
 </script>
 
@@ -315,56 +277,18 @@ async function remove() {
                     {{ t(`products.${product.type}`) }}<span v-if="product.category"> · {{ product.category }}</span>
                   </p>
                   <p class="mt-1 text-sm">
-                    {{ product.prices.map((p) => formatMoney(p.amount, p.currency, locale)).join(' · ') }}
+                    {{
+                      product.isFree
+                        ? t('products.freeProduct')
+                        : product.prices.map((p) => formatMoney(p.amount, p.currency, locale)).join(' · ')
+                    }}
                   </p>
                 </div>
               </div>
-              <div class="flex shrink-0 gap-1" @click.stop @keydown.stop>
-                <UButton
-                  icon="i-lucide-pencil"
-                  variant="ghost"
-                  color="neutral"
-                  :aria-label="t('products.edit')"
-                  @click="edit(product)"
-                />
-                <UButton
-                  icon="i-lucide-trash-2"
-                  variant="ghost"
-                  color="neutral"
-                  :aria-label="t('products.delete')"
-                  :aria-expanded="deleting?.id === product.id"
-                  @click="confirmDelete(product)"
-                />
-              </div>
+              <UIcon name="i-lucide-chevron-right" class="size-5 shrink-0 text-muted" aria-hidden="true" />
             </div>
           </UCard>
-          <UForm
-            v-if="deleting?.id === product.id"
-            :state="deleteState"
-            :schema="deleteSchema"
-            novalidate
-            class="space-y-3 rounded-lg border border-default bg-default p-4"
-            @submit="remove"
-            ><p>
-              {{
-                t(eligible ? 'products.deleteConfirm' : 'products.archiveInstead', {
-                  name: product.content.en.title || product.content.nl.title
-                })
-              }}
-            </p>
-            <UFormField v-if="eligible" name="name" :label="t('products.typeName')"
-              ><UInput v-model="deleteState.name"
-            /></UFormField>
-            <div class="flex justify-end gap-3">
-              <UButton color="neutral" variant="outline" @click="deleting = undefined">{{
-                t('products.cancel')
-              }}</UButton
-              ><UButton v-if="eligible" type="submit" color="error" icon="i-lucide-trash-2" :loading="deletingBusy">{{
-                t('products.delete')
-              }}</UButton>
-            </div></UForm
-          ></template
-        >
+        </template>
       </div>
       <div ref="bottomBoundary" class="h-px" aria-hidden="true" />
     </div>

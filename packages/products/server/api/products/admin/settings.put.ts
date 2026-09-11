@@ -27,8 +27,8 @@ export default defineEventHandler(async (event) => {
     }
   }
   await rows(
-    `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale) VALUES(true,$1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2 WHERE products.store.organization_id=$1`,
-    [context.organizationId, context.session.user.id, input.enabled, input.defaultLocale]
+    `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale,currencies) VALUES(true,$1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2,currencies=$5 WHERE products.store.organization_id=$1`,
+    [context.organizationId, context.session.user.id, input.enabled, input.defaultLocale, input.currencies]
   )
   return input
 })

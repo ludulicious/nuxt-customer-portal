@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import type { z } from 'zod'
 import type { Product, Asset, ProductCategory } from '../../shared/types'
-import { emptyProduct, productSchema, productCurrencies } from '../../shared/validation'
+import { emptyProduct, productSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
 
-const props = defineProps<{ product?: Product }>(),
+const props = withDefaults(defineProps<{ product?: Product; section?: 'all' | 'basic' | 'pricing' | 'media' }>(), {
+    section: 'all'
+  }),
   emit = defineEmits<{ saved: [product: Product]; cancel: [] }>()
 const { t } = useI18n(),
   api = useProducts(),
   schema = useProductFormSchema(productSchema)
 const state = reactive<z.infer<typeof productSchema>>(
-  props.product ? structuredClone(toRaw(props.product)) : emptyProduct()
+  props.product
+    ? {
+        isFree: false,
+        ...structuredClone(toRaw(props.product)),
+        prices: props.product.isFree ? [] : structuredClone(toRaw(props.product.prices))
+      }
+    : emptyProduct()
 )
 const busy = ref(false),
   error = ref(''),
@@ -56,18 +64,43 @@ async function showInvalidLanguage(event: { errors: Array<{ name?: string }> }) 
   invalid?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   invalid?.focus({ preventScroll: true })
 }
-const currencyOptions: string[] = [...productCurrencies]
+const currencies = ref<string[]>([])
+const settingsReady = ref(false)
+const pricingErrors = () =>
+  !state.isFree && !hasRequiredPrices(state, currencies.value)
+    ? [{ name: 'prices', message: t('products.requiredPrices') }]
+    : []
+watch(
+  () => state.isFree,
+  (free) => {
+    if (free) {
+      state.prices = []
+    } else {
+      state.prices = currencies.value.map((currency) => ({ currency, amount: 0, taxBehavior: 'inclusive' }))
+    }
+  }
+)
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
 const statuses = computed(() =>
   ['draft', 'published', 'archived'].map((value) => ({ value, label: t(`products.${value}`) }))
 )
 const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
 onMounted(async () => {
-  await loadCategories().catch(() => {
-    error.value = t('products.loadFailed')
-  })
+  if (props.section === 'all' || props.section === 'basic') {
+    await loadCategories().catch(() => {
+      error.value = t('products.loadFailed')
+    })
+  }
   try {
     const settings = await api.settings()
+    currencies.value = settings.currencies
+    if (!state.isFree && (props.section === 'all' || props.section === 'pricing')) {
+      state.prices = settings.currencies.map(
+        (currency) =>
+          state.prices.find((price) => price.currency === currency) || { currency, amount: 0, taxBehavior: 'inclusive' }
+      )
+    }
+    settingsReady.value = true
     defaultLanguage.value = settings.defaultLocale
     selectedLanguage.value = settings.defaultLocale
   } catch {
@@ -75,14 +108,10 @@ onMounted(async () => {
   } finally {
     languageReady.value = true
   }
-  if (props.product) {
+  if (props.product && (props.section === 'all' || props.section === 'media')) {
     assets.value = await api.assets(props.product.id)
   }
   await nextTick()
-  root.value?.scrollIntoView({
-    behavior: 'smooth',
-    block: root.value.offsetHeight < window.innerHeight - 120 ? 'center' : 'start'
-  })
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
@@ -136,138 +165,142 @@ function move(ids: string[], index: number, delta: number) {
       ref="form"
       :state="state"
       :schema="schema"
+      :validate="pricingErrors"
       novalidate
       class="space-y-5"
       @submit="save"
       @error="showInvalidLanguage"
     >
       <UAlert v-if="error" color="error" :title="error" />
-      <div class="grid gap-4 sm:grid-cols-2">
-        <UFormField name="slug" :label="t('products.slug')"><UInput v-model="state.slug" class="w-full" /></UFormField
-        ><UFormField name="category" :label="t('products.category')"
-          ><div class="flex gap-2">
-            <USelectMenu
-              v-model="selectedCategory"
-              :items="categoryOptions"
-              value-key="value"
-              :placeholder="t('products.selectCategory')"
-              class="min-w-0 flex-1"
-            />
-            <UButton
-              icon="i-lucide-plus"
-              variant="outline"
-              :aria-label="t('products.manageCategories')"
-              @click="categoriesOpen = true"
-            /></div></UFormField
-        ><UFormField name="type" :label="t('products.type')"
-          ><USelect v-model="state.type" :items="types" class="w-full" /></UFormField
-        ><UFormField name="status" :label="t('products.status')"
-          ><USelect v-model="state.status" :items="statuses" class="w-full"
+      <UAlert
+        v-if="settingsReady && (section === 'basic' || section === 'media') && pricingErrors().length"
+        color="warning"
+        :title="t('products.requiredPrices')"
+      />
+      <template v-if="section === 'all' || section === 'basic'">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <UFormField name="slug" :label="t('products.slug')"><UInput v-model="state.slug" class="w-full" /></UFormField
+          ><UFormField name="category" :label="t('products.category')"
+            ><div class="flex gap-2">
+              <USelectMenu
+                v-model="selectedCategory"
+                :items="categoryOptions"
+                value-key="value"
+                :placeholder="t('products.selectCategory')"
+                class="min-w-0 flex-1"
+              />
+              <UButton
+                icon="i-lucide-plus"
+                variant="outline"
+                :aria-label="t('products.manageCategories')"
+                @click="categoriesOpen = true"
+              /></div></UFormField
+          ><UFormField name="type" :label="t('products.type')"
+            ><USelect v-model="state.type" :items="types" class="w-full" /></UFormField
+          ><UFormField name="status" :label="t('products.status')"
+            ><USelect v-model="state.status" :items="statuses" class="w-full"
+          /></UFormField>
+        </div>
+        <UTabs
+          v-model="selectedLanguage"
+          :items="languageOptions"
+          variant="link"
+          :ui="{ list: 'justify-start', trigger: 'grow-0' }"
+        >
+          <template #content="{ item }">
+            <div class="space-y-3 pt-4">
+              <UFormField :name="`content.${item.value}.title`" :label="t('products.name')"
+                ><UInput v-model="state.content[item.value].title" class="w-full" /></UFormField
+              ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
+                ><UTextarea v-model="state.content[item.value].summary" class="w-full" /></UFormField
+              ><UFormField
+                :name="`content.${item.value}.description`"
+                :label="t('products.description')"
+                :help="t('products.markdownHelp')"
+                ><UTextarea v-model="state.content[item.value].description" :rows="8" class="w-full" /></UFormField
+              ><UFormField :name="`nextSteps.${item.value}`" :label="t('products.nextSteps')"
+                ><UTextarea v-model="state.nextSteps[item.value]" class="w-full"
+              /></UFormField>
+            </div>
+          </template>
+        </UTabs>
+      </template>
+      <template v-if="section === 'all' || section === 'pricing'">
+        <UFormField name="isFree" :label="t('products.freeProduct')"><USwitch v-model="state.isFree" /></UFormField>
+        <UFormField
+          v-if="!state.isFree"
+          name="prices"
+          :label="t('products.prices')"
+          :help="t('products.requiredPrices')"
+          ><div class="space-y-3">
+            <div v-for="(price, index) in state.prices" :key="index" class="flex flex-wrap items-end gap-3">
+              <UFormField :name="`prices.${index}.currency`" :label="t('products.currency')"
+                ><span class="block py-2 font-medium">{{ price.currency }}</span></UFormField
+              ><UFormField :name="`prices.${index}.amount`" :label="t('products.amount')"
+                ><UInput
+                  type="number"
+                  :step="1 / currencyScale(price.currency || 'EUR')"
+                  :model-value="price.amount / currencyScale(price.currency || 'EUR')"
+                  @update:model-value="
+                    price.amount = Math.round(Number($event) * currencyScale(price.currency || 'EUR'))
+                  " /></UFormField
+              ><UFormField :name="`prices.${index}.taxBehavior`" :label="t('products.tax')"
+                ><USelect v-model="price.taxBehavior" :items="taxOptions"
+              /></UFormField>
+            </div></div
+        ></UFormField>
+        <UFormField name="taxCode" :label="t('products.taxCode')"><UInput v-model="state.taxCode" /></UFormField>
+      </template>
+      <template v-if="section === 'all' || section === 'media'">
+        <UFormField name="videoUrl" :label="t('products.videoUrl')"
+          ><UInput v-model="state.videoUrl" class="w-full"
         /></UFormField>
-      </div>
-      <UTabs
-        v-model="selectedLanguage"
-        :items="languageOptions"
-        variant="link"
-        :ui="{ list: 'justify-start', trigger: 'grow-0' }"
-      >
-        <template #content="{ item }">
-          <div class="space-y-3 pt-4">
-            <UFormField :name="`content.${item.value}.title`" :label="t('products.name')"
-              ><UInput v-model="state.content[item.value].title" class="w-full" /></UFormField
-            ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
-              ><UTextarea v-model="state.content[item.value].summary" class="w-full" /></UFormField
-            ><UFormField
-              :name="`content.${item.value}.description`"
-              :label="t('products.description')"
-              :help="t('products.markdownHelp')"
-              ><UTextarea v-model="state.content[item.value].description" :rows="8" class="w-full" /></UFormField
-            ><UFormField :name="`nextSteps.${item.value}`" :label="t('products.nextSteps')"
-              ><UTextarea v-model="state.nextSteps[item.value]" class="w-full"
-            /></UFormField>
-          </div>
-        </template>
-      </UTabs>
-      <UFormField name="prices" :label="t('products.prices')"
-        ><div class="space-y-3">
-          <div v-for="(price, index) in state.prices" :key="index" class="flex flex-wrap items-end gap-3">
-            <UFormField :name="`prices.${index}.currency`" :label="t('products.currency')"
-              ><USelect v-model="price.currency" :items="currencyOptions" class="w-28" /></UFormField
-            ><UFormField :name="`prices.${index}.amount`" :label="t('products.amount')"
+        <p v-if="!product" class="text-muted">{{ t('products.saveBeforeUpload') }}</p>
+        <template v-else
+          ><fieldset v-for="visibility in ['public', 'private'] as const" :key="visibility" class="space-y-3">
+            <legend class="font-medium">{{ t(visibility === 'public' ? 'products.images' : 'products.files') }}</legend>
+            <UFormField :name="visibility === 'public' ? 'imageIds' : 'fileIds'"
+              ><div class="space-y-2">
+                <div
+                  v-for="(id, index) in visibility === 'public' ? state.imageIds : state.fileIds"
+                  :key="id"
+                  class="flex items-center gap-2"
+                >
+                  <span class="min-w-0 flex-1 truncate">{{ assets.find((a) => a.id === id)?.name || id }}</span
+                  ><UButton
+                    icon="i-lucide-arrow-up"
+                    variant="ghost"
+                    :aria-label="t('products.moveUp')"
+                    @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, -1)"
+                  /><UButton
+                    icon="i-lucide-arrow-down"
+                    variant="ghost"
+                    :aria-label="t('products.moveDown')"
+                    @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, 1)"
+                  /><UButton
+                    icon="i-lucide-x"
+                    variant="ghost"
+                    :aria-label="t('products.removeFile')"
+                    @click="(visibility === 'public' ? state.imageIds : state.fileIds).splice(index, 1)"
+                  />
+                </div></div></UFormField
+            ><label class="block"
+              ><span class="mb-2 block text-sm">{{ t('products.upload') }}</span
               ><UInput
-                type="number"
-                :step="1 / currencyScale(price.currency || 'EUR')"
-                :model-value="price.amount / currencyScale(price.currency || 'EUR')"
-                @update:model-value="
-                  price.amount = Math.round(Number($event) * currencyScale(price.currency || 'EUR'))
-                " /></UFormField
-            ><UFormField :name="`prices.${index}.taxBehavior`" :label="t('products.tax')"
-              ><USelect v-model="price.taxBehavior" :items="taxOptions" /></UFormField
-            ><UButton
-              icon="i-lucide-x"
-              variant="ghost"
-              color="neutral"
-              :aria-label="t('products.removePrice')"
-              @click="state.prices.splice(index, 1)"
-            />
-          </div>
-          <UButton
-            variant="outline"
-            icon="i-lucide-plus"
-            @click="state.prices.push({ currency: 'USD', amount: 1000, taxBehavior: 'inclusive' })"
-            >{{ t('products.addPrice') }}</UButton
-          >
-        </div></UFormField
-      >
-      <UFormField name="taxCode" :label="t('products.taxCode')"><UInput v-model="state.taxCode" /></UFormField>
-      <UFormField name="videoUrl" :label="t('products.videoUrl')"
-        ><UInput v-model="state.videoUrl" class="w-full"
-      /></UFormField>
-      <p v-if="!product" class="text-muted">{{ t('products.saveBeforeUpload') }}</p>
-      <template v-else
-        ><fieldset v-for="visibility in ['public', 'private'] as const" :key="visibility" class="space-y-3">
-          <legend class="font-medium">{{ t(visibility === 'public' ? 'products.images' : 'products.files') }}</legend>
-          <UFormField :name="visibility === 'public' ? 'imageIds' : 'fileIds'"
-            ><div class="space-y-2">
-              <div
-                v-for="(id, index) in visibility === 'public' ? state.imageIds : state.fileIds"
-                :key="id"
-                class="flex items-center gap-2"
-              >
-                <span class="min-w-0 flex-1 truncate">{{ assets.find((a) => a.id === id)?.name || id }}</span
-                ><UButton
-                  icon="i-lucide-arrow-up"
-                  variant="ghost"
-                  :aria-label="t('products.moveUp')"
-                  @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, -1)"
-                /><UButton
-                  icon="i-lucide-arrow-down"
-                  variant="ghost"
-                  :aria-label="t('products.moveDown')"
-                  @click="move(visibility === 'public' ? state.imageIds : state.fileIds, index, 1)"
-                /><UButton
-                  icon="i-lucide-x"
-                  variant="ghost"
-                  :aria-label="t('products.removeFile')"
-                  @click="(visibility === 'public' ? state.imageIds : state.fileIds).splice(index, 1)"
-                />
-              </div></div></UFormField
-          ><label class="block"
-            ><span class="mb-2 block text-sm">{{ t('products.upload') }}</span
-            ><UInput
-              type="file"
-              :disabled="busy"
-              :accept="
-                visibility === 'public'
-                  ? 'image/png,image/jpeg,image/webp,image/avif'
-                  : '.pdf,.zip,.mp3,.m4a,.wav,.ogg,.mp4,.webm,.txt,.docx'
-              "
-              @change="upload($event, visibility)"
-          /></label></fieldset
-      ></template>
+                type="file"
+                :disabled="busy"
+                :accept="
+                  visibility === 'public'
+                    ? 'image/png,image/jpeg,image/webp,image/avif'
+                    : '.pdf,.zip,.mp3,.m4a,.wav,.ogg,.mp4,.webm,.txt,.docx'
+                "
+                @change="upload($event, visibility)"
+            /></label></fieldset
+        ></template>
+      </template>
       <div class="flex justify-end gap-3">
         <UButton variant="outline" color="neutral" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
-        ><UButton type="submit" :loading="busy" :disabled="busy">{{ t('products.save') }}</UButton>
+        ><UButton type="submit" :loading="busy" :disabled="busy || !settingsReady">{{ t('products.save') }}</UButton>
       </div></UForm
     >
   </div>

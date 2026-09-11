@@ -8,7 +8,11 @@ const api = useProducts()
 const product = ref<Product>()
 const pending = ref(!!props.productId)
 const error = ref('')
-const back = () => navigateTo({ path: '/admin/products', query: route.query })
+const backTarget = computed(() => ({
+  path: props.productId ? `/admin/products/${props.productId}` : '/admin/products',
+  query: route.query
+}))
+const back = () => navigateTo(backTarget.value)
 watch(
   () => props.productId,
   async (id) => {
@@ -29,25 +33,16 @@ watch(
   { immediate: true }
 )
 async function saved(value: Product) {
-  if (!props.productId) {
-    await navigateTo({ path: `/admin/products/${value.id}/edit`, query: route.query }, { replace: true })
-  } else {
-    await back()
-  }
+  await navigateTo({ path: `/admin/products/${value.id}`, query: route.query }, { replace: !props.productId })
 }
 </script>
 
 <template>
   <ProductsShell :title="t(productId ? 'products.edit' : 'products.new')" :subtitle="t('products.catalogIntro')">
     <template #back>
-      <UButton
-        :to="{ path: '/admin/products', query: route.query }"
-        icon="i-lucide-arrow-left"
-        variant="link"
-        color="neutral"
-        class="mb-2 w-fit px-0"
-        >{{ t('products.backToProducts') }}</UButton
-      >
+      <UButton :to="backTarget" icon="i-lucide-arrow-left" variant="link" color="neutral" class="mb-2 w-fit px-0">{{
+        t(productId ? 'products.backToProduct' : 'products.backToProducts')
+      }}</UButton>
     </template>
     <p v-if="pending" role="status">{{ t('products.loading') }}</p>
     <UAlert v-else-if="error" color="error" :title="error" />

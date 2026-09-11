@@ -6,7 +6,7 @@ import { requireAllowedClientType } from '@nuxt-customer-portal/clients/server/u
 import { provisionPurchaseClient } from '@nuxt-customer-portal/clients/server/utils/purchase-client'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import type { Order, Price } from '../../shared/types'
-import { checkoutSchema } from '../../shared/validation'
+import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
 import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
@@ -47,13 +47,21 @@ export async function createCheckout(event: H3Event, body: unknown) {
       }
       return existing
     }
+    const [currentStore] = await rows<{ currencies: string[] }>(
+      'SELECT currencies FROM products.store WHERE id=true FOR SHARE',
+      [],
+      tx
+    )
     await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${input.productId}`])
     const product = await getProduct(store.organization_id, input.productId)
     if (product.status !== 'published') {
       throw createError({ statusCode: 404, message: 'Product is not available' })
     }
+    if (!hasRequiredPrices(product, currentStore!.currencies)) {
+      throw createError({ statusCode: 409, message: 'Product pricing is incomplete' })
+    }
     const price: Price | undefined = product.prices.find((p) => p.id === input.priceId)
-    if (!price) {
+    if (!price || (!product.isFree && !currentStore!.currencies.includes(price.currency))) {
       throw createError({ statusCode: 409, message: 'Price has changed; refresh the product' })
     }
     const id = randomUUID(),
@@ -76,6 +84,13 @@ export async function createCheckout(event: H3Event, body: unknown) {
     )
     return created!
   })
+  if (order.snapshot.product.isFree && order.snapshot.price.amount === 0) {
+    await rows("UPDATE products.purchase SET status='paid',total=0,net=0,tax=0 WHERE id=$1 AND status='pending'", [
+      order.id
+    ])
+    await processOrder(order.id)
+    return { url: `${baseUrl()}/purchases` }
+  }
   if (order.status !== 'pending') {
     throw createError({ statusCode: 409, message: 'This checkout is already completed or expired' })
   }
@@ -119,7 +134,7 @@ export async function processOrder(id: string) {
           order.invitation_id
         ])
       }
-      if (!order.invoice_id) {
+      if (!order.invoice_id && order.total !== 0) {
         order.invoice_id = await purchaseIntegration().invoice(tx, order, store.actor_id)
         await tx.query('UPDATE products.purchase SET invoice_id=$2 WHERE id=$1', [id, order.invoice_id])
       }

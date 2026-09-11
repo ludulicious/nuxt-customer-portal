@@ -262,6 +262,36 @@ test(
       await assert.rejects(categories.deleteCategory('store', category.id, { name: 'Wrong' }), { statusCode: 400 })
       await categories.deleteCategory('store', category.id, { name: 'Sessions' })
       assert.deepEqual(await categories.listCategories('store'), [])
+      await db.query("UPDATE products.store SET currencies=ARRAY['EUR','USD']")
+      await assert.rejects(catalog.saveProduct('store', { ...source, slug: 'missing-usd' }), { statusCode: 400 })
+      const multi = await catalog.saveProduct('store', {
+        ...source,
+        slug: 'multicurrency',
+        prices: [...source.prices, { currency: 'USD', amount: 2000, taxBehavior: 'inclusive' }]
+      })
+      assert.equal(multi.prices.length, 2)
+      const free = await catalog.saveProduct('store', { ...source, slug: 'free', isFree: true, prices: [] })
+      assert.equal(free.prices[0]!.amount, 0)
+      assert.equal((await catalog.publicProduct(free, 'en')).isFree, true)
+      assert.equal(
+        (await catalog.publicProduct(await catalog.getProduct('store', product.id), 'en')).pricingComplete,
+        false
+      )
+      await db.query(
+        `INSERT INTO products.purchase(id,store_id,product_id,price_id,request_id,request_hash,client_id,email,snapshot,status,total,net,tax,notified) VALUES('free-order','store',$1,$2,'free-request','free-hash',$3,'buyer@example.test',$4,'paid',0,0,0,true)`,
+        [
+          free.id,
+          free.prices[0]!.id,
+          client.clientId,
+          { product: free, price: free.prices[0], billing, title: 'Free', locale: 'en' }
+        ]
+      )
+      const { processOrder } = await import('../server/utils/orders')
+      await processOrder('free-order')
+      await processOrder('free-order')
+      const freeOrder = (await db.query("SELECT * FROM products.purchase WHERE id='free-order'")).rows[0]
+      assert.equal(freeOrder.invoice_id, null)
+      assert.equal(freeOrder.processing, 'complete')
     } finally {
       await db.end()
       await pool?.end()

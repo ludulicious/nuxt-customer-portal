@@ -80,3 +80,9 @@ Not included: physical products, shipping, inventory, booking capacity, carts, s
 ## Tests
 
 Run `pnpm test:packages` and the host's Nuxt typecheck. To include the Products integration test, set `PRODUCTS_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** whose name starts with `codex_products_test_`. That test applies migrations and creates fixtures; never point it at portal data.
+
+### Store currencies and free products
+
+Store Settings defines supported currencies (at least one). Paid product saves require positive prices in every supported currency. Adding a currency preserves existing prices; existing products must be updated before checkout is available again. Removed currencies are excluded from public pricing; historical orders retain their original prices. The migration initializes the store currencies from existing active prices, or EUR for an empty store.
+
+Mark a product as free to skip price entry. Internally a zero-value price preserves order references. Free acquisition uses the normal client, delivery, and purchase email flow without Stripe or an invoice. Store activation prerequisites still apply.

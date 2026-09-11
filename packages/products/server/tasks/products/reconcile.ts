@@ -7,9 +7,7 @@ import type { Order } from '../../../shared/types'
 export default defineTask({
   meta: { name: 'products:reconcile', description: 'Retry unfinished purchases and failed payment notifications' },
   async run() {
-    if (!process.env.PRODUCTS_STRIPE_SECRET_KEY) {
-      return { result: { skipped: true } }
-    }
+    const paymentsConfigured = !!process.env.PRODUCTS_STRIPE_SECRET_KEY
     const orders = await rows<Order>(
       `SELECT * FROM products.purchase WHERE (status='paid' AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
     )
@@ -18,6 +16,9 @@ export default defineTask({
     for (const order of orders) {
       try {
         if (order.status === 'pending') {
+          if (!paymentsConfigured) {
+            continue
+          }
           await reconcileCheckout(order.checkout_id!)
         } else {
           await processOrder(order.id)
@@ -32,7 +33,7 @@ export default defineTask({
     const events = await rows<{ id: string }>(
       'SELECT id FROM products.webhook WHERE processed_at IS NULL ORDER BY created_at LIMIT 20'
     )
-    for (const event of events) {
+    for (const event of paymentsConfigured ? events : []) {
       try {
         await handleWebhook(await stripeClient().events.retrieve(event.id))
       } catch {

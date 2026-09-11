@@ -14,7 +14,11 @@ export const store = schema.table('store', {
     .notNull()
     .references(() => user.id),
   enabled: boolean('enabled').default(false).notNull(),
-  defaultLocale: text('default_locale').default('en').notNull()
+  defaultLocale: text('default_locale').default('en').notNull(),
+  currencies: text('currencies')
+    .array()
+    .notNull()
+    .default(sql`ARRAY['EUR']::text[]`)
 })
 export const product = schema.table(
   'product',
