@@ -5,9 +5,17 @@ import type { Product, Asset, ProductCategory } from '../../shared/types'
 import { emptyProduct, productSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
 
-const props = withDefaults(defineProps<{ product?: Product; section?: 'all' | 'basic' | 'pricing' | 'media' }>(), {
-    section: 'all'
-  }),
+const props = withDefaults(
+    defineProps<{
+      product?: Product
+      section?: 'all' | 'basic' | 'details' | 'pricing' | 'media'
+      currency?: string
+      language?: 'en' | 'nl'
+    }>(),
+    {
+      section: 'all'
+    }
+  ),
   emit = defineEmits<{ saved: [product: Product]; cancel: [] }>()
 const { t } = useI18n(),
   api = useProducts(),
@@ -49,7 +57,7 @@ async function categorySaved(category: ProductCategory) {
   categoriesOpen.value = false
   await loadCategories()
 }
-const selectedLanguage = ref<'en' | 'nl'>('en')
+const selectedLanguage = ref<'en' | 'nl'>(props.language || 'en')
 const defaultLanguage = ref<'en' | 'nl'>('en')
 const supportedLanguages = ref<('en' | 'nl')[]>([])
 const languageReady = ref(false)
@@ -75,6 +83,11 @@ async function showInvalidLanguage(event: { errors: Array<{ name?: string }> }) 
 }
 const currencies = ref<string[]>([])
 const settingsReady = ref(false)
+const visiblePrices = computed(() =>
+  state.prices
+    .map((price, index) => ({ price, index }))
+    .filter(({ price }) => !props.currency || price.currency === props.currency)
+)
 const pricingErrors = () =>
   !state.isFree && !hasRequiredPrices(state, currencies.value)
     ? [{ name: 'prices', message: t('products.requiredPrices') }]
@@ -90,12 +103,9 @@ watch(
   }
 )
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
-const statuses = computed(() =>
-  ['draft', 'published', 'archived'].map((value) => ({ value, label: t(`products.${value}`) }))
-)
 const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
 onMounted(async () => {
-  if (props.section === 'all' || props.section === 'basic') {
+  if (props.section === 'all' || props.section === 'details') {
     await loadCategories().catch(() => {
       error.value = t('products.loadFailed')
     })
@@ -112,7 +122,7 @@ onMounted(async () => {
     settingsReady.value = true
     supportedLanguages.value = settings.languages
     defaultLanguage.value = settings.defaultLocale
-    selectedLanguage.value = settings.defaultLocale
+    selectedLanguage.value = props.language || settings.defaultLocale
   } catch {
     error.value = t('products.languageLoadFailed')
   } finally {
@@ -187,8 +197,8 @@ function move(ids: string[], index: number, delta: number) {
         color="warning"
         :title="t('products.requiredPrices')"
       />
-      <template v-if="section === 'all' || section === 'basic'">
-        <div class="grid gap-4 sm:grid-cols-2">
+      <template v-if="section === 'all' || section === 'details'">
+        <div :class="section === 'details' ? 'grid gap-4' : 'grid gap-4 sm:grid-cols-2'">
           <UFormField name="slug" :label="t('products.slug')"><UInput v-model="state.slug" class="w-full" /></UFormField
           ><UFormField name="categoryId" :label="t('products.category')"
             ><div class="flex gap-2">
@@ -208,14 +218,18 @@ function move(ids: string[], index: number, delta: number) {
           ><UFormField name="type" :label="t('products.type')"
             ><USelect v-model="state.type" :items="types" class="w-full" /></UFormField
           ><UFormField name="status" :label="t('products.status')"
-            ><USelect v-model="state.status" :items="statuses" class="w-full"
-          /></UFormField>
+            ><div class="flex min-h-8 items-center gap-3">
+              <UBadge color="neutral" variant="subtle">{{ t(`products.${state.status}`) }}</UBadge>
+            </div></UFormField
+          >
         </div>
+      </template>
+      <template v-if="section === 'all' || section === 'basic'">
         <UTabs
           v-model="selectedLanguage"
           :items="languageOptions"
           variant="link"
-          :ui="{ list: 'justify-start', trigger: 'grow-0' }"
+          :ui="{ list: language ? 'hidden' : 'justify-start', trigger: 'grow-0' }"
         >
           <template #content="{ item }">
             <div class="space-y-3 pt-4">
@@ -235,31 +249,49 @@ function move(ids: string[], index: number, delta: number) {
           </template>
         </UTabs>
       </template>
-      <template v-if="section === 'all' || section === 'pricing'">
+      <template v-if="section === 'all' || section === 'details'">
         <UFormField name="isFree" :label="t('products.freeProduct')"><USwitch v-model="state.isFree" /></UFormField>
+        <UFormField name="taxCode" :label="t('products.taxCode')"
+          ><UInput v-model="state.taxCode" class="w-full sm:max-w-xs"
+        /></UFormField>
+      </template>
+      <template
+        v-if="section === 'all' || section === 'pricing' || (section === 'details' && product?.isFree && !state.isFree)"
+      >
         <UFormField
           v-if="!state.isFree"
           name="prices"
-          :label="t('products.prices')"
-          :help="t('products.requiredPrices')"
+          :label="currency ? undefined : t('products.prices')"
+          :help="currency ? undefined : t('products.requiredPrices')"
           ><div class="space-y-3">
-            <div v-for="(price, index) in state.prices" :key="index" class="flex flex-wrap items-end gap-3">
-              <UFormField :name="`prices.${index}.currency`" :label="t('products.currency')"
+            <div
+              v-for="{ price, index } in visiblePrices"
+              :key="index"
+              :class="currency ? 'grid gap-4' : 'flex flex-wrap items-end gap-3'"
+            >
+              <UFormField v-if="!currency" :name="`prices.${index}.currency`" :label="t('products.currency')"
                 ><span class="block py-2 font-medium">{{ price.currency }}</span></UFormField
               ><UFormField :name="`prices.${index}.amount`" :label="t('products.amount')"
-                ><UInput
-                  type="number"
+                ><UInputNumber
+                  class="w-full"
+                  :format-options="{
+                    style: 'currency',
+                    currency: price.currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }"
+                  :increment="false"
+                  :decrement="false"
                   :step="1 / currencyScale(price.currency || 'EUR')"
                   :model-value="price.amount / currencyScale(price.currency || 'EUR')"
                   @update:model-value="
                     price.amount = Math.round(Number($event) * currencyScale(price.currency || 'EUR'))
                   " /></UFormField
               ><UFormField :name="`prices.${index}.taxBehavior`" :label="t('products.tax')"
-                ><USelect v-model="price.taxBehavior" :items="taxOptions"
+                ><USelect v-model="price.taxBehavior" :items="taxOptions" class="w-full"
               /></UFormField>
             </div></div
         ></UFormField>
-        <UFormField name="taxCode" :label="t('products.taxCode')"><UInput v-model="state.taxCode" /></UFormField>
       </template>
       <template v-if="section === 'all' || section === 'media'">
         <UFormField name="videoUrl" :label="t('products.videoUrl')"

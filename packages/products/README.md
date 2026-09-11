@@ -1,5 +1,7 @@
 # Products
 
+Publishing opens a confirmation checklist. Each supported store language requires a name, summary, and description; at least one product image is required. Paid products need a positive price in every supported store currency. Digital products also require a purchased file. Required failures block publishing and are enforced by the API. A closed store appears as a nonblocking warning: publishing does not open the store for purchases.
+
 A single provider-owned store for digital files and services. Includes English/Dutch product content, versioned one-time currency prices, published catalog access, Stripe Checkout, purchaser-only downloads/playback, and a purchase library. Install `@nuxt-customer-portal/invoice-products` and `@nuxt-customer-portal/invoices` for checkout and invoice delivery.
 
 ## Installation

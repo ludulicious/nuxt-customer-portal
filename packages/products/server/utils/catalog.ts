@@ -6,6 +6,7 @@ import sanitizeHtml from 'sanitize-html'
 import type { z } from 'zod'
 import type { Product, ProductData, Price, Locale, CatalogProduct, Page } from '../../shared/types'
 import { productSchema, listSchema, hasRequiredPrices } from '../../shared/validation'
+import { publishChecks } from '../../shared/publish'
 import { rows, transaction } from './database'
 import { baseUrl, getStore } from './access'
 
@@ -138,11 +139,19 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
     : inputPrices
   try {
     await transaction(async (tx) => {
-      const [currentStore] = await rows<{ currencies: string[] }>(
-        'SELECT currencies FROM products.store WHERE id=true FOR SHARE',
+      const [currentStore] = await rows<{ currencies: string[]; languages: Locale[]; enabled: boolean }>(
+        'SELECT currencies, languages, enabled FROM products.store WHERE id=true FOR SHARE',
         [],
         tx
       )
+      if (data.status === 'published') {
+        const failed = publishChecks({ ...data, prices }, currentStore!).filter(
+          (check) => !check.passed && !check.warning
+        )
+        if (failed.length) {
+          throw createError({ statusCode: 400, message: 'Complete the publish checklist', data: { checks: failed } })
+        }
+      }
       if (!hasRequiredPrices({ ...data, prices }, currentStore!.currencies)) {
         throw createError({
           statusCode: 400,

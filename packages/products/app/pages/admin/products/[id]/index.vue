@@ -7,18 +7,28 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'pricing' | 'media' | null>(route.query.edit === 'true' ? 'basic' : null)
+const editing = ref<'basic' | 'details' | 'pricing' | 'media' | null>(route.query.edit === 'true' ? 'basic' : null)
 const toast = useToast()
 const pending = ref(true),
   error = ref('')
 const language = ref<Locale>('en')
 const currency = ref('')
 const product = computed(() => preview.value?.product)
+const productName = computed(() => {
+  const content = product.value?.content
+  return (
+    content?.[preview.value?.defaultLocale || 'en'].title.trim() ||
+    content?.en.title.trim() ||
+    content?.nl.title.trim() ||
+    product.value?.slug ||
+    t('products.loading')
+  )
+})
 const copy = computed(() => preview.value?.content[language.value])
 const languageOptions = computed(() => {
   const first = preview.value?.defaultLocale || 'en'
   return ([first, first === 'en' ? 'nl' : 'en'] as Locale[])
-    .filter((value) => preview.value?.languages.includes(value) && product.value?.content[value].title.trim())
+    .filter((value) => preview.value?.languages.includes(value))
     .map((value) => ({
       value,
       label: value === 'en' ? '🇺🇸 English' : '🇳🇱 Nederlands'
@@ -27,7 +37,7 @@ const languageOptions = computed(() => {
 const currencyOptions = computed(() => [...new Set(product.value?.prices.map((price) => price.currency) || [])])
 const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
-function toggleEdit(section: 'basic' | 'pricing' | 'media') {
+function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'media') {
   editing.value = editing.value === section ? null : section
 }
 async function saved() {
@@ -59,7 +69,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <ProductsShell :title="copy?.title || t('products.preview')" :subtitle="t('products.previewIntro')">
+  <ProductsShell :title="productName" :subtitle="t('products.previewIntro')">
     <template #back
       ><UButton :to="backTarget" variant="link" color="neutral" icon="i-lucide-arrow-left" class="w-fit px-0">{{
         t('products.backToProducts')
@@ -67,13 +77,6 @@ onMounted(async () => {
     >
     <template v-if="product" #actions>
       <ProductsDelete :product="product" @deleted="navigateTo(backTarget)" />
-      <UButton
-        variant="outline"
-        icon="i-lucide-pencil"
-        :aria-expanded="editing === 'basic'"
-        @click="toggleEdit('basic')"
-        >{{ t('products.edit') }}</UButton
-      >
     </template>
     <p v-if="pending" role="status">{{ t('products.loading') }}</p>
     <UAlert v-else-if="error" color="error" :title="error" />
@@ -83,26 +86,6 @@ onMounted(async () => {
         color="warning"
         :title="t('products.requiredPrices')"
       />
-      <UCard v-if="editing === 'basic'">
-        <template #header
-          ><div class="flex items-center justify-between">
-            <h2 class="font-semibold">{{ t('products.basicDetails') }}</h2>
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              :aria-label="t('products.close')"
-              @click="editing = null"
-            /></div
-        ></template>
-        <ProductsForm
-          :key="`basic-${product.updatedAt}`"
-          :product="product"
-          section="basic"
-          @saved="saved"
-          @cancel="editing = null"
-        />
-      </UCard>
       <div class="flex flex-wrap items-center gap-2">
         <UBadge :color="product.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{
           t(`products.${product.status}`)
@@ -113,46 +96,67 @@ onMounted(async () => {
             · {{ product.categoryContent?.[language]?.name || product.categoryName || product.categoryId }}</span
           ></span
         >
-        <div v-if="languageOptions.length > 1 || currencyOptions.length > 1" class="ml-auto flex items-center gap-2">
-          <USelect
-            v-if="languageOptions.length > 1"
-            v-model="language"
-            :items="languageOptions"
-            size="sm"
-            :aria-label="t('products.contentLanguage')"
-            class="w-36"
-          />
-          <USelect
-            v-if="currencyOptions.length > 1"
-            v-model="currency"
-            :items="currencyOptions"
-            size="sm"
-            :aria-label="t('products.currency')"
-            class="w-24"
-          />
-        </div>
       </div>
       <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <ProductsPreviewCard :product="product" :copy="copy" />
-        <ProductsPriceCard
-          :price="selectedPrice"
-          :language="language"
-          :editing="editing === 'pricing'"
-          @edit="toggleEdit('pricing')"
-        />
-      </div>
-      <UCard v-if="editing === 'pricing'">
-        <template #header
-          ><h2 class="font-semibold">{{ t('products.editPrices') }}</h2></template
-        >
-        <ProductsForm
-          :key="`pricing-${product.updatedAt}`"
+        <ProductsPreviewCard
+          v-model:language="language"
+          class="lg:self-stretch"
+          :languages="languageOptions"
           :product="product"
-          section="pricing"
-          @saved="saved"
-          @cancel="editing = null"
-        />
-      </UCard>
+          :copy="copy"
+          :editing="editing === 'basic'"
+          @edit="toggleEdit('basic')"
+        >
+          <template #editor>
+            <ProductsForm
+              :key="`basic-${product.updatedAt}-${language}`"
+              :product="product"
+              :language="language"
+              section="basic"
+              @saved="saved"
+              @cancel="editing = null"
+            />
+          </template>
+        </ProductsPreviewCard>
+        <div class="space-y-6">
+          <ProductsDetailsCard
+            :product="product"
+            :language="language"
+            :editing="editing === 'details'"
+            @edit="toggleEdit('details')"
+            @saved="saved"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`details-${product.updatedAt}`"
+                :product="product"
+                section="details"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsDetailsCard>
+          <ProductsPriceCard
+            v-model:currency="currency"
+            :currencies="currencyOptions"
+            :price="selectedPrice"
+            :language="language"
+            :editing="editing === 'pricing'"
+            @edit="toggleEdit('pricing')"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`pricing-${product.updatedAt}-${currency}`"
+                :product="product"
+                :currency="currency"
+                section="pricing"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsPriceCard>
+        </div>
+      </div>
       <ProductsMediaSection
         :product="product"
         :editing="editing === 'media'"
