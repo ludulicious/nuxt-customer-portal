@@ -41,13 +41,9 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
     <div class="space-y-6">
       <div v-if="previewImageId" class="space-y-3">
         <div class="flex justify-end">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-pencil"
-            @click="emit('editMedia')"
-          >{{ t('products.editImages') }}</UButton>
+          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-pencil" @click="emit('editMedia')">{{
+            t('products.editImages')
+          }}</UButton>
         </div>
         <img
           :src="api.previewImageUrl(product.id, previewImageId)"
@@ -63,18 +59,19 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
       >
         <UIcon name="i-lucide-image" class="size-8" />
         <p class="text-sm">{{ t('products.noImages') }}</p>
-        <UButton
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-plus"
-          class="mt-1"
-          @click="emit('editMedia')"
-        >{{ t('products.addImages') }}</UButton>
+        <UButton color="neutral" variant="outline" icon="i-lucide-plus" class="mt-1" @click="emit('editMedia')">{{
+          t('products.addImages')
+        }}</UButton>
       </div>
       <slot v-if="editing" name="editor" />
       <template v-else>
         <div class="flex items-start justify-between gap-3">
-          <ProductsMarkdown v-if="copy.title.trim()" :html="titleHtml" :theme="markdownStyle" class="product-title min-w-0 flex-1" />
+          <ProductsMarkdown
+            v-if="copy.title.trim()"
+            :html="titleHtml"
+            :theme="markdownStyle"
+            class="product-title min-w-0 flex-1"
+          />
           <p v-else class="flex min-w-0 items-center gap-2 text-sm text-muted">
             <UIcon name="i-lucide-languages" class="size-4 shrink-0" aria-hidden="true" />
             {{ t('products.noTranslation') }}
@@ -104,6 +101,10 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
         <div v-if="product.nextSteps[language]?.trim()" class="space-y-1 border-t border-default pt-4 text-sm">
           <h4 class="font-medium text-muted">{{ t('products.nextSteps') }}</h4>
           <p class="whitespace-pre-wrap break-words">{{ product.nextSteps[language] }}</p>
+        </div>
+        <div v-if="copy.secondaryCta?.trim()" class="border-t border-default pt-4">
+          <h4 class="text-sm font-medium text-muted">{{ t('products.secondaryCta') }}</h4>
+          <p class="mt-1 font-medium">{{ copy.secondaryCta }}</p>
         </div>
         <UButton
           v-if="product.videoUrl"

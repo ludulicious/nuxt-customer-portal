@@ -23,6 +23,8 @@
     "name": "Product name",
     "summary": "Summary",
     "description": "Extended description",
+    "secondaryCta": "Secondary CTA",
+    "secondaryCtaPlaceholder": "Ready to take the next step?",
     "markdownHelp": "Use Markdown: headings, bold, lists, and links.",
     "nextSteps": "Instructions after purchase",
     "prices": "Prices",

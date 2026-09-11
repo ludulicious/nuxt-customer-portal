@@ -29,9 +29,14 @@ const state = reactive<z.infer<typeof productSchema>>(
         content: {
           en: {
             ...structuredClone(toRaw(props.product.content.en)),
-            subtitle: props.product.content.en.subtitle || ''
+            subtitle: props.product.content.en.subtitle || '',
+            secondaryCta: props.product.content.en.secondaryCta || ''
           },
-          nl: { ...structuredClone(toRaw(props.product.content.nl)), subtitle: props.product.content.nl.subtitle || '' }
+          nl: {
+            ...structuredClone(toRaw(props.product.content.nl)),
+            subtitle: props.product.content.nl.subtitle || '',
+            secondaryCta: props.product.content.nl.secondaryCta || ''
+          }
         },
         prices: props.product.isFree ? [] : structuredClone(toRaw(props.product.prices))
       }
@@ -316,10 +321,12 @@ async function save() {
     error.value = t('products.saveFailed')
     const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
     if (field) {
-      form.value?.setErrors([{
-        name: field,
-        message: field.startsWith('fileNames.') ? t('products.fileNameRequired') : t('products.conflict')
-      }])
+      form.value?.setErrors([
+        {
+          name: field,
+          message: field.startsWith('fileNames.') ? t('products.fileNameRequired') : t('products.conflict')
+        }
+      ])
     }
     await nextTick()
     root.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -504,6 +511,11 @@ function removeFile(id: string, index: number) {
                 ><UInput v-model="state.content[item.value].title" class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.subtitle`" :label="t('products.subtitle')"
                 ><UInput v-model="state.content[item.value].subtitle" class="w-full" /></UFormField
+              ><UFormField :name="`content.${item.value}.secondaryCta`" :label="t('products.secondaryCta')"
+                ><UInput
+                  v-model="state.content[item.value].secondaryCta"
+                  :placeholder="t('products.secondaryCtaPlaceholder')"
+                  class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
                 ><UTextarea
                   v-model="state.content[item.value].summary"
@@ -595,12 +607,32 @@ function removeFile(id: string, index: number) {
           <div v-if="section === 'all' || section === 'files'" class="space-y-3">
             <UFormField name="fileIds">
               <div class="space-y-2">
-                <div v-for="(id, index) in state.fileIds" :key="id" class="space-y-3 rounded-lg border border-default p-3">
+                <div
+                  v-for="(id, index) in state.fileIds"
+                  :key="id"
+                  class="space-y-3 rounded-lg border border-default p-3"
+                >
                   <div class="flex items-center gap-2">
                     <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
-                    <span class="min-w-0 flex-1 truncate text-sm text-muted">{{ assets.find((a) => a.id === id)?.name || id }}</span>
-                    <UButton icon="i-lucide-arrow-up" color="neutral" variant="ghost" :aria-label="t('products.moveUp')" :disabled="index === 0" @click="move(state.fileIds, index, -1)" />
-                    <UButton icon="i-lucide-arrow-down" color="neutral" variant="ghost" :aria-label="t('products.moveDown')" :disabled="index === state.fileIds.length - 1" @click="move(state.fileIds, index, 1)" />
+                    <span class="min-w-0 flex-1 truncate text-sm text-muted">{{
+                      assets.find((a) => a.id === id)?.name || id
+                    }}</span>
+                    <UButton
+                      icon="i-lucide-arrow-up"
+                      color="neutral"
+                      variant="ghost"
+                      :aria-label="t('products.moveUp')"
+                      :disabled="index === 0"
+                      @click="move(state.fileIds, index, -1)"
+                    />
+                    <UButton
+                      icon="i-lucide-arrow-down"
+                      color="neutral"
+                      variant="ghost"
+                      :aria-label="t('products.moveDown')"
+                      :disabled="index === state.fileIds.length - 1"
+                      @click="move(state.fileIds, index, 1)"
+                    />
                     <UButton
                       icon="i-lucide-x"
                       color="error"
@@ -631,8 +663,18 @@ function removeFile(id: string, index: number) {
         </template>
       </template>
       <div class="flex justify-end gap-3">
-        <UButton variant="outline" color="neutral" :disabled="busy || saving || purchasedFilesUploading" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
-        ><UButton type="submit" :loading="saving" :disabled="busy || saving || purchasedFilesUploading || !settingsReady">{{ t('products.save') }}</UButton>
+        <UButton
+          variant="outline"
+          color="neutral"
+          :disabled="busy || saving || purchasedFilesUploading"
+          @click="emit('cancel')"
+          >{{ t('products.cancel') }}</UButton
+        ><UButton
+          type="submit"
+          :loading="saving"
+          :disabled="busy || saving || purchasedFilesUploading || !settingsReady"
+          >{{ t('products.save') }}</UButton
+        >
       </div></UForm
     >
   </div>
@@ -648,7 +690,13 @@ function removeFile(id: string, index: number) {
     <template #body
       ><div v-if="pendingImage" class="space-y-4">
         <p class="text-sm text-muted">
-          {{ t('products.cropPurposeHelp', { purpose: t(`products.imagePurpose${pendingImage.purpose}`), width: cropTarget.width, height: cropTarget.height }) }}
+          {{
+            t('products.cropPurposeHelp', {
+              purpose: t(`products.imagePurpose${pendingImage.purpose}`),
+              width: cropTarget.width,
+              height: cropTarget.height
+            })
+          }}
         </p>
         <div
           ref="cropViewport"

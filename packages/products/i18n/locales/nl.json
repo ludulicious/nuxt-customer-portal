@@ -23,6 +23,8 @@
     "name": "Productnaam",
     "summary": "Samenvatting",
     "description": "Uitgebreide omschrijving",
+    "secondaryCta": "Secundaire CTA",
+    "secondaryCtaPlaceholder": "Klaar voor de volgende stap?",
     "markdownHelp": "Gebruik Markdown: koppen, vetgedrukte tekst, lijsten en links.",
     "nextSteps": "Instructies na aankoop",
     "prices": "Prijzen",

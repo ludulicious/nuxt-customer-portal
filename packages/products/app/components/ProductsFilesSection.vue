@@ -59,8 +59,13 @@ async function removeFile() {
   if (!file) {
     return
   }
-  const { id: _id, updatedAt: _updatedAt, categoryName: _categoryName, categoryContent: _categoryContent, ...input } =
-    structuredClone(toRaw(props.product))
+  const {
+    id: _id,
+    updatedAt: _updatedAt,
+    categoryName: _categoryName,
+    categoryContent: _categoryContent,
+    ...input
+  } = structuredClone(toRaw(props.product))
   input.fileIds = input.fileIds.filter((id) => id !== file.id)
   Reflect.deleteProperty(input.fileNames, file.id)
   try {
@@ -69,8 +74,16 @@ async function removeFile() {
         ...input,
         isFree: input.isFree ?? false,
         content: {
-          en: { ...input.content.en, subtitle: input.content.en.subtitle || '' },
-          nl: { ...input.content.nl, subtitle: input.content.nl.subtitle || '' }
+          en: {
+            ...input.content.en,
+            subtitle: input.content.en.subtitle || '',
+            secondaryCta: input.content.en.secondaryCta || ''
+          },
+          nl: {
+            ...input.content.nl,
+            subtitle: input.content.nl.subtitle || '',
+            secondaryCta: input.content.nl.secondaryCta || ''
+          }
         }
       },
       props.product.id
@@ -137,7 +150,8 @@ watch(() => props.product.updatedAt, loadAssets)
                     class="hover:text-highlighted hover:underline"
                     :class="row.original.englishName === '—' && 'pointer-events-none'"
                     :aria-label="`${t('products.fileTableEnglishName')}: ${row.original.englishName}`"
-                  >{{ row.original.englishName }}</a>
+                    >{{ row.original.englishName }}</a
+                  >
                 </span>
                 <span class="min-w-0">
                   <span aria-hidden="true">🇳🇱</span>
@@ -146,7 +160,8 @@ watch(() => props.product.updatedAt, loadAssets)
                     class="hover:text-highlighted hover:underline"
                     :class="row.original.dutchName === '—' && 'pointer-events-none'"
                     :aria-label="`${t('products.fileTableDutchName')}: ${row.original.dutchName}`"
-                  >{{ row.original.dutchName }}</a>
+                    >{{ row.original.dutchName }}</a
+                  >
                 </span>
               </div>
             </div>

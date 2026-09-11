@@ -7,6 +7,7 @@ const text = (max: number) => z.string().trim().max(max)
 const copy = z.object({
   title: text(200),
   subtitle: text(200).default(''),
+  secondaryCta: text(200).default(''),
   summary: text(1000),
   description: text(50000)
 })
@@ -189,23 +190,25 @@ function imageSizeSchema(defaultValue: { width: number; height: number }) {
     })
     .default(defaultValue)
 }
-export const storageSettingsSchema = z.object({
-  provider: z.enum(['s3', 'bunny']).default('s3'),
-  endpoint: z
-    .string()
-    .trim()
-    .max(500)
-    .refine((value) => !value || /^https?:\/\//.test(value), 'Use a valid HTTP(S) endpoint'),
-  region: z.string().trim().max(100),
-  bucket: z.string().trim().min(3).max(255),
-  accessKeyId: z.string().trim().max(256).optional(),
-  secretAccessKey: z.string().min(8).max(500).optional(),
-  pathStyle: z.boolean().default(false)
-}).superRefine((value, context) => {
-  if (value.provider === 's3' && !value.region) {
-    context.addIssue({ code: 'custom', path: ['region'], message: 'S3 region is required' })
-  }
-})
+export const storageSettingsSchema = z
+  .object({
+    provider: z.enum(['s3', 'bunny']).default('s3'),
+    endpoint: z
+      .string()
+      .trim()
+      .max(500)
+      .refine((value) => !value || /^https?:\/\//.test(value), 'Use a valid HTTP(S) endpoint'),
+    region: z.string().trim().max(100),
+    bucket: z.string().trim().min(3).max(255),
+    accessKeyId: z.string().trim().max(256).optional(),
+    secretAccessKey: z.string().min(8).max(500).optional(),
+    pathStyle: z.boolean().default(false)
+  })
+  .superRefine((value, context) => {
+    if (value.provider === 's3' && !value.region) {
+      context.addIssue({ code: 'custom', path: ['region'], message: 'S3 region is required' })
+    }
+  })
 export const cropSchema = z
   .object({
     x: z.number().min(0).max(1),
@@ -228,8 +231,8 @@ export const emptyProduct = () => ({
   categoryId: null as string | null,
   status: 'draft' as const,
   content: {
-    en: { title: '', subtitle: '', summary: '', description: '' },
-    nl: { title: '', subtitle: '', summary: '', description: '' }
+    en: { title: '', subtitle: '', secondaryCta: '', summary: '', description: '' },
+    nl: { title: '', subtitle: '', secondaryCta: '', summary: '', description: '' }
   },
   taxCode: 'txcd_10000000',
   nextSteps: { en: '', nl: '' },

@@ -10,6 +10,7 @@ import { productSchema, listSchema, hasRequiredPrices } from '../../shared/valid
 import { publishChecks } from '../../shared/publish'
 import { rows, transaction } from './database'
 import { baseUrl, getStore } from './access'
+import { assetUrl } from './storage'
 
 interface ProductRow {
   category_id: string | null
@@ -317,16 +318,24 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     : category?.content[store.default_locale]
   const imageAssets = product.imageIds.length
     ? await rows<{ id: string; object_key: string }>(
-        'SELECT id,object_key FROM products.asset WHERE ready AND visibility=\'public\' AND id=ANY($1::text[])',
+        "SELECT id,object_key FROM products.asset WHERE ready AND visibility='public' AND id=ANY($1::text[])",
         [product.imageIds]
       )
     : []
   const imageKeys = new Map(imageAssets.map((asset) => [asset.id, asset.object_key]))
   const imageKitEndpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
-  const imageUrl = (id: string) =>
-    imageKitEndpoint && imageKeys.get(id)
-      ? `${imageKitEndpoint}/${imageKeys.get(id)}`
-      : `${baseUrl()}/api/store/media/${id}`
+  const imageUrls = new Map(
+    await Promise.all(
+      product.imageIds.map(async (id) => {
+        if (imageKitEndpoint && imageKeys.get(id)) {
+          return [id, `${imageKitEndpoint}/${imageKeys.get(id)}`] as const
+        }
+        const url = await assetUrl(id)
+        return [id, url.startsWith('/') ? `${baseUrl()}${url}` : url] as const
+      })
+    )
+  )
+  const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
   return {
     categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
     isFree: !!product.isFree,
@@ -337,7 +346,8 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     categoryId: product.categoryId,
     category: category?.code || '',
     title: copy.title,
-          subtitle: copy.subtitle || '',
+    subtitle: copy.subtitle || '',
+    secondaryCta: copy.secondaryCta || '',
     summary: copy.summary,
     summaryHtml: renderDescription(copy.summary),
     markdownStyle: markdownStyleSchema.parse(store.markdown_style || {}),
