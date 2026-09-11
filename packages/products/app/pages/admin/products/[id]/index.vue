@@ -7,7 +7,7 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'details' | 'pricing' | 'media' | 'images' | null>(
+const editing = ref<'basic' | 'details' | 'pricing' | 'images' | 'files' | null>(
   route.query.edit === 'true' ? 'basic' : null
 )
 const toast = useToast()
@@ -61,7 +61,7 @@ const languageOptions = computed(() => {
 const currencyOptions = computed(() => [...new Set(product.value?.prices.map((price) => price.currency) || [])])
 const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
-function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'media') {
+function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'files') {
   editing.value = editing.value === section ? null : section
 }
 function openMediaEditor() {
@@ -131,9 +131,19 @@ onMounted(async () => {
         icon="i-lucide-circle-alert"
         :title="t('products.requiredPrices')"
       />
-      <UCard v-if="editing === 'images'">
+      <UCard v-if="editing === 'images'" @keydown.esc="editing = null">
         <template #header>
-          <h2 class="font-semibold">{{ t('products.productImageLibrary') }}</h2>
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="font-semibold">{{ t('products.productImageLibrary') }}</h2>
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              :aria-label="t('products.close')"
+              @click="editing = null"
+            />
+          </div>
         </template>
         <ProductsForm
           :key="`images-${product.updatedAt}`"
@@ -207,12 +217,10 @@ onMounted(async () => {
           </ProductsPriceCard>
         </div>
       </div>
-      <ProductsMediaSection
-        id="product-media-section"
-        class="scroll-mt-24"
+      <ProductsFilesSection
         :product="product"
-        :editing="editing === 'media'"
-        @edit="toggleEdit('media')"
+        :editing="editing === 'files'"
+        @edit="toggleEdit('files')"
         @saved="saved"
         @cancel="editing = null"
       />

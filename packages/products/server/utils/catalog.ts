@@ -30,7 +30,8 @@ export function normalizeProductImages(data: ProductData): ProductData {
         ? null
         : imageIds[0] || null,
     galleryImageIds: hasPlacements ? ordered(data.galleryImageIds) : [...imageIds],
-    detailImageIds: hasPlacements ? ordered(data.detailImageIds) : [...imageIds]
+    detailImageIds: hasPlacements ? ordered(data.detailImageIds) : [...imageIds],
+    fileNames: data.fileNames || {}
   }
 }
 export const renderDescription = (source: string) =>
@@ -175,6 +176,17 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         )
         if (failed.length) {
           throw createError({ statusCode: 400, message: 'Complete the publish checklist', data: { checks: failed } })
+        }
+      }
+      for (const fileId of data.fileIds) {
+        for (const language of currentStore!.languages) {
+          if (!data.fileNames[fileId]?.[language]?.trim()) {
+            throw createError({
+              statusCode: 400,
+              message: 'Add a customer-facing file name in every store language',
+              data: { field: `fileNames.${fileId}.${language}` }
+            })
+          }
         }
       }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`categories:${storeId}`])

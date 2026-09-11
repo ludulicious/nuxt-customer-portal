@@ -20,6 +20,7 @@ export interface ProductData {
   galleryImageIds: string[]
   detailImageIds: string[]
   fileIds: string[]
+  fileNames: Record<string, Record<Locale, string>>
   videoUrl: string
 }
 export interface Price {

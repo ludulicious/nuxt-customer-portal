@@ -18,6 +18,8 @@ const language = defineModel<Locale>('language', { required: true })
 const emit = defineEmits<{ edit: []; editMedia: [] }>()
 const { t } = useI18n()
 const api = useProducts()
+const previewImageId = computed(() => props.product.detailImageIds[0] || props.product.thumbnailImageId || '')
+const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
 </script>
 
 <template>
@@ -37,7 +39,7 @@ const api = useProducts()
       </div>
     </template>
     <div class="space-y-6">
-      <div v-if="product.imageIds.length" class="space-y-3">
+      <div v-if="previewImageId" class="space-y-3">
         <div class="flex justify-end">
           <UButton
             size="sm"
@@ -47,16 +49,13 @@ const api = useProducts()
             @click="emit('editMedia')"
           >{{ t('products.editImages') }}</UButton>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <img
-            v-for="id in product.imageIds"
-            :key="id"
-            :src="api.previewImageUrl(product.id, id)"
-            :alt="copy.title"
-            class="w-full rounded-lg object-contain"
-            loading="lazy"
-          />
-        </div>
+        <img
+          :src="api.previewImageUrl(product.id, previewImageId)"
+          :alt="copy.title"
+          class="w-full rounded-lg object-cover"
+          :class="hasDetailPreview ? 'aspect-[4/3]' : 'aspect-square max-w-sm'"
+          loading="lazy"
+        />
       </div>
       <div
         v-else

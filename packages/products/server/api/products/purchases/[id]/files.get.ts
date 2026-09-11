@@ -11,7 +11,13 @@ export default defineEventHandler(async (event) => {
   if (!order || !hasAccess(order)) {
     throw createError({ statusCode: 404 })
   }
-  return rows('SELECT id,name,content_type,size FROM products.asset WHERE ready AND id=ANY($1::text[])', [
+  const assets = await rows<{ id: string; name: string; content_type: string; size: number }>(
+    'SELECT id,name,content_type,size FROM products.asset WHERE ready AND id=ANY($1::text[])', [
     order.snapshot.product.fileIds
-  ])
+    ]
+  )
+  return assets.map((asset) => ({
+    ...asset,
+    name: order.snapshot.product.fileNames?.[asset.id]?.[order.snapshot.locale] || asset.name
+  }))
 })

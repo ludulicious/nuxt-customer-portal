@@ -50,6 +50,7 @@ export const productSchema = z
     galleryImageIds: z.array(text(100).min(1)).max(20).default([]),
     detailImageIds: z.array(text(100).min(1)).max(20).default([]),
     fileIds: z.array(text(100).min(1)).max(100),
+    fileNames: z.record(z.string(), z.object({ en: text(200), nl: text(200) })).default({}),
     videoUrl: z
       .string()
       .max(2000)
@@ -232,6 +233,7 @@ export const emptyProduct = () => ({
   galleryImageIds: [] as string[],
   detailImageIds: [] as string[],
   fileIds: [] as string[],
+  fileNames: {} as Record<string, Record<'en' | 'nl', string>>,
   videoUrl: '',
   prices: [{ currency: 'EUR', amount: 1000, taxBehavior: 'inclusive' as const }]
 })

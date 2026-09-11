@@ -14,5 +14,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  return sendAsset(event, assetId, getQuery(event).download === '1')
+  const fileName = order.snapshot.product.fileNames?.[assetId]?.[order.snapshot.locale]
+  return sendAsset(event, assetId, getQuery(event).download === '1', fileName)
 })

@@ -8,7 +8,7 @@ import { currencyScale } from '../../shared/money'
 const props = withDefaults(
     defineProps<{
       product?: Product
-      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media' | 'images'
+      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media' | 'images' | 'files'
       currency?: string
       language?: 'en' | 'nl'
     }>(),
@@ -37,7 +37,11 @@ const state = reactive<z.infer<typeof productSchema>>(
       }
     : { ...emptyProduct(), prices: [] }
 )
+for (const id of state.fileIds) {
+  state.fileNames[id] ||= { en: '', nl: '' }
+}
 const busy = ref(false),
+  saving = ref(false),
   error = ref(''),
   assets = ref<Asset[]>([]),
   form = useTemplateRef('form'),
@@ -115,6 +119,7 @@ const imagePolicy = ref<ImagePolicy>({
 })
 const pendingImage = ref<{ file: File; url: string; width: number; height: number; purpose: ImagePurpose }>()
 const imageQueue = ref<Array<{ file: File; purpose: ImagePurpose }>>([])
+const purchasedFilesUploading = ref(false)
 const cropTarget = computed(() => imagePolicy.value[pendingImage.value?.purpose || 'gallery'])
 const cropFocus = reactive({ x: 50, y: 50 })
 const zoom = ref(1)
@@ -277,14 +282,25 @@ onMounted(async () => {
   } finally {
     languageReady.value = true
   }
-  if (props.product && (props.section === 'all' || props.section === 'media' || props.section === 'images')) {
+  if (props.product && ['all', 'media', 'images', 'files'].includes(props.section)) {
     assets.value = await api.assets(props.product!.id)
   }
   await nextTick()
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
-  busy.value = true
+  const missingFileName = state.fileIds.flatMap((id) =>
+    supportedLanguages.value
+      .filter((language) => !state.fileNames[id]?.[language]?.trim())
+      .map((language) => `fileNames.${id}.${language}`)
+  )[0]
+  if (missingFileName) {
+    form.value?.setErrors([{ name: missingFileName, message: t('products.fileNameRequired') }])
+    await nextTick()
+    root.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    return
+  }
+  saving.value = true
   error.value = ''
   try {
     emit('saved', await api.save(state, props.product?.id))
@@ -292,12 +308,15 @@ async function save() {
     error.value = t('products.saveFailed')
     const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
     if (field) {
-      form.value?.setErrors([{ name: field, message: t('products.conflict') }])
+      form.value?.setErrors([{
+        name: field,
+        message: field.startsWith('fileNames.') ? t('products.fileNameRequired') : t('products.conflict')
+      }])
     }
     await nextTick()
     root.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } finally {
-    busy.value = false
+    saving.value = false
   }
 }
 async function upload(event: Event, visibility: 'public' | 'private', purpose?: ImagePurpose) {
@@ -344,9 +363,12 @@ async function performUpload(
   file: File,
   visibility: 'public' | 'private',
   selectedCrop?: { x: number; y: number; width: number; height: number },
-  purpose?: ImagePurpose
+  purpose?: ImagePurpose,
+  trackBusy = true
 ) {
-  busy.value = true
+  if (trackBusy) {
+    busy.value = true
+  }
   error.value = ''
   try {
     const id = await api.upload(props.product!.id, file, visibility, selectedCrop, purpose)
@@ -361,6 +383,7 @@ async function performUpload(
       }
     } else {
       state.fileIds.push(id)
+      state.fileNames[id] = { en: '', nl: '' }
     }
     assets.value = await api.assets(props.product!.id)
   } catch (uploadError) {
@@ -370,7 +393,9 @@ async function performUpload(
       color: 'error'
     })
   } finally {
-    busy.value = false
+    if (trackBusy) {
+      busy.value = false
+    }
   }
 }
 async function confirmCrop() {
@@ -397,6 +422,10 @@ function move(ids: string[], index: number, delta: number) {
   }
   const [id] = ids.splice(index, 1)
   ids.splice(target, 0, id!)
+}
+function removeFile(id: string, index: number) {
+  Reflect.deleteProperty(state.fileNames, id)
+  state.fileIds.splice(index, 1)
 }
 </script>
 
@@ -540,10 +569,11 @@ function move(ids: string[], index: number, delta: number) {
           ><UInput v-model="state.videoUrl" class="w-full"
         /></UFormField>
       </template>
-      <template v-if="section === 'all' || section === 'media' || section === 'images'">
+      <template v-if="section === 'all' || section === 'images' || section === 'files'">
         <p v-if="!product" class="text-muted">{{ t('products.saveBeforeUpload') }}</p>
         <template v-else>
           <ProductsImageLibrary
+            v-if="section === 'all' || section === 'images'"
             v-model:image-ids="state.imageIds"
             v-model:thumbnail-image-id="state.thumbnailImageId"
             v-model:gallery-image-ids="state.galleryImageIds"
@@ -554,52 +584,47 @@ function move(ids: string[], index: number, delta: number) {
             :image-policy="imagePolicy"
             @upload="(event, purpose) => upload(event, 'public', purpose)"
           />
-          <fieldset v-if="section !== 'images'" class="space-y-3 rounded-lg border border-default p-4">
-            <legend class="px-1 font-medium">{{ t('products.purchasedFiles') }}</legend>
+          <div v-if="section === 'all' || section === 'files'" class="space-y-3">
             <UFormField name="fileIds">
               <div class="space-y-2">
-                <div v-for="(id, index) in state.fileIds" :key="id" class="flex items-center gap-2">
-                  <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
-                  <span class="min-w-0 flex-1 truncate">{{ assets.find((a) => a.id === id)?.name || id }}</span>
-                  <UButton
-                    icon="i-lucide-arrow-up"
-                    color="neutral"
-                    variant="ghost"
-                    :aria-label="t('products.moveUp')"
-                    @click="move(state.fileIds, index, -1)"
-                  />
-                  <UButton
-                    icon="i-lucide-arrow-down"
-                    color="neutral"
-                    variant="ghost"
-                    :aria-label="t('products.moveDown')"
-                    @click="move(state.fileIds, index, 1)"
-                  />
-                  <UButton
-                    icon="i-lucide-x"
-                    color="error"
-                    variant="ghost"
-                    :aria-label="t('products.removeFile')"
-                    @click="state.fileIds.splice(index, 1)"
-                  />
+                <div v-for="(id, index) in state.fileIds" :key="id" class="space-y-3 rounded-lg border border-default p-3">
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
+                    <span class="min-w-0 flex-1 truncate text-sm text-muted">{{ assets.find((a) => a.id === id)?.name || id }}</span>
+                    <UButton icon="i-lucide-arrow-up" color="neutral" variant="ghost" :aria-label="t('products.moveUp')" :disabled="index === 0" @click="move(state.fileIds, index, -1)" />
+                    <UButton icon="i-lucide-arrow-down" color="neutral" variant="ghost" :aria-label="t('products.moveDown')" :disabled="index === state.fileIds.length - 1" @click="move(state.fileIds, index, 1)" />
+                    <UButton
+                      icon="i-lucide-x"
+                      color="error"
+                      variant="ghost"
+                      :aria-label="t('products.removeFile')"
+                      @click="removeFile(id, index)"
+                    />
+                  </div>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <UFormField
+                      v-for="languageOption in languageOptions"
+                      :key="languageOption.value"
+                      :name="`fileNames.${id}.${languageOption.value}`"
+                      :label="t('products.fileNameInLanguage', { language: languageOption.label })"
+                    >
+                      <UInput v-model="state.fileNames[id]![languageOption.value]" class="w-full" />
+                    </UFormField>
+                  </div>
                 </div>
               </div>
             </UFormField>
-            <label class="block">
-              <span class="mb-2 block text-sm">{{ t('products.uploadFile') }}</span>
-              <UInput
-                type="file"
-                :disabled="busy"
-                accept=".pdf,.zip,.mp3,.m4a,.wav,.ogg,.mp4,.webm,.txt,.docx"
-                @change="upload($event, 'private')"
-              />
-            </label>
-          </fieldset>
+            <ProductsPurchasedFileUpload
+              :disabled="saving"
+              :upload="(file) => performUpload(file, 'private', undefined, undefined, false)"
+              @update:uploading="purchasedFilesUploading = $event"
+            />
+          </div>
         </template>
       </template>
       <div class="flex justify-end gap-3">
-        <UButton variant="outline" color="neutral" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
-        ><UButton type="submit" :loading="busy" :disabled="busy || !settingsReady">{{ t('products.save') }}</UButton>
+        <UButton variant="outline" color="neutral" :disabled="busy || saving || purchasedFilesUploading" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
+        ><UButton type="submit" :loading="saving" :disabled="busy || saving || purchasedFilesUploading || !settingsReady">{{ t('products.save') }}</UButton>
       </div></UForm
     >
   </div>
