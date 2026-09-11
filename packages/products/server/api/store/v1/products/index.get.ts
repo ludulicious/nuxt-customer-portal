@@ -7,14 +7,18 @@ defineRouteMeta({
   openAPI: {
     operationId: 'storeCatalog',
     tags: ['Store'],
-    summary: 'Read the published catalog',
+    summary: 'Read the published or draft catalog',
     security: [{ catalogKey: [] }]
   }
 })
 export default defineEventHandler(async (event) => {
-  const store = await catalogAccess(event)
-  setHeader(event, 'Cache-Control', 'private, no-store')
   const q = parseInput(listSchema, getQuery(event))
-  const page = await listProducts(store.organization_id, q, true)
+  if (q.status === 'archived') {
+    throw createError({ statusCode: 400, message: 'Archived products are not available through the Store API' })
+  }
+  const visibility = q.status === 'draft' ? 'draft' : 'published'
+  const store = await catalogAccess(event, visibility)
+  setHeader(event, 'Cache-Control', 'private, no-store')
+  const page = await listProducts(store.organization_id, { ...q, status: visibility }, false)
   return { ...page, items: await Promise.all(page.items.map((p) => publicProduct(p, q.locale, q.currency))) }
 })

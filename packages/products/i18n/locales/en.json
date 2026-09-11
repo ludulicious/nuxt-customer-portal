@@ -103,6 +103,8 @@
     "selectPermission": "Select at least one permission.",
     "catalogReadScope": "Read product catalog",
     "catalogReadScopeHelp": "Allows this key to list and retrieve published products through the Store API.",
+    "draftsReadScope": "Read draft products",
+    "draftsReadScopeHelp": "Allows this key to list and retrieve draft products through the Store API.",
     "copyKey": "Copy this key now. It is shown only once.",
     "websiteName": "Website name",
     "expires": "Expiry (optional)",

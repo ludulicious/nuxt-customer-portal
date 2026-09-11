@@ -103,6 +103,8 @@
     "selectPermission": "Selecteer minstens één recht.",
     "catalogReadScope": "Productcatalogus lezen",
     "catalogReadScopeHelp": "Geeft deze sleutel toegang om gepubliceerde producten via de Store-API op te vragen.",
+    "draftsReadScope": "Conceptproducten lezen",
+    "draftsReadScopeHelp": "Geeft deze sleutel toegang om conceptproducten via de Store-API op te vragen.",
     "copyKey": "Kopieer deze sleutel nu. Je ziet hem maar één keer.",
     "websiteName": "Websitenaam",
     "expires": "Vervaldatum (optioneel)",

@@ -168,6 +168,26 @@ test(
         node: { req: { headers: { authorization: `Bearer ${key}` }, socket: { remoteAddress: 'localhost' } } }
       } as never
       assert.equal((await catalogAccess(event)).organization_id, 'store')
+      await assert.rejects(catalogAccess(event, 'draft'), { statusCode: 403 })
+      const createdDraftKey = await auth.api.createApiKey({
+        body: {
+          name: 'Draft test',
+          organizationId: 'store',
+          userId: 'owner',
+          permissions: { 'products.drafts': ['read'] }
+        }
+      })
+      const draftEvent = {
+        context: {},
+        node: {
+          req: {
+            headers: { authorization: `Bearer ${createdDraftKey.key}` },
+            socket: { remoteAddress: 'localhost' }
+          }
+        }
+      } as never
+      assert.equal((await catalogAccess(draftEvent, 'draft')).organization_id, 'store')
+      await assert.rejects(catalogAccess(draftEvent), { statusCode: 403 })
       await db.query('UPDATE public.apikey SET enabled=false WHERE id=$1', [createdKey.id])
       await assert.rejects(catalogAccess(event), { statusCode: 401 })
       await rateLimit('limited', 1)

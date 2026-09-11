@@ -8,6 +8,12 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       action: 'read',
       labelKey: 'products.catalogReadScope',
       descriptionKey: 'products.catalogReadScopeHelp'
+    },
+    {
+      id: 'products.drafts',
+      action: 'read',
+      labelKey: 'products.draftsReadScope',
+      descriptionKey: 'products.draftsReadScopeHelp'
     }
   ],
   moduleMenuItems: [

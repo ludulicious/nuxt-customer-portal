@@ -67,7 +67,7 @@ Refunds are initiated in Stripe in v1. Refund webhooks create incremental credit
 
 System administrators create keys in **Admin → API keys** for the provider organization. Client organizations cannot own or administer API keys. Keep a key exclusively on the external website's server. Better Auth shows it once, stores only its SHA-256 hash, and handles expiry, revocation, usage timestamps, and per-key rate limiting. Rotate by creating a replacement, switching the website, then revoking the old key.
 
-Each portal module explicitly declares the API capabilities it exposes. Administrators select from those scopes when creating a key; a key cannot access unselected or internal module functionality. Products currently exposes `products.catalog:read`, limited to 120 requests/minute. Requests from one source IP also share a 120/minute authentication limit. Portal purchase entry points are limited to 30/minute per source IP.
+Each portal module explicitly declares the API capabilities it exposes. Administrators select from those scopes when creating a key; a key cannot access unselected or internal module functionality. Products exposes `products.catalog:read` for published products and the separate `products.drafts:read` preview capability for drafts. Existing keys remain published-only until an administrator creates a replacement with draft access. API keys are limited to 120 requests/minute. Requests from one source IP also share a 120/minute authentication limit. Portal purchase entry points are limited to 30/minute per source IP.
 
 ```ts
 // Runs on your external website's server, never in a browser bundle.
@@ -82,8 +82,9 @@ const { items, pagination } = await response.json()
 
 - `GET /api/store/v1/products`: query `locale`, `currency`, `search`, `category` (code), `categoryId`, `type`, `page`, `sortBy`, `sortDir`. Pages contain 20 products and `pagination` with `page`, `pageSize`, `totalItems`, `totalPages`.
 - `GET /api/store/v1/products/{slug}`: one published product, optionally filtered by `locale` and `currency`.
+- Add `status=draft` to either endpoint to request drafts. The key must have `products.drafts:read`; published requests require `products.catalog:read`. Archived products are never exposed.
 - Products include `id`, `slug`, `type`, `categoryId`, `category` (code), `categoryDetails`, `title`, `summary`, `descriptionHtml`, gallery `images`, `thumbnailImage`, `detailImages`, `videoUrl`, `prices`, `purchaseUrl`, and `locale`. Prices include a stable version `id`, `currency`, integer minor-unit `amount`, and `taxBehavior`.
-- Errors: 400 invalid query; 401 missing, revoked, or expired key; 404 unavailable product; 429 rate limit; 503 store closed/unconfigured.
+- Errors: 400 invalid query; 401 missing, revoked, or expired key; 403 missing required scope; 404 unavailable product; 429 rate limit; 503 published store closed/unconfigured.
 - No private assets, order details, customer information, or unpublished products are included. Catalog responses are not shared-cacheable.
 
 Product pages are intentionally public so a buyer can follow a purchase URL. Catalog enumeration requires an API key. Translated copy falls back to the store's default language. Returned `locale` is the requested display language; individual content may be fallback text.

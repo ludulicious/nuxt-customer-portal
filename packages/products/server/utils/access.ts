@@ -58,19 +58,23 @@ export async function rateLimit(id: string, limit: number) {
 export async function publicLimit(event: H3Event) {
   await rateLimit(`public:${getRequestIP(event) || 'unknown'}`, 30)
 }
-export async function catalogAccess(event: H3Event) {
+export async function catalogAccess(event: H3Event, visibility: 'published' | 'draft' = 'published') {
   await rateLimit(`auth:${getRequestIP(event) || 'unknown'}`, 120)
   const token = getHeader(event, 'authorization')?.match(/^Bearer\s+([^\s]+)$/)?.[1]
   if (!token) {
     throw createError({ statusCode: 401, message: 'A catalog API key is required' })
   }
   const result = await auth.api.verifyApiKey({
-    body: { key: token, permissions: { 'products.catalog': ['read'] } }
+    body: { key: token }
   })
   if (!result.valid || !result.key) {
     throw createError({ statusCode: 401, message: 'Invalid or expired API key' })
   }
-  const store = await getStore(true)
+  const requiredResource = visibility === 'draft' ? 'products.drafts' : 'products.catalog'
+  if (!result.key.permissions?.[requiredResource]?.includes('read')) {
+    throw createError({ statusCode: 403, message: `API key does not have ${requiredResource}:read permission` })
+  }
+  const store = await getStore(visibility === 'published')
   const organization = await getPortalOrganization(result.key.referenceId)
   if (organization?.organizationType !== 'PROVIDER' || store.organization_id !== result.key.referenceId) {
     throw createError({ statusCode: 403, message: 'Store access denied' })
