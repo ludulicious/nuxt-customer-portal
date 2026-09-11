@@ -272,7 +272,15 @@
       },
       "chooseColor": "Kies {field}",
       "useAutomatic": "Automatische kleur gebruiken",
-      "showMarkdown": "Markdown tonen"
+      "showMarkdown": "Markdown tonen",
+      "h1Color": "H1-kleur overschrijven",
+      "h2Color": "H2-kleur overschrijven",
+      "h3Color": "H3-kleur overschrijven",
+      "h4Color": "H4-kleur overschrijven",
+      "h5Color": "H5-kleur overschrijven",
+      "h6Color": "H6-kleur overschrijven",
+      "headingColorHelp": "Laat afzonderlijke kopkleuren leeg om de algemene kopkleur te gebruiken.",
+      "sampleLevel": "Kop {level}"
     },
     "subtitle": "Ondertitel",
     "generalSettings": "Algemene instellingen",

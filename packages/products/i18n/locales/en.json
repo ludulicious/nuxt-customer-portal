@@ -272,7 +272,15 @@
       },
       "chooseColor": "Choose {field}",
       "useAutomatic": "Use automatic color",
-      "showMarkdown": "Show Markdown"
+      "showMarkdown": "Show Markdown",
+      "h1Color": "H1 color override",
+      "h2Color": "H2 color override",
+      "h3Color": "H3 color override",
+      "h4Color": "H4 color override",
+      "h5Color": "H5 color override",
+      "h6Color": "H6 color override",
+      "headingColorHelp": "Leave heading overrides empty to use the shared heading color.",
+      "sampleLevel": "Heading {level}"
     },
     "subtitle": "Subtitle",
     "generalSettings": "General settings",

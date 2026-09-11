@@ -12,7 +12,7 @@ const props = defineProps<{
 const titleHtml = computed(() => {
   const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   const subtitle = props.copy.subtitle?.trim()
-  return `<h1>${escape(props.copy.title)}</h1>${subtitle ? `<p>${escape(subtitle)}</p>` : ''}`
+  return `<h1>${escape(props.copy.title)}</h1>${subtitle ? `<h2>${escape(subtitle)}</h2>` : ''}`
 })
 const language = defineModel<Locale>('language', { required: true })
 const emit = defineEmits<{ edit: [] }>()
@@ -57,7 +57,7 @@ const api = useProducts()
       <slot v-if="editing" name="editor" />
       <template v-else>
         <div class="flex items-start justify-between gap-3">
-          <ProductsMarkdown v-if="copy.title.trim()" :html="titleHtml" :theme="markdownStyle" class="min-w-0 flex-1" />
+          <ProductsMarkdown v-if="copy.title.trim()" :html="titleHtml" :theme="markdownStyle" class="product-title min-w-0 flex-1" />
           <p v-else class="flex min-w-0 items-center gap-2 text-sm text-muted">
             <UIcon name="i-lucide-languages" class="size-4 shrink-0" aria-hidden="true" />
             {{ t('products.noTranslation') }}
@@ -100,3 +100,17 @@ const api = useProducts()
     </div>
   </UCard>
 </template>
+
+<style scoped>
+.product-title :deep(h1) {
+  margin-bottom: 0;
+}
+.product-title :deep(h2) {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: calc(1.17em * var(--store-content-scale));
+  font-weight: 400;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+</style>

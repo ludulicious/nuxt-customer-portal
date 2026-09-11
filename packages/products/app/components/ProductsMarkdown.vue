@@ -20,6 +20,13 @@ const style = computed(() => {
     '--store-content-scale': theme.headingScale,
     '--store-content-text': theme.textColor || 'inherit',
     '--store-content-heading': theme.headingColor || 'inherit',
+    '--store-content-h1': theme.h1Color || theme.headingColor || 'inherit',
+    '--store-content-h2': theme.h2Color || theme.headingColor || 'inherit',
+    '--store-content-h3': theme.h3Color || theme.headingColor || 'inherit',
+    '--store-content-h4': theme.h4Color || theme.headingColor || 'inherit',
+    '--store-content-h5': theme.h5Color || theme.headingColor || 'inherit',
+    '--store-content-h6': theme.h6Color || theme.headingColor || 'inherit',
+
     '--store-content-link': theme.linkColor || 'var(--ui-primary)',
     backgroundColor: theme.backgroundColor || undefined,
     padding: theme.backgroundColor ? '1rem' : undefined
@@ -138,5 +145,23 @@ const style = computed(() => {
 }
 .store-markdown :deep(> :last-child) {
   margin-bottom: 0;
+}
+.store-markdown :deep(h1) {
+  color: var(--store-content-h1);
+}
+.store-markdown :deep(h2) {
+  color: var(--store-content-h2);
+}
+.store-markdown :deep(h3) {
+  color: var(--store-content-h3);
+}
+.store-markdown :deep(h4) {
+  color: var(--store-content-h4);
+}
+.store-markdown :deep(h5) {
+  color: var(--store-content-h5);
+}
+.store-markdown :deep(h6) {
+  color: var(--store-content-h6);
 }
 </style>

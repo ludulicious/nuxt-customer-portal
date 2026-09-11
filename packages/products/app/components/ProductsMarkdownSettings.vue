@@ -25,14 +25,15 @@ const sampleMarkdown = computed(() => {
     `### ${sample('sampleHeading')}`,
     `- ${sample('sampleItemOne')}\n- ${sample('sampleItemTwo')}`,
     `[${sample('sampleLink')}](#)`,
-    `> ${sample('sampleQuote')}`
+    `> ${sample('sampleQuote')}`,
+    ...[1, 4, 5, 6].map((level) => `${'#'.repeat(level)} ${t('products.markdown.sampleLevel', { level })}`)
   ].join('\n\n')
 })
 const sampleHtml = computed(() => {
   const sample = (key: string) => t(`products.markdown.${key}`).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-  return `<h2>${sample('sampleTitle')}</h2><p><strong>${sample('sampleIntro')}</strong></p><h3>${sample('sampleHeading')}</h3><ul><li>${sample('sampleItemOne')}</li><li>${sample('sampleItemTwo')}</li></ul><p><a href="#">${sample('sampleLink')}</a></p><blockquote>${sample('sampleQuote')}</blockquote>`
+  return `<h2>${sample('sampleTitle')}</h2><p><strong>${sample('sampleIntro')}</strong></p><h3>${sample('sampleHeading')}</h3><ul><li>${sample('sampleItemOne')}</li><li>${sample('sampleItemTwo')}</li></ul><p><a href="#">${sample('sampleLink')}</a></p><blockquote>${sample('sampleQuote')}</blockquote>${[1, 4, 5, 6].map((level) => `<h${level}>${t('products.markdown.sampleLevel', { level })}</h${level}>`).join('')}`
 })
-const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bulletColor'] as const
+const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bulletColor', 'h1Color', 'h2Color', 'h3Color', 'h4Color', 'h5Color', 'h6Color'] as const
 </script>
 
 <template>
@@ -104,6 +105,7 @@ const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bu
           </UFormField>
         </div>
         <p class="text-sm text-muted">{{ t('products.markdown.colorHelp') }}</p>
+        <p class="text-sm text-muted">{{ t('products.markdown.headingColorHelp') }}</p>
       </div>
       <div class="min-w-0 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-3">

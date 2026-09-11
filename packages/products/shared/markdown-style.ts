@@ -14,6 +14,13 @@ export const markdownStyleSchema = z.object({
   bulletColor: color,
   textColor: color,
   headingColor: color,
+  h1Color: color,
+  h2Color: color,
+  h3Color: color,
+  h4Color: color,
+  h5Color: color,
+  h6Color: color,
+
   linkColor: color,
   backgroundColor: color
 })

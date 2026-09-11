@@ -33,3 +33,12 @@ test('bullet settings default for older themes and validate style and color', ()
   assert.equal(markdownStyleSchema.safeParse({ bulletStyle: 'url(example)' }).success, false)
   assert.equal(markdownStyleSchema.safeParse({ bulletColor: 'red;display:none' }).success, false)
 })
+
+test('heading color overrides default to inherited and validate each level', () => {
+  const legacy = markdownStyleSchema.parse({ headingColor: '#123456' })
+  for (const key of ['h1Color', 'h2Color', 'h3Color', 'h4Color', 'h5Color', 'h6Color'] as const) {
+    assert.equal(legacy[key], '')
+    assert.equal(markdownStyleSchema.parse({ [key]: '#abcdef' })[key], '#abcdef')
+    assert.equal(markdownStyleSchema.safeParse({ [key]: 'invalid' }).success, false)
+  }
+})
