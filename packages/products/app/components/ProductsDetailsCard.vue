@@ -45,9 +45,24 @@ async function changeStatus() {
 
 <template>
   <UCard>
-    <template #header
-      ><h2 class="font-semibold">{{ t('products.basicDetails') }}</h2></template
-    >
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-semibold">{{ t('products.basicDetails') }}</h2>
+        <div class="flex flex-wrap items-center gap-2">
+          <UBadge :color="product.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{
+            t(`products.${product.status}`)
+          }}</UBadge>
+          <UButton
+            :icon="action.icon"
+            :color="action.next === 'published' ? 'success' : 'primary'"
+            variant="outline"
+            :loading="busy"
+            :disabled="busy || editing"
+            @click="changeStatus"
+          >{{ action.label }}</UButton>
+        </div>
+      </div>
+    </template>
     <slot v-if="editing" name="editor" />
     <div v-else class="flex items-start gap-3">
       <dl class="min-w-0 flex-1 space-y-4 text-sm">
@@ -62,25 +77,12 @@ async function changeStatus() {
           </dd>
         </div>
         <div>
-          <dt class="text-muted">{{ t('products.freeProduct') }}</dt>
-          <dd class="mt-1">
-            {{ t(product.isFree ? 'products.yes' : 'products.no') }}
-          </dd>
+          <dt class="text-muted">{{ t('products.type') }}</dt>
+          <dd class="mt-1">{{ t(`products.${product.type}`) }}</dd>
         </div>
         <div>
           <dt class="text-muted">{{ t('products.taxCode') }}</dt>
           <dd class="mt-1 break-all">{{ product.taxCode }}</dd>
-        </div>
-        <div>
-          <dt class="text-muted">{{ t('products.status') }}</dt>
-          <dd class="mt-1 flex flex-wrap items-center gap-2">
-            <UBadge :color="product.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{
-              t(`products.${product.status}`)
-            }}</UBadge>
-            <UButton :icon="action.icon" variant="outline" :loading="busy" :disabled="busy" @click="changeStatus">{{
-              action.label
-            }}</UButton>
-          </dd>
         </div>
       </dl>
       <UButton

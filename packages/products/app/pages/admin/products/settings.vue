@@ -9,6 +9,7 @@ const { t } = useI18n(),
   settings = reactive({
     languages: ['en', 'nl'] as ('en' | 'nl')[],
     currencies: ['EUR'] as string[],
+    currencyTaxBehavior: {} as Record<string, 'inclusive' | 'exclusive'>,
     enabled: false,
     defaultLocale: 'en' as 'en' | 'nl'
   }),
@@ -22,6 +23,16 @@ const schema = useProductFormSchema(settingsSchema),
   apiSchema = useProductFormSchema(keySchema),
   keys = ref<Awaited<ReturnType<typeof api.keys>>>([]),
   health = ref<Awaited<ReturnType<typeof api.settings>>>()
+const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
+watch(
+  () => settings.currencies,
+  (currencies) => {
+    for (const currency of currencies) {
+      settings.currencyTaxBehavior[currency] ||= 'inclusive'
+    }
+  },
+  { immediate: true, deep: true }
+)
 const defaultLanguageOptions = computed(() =>
   portalLanguages.filter((language) => settings.languages.includes(language.value))
 )
@@ -39,6 +50,7 @@ async function load() {
     Object.assign(settings, {
       languages: health.value.languages,
       currencies: health.value.currencies,
+      currencyTaxBehavior: health.value.currencyTaxBehavior,
       enabled: health.value.enabled,
       defaultLocale: health.value.defaultLocale
     })
@@ -109,6 +121,17 @@ async function revoke() {
       <UFormField name="currencies" :label="t('products.supportedCurrencies')" :help="t('products.currenciesHelp')">
         <USelectMenu v-model="settings.currencies" :items="currencyOptions" multiple class="w-full sm:w-80" />
       </UFormField>
+      <div class="space-y-3">
+        <p class="text-sm text-muted">{{ t('products.currencyTaxHelp') }}</p>
+        <UFormField
+          v-for="currency in settings.currencies"
+          :key="currency"
+          :name="`currencyTaxBehavior.${currency}`"
+          :label="`${currency} — ${t('products.tax')}`"
+        >
+          <USelect v-model="settings.currencyTaxBehavior[currency]" :items="taxOptions" class="w-full sm:w-80" />
+        </UFormField>
+      </div>
       <ul class="space-y-1 text-sm">
         <li>Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}</li>
         <li>

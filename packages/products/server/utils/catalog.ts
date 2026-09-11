@@ -139,8 +139,13 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
     : inputPrices
   try {
     await transaction(async (tx) => {
-      const [currentStore] = await rows<{ currencies: string[]; languages: Locale[]; enabled: boolean }>(
-        'SELECT currencies, languages, enabled FROM products.store WHERE id=true FOR SHARE',
+      const [currentStore] = await rows<{
+        currencies: string[]
+        languages: Locale[]
+        enabled: boolean
+        currency_tax_behavior: Record<string, 'inclusive' | 'exclusive'>
+      }>(
+        'SELECT currencies, languages, enabled, currency_tax_behavior FROM products.store WHERE id=true FOR SHARE',
         [],
         tx
       )
@@ -151,13 +156,6 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         if (failed.length) {
           throw createError({ statusCode: 400, message: 'Complete the publish checklist', data: { checks: failed } })
         }
-      }
-      if (!hasRequiredPrices({ ...data, prices }, currentStore!.currencies)) {
-        throw createError({
-          statusCode: 400,
-          message: 'Enter a price for every store currency',
-          data: { field: 'prices' }
-        })
       }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`categories:${storeId}`])
       if (categoryId) {
@@ -178,6 +176,20 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
       ) {
         throw createError({ statusCode: 404, message: 'Product not found' })
       }
+      if (existing?.data.status === 'published' && !!existing.data.isFree !== data.isFree) {
+        throw createError({
+          statusCode: 409,
+          message: 'Published products cannot switch between free and paid',
+          data: { field: 'isFree' }
+        })
+      }
+      if (existing?.data.isFree && !data.isFree) {
+        for (const currency of currentStore!.currencies) {
+          if (!prices.some((price) => price.currency === currency)) {
+            prices.push({ currency, amount: 0, taxBehavior: 'inclusive' })
+          }
+        }
+      }
       for (const [visibility, ids] of [
         ['public', data.imageIds],
         ['private', data.fileIds]
@@ -193,6 +205,9 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         if (found.length !== new Set(ids).size) {
           throw createError({ statusCode: 400, message: 'Media must be uploaded to this product first' })
         }
+      }
+      for (const price of prices) {
+        price.taxBehavior = currentStore!.currency_tax_behavior[price.currency] || 'inclusive'
       }
       await tx.query(
         'INSERT INTO products.product(id,store_id,slug,data,category_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET slug=$3,data=$4,category_id=$5,updated_at=now()',

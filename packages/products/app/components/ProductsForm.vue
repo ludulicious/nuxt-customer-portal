@@ -89,7 +89,7 @@ const visiblePrices = computed(() =>
     .filter(({ price }) => !props.currency || price.currency === props.currency)
 )
 const pricingErrors = () =>
-  !state.isFree && !hasRequiredPrices(state, currencies.value)
+  state.status === 'published' && !state.isFree && !hasRequiredPrices(state, currencies.value)
     ? [{ name: 'prices', message: t('products.requiredPrices') }]
     : []
 watch(
@@ -103,7 +103,6 @@ watch(
   }
 )
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
-const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
 onMounted(async () => {
   if (props.section === 'all' || props.section === 'details') {
     await loadCategories().catch(() => {
@@ -250,14 +249,18 @@ function move(ids: string[], index: number, delta: number) {
         </UTabs>
       </template>
       <template v-if="section === 'all' || section === 'details'">
-        <UFormField name="isFree" :label="t('products.freeProduct')"><USwitch v-model="state.isFree" /></UFormField>
+        <UFormField
+          name="isFree"
+          :label="t('products.freeProduct')"
+          :help="product?.status === 'published' ? t('products.publishedPricingLocked') : undefined"
+        >
+          <USwitch v-model="state.isFree" :disabled="product?.status === 'published'" />
+        </UFormField>
         <UFormField name="taxCode" :label="t('products.taxCode')"
           ><UInput v-model="state.taxCode" class="w-full sm:max-w-xs"
         /></UFormField>
       </template>
-      <template
-        v-if="section === 'all' || section === 'pricing' || (section === 'details' && product?.isFree && !state.isFree)"
-      >
+      <template v-if="section === 'all' || section === 'pricing'">
         <UFormField
           v-if="!state.isFree"
           name="prices"
@@ -286,9 +289,7 @@ function move(ids: string[], index: number, delta: number) {
                   :model-value="price.amount / currencyScale(price.currency || 'EUR')"
                   @update:model-value="
                     price.amount = Math.round(Number($event) * currencyScale(price.currency || 'EUR'))
-                  " /></UFormField
-              ><UFormField :name="`prices.${index}.taxBehavior`" :label="t('products.tax')"
-                ><USelect v-model="price.taxBehavior" :items="taxOptions" class="w-full"
+                  "
               /></UFormField>
             </div></div
         ></UFormField>

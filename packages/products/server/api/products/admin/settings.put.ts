@@ -1,6 +1,7 @@
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
-import { rows } from '@nuxt-customer-portal/products/server/utils/database'
+import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
+import { randomUUID } from 'node:crypto'
 import { settingsSchema } from '@nuxt-customer-portal/products/shared/validation'
 import { purchaseIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
 import { stripeClient } from '@nuxt-customer-portal/products/server/utils/payments'
@@ -26,16 +27,36 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 409, message: 'Configure email delivery first' })
     }
   }
-  await rows(
-    `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale,currencies,languages) VALUES(true,$1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2,currencies=$5,languages=$6 WHERE products.store.organization_id=$1`,
-    [
-      context.organizationId,
-      context.session.user.id,
-      input.enabled,
-      input.defaultLocale,
-      input.currencies,
-      input.languages
-    ]
-  )
+  await transaction(async (tx) => {
+    const currencyTaxBehavior = Object.fromEntries(
+      input.currencies.map((currency) => [currency, input.currencyTaxBehavior[currency] || 'inclusive'])
+    )
+    await rows(
+      `INSERT INTO products.store(id,organization_id,actor_id,enabled,default_locale,currencies,languages,currency_tax_behavior) VALUES(true,$1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET enabled=$3,default_locale=$4,actor_id=$2,currencies=$5,languages=$6,currency_tax_behavior=$7 WHERE products.store.organization_id=$1`,
+      [
+        context.organizationId,
+        context.session.user.id,
+        input.enabled,
+        input.defaultLocale,
+        input.currencies,
+        input.languages,
+        currencyTaxBehavior
+      ],
+      tx
+    )
+    for (const [currency, taxBehavior] of Object.entries(currencyTaxBehavior)) {
+      const changed = await rows<{ product_id: string; amount: number }>(
+        `UPDATE products.price pr SET active=false FROM products.product p WHERE p.id=pr.product_id AND p.store_id=$1 AND pr.active AND pr.currency=$2 AND pr.tax_behavior<>$3 RETURNING pr.product_id,pr.amount`,
+        [context.organizationId, currency, taxBehavior],
+        tx
+      )
+      for (const price of changed) {
+        await tx.query(
+          'INSERT INTO products.price(id,product_id,currency,amount,tax_behavior) VALUES($1,$2,$3,$4,$5)',
+          [randomUUID(), price.product_id, currency, price.amount, taxBehavior]
+        )
+      }
+    }
+  })
   return input
 })

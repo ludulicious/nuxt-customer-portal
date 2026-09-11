@@ -164,6 +164,8 @@
     "currenciesHelp": "Betaalde producten hebben een prijs nodig in elke geselecteerde valuta. Werk na het toevoegen van een valuta bestaande producten bij voordat ze kunnen worden gekocht.",
     "requiredPrices": "Vul voor elke winkelvaluta een prijs in, of markeer het product als gratis.",
     "freeProduct": "Gratis product",
+    "currencyTaxHelp": "De belastinginstelling geldt voor alle productprijzen in elke valuta. Bestaande bestellingen behouden hun oorspronkelijke belastinginstelling.",
+    "publishedPricingLocked": "Gepubliceerde producten kunnen niet wisselen tussen gratis en betaald.",
     "getFree": "Gratis product verkrijgen",
     "supportedLanguages": "Ondersteunde talen",
     "languagesHelp": "Kies de beschikbare talen voor productinhoud. Bestaande vertalingen blijven bewaard als je een taal uitschakelt.",

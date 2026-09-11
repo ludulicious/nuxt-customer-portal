@@ -116,7 +116,12 @@ test('store currencies are required and paid products cover every currency', () 
   }
   assert.equal(productSchema.safeParse(free).success, true)
   assert.equal(hasRequiredPrices(free, ['EUR', 'USD']), true)
-  assert.equal(productSchema.safeParse({ ...free, isFree: false }).success, false)
+  assert.equal(productSchema.safeParse({ ...free, isFree: false }).success, true)
+  for (const prices of [[], [{ currency: 'EUR', amount: 0, taxBehavior: 'inclusive' }]]) {
+    const paid = { ...free, isFree: false, type: 'service', prices }
+    assert.equal(productSchema.safeParse(paid).success, true)
+    assert.equal(productSchema.safeParse({ ...paid, status: 'published' }).success, false)
+  }
   assert.equal(hasPurchaseAccess({ status: 'paid', total: 0, refunded: 0, disputed: false }), true)
   assert.equal(hasPurchaseAccess({ status: 'pending', total: 0, refunded: 0, disputed: false }), false)
 })
@@ -129,4 +134,14 @@ test('store languages require a supported default and preserve bilingual default
   assert.equal(settingsSchema.safeParse({ ...settings, languages: ['fr'] }).success, false)
   assert.equal(settingsSchema.safeParse({ ...settings, languages: ['nl'] }).success, false)
   assert.equal(settingsSchema.safeParse({ ...settings, defaultLocale: 'nl', languages: ['nl'] }).success, true)
+})
+
+test('store tax treatment accepts independent settings per supported currency', () => {
+  const settings = { enabled: false, defaultLocale: 'en', currencies: ['EUR', 'USD'] }
+  assert.equal(
+    settingsSchema.safeParse({ ...settings, currencyTaxBehavior: { EUR: 'inclusive', USD: 'exclusive' } }).success,
+    true
+  )
+  assert.equal(settingsSchema.safeParse({ ...settings, currencyTaxBehavior: { EUR: 'invalid' } }).success, false)
+  assert.equal(settingsSchema.safeParse({ ...settings, currencyTaxBehavior: { XXX: 'inclusive' } }).success, false)
 })

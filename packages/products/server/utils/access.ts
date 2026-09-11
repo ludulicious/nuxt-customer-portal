@@ -10,6 +10,7 @@ export interface Store {
   organization_id: string
   actor_id: string
   enabled: boolean
+  currency_tax_behavior: Record<string, 'inclusive' | 'exclusive'>
   currencies: string[]
   languages: ('en' | 'nl')[]
   default_locale: 'en' | 'nl'

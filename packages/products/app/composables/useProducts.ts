@@ -59,6 +59,7 @@ export const useProducts = () => ({
     $fetch<{
       languages: ('en' | 'nl')[]
       currencies: string[]
+      currencyTaxBehavior: Record<string, 'inclusive' | 'exclusive'>
       enabled: boolean
       defaultLocale: 'en' | 'nl'
       stripeConfigured: boolean

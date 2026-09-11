@@ -12,7 +12,29 @@ const toast = useToast()
 const pending = ref(true),
   error = ref('')
 const language = ref<Locale>('en')
+const languageStorageKey = 'portal:products:content-language'
+watch(language, (value) => {
+  if (!import.meta.client || pending.value) {
+    return
+  }
+  try {
+    localStorage.setItem(languageStorageKey, value)
+  } catch {
+    // Keep language selection usable when browser storage is unavailable.
+  }
+})
 const currency = ref('')
+const currencyStorageKey = 'portal:products:currency'
+watch(currency, (value) => {
+  if (!import.meta.client || pending.value || !value) {
+    return
+  }
+  try {
+    localStorage.setItem(currencyStorageKey, value)
+  } catch {
+    // Keep currency selection usable when browser storage is unavailable.
+  }
+})
 const product = computed(() => preview.value?.product)
 const productName = computed(() => {
   const content = product.value?.content
@@ -59,7 +81,23 @@ onMounted(async () => {
   try {
     preview.value = await api.preview(String(route.params.id))
     language.value = (languageOptions.value[0]?.value || preview.value.defaultLocale) as Locale
+    try {
+      const storedLanguage = localStorage.getItem(languageStorageKey)
+      if (languageOptions.value.some((item) => item.value === storedLanguage)) {
+        language.value = storedLanguage as Locale
+      }
+    } catch {
+      // Use the store default when browser storage is unavailable.
+    }
     currency.value = currencyOptions.value.includes('EUR') ? 'EUR' : currencyOptions.value[0] || ''
+    try {
+      const storedCurrency = localStorage.getItem(currencyStorageKey)
+      if (storedCurrency && currencyOptions.value.includes(storedCurrency)) {
+        currency.value = storedCurrency
+      }
+    } catch {
+      // Use an available currency when browser storage is unavailable.
+    }
   } catch {
     error.value = t('products.loadFailed')
   } finally {
@@ -84,19 +122,10 @@ onMounted(async () => {
       <UAlert
         v-if="!hasRequiredPrices(product, preview?.currencies || [])"
         color="warning"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
         :title="t('products.requiredPrices')"
       />
-      <div class="flex flex-wrap items-center gap-2">
-        <UBadge :color="product.status === 'published' ? 'success' : 'neutral'" variant="subtle">{{
-          t(`products.${product.status}`)
-        }}</UBadge>
-        <span class="text-sm text-muted"
-          >{{ t(`products.${product.type}`)
-          }}<span v-if="product.categoryId">
-            · {{ product.categoryContent?.[language]?.name || product.categoryName || product.categoryId }}</span
-          ></span
-        >
-      </div>
       <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <ProductsPreviewCard
           v-model:language="language"
@@ -138,6 +167,7 @@ onMounted(async () => {
           </ProductsDetailsCard>
           <ProductsPriceCard
             v-model:currency="currency"
+            :is-free="!!product.isFree"
             :currencies="currencyOptions"
             :price="selectedPrice"
             :language="language"

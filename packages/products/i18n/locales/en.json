@@ -164,6 +164,8 @@
     "currenciesHelp": "Paid products need a price in every selected currency. After adding a currency, update existing products before they can be purchased.",
     "requiredPrices": "Enter a price for every store currency, or mark the product as free.",
     "freeProduct": "Free product",
+    "currencyTaxHelp": "Tax treatment applies to all product prices in each currency. Existing orders keep their original tax treatment.",
+    "publishedPricingLocked": "Published products cannot switch between free and paid.",
     "getFree": "Get free product",
     "supportedLanguages": "Supported languages",
     "languagesHelp": "Choose the languages available for product content. Existing translations are preserved when a language is disabled.",

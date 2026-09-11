@@ -54,7 +54,7 @@ export const productSchema = z
     if (new Set(v.prices.map((p) => p.currency)).size !== v.prices.length) {
       ctx.addIssue({ code: 'custom', path: ['prices'], message: 'Only one price per currency' })
     }
-    if (!v.isFree) {
+    if (v.status === 'published' && !v.isFree) {
       v.prices.forEach((price, index) => {
         if (price.amount <= 0) {
           ctx.addIssue({
@@ -65,7 +65,7 @@ export const productSchema = z
         }
       })
     }
-    if (!v.isFree && !v.prices.length) {
+    if (v.status === 'published' && !v.isFree && !v.prices.length) {
       ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
     }
     if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
@@ -114,6 +114,7 @@ export const listSchema = z.object({
 export const keySchema = z.object({ name: text(100).min(1), expiresAt: z.iso.datetime().nullable().default(null) })
 export const settingsSchema = z
   .object({
+    currencyTaxBehavior: z.partialRecord(z.enum(productCurrencies), z.enum(['inclusive', 'exclusive'])).default({}),
     enabled: z.boolean(),
     defaultLocale: z.enum(portalLanguageCodes),
     languages: z
