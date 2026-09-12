@@ -91,14 +91,25 @@ export default defineNitroPlugin(() => {
       if (sent.rowCount) {
         return
       }
-      const preview = await getInvoiceEmailPreview(order.store_id, order.invoice_id)
-      await deliverInvoiceEmail(
-        order.store_id,
-        order.invoice_id,
-        actorId,
-        { to: preview.to, cc: [], locale: order.snapshot.locale, subject: preview.subject, body: preview.body },
-        false
-      )
+      try {
+        const preview = await getInvoiceEmailPreview(order.store_id, order.invoice_id)
+        await deliverInvoiceEmail(
+          order.store_id,
+          order.invoice_id,
+          actorId,
+          {
+            to: preview.to,
+            cc: [],
+            locale: order.snapshot.locale,
+            subject: order.snapshot.storeMode === 'sandbox' ? `[TEST] ${preview.subject}` : preview.subject,
+            body: preview.body
+          },
+          false
+        )
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        throw new Error(`Invoice email failed: ${message}`, { cause: error })
+      }
     }
   })
 })

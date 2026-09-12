@@ -1,6 +1,7 @@
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { baseUrl, getStore, publicLimit } from '@nuxt-customer-portal/products/server/utils/access'
-import { getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import { getOrder, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { checkoutReturnPath, hostThankYouUrl } from '@nuxt-customer-portal/products/server/utils/checkout-return'
 import { z } from 'zod'
@@ -18,6 +19,7 @@ export default defineEventHandler(async (event) => {
   if (store.mode !== 'sandbox') {
     throw createError({ statusCode: 404 })
   }
+  const processEffects = developmentSandboxEffectsEnabled()
   await transaction(async (tx) => {
     await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
     const order = await getOrder(id, tx)
@@ -32,8 +34,8 @@ export default defineEventHandler(async (event) => {
     if (input.scenario === 'paid') {
       const total = order.lines.reduce((sum, line) => sum + line.unit_amount * line.quantity, 0)
       await rows(
-        "UPDATE products.orders SET status='paid',payment_id=$2,total=$3,net=$3,tax=0,tax_details=$4,processing='complete',notified=true,updated_at=now() WHERE id=$1",
-        [id, `sandbox:${id}`, total, { sandbox: true }],
+        `UPDATE products.orders SET status='paid',payment_id=$2,total=$3,net=$3,tax=0,tax_details=$4,processing=$5,notified=$6,updated_at=now() WHERE id=$1`,
+        [id, `sandbox:${id}`, total, { sandbox: true }, processEffects ? 'pending' : 'complete', !processEffects],
         tx
       )
       for (const line of order.lines) {
@@ -52,6 +54,13 @@ export default defineEventHandler(async (event) => {
       )
     }
   })
+  if (input.scenario === 'paid' && processEffects) {
+    try {
+      await processOrder(id)
+    } catch {
+      // The simulated payment remains successful. Processing can be retried from Orders.
+    }
+  }
   const order = await getOrder(id)
   const line = order!.lines[0]!
   if (input.scenario === 'paid') {

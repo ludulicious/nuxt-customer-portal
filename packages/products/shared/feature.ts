@@ -19,7 +19,7 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   modules: [
     {
       id: 'products',
-      labelKey: 'products.title',
+      labelKey: 'products.store',
       icon: 'i-lucide-shopping-bag',
       to: '/purchases',
       routePrefixes: ['/purchases', '/admin/products'],

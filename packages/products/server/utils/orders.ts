@@ -14,6 +14,7 @@ import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
 import { stripeProvider } from './payments'
 import { orderIntegration, runOrderFulfillmentHooks } from './contracts'
+import { developmentSandboxEffectsEnabled } from './development'
 
 export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
   const [order] = await rows<Order>('SELECT * FROM products.orders WHERE id=$1', [id], tx)
@@ -107,13 +108,23 @@ export async function createCheckout(event: H3Event, body: unknown) {
   })
   const primaryLine = order.lines[0]!
   if (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0) {
+    const processSandboxEffects = store.mode === 'sandbox' && developmentSandboxEffectsEnabled()
     await rows(
       `UPDATE products.orders SET status='paid',total=0,net=0,tax=0,processing=$2,notified=$3 WHERE id=$1 AND status='pending'`,
-      [order.id, store.mode === 'sandbox' ? 'complete' : 'pending', store.mode === 'sandbox']
+      [
+        order.id,
+        store.mode === 'sandbox' && !processSandboxEffects ? 'complete' : 'pending',
+        store.mode === 'sandbox' && !processSandboxEffects
+      ]
     )
     await rows('UPDATE products.order_line SET total=0,net=0,tax=0 WHERE order_id=$1', [order.id])
-    if (store.mode === 'live') {
-      await processOrder(order.id)
+    if (store.mode === 'live' || processSandboxEffects) {
+      try {
+        await processOrder(order.id)
+      } catch {
+        // Payment success is independent from retryable post-payment processing.
+        // processOrder persists the error for the administrator.
+      }
     }
     return {
       url:
@@ -246,7 +257,8 @@ async function notifyOrder(id: string) {
         url,
         instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
       },
-      idempotencyKey: `purchase:${id}`
+      idempotencyKey: `purchase:${id}`,
+      subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
     })
     await tx.query('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1', [id])
   })

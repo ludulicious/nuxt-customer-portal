@@ -392,6 +392,7 @@ export const sendPortalEmail = async (input: {
   fromName?: string
   attachments?: PortalEmailAttachment[]
   idempotencyKey?: string
+  subjectPrefix?: string
 }) => {
   if (isPortalDemo()) {
     rejectDemoAction()
@@ -400,6 +401,7 @@ export const sendPortalEmail = async (input: {
     renderPortalEmail({ ...input, inlineBrandAssets: true }),
     providerConfiguration()
   ])
+  const subject = `${input.subjectPrefix ?? ''}${rendered.subject}`
   const fromEmail = input.fromEmail || provider.fromEmail
   const fromName = input.fromName || provider.fromName
   const from = fromName ? `${fromName.replace(/[<>\r\n]/g, '')} <${fromEmail}>` : fromEmail
@@ -408,7 +410,7 @@ export const sendPortalEmail = async (input: {
       from,
       to: [input.to],
       cc: input.cc?.length ? input.cc : undefined,
-      subject: rendered.subject,
+      subject,
       html: rendered.html,
       text: rendered.text,
       attachments: [...rendered.inlineAttachments, ...(input.attachments ?? [])]
@@ -418,7 +420,7 @@ export const sendPortalEmail = async (input: {
   if (error) {
     throw new Error(error.message)
   }
-  return { ...data, rendered }
+  return { ...data, rendered: { ...rendered, subject } }
 }
 
 export const retrievePortalEmail = async (providerMessageId: string) => {

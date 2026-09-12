@@ -82,7 +82,8 @@ export const useProducts = () => ({
   catalog: (slug: string, locale: string, currency?: string) =>
     $fetch<CatalogProduct>(`/api/store/product/${encodeURIComponent(slug)}`, { query: { locale, currency } }),
   checkout: (body: Record<string, unknown>) => $fetch<{ url: string }>('/api/store/checkout', { method: 'POST', body }),
-  orders: (query: Record<string, unknown>) => $fetch<Page<Order>>('/api/products/admin/orders', { query }),
+  orders: (query: Record<string, unknown>, signal?: AbortSignal) =>
+    $fetch<Page<Order>>('/api/products/admin/orders', { query, signal }),
   orderAction: (id: string, action: 'retry' | 'fulfill') =>
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
   settings: () =>

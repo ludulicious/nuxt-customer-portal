@@ -4,7 +4,7 @@ Publishing opens a confirmation checklist. Each supported store language require
 
 A single provider-owned store for digital files and services. Includes English/Dutch product content, versioned one-time currency prices, published catalog access, Stripe Checkout, purchaser-only downloads/playback, and a purchase library. Install `@nuxt-customer-portal/invoice-products` and `@nuxt-customer-portal/invoices` for checkout and invoice delivery.
 
-New stores start in **sandbox mode**. Administrators can open the storefront and run paid, failed, and expired checkout scenarios without Stripe, outbound purchase email, or sales invoices. The storefront displays a persistent test-environment warning, and sandbox orders remain visible in order administration. Switch the store environment to **live** only when Stripe, webhook signing, invoices, email, client types, and storage are configured. Existing stores retain live mode when this migration is installed.
+New stores start in **sandbox mode**. Administrators can open the storefront and run paid, failed, and expired checkout scenarios without Stripe. By default these simulations have no client, invoice, fulfillment, or email side effects. In a non-production process, set `IS_DEVELOPMENT=true` to exercise those post-payment effects. Sandbox email subjects are always prefixed with `[TEST]`. The flag is ignored when `NODE_ENV=production`; Stripe reconciliation, refunds, and disputes are never simulated. The storefront clearly warns when development effects are active, and sandbox orders remain visible in order administration. Switch the store environment to **live** only when Stripe, webhook signing, invoices, email, client types, and storage are configured. Existing stores retain live mode when this migration is installed.
 
 ## Installation
 
@@ -21,16 +21,17 @@ Configure these server-only environment variables; never put them in public runt
 | Variable                                     | Purpose                                                                         |
 | -------------------------------------------- | ------------------------------------------------------------------------------- |
 | `BETTER_AUTH_URL`                            | Canonical portal origin, including port locally; always use `localhost` locally |
+| `IS_DEVELOPMENT`                             | Explicitly enable non-Stripe sandbox side effects outside production            |
 | `PRODUCTS_STRIPE_SECRET_KEY`                 | Stripe account secret; use a test-mode key during testing                       |
 | `PRODUCTS_STRIPE_WEBHOOK_SECRET`             | Signing secret for this endpoint and Stripe mode                                |
 | `PRODUCTS_S3_BUCKET`                         | Private S3-compatible bucket                                                    |
 | `PRODUCTS_S3_REGION`                         | Bucket region, default `us-east-1`                                              |
 | `PRODUCTS_S3_ENDPOINT`                       | Optional endpoint for compatible storage                                        |
 | `PRODUCTS_S3_PATH_STYLE`                     | Use path-style addressing for environment-managed compatible storage            |
-| `PRODUCTS_STORAGE_PROVIDER`                  | Set to `bunny` to use Bunny's proprietary Storage API                            |
-| `PRODUCTS_BUNNY_STORAGE_ZONE`                | Bunny Storage Zone name                                                          |
-| `PRODUCTS_BUNNY_STORAGE_PASSWORD`            | Bunny Storage Zone password                                                      |
-| `PRODUCTS_BUNNY_STORAGE_ENDPOINT`            | Regional Storage API endpoint, default `https://storage.bunnycdn.com`             |
+| `PRODUCTS_STORAGE_PROVIDER`                  | Set to `bunny` to use Bunny's proprietary Storage API                           |
+| `PRODUCTS_BUNNY_STORAGE_ZONE`                | Bunny Storage Zone name                                                         |
+| `PRODUCTS_BUNNY_STORAGE_PASSWORD`            | Bunny Storage Zone password                                                     |
+| `PRODUCTS_BUNNY_STORAGE_ENDPOINT`            | Regional Storage API endpoint, default `https://storage.bunnycdn.com`           |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Standard AWS credentials, or use the SDK's role-based credential chain          |
 | `PRODUCTS_STORAGE_ENCRYPTION_KEY`            | Encrypts S3 credentials saved through Store settings                            |
 | `PRODUCTS_IMAGEKIT_URL_ENDPOINT`             | ImageKit URL endpoint for optimized public product-image delivery               |

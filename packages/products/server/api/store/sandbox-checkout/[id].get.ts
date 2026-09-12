@@ -1,5 +1,6 @@
 import { getStore, publicLimit } from '@nuxt-customer-portal/products/server/utils/access'
 import { getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 
 export default defineEventHandler(async (event) => {
   await publicLimit(event)
@@ -21,6 +22,7 @@ export default defineEventHandler(async (event) => {
     title: line.snapshot.title,
     amount: line.unit_amount,
     currency: line.snapshot.price.currency,
-    email: order.email
+    email: order.email,
+    developmentEffectsEnabled: developmentSandboxEffectsEnabled()
   }
 })

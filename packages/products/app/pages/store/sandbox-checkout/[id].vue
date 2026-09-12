@@ -13,6 +13,7 @@ const checkout = await $fetch<{
   amount: number
   currency: string
   email: string
+  developmentEffectsEnabled: boolean
 }>(`/api/store/sandbox-checkout/${encodeURIComponent(String(route.params.id))}`)
 
 async function finish(scenario: 'paid' | 'failed' | 'expired') {
@@ -39,6 +40,13 @@ async function finish(scenario: 'paid' | 'failed' | 'expired') {
       icon="i-lucide-flask-conical"
       :title="t('products.sandboxBanner')"
       :description="t('products.sandboxBannerHelp')"
+    />
+    <UAlert
+      v-if="checkout.developmentEffectsEnabled"
+      color="warning"
+      icon="i-lucide-mail-warning"
+      :title="t('products.developmentEffects')"
+      :description="t('products.developmentEffectsHelp')"
     />
     <div class="space-y-4 rounded-lg border p-6">
       <div>
