@@ -151,6 +151,7 @@ export const settingsSchema = z
     markdownStyle: markdownStyleSchema.optional(),
     currencyTaxBehavior: z.partialRecord(z.enum(productCurrencies), z.enum(['inclusive', 'exclusive'])).default({}),
     enabled: z.boolean(),
+    mode: z.enum(['sandbox', 'live']).default('sandbox'),
     defaultLocale: z.enum(portalLanguageCodes),
     languages: z
       .array(z.enum(portalLanguageCodes))

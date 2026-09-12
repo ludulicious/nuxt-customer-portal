@@ -6,12 +6,13 @@ import { storageSummary } from '@nuxt-customer-portal/products/server/utils/stor
 export default defineEventHandler(async (event) => {
   await admin(event)
   const [store] = await rows(
-    'SELECT markdown_style,image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
+    'SELECT markdown_style,image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
   )
   const storage = await storageSummary()
   return {
     markdownStyle: markdownStyleSchema.parse(store?.markdown_style || {}),
     enabled: store?.enabled || false,
+    mode: store?.mode || 'sandbox',
     languages: store?.languages || ['en', 'nl'],
     currencyTaxBehavior: store?.currencyTaxBehavior || {},
     currencies: store?.currencies || ['EUR'],

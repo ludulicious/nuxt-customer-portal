@@ -88,6 +88,7 @@ export interface Billing {
 export interface OrderSnapshot {
   billing: Billing
   locale: Locale
+  storeMode?: 'sandbox' | 'live'
 }
 export interface OrderLineSnapshot {
   product: ProductData
@@ -160,6 +161,7 @@ export interface CartLine {
   updated_at: string
 }
 export interface CatalogProduct {
+  storeMode: 'sandbox' | 'live'
   markdownStyle: MarkdownStyle
   imagePolicy: ImagePolicy
   summaryHtml: string

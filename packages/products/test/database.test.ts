@@ -44,6 +44,7 @@ test(
         `INSERT INTO public.member(id,organization_id,user_id,role,created_at) VALUES('owner-membership','store','owner','owner',now())`
       )
       await db.query(`INSERT INTO products.store(organization_id,actor_id,enabled) VALUES('store','owner',true)`)
+      assert.equal((await db.query("SELECT mode FROM products.store WHERE id=true")).rows[0].mode, 'sandbox')
       const catalog = await import('../server/utils/catalog')
       pool = (await import('@nuxt-customer-portal/core/server/utils/db')).pool
       const source = {

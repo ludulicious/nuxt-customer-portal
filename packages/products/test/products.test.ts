@@ -148,6 +148,13 @@ test('store currencies are required and paid products cover every currency', () 
   assert.equal(hasPurchaseAccess({ status: 'pending', total: 0, refunded: 0, disputed: false }), false)
 })
 
+test('new stores default to sandbox mode and reject unknown environments', () => {
+  const settings = { enabled: false, defaultLocale: 'en', languages: ['en'], currencies: ['EUR'] }
+  assert.equal(settingsSchema.parse(settings).mode, 'sandbox')
+  assert.equal(settingsSchema.safeParse({ ...settings, mode: 'live' }).success, true)
+  assert.equal(settingsSchema.safeParse({ ...settings, mode: 'preview' }).success, false)
+})
+
 test('store languages require a supported default and preserve bilingual defaults', () => {
   const settings = { enabled: false, defaultLocale: 'en', currencies: ['EUR'] }
   assert.deepEqual(settingsSchema.parse(settings).languages, ['en', 'nl'])

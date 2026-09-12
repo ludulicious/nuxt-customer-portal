@@ -79,6 +79,13 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
 
 <template>
   <main class="mx-auto max-w-4xl space-y-6 p-6">
+    <UAlert
+      v-if="product?.storeMode === 'sandbox'"
+      color="warning"
+      icon="i-lucide-flask-conical"
+      :title="t('products.sandboxBanner')"
+      :description="t('products.sandboxBannerHelp')"
+    />
     <UAlert v-if="error" color="error" :title="error" /><template v-if="product"
       ><h1 class="text-3xl font-semibold">{{ product.title }}</h1>
       <p v-if="product.subtitle" class="text-lg text-muted">{{ product.subtitle }}</p>
@@ -122,7 +129,9 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
           <h2 class="text-xl font-semibold">{{ t('products.checkout') }}</h2>
           <UButton v-if="!isAuthenticated" :to="loginUrl" variant="ghost">{{ t('products.optionalLogin') }}</UButton>
         </div>
-        <p class="text-sm text-muted">{{ t('products.inviteAfterPurchase') }}</p>
+        <p class="text-sm text-muted">{{
+          t(product.storeMode === 'sandbox' ? 'products.sandboxPurchaseHelp' : 'products.inviteAfterPurchase')
+        }}</p>
         <UButton v-if="canRegister && !isAuthenticated" to="/signup" variant="link">{{
           t('products.createAccount')
         }}</UButton>
@@ -179,10 +188,18 @@ const loginUrl = computed(() => `/login?redirect=${encodeURIComponent(route.full
               ><UInput v-model="state.billing.vatNumber" class="w-full" /></UFormField
           ></template>
         </div>
-        <p v-if="!product.isFree" class="text-sm text-muted">{{ t('products.finalTax') }}</p>
+        <p v-if="!product.isFree" class="text-sm text-muted">{{
+          t(product.storeMode === 'sandbox' ? 'products.sandboxFinalTax' : 'products.finalTax')
+        }}</p>
         <UAlert v-if="!product.pricingComplete" color="warning" :title="t('products.unavailable')" />
         <UButton type="submit" :disabled="!product.pricingComplete" :loading="busy" icon="i-lucide-lock-keyhole">{{
-          t(product.prices.find((p) => p.id === state.priceId)?.amount === 0 ? 'products.getFree' : 'products.pay')
+          t(
+            product.prices.find((p) => p.id === state.priceId)?.amount === 0
+              ? 'products.getFree'
+              : product.storeMode === 'sandbox'
+                ? 'products.testCheckout'
+                : 'products.pay'
+          )
         }}</UButton></UForm
       ></template
     >

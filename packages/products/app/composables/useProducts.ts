@@ -91,6 +91,7 @@ export const useProducts = () => ({
       markdownStyle: MarkdownStyle
       currencyTaxBehavior: Record<string, 'inclusive' | 'exclusive'>
       enabled: boolean
+      mode: 'sandbox' | 'live'
       defaultLocale: 'en' | 'nl'
       stripeConfigured: boolean
       webhookConfigured: boolean

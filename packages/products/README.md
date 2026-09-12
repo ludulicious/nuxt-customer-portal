@@ -4,6 +4,8 @@ Publishing opens a confirmation checklist. Each supported store language require
 
 A single provider-owned store for digital files and services. Includes English/Dutch product content, versioned one-time currency prices, published catalog access, Stripe Checkout, purchaser-only downloads/playback, and a purchase library. Install `@nuxt-customer-portal/invoice-products` and `@nuxt-customer-portal/invoices` for checkout and invoice delivery.
 
+New stores start in **sandbox mode**. Administrators can open the storefront and run paid, failed, and expired checkout scenarios without Stripe, outbound purchase email, or sales invoices. The storefront displays a persistent test-environment warning, and sandbox orders remain visible in order administration. Switch the store environment to **live** only when Stripe, webhook signing, invoices, email, client types, and storage are configured. Existing stores retain live mode when this migration is installed.
+
 ## Installation
 
 Add `@nuxt-customer-portal/products`, `@nuxt-customer-portal/invoices`, and `@nuxt-customer-portal/invoice-products` to `portal.config.ts` layers and run the portal migration command. Enable personal and organization clients. In the configurable SaaS portal, enable all three modules in portal settings. Existing installations remain closed for new sales until an owner saves Store settings and explicitly opens the store.

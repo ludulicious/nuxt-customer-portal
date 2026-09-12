@@ -11,6 +11,10 @@ const props = defineProps<{
 const emit = defineEmits<{ save: [] }>()
 const currencyOptions = [...productCurrencies]
 const { t } = useI18n()
+const modeOptions = computed(() => [
+  { value: 'sandbox', label: t('products.sandboxMode') },
+  { value: 'live', label: t('products.liveMode') }
+])
 const schema = useProductFormSchema(settingsSchema.safeExtend({ markdownStyle: z.any().optional() }))
 const health = computed(() => props.health)
 const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
@@ -46,6 +50,9 @@ function save() {
       ><UFormField name="enabled" :label="t('products.storeEnabled')"
         ><USwitch v-model="settings.enabled"
       /></UFormField>
+      <UFormField name="mode" :label="t('products.storeMode')" :help="t('products.storeModeHelp')">
+        <USelect v-model="settings.mode" :items="modeOptions" class="w-full sm:w-80" />
+      </UFormField>
       <UFormField name="languages" :label="t('products.supportedLanguages')" :help="t('products.languagesHelp')">
         <USelectMenu
           v-model="settings.languages"
@@ -88,15 +95,15 @@ function save() {
         </div>
       </fieldset>
       <ul class="space-y-1 text-sm">
-        <li>Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}</li>
-        <li>
+        <li v-if="settings.mode === 'live'">Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}</li>
+        <li v-if="settings.mode === 'live'">
           {{ t('products.webhook') }}: {{ t(health?.webhookConfigured ? 'products.configured' : 'products.missing') }}
         </li>
         <li>
           {{ t('products.storage') }}: {{ t(health?.storageConfigured ? 'products.configured' : 'products.missing') }}
         </li>
       </ul>
-      <p class="text-sm text-muted">{{ t('products.configHelp') }}</p>
+      <p class="text-sm text-muted">{{ t(settings.mode === 'live' ? 'products.configHelp' : 'products.sandboxConfigHelp') }}</p>
 
       <UButton type="submit" :loading="saving">{{ t('products.save') }}</UButton></UForm
     >

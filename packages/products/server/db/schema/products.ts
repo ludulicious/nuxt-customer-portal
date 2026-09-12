@@ -26,6 +26,7 @@ export const store = schema.table('store', {
     .notNull()
     .references(() => user.id),
   enabled: boolean('enabled').default(false).notNull(),
+  mode: text('mode').$type<'sandbox' | 'live'>().default('sandbox').notNull(),
   defaultLocale: text('default_locale').default('en').notNull(),
   languages: text('languages')
     .array()

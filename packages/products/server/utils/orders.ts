@@ -25,7 +25,9 @@ export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
 export async function createCheckout(event: H3Event, body: unknown) {
   const input = parseInput(checkoutSchema, body),
     store = await getStore(true)
-  await orderIntegration().assertReady(store.organization_id)
+  if (store.mode === 'live') {
+    await orderIntegration().assertReady(store.organization_id)
+  }
   await requireAllowedClientType(input.billing.type)
   const session = await getSession(event)
   const buyerId =
@@ -80,7 +82,7 @@ export async function createCheckout(event: H3Event, body: unknown) {
     }
     const id = randomUUID(),
       title = selectCopy(product, input.locale, store.default_locale).title
-    const snapshot = { billing: input.billing, locale: input.locale }
+    const snapshot = { billing: input.billing, locale: input.locale, storeMode: store.mode }
     const lineSnapshot = { product, title, price }
     const [created] = await rows<Order>(
       `INSERT INTO products.orders(id,store_id,request_id,request_hash,buyer_id,email,snapshot) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -97,15 +99,23 @@ export async function createCheckout(event: H3Event, body: unknown) {
   })
   const primaryLine = order.lines[0]!
   if (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0) {
-    await rows("UPDATE products.orders SET status='paid',total=0,net=0,tax=0 WHERE id=$1 AND status='pending'", [
-      order.id
-    ])
+    await rows(
+      `UPDATE products.orders SET status='paid',total=0,net=0,tax=0,processing=$2,notified=$3 WHERE id=$1 AND status='pending'`,
+      [order.id, store.mode === 'sandbox' ? 'complete' : 'pending', store.mode === 'sandbox']
+    )
     await rows('UPDATE products.order_line SET total=0,net=0,tax=0 WHERE order_id=$1', [order.id])
-    await processOrder(order.id)
+    if (store.mode === 'live') {
+      await processOrder(order.id)
+    }
     return { url: `${baseUrl()}/purchases` }
   }
   if (order.status !== 'pending') {
     throw createError({ statusCode: 409, message: 'This checkout is already completed or expired' })
+  }
+  if (store.mode === 'sandbox') {
+    const checkoutId = `sandbox:${order.id}`
+    await rows('UPDATE products.orders SET checkout_id=$2 WHERE id=$1', [order.id, checkoutId])
+    return { url: `${baseUrl()}/store/sandbox-checkout/${order.id}` }
   }
   const checkout = await stripeProvider.checkout(order)
   await rows('UPDATE products.orders SET checkout_id=$2 WHERE id=$1', [order.id, checkout.id])

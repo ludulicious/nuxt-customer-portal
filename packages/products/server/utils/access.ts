@@ -13,6 +13,7 @@ export interface Store {
   organization_id: string
   actor_id: string
   enabled: boolean
+  mode: 'sandbox' | 'live'
   markdown_style: MarkdownStyle
   currency_tax_behavior: Record<string, 'inclusive' | 'exclusive'>
   currencies: string[]

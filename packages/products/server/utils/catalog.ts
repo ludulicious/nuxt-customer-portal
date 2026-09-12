@@ -348,6 +348,7 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
   )
   const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
   return {
+    storeMode: store.mode,
     categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
     isFree: !!product.isFree,
     pricingComplete: !!hasRequiredPrices(product, store.currencies),

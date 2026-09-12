@@ -12,6 +12,7 @@ const { t } = useI18n(),
     currencies: ['EUR'],
     currencyTaxBehavior: {} as Record<string, 'inclusive' | 'exclusive'>,
     enabled: false,
+    mode: 'sandbox' as const,
     defaultLocale: 'en' as 'en' | 'nl',
     imagePolicy: {
       thumbnail: { width: 400, height: 400 },
@@ -31,6 +32,7 @@ async function load() {
       currencies: health.value.currencies,
       currencyTaxBehavior: health.value.currencyTaxBehavior,
       enabled: health.value.enabled,
+      mode: health.value.mode,
       defaultLocale: health.value.defaultLocale,
       imagePolicy: health.value.imagePolicy
     })
@@ -46,6 +48,7 @@ async function save(tab: 'general' | 'styles') {
     const latest = await api.settings()
     const general = {
       enabled: latest.enabled,
+      mode: latest.mode,
       languages: latest.languages,
       defaultLocale: latest.defaultLocale,
       currencies: latest.currencies,
