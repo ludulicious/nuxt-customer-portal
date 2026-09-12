@@ -71,6 +71,18 @@ test('payment state gates access including full refunds and disputes', () => {
   assert.equal(hasPurchaseAccess({ ...paid, disputed: true }), false)
   assert.equal(hasPurchaseAccess({ ...paid, status: 'pending' }), false)
   assert.equal(hasPurchaseAccess({ ...paid, total: null }), false)
+  assert.equal(hasPurchaseAccess(paid, { total: 600, refunded: 600 }), false)
+  assert.equal(hasPurchaseAccess({ ...paid, refunded: 500 }, { total: 600, refunded: 0 }), true)
+})
+test('commerce schema uses multi-item orders and persisted carts', () => {
+  const migration = readFileSync(new URL('../migrations/0000_baseline.sql', import.meta.url), 'utf8')
+  assert.doesNotMatch(migration, /products\.purchase/)
+  assert.match(migration, /CREATE TABLE products\.orders/)
+  assert.match(migration, /CREATE TABLE products\.order_line/)
+  assert.match(migration, /quantity integer NOT NULL CHECK\(quantity>0\)/)
+  assert.match(migration, /CREATE TABLE products\.cart/)
+  assert.match(migration, /CREATE TABLE products\.cart_line/)
+  assert.match(migration, /FOREIGN KEY\(cart_id\) REFERENCES products\.cart\(id\)/)
 })
 test('English and Dutch provide matching interface translations', () => {
   const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8')).products

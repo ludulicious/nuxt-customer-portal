@@ -86,16 +86,35 @@ export interface Billing {
   clientId?: string
 }
 export interface OrderSnapshot {
+  billing: Billing
+  locale: Locale
+}
+export interface OrderLineSnapshot {
   product: ProductData
   title: string
   price: Price
-  billing: Billing
-  locale: Locale
+}
+export interface OrderLine {
+  id: string
+  order_id: string
+  position: number
+  product_id: string
+  price_id: string
+  quantity: number
+  snapshot: OrderLineSnapshot
+  unit_amount: number
+  total: number | null
+  net: number | null
+  tax: number | null
+  tax_details: unknown
+  refunded: number
+  fulfilled: boolean
+  created_at: string
 }
 export interface Order {
   id: string
   store_id: string
-  product_id: string
+  cart_id: string | null
   buyer_id: string | null
   client_id: string | null
   email: string
@@ -108,14 +127,37 @@ export interface Order {
   tax: number | null
   refunded: number
   disputed: boolean
-  fulfilled: boolean
   invoice_id: string | null
   invitation_id: string | null
   notified: boolean
   error: string | null
   created_at: string
+  updated_at: string
   tax_details: unknown
   processing: string
+  lines: OrderLine[]
+}
+export interface Cart {
+  id: string
+  store_id: string
+  buyer_id: string | null
+  token_hash: string
+  status: 'active' | 'converted' | 'expired'
+  locale: Locale
+  currency: string
+  expires_at: string
+  created_at: string
+  updated_at: string
+  lines: CartLine[]
+}
+export interface CartLine {
+  id: string
+  cart_id: string
+  product_id: string
+  price_id: string
+  quantity: number
+  created_at: string
+  updated_at: string
 }
 export interface CatalogProduct {
   markdownStyle: MarkdownStyle

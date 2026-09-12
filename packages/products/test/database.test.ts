@@ -122,7 +122,8 @@ test(
         address: 'Street 1',
         email: billing.email,
         locale: 'en' as const,
-        paymentReference: 'pi_test'
+        paymentReference: 'pi_test',
+        lines: [{ description: 'Coaching', quantity: 1, net: 1001, tax: 210, taxDetails: { taxes: [] } }]
       }
       await db.query('BEGIN')
       const invoice = await createCommerceDocument(db as never, input)
@@ -140,16 +141,21 @@ test(
         originalInvoiceId: invoice,
         net: -1001,
         tax: -210,
-        total: -1211
+        total: -1211,
+        lines: [{ description: 'Coaching', quantity: 1, net: -1001, tax: -210, taxDetails: { taxes: [] } }]
       })
       await db.query('COMMIT')
       const creditDocument = await getInvoice('store', credit)
       assert.equal(creditDocument.totalMinor, -1211)
       assert.equal(creditDocument.documentType, 'credit')
-      const snapshot = { product: source, title: 'Coaching', price: old, billing, locale: 'en' }
+      const snapshot = { billing, locale: 'en' }
       await db.query(
-        `INSERT INTO products.purchase(id,store_id,product_id,price_id,request_id,request_hash,email,snapshot) VALUES('order','store',$1,$2,'request','hash','buyer@example.test',$3)`,
-        [product.id, old.id, snapshot]
+        `INSERT INTO products.orders(id,store_id,request_id,request_hash,email,snapshot) VALUES('order','store','request','hash','buyer@example.test',$1)`,
+        [snapshot]
+      )
+      await db.query(
+        `INSERT INTO products.order_line(id,order_id,position,product_id,price_id,quantity,snapshot,unit_amount) VALUES('line','order',0,$1,$2,1,$3,1000)`,
+        [product.id, old.id, { product: source, title: 'Coaching', price: old }]
       )
 
       const { catalogAccess, rateLimit } = await import('../server/utils/access')
@@ -197,7 +203,7 @@ test(
       const { stripeProvider, stripeClient } = await import('../server/utils/payments')
       Object.assign(globalThis, { defineNitroPlugin: (callback: () => void) => callback() })
       await import('../../invoice-products/server/plugins/purchases')
-      await db.query("UPDATE products.purchase SET client_id=$1,notified=true WHERE id='order'", [client.clientId])
+      await db.query("UPDATE products.orders SET client_id=$1,notified=true WHERE id='order'", [client.clientId])
       const originalPayment = stripeProvider.lookupPayment
       stripeProvider.lookupPayment = async () => ({ refunded: 0, disputed: false })
       const original = stripeProvider.lookupCheckout
@@ -211,7 +217,9 @@ test(
           amount_total: 1000,
           total_details: { amount_tax: 174 },
           payment_intent: 'pi_fixture',
-          line_items: { data: [{ quantity: 1, price: { unit_amount: 1000 }, taxes: [] }] }
+          line_items: {
+            data: [{ quantity: 1, price: { unit_amount: 1000 }, amount_total: 1000, taxes: [{ amount: 174 }] }]
+          }
         }) as never
       const { handleWebhook } = await import('../server/utils/webhooks')
       const notification = {
@@ -222,7 +230,7 @@ test(
       try {
         await handleWebhook(notification)
         await handleWebhook(notification)
-        const createdInvoice = (await db.query("SELECT invoice_id FROM products.purchase WHERE id='order'")).rows[0]
+        const createdInvoice = (await db.query("SELECT invoice_id FROM products.orders WHERE id='order'")).rows[0]
           .invoice_id
         assert.ok(createdInvoice)
         assert.equal((await getInvoice('store', createdInvoice)).totalMinor, 1000)
@@ -238,12 +246,12 @@ test(
           (await db.query("SELECT count(*) FROM invoice_products.refund_credit WHERE order_id='order'")).rows[0].count,
           '1'
         )
-        assert.equal((await db.query("SELECT refunded FROM products.purchase WHERE id='order'")).rows[0].refunded, 1000)
+        assert.equal((await db.query("SELECT refunded FROM products.orders WHERE id='order'")).rows[0].refunded, 1000)
       } finally {
         stripeProvider.lookupCheckout = original
         stripeProvider.lookupPayment = originalPayment
       }
-      assert.equal((await db.query("SELECT status FROM products.purchase WHERE id='order'")).rows[0].status, 'paid')
+      assert.equal((await db.query("SELECT status FROM products.orders WHERE id='order'")).rows[0].status, 'paid')
       assert.equal(
         (await db.query("SELECT count(*) FROM products.webhook WHERE id='evt_fixture' AND processed_at IS NOT NULL"))
           .rows[0].count,
@@ -357,18 +365,17 @@ test(
         false
       )
       await db.query(
-        `INSERT INTO products.purchase(id,store_id,product_id,price_id,request_id,request_hash,client_id,email,snapshot,status,total,net,tax,notified) VALUES('free-order','store',$1,$2,'free-request','free-hash',$3,'buyer@example.test',$4,'paid',0,0,0,true)`,
-        [
-          free.id,
-          free.prices[0]!.id,
-          client.clientId,
-          { product: free, price: free.prices[0], billing, title: 'Free', locale: 'en' }
-        ]
+        `INSERT INTO products.orders(id,store_id,request_id,request_hash,client_id,email,snapshot,status,total,net,tax,notified) VALUES('free-order','store','free-request','free-hash',$1,'buyer@example.test',$2,'paid',0,0,0,true)`,
+        [client.clientId, { billing, locale: 'en' }]
+      )
+      await db.query(
+        `INSERT INTO products.order_line(id,order_id,position,product_id,price_id,quantity,snapshot,unit_amount,total,net,tax) VALUES('free-line','free-order',0,$1,$2,1,$3,0,0,0,0)`,
+        [free.id, free.prices[0]!.id, { product: free, price: free.prices[0], title: 'Free' }]
       )
       const { processOrder } = await import('../server/utils/orders')
       await processOrder('free-order')
       await processOrder('free-order')
-      const freeOrder = (await db.query("SELECT * FROM products.purchase WHERE id='free-order'")).rows[0]
+      const freeOrder = (await db.query("SELECT * FROM products.orders WHERE id='free-order'")).rows[0]
       assert.equal(freeOrder.invoice_id, null)
       assert.equal(freeOrder.processing, 'complete')
     } finally {

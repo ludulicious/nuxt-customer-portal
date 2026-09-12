@@ -21,6 +21,13 @@ export interface CommerceDocument {
   email: string
   locale: 'en' | 'nl'
   paymentReference: string
+  lines: Array<{
+    description: string
+    quantity: number
+    net: number
+    tax: number
+    taxDetails: unknown
+  }>
   originalInvoiceId?: string
 }
 export async function assertCommerceInvoicesReady(storeId: string) {
@@ -37,6 +44,13 @@ export async function assertCommerceInvoicesReady(storeId: string) {
 export async function createCommerceDocument(tx: PoolClient, input: CommerceDocument) {
   if (input.net + input.tax !== input.total) {
     throw new Error('Invoice amounts do not reconcile')
+  }
+  if (
+    !input.lines.length ||
+    input.lines.reduce((sum, line) => sum + line.net, 0) !== input.net ||
+    input.lines.reduce((sum, line) => sum + line.tax, 0) !== input.tax
+  ) {
+    throw new Error('Invoice lines do not reconcile')
   }
   const existing = await tx.query<{ id: string }>(
     'SELECT id FROM invoices.invoice WHERE organization_id=$1 AND external_reference=$2',
@@ -124,18 +138,23 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
       input.reference
     ]
   )
-  await tx.query(
-    "INSERT INTO invoices.invoice_line(id,invoice_id,position,description,quantity_milli,unit,unit_price_minor,vat_rate_basis_points,exact_tax_minor,tax_details) VALUES($1,$2,0,$3,1000,'item',$4,$5,$6,$7)",
-    [
-      randomUUID(),
-      id,
-      input.title,
-      input.net,
-      input.net ? Math.round((input.tax / input.net) * 10000) : 0,
-      input.tax,
-      JSON.stringify(input.taxDetails)
-    ]
-  )
+  for (const [position, line] of input.lines.entries()) {
+    const unitNet = line.quantity ? Math.round(line.net / line.quantity) : line.net
+    await tx.query(
+      "INSERT INTO invoices.invoice_line(id,invoice_id,position,description,quantity_milli,unit,unit_price_minor,vat_rate_basis_points,exact_tax_minor,tax_details) VALUES($1,$2,$3,$4,$5,'item',$6,$7,$8,$9)",
+      [
+        randomUUID(),
+        id,
+        position,
+        line.description,
+        line.quantity * 1000,
+        unitNet,
+        line.net ? Math.round((line.tax / line.net) * 10000) : 0,
+        line.tax,
+        JSON.stringify(line.taxDetails)
+      ]
+    )
+  }
   await tx.query(
     'INSERT INTO invoices.invoice_payment(id,invoice_id,paid_on,amount_minor,reference,note,created_by_id) VALUES($1,$2,$3,$4,$5,$6,$7)',
     [

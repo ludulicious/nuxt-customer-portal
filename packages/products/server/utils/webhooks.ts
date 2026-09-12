@@ -1,22 +1,26 @@
 import type Stripe from 'stripe'
 import { rows, transaction } from './database'
 import { stripeProvider } from './payments'
-import { reconcileCheckout, processOrder } from './orders'
+import { getOrder, reconcileCheckout, processOrder } from './orders'
 import type { Order } from '../../shared/types'
 
 export async function reconcilePayment(paymentId: string) {
-  const [order] = await rows<Order>('SELECT * FROM products.purchase WHERE payment_id=$1', [paymentId])
+  const [record] = await rows<Order>('SELECT * FROM products.orders WHERE payment_id=$1', [paymentId])
+  const order = record ? await getOrder(record.id) : undefined
   if (!order) {
     return
   }
   await transaction(async (tx) => {
-    await tx.query('SELECT id FROM products.purchase WHERE id=$1 FOR UPDATE', [order.id])
+    await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [order.id])
     const state = await stripeProvider.lookupPayment(paymentId)
-    await tx.query('UPDATE products.purchase SET refunded=$2,disputed=$3,updated_at=now() WHERE id=$1', [
+    await tx.query('UPDATE products.orders SET refunded=$2,disputed=$3,updated_at=now() WHERE id=$1', [
       order.id,
       state.refunded,
       state.disputed
     ])
+    if (order.lines.length === 1) {
+      await tx.query('UPDATE products.order_line SET refunded=$2 WHERE id=$1', [order.lines[0]!.id, state.refunded])
+    }
   })
   await processOrder(order.id)
   return order.id
@@ -41,7 +45,7 @@ export async function handleWebhook(event: Stripe.Event) {
     }
     if (event.type === 'checkout.session.async_payment_failed') {
       const session = event.data.object as Stripe.Checkout.Session
-      await rows("UPDATE products.purchase SET status='failed' WHERE checkout_id=$1 AND status='pending'", [session.id])
+      await rows("UPDATE products.orders SET status='failed' WHERE checkout_id=$1 AND status='pending'", [session.id])
     }
     if (event.type === 'charge.refunded' || event.type.startsWith('charge.dispute.')) {
       const object = event.data.object as Stripe.Charge | Stripe.Dispute
@@ -50,7 +54,7 @@ export async function handleWebhook(event: Stripe.Event) {
         id = await reconcilePayment(paymentId)
       }
     }
-    await rows('UPDATE products.webhook SET processed_at=now(),purchase_id=$2,error=NULL WHERE id=$1', [
+    await rows('UPDATE products.webhook SET processed_at=now(),order_id=$2,error=NULL WHERE id=$1', [
       event.id,
       id || null
     ])

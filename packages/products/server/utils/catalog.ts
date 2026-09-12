@@ -295,7 +295,7 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
 export async function deletion(storeId: string, id: string) {
   await getProduct(storeId, id)
   const [r] = await rows<{ exists: boolean }>(
-    'SELECT EXISTS(SELECT 1 FROM products.purchase WHERE product_id=$1) AS exists',
+    'SELECT EXISTS(SELECT 1 FROM products.order_line WHERE product_id=$1) AS exists',
     [id]
   )
   return { eligible: !r!.exists }

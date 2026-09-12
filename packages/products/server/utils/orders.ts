@@ -5,18 +5,27 @@ import { getSession, requireSession } from '@nuxt-customer-portal/core/server/po
 import { requireAllowedClientType } from '@nuxt-customer-portal/clients/server/utils/client-configuration'
 import { provisionPurchaseClient } from '@nuxt-customer-portal/clients/server/utils/purchase-client'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
-import type { Order, Price } from '../../shared/types'
+import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
 import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
 import { stripeProvider } from './payments'
-import { purchaseIntegration, runPurchaseFulfillmentHooks } from './contracts'
+import { orderIntegration, runOrderFulfillmentHooks } from './contracts'
+
+export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
+  const [order] = await rows<Order>('SELECT * FROM products.orders WHERE id=$1', [id], tx)
+  if (!order) {
+    return undefined
+  }
+  order.lines = await rows('SELECT * FROM products.order_line WHERE order_id=$1 ORDER BY position', [id], tx)
+  return order
+}
 
 export async function createCheckout(event: H3Event, body: unknown) {
   const input = parseInput(checkoutSchema, body),
     store = await getStore(true)
-  await purchaseIntegration().assertReady(store.organization_id)
+  await orderIntegration().assertReady(store.organization_id)
   await requireAllowedClientType(input.billing.type)
   const session = await getSession(event)
   const buyerId =
@@ -37,7 +46,7 @@ export async function createCheckout(event: H3Event, body: unknown) {
   const order = await transaction(async (tx) => {
     await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`checkout:${input.requestId}`])
     const [existing] = await rows<Order & { request_hash: string }>(
-      'SELECT * FROM products.purchase WHERE request_id=$1',
+      'SELECT * FROM products.orders WHERE request_id=$1',
       [input.requestId],
       tx
     )
@@ -45,6 +54,11 @@ export async function createCheckout(event: H3Event, body: unknown) {
       if (existing.request_hash !== fingerprint) {
         throw createError({ statusCode: 409, message: 'Checkout request has changed; start a new purchase' })
       }
+      existing.lines = await rows(
+        'SELECT * FROM products.order_line WHERE order_id=$1 ORDER BY position',
+        [existing.id],
+        tx
+      )
       return existing
     }
     const [currentStore] = await rows<{ currencies: string[] }>(
@@ -66,28 +80,27 @@ export async function createCheckout(event: H3Event, body: unknown) {
     }
     const id = randomUUID(),
       title = selectCopy(product, input.locale, store.default_locale).title
-    const snapshot = { product, title, price, billing: input.billing, locale: input.locale }
+    const snapshot = { billing: input.billing, locale: input.locale }
+    const lineSnapshot = { product, title, price }
     const [created] = await rows<Order>(
-      `INSERT INTO products.purchase(id,store_id,product_id,price_id,request_id,request_hash,buyer_id,email,snapshot) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [
-        id,
-        store.organization_id,
-        product.id,
-        price.id,
-        input.requestId,
-        fingerprint,
-        buyerId,
-        input.billing.email,
-        snapshot
-      ],
+      `INSERT INTO products.orders(id,store_id,request_id,request_hash,buyer_id,email,snapshot) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [id, store.organization_id, input.requestId, fingerprint, buyerId, input.billing.email, snapshot],
       tx
     )
+    const [line] = await rows<OrderLine>(
+      `INSERT INTO products.order_line(id,order_id,position,product_id,price_id,quantity,snapshot,unit_amount) VALUES($1,$2,0,$3,$4,1,$5,$6) RETURNING *`,
+      [randomUUID(), id, product.id, price.id, lineSnapshot, price.amount],
+      tx
+    )
+    created!.lines = [line!]
     return created!
   })
-  if (order.snapshot.product.isFree && order.snapshot.price.amount === 0) {
-    await rows("UPDATE products.purchase SET status='paid',total=0,net=0,tax=0 WHERE id=$1 AND status='pending'", [
+  const primaryLine = order.lines[0]!
+  if (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0) {
+    await rows("UPDATE products.orders SET status='paid',total=0,net=0,tax=0 WHERE id=$1 AND status='pending'", [
       order.id
     ])
+    await rows('UPDATE products.order_line SET total=0,net=0,tax=0 WHERE order_id=$1', [order.id])
     await processOrder(order.id)
     return { url: `${baseUrl()}/purchases` }
   }
@@ -95,7 +108,7 @@ export async function createCheckout(event: H3Event, body: unknown) {
     throw createError({ statusCode: 409, message: 'This checkout is already completed or expired' })
   }
   const checkout = await stripeProvider.checkout(order)
-  await rows('UPDATE products.purchase SET checkout_id=$2 WHERE id=$1', [order.id, checkout.id])
+  await rows('UPDATE products.orders SET checkout_id=$2 WHERE id=$1', [order.id, checkout.id])
   return { url: checkout.url }
 }
 export { hasPurchaseAccess as hasAccess } from '../../shared/access'
@@ -104,7 +117,7 @@ export async function claimPurchases(event: H3Event) {
   if (!session.user.emailVerified || !session.user.email) {
     throw createError({ statusCode: 403, message: 'Verify your email before accessing purchases' })
   }
-  await rows(`UPDATE products.purchase SET buyer_id=$1 WHERE buyer_id IS NULL AND email=$2 AND status='paid'`, [
+  await rows(`UPDATE products.orders SET buyer_id=$1 WHERE buyer_id IS NULL AND email=$2 AND status='paid'`, [
     session.user.id,
     session.user.email.toLowerCase()
   ])
@@ -114,7 +127,8 @@ export async function processOrder(id: string) {
   const store = await getStore()
   try {
     await transaction(async (tx) => {
-      const [order] = await rows<Order>('SELECT * FROM products.purchase WHERE id=$1 FOR UPDATE', [id], tx)
+      await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
+      const order = await getOrder(id, tx)
       if (!order || order.status !== 'paid') {
         return
       }
@@ -128,25 +142,25 @@ export async function processOrder(id: string) {
         )
         order.client_id = linked.clientId
         order.invitation_id = linked.invitationId
-        await tx.query('UPDATE products.purchase SET client_id=$2,invitation_id=$3 WHERE id=$1', [
+        await tx.query('UPDATE products.orders SET client_id=$2,invitation_id=$3 WHERE id=$1', [
           id,
           order.client_id,
           order.invitation_id
         ])
       }
       if (!order.invoice_id && order.total !== 0) {
-        order.invoice_id = await purchaseIntegration().invoice(tx, order, store.actor_id)
-        await tx.query('UPDATE products.purchase SET invoice_id=$2 WHERE id=$1', [id, order.invoice_id])
+        order.invoice_id = await orderIntegration().invoice(tx, order, store.actor_id)
+        await tx.query('UPDATE products.orders SET invoice_id=$2 WHERE id=$1', [id, order.invoice_id])
       }
-      await purchaseIntegration().refund(tx, order, store.actor_id)
+      await orderIntegration().refund(tx, order, store.actor_id)
       if (order.processing !== 'complete') {
-        await runPurchaseFulfillmentHooks(tx, order)
+        await runOrderFulfillmentHooks(tx, order)
       }
-      await tx.query("UPDATE products.purchase SET processing='complete',error=NULL WHERE id=$1", [id])
+      await tx.query("UPDATE products.orders SET processing='complete',error=NULL WHERE id=$1", [id])
     })
     await notifyOrder(id)
   } catch (error) {
-    await rows("UPDATE products.purchase SET processing='failed',error=$2 WHERE id=$1", [
+    await rows("UPDATE products.orders SET processing='failed',error=$2 WHERE id=$1", [
       id,
       error instanceof Error ? error.message : 'Processing failed'
     ])
@@ -175,7 +189,8 @@ const purchaseEmail = {
 async function notifyOrder(id: string) {
   // Serialize delivery attempts. Provider idempotency protects the send/commit crash boundary.
   await transaction(async (tx) => {
-    const [order] = await rows<Order>('SELECT * FROM products.purchase WHERE id=$1 FOR UPDATE', [id], tx)
+    await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
+    const order = await getOrder(id, tx)
     if (!order || order.status !== 'paid' || order.notified) {
       return
     }
@@ -183,20 +198,21 @@ async function notifyOrder(id: string) {
     const url = order.invitation_id
       ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
       : `${baseUrl()}/purchases`
-    await purchaseIntegration().notify(order, store.actor_id)
+    await orderIntegration().notify(order, store.actor_id)
+    const primaryLine = order.lines[0]!
     await sendPortalEmail({
       moduleId: 'products',
       definition: purchaseEmail,
       locale: order.snapshot.locale,
       to: order.email,
       values: {
-        product: order.snapshot.title,
+        product: order.lines.map((line) => line.snapshot.title).join(', '),
         url,
-        instructions: order.snapshot.product.nextSteps[order.snapshot.locale]
+        instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
       },
       idempotencyKey: `purchase:${id}`
     })
-    await tx.query('UPDATE products.purchase SET notified=true,error=NULL WHERE id=$1', [id])
+    await tx.query('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1', [id])
   })
 }
 export async function reconcileCheckout(checkoutId: string) {
@@ -205,22 +221,26 @@ export async function reconcileCheckout(checkoutId: string) {
   if (!id) {
     return
   }
-  const [order] = await rows<Order>('SELECT * FROM products.purchase WHERE id=$1', [id])
+  const order = await getOrder(id)
   if (!order || (order.checkout_id && order.checkout_id !== checkout.id)) {
     return
   }
-  if (checkout.currency?.toUpperCase() !== order.snapshot.price.currency || checkout.client_reference_id !== id) {
+  if (
+    checkout.currency?.toUpperCase() !== order.lines[0]?.snapshot.price.currency ||
+    checkout.client_reference_id !== id
+  ) {
     throw new Error('Checkout identity mismatch')
   }
   if (checkout.payment_status === 'paid') {
     const total = checkout.amount_total!,
       tax = checkout.total_details?.amount_tax || 0
-    const line = checkout.line_items?.data[0]
+    const checkoutLines = checkout.line_items?.data ?? []
     if (
-      !line ||
-      line.quantity !== 1 ||
-      checkout.line_items?.data.length !== 1 ||
-      line.price?.unit_amount !== order.snapshot.price.amount
+      checkoutLines.length !== order.lines.length ||
+      checkoutLines.some(
+        (line, index) =>
+          line.quantity !== order.lines[index]!.quantity || line.price?.unit_amount !== order.lines[index]!.unit_amount
+      )
     ) {
       throw new Error('Checkout price mismatch')
     }
@@ -230,7 +250,7 @@ export async function reconcileCheckout(checkoutId: string) {
       throw new Error('Paid checkout has no payment reference')
     }
     await transaction(async (tx) => {
-      await tx.query('SELECT id FROM products.purchase WHERE id=$1 FOR UPDATE', [id])
+      await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
       const paymentState = await stripeProvider.lookupPayment(paymentId)
       const address = checkout.customer_details?.address
       if (address && !order.invoice_id) {
@@ -246,13 +266,13 @@ export async function reconcileCheckout(checkoutId: string) {
           .join(', ')
         order.snapshot.billing.country = address.country || order.snapshot.billing.country
         order.snapshot.billing.vatNumber = checkout.customer_details?.tax_ids?.[0]?.value || ''
-        await tx.query('UPDATE products.purchase SET snapshot=$2 WHERE id=$1 AND invoice_id IS NULL', [
+        await tx.query('UPDATE products.orders SET snapshot=$2 WHERE id=$1 AND invoice_id IS NULL', [
           id,
           order.snapshot
         ])
       }
       await tx.query(
-        `UPDATE products.purchase SET status='paid',checkout_id=$2,payment_id=$3,total=$4,net=$5,tax=$6,tax_details=$7,refunded=GREATEST(refunded,$8),disputed=$9,updated_at=now() WHERE id=$1`,
+        `UPDATE products.orders SET status='paid',checkout_id=$2,payment_id=$3,total=$4,net=$5,tax=$6,tax_details=$7,refunded=GREATEST(refunded,$8),disputed=$9,updated_at=now() WHERE id=$1`,
         [
           id,
           checkout.id,
@@ -261,7 +281,7 @@ export async function reconcileCheckout(checkoutId: string) {
           total - tax,
           tax,
           JSON.stringify({
-            taxes: line.taxes || [],
+            taxes: checkoutLines.flatMap((line) => line.taxes || []),
             taxIds: checkout.customer_details?.tax_ids || [],
             address: checkout.customer_details?.address,
             taxExempt: checkout.customer_details?.tax_exempt
@@ -270,10 +290,25 @@ export async function reconcileCheckout(checkoutId: string) {
           paymentState.disputed
         ]
       )
+      for (const [index, line] of checkoutLines.entries()) {
+        const lineTax = (line.taxes || []).reduce((sum, item) => sum + (item.amount || 0), 0)
+        const lineTotal = line.amount_total
+        await tx.query(
+          'UPDATE products.order_line SET total=$2,net=$3,tax=$4,tax_details=$5,refunded=GREATEST(refunded,$6) WHERE id=$1',
+          [
+            order.lines[index]!.id,
+            lineTotal,
+            lineTotal - lineTax,
+            lineTax,
+            JSON.stringify({ taxes: line.taxes || [] }),
+            order.lines.length === 1 ? paymentState.refunded : order.lines[index]!.refunded
+          ]
+        )
+      }
     })
     await processOrder(id)
   } else if (checkout.status === 'expired') {
-    await rows("UPDATE products.purchase SET status='expired' WHERE id=$1 AND status='pending'", [id])
+    await rows("UPDATE products.orders SET status='expired' WHERE id=$1 AND status='pending'", [id])
   }
   return id
 }

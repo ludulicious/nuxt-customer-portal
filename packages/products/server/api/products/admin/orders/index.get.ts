@@ -2,6 +2,7 @@ import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { z } from 'zod'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
+import type { Order } from '@nuxt-customer-portal/products/shared/types'
 
 export default defineEventHandler(async (event) => {
   const { organizationId } = await admin(event)
@@ -14,12 +15,16 @@ export default defineEventHandler(async (event) => {
     getQuery(event)
   )
   const args = [organizationId, `%${q.search}%`, q.status]
-  const where = "store_id=$1 AND (email ILIKE $2 OR snapshot->>'title' ILIKE $2) AND ($3='all' OR status=$3)"
-  const [count] = await rows<{ count: string }>(`SELECT count(*) FROM products.purchase WHERE ${where}`, args)
-  const items = await rows(
-    `SELECT * FROM products.purchase WHERE ${where} ORDER BY created_at DESC,id LIMIT 20 OFFSET $4`,
+  const where =
+    "store_id=$1 AND (email ILIKE $2 OR EXISTS(SELECT 1 FROM products.order_line l WHERE l.order_id=products.orders.id AND l.snapshot->>'title' ILIKE $2)) AND ($3='all' OR status=$3)"
+  const [count] = await rows<{ count: string }>(`SELECT count(*) FROM products.orders WHERE ${where}`, args)
+  const items = await rows<Order>(
+    `SELECT * FROM products.orders WHERE ${where} ORDER BY created_at DESC,id LIMIT 20 OFFSET $4`,
     [...args, (q.page - 1) * 20]
   )
+  for (const order of items) {
+    order.lines = await rows('SELECT * FROM products.order_line WHERE order_id=$1 ORDER BY position', [order.id])
+  }
   return {
     items,
     pagination: {

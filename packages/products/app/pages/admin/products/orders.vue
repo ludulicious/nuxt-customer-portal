@@ -61,22 +61,32 @@ async function action(id: string, name: 'retry' | 'fulfill') {
     <article v-for="order in result?.items" :key="order.id" class="space-y-3 rounded-lg border p-4">
       <div class="flex justify-between gap-3">
         <div>
-          <h2 class="font-medium">{{ order.snapshot.title }}</h2>
+          <h2 class="font-medium">{{ order.lines.map((line) => line.snapshot.title).join(', ') }}</h2>
           <p>{{ order.email }}</p>
           <p class="text-sm text-muted">
             {{ new Date(order.created_at).toLocaleString(locale) }} · {{ t(`products.${order.status}`) }}
           </p>
         </div>
         <span>{{
-          formatMoney(order.total ?? order.snapshot.price.amount, order.snapshot.price.currency, locale)
+          formatMoney(
+            order.total ?? order.lines.reduce((sum, line) => sum + line.unit_amount * line.quantity, 0),
+            order.lines[0]!.snapshot.price.currency,
+            locale
+          )
         }}</span>
       </div>
       <p v-if="order.refunded">
-        {{ t('products.refunded') }}: {{ formatMoney(order.refunded, order.snapshot.price.currency, locale) }}
+        {{ t('products.refunded') }}: {{ formatMoney(order.refunded, order.lines[0]!.snapshot.price.currency, locale) }}
       </p>
       <p v-if="order.disputed">{{ t('products.disputed') }}</p>
-      <p v-if="order.snapshot.product.type === 'service'">
-        {{ t(order.fulfilled ? 'products.fulfilled' : 'products.awaitingFulfillment') }}
+      <p v-if="order.lines.some((line) => line.snapshot.product.type === 'service')">
+        {{
+          t(
+            order.lines.filter((line) => line.snapshot.product.type === 'service').every((line) => line.fulfilled)
+              ? 'products.fulfilled'
+              : 'products.awaitingFulfillment'
+          )
+        }}
       </p>
       <UAlert v-if="order.error" color="error" :title="t('products.processingFailed')" :description="order.error" />
       <div class="flex flex-wrap gap-2">
@@ -87,8 +97,7 @@ async function action(id: string, name: 'retry' | 'fulfill') {
         ><UButton
           v-if="
             order.status === 'paid' &&
-            order.snapshot.product.type === 'service' &&
-            !order.fulfilled &&
+            order.lines.some((line) => line.snapshot.product.type === 'service' && !line.fulfilled) &&
             !order.disputed &&
             order.refunded < (order.total || 0)
           "

@@ -71,7 +71,8 @@ export const useProducts = () => ({
       response = await fetch(signed.url, { method: 'POST', body })
     }
     if (!response.ok) {
-      const failure = await response.json().catch(() => undefined) as { statusMessage?: string; message?: string } | undefined
+      const failure = (await response.json().catch(() => undefined)) as
+        { statusMessage?: string; message?: string } | undefined
       throw new Error(failure?.statusMessage || failure?.message || `Upload failed (${response.status})`)
     }
     await $fetch(`/api/products/admin/products/${id}/uploads/${signed.id}`, { method: 'POST', body: crop || {} })
@@ -123,6 +124,7 @@ export const useProducts = () => ({
     $fetch<
       Array<{
         id: string
+        orderId: string
         title: string
         type: string
         amount: number

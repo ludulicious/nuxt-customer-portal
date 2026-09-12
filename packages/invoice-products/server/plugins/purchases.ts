@@ -1,4 +1,4 @@
-import { registerPurchaseIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
+import { registerOrderIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
 import {
   assertCommerceInvoicesReady,
   createCommerceDocument
@@ -12,8 +12,8 @@ const details = (order: Order, actorId: string) => ({
   storeId: order.store_id,
   clientId: order.client_id!,
   actorId,
-  title: order.snapshot.title,
-  currency: order.snapshot.price.currency,
+  title: order.lines.map((line) => line.snapshot.title).join(', '),
+  currency: order.lines[0]!.snapshot.price.currency,
   net: order.net!,
   tax: order.tax!,
   total: order.total!,
@@ -23,10 +23,17 @@ const details = (order: Order, actorId: string) => ({
   address: order.snapshot.billing.address,
   email: order.email,
   locale: order.snapshot.locale,
-  paymentReference: order.payment_id!
+  paymentReference: order.payment_id!,
+  lines: order.lines.map((line) => ({
+    description: line.snapshot.title,
+    quantity: line.quantity,
+    net: line.net!,
+    tax: line.tax!,
+    taxDetails: line.tax_details
+  }))
 })
 export default defineNitroPlugin(() => {
-  registerPurchaseIntegration({
+  registerOrderIntegration({
     assertReady: assertCommerceInvoicesReady,
     async invoice(tx, order, actorId) {
       const id = await createCommerceDocument(tx, details(order, actorId))
@@ -57,7 +64,16 @@ export default defineNitroPlugin(() => {
         originalInvoiceId: order.invoice_id,
         net: -(delta - tax),
         tax: -tax,
-        total: -delta
+        total: -delta,
+        lines: [
+          {
+            description: order.lines.map((line) => line.snapshot.title).join(', '),
+            quantity: 1,
+            net: -(delta - tax),
+            tax: -tax,
+            taxDetails: order.tax_details
+          }
+        ]
       })
       await tx.query(
         'INSERT INTO invoice_products.refund_credit(order_id,cumulative_amount,invoice_id) VALUES($1,$2,$3)',

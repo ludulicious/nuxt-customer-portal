@@ -91,9 +91,9 @@ Product pages are intentionally public so a buyer can follow a purchase URL. Cat
 
 ## Extension contracts
 
-`registerPurchaseIntegration` connects invoice generation, refunds, and notification delivery without a Products dependency on Invoices. `registerPurchaseFulfillmentHook` registers an idempotent, transactional hook keyed by order ID. A later appointments bridge can attach bookings to purchased service orders; current service orders require manual scheduling and completion. Payment behavior lives behind `PaymentProvider`; Stripe is the only implemented adapter. Polar requires separate merchant-of-record invoicing behavior.
+`registerOrderIntegration` connects invoice generation, refunds, and notification delivery without a Products dependency on Invoices. `registerOrderFulfillmentHook` registers an idempotent, transactional hook keyed by order ID. A later appointments bridge can attach bookings to purchased service order lines; current service orders require manual scheduling and completion. Payment behavior lives behind `PaymentProvider`; Stripe is the only implemented adapter. Polar requires separate merchant-of-record invoicing behavior.
 
-Not included: physical products, shipping, inventory, booking capacity, carts, subscriptions, coupons, course lessons/progress, or media transcoding.
+Not included: physical products, shipping, inventory, booking capacity, cart UI or cart APIs, subscriptions, coupons, course lessons/progress, or media transcoding. The database includes cart and order-line structures for a future multi-item checkout while the current storefront creates a one-line order directly.
 
 ## Tests
 

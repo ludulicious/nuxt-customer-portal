@@ -1,19 +1,15 @@
-import { claimPurchases, hasAccess } from '@nuxt-customer-portal/products/server/utils/orders'
-import { rows } from '@nuxt-customer-portal/products/server/utils/database'
+import { claimPurchases, hasAccess, getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { sendAsset } from '@nuxt-customer-portal/products/server/utils/storage'
-import type { Order } from '@nuxt-customer-portal/products/shared/types'
 
 export default defineEventHandler(async (event) => {
   const userId = await claimPurchases(event),
     assetId = getRouterParam(event, 'assetId')!
-  const [order] = await rows<Order>('SELECT * FROM products.purchase WHERE id=$1 AND buyer_id=$2', [
-    getRouterParam(event, 'id'),
-    userId
-  ])
-  if (!order || !hasAccess(order) || !order.snapshot.product.fileIds.includes(assetId)) {
+  const order = await getOrder(getRouterParam(event, 'id')!)
+  const line = order?.lines.find((item) => hasAccess(order, item) && item.snapshot.product.fileIds.includes(assetId))
+  if (!order || order.buyer_id !== userId || !line) {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  const fileName = order.snapshot.product.fileNames?.[assetId]?.[order.snapshot.locale]
+  const fileName = line.snapshot.product.fileNames?.[assetId]?.[order.snapshot.locale]
   return sendAsset(event, assetId, getQuery(event).download === '1', fileName)
 })

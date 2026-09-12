@@ -46,18 +46,18 @@ const source = (id: string, asset: string) => `/api/products/purchases/${id}/fil
         <h3>{{ file.name }}</h3>
         <audio
           v-if="file.content_type.startsWith('audio/')"
-          :src="source(order.id, file.id)"
+          :src="source(order.orderId, file.id)"
           controls
           preload="none"
           class="w-full"
         /><video
           v-if="file.content_type.startsWith('video/')"
-          :src="source(order.id, file.id)"
+          :src="source(order.orderId, file.id)"
           controls
           preload="none"
           class="w-full rounded"
         /><UButton
-          :href="`${source(order.id, file.id)}?download=1`"
+          :href="`${source(order.orderId, file.id)}?download=1`"
           external
           variant="outline"
           icon="i-lucide-download"

@@ -29,7 +29,7 @@ export const stripeProvider: PaymentProvider = {
   },
   lookupCheckout: (id) => stripeClient().checkout.sessions.retrieve(id, { expand: ['line_items.data.taxes.rate'] }),
   async checkout(order) {
-    const p = order.snapshot.price
+    const primaryLine = order.lines[0]!
     return stripeClient().checkout.sessions.create(
       {
         mode: 'payment',
@@ -37,24 +37,25 @@ export const stripeProvider: PaymentProvider = {
         client_reference_id: order.id,
         metadata: { orderId: order.id },
         payment_intent_data: { metadata: { orderId: order.id } },
-        line_items: [
-          {
-            quantity: 1,
+        line_items: order.lines.map((line) => {
+          const p = line.snapshot.price
+          return {
+            quantity: line.quantity,
             price_data: {
               currency: p.currency.toLowerCase(),
               unit_amount: p.amount,
               tax_behavior: p.taxBehavior,
-              product_data: { name: order.snapshot.title, tax_code: order.snapshot.product.taxCode }
+              product_data: { name: line.snapshot.title, tax_code: line.snapshot.product.taxCode }
             }
           }
-        ],
+        }),
         automatic_tax: { enabled: true },
         billing_address_collection: 'required',
         tax_id_collection: { enabled: order.snapshot.billing.type === 'organization' },
         invoice_creation: { enabled: false },
         locale: order.snapshot.locale,
         success_url: `${baseUrl()}/store/complete`,
-        cancel_url: `${baseUrl()}/store/${order.snapshot.product.slug}`
+        cancel_url: `${baseUrl()}/store/${primaryLine.snapshot.product.slug}`
       },
       { idempotencyKey: `products:${order.id}` }
     )

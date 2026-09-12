@@ -3,7 +3,7 @@ import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { randomUUID } from 'node:crypto'
 import { settingsSchema } from '@nuxt-customer-portal/products/shared/validation'
-import { purchaseIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
+import { orderIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
 import { stripeClient } from '@nuxt-customer-portal/products/server/utils/payments'
 import { storage } from '@nuxt-customer-portal/products/server/utils/storage'
 import { getPortalEmailProviderStatus } from '@nuxt-customer-portal/core/server/utils/portal-email'
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     if (!process.env.PRODUCTS_STRIPE_WEBHOOK_SECRET) {
       throw createError({ statusCode: 409, message: 'Configure Stripe webhooks' })
     }
-    await purchaseIntegration().assertReady(context.organizationId)
+    await orderIntegration().assertReady(context.organizationId)
     const config = await getClientConfiguration()
     if (!['person', 'organization'].every((t) => config.allowedTypes.includes(t as 'person' | 'organization'))) {
       throw createError({ statusCode: 409, message: 'Enable personal and business clients first' })

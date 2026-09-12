@@ -10,7 +10,7 @@ export default defineTask({
   async run() {
     const paymentsConfigured = !!process.env.PRODUCTS_STRIPE_SECRET_KEY
     const orders = await rows<Order>(
-      `SELECT * FROM products.purchase WHERE (status='paid' AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
+      `SELECT * FROM products.orders WHERE (status='paid' AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
     )
     let processed = 0,
       failed = 0
@@ -28,7 +28,7 @@ export default defineTask({
       } catch {
         failed++
       } finally {
-        await rows('UPDATE products.purchase SET updated_at=now() WHERE id=$1', [order.id])
+        await rows('UPDATE products.orders SET updated_at=now() WHERE id=$1', [order.id])
       }
     }
     const events = await rows<{ id: string }>(
