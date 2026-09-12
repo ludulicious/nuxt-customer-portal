@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { publishChecks } from '../shared/publish'
 import { emptyProduct } from '../shared/validation'
+
+test('publish dialog loads data when conditionally mounted already open', async () => {
+  const dialog = await readFile(new URL('../app/components/ProductsPublishDialog.vue', import.meta.url), 'utf8')
+
+  assert.match(dialog, /await Promise\.all\(\[api\.get\(props\.productId\), api\.settings\(\)\]\)/)
+  assert.doesNotMatch(dialog, /watch\(\s*open/)
+})
 
 test('publish checklist requires every enabled translation, image, currency and digital file', () => {
   const product = emptyProduct()

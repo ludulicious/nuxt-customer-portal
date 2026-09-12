@@ -57,15 +57,7 @@ watch(search, () => {
   searchTimeout = setTimeout(loadUsers, 300)
 })
 
-watch(open, async (isOpen) => {
-  if (!isOpen) {
-    return
-  }
-  search.value = ''
-  state.userId = ''
-  state.role = 'member'
-  await loadUsers()
-})
+await loadUsers()
 
 onUnmounted(() => {
   if (searchTimeout) {

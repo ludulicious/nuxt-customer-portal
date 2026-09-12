@@ -31,31 +31,18 @@ const form = reactive({
 const hasOwner = ref(false)
 const checkingOwner = ref(false)
 
-// Check if organization has an owner when modal opens
-watch(open, async (isOpen) => {
-  if (isOpen) {
-    checkingOwner.value = true
-    try {
-      // Fetch members to check if organization has an owner
-      const members = await $fetch<Array<{ role: string }>>(`/api/admin/organizations/${props.organizationId}/members`)
-      hasOwner.value = members?.some((member) => member.role === 'owner') || false
-
-      // Set default role to 'owner' if no owner exists, otherwise 'member'
-      form.role = hasOwner.value ? 'member' : 'owner'
-    } catch (err) {
-      console.error('Failed to check for owner:', err)
-      // Default to 'member' if check fails
-      form.role = 'member'
-      hasOwner.value = true // Assume owner exists to be safe
-    } finally {
-      checkingOwner.value = false
-    }
-  } else {
-    // Reset form when modal closes
-    form.email = ''
-    // Role will be set when modal opens again based on hasOwner check
-  }
-})
+checkingOwner.value = true
+try {
+  const members = await $fetch<Array<{ role: string }>>(`/api/admin/organizations/${props.organizationId}/members`)
+  hasOwner.value = members?.some((member) => member.role === 'owner') || false
+  form.role = hasOwner.value ? 'member' : 'owner'
+} catch (err) {
+  console.error('Failed to check for owner:', err)
+  form.role = 'member'
+  hasOwner.value = true
+} finally {
+  checkingOwner.value = false
+}
 
 const roleOptions = computed(() => [
   { label: t('admin.organization.detail.invitations.roleOwner'), value: 'owner' },

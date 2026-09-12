@@ -66,16 +66,7 @@ const loadPreview = async (locale?: string) => {
     loadingPreview.value = false
   }
 }
-watch(
-  open,
-  (open) => {
-    if (open) {
-      void loadPreview()
-    } else {
-      preview.value = null
-    }
-  }
-)
+await loadPreview()
 const send = async () => {
   busy.value = true
   try {

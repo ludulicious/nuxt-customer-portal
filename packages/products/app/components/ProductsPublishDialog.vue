@@ -9,28 +9,19 @@ const emit = defineEmits<{ saved: [] }>()
 const api = useProducts()
 const { t } = useI18n()
 const busy = ref(false)
-const loading = ref(false)
+const loading = ref(true)
 const error = ref('')
 const product = ref<Awaited<ReturnType<typeof api.get>>>()
 const settings = ref<Awaited<ReturnType<typeof api.settings>>>()
 const checks = computed(() => (product.value && settings.value ? publishChecks(product.value, settings.value) : []))
 const allowed = computed(() => checks.value.length > 0 && checks.value.every((check) => check.passed || check.warning))
-watch(open, async (value) => {
-  if (!value) {
-    return
-  }
-  error.value = ''
-  product.value = undefined
-  settings.value = undefined
-  loading.value = true
-  try {
-    ;[product.value, settings.value] = await Promise.all([api.get(props.productId), api.settings()])
-  } catch {
-    error.value = t('products.loadFailed')
-  } finally {
-    loading.value = false
-  }
-})
+try {
+  ;[product.value, settings.value] = await Promise.all([api.get(props.productId), api.settings()])
+} catch {
+  error.value = t('products.loadFailed')
+} finally {
+  loading.value = false
+}
 async function publish() {
   if (!allowed.value || busy.value || !product.value) {
     return
