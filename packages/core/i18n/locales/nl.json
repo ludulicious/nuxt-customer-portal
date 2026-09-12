@@ -82,7 +82,7 @@
     "label": "Tijdzone",
     "provider": "Tijdzone van het bedrijf",
     "preference": "Weergavetijdzone",
-    "inherit": "Overnemen ({timezone})",
+    "inherit": "Standaardtijdzone gebruiken ({timezone})",
     "invalid": "Kies een geldige tijdzone",
     "savedPreference": "Je opgeslagen tijdzone blijft hetzelfde wanneer je reist.",
     "current": "Momenteel: {timezone}",

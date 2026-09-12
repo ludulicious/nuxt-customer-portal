@@ -82,7 +82,7 @@
     "label": "Timezone",
     "provider": "Business timezone",
     "preference": "Display timezone",
-    "inherit": "Inherit ({timezone})",
+    "inherit": "Use default timezone ({timezone})",
     "invalid": "Choose a valid timezone",
     "savedPreference": "Your saved timezone stays the same when you travel.",
     "current": "Currently: {timezone}",

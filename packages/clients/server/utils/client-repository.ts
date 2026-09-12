@@ -21,6 +21,8 @@ const clientSelection = {
   metadata: organization.metadata,
   createdAt: organization.createdAt,
   clientType: clientProfile.clientType,
+  firstName: clientProfile.firstName,
+  lastName: clientProfile.lastName,
   timezone: clientProfile.timezone,
   officialName: clientProfile.officialName,
   address: clientProfile.address,
@@ -39,6 +41,8 @@ interface ClientRow {
   metadata: string | null
   createdAt: Date
   clientType: 'organization' | 'person'
+  firstName: string | null
+  lastName: string | null
   timezone: string | null
   officialName: string
   address: string
@@ -66,6 +70,8 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
         phone: member.phone,
         jobTitle: member.jobTitle,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         image: user.image
       })
@@ -86,29 +92,32 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
       .where(and(inArray(invitation.organizationId, ids), eq(invitation.status, 'pending')))
       .orderBy(asc(invitation.email))
   ])
-  return rows.map((row) => ({
-    id: row.organizationId,
-    organizationId: row.organizationId,
-    name: row.name,
-    slug: row.slug,
-    logo: row.logo,
-    avatarLogo: getOrganizationAvatar(row) ?? null,
-    clientType: row.clientType,
-    timezone: row.timezone,
-    schedulingTimezone: row.timezone || providerTimezone,
-    officialName: row.officialName,
-    address: row.address,
-    registrationNumber: row.registrationNumber,
-    vatNumber: row.vatNumber,
-    invoiceEmail: row.invoiceEmail,
-    preferredLocale: row.preferredLocale === 'en' ? 'en' : 'nl',
-    archivedAt: row.archivedAt?.toISOString() ?? null,
-    modules: modules
-      .filter((item) => item.organizationId === row.organizationId)
-      .map((item) => ({ moduleId: item.moduleId, enabled: item.enabled })),
-    members: members
-      .filter((item) => item.organizationId === row.organizationId)
-      .map((item) => ({
+  return rows.map((row) => {
+    const clientMembers = members.filter((item) => item.organizationId === row.organizationId)
+    const personalMember = row.clientType === 'person' ? clientMembers[0] : undefined
+    return {
+      id: row.organizationId,
+      organizationId: row.organizationId,
+      name: row.name,
+      firstName: row.clientType === 'person' ? row.firstName ?? personalMember?.firstName ?? null : null,
+      lastName: row.clientType === 'person' ? row.lastName ?? personalMember?.lastName ?? null : null,
+      slug: row.slug,
+      logo: row.logo,
+      avatarLogo: getOrganizationAvatar(row) ?? null,
+      clientType: row.clientType,
+      timezone: row.timezone,
+      schedulingTimezone: row.timezone || providerTimezone,
+      officialName: row.officialName,
+      address: row.address,
+      registrationNumber: row.registrationNumber,
+      vatNumber: row.vatNumber,
+      invoiceEmail: row.invoiceEmail,
+      preferredLocale: row.preferredLocale === 'en' ? 'en' : 'nl',
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+      modules: modules
+        .filter((item) => item.organizationId === row.organizationId)
+        .map((item) => ({ moduleId: item.moduleId, enabled: item.enabled })),
+      members: clientMembers.map((item) => ({
         id: item.id,
         userId: item.userId,
         name: item.name,
@@ -118,16 +127,17 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
         phone: item.phone,
         jobTitle: item.jobTitle
       })),
-    invitations: invitations
-      .filter((item) => item.organizationId === row.organizationId)
-      .map((item) => ({
-        id: item.id,
-        email: item.email,
-        role: item.role || 'member',
-        status: item.status,
-        expiresAt: item.expiresAt.toISOString()
-      }))
-  }))
+      invitations: invitations
+        .filter((item) => item.organizationId === row.organizationId)
+        .map((item) => ({
+          id: item.id,
+          email: item.email,
+          role: item.role || 'member',
+          status: item.status,
+          expiresAt: item.expiresAt.toISOString()
+        }))
+    }
+  })
 }
 
 export const listGenericClientsPage = async (query: GenericClientListQuery): Promise<ClientListResponse> => {
@@ -249,6 +259,8 @@ export const createClientInTransaction = async (
   await tx.insert(clientProfile).values({
     organizationId,
     clientType: type,
+    firstName: type === 'person' ? input.firstName : null,
+    lastName: type === 'person' ? input.lastName : null,
     timezone: input.timezone ?? null,
     officialName: type === 'person' ? input.name : input.officialName!,
     address: input.address,
@@ -279,6 +291,9 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
     const [profile] = await tx.select().from(clientProfile).where(eq(clientProfile.organizationId, organizationId))
     if (profile?.clientType === 'person' && (input.registrationNumber || input.vatNumber)) {
       throw createError({ statusCode: 400, message: 'Personal clients cannot have company fields' })
+    }
+    if (profile?.clientType !== 'person' && (input.firstName !== undefined || input.lastName !== undefined)) {
+      throw createError({ statusCode: 400, message: 'Name parts are only available for personal clients' })
     }
     const orgValues: Record<string, unknown> = {}
     if (input.name !== undefined) {
@@ -312,7 +327,18 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
     if (input.preferredLocale !== undefined) {
       values.preferredLocale = input.preferredLocale
     }
+    if (input.firstName !== undefined && input.lastName !== undefined) {
+      values.firstName = input.firstName
+      values.lastName = input.lastName
+    }
     await tx.update(clientProfile).set(values).where(eq(clientProfile.organizationId, organizationId))
+    if (input.firstName !== undefined && input.lastName !== undefined) {
+      const personalUserIds = tx.select({ id: member.userId }).from(member).where(eq(member.organizationId, organizationId))
+      await tx
+        .update(user)
+        .set({ firstName: input.firstName, lastName: input.lastName })
+        .where(inArray(user.id, personalUserIds))
+    }
   })
 
 export const setClientArchived = async (organizationId: string, actorUserId: string, archived: boolean) => {

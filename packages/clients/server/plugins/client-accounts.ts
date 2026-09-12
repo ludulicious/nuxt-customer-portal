@@ -1,4 +1,7 @@
-import { registerUserDisplayNameChangedHook } from '@nuxt-customer-portal/core/server/utils/business-hooks'
+import {
+  registerUserDisplayNameChangedHook,
+  registerUserIdentityChangedHook
+} from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { and, eq, inArray } from 'drizzle-orm'
 import { createError } from 'h3'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
@@ -23,6 +26,21 @@ export default defineNitroPlugin(() => {
         .set({ officialName: name, updatedAt: new Date() })
         .where(eq(clientProfile.organizationId, client.id))
     }
+  })
+  registerUserIdentityChangedHook(async (transaction, userId, identity) => {
+    if (!identity.firstName || !identity.lastName) {
+      return
+    }
+    const tx = transaction as Parameters<Parameters<typeof db.transaction>[0]>[0]
+    const personalClientIds = tx
+      .select({ id: member.organizationId })
+      .from(member)
+      .innerJoin(clientProfile, eq(clientProfile.organizationId, member.organizationId))
+      .where(and(eq(member.userId, userId), eq(clientProfile.clientType, 'person')))
+    await tx
+      .update(clientProfile)
+      .set({ firstName: identity.firstName, lastName: identity.lastName, updatedAt: new Date() })
+      .where(inArray(clientProfile.organizationId, personalClientIds))
   })
   // Nitro does not await plugin return values. Register policies synchronously,
   // and gate requests on database validation instead of leaving a startup gap.

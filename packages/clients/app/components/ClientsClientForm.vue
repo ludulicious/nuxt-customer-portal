@@ -13,6 +13,8 @@ const form = reactive({
   clientType: (allowedTypes.value[0] ?? 'organization') as 'organization' | 'person',
   timezone: null as string | null,
   name: '',
+  firstName: '',
+  lastName: '',
   slug: '',
   officialName: '',
   address: '',
@@ -21,6 +23,7 @@ const form = reactive({
   invoiceEmail: '',
   preferredLocale: 'nl' as 'nl' | 'en'
 })
+const displayNameCustomized = ref(false)
 const schema = computed(() =>
   z.object({
     clientType: z.enum(['organization', 'person']),
@@ -29,6 +32,14 @@ const schema = computed(() =>
       .nullable()
       .refine((value) => value === null || isValidTimezone(value), t('timezones.invalid')),
     name: z.string().trim().min(2, t('features.clients.validation.name')).max(160),
+    firstName:
+      form.clientType === 'person'
+        ? z.string().trim().min(1, t('features.clients.validation.firstName')).max(80)
+        : z.string(),
+    lastName:
+      form.clientType === 'person'
+        ? z.string().trim().min(1, t('features.clients.validation.lastName')).max(80)
+        : z.string(),
     slug:
       props.editing || form.clientType === 'person'
         ? z.string()
@@ -56,6 +67,8 @@ const reset = () =>
           clientType: props.client.clientType,
           timezone: props.client.timezone,
           name: props.client.name,
+          firstName: props.client.firstName ?? '',
+          lastName: props.client.lastName ?? '',
           slug: props.client.slug,
           officialName: props.client.officialName,
           address: props.client.address,
@@ -68,6 +81,8 @@ const reset = () =>
           clientType: allowedTypes.value[0] ?? 'organization',
           timezone: null,
           name: '',
+          firstName: '',
+          lastName: '',
           slug: '',
           officialName: '',
           address: '',
@@ -77,10 +92,37 @@ const reset = () =>
           preferredLocale: 'nl'
         }
   )
-watch(() => props.client, reset, { immediate: true })
+watch(
+  () => props.client,
+  () => {
+    reset()
+    displayNameCustomized.value = Boolean(props.client)
+  },
+  { immediate: true }
+)
+watch(
+  () => [form.firstName, form.lastName],
+  () => {
+    if (form.clientType === 'person' && !displayNameCustomized.value) {
+      form.name = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(' ')
+    }
+  }
+)
+watch(
+  () => form.clientType,
+  (type) => {
+    if (!props.editing && type === 'person') {
+      displayNameCustomized.value = false
+      form.name = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(' ')
+    }
+  }
+)
 const submit = () =>
   emit('submit', {
     name: form.name.trim(),
+    ...(form.clientType === 'person'
+      ? { firstName: form.firstName.trim(), lastName: form.lastName.trim() }
+      : {}),
     ...(props.editing
       ? {}
       : { clientType: form.clientType, ...(form.clientType === 'organization' ? { slug: form.slug.trim() } : {}) }),
@@ -132,12 +174,16 @@ const submit = () =>
         />
       </UFormField>
       <div class="grid gap-4 md:grid-cols-2">
-        <UFormField
-          name="name"
-          :label="t(form.clientType === 'person' ? 'features.clients.fullName' : 'features.clients.name')"
-          required
-        >
-          <UInput v-model="form.name" class="w-full" />
+        <template v-if="form.clientType === 'person'">
+          <UFormField name="firstName" :label="t('features.clients.firstName')" required>
+            <UInput v-model="form.firstName" autocomplete="given-name" class="w-full" />
+          </UFormField>
+          <UFormField name="lastName" :label="t('features.clients.lastName')" required>
+            <UInput v-model="form.lastName" autocomplete="family-name" class="w-full" />
+          </UFormField>
+        </template>
+        <UFormField name="name" :label="t('features.clients.name')" required>
+          <UInput v-model="form.name" class="w-full" @update:model-value="displayNameCustomized = true" />
         </UFormField>
         <UFormField
           v-if="form.clientType === 'organization'"
@@ -179,10 +225,10 @@ const submit = () =>
             class="w-full"
           />
         </UFormField>
+        <UFormField name="timezone" :label="t('timezones.label')">
+          <PortalTimezoneSelect v-model="form.timezone" :inherited-timezone="timezones?.providerTimezone" />
+        </UFormField>
       </div>
-      <UFormField name="timezone" :label="t('timezones.label')">
-        <PortalTimezoneSelect v-model="form.timezone" :inherited-timezone="timezones?.providerTimezone" />
-      </UFormField>
       <UFormField name="address" :label="t('features.clients.address')">
         <UTextarea v-model="form.address" class="w-full" />
       </UFormField>

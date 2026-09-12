@@ -22,6 +22,8 @@ export const genericClientListQuerySchema = z.object({
 
 const clientFields = z.object({
   clientType: z.enum(['organization', 'person']).default('organization'),
+  firstName: z.string().trim().min(1).max(80).optional(),
+  lastName: z.string().trim().min(1).max(80).optional(),
   timezone: timezoneSchema.nullable().optional(),
   name: z.string().trim().min(2).max(160),
   slug: slug.optional(),
@@ -44,6 +46,8 @@ export const genericClientCreateSchema = clientFields.superRefine((input, ctx) =
     }
   } else if (input.registrationNumber || input.vatNumber) {
     ctx.addIssue({ code: 'custom', message: 'Personal clients cannot have company registration or VAT fields' })
+  } else if (!input.firstName || !input.lastName) {
+    ctx.addIssue({ code: 'custom', path: ['firstName'], message: 'Personal clients require first and last name' })
   }
 })
 export const clientUpdateSchema = clientFields
@@ -51,9 +55,12 @@ export const clientUpdateSchema = clientFields
   .partial()
   .extend({
     address: z.string().trim().max(1000).optional(),
-    preferredLocale: z.enum(['nl', 'en']).optional()
+    preferredLocale: z.enum(['nl', 'en']).optional(),
   })
   .strict()
+  .refine((value) => (value.firstName === undefined) === (value.lastName === undefined), {
+    message: 'First and last name must be updated together'
+  })
   .refine((value) => Object.keys(value).length > 0, 'At least one field is required')
 export const clientArchiveSchema = z.object({ archived: z.boolean() })
 export const clientModuleUpdateSchema = z.object({ enabled: z.boolean() })

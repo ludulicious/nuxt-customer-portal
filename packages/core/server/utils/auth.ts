@@ -33,6 +33,7 @@ import {
 } from '../../shared/permissions'
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
+import { runUserIdentityChangedHooks } from './business-hooks'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -308,6 +309,14 @@ export const auth = betterAuth({
             userId: user.id,
             role: 'owner',
             createdAt: new Date()
+          })
+        }
+      },
+      update: {
+        after: async (updatedUser) => {
+          await runUserIdentityChangedHooks(db, updatedUser.id, {
+            firstName: typeof updatedUser.firstName === 'string' ? updatedUser.firstName : null,
+            lastName: typeof updatedUser.lastName === 'string' ? updatedUser.lastName : null
           })
         }
       }

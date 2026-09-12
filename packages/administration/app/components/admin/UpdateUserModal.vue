@@ -19,7 +19,9 @@ const toast = useToast()
 
 const updateSchema = computed(() =>
   z.object({
-    name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength'))
+    name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength')),
+    firstName: z.string().trim().min(1, t('admin.user.update.firstNameRequired')).max(80),
+    lastName: z.string().trim().min(1, t('admin.user.update.lastNameRequired')).max(80)
   })
 )
 
@@ -27,7 +29,9 @@ type UpdateSchema = z.output<typeof updateSchema.value>
 type UpdateFormInput = z.input<typeof updateSchema.value>
 
 const updateForm = reactive<UpdateFormInput>({
-  name: ''
+  name: '',
+  firstName: '',
+  lastName: ''
 })
 
 watch(
@@ -35,6 +39,8 @@ watch(
   ([isOpen, user]) => {
     if (isOpen && user) {
       updateForm.name = user.name || ''
+      updateForm.firstName = user.firstName || ''
+      updateForm.lastName = user.lastName || ''
     }
   },
   { immediate: true }
@@ -49,7 +55,11 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
     const { error: updateError } = await authClient.admin.updateUser({
       userId: props.user.id,
       // Profile images are user-managed and never writable from Administration.
-      data: { name: event.data.name.trim() }
+      data: {
+        name: event.data.name.trim(),
+        firstName: event.data.firstName.trim(),
+        lastName: event.data.lastName.trim()
+      }
     })
 
     if (updateError) {
@@ -86,6 +96,15 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
         <UFormField name="name" :label="t('admin.user.update.name')">
           <UInput v-model="updateForm.name" :placeholder="t('admin.user.update.name')" class="w-full" />
         </UFormField>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <UFormField name="firstName" :label="t('admin.user.update.firstName')" required>
+            <UInput v-model="updateForm.firstName" autocomplete="given-name" class="w-full" />
+          </UFormField>
+          <UFormField name="lastName" :label="t('admin.user.update.lastName')" required>
+            <UInput v-model="updateForm.lastName" autocomplete="family-name" class="w-full" />
+          </UFormField>
+        </div>
 
         <div class="flex gap-4 justify-end pt-4">
           <UButton type="button" variant="outline" @click="open = false">

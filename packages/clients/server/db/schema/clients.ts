@@ -19,6 +19,8 @@ export const clientProfile = clientsSchema.table(
       .primaryKey()
       .references(() => organization.id, { onDelete: 'restrict' }),
     clientType: text('client_type').$type<'organization' | 'person'>().default('organization').notNull(),
+    firstName: text('first_name'),
+    lastName: text('last_name'),
     timezone: text('timezone'),
     officialName: text('official_name').notNull(),
     address: text('address').default('').notNull(),

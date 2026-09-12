@@ -91,9 +91,12 @@ export default defineEventHandler(async (event) => {
         })
       }
     } else {
+      const [firstName, ...lastNameParts] = input.name!.trim().split(/\s+/)
       clientId = await createClientInTransaction(tx, session.user.id, {
         clientType: 'person',
         name: input.name!,
+        firstName: firstName!,
+        lastName: lastNameParts.join(' ') || firstName!,
         invoiceEmail: input.email,
         address: '',
         preferredLocale: input.preferredLocale,

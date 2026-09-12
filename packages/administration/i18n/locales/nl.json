@@ -356,6 +356,10 @@
         "title": "Gebruiker Bijwerken",
         "description": "Werk de naam van de gebruiker bij. Profielfoto's worden door gebruikers zelf beheerd.",
         "name": "Naam",
+        "firstName": "Voornaam",
+        "lastName": "Achternaam",
+        "firstNameRequired": "Voornaam is verplicht",
+        "lastNameRequired": "Achternaam is verplicht",
         "confirm": "Gebruiker Bijwerken",
         "success": "Gebruiker succesvol bijgewerkt",
         "error": "Gebruiker bijwerken mislukt"

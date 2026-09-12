@@ -7,6 +7,8 @@ export interface User {
   id: string
   name: string
   email: string
+  firstName?: string | null
+  lastName?: string | null
   timezone?: string | null
   emailVerified: boolean
   image?: string

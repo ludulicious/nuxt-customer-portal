@@ -1,4 +1,7 @@
-import { runUserDisplayNameChangedHooks } from '@nuxt-customer-portal/core/server/utils/business-hooks'
+import {
+  runUserDisplayNameChangedHooks,
+  runUserIdentityChangedHooks
+} from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { defineEventHandler, createError, readBody } from 'h3'
 import { z } from 'zod'
 import { timezoneSchema } from '@nuxt-customer-portal/core/server/utils/timezone-validation'
@@ -118,6 +121,12 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
     })
     if (updated && updateData.name !== undefined) {
       await runUserDisplayNameChangedHooks(tx, user.id, updated.name)
+    }
+    if (updated && updateData.firstName !== undefined && updateData.lastName !== undefined) {
+      await runUserIdentityChangedHooks(tx, user.id, {
+        firstName: updated.firstName,
+        lastName: updated.lastName
+      })
     }
     return updated
   })

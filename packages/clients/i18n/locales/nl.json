@@ -65,6 +65,8 @@
       "resultCount": "{count} klant | {count} klanten",
       "validation": {
         "name": "Voer minimaal twee tekens in.",
+        "firstName": "Voornaam is verplicht.",
+        "lastName": "Achternaam is verplicht.",
         "slug": "Gebruik alleen kleine letters, cijfers en enkele koppeltekens.",
         "officialName": "Voer de officiële bedrijfsnaam in.",
         "email": "Voer een geldig e-mailadres in."

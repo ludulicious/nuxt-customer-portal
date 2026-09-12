@@ -24,6 +24,8 @@ export interface GenericClientDto {
   id: string
   organizationId: string
   name: string
+  firstName: string | null
+  lastName: string | null
   slug: string
   logo: string | null
   clientType: 'organization' | 'person'

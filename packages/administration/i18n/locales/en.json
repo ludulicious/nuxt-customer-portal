@@ -360,6 +360,10 @@
         "title": "Update User",
         "description": "Update the user's name. Profile pictures are managed by users themselves.",
         "name": "Name",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
         "confirm": "Update User",
         "success": "User updated successfully",
         "error": "Failed to update user"
