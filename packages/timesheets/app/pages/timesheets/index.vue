@@ -1342,7 +1342,11 @@ const runningDuration = computed(() => {
       </template>
     </UModal>
 
-    <UModal v-if="submissionModalOpen" v-model:open="submissionModalOpen" :title="t('features.timesheets.submissions.title')">
+    <UModal
+      v-if="submissionModalOpen"
+      v-model:open="submissionModalOpen"
+      :title="t('features.timesheets.submissions.title')"
+    >
       <template #body>
         <UForm :state="submissionState" :schema="submissionSchema" novalidate class="space-y-4" @submit="submit">
           <p class="text-sm text-muted">{{ t('features.timesheets.submissions.description') }}</p>

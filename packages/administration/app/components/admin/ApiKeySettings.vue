@@ -157,7 +157,12 @@ onMounted(loadKeys)
       </UTable>
     </div>
 
-    <UModal v-if="createOpen" v-model:open="createOpen" :title="t('admin.apiKeys.newApiKey')" :ui="{ content: 'pointer-events-auto' }">
+    <UModal
+      v-if="createOpen"
+      v-model:open="createOpen"
+      :title="t('admin.apiKeys.newApiKey')"
+      :ui="{ content: 'pointer-events-auto' }"
+    >
       <template #body>
         <div class="space-y-4">
           <UAlert v-if="shownKey" color="success" variant="subtle" :title="t('admin.apiKeys.copyKey')">

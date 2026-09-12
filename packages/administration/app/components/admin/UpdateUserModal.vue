@@ -19,7 +19,11 @@ const toast = useToast()
 
 const updateSchema = computed(() =>
   z.object({
-    name: z.string().trim().min(1, t('profile.validation.nameRequired')).max(255, t('profile.validation.nameMaxLength')),
+    name: z
+      .string()
+      .trim()
+      .min(1, t('profile.validation.nameRequired'))
+      .max(255, t('profile.validation.nameMaxLength')),
     firstName: z.string().trim().min(1, t('admin.user.update.firstNameRequired')).max(80),
     lastName: z.string().trim().min(1, t('admin.user.update.lastNameRequired')).max(80)
   })

@@ -263,7 +263,12 @@ const stopImpersonating = async () => {
       </div>
 
       <!-- Organization Switcher Modal -->
-      <UModal v-if="showOrgSwitcherModal" v-model:open="showOrgSwitcherModal" :title="t('menu.switchOrganization')" :ui="{ footer: 'justify-end' }">
+      <UModal
+        v-if="showOrgSwitcherModal"
+        v-model:open="showOrgSwitcherModal"
+        :title="t('menu.switchOrganization')"
+        :ui="{ footer: 'justify-end' }"
+      >
         <template #body>
           <OrganizationSwitcher
             v-if="isAuthenticated"

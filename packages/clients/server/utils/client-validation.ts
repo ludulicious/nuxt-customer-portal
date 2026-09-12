@@ -55,7 +55,7 @@ export const clientUpdateSchema = clientFields
   .partial()
   .extend({
     address: z.string().trim().max(1000).optional(),
-    preferredLocale: z.enum(['nl', 'en']).optional(),
+    preferredLocale: z.enum(['nl', 'en']).optional()
   })
   .strict()
   .refine((value) => (value.firstName === undefined) === (value.lastName === undefined), {

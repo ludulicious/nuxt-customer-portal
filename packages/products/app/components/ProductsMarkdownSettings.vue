@@ -7,7 +7,10 @@ const fontOptions = computed(() =>
   ['system', 'sans', 'serif'].map((value) => ({ value, label: t(`products.markdown.${value}`) }))
 )
 const bulletOptions = computed(() =>
-  ['disc', 'circle', 'square', 'dash', 'check', 'sparkle'].map((value) => ({ value, label: t(`products.markdown.bullets.${value}`) }))
+  ['disc', 'circle', 'square', 'dash', 'check', 'sparkle'].map((value) => ({
+    value,
+    label: t(`products.markdown.bullets.${value}`)
+  }))
 )
 const numbers = [
   { key: 'fontSize', min: 12, max: 24, step: 1 },
@@ -30,10 +33,23 @@ const sampleMarkdown = computed(() => {
   ].join('\n\n')
 })
 const sampleHtml = computed(() => {
-  const sample = (key: string) => t(`products.markdown.${key}`).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+  const sample = (key: string) =>
+    t(`products.markdown.${key}`).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   return `<h2>${sample('sampleTitle')}</h2><p><strong>${sample('sampleIntro')}</strong></p><h3>${sample('sampleHeading')}</h3><ul><li>${sample('sampleItemOne')}</li><li>${sample('sampleItemTwo')}</li></ul><p><a href="#">${sample('sampleLink')}</a></p><blockquote>${sample('sampleQuote')}</blockquote>${[1, 4, 5, 6].map((level) => `<h${level}>${t('products.markdown.sampleLevel', { level })}</h${level}>`).join('')}`
 })
-const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bulletColor', 'h1Color', 'h2Color', 'h3Color', 'h4Color', 'h5Color', 'h6Color'] as const
+const colors = [
+  'textColor',
+  'headingColor',
+  'linkColor',
+  'backgroundColor',
+  'bulletColor',
+  'h1Color',
+  'h2Color',
+  'h3Color',
+  'h4Color',
+  'h5Color',
+  'h6Color'
+] as const
 </script>
 
 <template>
@@ -94,7 +110,11 @@ const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bu
                 <template #content>
                   <div class="space-y-3 p-4">
                     <p class="text-sm font-medium">{{ t(`products.markdown.${key}`) }}</p>
-                    <UColorPicker :model-value="theme[key] || undefined" format="hex" @update:model-value="theme[key] = $event || ''" />
+                    <UColorPicker
+                      :model-value="theme[key] || undefined"
+                      format="hex"
+                      @update:model-value="theme[key] = $event || ''"
+                    />
                     <UButton type="button" color="neutral" variant="outline" block @click="theme[key] = ''">
                       {{ t('products.markdown.useAutomatic') }}
                     </UButton>
@@ -119,7 +139,11 @@ const colors = ['textColor', 'headingColor', 'linkColor', 'backgroundColor', 'bu
         <div class="rounded-lg border border-default p-5">
           <ProductsMarkdown :html="sampleHtml" :theme="theme" />
         </div>
-        <pre v-if="showMarkdown" :id="markdownSourceId" class="whitespace-pre-wrap break-words rounded-lg border border-default bg-elevated p-4 text-sm"><code>{{ sampleMarkdown }}</code></pre>
+        <pre
+          v-if="showMarkdown"
+          :id="markdownSourceId"
+          class="whitespace-pre-wrap break-words rounded-lg border border-default bg-elevated p-4 text-sm"
+        ><code>{{ sampleMarkdown }}</code></pre>
       </div>
     </div>
   </section>

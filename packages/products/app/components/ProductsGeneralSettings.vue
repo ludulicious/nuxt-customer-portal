@@ -95,7 +95,9 @@ function save() {
         </div>
       </fieldset>
       <ul class="space-y-1 text-sm">
-        <li v-if="settings.mode === 'live'">Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}</li>
+        <li v-if="settings.mode === 'live'">
+          Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}
+        </li>
         <li v-if="settings.mode === 'live'">
           {{ t('products.webhook') }}: {{ t(health?.webhookConfigured ? 'products.configured' : 'products.missing') }}
         </li>
@@ -103,7 +105,9 @@ function save() {
           {{ t('products.storage') }}: {{ t(health?.storageConfigured ? 'products.configured' : 'products.missing') }}
         </li>
       </ul>
-      <p class="text-sm text-muted">{{ t(settings.mode === 'live' ? 'products.configHelp' : 'products.sandboxConfigHelp') }}</p>
+      <p class="text-sm text-muted">
+        {{ t(settings.mode === 'live' ? 'products.configHelp' : 'products.sandboxConfigHelp') }}
+      </p>
 
       <UButton type="submit" :loading="saving">{{ t('products.save') }}</UButton></UForm
     >

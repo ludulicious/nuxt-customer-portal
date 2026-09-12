@@ -120,9 +120,7 @@ watch(
 const submit = () =>
   emit('submit', {
     name: form.name.trim(),
-    ...(form.clientType === 'person'
-      ? { firstName: form.firstName.trim(), lastName: form.lastName.trim() }
-      : {}),
+    ...(form.clientType === 'person' ? { firstName: form.firstName.trim(), lastName: form.lastName.trim() } : {}),
     ...(props.editing
       ? {}
       : { clientType: form.clientType, ...(form.clientType === 'organization' ? { slug: form.slug.trim() } : {}) }),

@@ -80,13 +80,19 @@ export const auth = betterAuth({
           message: demoMessage(ctx.headers?.get('accept-language') || '')
         })
       }
-      if (['/api-key/create', '/api-key/list', '/api-key/get', '/api-key/update', '/api-key/delete'].includes(ctx.path)) {
+      if (
+        ['/api-key/create', '/api-key/list', '/api-key/get', '/api-key/update', '/api-key/delete'].includes(ctx.path)
+      ) {
         const body = (ctx.body ?? {}) as Record<string, unknown>
         const query = (ctx.query ?? {}) as Record<string, unknown>
         const current = await getSessionFromCtx(ctx)
         const actorId = (body.userId as string | undefined) ?? current?.user.id
         if (actorId) {
-          const [actor] = await db.select({ role: userTable.role }).from(userTable).where(eq(userTable.id, actorId)).limit(1)
+          const [actor] = await db
+            .select({ role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, actorId))
+            .limit(1)
           if (actor?.role !== 'admin') {
             throw new APIError('FORBIDDEN', { message: 'System administrator access is required to manage API keys' })
           }

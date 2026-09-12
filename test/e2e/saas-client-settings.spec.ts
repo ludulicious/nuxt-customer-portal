@@ -16,7 +16,7 @@ test('SaaS client settings govern creation and reject conflicting concurrent cha
   }
   let response = await coach.get('/api/admin/portal-settings')
   assert.equal(response.status(), 200, await response.text())
-  let settings = (await response.json()).settings
+  const settings = (await response.json()).settings
   assert.deepEqual(settings.clients, { allowedTypes: ['organization', 'person'], personalSelfRegistration: true })
   response = await coach.post('/api/admin/portal-settings/complete', { data: { settings } })
   assert.equal(response.status(), 200, await response.text())
@@ -24,7 +24,7 @@ test('SaaS client settings govern creation and reject conflicting concurrent cha
     coach.put('/api/admin/portal-settings', { data: { settings: { ...settings, clients }, step: 'clients' } })
   response = await save({ allowedTypes: ['organization'], personalSelfRegistration: false })
   assert.equal(response.status(), 200, await response.text())
-  let publicSettings = await (await coach.get('/api/portal/public')).json()
+  const publicSettings = await (await coach.get('/api/portal/public')).json()
   assert.deepEqual(publicSettings.clients, { allowedTypes: ['organization'], personalSelfRegistration: false })
   response = await coach.post('/api/auth/organization/set-active', { data: { organizationId: 'provider' } })
   assert.equal(response.status(), 200)

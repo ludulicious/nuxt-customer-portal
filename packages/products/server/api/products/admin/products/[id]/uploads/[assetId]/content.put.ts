@@ -3,10 +3,5 @@ import { uploadBunnyObject } from '@nuxt-customer-portal/products/server/utils/s
 
 export default defineEventHandler(async (event) => {
   const { organizationId } = await admin(event)
-  return uploadBunnyObject(
-    event,
-    organizationId,
-    getRouterParam(event, 'id')!,
-    getRouterParam(event, 'assetId')!
-  )
+  return uploadBunnyObject(event, organizationId, getRouterParam(event, 'id')!, getRouterParam(event, 'assetId')!)
 })

@@ -59,7 +59,8 @@ async function changeStatus() {
             :loading="busy"
             :disabled="busy || editing"
             @click="changeStatus"
-          >{{ action.label }}</UButton>
+            >{{ action.label }}</UButton
+          >
         </div>
       </div>
     </template>
@@ -97,5 +98,10 @@ async function changeStatus() {
       />
     </div>
   </UCard>
-  <ProductsPublishDialog v-if="publishOpen" v-model:open="publishOpen" :product-id="product.id" @saved="emit('saved')" />
+  <ProductsPublishDialog
+    v-if="publishOpen"
+    v-model:open="publishOpen"
+    :product-id="product.id"
+    @saved="emit('saved')"
+  />
 </template>

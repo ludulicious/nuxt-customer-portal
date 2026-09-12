@@ -20,9 +20,12 @@ const selectedAsset = computed(() => props.assets.find(({ id }) => id === select
 const imageAsset = (id: string) => props.assets.find((asset) => asset.id === id)
 const purposes = ['thumbnail', 'gallery', 'detail'] as const
 const activePurpose = ref<ImagePurpose>(imageAsset(selectedId.value)?.image_purpose || 'thumbnail')
-const purposeImageIds = computed(() => imageIds.value.filter((id) => imageAsset(id)?.image_purpose === activePurpose.value))
+const purposeImageIds = computed(() =>
+  imageIds.value.filter((id) => imageAsset(id)?.image_purpose === activePurpose.value)
+)
 const selectedIndex = computed(() => purposeImageIds.value.indexOf(selectedId.value))
-const purposeCount = (purpose: ImagePurpose) => imageIds.value.filter((id) => imageAsset(id)?.image_purpose === purpose).length
+const purposeCount = (purpose: ImagePurpose) =>
+  imageIds.value.filter((id) => imageAsset(id)?.image_purpose === purpose).length
 
 watch(
   purposeImageIds,
@@ -62,7 +65,10 @@ function removeSelected() {
   if (index < 0) {
     return
   }
-  const nextPurposeId = purposeImageIds.value.filter((id) => id !== selectedId.value)[Math.min(selectedIndex.value, purposeImageIds.value.length - 2)] || ''
+  const nextPurposeId =
+    purposeImageIds.value.filter((id) => id !== selectedId.value)[
+      Math.min(selectedIndex.value, purposeImageIds.value.length - 2)
+    ] || ''
   const ids = [...imageIds.value]
   ids.splice(index, 1)
   imageIds.value = ids
@@ -95,19 +101,39 @@ function removeSelected() {
 
     <UFormField name="imageIds">
       <div class="space-y-4">
-        <div class="grid gap-1 rounded-lg bg-elevated p-1 sm:grid-cols-3" role="tablist" :aria-label="t('products.imagePurpose')">
+        <div
+          class="grid gap-1 rounded-lg bg-elevated p-1 sm:grid-cols-3"
+          role="tablist"
+          :aria-label="t('products.imagePurpose')"
+        >
           <button
             v-for="purpose in purposes"
             :key="purpose"
             type="button"
             role="tab"
             class="flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-primary"
-            :class="activePurpose === purpose ? 'bg-default text-highlighted shadow-sm' : 'text-muted hover:bg-default/60 hover:text-highlighted'"
+            :class="
+              activePurpose === purpose
+                ? 'bg-default text-highlighted shadow-sm'
+                : 'text-muted hover:bg-default/60 hover:text-highlighted'
+            "
             :aria-selected="activePurpose === purpose"
             @click="selectPurpose(purpose)"
           >
-            <span class="flex size-9 shrink-0 items-center justify-center rounded-md" :class="activePurpose === purpose ? 'bg-primary/10 text-primary' : 'bg-muted'">
-              <UIcon :name="purpose === 'thumbnail' ? 'i-lucide-square' : purpose === 'gallery' ? 'i-lucide-rectangle-vertical' : 'i-lucide-rectangle-horizontal'" class="size-4" />
+            <span
+              class="flex size-9 shrink-0 items-center justify-center rounded-md"
+              :class="activePurpose === purpose ? 'bg-primary/10 text-primary' : 'bg-muted'"
+            >
+              <UIcon
+                :name="
+                  purpose === 'thumbnail'
+                    ? 'i-lucide-square'
+                    : purpose === 'gallery'
+                      ? 'i-lucide-rectangle-vertical'
+                      : 'i-lucide-rectangle-horizontal'
+                "
+                class="size-4"
+              />
             </span>
             <span class="min-w-0 flex-1">
               <span class="flex items-center justify-between gap-2">
@@ -123,13 +149,16 @@ function removeSelected() {
 
         <div class="flex flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-muted">
-            {{ t(`products.imagePurpose${activePurpose}`) }} · {{ imagePolicy[activePurpose].width }} × {{ imagePolicy[activePurpose].height }}
+            {{ t(`products.imagePurpose${activePurpose}`) }} · {{ imagePolicy[activePurpose].width }} ×
+            {{ imagePolicy[activePurpose].height }}
           </p>
           <label
             class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition"
-            :class="activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1
-              ? 'cursor-not-allowed bg-muted text-dimmed'
-              : 'cursor-pointer bg-primary text-inverted hover:bg-primary/90'"
+            :class="
+              activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1
+                ? 'cursor-not-allowed bg-muted text-dimmed'
+                : 'cursor-pointer bg-primary text-inverted hover:bg-primary/90'
+            "
             :aria-disabled="busy || (activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1)"
           >
             <UIcon name="i-lucide-upload" class="size-4" />
@@ -153,7 +182,9 @@ function removeSelected() {
                 :key="id"
                 type="button"
                 class="group relative aspect-square overflow-hidden rounded-lg border bg-muted text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                :class="selectedId === id ? 'border-primary ring-2 ring-primary/30' : 'border-default hover:border-primary/60'"
+                :class="
+                  selectedId === id ? 'border-primary ring-2 ring-primary/30' : 'border-default hover:border-primary/60'
+                "
                 :aria-label="t('products.selectImage', { number: index + 1 })"
                 :aria-pressed="selectedId === id"
                 @click="selectedId = id"
@@ -164,12 +195,17 @@ function removeSelected() {
                   class="absolute inset-0 size-full object-cover transition duration-200 group-hover:scale-[1.02]"
                   loading="lazy"
                 />
-                <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-7 text-xs text-white">
+                <span
+                  class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-7 text-xs text-white"
+                >
                   {{ index + 1 }} · {{ imageAsset(id)?.width || '—' }} × {{ imageAsset(id)?.height || '—' }}
                 </span>
               </button>
             </div>
-            <div v-else class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-default text-center text-muted">
+            <div
+              v-else
+              class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-default text-center text-muted"
+            >
               <UIcon name="i-lucide-images" class="size-8" />
               <p class="text-sm font-medium">{{ t('products.noProductImages') }}</p>
               <p class="max-w-xs text-xs">{{ t('products.chooseImageToStart') }}</p>
@@ -177,59 +213,65 @@ function removeSelected() {
           </div>
 
           <aside class="rounded-lg border border-default bg-elevated/30 p-3">
-          <template v-if="selectedId">
-            <button
-              type="button"
-              class="group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-muted focus-visible:outline-2 focus-visible:outline-primary"
-              :aria-label="t('products.previewImage')"
-              @click="previewOpen = true"
-            >
-              <img
-                :src="api.previewImageUrl(productId, selectedId)"
-                :alt="selectedAsset?.name || t('products.previewImage')"
-                class="size-full object-cover"
-              />
-              <span class="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/30">
-                <UIcon name="i-lucide-expand" class="size-6 text-white opacity-0 transition group-hover:opacity-100" />
-              </span>
-            </button>
-            <div class="mt-3 space-y-1">
-              <p class="truncate text-sm font-medium">{{ selectedAsset?.name }}</p>
-              <p class="text-xs text-muted">
-                {{ selectedAsset?.width || '—' }} × {{ selectedAsset?.height || '—' }}
-              </p>
+            <template v-if="selectedId">
+              <button
+                type="button"
+                class="group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-muted focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-label="t('products.previewImage')"
+                @click="previewOpen = true"
+              >
+                <img
+                  :src="api.previewImageUrl(productId, selectedId)"
+                  :alt="selectedAsset?.name || t('products.previewImage')"
+                  class="size-full object-cover"
+                />
+                <span
+                  class="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/30"
+                >
+                  <UIcon
+                    name="i-lucide-expand"
+                    class="size-6 text-white opacity-0 transition group-hover:opacity-100"
+                  />
+                </span>
+              </button>
+              <div class="mt-3 space-y-1">
+                <p class="truncate text-sm font-medium">{{ selectedAsset?.name }}</p>
+                <p class="text-xs text-muted">{{ selectedAsset?.width || '—' }} × {{ selectedAsset?.height || '—' }}</p>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <UButton
+                  v-if="activePurpose !== 'thumbnail'"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-arrow-left"
+                  :disabled="selectedIndex <= 0"
+                  @click="move(-1)"
+                  >{{ t('products.moveEarlier') }}</UButton
+                >
+                <UButton
+                  v-if="activePurpose !== 'thumbnail'"
+                  color="neutral"
+                  variant="outline"
+                  trailing-icon="i-lucide-arrow-right"
+                  :disabled="selectedIndex >= purposeImageIds.length - 1"
+                  @click="move(1)"
+                  >{{ t('products.moveLater') }}</UButton
+                >
+                <UButton
+                  class="col-span-2 justify-center"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="removeSelected"
+                  >{{ t('products.removeImage') }}</UButton
+                >
+              </div>
+              <p class="mt-2 text-xs text-muted">{{ t('products.removeImageHelp') }}</p>
+            </template>
+            <div v-else class="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-muted">
+              <UIcon name="i-lucide-mouse-pointer-2" class="size-7" />
+              <p class="text-sm font-medium">{{ t('products.selectImageToEdit') }}</p>
             </div>
-            <div class="mt-3 grid grid-cols-2 gap-2">
-              <UButton
-                v-if="activePurpose !== 'thumbnail'"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-arrow-left"
-                :disabled="selectedIndex <= 0"
-                @click="move(-1)"
-              >{{ t('products.moveEarlier') }}</UButton>
-              <UButton
-                v-if="activePurpose !== 'thumbnail'"
-                color="neutral"
-                variant="outline"
-                trailing-icon="i-lucide-arrow-right"
-                :disabled="selectedIndex >= purposeImageIds.length - 1"
-                @click="move(1)"
-              >{{ t('products.moveLater') }}</UButton>
-              <UButton
-                class="col-span-2 justify-center"
-                color="error"
-                variant="subtle"
-                icon="i-lucide-trash-2"
-                @click="removeSelected"
-              >{{ t('products.removeImage') }}</UButton>
-            </div>
-            <p class="mt-2 text-xs text-muted">{{ t('products.removeImageHelp') }}</p>
-          </template>
-          <div v-else class="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-muted">
-            <UIcon name="i-lucide-mouse-pointer-2" class="size-7" />
-            <p class="text-sm font-medium">{{ t('products.selectImageToEdit') }}</p>
-          </div>
           </aside>
         </div>
       </div>

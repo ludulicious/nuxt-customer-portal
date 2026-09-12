@@ -99,8 +99,8 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
       id: row.organizationId,
       organizationId: row.organizationId,
       name: row.name,
-      firstName: row.clientType === 'person' ? row.firstName ?? personalMember?.firstName ?? null : null,
-      lastName: row.clientType === 'person' ? row.lastName ?? personalMember?.lastName ?? null : null,
+      firstName: row.clientType === 'person' ? (row.firstName ?? personalMember?.firstName ?? null) : null,
+      lastName: row.clientType === 'person' ? (row.lastName ?? personalMember?.lastName ?? null) : null,
       slug: row.slug,
       logo: row.logo,
       avatarLogo: getOrganizationAvatar(row) ?? null,
@@ -333,7 +333,10 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
     }
     await tx.update(clientProfile).set(values).where(eq(clientProfile.organizationId, organizationId))
     if (input.firstName !== undefined && input.lastName !== undefined) {
-      const personalUserIds = tx.select({ id: member.userId }).from(member).where(eq(member.organizationId, organizationId))
+      const personalUserIds = tx
+        .select({ id: member.userId })
+        .from(member)
+        .where(eq(member.organizationId, organizationId))
       await tx
         .update(user)
         .set({ firstName: input.firstName, lastName: input.lastName })

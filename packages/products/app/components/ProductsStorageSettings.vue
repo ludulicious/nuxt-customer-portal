@@ -27,9 +27,15 @@ const schema = z.object({
     .trim()
     .refine((value) => !value || /^https?:\/\//.test(value), t('products.storageEndpointInvalid'))
     .refine((value) => state.provider !== 'bunny' || Boolean(value), t('products.storageBunnyEndpointRequired')),
-  region: z.string().trim().refine((value) => state.provider === 'bunny' || Boolean(value), t('products.storageRegionRequired')),
+  region: z
+    .string()
+    .trim()
+    .refine((value) => state.provider === 'bunny' || Boolean(value), t('products.storageRegionRequired')),
   bucket: z.string().trim().min(3, t('products.storageBucketRequired')),
-  accessKeyId: z.string().trim().refine((value) => state.provider === 'bunny' || value.length >= 3, t('products.storageAccessKeyRequired')),
+  accessKeyId: z
+    .string()
+    .trim()
+    .refine((value) => state.provider === 'bunny' || value.length >= 3, t('products.storageAccessKeyRequired')),
   secretAccessKey: z
     .string()
     .refine((value) => props.storage.configured || value.length >= 8, t('products.storageSecretRequired')),
@@ -131,12 +137,19 @@ async function remove() {
         }}</UBadge>
       </div>
       <UFormField name="provider" :label="t('products.storageProvider')">
-        <USelect v-model="state.provider" :items="providerItems" :disabled="locked || storage.configured" class="w-full" />
+        <USelect
+          v-model="state.provider"
+          :items="providerItems"
+          :disabled="locked || storage.configured"
+          class="w-full"
+        />
         <template #help>
           <span>{{ t(state.provider === 'bunny' ? 'products.storageBunnyHelp' : 'products.storageS3Help') }}</span>
         </template>
       </UFormField>
-      <UFormField name="endpoint" :label="t(state.provider === 'bunny' ? 'products.storageBunnyEndpoint' : 'products.storageEndpoint')"
+      <UFormField
+        name="endpoint"
+        :label="t(state.provider === 'bunny' ? 'products.storageBunnyEndpoint' : 'products.storageEndpoint')"
         ><UInput
           v-model="state.endpoint"
           :disabled="locked"
@@ -150,7 +163,9 @@ async function remove() {
           ><UInput v-model="state.region" :disabled="locked" class="w-full"
         /></UFormField>
       </div>
-      <UFormField name="bucket" :label="t(state.provider === 'bunny' ? 'products.storageBunnyZone' : 'products.storageBucket')"
+      <UFormField
+        name="bucket"
+        :label="t(state.provider === 'bunny' ? 'products.storageBunnyZone' : 'products.storageBucket')"
         ><UInput v-model="state.bucket" :disabled="locked" class="w-full"
       /></UFormField>
       <UFormField v-if="state.provider === 's3'" name="accessKeyId" :label="t('products.storageAccessKey')"
@@ -158,9 +173,15 @@ async function remove() {
       /></UFormField>
       <UFormField
         name="secretAccessKey"
-        :label="state.provider === 'bunny'
-          ? (storage.configured ? t('products.storageReplaceBunnyPassword') : t('products.storageBunnyPassword'))
-          : (storage.configured ? t('products.storageReplaceSecret') : t('products.storageSecretKey'))"
+        :label="
+          state.provider === 'bunny'
+            ? storage.configured
+              ? t('products.storageReplaceBunnyPassword')
+              : t('products.storageBunnyPassword')
+            : storage.configured
+              ? t('products.storageReplaceSecret')
+              : t('products.storageSecretKey')
+        "
         ><UInput
           v-model="state.secretAccessKey"
           :disabled="locked"
@@ -181,9 +202,14 @@ async function remove() {
           @click="removing = true"
           >{{ t('products.storageRemove') }}</UButton
         >
-        <UButton type="button" variant="outline" :disabled="locked && !storage.configured" :loading="busy" @click="test">{{
-          t('products.storageTest')
-        }}</UButton>
+        <UButton
+          type="button"
+          variant="outline"
+          :disabled="locked && !storage.configured"
+          :loading="busy"
+          @click="test"
+          >{{ t('products.storageTest') }}</UButton
+        >
         <UButton type="submit" :disabled="locked" :loading="busy">{{ t('products.save') }}</UButton>
       </div>
     </UForm>

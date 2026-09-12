@@ -727,15 +727,15 @@ function removeFile(id: string, index: number) {
       </div></UForm
     >
   </div>
-  <UModal v-if="categoriesOpen" v-model:open="categoriesOpen" :title="t('products.addCategory')" :ui="{ content: 'pointer-events-auto' }">
+  <UModal
+    v-if="categoriesOpen"
+    v-model:open="categoriesOpen"
+    :title="t('products.addCategory')"
+    :ui="{ content: 'pointer-events-auto' }"
+  >
     <template #body><ProductsCategoryForm embedded @saved="categorySaved" @cancel="categoriesOpen = false" /></template>
   </UModal>
-  <UModal
-    v-if="cropOpen && pendingImage"
-    v-model:open="cropOpen"
-    :title="t('products.cropImage')"
-    :dismissible="!busy"
-  >
+  <UModal v-if="cropOpen && pendingImage" v-model:open="cropOpen" :title="t('products.cropImage')" :dismissible="!busy">
     <template #body
       ><div v-if="pendingImage" class="space-y-4">
         <p class="text-sm text-muted">

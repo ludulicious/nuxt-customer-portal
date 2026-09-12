@@ -148,8 +148,8 @@ export const storageSummary = async (): Promise<StorageSettings> => {
   )
   const configured = Boolean(
     row?.storage_bucket &&
-      row.storage_secret_access_key &&
-      (row.storage_provider === 'bunny' || (row.storage_region && row.storage_access_key_id))
+    row.storage_secret_access_key &&
+    (row.storage_provider === 'bunny' || (row.storage_region && row.storage_access_key_id))
   )
   return {
     provider: row?.storage_provider || 's3',

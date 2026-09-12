@@ -43,7 +43,10 @@ test('Bunny proprietary API health check uploads, reads, and removes a probe', a
   } finally {
     globalThis.fetch = originalFetch
   }
-  assert.deepEqual(requests.map(({ method }) => method), ['PUT', 'GET', 'DELETE'])
+  assert.deepEqual(
+    requests.map(({ method }) => method),
+    ['PUT', 'GET', 'DELETE']
+  )
   assert.ok(requests.every(({ url }) => url.includes('/product-zone/products/health/')))
   assert.ok(requests.every(({ accessKey }) => accessKey === 'zone-password'))
 })

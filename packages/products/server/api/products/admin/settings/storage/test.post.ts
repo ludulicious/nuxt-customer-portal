@@ -27,9 +27,9 @@ export default defineEventHandler(async (event) => {
       'SELECT storage_secret_access_key,storage_access_key_id FROM products.store WHERE id=true AND organization_id=$1',
       [context.organizationId]
     )
-    const secret = input.secretAccessKey || (existing?.storage_secret_access_key
-      ? decryptStorageSecret(existing.storage_secret_access_key)
-      : '')
+    const secret =
+      input.secretAccessKey ||
+      (existing?.storage_secret_access_key ? decryptStorageSecret(existing.storage_secret_access_key) : '')
     const accessKeyId = input.provider === 'bunny' ? '' : input.accessKeyId || existing?.storage_access_key_id || ''
     if (!secret || (input.provider === 's3' && !accessKeyId)) {
       throw createError({ statusCode: 422, message: 'Access credentials are required' })
@@ -48,9 +48,8 @@ export default defineEventHandler(async (event) => {
   try {
     await testStorageConfiguration(config)
   } catch (error) {
-    const message = error instanceof Error && error.message.startsWith('Bunny Storage')
-      ? error.message
-      : 'Storage connection failed'
+    const message =
+      error instanceof Error && error.message.startsWith('Bunny Storage') ? error.message : 'Storage connection failed'
     throw createError({ statusCode: 422, message })
   }
   return { ok: true, source: config.source }
