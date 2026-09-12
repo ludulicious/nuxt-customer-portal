@@ -23,7 +23,16 @@ export default defineEventHandler(async (event) => {
       // running post-payment effects. Make those orders eligible for processing.
       await rows("UPDATE products.orders SET processing='pending',notified=false,error=NULL WHERE id=$1", [order.id])
     }
-    await processOrder(order.id)
+    try {
+      await processOrder(order.id)
+    } catch {
+      const failed = await getOrder(order.id)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Order processing failed',
+        data: { message: failed?.error || 'Order processing failed' }
+      })
+    }
     return { ok: true }
   }
   if (order.checkout_id) {

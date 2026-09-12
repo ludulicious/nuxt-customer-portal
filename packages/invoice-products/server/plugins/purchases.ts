@@ -95,8 +95,8 @@ export default defineNitroPlugin(() => {
         const preview = await getInvoiceEmailPreview(order.store_id, order.invoice_id)
         await deliverInvoiceEmail(
           order.store_id,
-          order.invoice_id,
           actorId,
+          order.invoice_id,
           {
             to: preview.to,
             cc: [],

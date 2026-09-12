@@ -4,6 +4,7 @@ import { formatMoney } from '../../../../shared/money'
 
 const { t, locale } = useI18n()
 const api = useProducts()
+const toast = useToast()
 const route = useRoute()
 const router = useRouter()
 const result = ref<Page<Order>>()
@@ -169,11 +170,17 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
     await load(true)
   } catch (cause) {
     const failure = cause as {
-      data?: { message?: string; statusMessage?: string }
+      data?: { message?: string; statusMessage?: string; data?: { message?: string } }
       message?: string
     }
     await load(true)
-    error.value = failure.data?.message || failure.data?.statusMessage || failure.message || t('products.actionFailed')
+    const message =
+      failure.data?.data?.message ||
+      failure.data?.message ||
+      failure.data?.statusMessage ||
+      failure.message ||
+      t('products.actionFailed')
+    toast.add({ title: t('products.processingFailed'), description: message, color: 'error' })
   } finally {
     busyId.value = ''
   }

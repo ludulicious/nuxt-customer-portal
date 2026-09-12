@@ -233,35 +233,34 @@ const purchaseEmail = {
   ]
 }
 async function notifyOrder(id: string) {
-  // Serialize delivery attempts. Provider idempotency protects the send/commit crash boundary.
-  await transaction(async (tx) => {
-    await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
-    const order = await getOrder(id, tx)
-    if (!order || order.status !== 'paid' || order.notified) {
-      return
-    }
-    const store = await getStore()
-    const url = order.invitation_id
-      ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
-      : `${baseUrl()}/purchases`
-    await orderIntegration().notify(order, store.actor_id)
-    const primaryLine = order.lines[0]!
-    await sendPortalEmail({
-      moduleId: 'products',
-      definition: purchaseEmail,
-      locale: order.snapshot.locale,
-      to: order.email,
-      values: {
-        product: order.lines.map((line) => line.snapshot.title).join(', '),
-        bookingReference: order.booking_reference,
-        url,
-        instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
-      },
-      idempotencyKey: `purchase:${id}`,
-      subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
-    })
-    await tx.query('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1', [id])
+  const order = await getOrder(id)
+  if (!order || order.status !== 'paid' || order.notified) {
+    return
+  }
+  const store = await getStore()
+  const url = order.invitation_id
+    ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
+    : `${baseUrl()}/purchases`
+  // Invoice delivery persists its own claim, and the purchase email uses a
+  // provider idempotency key. Do not hold an order transaction over PDF and
+  // external email work.
+  await orderIntegration().notify(order, store.actor_id)
+  const primaryLine = order.lines[0]!
+  await sendPortalEmail({
+    moduleId: 'products',
+    definition: purchaseEmail,
+    locale: order.snapshot.locale,
+    to: order.email,
+    values: {
+      product: order.lines.map((line) => line.snapshot.title).join(', '),
+      bookingReference: order.booking_reference,
+      url,
+      instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
+    },
+    idempotencyKey: `purchase:${id}`,
+    subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
   })
+  await rows('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1 AND notified=false', [id])
 }
 export async function reconcileCheckout(checkoutId: string) {
   const checkout = await stripeProvider.lookupCheckout(checkoutId)

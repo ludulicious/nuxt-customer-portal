@@ -494,12 +494,16 @@ const totals = (
   return { subtotalMinor, vatMinor, totalMinor, paidMinor, outstandingMinor: Math.max(0, totalMinor - paidMinor) }
 }
 
-export const listInvoices = async (organizationId: string): Promise<InvoiceDto[]> => {
+export const listInvoices = async (organizationId: string, invoiceId?: string): Promise<InvoiceDto[]> => {
   await requireInvoicesEnabled(organizationId)
   const rows = await db
     .select()
     .from(invoice)
-    .where(eq(invoice.organizationId, organizationId))
+    .where(
+      invoiceId
+        ? and(eq(invoice.organizationId, organizationId), eq(invoice.id, invoiceId))
+        : eq(invoice.organizationId, organizationId)
+    )
     .orderBy(desc(invoice.issueDate), desc(invoice.createdAt))
   if (!rows.length) {
     return []
@@ -553,7 +557,7 @@ export const listInvoices = async (organizationId: string): Promise<InvoiceDto[]
 }
 
 export const getInvoice = async (organizationId: string, id: string): Promise<InvoiceDto> => {
-  const selected = (await listInvoices(organizationId)).find((item) => item.id === id)
+  const [selected] = await listInvoices(organizationId, id)
   if (!selected) {
     throw createError({ statusCode: 404, message: 'Invoice not found' })
   }
