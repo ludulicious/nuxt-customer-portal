@@ -1,9 +1,13 @@
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
-import { apiKeyAdmin } from '@nuxt-customer-portal/products/server/utils/access'
+import { requireApiKeyAdmin } from '../../../utils/api-key-admin'
 
 export default defineEventHandler(async (event) => {
-  const { organizationId } = await apiKeyAdmin(event)
-  const result = await auth.api.listApiKeys({ headers: event.headers, query: { organizationId, sortDirection: 'desc' } })
+  const { organizationId } = await requireApiKeyAdmin(event)
+  setHeader(event, 'Cache-Control', 'no-store')
+  const result = await auth.api.listApiKeys({
+    headers: event.headers,
+    query: { organizationId, sortDirection: 'desc' }
+  })
   return result.apiKeys.map((key) => ({
     id: key.id,
     name: key.name,

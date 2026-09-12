@@ -16,19 +16,6 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       descriptionKey: 'products.draftsReadScopeHelp'
     }
   ],
-  moduleMenuItems: [
-    {
-      moduleId: 'admin',
-      item: {
-        id: 'admin-api-keys',
-        labelKey: 'products.apiKeys',
-        icon: 'i-lucide-key-round',
-        to: '/admin/api-keys',
-        audiences: ['admin'],
-        order: 30
-      }
-    }
-  ],
   modules: [
     {
       id: 'products',

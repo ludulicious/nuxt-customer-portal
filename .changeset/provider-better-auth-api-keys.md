@@ -1,5 +1,6 @@
 ---
 '@nuxt-customer-portal/core': minor
+'@nuxt-customer-portal/administration': minor
 '@nuxt-customer-portal/products': minor
 ---
 

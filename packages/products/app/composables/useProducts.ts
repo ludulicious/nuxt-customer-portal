@@ -104,22 +104,6 @@ export const useProducts = () => ({
   testStorage: (body: Record<string, unknown>) =>
     $fetch('/api/products/admin/settings/storage/test', { method: 'POST', body }),
   removeStorage: () => $fetch('/api/products/admin/settings/storage', { method: 'DELETE' }),
-  keys: () =>
-    $fetch<
-      Array<{
-        id: string
-        name: string | null
-        prefix: string | null
-        expiresAt: string | null
-        enabled: boolean
-        lastUsedAt: string | null
-        createdAt: string
-        permissions: Record<string, string[]>
-      }>
-    >('/api/admin/api-keys'),
-  createKey: (body: Record<string, unknown>) =>
-    $fetch<{ key: string }>('/api/admin/api-keys', { method: 'POST', body }),
-  revoke: (id: string) => $fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' }),
   purchases: () =>
     $fetch<
       Array<{

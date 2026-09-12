@@ -84,6 +84,10 @@ test('commerce schema uses multi-item orders and persisted carts', () => {
   assert.match(migration, /CREATE TABLE products\.cart_line/)
   assert.match(migration, /FOREIGN KEY\(cart_id\) REFERENCES products\.cart\(id\)/)
 })
+test('legacy product API keys are removed by a forward migration', () => {
+  const migration = readFileSync(new URL('../migrations/0013_drop_legacy_api_keys.sql', import.meta.url), 'utf8')
+  assert.match(migration, /DROP TABLE IF EXISTS products\.api_key/)
+})
 test('English and Dutch provide matching interface translations', () => {
   const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8')).products
   const nl = JSON.parse(readFileSync(new URL('../i18n/locales/nl.json', import.meta.url), 'utf8')).products

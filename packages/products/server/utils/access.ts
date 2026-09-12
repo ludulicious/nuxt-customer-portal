@@ -30,18 +30,14 @@ export async function getStore(active = false) {
 export async function admin(event: H3Event) {
   const context = await requireFeatureAccess(event, productsFeature.policy, 'manage')
   if (context.organizationType !== 'PROVIDER' || (context.role !== 'owner' && context.role !== 'admin')) {
-    throw createError({ statusCode: 403, message: 'API keys are only available to provider organization administrators' })
+    throw createError({
+      statusCode: 403,
+      message: 'Product administration is only available to provider organization administrators'
+    })
   }
   const [store] = await rows<Store>('SELECT * FROM products.store WHERE id=true')
   if (store && store.organization_id !== context.organizationId) {
     throw createError({ statusCode: 403, message: 'This organization does not own the store' })
-  }
-  return context
-}
-export async function apiKeyAdmin(event: H3Event) {
-  const context = await admin(event)
-  if (context.session.user.role !== 'admin') {
-    throw createError({ statusCode: 403, message: 'System administrator access is required to manage API keys' })
   }
   return context
 }

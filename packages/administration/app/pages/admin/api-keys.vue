@@ -3,10 +3,10 @@ const { t } = useI18n()
 const { isAdmin } = storeToRefs(useUserStore())
 
 if (!isAdmin.value) {
-  throw createError({ statusCode: 403, message: t('products.apiKeysAccessRequired') })
+  throw createError({ statusCode: 403, message: t('admin.apiKeys.accessRequired') })
 }
 
-useSeoMeta({ title: () => t('products.apiKeys') })
+useSeoMeta({ title: () => t('admin.apiKeys.title') })
 </script>
 
 <template>
@@ -17,13 +17,13 @@ useSeoMeta({ title: () => t('products.apiKeys') })
           <div class="flex min-w-0 gap-3">
             <UIcon name="i-lucide-key-round" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
-              <h1 class="text-2xl font-semibold text-highlighted">{{ t('products.apiKeys') }}</h1>
-              <p class="text-sm text-muted">{{ t('products.apiKeysAdminDescription') }}</p>
+              <h1 class="text-2xl font-semibold text-highlighted">{{ t('admin.apiKeys.title') }}</h1>
+              <p class="text-sm text-muted">{{ t('admin.apiKeys.description') }}</p>
             </div>
           </div>
         </header>
 
-        <ProductsApiKeySettings />
+        <AdminApiKeySettings />
       </div>
     </div>
   </div>

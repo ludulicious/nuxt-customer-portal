@@ -39,6 +39,14 @@ export const administrationFeature: PortalFeatureDefinition = {
           order: 20
         },
         {
+          id: 'admin-api-keys',
+          labelKey: 'admin.apiKeys.title',
+          icon: 'i-lucide-key-round',
+          to: '/admin/api-keys',
+          audiences: ['admin'],
+          order: 30
+        },
+        {
           id: 'admin-email',
           labelKey: 'admin.email.title',
           icon: 'i-lucide-mail',

@@ -2,14 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { productValidationMessage } from '../shared/validation-messages'
-import {
-  productSchema,
-  emptyProduct,
-  categorySchema,
-  billingSchema,
-  settingsSchema,
-  keySchema
-} from '../shared/validation'
+import { productSchema, emptyProduct, categorySchema, billingSchema, settingsSchema } from '../shared/validation'
 
 test('product errors explain required fields, slug format, text limits and prices', () => {
   const value = {
@@ -40,7 +33,7 @@ test('product errors explain required fields, slug format, text limits and price
   )
 })
 
-test('category, billing, store and API key errors have actionable messages', () => {
+test('category, billing and store errors have actionable messages', () => {
   const examples = [
     [
       categorySchema,
@@ -61,8 +54,7 @@ test('category, billing, store and API key errors have actionable messages', () 
       },
       'email'
     ],
-    [settingsSchema, { enabled: false, defaultLocale: 'en', languages: [], currencies: ['EUR'] }, 'languages'],
-    [keySchema, { name: '', expiresAt: null }, 'required']
+    [settingsSchema, { enabled: false, defaultLocale: 'en', languages: [], currencies: ['EUR'] }, 'languages']
   ] as const
   for (const [schema, value, key] of examples) {
     assert.ok(

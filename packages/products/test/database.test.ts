@@ -33,6 +33,7 @@ test(
           await db.query(await readFile(new URL(file, directory), 'utf8'))
         }
       }
+      assert.equal((await db.query("SELECT to_regclass('products.api_key') AS table_name")).rows[0].table_name, null)
       await db.query(
         `INSERT INTO public.organization(id,name,slug,created_at,organization_type) VALUES('store','Store','store',now(),'PROVIDER'),('other','Other','other',now(),'CLIENT')`
       )

@@ -7,6 +7,22 @@ import type {
 } from '@nuxt-customer-portal/core/shared/types/index'
 
 export const useAdministration = () => {
+  const keys = () =>
+    $fetch<
+      Array<{
+        id: string
+        name: string | null
+        prefix: string | null
+        expiresAt: string | null
+        enabled: boolean
+        lastUsedAt: string | null
+        createdAt: string
+        permissions: Record<string, string[]>
+      }>
+    >('/api/admin/api-keys', { cache: 'no-store' })
+  const createKey = (body: Record<string, unknown>) =>
+    $fetch<{ key: string }>('/api/admin/api-keys', { method: 'POST', body })
+  const revoke = (id: string) => $fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' })
   const listInvitations = (page: number, search: string) =>
     $fetch<{
       items: Array<{
@@ -33,5 +49,5 @@ export const useAdministration = () => {
   const linkOrganizationMember = async (organizationId: string, input: { userId: string; role: MemberRole }) =>
     await $fetch(`/api/admin/organizations/${organizationId}/members`, { method: 'POST', body: input })
 
-  return { searchUsers, getUser, updateUserRole, linkOrganizationMember, listInvitations }
+  return { keys, createKey, revoke, searchUsers, getUser, updateUserRole, linkOrganizationMember, listInvitations }
 }
