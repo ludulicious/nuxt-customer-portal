@@ -415,6 +415,7 @@ const toggleEditing = () => {
       </div>
     </UCard>
     <ConfirmationModal
+      v-if="showRemoveMemberConfirmation"
       v-model:open="showRemoveMemberConfirmation"
       title="features.clients.removeMember"
       message="features.clients.confirmRemoveMember"
@@ -422,7 +423,6 @@ const toggleEditing = () => {
       confirm-text="features.clients.removeMember"
       confirm-color="error"
       @confirm="removeMember"
-      @cancel="memberToRemove = null"
     />
   </div>
 </template>

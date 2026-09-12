@@ -120,7 +120,7 @@ const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.user.ban.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-if="open" v-model:open="open" :title="t('admin.user.ban.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="banForm" :schema="banSchema" class="space-y-4" @submit="handleBanSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">

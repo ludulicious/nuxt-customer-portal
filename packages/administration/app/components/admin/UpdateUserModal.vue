@@ -76,7 +76,7 @@ const handleUpdateSubmit = async (event: FormSubmitEvent<UpdateSchema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.user.update.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-if="open" v-model:open="open" :title="t('admin.user.update.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="updateForm" :schema="updateSchema" class="space-y-4" @submit="handleUpdateSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">

@@ -236,7 +236,7 @@ function removeSelected() {
     </UFormField>
   </fieldset>
 
-  <UModal v-model:open="previewOpen" :title="selectedAsset?.name || t('products.previewImage')">
+  <UModal v-if="previewOpen" v-model:open="previewOpen" :title="selectedAsset?.name || t('products.previewImage')">
     <template #body>
       <img
         v-if="selectedId"

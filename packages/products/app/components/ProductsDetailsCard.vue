@@ -97,5 +97,5 @@ async function changeStatus() {
       />
     </div>
   </UCard>
-  <ProductsPublishDialog v-model:open="publishOpen" :product-id="product.id" @saved="emit('saved')" />
+  <ProductsPublishDialog v-if="publishOpen" v-model:open="publishOpen" :product-id="product.id" @saved="emit('saved')" />
 </template>

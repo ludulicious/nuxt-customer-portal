@@ -215,7 +215,7 @@ watch(() => props.product.updatedAt, loadAssets)
       <p v-else class="text-sm text-muted">{{ t('products.noPurchasedFiles') }}</p>
     </template>
     <ConfirmationModal
-      v-if="selectedFile"
+      v-if="removing && selectedFile"
       v-model:open="removing"
       title="products.removePurchasedFile"
       message="products.removePurchasedFileConfirm"

@@ -286,7 +286,7 @@ const openBanModal = (user: AdminUserResponse) => {
       @success="emit('refresh')"
     />
 
-    <UModal v-model:open="showEditRoleModal" :title="t('admin.user.list.role')" :ui="{ footer: 'justify-end' }">
+    <UModal v-if="showEditRoleModal" v-model:open="showEditRoleModal" :title="t('admin.user.list.role')" :ui="{ footer: 'justify-end' }">
       <template #body>
         <div class="space-y-4">
           <p v-if="selectedUser" class="text-sm text-gray-600 dark:text-gray-400">

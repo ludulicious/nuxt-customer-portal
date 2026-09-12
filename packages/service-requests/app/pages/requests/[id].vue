@@ -140,7 +140,7 @@ const handleDelete = async () => {
       />
 
       <ServiceRequestManagement v-if="can('manage')" :request="request" @updated="request = $event" />
-      <UModal v-model:open="showEditModal" :title="t('features.serviceRequests.edit')">
+      <UModal v-if="showEditModal" v-model:open="showEditModal" :title="t('features.serviceRequests.edit')">
         <template #body>
           <CustomerRequestForm
             :initial-data="request"
@@ -151,6 +151,7 @@ const handleDelete = async () => {
         </template>
       </UModal>
       <ConfirmationModal
+        v-if="showDeleteConfirm"
         v-model:open="showDeleteConfirm"
         title="features.serviceRequests.delete"
         message="features.serviceRequests.confirmDelete"

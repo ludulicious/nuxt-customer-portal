@@ -485,7 +485,7 @@ onMounted(() => {
     </header>
 
     <InvoicesInvoiceEmailModal
-      v-if="!isClient"
+      v-if="!isClient && emailOpen"
       v-model:open="emailOpen"
       :invoice-id="invoice.id"
       :mode="emailMode"
@@ -821,7 +821,7 @@ onMounted(() => {
       </div>
     </section>
     <ConfirmationModal
-      v-if="!isClient"
+      v-if="!isClient && attachmentDeleteOpen"
       v-model:open="attachmentDeleteOpen"
       :title="t('features.invoices.admin.removeAttachment')"
       :message="t('features.invoices.admin.removeAttachmentDescription', { name: attachmentDeletion?.name })"
@@ -829,10 +829,9 @@ onMounted(() => {
       :cancel-text="t('features.invoices.cancel')"
       confirm-color="error"
       @confirm="removeAttachment"
-      @cancel="attachmentDeletion = null"
     />
     <ConfirmationModal
-      v-if="!isClient"
+      v-if="!isClient && statusConfirmationOpen"
       v-model:open="statusConfirmationOpen"
       :title="
         t(
@@ -855,7 +854,6 @@ onMounted(() => {
       :cancel-text="t('features.invoices.cancel')"
       :confirm-color="statusConfirmation === 'VOID' ? 'error' : 'primary'"
       @confirm="confirmStatusAction"
-      @cancel="statusConfirmation = null"
     />
   </div>
 </template>

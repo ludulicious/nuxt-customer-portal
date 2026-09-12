@@ -51,6 +51,7 @@ async function publish() {
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('products.publishReview')"
     :dismissible="!busy"

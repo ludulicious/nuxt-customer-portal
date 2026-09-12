@@ -253,7 +253,7 @@ await loadUsers()
               />
             </template>
           </div>
-          <UModal v-model:open="showFilters" :title="t('common.filters')">
+          <UModal v-if="showFilters" v-model:open="showFilters" :title="t('common.filters')">
             <template #body>
               <div class="space-y-4">
                 <UFormField :label="t('admin.user.list.role')">
@@ -264,7 +264,7 @@ await loadUsers()
               </div>
             </template>
           </UModal>
-          <UModal v-model:open="showSort" :title="t('common.sort')">
+          <UModal v-if="showSort" v-model:open="showSort" :title="t('common.sort')">
             <template #body>
               <div class="space-y-4">
                 <UFormField :label="t('common.sortBy')">
@@ -369,6 +369,6 @@ await loadUsers()
       v-model:open="showPrivateInvitation"
       @success="loadUsers"
     />
-    <AdminCreateUserModal v-model:open="showCreateModal" @success="loadUsers" />
+    <AdminCreateUserModal v-if="showCreateModal" v-model:open="showCreateModal" @success="loadUsers" />
   </div>
 </template>

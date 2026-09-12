@@ -184,7 +184,7 @@ const listContainerRef = ref<HTMLElement | null>(null)
       </div>
 
       <!-- Mobile Sort Modal -->
-      <UModal v-model:open="showSortModal" :title="t('common.sort')" :ui="{ content: 'w-full sm:max-w-md' }">
+      <UModal v-if="showSortModal" v-model:open="showSortModal" :title="t('common.sort')" :ui="{ content: 'w-full sm:max-w-md' }">
         <template #body>
           <div class="space-y-4">
             <UFormField :label="t('common.sortBy')">

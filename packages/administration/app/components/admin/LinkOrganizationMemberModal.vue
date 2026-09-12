@@ -95,6 +95,7 @@ const submit = async () => {
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('admin.organization.detail.members.link.title')"
     :ui="{ footer: 'justify-end' }"

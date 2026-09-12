@@ -68,6 +68,7 @@ async function submit() {
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('features.clients.invitePrivateClient')"
     :description="t('features.clients.privateInviteDescription')"

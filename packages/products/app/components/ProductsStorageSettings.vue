@@ -188,6 +188,7 @@ async function remove() {
       </div>
     </UForm>
     <ConfirmationModal
+      v-if="removing"
       v-model:open="removing"
       title="products.storageRemove"
       message="products.storageRemoveConfirm"

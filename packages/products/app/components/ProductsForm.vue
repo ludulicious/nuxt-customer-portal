@@ -157,6 +157,7 @@ const imagePolicy = ref<ImagePolicy>({
   detail: { width: 1200, height: 900 }
 })
 const pendingImage = ref<{ file: File; url: string; width: number; height: number; purpose: ImagePurpose }>()
+const cropOpen = ref(false)
 const imageQueue = ref<Array<{ file: File; purpose: ImagePurpose }>>([])
 const purchasedFilesUploading = ref(false)
 const cropTarget = computed(() => imagePolicy.value[pendingImage.value?.purpose || 'gallery'])
@@ -392,6 +393,7 @@ function openNextImage() {
     image = new Image()
   image.onload = () => {
     pendingImage.value = { ...queued, url, width: image.naturalWidth, height: image.naturalHeight }
+    cropOpen.value = true
     cropFocus.x = 50
     cropFocus.y = 50
     zoom.value = 1
@@ -450,6 +452,7 @@ async function confirmCrop() {
   await performUpload(current.file, 'public', crop.value, current.purpose)
   URL.revokeObjectURL(current.url)
   pendingImage.value = undefined
+  cropOpen.value = false
   openNextImage()
 }
 function cancelCrop() {
@@ -457,8 +460,14 @@ function cancelCrop() {
     URL.revokeObjectURL(pendingImage.value.url)
   }
   pendingImage.value = undefined
+  cropOpen.value = false
   imageQueue.value = []
 }
+watch(cropOpen, (open) => {
+  if (!open && pendingImage.value) {
+    cancelCrop()
+  }
+})
 function move(ids: string[], index: number, delta: number) {
   const target = index + delta
   if (target < 0 || target >= ids.length) {
@@ -718,14 +727,14 @@ function removeFile(id: string, index: number) {
       </div></UForm
     >
   </div>
-  <UModal v-model:open="categoriesOpen" :title="t('products.addCategory')" :ui="{ content: 'pointer-events-auto' }">
+  <UModal v-if="categoriesOpen" v-model:open="categoriesOpen" :title="t('products.addCategory')" :ui="{ content: 'pointer-events-auto' }">
     <template #body><ProductsCategoryForm embedded @saved="categorySaved" @cancel="categoriesOpen = false" /></template>
   </UModal>
   <UModal
-    :open="!!pendingImage"
+    v-if="cropOpen && pendingImage"
+    v-model:open="cropOpen"
     :title="t('products.cropImage')"
     :dismissible="!busy"
-    @update:open="(open) => !open && cancelCrop()"
   >
     <template #body
       ><div v-if="pendingImage" class="space-y-4">

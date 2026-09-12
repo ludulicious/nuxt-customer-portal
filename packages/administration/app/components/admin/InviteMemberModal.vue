@@ -105,6 +105,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('admin.organization.detail.invitations.modalTitle')"
     :ui="{ footer: 'justify-end' }"

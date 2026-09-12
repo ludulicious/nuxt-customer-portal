@@ -48,7 +48,7 @@ async function remove() {
   <UButton color="neutral" variant="ghost" icon="i-lucide-trash-2" @click="open = true">{{
     t('products.delete')
   }}</UButton>
-  <UModal v-model:open="open" :title="t('products.delete')" :ui="{ content: 'pointer-events-auto' }">
+  <UModal v-if="open" v-model:open="open" :title="t('products.delete')" :ui="{ content: 'pointer-events-auto' }">
     <template #body>
       <p v-if="pending" role="status">{{ t('products.loading') }}</p>
       <UForm v-else :state="state" :schema="schema" novalidate class="space-y-4" @submit="remove">
