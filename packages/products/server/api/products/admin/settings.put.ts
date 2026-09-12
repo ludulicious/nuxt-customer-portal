@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       input.currencies.map((currency) => [currency, input.currencyTaxBehavior[currency] || 'inclusive'])
     )
     await rows(
-      `INSERT INTO products.store(id,organization_id,actor_id,enabled,mode,default_locale,currencies,languages,currency_tax_behavior,markdown_style,image_policy) VALUES(true,$1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9::jsonb,'{}'::jsonb),$10) ON CONFLICT(id) DO UPDATE SET enabled=$3,mode=$4,default_locale=$5,actor_id=$2,currencies=$6,languages=$7,currency_tax_behavior=$8,markdown_style=COALESCE($9::jsonb,products.store.markdown_style),image_policy=$10 WHERE products.store.organization_id=$1`,
+      `INSERT INTO products.store(id,organization_id,actor_id,enabled,mode,default_locale,currencies,languages,currency_tax_behavior,markdown_style,image_policy,checkout_appearance) VALUES(true,$1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9::jsonb,'{}'::jsonb),$10,$11) ON CONFLICT(id) DO UPDATE SET enabled=$3,mode=$4,default_locale=$5,actor_id=$2,currencies=$6,languages=$7,currency_tax_behavior=$8,markdown_style=COALESCE($9::jsonb,products.store.markdown_style),image_policy=$10,checkout_appearance=$11 WHERE products.store.organization_id=$1`,
       [
         context.organizationId,
         context.session.user.id,
@@ -43,7 +43,8 @@ export default defineEventHandler(async (event) => {
         input.languages,
         currencyTaxBehavior,
         input.markdownStyle || null,
-        input.imagePolicy
+        input.imagePolicy,
+        input.checkoutAppearance
       ],
       tx
     )

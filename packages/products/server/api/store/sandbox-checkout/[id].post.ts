@@ -2,6 +2,7 @@ import { parseInput } from '@nuxt-customer-portal/products/server/utils/validati
 import { baseUrl, getStore, publicLimit } from '@nuxt-customer-portal/products/server/utils/access'
 import { getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
+import { checkoutReturnPath, hostThankYouUrl } from '@nuxt-customer-portal/products/server/utils/checkout-return'
 import { z } from 'zod'
 
 const scenarioSchema = z.object({ scenario: z.enum(['paid', 'failed', 'expired']) })
@@ -44,8 +45,41 @@ export default defineEventHandler(async (event) => {
         )
       }
     } else {
-      await rows('UPDATE products.orders SET status=$2,processing=$2,updated_at=now() WHERE id=$1', [id, input.scenario], tx)
+      await rows(
+        'UPDATE products.orders SET status=$2,processing=$2,updated_at=now() WHERE id=$1',
+        [id, input.scenario],
+        tx
+      )
     }
   })
-  return { url: `/store/complete?sandbox=${input.scenario}` }
+  const order = await getOrder(id)
+  const line = order!.lines[0]!
+  if (input.scenario === 'paid') {
+    return {
+      url:
+        hostThankYouUrl({
+          returnUrl: order!.snapshot.returnUrl,
+          slug: line.snapshot.product.slug,
+          locale: order!.snapshot.locale,
+          currency: line.snapshot.price.currency,
+          bookingReference: order!.booking_reference
+        }) ||
+        checkoutReturnPath({
+          slug: line.snapshot.product.slug,
+          locale: order!.snapshot.locale,
+          currency: line.snapshot.price.currency,
+          outcome: 'success',
+          bookingReference: order!.booking_reference
+        })
+    }
+  }
+  return {
+    url: checkoutReturnPath({
+      slug: line.snapshot.product.slug,
+      locale: order!.snapshot.locale,
+      currency: line.snapshot.price.currency,
+      outcome: input.scenario,
+      returnUrl: order!.snapshot.returnUrl
+    })
+  }
 })

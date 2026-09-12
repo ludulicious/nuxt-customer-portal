@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { markdownStyleSchema } from './markdown-style'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
+import { checkoutAppearanceSchema, defaultCheckoutAppearance } from './checkout-appearance'
 
 export const localeSchema = z.enum(portalLanguageCodes).default('en')
 const text = (max: number) => z.string().trim().max(max)
@@ -110,6 +111,8 @@ export const productCreateSchema = productSchema.safeExtend({ categoryId: text(1
 export const billingSchema = z
   .object({
     type: z.enum(['person', 'organization']),
+    firstName: text(100),
+    lastName: text(100),
     name: text(200).min(1),
     email: z.email().transform((v) => v.toLowerCase()),
     company: text(200),
@@ -120,6 +123,12 @@ export const billingSchema = z
     clientId: text(100).optional()
   })
   .superRefine((v, c) => {
+    if (v.type === 'person' && !v.firstName) {
+      c.addIssue({ code: 'custom', path: ['firstName'], message: 'First name is required' })
+    }
+    if (v.type === 'person' && !v.lastName) {
+      c.addIssue({ code: 'custom', path: ['lastName'], message: 'Last name is required' })
+    }
     if (v.type === 'organization' && !v.company) {
       c.addIssue({ code: 'custom', path: ['company'], message: 'Company name is required' })
     }
@@ -128,6 +137,7 @@ export const checkoutSchema = z.object({
   productId: text(100).min(1),
   priceId: text(100).min(1),
   locale: localeSchema,
+  returnUrl: z.string().trim().max(2000).optional(),
   billing: billingSchema,
   requestId: z.uuid()
 })
@@ -148,6 +158,7 @@ export const listSchema = z.object({
 })
 export const settingsSchema = z
   .object({
+    checkoutAppearance: checkoutAppearanceSchema.default(defaultCheckoutAppearance()),
     markdownStyle: markdownStyleSchema.optional(),
     currencyTaxBehavior: z.partialRecord(z.enum(productCurrencies), z.enum(['inclusive', 'exclusive'])).default({}),
     enabled: z.boolean(),

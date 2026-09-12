@@ -7,6 +7,8 @@ import { provisionPurchaseClient } from '@nuxt-customer-portal/clients/server/ut
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
+import { resolveCheckoutReturnUrl } from '../../shared/checkout-query'
+import { checkoutReturnPath, hostThankYouUrl } from './checkout-return'
 import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
@@ -25,6 +27,7 @@ export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
 export async function createCheckout(event: H3Event, body: unknown) {
   const input = parseInput(checkoutSchema, body),
     store = await getStore(true)
+  input.returnUrl = resolveCheckoutReturnUrl(input.returnUrl, store.checkout_appearance.returnUrl)
   if (store.mode === 'live') {
     await orderIntegration().assertReady(store.organization_id)
   }
@@ -82,7 +85,12 @@ export async function createCheckout(event: H3Event, body: unknown) {
     }
     const id = randomUUID(),
       title = selectCopy(product, input.locale, store.default_locale).title
-    const snapshot = { billing: input.billing, locale: input.locale, storeMode: store.mode }
+    const snapshot = {
+      billing: input.billing,
+      locale: input.locale,
+      returnUrl: input.returnUrl,
+      storeMode: store.mode
+    }
     const lineSnapshot = { product, title, price }
     const [created] = await rows<Order>(
       `INSERT INTO products.orders(id,store_id,request_id,request_hash,buyer_id,email,snapshot) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -107,7 +115,23 @@ export async function createCheckout(event: H3Event, body: unknown) {
     if (store.mode === 'live') {
       await processOrder(order.id)
     }
-    return { url: `${baseUrl()}/purchases` }
+    return {
+      url:
+        hostThankYouUrl({
+          returnUrl: order.snapshot.returnUrl,
+          slug: primaryLine.snapshot.product.slug,
+          locale: order.snapshot.locale,
+          currency: primaryLine.snapshot.price.currency,
+          bookingReference: order.booking_reference
+        }) ||
+        `${baseUrl()}${checkoutReturnPath({
+          slug: primaryLine.snapshot.product.slug,
+          locale: order.snapshot.locale,
+          currency: primaryLine.snapshot.price.currency,
+          outcome: 'success',
+          bookingReference: order.booking_reference
+        })}`
+    }
   }
   if (order.status !== 'pending') {
     throw createError({ statusCode: 409, message: 'This checkout is already completed or expired' })
@@ -183,15 +207,16 @@ const purchaseEmail = {
   defaults: {
     en: {
       subject: 'Your purchase: {{product}}',
-      body: 'Thank you for your purchase of {{product}}. {{instructions}}<br><a href="{{url}}">Open your portal</a>'
+      body: 'Thank you for your purchase of {{product}}.<br>Booking reference: <strong>{{bookingReference}}</strong><br>{{instructions}}<br><a href="{{url}}">Open your portal</a>'
     },
     nl: {
       subject: 'Je aankoop: {{product}}',
-      body: 'Bedankt voor je aankoop van {{product}}. {{instructions}}<br><a href="{{url}}">Open je portaal</a>'
+      body: 'Bedankt voor je aankoop van {{product}}.<br>Boekingsnummer: <strong>{{bookingReference}}</strong><br>{{instructions}}<br><a href="{{url}}">Open je portaal</a>'
     }
   },
   placeholders: [
     { key: 'product', labelKey: 'products.title', example: 'Audio' },
+    { key: 'bookingReference', labelKey: 'products.bookingReference', example: 'BK-7F3A9C12D4E8' },
     { key: 'instructions', labelKey: 'products.nextSteps', example: 'Welcome' },
     { key: 'url', labelKey: 'products.purchases', example: 'https://example.com/purchases' }
   ]
@@ -217,6 +242,7 @@ async function notifyOrder(id: string) {
       to: order.email,
       values: {
         product: order.lines.map((line) => line.snapshot.title).join(', '),
+        bookingReference: order.booking_reference,
         url,
         instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
       },

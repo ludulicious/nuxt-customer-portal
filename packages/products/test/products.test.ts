@@ -13,6 +13,38 @@ import {
 import { fileExtension, withoutFileExtension, withFileExtension } from '../shared/file-name'
 import { currencyScale, formatMoney } from '../shared/money'
 import { hasPurchaseAccess } from '../shared/access'
+import { checkoutAppearanceSchema } from '../shared/checkout-appearance'
+import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../shared/checkout-query'
+
+test('checkout appearance has safe reusable defaults and validates URLs', () => {
+  const appearance = checkoutAppearanceSchema.parse({})
+  assert.equal(appearance.actionColor, '#563273')
+  assert.equal(checkoutAppearanceSchema.safeParse({ logoUrl: 'javascript:alert(1)' }).success, false)
+  assert.equal(checkoutAppearanceSchema.safeParse({ actionColor: 'url(javascript:alert(1))' }).success, false)
+  assert.equal(
+    checkoutAppearanceSchema.safeParse({ returnUrl: 'https://shannonchapoy.com/specials/path' }).success,
+    true
+  )
+})
+
+test('checkout query accepts supported host preferences and falls back safely', () => {
+  assert.deepEqual(resolveCheckoutQuery({ locale: 'nl', currency: 'usd' }), { locale: 'nl', currency: 'USD' })
+  assert.deepEqual(resolveCheckoutQuery({ locale: 'fr', currency: 'BTC' }), { locale: 'en', currency: undefined })
+})
+
+test('checkout return URLs preserve exact host paths without allowing open redirects', () => {
+  const configured = 'https://shannonchapoy.com/services'
+  assert.equal(
+    resolveCheckoutReturnUrl('https://shannonchapoy.com/specials/intake?source=home', configured),
+    'https://shannonchapoy.com/specials/intake?source=home'
+  )
+  assert.equal(resolveCheckoutReturnUrl('https://attacker.example/phishing', configured), configured)
+  assert.equal(resolveCheckoutReturnUrl('javascript:alert(1)', configured), configured)
+  assert.equal(
+    resolveCheckoutReturnUrl('http://localhost:3000/specials/intake', configured),
+    'http://localhost:3000/specials/intake'
+  )
+})
 
 test('publishing requires translated identity, a price and digital delivery', () => {
   const product = emptyProduct()
@@ -47,6 +79,8 @@ test('checkout rejects incomplete billing and does not accept browser prices', (
     locale: 'nl',
     billing: {
       type: 'person',
+      firstName: 'Test',
+      lastName: 'Buyer',
       name: 'Buyer',
       email: 'BUYER@example.test',
       company: '',
@@ -87,6 +121,12 @@ test('commerce schema uses multi-item orders and persisted carts', () => {
 test('legacy product API keys are removed by a forward migration', () => {
   const migration = readFileSync(new URL('../migrations/0013_drop_legacy_api_keys.sql', import.meta.url), 'utf8')
   assert.match(migration, /DROP TABLE IF EXISTS products\.api_key/)
+})
+test('orders receive a unique customer-facing booking reference', () => {
+  const migration = readFileSync(new URL('../migrations/0016_order_booking_reference.sql', import.meta.url), 'utf8')
+  assert.match(migration, /ADD COLUMN booking_reference text/)
+  assert.match(migration, /CREATE UNIQUE INDEX orders_booking_reference/)
+  assert.match(migration, /ALTER COLUMN booking_reference SET NOT NULL/)
 })
 test('English and Dutch provide matching interface translations', () => {
   const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8')).products

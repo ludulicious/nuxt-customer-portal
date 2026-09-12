@@ -13,7 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
-import type { ProductData, OrderSnapshot, OrderLineSnapshot } from '../../../shared/types'
+import type { ProductData, OrderSnapshot, OrderLineSnapshot, CheckoutAppearance } from '../../../shared/types'
 
 const schema = pgSchema('products')
 const stamp = (name: string) => timestamp(name, { withTimezone: true }).defaultNow().notNull()
@@ -33,6 +33,10 @@ export const store = schema.table('store', {
     .notNull()
     .default(sql`ARRAY['en','nl']::text[]`),
   markdownStyle: jsonb('markdown_style').notNull().default({}),
+  checkoutAppearance: jsonb('checkout_appearance')
+    .$type<CheckoutAppearance>()
+    .notNull()
+    .default({} as CheckoutAppearance),
   currencyTaxBehavior: jsonb('currency_tax_behavior')
     .$type<Record<string, 'inclusive' | 'exclusive'>>()
     .notNull()
@@ -126,6 +130,9 @@ export const orders = schema.table(
   'orders',
   {
     id: text('id').primaryKey(),
+    bookingReference: text('booking_reference')
+      .notNull()
+      .default(sql`'BK-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12))`),
     storeId: text('store_id')
       .notNull()
       .references(() => organization.id),
@@ -155,6 +162,7 @@ export const orders = schema.table(
   },
   (t) => [
     index('orders_buyer').on(t.buyerId),
+    uniqueIndex('orders_booking_reference').on(t.bookingReference),
     index('orders_email').on(t.email),
     index('orders_store').on(t.storeId, t.createdAt),
     foreignKey({ name: 'orders_cart_fk', columns: [t.cartId], foreignColumns: [cart.id] }).onDelete('restrict')

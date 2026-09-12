@@ -1,4 +1,5 @@
 import { markdownStyleSchema } from '../../shared/markdown-style'
+import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
@@ -362,6 +363,7 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     buyButtonLabel: copy.buyButtonLabel || '',
     secondaryCta: copy.secondaryCta || '',
     summary: copy.summary,
+    nextSteps: product.nextSteps[locale] || product.nextSteps[store.default_locale] || '',
     summaryHtml: renderDescription(copy.summary),
     markdownStyle: markdownStyleSchema.parse(store.markdown_style || {}),
     imagePolicy: store.image_policy || {
@@ -378,7 +380,8 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
       (p) => product.isFree || (store.currencies.includes(p.currency) && (!currency || p.currency === currency))
     ),
     purchaseUrl: `${baseUrl()}/store/${product.slug}`,
-    locale
+    locale,
+    checkoutAppearance: checkoutAppearanceSchema.parse(store.checkout_appearance || {})
   } as CatalogProduct
 }
 export type ProductInput = z.infer<typeof productSchema>

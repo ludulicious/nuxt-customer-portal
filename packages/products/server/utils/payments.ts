@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createError } from 'h3'
 import type { Order } from '../../shared/types'
 import { baseUrl } from './access'
+import { checkoutReturnPath, hostThankYouUrl } from './checkout-return'
 
 export const stripeClient = () => {
   const secret = process.env.PRODUCTS_STRIPE_SECRET_KEY
@@ -30,6 +31,21 @@ export const stripeProvider: PaymentProvider = {
   lookupCheckout: (id) => stripeClient().checkout.sessions.retrieve(id, { expand: ['line_items.data.taxes.rate'] }),
   async checkout(order) {
     const primaryLine = order.lines[0]!
+    const successUrl =
+      hostThankYouUrl({
+        returnUrl: order.snapshot.returnUrl,
+        slug: primaryLine.snapshot.product.slug,
+        locale: order.snapshot.locale,
+        currency: primaryLine.snapshot.price.currency,
+        bookingReference: order.booking_reference
+      }) ||
+      `${baseUrl()}${checkoutReturnPath({
+        slug: primaryLine.snapshot.product.slug,
+        locale: order.snapshot.locale,
+        currency: primaryLine.snapshot.price.currency,
+        outcome: 'success',
+        bookingReference: order.booking_reference
+      })}`
     return stripeClient().checkout.sessions.create(
       {
         mode: 'payment',
@@ -54,8 +70,14 @@ export const stripeProvider: PaymentProvider = {
         tax_id_collection: { enabled: order.snapshot.billing.type === 'organization' },
         invoice_creation: { enabled: false },
         locale: order.snapshot.locale,
-        success_url: `${baseUrl()}/store/complete`,
-        cancel_url: `${baseUrl()}/store/${primaryLine.snapshot.product.slug}`
+        success_url: successUrl,
+        cancel_url: `${baseUrl()}${checkoutReturnPath({
+          slug: primaryLine.snapshot.product.slug,
+          locale: order.snapshot.locale,
+          currency: primaryLine.snapshot.price.currency,
+          outcome: 'cancelled',
+          returnUrl: order.snapshot.returnUrl
+        })}`
       },
       { idempotencyKey: `products:${order.id}` }
     )

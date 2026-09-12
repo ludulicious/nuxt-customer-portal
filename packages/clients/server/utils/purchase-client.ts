@@ -7,6 +7,8 @@ import { requireAllowedClientType } from './client-configuration'
 
 export interface PurchaseClientInput {
   type: 'person' | 'organization'
+  firstName: string
+  lastName: string
   name: string
   email: string
   company: string
@@ -57,6 +59,7 @@ export async function provisionPurchaseClient(
     clientId = await createClientInTransaction(database, actorId, {
       clientType: input.type,
       name: input.type === 'person' ? input.name : input.company,
+      ...(input.type === 'person' ? { firstName: input.firstName, lastName: input.lastName } : {}),
       slug: `buyer-${randomUUID()}`,
       officialName: input.type === 'person' ? input.name : input.company,
       address: input.address,

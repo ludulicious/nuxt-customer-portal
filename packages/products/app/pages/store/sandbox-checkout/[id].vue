@@ -23,7 +23,7 @@ async function finish(scenario: 'paid' | 'failed' | 'expired') {
       method: 'POST',
       body: { scenario }
     })
-    await navigateTo(result.url)
+    await navigateTo(result.url, { external: true })
   } catch (e) {
     error.value = (e as { data?: { message?: string } }).data?.message || t('products.sandboxCheckoutFailed')
   } finally {
@@ -46,9 +46,10 @@ async function finish(scenario: 'paid' | 'failed' | 'expired') {
         <h1 class="text-2xl font-semibold">{{ checkout.title }}</h1>
       </div>
       <dl class="grid grid-cols-2 gap-2 text-sm">
-        <dt class="text-muted">{{ t('products.email') }}</dt><dd>{{ checkout.email }}</dd>
-        <dt class="text-muted">{{ t('products.amount') }}</dt
-        ><dd>{{ formatMoney(checkout.amount, checkout.currency) }}</dd>
+        <dt class="text-muted">{{ t('products.email') }}</dt>
+        <dd>{{ checkout.email }}</dd>
+        <dt class="text-muted">{{ t('products.amount') }}</dt>
+        <dd>{{ formatMoney(checkout.amount, checkout.currency) }}</dd>
       </dl>
       <UAlert v-if="error" color="error" :title="error" />
       <div class="grid gap-3 sm:grid-cols-3">

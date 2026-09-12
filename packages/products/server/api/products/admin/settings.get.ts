@@ -2,14 +2,16 @@ import { markdownStyleSchema } from '@nuxt-customer-portal/products/shared/markd
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { storageSummary } from '@nuxt-customer-portal/products/server/utils/storage-configuration'
+import { checkoutAppearanceSchema } from '@nuxt-customer-portal/products/shared/checkout-appearance'
 
 export default defineEventHandler(async (event) => {
   await admin(event)
   const [store] = await rows(
-    'SELECT markdown_style,image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
+    'SELECT markdown_style,checkout_appearance AS "checkoutAppearance",image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
   )
   const storage = await storageSummary()
   return {
+    checkoutAppearance: checkoutAppearanceSchema.parse(store?.checkoutAppearance || {}),
     markdownStyle: markdownStyleSchema.parse(store?.markdown_style || {}),
     enabled: store?.enabled || false,
     mode: store?.mode || 'sandbox',

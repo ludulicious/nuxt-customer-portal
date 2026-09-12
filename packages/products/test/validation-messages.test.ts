@@ -44,6 +44,8 @@ test('category, billing and store errors have actionable messages', () => {
       billingSchema,
       {
         type: 'person',
+        firstName: 'First',
+        lastName: 'Last',
         name: 'Name',
         email: 'bad',
         company: '',

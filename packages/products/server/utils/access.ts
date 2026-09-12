@@ -1,5 +1,5 @@
 import type { MarkdownStyle } from '../../shared/markdown-style'
-import type { ImagePolicy } from '../../shared/types'
+import type { CheckoutAppearance, ImagePolicy } from '../../shared/types'
 import { createHash } from 'node:crypto'
 import { createError, getHeader, getRequestIP, type H3Event } from 'h3'
 import { getPortalOrganization, requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
@@ -15,6 +15,7 @@ export interface Store {
   enabled: boolean
   mode: 'sandbox' | 'live'
   markdown_style: MarkdownStyle
+  checkout_appearance: CheckoutAppearance
   currency_tax_behavior: Record<string, 'inclusive' | 'exclusive'>
   currencies: string[]
   languages: ('en' | 'nl')[]

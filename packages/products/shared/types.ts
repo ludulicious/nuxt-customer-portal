@@ -1,4 +1,7 @@
 import type { MarkdownStyle } from './markdown-style'
+import type { CheckoutAppearance } from './checkout-appearance'
+
+export type { CheckoutAppearance } from './checkout-appearance'
 
 export type Locale = 'en' | 'nl'
 export interface ProductCopy {
@@ -76,6 +79,8 @@ export interface StorageSettings {
 }
 export interface Billing {
   type: 'person' | 'organization'
+  firstName: string
+  lastName: string
   name: string
   email: string
   company: string
@@ -88,6 +93,7 @@ export interface Billing {
 export interface OrderSnapshot {
   billing: Billing
   locale: Locale
+  returnUrl?: string
   storeMode?: 'sandbox' | 'live'
 }
 export interface OrderLineSnapshot {
@@ -114,6 +120,7 @@ export interface OrderLine {
 }
 export interface Order {
   id: string
+  booking_reference: string
   store_id: string
   cart_id: string | null
   buyer_id: string | null
@@ -178,6 +185,7 @@ export interface CatalogProduct {
   buyButtonLabel: string
   secondaryCta: string
   summary: string
+  nextSteps: string
   descriptionHtml: string
   images: string[]
   thumbnailImage: string | null
@@ -186,6 +194,7 @@ export interface CatalogProduct {
   prices: Price[]
   purchaseUrl: string
   locale: Locale
+  checkoutAppearance: CheckoutAppearance
 }
 export interface Page<T> {
   items: T[]

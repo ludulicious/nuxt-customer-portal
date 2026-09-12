@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   )
   const args = [organizationId, `%${q.search}%`, q.status]
   const where =
-    "store_id=$1 AND (email ILIKE $2 OR EXISTS(SELECT 1 FROM products.order_line l WHERE l.order_id=products.orders.id AND l.snapshot->>'title' ILIKE $2)) AND ($3='all' OR status=$3)"
+    "store_id=$1 AND (email ILIKE $2 OR booking_reference ILIKE $2 OR EXISTS(SELECT 1 FROM products.order_line l WHERE l.order_id=products.orders.id AND l.snapshot->>'title' ILIKE $2)) AND ($3='all' OR status=$3)"
   const [count] = await rows<{ count: string }>(`SELECT count(*) FROM products.orders WHERE ${where}`, args)
   const items = await rows<Order>(
     `SELECT * FROM products.orders WHERE ${where} ORDER BY created_at DESC,id LIMIT 20 OFFSET $4`,

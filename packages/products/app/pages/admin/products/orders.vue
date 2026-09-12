@@ -62,6 +62,7 @@ async function action(id: string, name: 'retry' | 'fulfill') {
       <div class="flex justify-between gap-3">
         <div>
           <h2 class="font-medium">{{ order.lines.map((line) => line.snapshot.title).join(', ') }}</h2>
+          <p class="font-mono text-sm">{{ order.booking_reference }}</p>
           <p>{{ order.email }}</p>
           <p class="text-sm text-muted">
             {{ new Date(order.created_at).toLocaleString(locale) }} · {{ t(`products.${order.status}`) }}

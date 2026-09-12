@@ -9,7 +9,8 @@ import type {
   ProductPreview,
   ImagePolicy,
   ImagePurpose,
-  StorageSettings
+  StorageSettings,
+  CheckoutAppearance
 } from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
@@ -78,14 +79,15 @@ export const useProducts = () => ({
     await $fetch(`/api/products/admin/products/${id}/uploads/${signed.id}`, { method: 'POST', body: crop || {} })
     return signed.id
   },
-  catalog: (slug: string, locale: string) =>
-    $fetch<CatalogProduct>(`/api/store/product/${encodeURIComponent(slug)}`, { query: { locale } }),
+  catalog: (slug: string, locale: string, currency?: string) =>
+    $fetch<CatalogProduct>(`/api/store/product/${encodeURIComponent(slug)}`, { query: { locale, currency } }),
   checkout: (body: Record<string, unknown>) => $fetch<{ url: string }>('/api/store/checkout', { method: 'POST', body }),
   orders: (query: Record<string, unknown>) => $fetch<Page<Order>>('/api/products/admin/orders', { query }),
   orderAction: (id: string, action: 'retry' | 'fulfill') =>
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
   settings: () =>
     $fetch<{
+      checkoutAppearance: CheckoutAppearance
       languages: ('en' | 'nl')[]
       currencies: string[]
       markdownStyle: MarkdownStyle

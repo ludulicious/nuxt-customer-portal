@@ -2,11 +2,13 @@
 import type { z } from 'zod'
 import type { settingsSchema } from '../../../../shared/validation'
 import { defaultMarkdownStyle } from '../../../../shared/markdown-style'
+import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
 
 const { t } = useI18n(),
   api = useProducts(),
   toast = useToast(),
   settings = reactive<z.output<typeof settingsSchema>>({
+    checkoutAppearance: defaultCheckoutAppearance(),
     markdownStyle: defaultMarkdownStyle(),
     languages: ['en', 'nl'] as ('en' | 'nl')[],
     currencies: ['EUR'],
@@ -28,6 +30,7 @@ async function load() {
     health.value = await api.settings()
     Object.assign(settings, {
       markdownStyle: health.value.markdownStyle,
+      checkoutAppearance: health.value.checkoutAppearance,
       languages: health.value.languages,
       currencies: health.value.currencies,
       currencyTaxBehavior: health.value.currencyTaxBehavior,
@@ -53,17 +56,19 @@ async function save(tab: 'general' | 'styles') {
       defaultLocale: latest.defaultLocale,
       currencies: latest.currencies,
       currencyTaxBehavior: latest.currencyTaxBehavior,
-      imagePolicy: latest.imagePolicy
+      imagePolicy: latest.imagePolicy,
+      checkoutAppearance: latest.checkoutAppearance
     }
     await api.saveSettings(
       tab === 'styles'
-        ? { ...general, markdownStyle: settings.markdownStyle }
+        ? { ...general, markdownStyle: settings.markdownStyle, checkoutAppearance: settings.checkoutAppearance }
         : { ...settings, markdownStyle: latest.markdownStyle }
     )
     toast.add({ title: t('products.saved'), color: 'success' })
     health.value = await api.settings()
   } catch (e) {
-    error.value = (e as { data?: { message?: string } }).data?.message || t('products.saveFailed')
+    const failure = e as { data?: { message?: string }; message?: string }
+    error.value = failure.data?.message || failure.message || t('products.saveFailed')
   } finally {
     busy.value = false
   }
