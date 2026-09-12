@@ -4,8 +4,9 @@ import type { InvoiceEmailPreviewDto } from '@nuxt-customer-portal/invoices/shar
 
 type EmailMode = 'issue' | 'resend' | 'reminder'
 
-const props = defineProps<{ open: boolean; invoiceId: string; mode: EmailMode; refresh: () => Promise<unknown> }>()
-const emit = defineEmits<{ 'update:open': [value: boolean]; sent: [] }>()
+const props = defineProps<{ invoiceId: string; mode: EmailMode; refresh: () => Promise<unknown> }>()
+const open = defineModel<boolean>('open', { default: false })
+const emit = defineEmits<{ sent: [] }>()
 const { t } = useI18n()
 const api = useInvoices()
 const toast = useToast()
@@ -59,22 +60,13 @@ const loadPreview = async (locale?: string) => {
       body: result.body
     })
   } catch (error) {
-    emit('update:open', false)
+    open.value = false
     toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
   } finally {
     loadingPreview.value = false
   }
 }
-watch(
-  () => props.open,
-  (open) => {
-    if (open) {
-      void loadPreview()
-    } else {
-      preview.value = null
-    }
-  }
-)
+await loadPreview()
 const send = async () => {
   busy.value = true
   try {
@@ -95,7 +87,7 @@ const send = async () => {
     await props.refresh()
     toast.add({ title: t(successKey.value), color: 'success' })
     emit('sent')
-    emit('update:open', false)
+    open.value = false
   } catch (error) {
     toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
   } finally {
@@ -105,7 +97,7 @@ const send = async () => {
 </script>
 
 <template>
-  <UModal :open="open" :title="t(titleKey)" @update:open="emit('update:open', $event)">
+  <UModal v-if="open" v-model:open="open" :title="t(titleKey)">
     <template #body>
       <div v-if="loadingPreview" class="flex justify-center py-10" role="status">
         <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" /><span class="sr-only">{{
@@ -198,7 +190,7 @@ const send = async () => {
           </ul>
         </div>
         <div class="flex justify-end gap-2">
-          <UButton type="button" color="neutral" variant="ghost" @click="emit('update:open', false)">
+          <UButton type="button" color="neutral" variant="ghost" @click="open = false">
             {{ t('features.invoices.cancel') }} </UButton
           ><UButton
             type="submit"

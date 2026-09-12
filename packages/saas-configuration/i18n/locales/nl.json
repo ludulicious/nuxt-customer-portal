@@ -3,7 +3,9 @@
     "navigation": "Portaalinstellingen",
     "title": "Portaalinstellingen",
     "onboardingTitle": "Stel je portaal in",
-    "public": { "myDashboard": "Mijn dashboard" },
+    "public": {
+      "myDashboard": "Mijn dashboard"
+    },
     "bootstrap": {
       "title": "Maak de portaalbeheerder aan",
       "description": "Dit nieuwe portaal is gereserveerd voor de aangewezen beheerder. Maak eerst dit account aan; na het inloggen configureer je het portaal."
@@ -19,7 +21,9 @@
         "modules": "Modules",
         "home": "Homepage",
         "legal": "Juridische pagina's",
-        "review": "Controleren"
+        "review": "Controleren",
+        "clients": "Klanten",
+        "languages": "Talen"
       },
       "appearanceSection": "Weergave",
       "logoSection": "Logo's voor de gekozen kleurmodus",
@@ -55,7 +59,10 @@
         "logoLight": "Breed logo voor kopteksten en pagina's met een lichte achtergrond.",
         "logoDark": "Breed logo voor kopteksten en pagina's met een donkere achtergrond."
       },
-      "themes": { "apex": "Apex", "brutal": "Brutal" },
+      "themes": {
+        "apex": "Apex",
+        "brutal": "Brutal"
+      },
       "colorModes": {
         "userChoice": "Keuze van de gebruiker",
         "lightOnly": "Alleen licht",
@@ -70,7 +77,11 @@
         "serviceRequestsDescription": "Laat klanten verzoeken indienen en de voortgang volgen.",
         "invoiceTimesheets": "Factuur uit urenregistratie",
         "invoiceTimesheetsDescription": "Zet goedgekeurde uren om in factuurregels; vereist Urenregistratie en Facturen.",
-        "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt."
+        "preserved": "Gegevens blijven bewaard wanneer je deze module uitschakelt.",
+        "products": "Producten",
+        "productsDescription": "Verkoop digitale producten en diensten.",
+        "invoiceProducts": "Productfacturen",
+        "invoiceProductsDescription": "Maak portaalfacturen voor productaankopen."
       },
       "actions": {
         "remove": "Verwijderen",
@@ -99,6 +110,20 @@
         "invalidImage": "Gebruik een geldige PNG-, JPEG- of WebP-afbeelding kleiner dan 2 MB.",
         "imageTooLarge": "De afmetingen mogen niet groter zijn dan 2400×2400 pixels.",
         "markTooSmall": "Compacte pictogrammen moeten minimaal 64×64 pixels zijn."
+      },
+      "clients": {
+        "description": "Kies of dit portaal organisaties, particulieren of beide bedient.",
+        "allowedTypes": "Toegestane klanttypen",
+        "existing": "Een type kan niet worden uitgeschakeld zolang er klanten van dat type bestaan, inclusief gearchiveerde klanten.",
+        "organization": "Organisaties (B2B)",
+        "person": "Particulieren (B2C)",
+        "registration": "Persoonlijke zelfregistratie toestaan",
+        "registrationDescription": "Geverifieerde gebruikers kunnen de persoonlijke onboarding voltooien en een eigen klantaccount openen. Als dit is uitgeschakeld, kun je nog steeds particuliere klanten aanmaken en uitnodigen.",
+        "registrationDisabled": "Zelfregistratie vereist open registratie in de authenticatieconfiguratie."
+      },
+      "languages": {
+        "label": "Ondersteunde interfacetalen",
+        "help": "Kies minstens één taal voor de portaalinterface. Als de huidige taal wordt uitgeschakeld, schakelt het portaal over naar de eerste ondersteunde taal."
       }
     }
   }

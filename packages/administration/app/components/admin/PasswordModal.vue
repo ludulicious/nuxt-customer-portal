@@ -67,7 +67,7 @@ const handlePasswordSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.user.password.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-if="open" v-model:open="open" :title="t('admin.user.password.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm :state="passwordForm" :schema="passwordSchema" class="space-y-4" @submit="handlePasswordSubmit">
         <p class="text-sm text-gray-600 dark:text-gray-400">

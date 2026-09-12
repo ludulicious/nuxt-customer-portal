@@ -29,7 +29,8 @@ onMounted(async () => {
 
   // Only auto-send OTP for login verification, not signup verification
   // Signup verification already sends an OTP during the signup process
-  const isLoginVerification = route.query.redirect || route.query.from === 'login'
+  const isLoginVerification =
+    (route.query.redirect && route.query.purpose !== 'personal') || route.query.from === 'login'
   if (email.value && isLoginVerification) {
     console.log('Login verification detected, sending OTP...')
     // Reset cooldown to ensure resendCode can run
@@ -86,7 +87,8 @@ const verifyCode = async () => {
   try {
     // For users who are verifying during login, we need to sign them in
     // Check if this is a login verification (has redirect param) or signup verification
-    const isLoginVerification = route.query.redirect || route.query.from === 'login'
+    const isLoginVerification =
+      (route.query.redirect && route.query.purpose !== 'personal') || route.query.from === 'login'
     console.log('Verification context:', { isLoginVerification, email: email.value, redirect: route.query.redirect })
 
     let result
@@ -193,7 +195,8 @@ const resendCode = async () => {
 
   try {
     // Determine OTP type based on context
-    const isLoginVerification = route.query.redirect || route.query.from === 'login'
+    const isLoginVerification =
+      (route.query.redirect && route.query.purpose !== 'personal') || route.query.from === 'login'
     const otpType = isLoginVerification ? 'sign-in' : 'email-verification'
 
     await authClient.emailOtp

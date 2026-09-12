@@ -70,7 +70,7 @@ const revoke = async () => {
       :aria-label="t('invitationManagement.revoke')"
       @click="revoking = true"
     />
-    <UModal v-model:open="editing" :title="t('invitationManagement.edit')">
+    <UModal v-if="editing" v-model:open="editing" :title="t('invitationManagement.edit')">
       <template #body>
         <UForm :state="state" :schema="invitationRoleSchema" novalidate class="space-y-4" @submit="save">
           <p>{{ email }}</p>
@@ -85,6 +85,7 @@ const revoke = async () => {
       </template>
     </UModal>
     <ConfirmationModal
+      v-if="revoking"
       v-model:open="revoking"
       title="invitationManagement.revoke"
       message="invitationManagement.confirmRevoke"

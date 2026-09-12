@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, date, index, integer, jsonb, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 
@@ -109,6 +109,10 @@ export const invoice = invoicesSchema.table(
       .references(() => organization.id, { onDelete: 'cascade' }),
     clientOrganizationId: text('client_organization_id').references(() => organization.id, { onDelete: 'restrict' }),
     number: text('number').notNull(),
+    documentType: text('document_type').default('invoice').notNull(),
+    originalInvoiceId: text('original_invoice_id'),
+    externalReference: text('external_reference'),
+    automated: boolean('automated').default(false).notNull(),
     status: invoiceStatus('status').default('DRAFT').notNull(),
     currency: text('currency').notNull(),
     issueDate: date('issue_date', { mode: 'string' }).notNull(),
@@ -152,7 +156,9 @@ export const invoiceLine = invoicesSchema.table(
     quantityMilli: integer('quantity_milli').notNull(),
     unit: text('unit').default('item').notNull(),
     unitPriceMinor: integer('unit_price_minor').notNull(),
-    vatRateBasisPoints: integer('vat_rate_basis_points').default(2100).notNull()
+    vatRateBasisPoints: integer('vat_rate_basis_points').default(2100).notNull(),
+    exactTaxMinor: integer('exact_tax_minor'),
+    taxDetails: jsonb('tax_details')
   },
   (table) => [index('invoice_line_invoice_idx').on(table.invoiceId)]
 )

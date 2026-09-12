@@ -11,6 +11,8 @@ import {
   type PortalSettings
 } from '../../shared/settings'
 
+type PoolClient = Pick<typeof pool, 'query'>
+
 interface SettingsRow {
   settings: PortalSettings
   onboarding_step: string
@@ -41,9 +43,17 @@ export async function readPortalSettings(): Promise<{
         : portalOnboardingSteps.includes(row.onboarding_step as PortalOnboardingStep)
           ? (row.onboarding_step as PortalOnboardingStep)
           : 'branding'
-    return { settings: portalSettingsSchema.parse(row.settings), step, completed: Boolean(row.completed_at) }
+    return {
+      settings: portalSettingsSchema.parse({
+        ...row.settings,
+        clients: row.settings.clients ?? useRuntimeConfig().public.clients
+      }),
+      step,
+      completed: Boolean(row.completed_at)
+    }
   }
   const defaults = defaultPortalSettings(process.env.PORTAL_PROVIDER_NAME || 'Customer Portal')
+  defaults.clients = portalSettingsSchema.parse({ ...defaults, clients: useRuntimeConfig().public.clients }).clients
   await pool.query(
     `INSERT INTO saas_configuration.portal_settings (id, settings) VALUES (true, $1::jsonb) ON CONFLICT (id) DO NOTHING`,
     [JSON.stringify(defaults)]
@@ -100,16 +110,49 @@ export async function validatePortalBrandImages(settings: PortalSettings) {
   }
 }
 
+async function validateClientSettings(client: PoolClient, settings: PortalSettings) {
+  await client.query("SELECT pg_advisory_xact_lock(hashtext('portal-client-configuration'))")
+  const config = useRuntimeConfig()
+  const mode = process.env.PORTAL_REGISTRATION_MODE || config.portalAuth.registrationMode
+  if (settings.clients.personalSelfRegistration && mode !== 'open') {
+    throw createError({
+      statusCode: 400,
+      message: 'Personal self-registration requires open authentication registration'
+    })
+  }
+  const table = await client.query("SELECT to_regclass('clients.client_profile') AS name")
+  if (table.rows[0]?.name) {
+    const existing = await client.query(
+      'SELECT DISTINCT client_type FROM clients.client_profile WHERE NOT (client_type = ANY($1::text[]))',
+      [settings.clients.allowedTypes]
+    )
+    if (existing.rows.length) {
+      throw createError({ statusCode: 409, message: 'Cannot disable a client type while clients of that type exist' })
+    }
+  }
+}
+
 export async function writePortalSettings(input: unknown, requestedStep?: unknown) {
   const settings = portalSettingsSchema.parse(input)
   await validatePortalBrandImages(settings)
   const step = portalOnboardingSteps.includes(requestedStep as PortalOnboardingStep)
     ? (requestedStep as PortalOnboardingStep)
     : undefined
-  await pool.query(
-    `UPDATE saas_configuration.portal_settings SET settings=$1::jsonb, onboarding_step=COALESCE($2,onboarding_step), updated_at=now() WHERE id=true`,
-    [JSON.stringify(settings), step || null]
-  )
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await validateClientSettings(client, settings)
+    await client.query(
+      `UPDATE saas_configuration.portal_settings SET settings=$1::jsonb, onboarding_step=COALESCE($2,onboarding_step), updated_at=now() WHERE id=true`,
+      [JSON.stringify(settings), step || null]
+    )
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
   return { settings, step: step || (await readPortalSettings()).step }
 }
 
@@ -119,6 +162,7 @@ export async function completePortalOnboarding(input: unknown) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+    await validateClientSettings(client, settings)
     await client.query(
       `UPDATE saas_configuration.portal_settings SET settings=$1::jsonb, onboarding_step='review', completed_at=now(), updated_at=now() WHERE id=true`,
       [JSON.stringify(settings)]

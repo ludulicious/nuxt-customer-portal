@@ -80,7 +80,7 @@ const isMobile = computed(() => width.value < Math.max(660, 160 + props.filters.
         />
       </template>
     </div>
-    <UModal v-model:open="showFilters" :title="t('common.filters')">
+    <UModal v-if="showFilters" v-model:open="showFilters" :title="t('common.filters')">
       <template #body>
         <div class="space-y-4">
           <UFormField v-for="filter in filters" :key="filter.key" :label="filter.placeholder">
@@ -95,7 +95,7 @@ const isMobile = computed(() => width.value < Math.max(660, 160 + props.filters.
         </div>
       </template>
     </UModal>
-    <UModal v-model:open="showSort" :title="t('common.sort')">
+    <UModal v-if="showSort" v-model:open="showSort" :title="t('common.sort')">
       <template #body>
         <div class="space-y-4">
           <USelect

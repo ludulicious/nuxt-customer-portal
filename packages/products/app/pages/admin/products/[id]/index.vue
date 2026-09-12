@@ -1,0 +1,230 @@
+<script setup lang="ts">
+import { hasRequiredPrices } from '../../../../../shared/validation'
+import type { ProductPreview, Locale } from '../../../../../shared/types'
+
+definePageMeta({ key: (route) => route.path })
+const { t } = useI18n()
+const route = useRoute()
+const api = useProducts()
+const preview = ref<ProductPreview>()
+const editing = ref<'basic' | 'details' | 'pricing' | 'images' | 'files' | null>(
+  route.query.edit === 'true' ? 'basic' : null
+)
+const toast = useToast()
+const pending = ref(true),
+  error = ref('')
+const language = ref<Locale>('en')
+const languageStorageKey = 'portal:products:content-language'
+watch(language, (value) => {
+  if (!import.meta.client || pending.value) {
+    return
+  }
+  try {
+    localStorage.setItem(languageStorageKey, value)
+  } catch {
+    // Keep language selection usable when browser storage is unavailable.
+  }
+})
+const currency = ref('')
+const currencyStorageKey = 'portal:products:currency'
+watch(currency, (value) => {
+  if (!import.meta.client || pending.value || !value) {
+    return
+  }
+  try {
+    localStorage.setItem(currencyStorageKey, value)
+  } catch {
+    // Keep currency selection usable when browser storage is unavailable.
+  }
+})
+const product = computed(() => preview.value?.product)
+const productName = computed(() => {
+  const content = product.value?.content
+  return (
+    content?.[preview.value?.defaultLocale || 'en'].title.trim() ||
+    content?.en.title.trim() ||
+    content?.nl.title.trim() ||
+    product.value?.slug ||
+    t('products.loading')
+  )
+})
+const copy = computed(() => preview.value?.content[language.value])
+const languageOptions = computed(() => {
+  const first = preview.value?.defaultLocale || 'en'
+  return ([first, first === 'en' ? 'nl' : 'en'] as Locale[])
+    .filter((value) => preview.value?.languages.includes(value))
+    .map((value) => ({
+      value,
+      label: value === 'en' ? '🇺🇸 English' : '🇳🇱 Nederlands'
+    }))
+})
+const currencyOptions = computed(() => [...new Set(product.value?.prices.map((price) => price.currency) || [])])
+const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
+const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
+function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'files') {
+  editing.value = editing.value === section ? null : section
+}
+function openMediaEditor() {
+  editing.value = 'images'
+}
+async function saved() {
+  editing.value = null
+  try {
+    preview.value = await api.preview(String(route.params.id))
+    if (!currencyOptions.value.includes(currency.value)) {
+      currency.value = currencyOptions.value[0] || ''
+    }
+    if (!languageOptions.value.some((item) => item.value === language.value)) {
+      language.value = languageOptions.value[0]?.value || preview.value.defaultLocale
+    }
+    toast.add({ title: t('products.saved'), color: 'success' })
+  } catch {
+    error.value = t('products.loadFailed')
+  }
+}
+onMounted(async () => {
+  try {
+    preview.value = await api.preview(String(route.params.id))
+    language.value = (languageOptions.value[0]?.value || preview.value.defaultLocale) as Locale
+    try {
+      const storedLanguage = localStorage.getItem(languageStorageKey)
+      if (languageOptions.value.some((item) => item.value === storedLanguage)) {
+        language.value = storedLanguage as Locale
+      }
+    } catch {
+      // Use the store default when browser storage is unavailable.
+    }
+    currency.value = currencyOptions.value.includes('EUR') ? 'EUR' : currencyOptions.value[0] || ''
+    try {
+      const storedCurrency = localStorage.getItem(currencyStorageKey)
+      if (storedCurrency && currencyOptions.value.includes(storedCurrency)) {
+        currency.value = storedCurrency
+      }
+    } catch {
+      // Use an available currency when browser storage is unavailable.
+    }
+  } catch {
+    error.value = t('products.loadFailed')
+  } finally {
+    pending.value = false
+  }
+})
+</script>
+
+<template>
+  <ProductsShell :title="productName" :subtitle="t('products.previewIntro')">
+    <template #back
+      ><UButton :to="backTarget" variant="link" color="neutral" icon="i-lucide-arrow-left" class="w-fit px-0">{{
+        t('products.backToProducts')
+      }}</UButton></template
+    >
+    <template v-if="product" #actions>
+      <ProductsDelete :product="product" @deleted="navigateTo(backTarget)" />
+    </template>
+    <p v-if="pending" role="status">{{ t('products.loading') }}</p>
+    <UAlert v-else-if="error" color="error" :title="error" />
+    <template v-else-if="product && copy">
+      <UAlert
+        v-if="!hasRequiredPrices(product, preview?.currencies || [])"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :title="t('products.requiredPrices')"
+      />
+      <UCard v-if="editing === 'images'" @keydown.esc="editing = null">
+        <template #header>
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="font-semibold">{{ t('products.productImageLibrary') }}</h2>
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              :aria-label="t('products.close')"
+              @click="editing = null"
+            />
+          </div>
+        </template>
+        <ProductsForm
+          :key="`images-${product.updatedAt}`"
+          :product="product"
+          section="images"
+          @saved="saved"
+          @cancel="editing = null"
+        />
+      </UCard>
+      <template v-else>
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <ProductsPreviewCard
+          v-model:language="language"
+          class="lg:self-stretch"
+          :languages="languageOptions"
+          :product="product"
+          :copy="copy"
+          :markdown-style="preview?.markdownStyle"
+          :editing="editing === 'basic'"
+          @edit="toggleEdit('basic')"
+          @edit-media="openMediaEditor"
+        >
+          <template #editor>
+            <ProductsForm
+              :key="`basic-${product.updatedAt}-${language}`"
+              :product="product"
+              :language="language"
+              section="basic"
+              @saved="saved"
+              @cancel="editing = null"
+            />
+          </template>
+        </ProductsPreviewCard>
+        <div class="space-y-6">
+          <ProductsDetailsCard
+            :product="product"
+            :language="language"
+            :editing="editing === 'details'"
+            @edit="toggleEdit('details')"
+            @saved="saved"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`details-${product.updatedAt}`"
+                :product="product"
+                section="details"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsDetailsCard>
+          <ProductsPriceCard
+            v-model:currency="currency"
+            :is-free="!!product.isFree"
+            :currencies="currencyOptions"
+            :price="selectedPrice"
+            :language="language"
+            :editing="editing === 'pricing'"
+            @edit="toggleEdit('pricing')"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`pricing-${product.updatedAt}-${currency}`"
+                :product="product"
+                :currency="currency"
+                section="pricing"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsPriceCard>
+        </div>
+      </div>
+      <ProductsFilesSection
+        :product="product"
+        :editing="editing === 'files'"
+        @edit="toggleEdit('files')"
+        @saved="saved"
+        @cancel="editing = null"
+      />
+      </template>
+    </template>
+  </ProductsShell>
+</template>

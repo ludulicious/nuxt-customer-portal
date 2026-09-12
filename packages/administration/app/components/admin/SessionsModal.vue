@@ -168,6 +168,7 @@ const revokeAllSessions = async () => {
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('admin.user.sessions.title')"
     :description="t('admin.user.sessions.description')"

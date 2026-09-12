@@ -1,5 +1,35 @@
 {
   "admin": {
+    "apiKeys": {
+      "title": "API keys",
+      "description": "Manage provider API access and assign permissions exposed by installed portal modules.",
+      "accessRequired": "System administrator access is required to manage API keys.",
+      "keyHelp": "Keep these keys on your website server. Rotate a key by creating a replacement, updating your website, and revoking the old key.",
+      "providerKeysOnlyTitle": "Provider access only",
+      "permissions": "Permissions",
+      "selectPermission": "Select at least one permission.",
+      "copyKey": "Copy this key now. It is shown only once.",
+      "websiteName": "Website name",
+      "expires": "Expiry (optional)",
+      "createKey": "Create API key",
+      "newApiKey": "New API key",
+      "noApiKeys": "No API keys have been created yet.",
+      "unnamedKey": "Unnamed key",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expiresAt": "Expires",
+      "status": "Status",
+      "active": "Active",
+      "keyRevoked": "API key revoked",
+      "neverUsed": "Never used",
+      "revoked": "Revoked",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke access for {name}?",
+      "cancel": "Cancel",
+      "close": "Close",
+      "loadFailed": "API keys could not be loaded.",
+      "saveFailed": "The API key could not be saved."
+    },
     "email": {
       "title": "Email",
       "description": "Configure portal-wide email delivery, layout, and message text.",
@@ -223,7 +253,8 @@
         "notAvailable": "N/A",
         "role": "Role",
         "status": "Status",
-        "verified": "Verified"
+        "verified": "Verified",
+        "invitePrivateClient": "Invite private client"
       },
       "detail": {
         "title": "User details",
@@ -329,6 +360,10 @@
         "title": "Update User",
         "description": "Update the user's name. Profile pictures are managed by users themselves.",
         "name": "Name",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
         "confirm": "Update User",
         "success": "User updated successfully",
         "error": "Failed to update user"

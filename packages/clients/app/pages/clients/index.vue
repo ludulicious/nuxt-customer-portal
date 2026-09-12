@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { clientsIcon } from '@nuxt-customer-portal/clients/shared/feature'
 import type { ClientListResponse, GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const { t } = useI18n()
@@ -7,7 +8,11 @@ const router = useRouter()
 const toast = useToast()
 const api = useClients()
 const runtimeConfig = useRuntimeConfig()
+const clientConfiguration = useClientConfiguration()
 const defaultModules = (runtimeConfig.public.clients as { defaultModules?: string[] } | undefined)?.defaultModules ?? []
+const clientType = ref(
+  ['organization', 'person'].includes(String(route.query.clientType)) ? String(route.query.clientType) : 'all'
+)
 const search = ref(String(route.query.search ?? ''))
 const status = ref(route.query.status === 'archived' ? 'archived' : route.query.status === 'all' ? 'all' : 'active')
 const sortBy = ref(
@@ -35,6 +40,7 @@ const sortOptions = computed(() => [
 ])
 
 const routeQuery = () => ({
+  ...(clientType.value !== 'all' ? { clientType: clientType.value } : {}),
   ...(search.value.trim() ? { search: search.value.trim() } : {}),
   ...(status.value !== 'active' ? { status: status.value } : {}),
   ...(sortBy.value !== 'name' ? { sortBy: sortBy.value } : {}),
@@ -60,12 +66,19 @@ const clientDetailTo = (client: GenericClientDto) => ({
   query: { returnTo: listReturnPath.value }
 })
 
+let loadVersion = 0
 const load = async () => {
+  const version = ++loadVersion
   pending.value = true
   try {
-    result.value = await api.list({ ...requestQuery(), page: page.value, pageSize: 20 })
+    const response = await api.list({ ...requestQuery(), page: page.value, pageSize: 20 })
+    if (version === loadVersion) {
+      result.value = response
+    }
   } finally {
-    pending.value = false
+    if (version === loadVersion) {
+      pending.value = false
+    }
   }
 }
 
@@ -94,14 +107,55 @@ const syncAndLoad = async (resetPage = false) => {
   await load()
 }
 
+let hydratingRoute = false
 let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(
+  () => route.query,
+  async (query) => {
+    const next = {
+      search: String(query.search ?? ''),
+      status: query.status === 'archived' ? 'archived' : query.status === 'all' ? 'all' : 'active',
+      clientType: ['organization', 'person'].includes(String(query.clientType)) ? String(query.clientType) : 'all',
+      sortBy: ['name', 'createdAt', 'status'].includes(String(query.sortBy)) ? String(query.sortBy) : 'name',
+      sortDir: query.sortDir === 'desc' ? ('desc' as const) : ('asc' as const),
+      page: Math.max(1, Number(query.page) || 1)
+    }
+    if (
+      next.search === search.value &&
+      next.status === status.value &&
+      next.clientType === clientType.value &&
+      next.sortBy === sortBy.value &&
+      next.sortDir === sortDir.value &&
+      next.page === page.value
+    ) {
+      return
+    }
+    clearTimeout(searchTimer)
+    hydratingRoute = true
+    search.value = next.search
+    status.value = next.status
+    clientType.value = next.clientType
+    sortBy.value = next.sortBy
+    sortDir.value = next.sortDir
+    page.value = next.page
+    await nextTick()
+    hydratingRoute = false
+    await load()
+  }
+)
 watch(search, () => {
+  if (hydratingRoute) {
+    return
+  }
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     void syncAndLoad(true)
   }, 300)
 })
-watch([status, sortBy, sortDir], () => {
+watch([status, sortBy, sortDir, clientType], () => {
+  if (hydratingRoute) {
+    return
+  }
   void syncAndLoad(true)
 })
 watch(pending, (value) => {
@@ -152,7 +206,7 @@ onMounted(() => {
       <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
         <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
           <div class="flex min-w-0 gap-3">
-            <UIcon name="i-lucide-building-2" class="mt-1 size-6 shrink-0 text-primary" />
+            <UIcon :name="clientsIcon(clientConfiguration.allowedTypes)" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
               <h1 class="text-2xl font-semibold">{{ t('features.clients.title') }}</h1>
               <p class="hidden text-sm text-muted sm:block">{{ t('features.clients.description') }}</p>
@@ -191,12 +245,26 @@ onMounted(() => {
         <PortalListToolbar
           v-model:search="search"
           :search-placeholder="t('features.clients.search')"
-          :filters="[{ key: 'status', placeholder: t('features.clients.status'), items: statusOptions }]"
-          :filter-values="{ status }"
+          :filters="[
+            { key: 'status', placeholder: t('features.clients.status'), items: statusOptions },
+            ...((clientConfiguration.allowedTypes?.length ?? 1) > 1
+              ? [
+                  {
+                    key: 'clientType',
+                    placeholder: t('features.clients.clientType'),
+                    items: ['all', 'organization', 'person'].map((value) => ({
+                      value,
+                      label: t(value === 'all' ? 'features.clients.allTypes' : `features.clients.types.${value}`)
+                    }))
+                  }
+                ]
+              : [])
+          ]"
+          :filter-values="{ status, clientType }"
           :sort-options="sortOptions"
           :sort-by="sortBy"
           :sort-dir="sortDir"
-          @filter="(_key, value) => (status = value || 'all')"
+          @filter="(key, value) => (key === 'clientType' ? (clientType = value || 'all') : (status = value || 'all'))"
           @sort="sortBy = $event"
           @toggle-direction="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
         />
@@ -228,12 +296,27 @@ onMounted(() => {
                 <UAvatar :src="client.avatarLogo || client.logo || undefined" :alt="client.name" />
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
+                    <UTooltip :text="t(`features.clients.types.${client.clientType}`)">
+                      <span
+                        tabindex="0"
+                        role="img"
+                        :aria-label="t(`features.clients.types.${client.clientType}`)"
+                        class="inline-flex shrink-0 rounded text-muted focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        <UIcon
+                          :name="client.clientType === 'person' ? 'i-lucide-user-round' : 'i-lucide-building-2'"
+                          class="size-4"
+                        />
+                      </span>
+                    </UTooltip>
                     <p class="truncate font-semibold">{{ client.name }}</p>
                     <UBadge :color="client.archivedAt ? 'neutral' : 'success'" variant="subtle">{{
                       t(client.archivedAt ? 'features.clients.archived' : 'features.clients.active')
                     }}</UBadge>
                   </div>
-                  <p class="mt-1 truncate text-sm text-muted">{{ client.officialName }} · {{ client.slug }}</p>
+                  <p v-if="client.clientType === 'organization'" class="mt-1 truncate text-sm text-muted">
+                    {{ client.slug }}
+                  </p>
                 </div>
               </NuxtLink>
               <NuxtLink

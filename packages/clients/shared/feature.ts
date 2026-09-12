@@ -48,3 +48,19 @@ export const clientsFeature: PortalFeatureDefinition<ClientAction> = {
     CLIENT: { owner: ['read', 'update', 'manageMembers'], admin: ['read', 'update', 'manageMembers'], member: ['read'] }
   }
 }
+
+export const clientsIcon = (allowedTypes: readonly string[] = []) =>
+  allowedTypes.includes('person') ? 'i-lucide-users-round' : 'i-lucide-building-2'
+
+export const createClientsFeature = (allowedTypes: readonly string[]): typeof clientsFeature => {
+  const icon = clientsIcon(allowedTypes)
+  return {
+    ...clientsFeature,
+    navigation: clientsFeature.navigation?.map((item) => ({ ...item, icon })),
+    modules: clientsFeature.modules?.map((item) => ({
+      ...item,
+      icon,
+      menuItems: item.menuItems?.map((entry) => ({ ...entry, icon }))
+    }))
+  }
+}

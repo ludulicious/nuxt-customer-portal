@@ -17,7 +17,13 @@ useSeoMeta({
 })
 
 const toast = useToast()
-const portalAuth = useRuntimeConfig().public.portalAuth
+const runtimeConfig = useRuntimeConfig()
+const portalAuth = runtimeConfig.public.portalAuth
+const route = useRoute()
+const clientConfiguration = useClientConfiguration()
+const personalSignup = computed(
+  () => Boolean(clientConfiguration.value.personalSelfRegistration) && !route.query.invitationId
+)
 
 const invitationId = useRoute().query.invitationId
 if (
@@ -29,10 +35,16 @@ if (
 
 const fields = computed(() => [
   {
-    name: 'name',
+    name: 'firstName',
     type: 'text' as const,
-    label: t('signup.fields.name'),
-    placeholder: t('signup.fields.namePlaceholder')
+    label: t('signup.fields.firstName'),
+    autocomplete: 'given-name'
+  },
+  {
+    name: 'lastName',
+    type: 'text' as const,
+    label: t('signup.fields.lastName'),
+    autocomplete: 'family-name'
   },
   {
     name: 'email',
@@ -71,19 +83,20 @@ const providers = computed(() =>
 
 const schema = computed(() =>
   z.object({
-    name: z.string().min(1, t('signup.validation.nameRequired')),
+    firstName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80),
+    lastName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80),
     email: z.email(t('signup.validation.invalidEmail')),
     password: z.string().min(8, t('signup.validation.passwordMinLength'))
   })
 )
 
 type Schema = {
-  name: string
+  firstName: string
+  lastName: string
   email: string
   password: string
 }
 
-const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const invitationInfo = ref<{ organizationName?: string; role?: string; email?: string } | null>(null)
@@ -261,7 +274,9 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
 
   try {
     const response = await authClient.signUp.email({
-      name: payload.data.name,
+      name: `${payload.data.firstName} ${payload.data.lastName}`,
+      firstName: payload.data.firstName,
+      lastName: payload.data.lastName,
       email: payload.data.email,
       password: payload.data.password
     })
@@ -271,7 +286,8 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
     } else {
       // Redirect to OTP verification page with email parameter and invitation ID if present
-      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}`
+      const personal = personalSignup.value
+      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}${personal ? '&redirect=%2Fpersonal-onboarding&purpose=personal' : ''}`
       navigateTo(verifyUrl)
     }
   } catch (err) {
@@ -304,7 +320,7 @@ const handleGitHubLogin = async () => {
   loading.value = true
   errorMessage.value = null
   try {
-    const redirectTo = route.query.redirect?.toString() || '/dashboard'
+    const redirectTo = personalSignup.value ? '/personal-onboarding' : route.query.redirect?.toString() || '/dashboard'
     await signIn.social({ provider: 'github', callbackURL: redirectTo })
   } catch (error) {
     console.error('GitHub sign in initiation failed:', error)
@@ -317,7 +333,7 @@ const handleGoogleLogin = async () => {
   loading.value = true
   errorMessage.value = null
   try {
-    const redirectTo = route.query.redirect?.toString() || '/dashboard'
+    const redirectTo = personalSignup.value ? '/personal-onboarding' : route.query.redirect?.toString() || '/dashboard'
     await signIn.social({ provider: 'google', callbackURL: redirectTo })
   } catch (error) {
     console.error('Google sign in initiation failed:', error)
@@ -336,10 +352,11 @@ const handleGoogleLogin = async () => {
     </div>
 
     <UAuthForm
+      novalidate
       :fields="fields"
       :schema="schema"
       :providers="providers"
-      :title="t('signup.title')"
+      :title="t(personalSignup ? 'personalRegistration' : 'signup.title')"
       :loading="loading"
       :submit="{ label: t('signup.submitButton') }"
       @submit="onSubmit"

@@ -6,6 +6,8 @@ export interface InvoiceLineDto {
   unit: string
   unitPriceMinor: number
   vatRateBasisPoints: number
+  exactTaxMinor?: number | null
+  taxDetails?: unknown
   amountMinor: number
 }
 export interface InvoicePaymentDto {
@@ -52,6 +54,10 @@ export interface InvoiceDto {
   organizationId: string
   clientOrganizationId: string | null
   number: string
+  documentType?: string
+  originalInvoiceId?: string | null
+  externalReference?: string | null
+  automated?: boolean
   status: InvoiceStatus
   currency: string
   issueDate: string
@@ -190,6 +196,7 @@ export interface InvoiceContactDto {
   jobTitle: string | null
 }
 export interface InvoiceClientDto {
+  clientType: 'organization' | 'person'
   id: string
   organizationId: string
   name: string

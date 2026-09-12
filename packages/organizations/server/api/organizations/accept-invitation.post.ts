@@ -1,3 +1,7 @@
+import {
+  assertClientInvitationAcceptance,
+  isPersonalClient
+} from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 import { defineEventHandler, createError, readBody } from 'h3'
 import { z } from 'zod'
 import { auth, generateId } from '@nuxt-customer-portal/core/server/utils/auth'
@@ -32,6 +36,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = session.user as SessionUser
+  if (!user.emailVerified) {
+    throw createError({ statusCode: 403, message: 'Verify your email before accepting an invitation' })
+  }
   const parsed = z.object({ invitationId: z.string().min(1) }).safeParse(await readBody(event))
   if (!parsed.success) {
     throw createError({ statusCode: 400, message: 'Invitation ID is required' })
@@ -94,6 +101,11 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, message: 'Organization not found' })
       }
 
+      await assertClientInvitationAcceptance(invitation.organizationId, user.id)
+      if (await isPersonalClient(invitation.organizationId)) {
+        invitation.role = 'owner'
+      }
+
       // Create the member record
       const memberId = generateId()
       await tx.insert(memberTable).values({
@@ -124,6 +136,10 @@ export default defineEventHandler(async (event) => {
   } catch (err: unknown) {
     if (err instanceof Error && 'statusCode' in err) {
       throw err
+    }
+    const cause = err as { code?: string; cause?: { code?: string } }
+    if (cause.code === '23505' || cause.cause?.code === '23505') {
+      throw createError({ statusCode: 409, message: 'Personal account already exists. Contact your coach.' })
     }
     const errorMessage = err instanceof Error ? err.message : 'Failed to accept invitation'
     throw createError({ statusCode: 500, message: errorMessage })

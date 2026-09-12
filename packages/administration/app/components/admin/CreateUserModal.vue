@@ -59,7 +59,7 @@ const createUser = async (event: FormSubmitEvent<CreateUserSchema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.user.create.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-if="open" v-model:open="open" :title="t('admin.user.create.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <UForm
         id="admin-create-user-form"

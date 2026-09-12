@@ -1194,7 +1194,7 @@ const runningDuration = computed(() => {
       </div>
     </details>
 
-    <UModal v-model:open="replyOpen" :title="t('features.timesheets.submissions.resubmit')">
+    <UModal v-if="replyOpen" v-model:open="replyOpen" :title="t('features.timesheets.submissions.resubmit')">
       <template #body>
         <UForm :schema="submissionReplySchema" :state="replyState" novalidate class="space-y-4" @submit="resubmit">
           <UFormField name="reply" :label="t('features.timesheets.submissions.reply')">
@@ -1208,6 +1208,7 @@ const runningDuration = computed(() => {
     </UModal>
 
     <UModal
+      v-if="modalOpen"
       v-model:open="modalOpen"
       :title="form.id ? t('features.timesheets.editEntry') : t('features.timesheets.addEntry')"
       @after:enter="focusPrefilledHours"
@@ -1292,7 +1293,7 @@ const runningDuration = computed(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="cellEntriesOpen" :title="t('features.timesheets.cellEntries.title')">
+    <UModal v-if="cellEntriesOpen" v-model:open="cellEntriesOpen" :title="t('features.timesheets.cellEntries.title')">
       <template #body>
         <div v-if="selectedCell" class="space-y-4">
           <div>
@@ -1341,7 +1342,7 @@ const runningDuration = computed(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="submissionModalOpen" :title="t('features.timesheets.submissions.title')">
+    <UModal v-if="submissionModalOpen" v-model:open="submissionModalOpen" :title="t('features.timesheets.submissions.title')">
       <template #body>
         <UForm :state="submissionState" :schema="submissionSchema" novalidate class="space-y-4" @submit="submit">
           <p class="text-sm text-muted">{{ t('features.timesheets.submissions.description') }}</p>
@@ -1397,7 +1398,7 @@ const runningDuration = computed(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="timerModalOpen" :title="t('features.timesheets.timer.start')">
+    <UModal v-if="timerModalOpen" v-model:open="timerModalOpen" :title="t('features.timesheets.timer.start')">
       <template #body>
         <UAlert
           v-if="!isOrganizationAdmin && workspaceStructureIncomplete"

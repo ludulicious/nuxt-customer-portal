@@ -72,7 +72,9 @@ const primaryColorStyle = computed<Record<string, string>>(() => {
 const stepIndex = computed(() => portalOnboardingSteps.indexOf(step.value))
 const stepLabels = computed<Record<PortalOnboardingStep, string>>(() => ({
   branding: t('saasSettings.editor.steps.branding'),
+  languages: t('saasSettings.editor.steps.languages'),
   modules: t('saasSettings.editor.steps.modules'),
+  clients: t('saasSettings.editor.steps.clients'),
   home: t('saasSettings.editor.steps.home'),
   legal: t('saasSettings.editor.steps.legal'),
   review: t('saasSettings.editor.steps.review')
@@ -99,8 +101,9 @@ async function save(next?: PortalOnboardingStep) {
       toast.add({ title: t('saasSettings.editor.messages.saved'), color: 'success' })
     }
     return true
-  } catch {
-    showError(t('saasSettings.editor.messages.saveFailed'))
+  } catch (error) {
+    const status = (error as { statusCode?: number }).statusCode
+    showError(t(status === 409 ? 'saasSettings.editor.clients.existing' : 'saasSettings.editor.messages.saveFailed'))
     return false
   } finally {
     busy.value = false
@@ -188,10 +191,13 @@ async function submitForm() {
             class="settings-form"
             :state="state"
             :schema="portalSettingsSchema"
+            novalidate
             @submit="submitForm"
             @error="showError(t('saasSettings.editor.messages.reviewSettings'))"
           >
             <PortalSettingsBrandingStep v-if="step === 'branding'" v-model="state" @error="showError" />
+            <PortalSettingsLanguagesStep v-else-if="step === 'languages'" v-model="state" />
+            <PortalSettingsClientsStep v-else-if="step === 'clients'" v-model="state" />
             <PortalSettingsModulesStep v-else-if="step === 'modules'" v-model="state" />
             <PortalSettingsHomeStep v-else-if="step === 'home'" v-model="state" />
             <PortalSettingsLegalStep v-else-if="step === 'legal'" v-model="state" />

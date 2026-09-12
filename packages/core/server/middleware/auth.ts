@@ -1,5 +1,6 @@
 import { defineEventHandler, type H3Event, createError } from 'h3'
 import { auth } from '../utils/auth'
+import { isPublicStoreRoute } from '../utils/public-api-route'
 
 async function isAuthenticated(event: H3Event): Promise<boolean> {
   const session = await auth.api.getSession({
@@ -15,6 +16,11 @@ export default defineEventHandler(async (event) => {
   const url = event.node.req.url
 
   if (!url || !url.startsWith('/api/')) {
+    return
+  }
+  // Products routes implement their own catalog-key, signature, or public-entry checks.
+  const pathname = new URL(url, 'http://localhost').pathname
+  if (isPublicStoreRoute(event.method, pathname)) {
     return
   }
   const unprotectedPaths = [

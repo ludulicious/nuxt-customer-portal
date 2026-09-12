@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { z } from 'zod'
 import { createHoursIntroduction } from '@nuxt-customer-portal/invoices/shared/invoice-introduction'
 import type { InvoicesAdminBootstrap } from '@nuxt-customer-portal/invoices/app/composables/useInvoices'
@@ -121,7 +122,7 @@ const invoiceSchema = computed(() =>
     })
 )
 const money = (minor: unknown, currency = props.data.settings.currency) =>
-  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(Number(minor) / 100)
+  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(Number(minor) / currencyScale(currency))
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const quantityFormat: Intl.NumberFormatOptions = { minimumFractionDigits: 2, maximumFractionDigits: 3 }
@@ -140,7 +141,7 @@ const updateQuantity = (line: (typeof model.lines)[number], value: number | null
   line.quantityMilli = Math.round(Number(value ?? 0) * 1000)
 }
 const updateUnitPrice = (line: (typeof model.lines)[number], value: number | null | undefined) => {
-  line.unitPriceMinor = Math.round(Number(value ?? 0) * 100)
+  line.unitPriceMinor = Math.round(Number(value ?? 0) * currencyScale(model.currency))
 }
 const updateVatRate = (line: (typeof model.lines)[number], value: number | null | undefined) => {
   line.vatRateBasisPoints = Math.round(Number(value ?? 0) * 10_000)
@@ -183,7 +184,9 @@ const missingClientInvoiceDetails = computed(() => {
   }
   const missing = [
     !client.address.trim() && t('features.invoices.admin.address'),
-    !client.contacts.length && t('features.invoices.admin.contactPersons')
+    client.clientType === 'person'
+      ? !client.invoiceEmail?.trim() && t('features.invoices.admin.email')
+      : !client.contacts.length && t('features.invoices.admin.contactPersons')
   ]
   return missing.filter((item): item is string => Boolean(item))
 })
@@ -250,7 +253,8 @@ const chooseClient = (id: string) => {
 }
 const editSelectedClient = async () => {
   await navigateTo({
-    path: `/clients/${selectedClient.value?.organizationId}`
+    path: `/clients/${selectedClient.value?.organizationId}`,
+    query: { edit: 'true' }
   })
 }
 const groupEntries = (entries: InvoiceableEntryDto[]) => {
@@ -554,7 +558,11 @@ if (props.createPage) {
             <UFormField :label="t('features.invoices.admin.client')">
               <UInput :model-value="selectedClient?.name" disabled class="w-full" />
             </UFormField>
-            <UFormField name="contactId" :label="t('features.invoices.admin.contact')">
+            <UFormField
+              v-if="selectedClient?.clientType !== 'person'"
+              name="contactId"
+              :label="t('features.invoices.admin.contact')"
+            >
               <USelect
                 v-model="model.contactId"
                 :items="
@@ -564,6 +572,9 @@ if (props.createPage) {
                 value-key="value"
                 class="w-full"
               />
+            </UFormField>
+            <UFormField v-if="selectedClient?.clientType === 'person'" :label="t('features.invoices.admin.email')">
+              <UInput :model-value="selectedClient.invoiceEmail ?? ''" disabled class="w-full" />
             </UFormField>
             <UFormField :label="t('features.invoices.admin.currency')">
               <UInput v-model="model.currency" disabled class="w-full" />
@@ -615,7 +626,7 @@ if (props.createPage) {
               :label="t('features.invoices.admin.unitPrice')"
             >
               <UInputNumber
-                :model-value="line.unitPriceMinor / 100"
+                :model-value="line.unitPriceMinor / currencyScale(model.currency)"
                 :min="0"
                 :step="0.01"
                 :format-options="currencyFormat"

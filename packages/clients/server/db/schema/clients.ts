@@ -1,5 +1,6 @@
-import { boolean, index, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
-import { organization, user } from '@nuxt-customer-portal/core/schema'
+import { sql } from 'drizzle-orm'
+import { boolean, check, index, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { organization, user, member } from '@nuxt-customer-portal/core/schema'
 
 export const clientsSchema = pgSchema('clients')
 
@@ -17,6 +18,10 @@ export const clientProfile = clientsSchema.table(
     organizationId: text('organization_id')
       .primaryKey()
       .references(() => organization.id, { onDelete: 'restrict' }),
+    clientType: text('client_type').$type<'organization' | 'person'>().default('organization').notNull(),
+    firstName: text('first_name'),
+    lastName: text('last_name'),
+    timezone: text('timezone'),
     officialName: text('official_name').notNull(),
     address: text('address').default('').notNull(),
     registrationNumber: text('registration_number'),
@@ -27,7 +32,14 @@ export const clientProfile = clientsSchema.table(
     archivedById: text('archived_by_id').references(() => user.id, { onDelete: 'set null' }),
     ...auditColumns
   },
-  (table) => [index('client_profile_archived_idx').on(table.archivedAt)]
+  (table) => [
+    index('client_profile_archived_idx').on(table.archivedAt),
+    check('client_profile_client_type_check', sql`${table.clientType} IN ('organization', 'person')`),
+    check(
+      'person_no_company_fields',
+      sql`${table.clientType} <> 'person' OR (${table.registrationNumber} IS NULL AND ${table.vatNumber} IS NULL)`
+    )
+  ]
 )
 
 export const clientModule = clientsSchema.table(
@@ -53,3 +65,17 @@ export const clientModule = clientsSchema.table(
 
 export type ClientProfileRecord = typeof clientProfile.$inferSelect
 export type ClientModuleRecord = typeof clientModule.$inferSelect
+
+export const personalMembership = clientsSchema.table('personal_membership', {
+  organizationId: text('organization_id')
+    .primaryKey()
+    .references(() => clientProfile.organizationId, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  memberId: text('member_id')
+    .notNull()
+    .unique()
+    .references(() => member.id, { onDelete: 'cascade' })
+})

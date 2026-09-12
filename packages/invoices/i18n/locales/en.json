@@ -243,7 +243,10 @@
         "completeClientDetails": "Edit client details",
         "senderInvoiceDetails": "Sender invoice details",
         "invoiceEmail": "Invoice email address",
-        "emailMessages": { "invoice": "Invoice", "paymentReminder": "Payment reminder" },
+        "emailMessages": {
+          "invoice": "Invoice",
+          "paymentReminder": "Payment reminder"
+        },
         "emailPlaceholders": {
           "invoiceNumber": "Invoice number",
           "senderName": "Sender name",
@@ -294,7 +297,8 @@
           "sortTotal": "Total amount"
         },
         "to": "To",
-        "amount": "Amount"
+        "amount": "Amount",
+        "creditTitle": "Credit note {number}"
       },
       "messages": {
         "saved": "Time saved",

@@ -77,5 +77,22 @@
     "admin": "Beheer",
     "blog": "Blog",
     "contact": "Contact"
+  },
+  "timezones": {
+    "label": "Tijdzone",
+    "provider": "Tijdzone van het bedrijf",
+    "preference": "Weergavetijdzone",
+    "inherit": "Standaardtijdzone gebruiken ({timezone})",
+    "invalid": "Kies een geldige tijdzone",
+    "savedPreference": "Je opgeslagen tijdzone blijft hetzelfde wanneer je reist.",
+    "current": "Momenteel: {timezone}",
+    "useDevice": "Tijdzone van apparaat gebruiken",
+    "save": "Opslaan",
+    "saved": "Tijdzone opgeslagen",
+    "failed": "Tijdzone opslaan mislukt",
+    "openPersonalAccount": "Persoonlijk account openen",
+    "personalAccount": "Persoonlijk account",
+    "selectAccount": "Account selecteren",
+    "accountSettings": "Accountgegevens"
   }
 }

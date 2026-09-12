@@ -62,7 +62,7 @@ test('client status filters support a default active view and a durable all view
 test('client invitations use UForm with Zod validation and surface request failures', async () => {
   const detailComponent = await readFile(detailComponentUrl, 'utf8')
 
-  assert.match(detailComponent, /<UForm\s+:state="invitationForm"\s+:schema="invitationSchema"/)
+  assert.match(detailComponent, /<UForm[^>]*:state="invitationForm"\s+:schema="invitationSchema"/)
   assert.match(detailComponent, /:schema="invitationSchema"\s+novalidate/)
   assert.match(detailComponent, /<UFormField name="email">/)
   assert.match(detailComponent, /email: z\.string\(\)\.trim\(\)\.email/)

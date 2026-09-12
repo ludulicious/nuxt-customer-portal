@@ -183,7 +183,11 @@
       "namePlaceholder": "Voer je naam in",
       "profilePicture": "Profielfoto",
       "profilePictureDescription": "JPG, GIF of PNG. Max. 1MB.",
-      "chooseAvatar": "Kiezen"
+      "chooseAvatar": "Kiezen",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "displayName": "Weergavenaam",
+      "displayNameDescription": "De naam die in het portaal wordt getoond. Deze mag afwijken van je voor- en achternaam."
     },
     "messages": {
       "error": "Fout",
@@ -202,7 +206,10 @@
       "atLeastOneField": "Ten minste één veld (naam of afbeelding) moet worden ingevuld",
       "imageInvalidUrl": "Afbeelding moet een geldige URL zijn",
       "nameMaxLength": "Naam moet minder dan 255 tekens zijn",
-      "nameRequired": "Naam is verplicht"
+      "nameRequired": "Naam is verplicht",
+      "firstNameRequired": "Voornaam is verplicht",
+      "lastNameRequired": "Achternaam is verplicht",
+      "namePartMaxLength": "Gebruik maximaal 80 tekens"
     }
   }
 }

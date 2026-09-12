@@ -18,12 +18,22 @@ const packageDirectories = [
   'timesheets',
   'invoices',
   'invoice-timesheets',
+  'products',
+  'invoice-products',
   'preset',
   'saas-configuration',
   'kit'
 ]
 const layerPackages = new Set(packageDirectories.filter((name) => name !== 'kit'))
-const migrationPackages = new Set(['core', 'service-requests', 'timesheets', 'invoices', 'invoice-timesheets'])
+const migrationPackages = new Set([
+  'core',
+  'service-requests',
+  'timesheets',
+  'invoices',
+  'invoice-timesheets',
+  'products',
+  'invoice-products'
+])
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'nuxt-customer-portal-pack-'))
 const tarballDirectory = join(temporaryRoot, 'tarballs')
 mkdirSync(tarballDirectory)

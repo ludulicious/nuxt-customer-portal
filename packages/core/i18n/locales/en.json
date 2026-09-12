@@ -77,5 +77,22 @@
     "admin": "Admin",
     "blog": "Blog",
     "contact": "Contact"
+  },
+  "timezones": {
+    "label": "Timezone",
+    "provider": "Business timezone",
+    "preference": "Display timezone",
+    "inherit": "Use default timezone ({timezone})",
+    "invalid": "Choose a valid timezone",
+    "savedPreference": "Your saved timezone stays the same when you travel.",
+    "current": "Currently: {timezone}",
+    "useDevice": "Use device timezone",
+    "save": "Save",
+    "saved": "Timezone saved",
+    "failed": "Could not save timezone",
+    "openPersonalAccount": "Open personal account",
+    "personalAccount": "Personal account",
+    "selectAccount": "Select account",
+    "accountSettings": "Account details"
   }
 }

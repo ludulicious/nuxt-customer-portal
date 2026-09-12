@@ -81,7 +81,9 @@
       "name": "Naam",
       "namePlaceholder": "Voer je naam in",
       "password": "Wachtwoord",
-      "passwordPlaceholder": "Voer je wachtwoord in"
+      "passwordPlaceholder": "Voer je wachtwoord in",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam"
     },
     "footer": "Door je aan te melden, ga je akkoord met onze",
     "loginLink": "Inloggen",
@@ -111,5 +113,6 @@
     "subtitle": "Voer de 6-cijferige code in die is verzonden naar {email}",
     "success": "E-mail succesvol geverifieerd!",
     "title": "Verifieer Je E-mail"
-  }
+  },
+  "personalRegistration": "Registreren als particuliere klant"
 }

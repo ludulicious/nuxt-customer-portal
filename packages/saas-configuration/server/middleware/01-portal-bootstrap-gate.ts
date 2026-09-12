@@ -1,5 +1,6 @@
 const alwaysAllowed = ['/api/health', '/api/portal/bootstrap', '/api/portal/public']
 const moduleApiPrefixes: Record<string, string[]> = {
+  products: ['/api/products/admin', '/api/store/v1', '/api/store/product', '/api/store/checkout'],
   timesheets: ['/api/timesheets'],
   invoices: ['/api/invoices'],
   'service-requests': ['/api/service-requests'],

@@ -57,15 +57,7 @@ watch(search, () => {
   searchTimeout = setTimeout(loadUsers, 300)
 })
 
-watch(open, async (isOpen) => {
-  if (!isOpen) {
-    return
-  }
-  search.value = ''
-  state.userId = ''
-  state.role = 'member'
-  await loadUsers()
-})
+await loadUsers()
 
 onUnmounted(() => {
   if (searchTimeout) {
@@ -95,6 +87,7 @@ const submit = async () => {
 
 <template>
   <UModal
+    v-if="open"
     v-model:open="open"
     :title="t('admin.organization.detail.members.link.title')"
     :ui="{ footer: 'justify-end' }"

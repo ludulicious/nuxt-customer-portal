@@ -243,7 +243,10 @@
         "completeClientDetails": "Klantgegevens bewerken",
         "senderInvoiceDetails": "Factuurgegevens afzender",
         "invoiceEmail": "E-mailadres voor facturen",
-        "emailMessages": { "invoice": "Factuur", "paymentReminder": "Betalingsherinnering" },
+        "emailMessages": {
+          "invoice": "Factuur",
+          "paymentReminder": "Betalingsherinnering"
+        },
         "emailPlaceholders": {
           "invoiceNumber": "Factuurnummer",
           "senderName": "Naam afzender",
@@ -294,7 +297,8 @@
           "sortTotal": "Totaalbedrag"
         },
         "to": "Tot",
-        "amount": "Bedrag"
+        "amount": "Bedrag",
+        "creditTitle": "Creditnota {number}"
       },
       "messages": {
         "saved": "Tijd opgeslagen",

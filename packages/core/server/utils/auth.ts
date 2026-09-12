@@ -1,3 +1,5 @@
+import { z } from 'zod'
+import { isPersonalClient, assertClientInvitationAcceptance } from './client-account-policy'
 import { isPortalDemo } from './demo'
 import { demoMessage, isDemoRequestAllowed } from '../../shared/demo-policy'
 import { betterAuth } from 'better-auth'
@@ -6,6 +8,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
 import { admin as adminPlugin, customSession, emailOTP, openAPI, organization } from 'better-auth/plugins'
+import { apiKey } from '@better-auth/api-key'
 import { db } from './db'
 import { and, eq, gt } from 'drizzle-orm'
 import {
@@ -15,12 +18,22 @@ import {
   verification as verificationTable,
   organization as organizationTable,
   member as organizationMemberTable,
-  invitation as organizationInvitationTable
+  invitation as organizationInvitationTable,
+  apiKey as apiKeyTable
 } from '../db/schema/auth-schema'
 import { nanoid } from 'nanoid'
-import { ac, user, admin as adminRole } from '../../shared/permissions'
+import {
+  ac,
+  user,
+  admin as adminRole,
+  organizationAc,
+  organizationOwner,
+  organizationAdmin,
+  organizationMember
+} from '../../shared/permissions'
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
+import { runUserIdentityChangedHooks } from './business-hooks'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -50,7 +63,8 @@ export const auth = betterAuth({
       member: organizationMemberTable,
       verification: verificationTable,
       organization: organizationTable,
-      invitation: organizationInvitationTable
+      invitation: organizationInvitationTable,
+      apikey: apiKeyTable
     },
     usePlural: false
     // Tables are singular (e.g., "user"), so no need for usePlural
@@ -65,6 +79,89 @@ export const auth = betterAuth({
           code: 'DEMO_RESTRICTED',
           message: demoMessage(ctx.headers?.get('accept-language') || '')
         })
+      }
+      if (['/api-key/create', '/api-key/list', '/api-key/get', '/api-key/update', '/api-key/delete'].includes(ctx.path)) {
+        const body = (ctx.body ?? {}) as Record<string, unknown>
+        const query = (ctx.query ?? {}) as Record<string, unknown>
+        const current = await getSessionFromCtx(ctx)
+        const actorId = (body.userId as string | undefined) ?? current?.user.id
+        if (actorId) {
+          const [actor] = await db.select({ role: userTable.role }).from(userTable).where(eq(userTable.id, actorId)).limit(1)
+          if (actor?.role !== 'admin') {
+            throw new APIError('FORBIDDEN', { message: 'System administrator access is required to manage API keys' })
+          }
+        }
+        let organizationId = (body.organizationId ?? query.organizationId) as string | undefined
+        const keyId = (body.keyId ?? query.id) as string | undefined
+        if (!organizationId && !keyId) {
+          organizationId = current?.session.activeOrganizationId ?? undefined
+        }
+        if (!organizationId && keyId) {
+          const [key] = await db
+            .select({ referenceId: apiKeyTable.referenceId })
+            .from(apiKeyTable)
+            .where(eq(apiKeyTable.id, keyId))
+            .limit(1)
+          organizationId = key?.referenceId
+        }
+        if (organizationId) {
+          const [selected] = await db
+            .select({ organizationType: organizationTable.organizationType })
+            .from(organizationTable)
+            .where(eq(organizationTable.id, organizationId))
+            .limit(1)
+          if (selected?.organizationType !== 'PROVIDER') {
+            throw new APIError('FORBIDDEN', {
+              message: 'API keys are only available to provider organizations'
+            })
+          }
+        }
+      }
+      if (ctx.path.startsWith('/organization/') && ctx.body) {
+        const current = await getSessionFromCtx(ctx)
+        const body = ctx.body as Record<string, unknown>
+        let target = body.organizationId as string | undefined
+        if (typeof body.invitationId === 'string') {
+          const [invite] = await db
+            .select()
+            .from(organizationInvitationTable)
+            .where(eq(organizationInvitationTable.id, body.invitationId))
+            .limit(1)
+          target = invite?.organizationId
+        }
+        const memberId = body.memberId ?? body.memberIdOrEmail
+        if (typeof memberId === 'string') {
+          const [selected] = await db
+            .select()
+            .from(organizationMemberTable)
+            .where(eq(organizationMemberTable.id, memberId))
+            .limit(1)
+          target = selected?.organizationId ?? target
+        }
+        target ||= current?.session.activeOrganizationId ?? undefined
+        if (target && (await isPersonalClient(target))) {
+          if (ctx.path === '/organization/accept-invitation') {
+            if (!current?.user.emailVerified) {
+              throw new APIError('FORBIDDEN', { message: 'Verify your email first' })
+            }
+            try {
+              await assertClientInvitationAcceptance(target, current.user.id)
+            } catch {
+              throw new APIError('CONFLICT', { message: 'Personal account already exists. Contact your coach.' })
+            }
+          } else if (
+            ![
+              '/organization/set-active',
+              '/organization/reject-invitation',
+              '/organization/check-slug',
+              '/organization/has-permission'
+            ].includes(ctx.path)
+          ) {
+            throw new APIError('FORBIDDEN', {
+              message: 'Personal account membership and organization settings cannot be changed through this route'
+            })
+          }
+        }
       }
       if (ctx.path !== '/organization/list-members' && ctx.path !== '/organization/list-invitations') {
         return
@@ -101,6 +198,11 @@ export const auth = betterAuth({
     requireEmailVerification: true
   },
   user: {
+    additionalFields: {
+      timezone: { type: 'string', required: false, input: false },
+      firstName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } },
+      lastName: { type: 'string', required: false, validator: { input: z.string().trim().min(1).max(80) } }
+    },
     deleteUser: {
       enabled: true,
       sendDeleteAccountVerification: async ({ user, url, token: _token }, _request) => {
@@ -209,6 +311,14 @@ export const auth = betterAuth({
             createdAt: new Date()
           })
         }
+      },
+      update: {
+        after: async (updatedUser) => {
+          await runUserIdentityChangedHooks(db, updatedUser.id, {
+            firstName: typeof updatedUser.firstName === 'string' ? updatedUser.firstName : null,
+            lastName: typeof updatedUser.lastName === 'string' ? updatedUser.lastName : null
+          })
+        }
       }
     },
     session: {
@@ -238,6 +348,12 @@ export const auth = betterAuth({
     }),
     organization({
       allowUserToCreateOrganization: false,
+      ac: organizationAc,
+      roles: {
+        owner: organizationOwner,
+        admin: organizationAdmin,
+        member: organizationMember
+      },
       schema: {
         organization: {
           additionalFields: {
@@ -289,6 +405,14 @@ export const auth = betterAuth({
           console.log(`User ${user.email} accepted invitation to ${organization.name} with role ${member.role}`)
         }
       }
+    }),
+    apiKey({
+      references: 'organization',
+      defaultPrefix: 'portal_',
+      requireName: true,
+      startingCharactersConfig: { shouldStore: true, charactersLength: 12 },
+      keyExpiration: { minExpiresIn: 1 / 24, maxExpiresIn: 365 },
+      rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 }
     }),
     emailOTP({
       overrideDefaultEmailVerification: true,

@@ -23,7 +23,9 @@ export default defineNuxtConfig({
   fonts: {
     families: [
       { name: 'Bricolage Grotesque', provider: 'google', weights: [400, 700, 800, 900], global: true },
-      { name: 'Geist', provider: 'google', weights: [400, 600, 700], global: true }
+      { name: 'Geist', provider: 'google', weights: [400, 600, 700], global: true },
+      { name: 'Playfair Display', provider: 'google', weights: [400, 600, 700], global: true },
+      { name: 'Lato', provider: 'google', weights: [300, 400, 700], global: true }
     ]
   },
   i18n: {

@@ -1,3 +1,4 @@
+import { invoiceRecipientEmail } from '../shared/recipient-email'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
@@ -24,6 +25,13 @@ test('invoice creation has a dedicated route and a non-shrinking scrollable form
   assert.match(toolbar, /v-model:open="showFilters"/)
 })
 
+test('conditionally mounted invoice email modal loads its preview in setup', () => {
+  const modal = readFileSync(new URL('../app/components/InvoicesInvoiceEmailModal.vue', import.meta.url), 'utf8')
+
+  assert.match(modal, /await loadPreview\(\)/)
+  assert.doesNotMatch(modal, /watch\(\s*open/)
+})
+
 test('both invoice creation flows open the newly created invoice detail', () => {
   const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
   const save = component.split('const save = async () => {')[1]!.split('const statusColor')[0]!
@@ -35,11 +43,19 @@ test('both invoice creation flows open the newly created invoice detail', () => 
   assert.doesNotMatch(save, /navigateTo\('\/admin\/invoices'\)/)
 })
 
-test('client general email is not required or used as an invoice recipient fallback', () => {
-  const repository = readFileSync(new URL('../server/utils/invoice-repository.ts', import.meta.url), 'utf8')
-  const form = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
-  assert.match(repository, /recipientEmail: contact\?\.email \?\? null/)
-  assert.doesNotMatch(form, /!client\.invoiceEmail/)
+test('private clients use their own email while organizations use the selected contact', () => {
+  assert.equal(
+    invoiceRecipientEmail({ clientType: 'person', invoiceEmail: 'private@example.test' }),
+    'private@example.test'
+  )
+  assert.equal(invoiceRecipientEmail({ clientType: 'organization', invoiceEmail: 'general@example.test' }), null)
+  assert.equal(
+    invoiceRecipientEmail(
+      { clientType: 'organization', invoiceEmail: 'general@example.test' },
+      { email: 'contact@example.test' }
+    ),
+    'contact@example.test'
+  )
 })
 
 test('provider invoice access overview is scoped and read-only', () => {

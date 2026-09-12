@@ -2,14 +2,14 @@
 import { z } from 'zod'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
-const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown> }>()
+const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown>; startEditing?: boolean }>()
 const emit = defineEmits<{ deleted: [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const api = useClients()
 const { clientIntegrations } = usePortalFeatures()
 const busy = ref(false)
-const editing = ref(false)
+const editing = ref(props.startEditing ?? false)
 const deleting = ref(false)
 const deleteName = ref('')
 const deletion = ref<{ canDelete: boolean; memberCount: number; moduleCount: number; clientName: string } | null>(null)
@@ -146,7 +146,7 @@ const toggleEditing = () => {
               {{ t(client.archivedAt ? 'features.clients.archived' : 'features.clients.active') }}
             </UBadge>
           </div>
-          <p class="text-sm text-muted">{{ client.officialName }}</p>
+          <p v-if="client.officialName !== client.name" class="text-sm text-muted">{{ client.officialName }}</p>
         </div>
       </div>
       <UButton size="sm" variant="outline" icon="i-lucide-pencil" @click="toggleEditing">
@@ -169,22 +169,30 @@ const toggleEditing = () => {
       </template>
       <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
+          <dt class="text-sm text-muted">{{ t('features.clients.clientType') }}</dt>
+          <dd>{{ t(`features.clients.types.${client.clientType}`) }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-muted">{{ t('timezones.label') }}</dt>
+          <dd>{{ client.timezone || t('timezones.inherit', { timezone: client.schedulingTimezone }) }}</dd>
+        </div>
+        <div>
           <dt class="text-sm text-muted">{{ t('features.clients.name') }}</dt>
           <dd class="font-medium">{{ client.name }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.officialName') }}</dt>
           <dd>{{ client.officialName }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.slug') }}</dt>
           <dd class="font-mono text-sm">{{ client.slug }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.registrationNumber') }}</dt>
           <dd>{{ client.registrationNumber || '—' }}</dd>
         </div>
-        <div>
+        <div v-if="client.clientType === 'organization'">
           <dt class="text-sm text-muted">{{ t('features.clients.vatNumber') }}</dt>
           <dd>{{ client.vatNumber || '—' }}</dd>
         </div>
@@ -203,16 +211,24 @@ const toggleEditing = () => {
       </dl>
     </UCard>
 
-    <UCard>
+    <UCard v-if="client.clientType !== 'person' || !client.members.length">
       <template #header>
-        <h2 class="font-semibold">{{ t('features.clients.members') }}</h2>
+        <h2 class="font-semibold">
+          {{ t(client.clientType === 'person' ? 'features.clients.invitePrivateClient' : 'features.clients.members') }}
+        </h2>
       </template>
       <div class="grid gap-4">
         <UForm
+          v-if="client.clientType !== 'person' || !client.invitations.length"
           :state="invitationForm"
           :schema="invitationSchema"
           novalidate
-          class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]"
+          :class="[
+            'grid items-start gap-2',
+            client.clientType === 'person'
+              ? 'sm:grid-cols-[minmax(0,1fr)_auto]'
+              : 'sm:grid-cols-[minmax(0,1fr)_150px_auto]'
+          ]"
           @submit="inviteMember"
         >
           <UFormField name="email">
@@ -223,7 +239,7 @@ const toggleEditing = () => {
               class="w-full"
             />
           </UFormField>
-          <UFormField name="role">
+          <UFormField v-if="client.clientType !== 'person'" name="role">
             <USelect v-model="invitationForm.role" :items="['member', 'admin', 'owner']" class="w-full" />
           </UFormField>
           <UButton type="submit" :disabled="!invitationForm.email.trim()" :loading="busy">
@@ -247,6 +263,7 @@ const toggleEditing = () => {
             </div>
             <div class="flex items-center gap-2">
               <USelect
+                v-if="client.clientType !== 'person'"
                 :model-value="item.role"
                 :items="['member', 'admin', 'owner']"
                 size="xs"
@@ -265,9 +282,11 @@ const toggleEditing = () => {
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-muted">{{ t('features.clients.noMembers') }}</p>
+        <p v-else-if="client.clientType !== 'person'" class="text-sm text-muted">
+          {{ t('features.clients.noMembers') }}
+        </p>
 
-        <div class="border-t border-default pt-4">
+        <div v-if="client.clientType !== 'person' || client.invitations.length" class="border-t border-default pt-4">
           <h3 class="mb-3 text-sm font-semibold">
             {{ t('features.clients.pendingInvitations') }} ({{ client.invitations.length }})
           </h3>
@@ -289,12 +308,14 @@ const toggleEditing = () => {
               </div>
               <div class="flex items-center gap-2">
                 <UBadge color="warning" variant="soft">{{ t('features.clients.invitationPending') }}</UBadge
-                ><UBadge color="neutral" variant="soft">{{ invitation.role }}</UBadge>
+                ><UBadge v-if="client.clientType !== 'person'" color="neutral" variant="soft">{{
+                  invitation.role
+                }}</UBadge>
                 <InvitationActions
                   :endpoint="`/api/clients/${client.id}/invitations/${invitation.id}`"
                   :email="invitation.email"
                   :role="invitation.role"
-                  can-edit
+                  :can-edit="client.clientType !== 'person'"
                   can-revoke
                   @refresh="refresh()"
                 />
@@ -394,6 +415,7 @@ const toggleEditing = () => {
       </div>
     </UCard>
     <ConfirmationModal
+      v-if="showRemoveMemberConfirmation"
       v-model:open="showRemoveMemberConfirmation"
       title="features.clients.removeMember"
       message="features.clients.confirmRemoveMember"
@@ -401,7 +423,6 @@ const toggleEditing = () => {
       confirm-text="features.clients.removeMember"
       confirm-color="error"
       @confirm="removeMember"
-      @cancel="memberToRemove = null"
     />
   </div>
 </template>

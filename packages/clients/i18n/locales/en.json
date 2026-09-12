@@ -2,7 +2,7 @@
   "features": {
     "clients": {
       "title": "Clients",
-      "description": "Manage client companies, members, profiles, and module access.",
+      "description": "Manage clients, profiles, members, and module access.",
       "backToClients": "Back to clients",
       "openClient": "Open {name}",
       "loading": "Loading client",
@@ -65,10 +65,36 @@
       "resultCount": "{count} Client | {count} Clients",
       "validation": {
         "name": "Enter at least two characters.",
+        "firstName": "First name is required.",
+        "lastName": "Last name is required.",
         "slug": "Use lowercase letters, numbers, and single hyphens only.",
         "officialName": "Enter the official company name.",
         "email": "Enter a valid email address."
-      }
+      },
+      "clientType": "Client type",
+      "types": {
+        "organization": "Organization",
+        "person": "Private person"
+      },
+      "fullName": "Full name",
+      "personalAccount": "Personal account",
+      "openPersonalAccount": "Open personal account",
+      "onboardingFailed": "Could not open your personal account. Verify your email or contact your coach if you already have an account.",
+      "editPersonalProfile": "Edit personal profile",
+      "allTypes": "All client types",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "personalAddress": "Personal address",
+      "personalAddressDescription": "The address on your private client profile, used for billing.",
+      "addressTooLong": "Use at most 1,000 characters",
+      "addressSaved": "Address saved",
+      "addressLoadFailed": "Could not load your personal address",
+      "invitePrivateClient": "Invite private client",
+      "choosePrivateClient": "Choose a private client",
+      "useExistingPrivateClient": "Invite an existing private client",
+      "privateInviteDescription": "Invite someone to their private client account. They will create or sign in to their own login to accept.",
+      "invitationCreated": "Invitation created",
+      "invitationDeliveryFailed": "Invitation saved, but the email could not be sent. Revoke it from Pending invitations, then invite the existing private client again."
     }
   }
 }

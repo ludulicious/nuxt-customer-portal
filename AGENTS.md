@@ -11,3 +11,7 @@ Always use `localhost` as the hostname when opening, checking, or sharing local 
 # Forms
 
 When creating or editing forms in this project, use Nuxt UI's `UForm` and Nuxt UI form components with a Zod validation schema. Display validation errors through Nuxt UI. Disable browser-native form validation with `novalidate`; do not rely on native constraint validation or browser validation popups.
+
+# Modals
+
+Always conditionally mount modal components and bind their open state two ways: use `v-if="isOpen"` together with `v-model:open="isOpen"`. Keep any selected entity or form input separate from the open-state boolean; closing a modal must not require clearing those values. Apply this pattern to `UModal`, `ConfirmationModal`, and all custom modal components.

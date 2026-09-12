@@ -35,7 +35,10 @@ const schema = computed(() =>
   })
 )
 const endpoint = `/api/invoices/admin/clients/${props.client.organizationId}/contacts`
-const { data: contacts, refresh } = await useFetch<InvoiceContactDto[]>(endpoint, { default: () => [] })
+const { data: contacts, refresh } = await useFetch<InvoiceContactDto[]>(endpoint, {
+  default: () => [],
+  immediate: props.client.clientType !== 'person'
+})
 const reset = () => {
   editingId.value = ''
   formOpen.value = false
@@ -77,7 +80,7 @@ const remove = async (contact: InvoiceContactDto) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div v-if="client.clientType !== 'person'" class="space-y-6">
     <InvoicesClientAccessPanel :client="client" />
     <UCard>
       <template #header>
