@@ -1,13 +1,16 @@
 <script setup lang="ts">
-defineProps<{ title: string; subtitle?: string; icon?: string }>()
+defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boolean }>()
 </script>
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <section class="min-h-0 flex-1 overflow-y-auto">
-      <div class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8">
+    <section class="min-h-0 flex-1" :class="constrained ? 'overflow-hidden' : 'overflow-y-auto'">
+      <div
+        class="mx-auto flex max-w-[1440px] flex-col gap-4 p-4 sm:p-6 lg:p-8"
+        :class="constrained ? 'h-full min-h-0' : ''"
+      >
         <slot name="back" />
-        <header class="flex items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
+        <header class="flex shrink-0 items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
           <div class="flex min-w-0 gap-3">
             <UIcon :name="icon || 'i-lucide-shopping-bag'" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
@@ -17,7 +20,13 @@ defineProps<{ title: string; subtitle?: string; icon?: string }>()
           </div>
           <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1"><slot name="actions" /></div>
         </header>
-        <slot />
+        <div v-if="$slots.controls" class="shrink-0"><slot name="controls" /></div>
+        <div
+          data-products-scroll
+          :class="constrained ? 'min-h-0 flex-1 overflow-y-auto' : ''"
+        >
+          <slot />
+        </div>
       </div>
     </section>
     <footer

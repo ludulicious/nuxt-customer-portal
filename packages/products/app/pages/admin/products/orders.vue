@@ -16,6 +16,7 @@ const searchInput = ref(String(route.query.search || ''))
 const listRoot = useTemplateRef('listRoot')
 const topBoundary = useTemplateRef('topBoundary')
 const bottomBoundary = useTemplateRef('bottomBoundary')
+const scrollContainer = () => listRoot.value?.closest('[data-products-scroll]') as HTMLElement | null
 let observer: IntersectionObserver | undefined
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let controller: AbortController | undefined
@@ -86,7 +87,7 @@ async function load(force = false) {
     if (active.signal.aborted) {
       return
     }
-    const scroll = listRoot.value?.closest('section')
+    const scroll = scrollContainer()
     const height = scroll?.scrollHeight ?? 0
     const prepend = same && loaded.size > 0 && page.value < Math.min(...loaded)
     result.value = response
@@ -143,7 +144,7 @@ onMounted(() => {
         router.replace({ query: { ...route.query, page: next } })
       }
     },
-    { root: listRoot.value?.closest('section'), rootMargin: '40px' }
+    { root: scrollContainer(), rootMargin: '40px' }
   )
   if (topBoundary.value) {
     observer.observe(topBoundary.value)
@@ -160,7 +161,7 @@ onBeforeUnmount(() => {
 
 async function goToPage(value: number) {
   await router.replace({ query: { ...route.query, page: value, scroll: undefined } })
-  listRoot.value?.closest('section')?.scrollTo({ top: 0, behavior: 'smooth' })
+  scrollContainer()?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 async function action(order: Order, name: 'retry' | 'fulfill') {
   busyId.value = `${order.id}:${name}`
@@ -188,7 +189,12 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
 </script>
 
 <template>
-  <ProductsShell :title="t('products.orders')" :subtitle="t('products.ordersIntro')" icon="i-lucide-receipt-text">
+  <ProductsShell
+    :title="t('products.orders')"
+    :subtitle="t('products.ordersIntro')"
+    icon="i-lucide-receipt-text"
+    constrained
+  >
     <template #actions>
       <UButton
         icon="i-lucide-refresh-cw"
@@ -200,33 +206,40 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
         @click="load(true)"
       />
     </template>
-    <UAlert v-if="error" color="error" variant="subtle" :title="error" />
-    <PortalListToolbar
-      v-model:search="searchInput"
-      :search-placeholder="t('products.ordersSearch')"
-      :filters="[
-        {
-          key: 'status',
-          placeholder: t('products.status'),
-          items: [
-            { value: 'all', label: t('products.allStatuses') },
-            ...['pending', 'paid', 'failed', 'expired'].map((value) => ({ value, label: t(`products.${value}`) }))
-          ]
-        }
-      ]"
-      :filter-values="{ status }"
-      :sort-options="[
-        { value: 'createdAt', label: t('products.orderSortCreated') },
-        { value: 'total', label: t('products.orderSortTotal') },
-        { value: 'email', label: t('products.orderSortCustomer') },
-        { value: 'bookingReference', label: t('products.bookingReference') }
-      ]"
-      :sort-by="sortBy"
-      :sort-dir="sortDir"
-      @filter="toolbarFilter"
-      @sort="updateQuery('sortBy', $event === 'createdAt' ? '' : $event)"
-      @toggle-direction="updateQuery('sortDir', sortDir === 'asc' ? '' : 'asc')"
-    />
+    <template #controls>
+      <div class="space-y-4">
+        <UAlert v-if="error" color="error" variant="subtle" :title="error" />
+        <PortalListToolbar
+          v-model:search="searchInput"
+          :search-placeholder="t('products.ordersSearch')"
+          :filters="[
+            {
+              key: 'status',
+              placeholder: t('products.status'),
+              items: [
+                { value: 'all', label: t('products.allStatuses') },
+                ...['pending', 'paid', 'failed', 'expired'].map((value) => ({
+                  value,
+                  label: t(`products.${value}`)
+                }))
+              ]
+            }
+          ]"
+          :filter-values="{ status }"
+          :sort-options="[
+            { value: 'createdAt', label: t('products.orderSortCreated') },
+            { value: 'total', label: t('products.orderSortTotal') },
+            { value: 'email', label: t('products.orderSortCustomer') },
+            { value: 'bookingReference', label: t('products.bookingReference') }
+          ]"
+          :sort-by="sortBy"
+          :sort-dir="sortDir"
+          @filter="toolbarFilter"
+          @sort="updateQuery('sortBy', $event === 'createdAt' ? '' : $event)"
+          @toggle-direction="updateQuery('sortDir', sortDir === 'asc' ? '' : 'asc')"
+        />
+      </div>
+    </template>
     <div v-if="!items.length && !pending && !error" class="py-10 text-center">
       <UIcon name="i-lucide-receipt-text" class="mx-auto size-10 text-muted" />
       <h2 class="mt-3 font-semibold">{{ t(filtered ? 'products.noMatchingOrders' : 'products.noOrders') }}</h2>

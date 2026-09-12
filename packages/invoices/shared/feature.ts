@@ -10,26 +10,12 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       id: 'invoices',
       labelKey: 'features.invoices.title',
       icon: 'i-lucide-receipt-text',
-      to: '/invoices',
-      routePrefixes: ['/invoices', '/admin/invoices'],
+      to: '/admin/invoices',
+      routePrefixes: ['/admin/invoices'],
       audiences: ['authenticated'],
+      navigationAudiences: ['providerAdmin'],
       order: 31,
       menuItems: [
-        {
-          id: 'received-invoices',
-          labelKey: 'features.invoices.receivedInvoices',
-          icon: 'i-lucide-inbox',
-          to: '/invoices',
-          exact: true,
-          audiences: ['authenticated']
-        },
-        {
-          id: 'invoice-viewers',
-          labelKey: 'features.invoices.clientInvoices.viewersTitle',
-          icon: 'i-lucide-users-round',
-          to: '/invoices/viewers',
-          audiences: ['clientAdmin']
-        },
         {
           id: 'sales-invoices',
           labelKey: 'features.invoices.salesInvoices',
@@ -46,6 +32,29 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
           audiences: ['providerAdmin']
         }
       ]
+    }
+  ],
+  moduleMenuItems: [
+    {
+      moduleId: 'purchases',
+      item: {
+        id: 'received-invoices',
+        labelKey: 'features.invoices.receivedInvoices',
+        icon: 'i-lucide-inbox',
+        to: '/invoices',
+        exact: true,
+        audiences: ['clientAuthenticated']
+      }
+    },
+    {
+      moduleId: 'purchases',
+      item: {
+        id: 'invoice-viewers',
+        labelKey: 'features.invoices.clientInvoices.viewersTitle',
+        icon: 'i-lucide-users-round',
+        to: '/invoices/viewers',
+        audiences: ['clientOrganizationAdmin']
+      }
     }
   ],
   dashboardWidgets: [

@@ -7,6 +7,7 @@ export type PortalAudience =
   | 'providerAdmin'
   | 'clientAuthenticated'
   | 'clientAdmin'
+  | 'clientOrganizationAdmin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
 export type PortalOrganizationType = 'PROVIDER' | 'CLIENT'
 
@@ -58,6 +59,7 @@ export interface PortalModuleContribution {
   to: string
   routePrefixes: string[]
   audiences: PortalAudience[]
+  navigationAudiences?: PortalAudience[]
   order?: number
   menuItems?: readonly PortalModuleMenuItem[]
 }

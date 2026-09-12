@@ -21,9 +21,9 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       id: 'products',
       labelKey: 'products.store',
       icon: 'i-lucide-shopping-bag',
-      to: '/purchases',
-      routePrefixes: ['/purchases', '/admin/products'],
-      audiences: ['authenticated'],
+      to: '/admin/products',
+      routePrefixes: ['/admin/products'],
+      audiences: ['providerAdmin'],
       menuItems: [
         {
           id: 'catalog',
@@ -48,18 +48,29 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           audiences: ['providerAdmin']
         },
         {
-          id: 'purchases',
-          icon: 'i-lucide-library',
-          labelKey: 'products.purchases',
-          to: '/purchases',
-          audiences: ['authenticated']
-        },
-        {
           id: 'store-settings',
           icon: 'i-lucide-settings',
           labelKey: 'products.settings',
           to: '/admin/products/settings',
           audiences: ['providerAdmin']
+        }
+      ]
+    },
+    {
+      id: 'purchases',
+      labelKey: 'products.purchasesModule',
+      icon: 'i-lucide-library',
+      to: '/purchases',
+      routePrefixes: ['/purchases', '/invoices'],
+      audiences: ['clientAuthenticated'],
+      menuItems: [
+        {
+          id: 'purchases',
+          icon: 'i-lucide-library',
+          labelKey: 'products.purchases',
+          to: '/purchases',
+          audiences: ['clientAuthenticated'],
+          exact: true
         }
       ]
     }

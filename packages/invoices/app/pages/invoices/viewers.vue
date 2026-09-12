@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const { activeOrganizationIsPersonal } = usePortalSession()
+if (activeOrganizationIsPersonal.value) {
+  await navigateTo('/invoices')
+}
 const api = useInvoices()
 const toast = useToast()
 const { data: suppliers, refresh: refreshSuppliers } = await useAsyncData(

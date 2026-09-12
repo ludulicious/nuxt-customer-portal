@@ -201,6 +201,25 @@ export interface Page<T> {
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number }
 }
 
+export interface Purchase {
+  id: string
+  orderId: string
+  bookingReference: string
+  title: string
+  locale: Locale
+  type: ProductData['type']
+  amount: number
+  currency: string
+  access: boolean
+  refunded: number
+  disputed: boolean
+  fulfilled: boolean
+  invoiceId: string | null
+  nextSteps: string
+  fileIds: string[]
+  createdAt: string
+}
+
 export interface ProductCategory {
   code: string
   content: Record<Locale, { name: string; description: string }>

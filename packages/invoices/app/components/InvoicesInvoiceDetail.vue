@@ -9,7 +9,13 @@ import type {
 import { isKnownEmailProviderEvent } from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
 
 const props = withDefaults(
-  defineProps<{ invoice: InvoiceDto | ClientInvoiceDto; refresh: () => Promise<unknown>; mode?: 'admin' | 'client' }>(),
+  defineProps<{
+    invoice: InvoiceDto | ClientInvoiceDto
+    refresh: () => Promise<unknown>
+    mode?: 'admin' | 'client'
+    backTo?: string
+    backLabel?: string
+  }>(),
   { mode: 'admin' }
 )
 const isClient = computed(() => props.mode === 'client')
@@ -375,13 +381,13 @@ onMounted(() => {
     <header class="invoice-detail-header">
       <div class="min-w-0">
         <UButton
-          :to="isClient ? '/invoices' : '/admin/invoices'"
+          :to="backTo || (isClient ? '/invoices' : '/admin/invoices')"
           variant="link"
           color="neutral"
           icon="i-lucide-arrow-left"
           class="invoice-back-link mb-2 px-0"
         >
-          {{ t('features.invoices.admin.backToInvoices') }}
+          {{ backLabel || t('features.invoices.admin.backToInvoices') }}
         </UButton>
         <div class="invoice-title-line">
           <h1 class="text-2xl font-semibold text-highlighted">

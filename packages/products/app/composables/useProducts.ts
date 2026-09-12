@@ -10,7 +10,8 @@ import type {
   ImagePolicy,
   ImagePurpose,
   StorageSettings,
-  CheckoutAppearance
+  CheckoutAppearance,
+  Purchase
 } from '../../shared/types'
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
@@ -108,25 +109,8 @@ export const useProducts = () => ({
   testStorage: (body: Record<string, unknown>) =>
     $fetch('/api/products/admin/settings/storage/test', { method: 'POST', body }),
   removeStorage: () => $fetch('/api/products/admin/settings/storage', { method: 'DELETE' }),
-  purchases: () =>
-    $fetch<
-      Array<{
-        id: string
-        orderId: string
-        title: string
-        type: string
-        amount: number
-        currency: string
-        access: boolean
-        refunded: number
-        disputed: boolean
-        fulfilled: boolean
-        invoiceId: string | null
-        nextSteps: string
-        fileIds: string[]
-        createdAt: string
-      }>
-    >('/api/products/purchases'),
+  purchases: (query: Record<string, unknown>, signal?: AbortSignal) =>
+    $fetch<Page<Purchase>>('/api/products/purchases', { query, signal }),
   files: (id: string) =>
     $fetch<Array<{ id: string; name: string; content_type: string; size: number }>>(
       `/api/products/purchases/${id}/files`
