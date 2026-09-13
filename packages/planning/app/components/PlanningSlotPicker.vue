@@ -121,7 +121,7 @@ onMounted(() => {
 
 <template>
   <div class="space-y-5">
-    <UAlert v-if="error" color="error" :title="error" />
+    <UAlert v-if="error" variant="outline" color="error" :title="error" />
     <div class="grid gap-4 sm:grid-cols-2">
       <UFormField :label="t('planning.timezone')"
         ><USelectMenu v-model="timezone" :items="timezones" class="w-full"

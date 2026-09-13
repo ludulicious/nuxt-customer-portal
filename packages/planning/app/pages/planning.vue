@@ -5,6 +5,9 @@ import type { AvailabilityWindow } from '../../shared/types'
 import type { ProviderConfiguration, AppointmentListItem } from '../composables/usePlanning'
 import { localParts } from '../../shared/availability'
 
+const { activeOrganizationRole } = usePortalSession()
+const canManagePlanning = computed(() => ['owner', 'admin'].includes(activeOrganizationRole.value || ''))
+
 const api = usePlanning(),
   { t, locale } = useI18n(),
   settings = ref<ProviderConfiguration>(),
@@ -180,11 +183,16 @@ async function removeWindow() {
 <template>
   <UContainer class="space-y-6 py-8"
     ><h1 class="text-2xl font-bold">{{ t('planning.planning') }}</h1>
-    <UAlert v-if="error" color="error" :title="error" /><UAlert
+    <UAlert v-if="error" variant="outline" color="error" :title="error" /><UAlert
       v-if="settings && !settings.enabled"
+      variant="outline"
       color="warning"
-      :title="t('planning.planningDisabled')"
-    />
+      :title="t(canManagePlanning ? 'planning.planningDisabledAdmin' : 'planning.planningDisabled')"
+    >
+      <template v-if="canManagePlanning" #actions>
+        <UButton to="/admin/planning" color="neutral" variant="link">{{ t('planning.settings') }}</UButton>
+      </template>
+    </UAlert>
     <UCard
       ><template #header
         ><h2 class="font-semibold">{{ t('planning.connections') }}</h2></template

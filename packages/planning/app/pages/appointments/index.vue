@@ -14,7 +14,7 @@ onMounted(async () => {
 <template>
   <UContainer class="space-y-5 py-8"
     ><h1 class="text-2xl font-bold">{{ t('planning.appointments') }}</h1>
-    <UAlert v-if="error" color="error" :title="error" />
+    <UAlert v-if="error" variant="outline" color="error" :title="error" />
     <p v-if="!items.length">{{ t('planning.noAppointments') }}</p>
     <UCard v-for="item in items" :key="item.id"
       ><h2 class="font-semibold">{{ item.title }}</h2>

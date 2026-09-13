@@ -81,6 +81,7 @@
     "meetingUrl": "Meeting link",
     "url": "Portal link",
     "pendingChange": "A replacement time is reserved. Your current appointment stays confirmed until the change completes.",
-    "abandonChange": "Abandon pending change"
+    "abandonChange": "Abandon pending change",
+    "planningDisabledAdmin": "Planning is switched off for your account. After setting up your connections, enable it in Planning settings."
   }
 }

@@ -27,7 +27,12 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
 <template>
   <main class="mx-auto max-w-2xl space-y-6 px-4 py-10">
     <UButton v-if="returnUrl" :to="returnUrl" color="neutral" variant="link">{{ t('planning.back') }}</UButton>
-    <UAlert v-if="product.storeMode === 'sandbox'" color="warning" :title="t('products.sandboxBanner')" />
+    <UAlert
+      v-if="product.storeMode === 'sandbox'"
+      variant="outline"
+      color="warning"
+      :title="t('products.sandboxBanner')"
+    />
     <h1 class="text-3xl font-bold">{{ product.title }}</h1>
     <p>{{ product.summary }}</p>
     <p>{{ t('planning.duration', { minutes: product.durationMinutes }) }}</p>

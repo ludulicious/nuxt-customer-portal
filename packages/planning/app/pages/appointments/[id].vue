@@ -52,7 +52,7 @@ async function cancel() {
 <template>
   <UContainer class="max-w-3xl space-y-5 py-8"
     ><UButton to="/appointments" variant="link">{{ t('planning.back') }}</UButton
-    ><UAlert v-if="error" color="error" :title="error" /><template v-if="item"
+    ><UAlert v-if="error" variant="outline" color="error" :title="error" /><template v-if="item"
       ><h1 class="text-2xl font-bold">{{ item.title }}</h1>
       <p>
         {{
@@ -67,7 +67,7 @@ async function cancel() {
       <UButton v-if="item.status === 'confirmed' && item.meetingUrl" :to="item.meetingUrl" target="_blank">{{
         t('planning.joinMeeting')
       }}</UButton>
-      <UAlert v-if="item.pendingChangeExpiresAt" :title="t('planning.pendingChange')" />
+      <UAlert v-if="item.pendingChangeExpiresAt" variant="outline" :title="t('planning.pendingChange')" />
       <UButton v-if="item.pendingChangeExpiresAt" variant="outline" :loading="busy" @click="abandonChange">{{
         t('planning.abandonChange')
       }}</UButton>

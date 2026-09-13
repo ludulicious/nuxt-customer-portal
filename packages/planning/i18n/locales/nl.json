@@ -81,6 +81,7 @@
     "meetingUrl": "Vergaderlink",
     "url": "Portaallink",
     "pendingChange": "Een vervangend tijdstip is gereserveerd. Je huidige afspraak blijft bevestigd totdat de wijziging is voltooid.",
-    "abandonChange": "Lopende wijziging afbreken"
+    "abandonChange": "Lopende wijziging afbreken",
+    "planningDisabledAdmin": "Planning staat uit voor je account. Stel eerst je verbindingen in en schakel planning daarna in bij Planninginstellingen."
   }
 }

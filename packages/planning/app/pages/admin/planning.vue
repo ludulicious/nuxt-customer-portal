@@ -63,7 +63,7 @@ async function retry() {
 <template>
   <UContainer class="space-y-6 py-8"
     ><h1 class="text-2xl font-bold">{{ t('planning.settings') }}</h1>
-    <UAlert v-if="error" color="error" :title="error" /><UCard
+    <UAlert v-if="error" variant="outline" color="error" :title="error" /><UCard
       ><template #header
         ><h2 class="font-semibold">{{ t('planning.providers') }}</h2></template
       >
