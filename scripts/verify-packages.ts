@@ -19,6 +19,7 @@ const packageDirectories = [
   'invoices',
   'invoice-timesheets',
   'products',
+  'planning',
   'invoice-products',
   'preset',
   'saas-configuration',
@@ -32,6 +33,7 @@ const migrationPackages = new Set([
   'invoices',
   'invoice-timesheets',
   'products',
+  'planning',
   'invoice-products'
 ])
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'nuxt-customer-portal-pack-'))

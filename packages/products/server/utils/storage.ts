@@ -237,7 +237,7 @@ export async function finishUpload(storeId: string, productId: string, id: strin
         ? Buffer.from(await bunnyObject!.arrayBuffer())
         : await bodyBuffer((await client!.send(new GetObjectCommand({ Bucket: bucket, Key: sourceKey }))).Body)
     const metadata = await sharp(original, { limitInputPixels: 40_000_000 }).metadata()
-    const expectedContentType = metadata.format === 'jpg' ? 'image/jpeg' : `image/${metadata.format}`
+    const expectedContentType = `image/${metadata.format}`
     if (!metadata.format || expectedContentType !== asset.content_type) {
       throw new Error('invalid_image')
     }

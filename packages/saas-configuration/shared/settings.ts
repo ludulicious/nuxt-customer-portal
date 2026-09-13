@@ -7,6 +7,7 @@ export const portalModuleIds = [
   'service-requests',
   'invoice-timesheets',
   'products',
+  'planning',
   'invoice-products'
 ] as const
 export type PortalModuleId = (typeof portalModuleIds)[number]
@@ -91,6 +92,9 @@ export const portalSettingsSchema = z
     content: z.object({ en: localizedContentSchema, nl: localizedContentSchema })
   })
   .superRefine((value, context) => {
+    if (value.enabledModules.includes('planning') && !value.enabledModules.includes('products')) {
+      context.addIssue({ code: 'custom', path: ['enabledModules'], message: 'Planning requires Products' })
+    }
     if (
       (value.enabledModules.includes('products') && !value.enabledModules.includes('invoice-products')) ||
       (value.enabledModules.includes('invoice-products') &&

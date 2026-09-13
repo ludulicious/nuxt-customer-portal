@@ -13,7 +13,7 @@ import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
 import { stripeProvider } from './payments'
-import { orderIntegration, runOrderFulfillmentHooks } from './contracts'
+import { orderIntegration, runOrderFulfillmentHooks, planningOrderIntegration } from './contracts'
 import { developmentSandboxEffectsEnabled } from './development'
 
 export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
@@ -47,6 +47,14 @@ export async function createCheckout(event: H3Event, body: unknown) {
     if (!member) {
       throw createError({ statusCode: 403, message: 'Client membership required' })
     }
+  }
+  const planningIntegration = planningOrderIntegration()
+  const requestedProduct = await getProduct(store.organization_id, input.productId)
+  if (requestedProduct.planning?.enabled && !planningIntegration) {
+    throw createError({ statusCode: 503, message: 'Install planning before purchasing this service' })
+  }
+  if (planningIntegration && (requestedProduct.planning?.enabled || input.holdToken)) {
+    await planningIntegration.prepareCheckout(event, input)
   }
   const fingerprint = hash(JSON.stringify({ ...input, buyerId }))
   const order = await transaction(async (tx) => {
@@ -104,11 +112,19 @@ export async function createCheckout(event: H3Event, body: unknown) {
       tx
     )
     created!.lines = [line!]
+    if (product.planning?.enabled || input.holdToken) {
+      if (!planningIntegration || !input.holdToken) {
+        throw createError({ statusCode: 409, message: 'Choose an appointment before checkout' })
+      }
+      await planningIntegration.bind(event, tx, created!, input.holdToken)
+    }
     return created!
   })
   const primaryLine = order.lines[0]!
   if (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0) {
     const processSandboxEffects = store.mode === 'sandbox' && developmentSandboxEffectsEnabled()
+    order.snapshot.paymentCompletedAt ||= new Date().toISOString()
+    await rows('UPDATE products.orders SET snapshot=$2 WHERE id=$1', [order.id, order.snapshot])
     await rows(
       `UPDATE products.orders SET status='paid',total=0,net=0,tax=0,processing=$2,notified=$3 WHERE id=$1 AND status='pending'`,
       [
@@ -126,8 +142,16 @@ export async function createCheckout(event: H3Event, body: unknown) {
         // processOrder persists the error for the administrator.
       }
     }
+    if (store.mode === 'sandbox' && !processSandboxEffects && order.snapshot.planningReservationId) {
+      const current = await getOrder(order.id)
+      await planningIntegration!.prepareOrder(current!)
+      await transaction((tx) => planningIntegration!.confirm(tx, current!))
+    }
     return {
       url:
+        (order.snapshot.planningChangeAppointmentId
+          ? `${baseUrl()}/appointments/${order.snapshot.planningChangeAppointmentId}?payment=success`
+          : undefined) ||
         hostThankYouUrl({
           returnUrl: order.snapshot.returnUrl,
           slug: primaryLine.snapshot.product.slug,
@@ -153,7 +177,17 @@ export async function createCheckout(event: H3Event, body: unknown) {
     return { url: `${baseUrl()}/store/sandbox-checkout/${order.id}` }
   }
   const checkout = await stripeProvider.checkout(order)
-  await rows('UPDATE products.orders SET checkout_id=$2 WHERE id=$1', [order.id, checkout.id])
+  const saved = await rows<{ id: string }>(
+    "UPDATE products.orders SET checkout_id=$2 WHERE id=$1 AND status='pending' RETURNING id",
+    [order.id, checkout.id]
+  )
+  if (
+    order.snapshot.planningReservationId &&
+    (!saved.length || Date.parse(order.snapshot.planningExpiresAt!) <= Date.now())
+  ) {
+    await stripeProvider.expireCheckout(checkout.id)
+    throw createError({ statusCode: 409, message: 'Reservation expired; choose another slot' })
+  }
   return { url: checkout.url }
 }
 export { hasPurchaseAccess as hasAccess } from '../../shared/access'
@@ -171,7 +205,18 @@ export async function claimPurchases(event: H3Event) {
 export async function processOrder(id: string) {
   const store = await getStore()
   try {
+    const current = await getOrder(id)
+    if (current?.status === 'paid' && current.snapshot.planningReservationId) {
+      if (!planningOrderIntegration()) {
+        throw new Error('Planning package required to process this appointment')
+      }
+      await planningOrderIntegration()!.prepareOrder(current)
+    }
     await transaction(async (tx) => {
+      const pending = await getOrder(id, tx)
+      if (pending?.status === 'paid' && pending.snapshot.planningReservationId) {
+        await planningOrderIntegration()!.confirm(tx, pending)
+      }
       await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
       const order = await getOrder(id, tx)
       if (!order || order.status !== 'paid') {
@@ -245,6 +290,10 @@ async function notifyOrder(id: string) {
   // provider idempotency key. Do not hold an order transaction over PDF and
   // external email work.
   await orderIntegration().notify(order, store.actor_id)
+  if (order.snapshot.planningFailure || order.snapshot.planningChangeAppointmentId) {
+    await rows('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1', [id])
+    return
+  }
   const primaryLine = order.lines[0]!
   await sendPortalEmail({
     moduleId: 'products',
@@ -262,7 +311,7 @@ async function notifyOrder(id: string) {
   })
   await rows('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1 AND notified=false', [id])
 }
-export async function reconcileCheckout(checkoutId: string) {
+export async function reconcileCheckout(checkoutId: string, paymentCompletedAt?: string) {
   const checkout = await stripeProvider.lookupCheckout(checkoutId)
   const id = checkout.metadata?.orderId
   if (!id) {
@@ -296,9 +345,16 @@ export async function reconcileCheckout(checkoutId: string) {
     if (!paymentId) {
       throw new Error('Paid checkout has no payment reference')
     }
+    const paymentState = await stripeProvider.lookupPayment(paymentId)
+    if (order.snapshot.planningReservationId && !order.snapshot.paymentCompletedAt) {
+      order.snapshot.paymentCompletedAt =
+        paymentCompletedAt || (await stripeProvider.paymentCompletedAt(paymentId, order.created_at))
+    }
     await transaction(async (tx) => {
       await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
-      const paymentState = await stripeProvider.lookupPayment(paymentId)
+      if (order.snapshot.planningReservationId) {
+        await tx.query('UPDATE products.orders SET snapshot=$2 WHERE id=$1', [id, order.snapshot])
+      }
       const address = checkout.customer_details?.address
       if (address && !order.invoice_id) {
         order.snapshot.billing.address = [

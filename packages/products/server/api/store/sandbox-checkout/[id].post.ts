@@ -5,6 +5,7 @@ import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { checkoutReturnPath, hostThankYouUrl } from '@nuxt-customer-portal/products/server/utils/checkout-return'
 import { z } from 'zod'
+import { planningOrderIntegration } from '../../../utils/contracts'
 
 const scenarioSchema = z.object({ scenario: z.enum(['paid', 'failed', 'expired']) })
 
@@ -32,6 +33,8 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 409, message: 'This sandbox checkout is no longer pending' })
     }
     if (input.scenario === 'paid') {
+      order.snapshot.paymentCompletedAt = new Date().toISOString()
+      await tx.query('UPDATE products.orders SET snapshot=$2 WHERE id=$1', [id, order.snapshot])
       const total = order.lines.reduce((sum, line) => sum + line.unit_amount * line.quantity, 0)
       await rows(
         `UPDATE products.orders SET status='paid',payment_id=$2,total=$3,net=$3,tax=0,tax_details=$4,processing=$5,notified=$6,updated_at=now() WHERE id=$1`,
@@ -62,10 +65,17 @@ export default defineEventHandler(async (event) => {
     }
   }
   const order = await getOrder(id)
+  if (input.scenario === 'paid' && !processEffects && order!.snapshot.planningReservationId) {
+    await planningOrderIntegration()!.prepareOrder(order!)
+    await transaction((tx) => planningOrderIntegration()!.confirm(tx, order!))
+  }
   const line = order!.lines[0]!
   if (input.scenario === 'paid') {
     return {
       url:
+        (order!.snapshot.planningChangeAppointmentId
+          ? `${baseUrl()}/appointments/${order!.snapshot.planningChangeAppointmentId}?payment=success`
+          : undefined) ||
         hostThankYouUrl({
           returnUrl: order!.snapshot.returnUrl,
           slug: line.snapshot.product.slug,

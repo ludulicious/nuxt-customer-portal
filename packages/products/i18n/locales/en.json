@@ -496,6 +496,15 @@
     "accentColor": "Accent color",
     "actionColor": "Action color",
     "focusColor": "Focus color",
-    "borderColor": "Border color"
+    "borderColor": "Border color",
+    "plannable": "Require appointment booking",
+    "durationMinutes": "Appointment duration (minutes)",
+    "planningProviders": "Eligible provider users",
+    "meetingProvider": "Meeting provider",
+    "noMeeting": "No online meeting",
+    "overridePlanningPolicy": "Override organization booking policy",
+    "reservationUntil": "Reserved until {time}",
+    "reservationExpired": "Your reservation has expired. Choose another time before checkout.",
+    "chooseAnotherSlot": "Choose another time"
   }
 }

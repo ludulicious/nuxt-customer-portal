@@ -16,7 +16,7 @@ import type {
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
 
-type ProductInput = z.infer<typeof productSchema>
+type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
   preview: (id: string) => $fetch<ProductPreview>(`/api/products/admin/products/${encodeURIComponent(id)}/preview`),
   previewImageUrl: (id: string, assetId: string) =>

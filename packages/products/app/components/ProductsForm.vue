@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
+import { defaultPlanning, defaultPlanningPolicy } from '../../shared/planning'
 import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
 import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
@@ -28,6 +29,7 @@ const state = reactive<z.infer<typeof productSchema>>(
   props.product
     ? {
         isFree: false,
+        planning: defaultPlanning(),
         ...structuredClone(toRaw(props.product)),
         content: {
           en: {
@@ -296,8 +298,31 @@ const createName = computed({
     }
   }
 })
+const planningProviders = ref<Array<{ userId: string; name: string }>>([])
+const planningInstalled = ref(false)
+const planningDefaults = ref(defaultPlanningPolicy())
+const planningOverrides = computed({
+  get: () => Object.keys(state.planning.policyOverrides).length > 0,
+  set: (value) => {
+    state.planning.policyOverrides = value ? structuredClone(toRaw(planningDefaults.value)) : {}
+  }
+})
+const planningPolicy = computed({
+  get: () => ({ ...planningDefaults.value, ...state.planning.policyOverrides }),
+  set: (value) => {
+    state.planning.policyOverrides = value
+  }
+})
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
 onMounted(async () => {
+  try {
+    planningProviders.value = await $fetch('/api/planning/admin/providers')
+    planningDefaults.value = await $fetch('/api/planning/admin/policy')
+    planningInstalled.value = true
+  } catch {
+    /* Planning is an optional package. */
+  }
+
   if (props.section === 'create' || props.section === 'all' || props.section === 'details') {
     await loadCategories().catch(() => {
       error.value = t('products.loadFailed')
@@ -495,6 +520,42 @@ function removeFile(id: string, index: number) {
       @error="showInvalidLanguage"
     >
       <UAlert v-if="error" color="error" :title="error" />
+      <div
+        v-if="planningInstalled && state.type === 'service' && ['all', 'basic', 'details'].includes(section)"
+        class="space-y-4 rounded border border-default p-4"
+      >
+        <UFormField name="planning.enabled" :label="t('products.plannable')"
+          ><USwitch v-model="state.planning.enabled"
+        /></UFormField>
+        <template v-if="state.planning.enabled">
+          <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
+            ><UInputNumber v-model="state.planning.durationMinutes" :min="1"
+          /></UFormField>
+          <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')"
+            ><USelectMenu
+              v-model="state.planning.providerUserIds"
+              :items="planningProviders.map((p) => ({ value: p.userId, label: p.name }))"
+              value-key="value"
+              multiple
+              class="w-full"
+          /></UFormField>
+          <UFormField name="planning.meetingProvider" :label="t('products.meetingProvider')"
+            ><USelect
+              v-model="state.planning.meetingProvider"
+              :items="[
+                { value: 'none', label: t('products.noMeeting') },
+                { value: 'zoom', label: 'Zoom' }
+              ]"
+          /></UFormField>
+          <UFormField :label="t('products.overridePlanningPolicy')"><USwitch v-model="planningOverrides" /></UFormField>
+          <PlanningPolicyFields
+            v-if="planningOverrides"
+            v-model="planningPolicy"
+            prefix="planning.policyOverrides."
+            :currencies="currencies"
+          />
+        </template>
+      </div>
       <UAlert
         v-if="settingsReady && (section === 'basic' || section === 'media') && pricingErrors().length"
         color="warning"

@@ -1,0 +1,477 @@
+import { randomUUID } from 'node:crypto'
+import { pool } from '@nuxt-customer-portal/core/server/utils/db'
+import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
+import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
+import { getOrder, reconcileCheckout, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
+import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
+import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
+import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
+import { calendarInvitation } from '../../shared/invitation'
+import { wallInstant } from '../../shared/availability'
+import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
+import { digest, secret } from './crypto'
+import { enqueue, lockProvider } from './booking'
+
+import { appointmentEmail } from '../../shared/emails'
+
+export async function auditLock(tx: Pick<import('pg').PoolClient, 'query'>, id: string) {
+  await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`planning-effects:${id}`])
+}
+async function appointmentEffects(id: string, revision: number, notify = true) {
+  const [a] = await rows<Appointment>('SELECT * FROM planning.appointment WHERE id=$1', [id])
+  if (!a || a.revision !== revision) {
+    return
+  }
+  const order = await getOrder(a.order_id)
+  if (!order) {
+    throw new Error('Appointment order missing')
+  }
+  if (order.snapshot.storeMode === 'sandbox' && !developmentSandboxEffectsEnabled()) {
+    return
+  }
+  const [provider] = await rows<{ write_calendar_id: string; email: string }>(
+    `SELECT p.write_calendar_id,u.email FROM planning.provider p JOIN public."user" u ON u.id=p.user_id WHERE p.store_id=$1 AND p.user_id=$2`,
+    [a.store_id, a.user_id]
+  )
+  const eventId = a.calendar_event_id || `p${id.replace(/-/g, '')}`
+  if (a.status === 'cancelled') {
+    if (a.calendar_event_id && a.calendar_id) {
+      await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
+    }
+    if (a.meeting_id) {
+      await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
+    }
+  } else {
+    if (a.snapshot.meetingProvider === 'zoom') {
+      const meeting = await meetingAdapter().ensure(
+        a.store_id,
+        a.user_id,
+        `portal:${id}`,
+        a.snapshot.title,
+        a.start_at,
+        a.snapshot.durationMinutes,
+        a.meeting_id || undefined
+      )
+      a.meeting_id = meeting.id
+      a.meeting_url = meeting.url
+      await rows('UPDATE planning.appointment SET meeting_id=$2,meeting_url=$3 WHERE id=$1', [
+        id,
+        meeting.id,
+        meeting.url
+      ])
+    }
+    if (!provider?.write_calendar_id) {
+      throw new Error('Select a writable calendar')
+    }
+    if (a.calendar_id && a.calendar_id !== provider.write_calendar_id && a.calendar_event_id) {
+      await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
+    }
+    const written = await calendarAdapter().put(a.store_id, a.user_id, provider.write_calendar_id, {
+      id: eventId,
+      summary: a.snapshot.title,
+      start: { dateTime: a.start_at.toISOString(), timeZone: a.snapshot.timezone },
+      end: { dateTime: a.end_at.toISOString(), timeZone: a.snapshot.timezone },
+      transparency: 'opaque',
+      description: `${a.meeting_url || ''}\n${a.snapshot.graceMinutes} minutes grace time after this appointment. Manage in the portal.`,
+      extendedProperties: { private: { portalPlanning: id, portalRevision: String(revision) } }
+    })
+    if (
+      written?.externalChangeKey ||
+      (written?.wasMissing && a.calendar_event_id && a.calendar_id === provider.write_calendar_id)
+    ) {
+      await enqueue(
+        pool,
+        `mirror-notice:${id}:${revision}:${written.externalChangeKey || 'missing'}`,
+        'mirror-notice',
+        { userId: a.user_id }
+      )
+    }
+    await rows(
+      'UPDATE planning.appointment SET calendar_event_id=$2,calendar_id=$3,calendar_user_id=user_id WHERE id=$1',
+      [id, written?.id || eventId, provider.write_calendar_id]
+    )
+  }
+  if (!notify) {
+    return
+  }
+  const locale = a.snapshot.locale
+  const invitation = calendarInvitation({
+    id,
+    revision,
+    title: a.snapshot.title,
+    start: a.start_at,
+    end: a.end_at,
+    organizer: a.snapshot.organizerEmail || provider!.email,
+    attendee: order.email,
+    url: a.meeting_url,
+    cancelled: a.status === 'cancelled'
+  })
+  // Stable organizer, attendee and UID prevent duplicate customer appointments.
+  await sendPortalEmail({
+    moduleId: 'planning',
+    definition: appointmentEmail,
+    locale,
+    to: order.email,
+    values: {
+      product: a.snapshot.title,
+      status:
+        a.status === 'cancelled'
+          ? locale === 'nl'
+            ? 'Afspraak geannuleerd'
+            : 'Appointment cancelled'
+          : locale === 'nl'
+            ? 'Afspraak bevestigd'
+            : 'Appointment confirmed',
+      time: new Intl.DateTimeFormat(locale, {
+        dateStyle: 'full',
+        timeStyle: 'short',
+        timeZone: a.snapshot.customerTimezone
+      }).format(a.start_at),
+      meetingUrl: a.meeting_url || `${baseUrl()}/appointments`,
+      url: order.invitation_id
+        ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
+        : `${baseUrl()}/appointments`
+    },
+    attachments: [
+      {
+        filename: 'appointment.ics',
+        content: Buffer.from(invitation),
+        contentType: `text/calendar; method=${a.status === 'cancelled' ? 'CANCEL' : 'REQUEST'}; charset=UTF-8`
+      }
+    ],
+    idempotencyKey: `appointment:${id}:${revision}`,
+    subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
+  })
+  await rows('UPDATE planning.appointment SET effects_error=NULL WHERE id=$1', [id])
+}
+async function availabilityEffects(id: string) {
+  const [window] = await rows<{
+    store_id: string
+    user_id: string
+    data: AvailabilityWindow
+    revision: number
+    deleted: boolean
+    calendar_event_id: string | null
+    calendar_id: string | null
+  }>('SELECT * FROM planning.availability WHERE id=$1', [id])
+  if (!window) {
+    return
+  }
+  const [store] = await rows<{ mode: string }>('SELECT mode FROM products.store WHERE organization_id=$1', [
+    window.store_id
+  ])
+  if (store?.mode === 'sandbox' && !developmentSandboxEffectsEnabled()) {
+    return
+  }
+  const eventId = window.calendar_event_id || `a${id.replace(/-/g, '')}`
+  const [provider] = await rows<{ write_calendar_id: string }>(
+    'SELECT write_calendar_id FROM planning.provider WHERE store_id=$1 AND user_id=$2',
+    [window.store_id, window.user_id]
+  )
+  if (window.deleted) {
+    if (window.calendar_id) {
+      await calendarAdapter().remove(window.store_id, window.user_id, window.calendar_id, eventId)
+    }
+    return
+  }
+  if (!provider?.write_calendar_id) {
+    throw new Error('Select a writable calendar')
+  }
+  if (window.calendar_id && window.calendar_id !== provider.write_calendar_id) {
+    await calendarAdapter().remove(window.store_id, window.user_id, window.calendar_id, eventId)
+  }
+  const w = window.data,
+    recurrence: string[] = []
+  if (w.recurring) {
+    // UNTIL uses the final occurrence’s actual instant in the series timezone.
+    recurrence.push(
+      `RRULE:FREQ=WEEKLY${
+        w.endDate
+          ? `;UNTIL=${wallInstant(w.endDate, w.startTime, w.timezone)
+              .toISOString()
+              .replace(/[-:]/g, '')
+              .replace(/\.\d{3}/, '')}`
+          : ''
+      }`
+    )
+    if (w.exceptions.length) {
+      recurrence.push(
+        `EXDATE;TZID=${w.timezone}:${w.exceptions.map((d) => `${d.replace(/-/g, '')}T${w.startTime.replace(':', '')}00`).join(',')}`
+      )
+    }
+  }
+  const written = await calendarAdapter().put(window.store_id, window.user_id, provider.write_calendar_id, {
+    id: eventId,
+    summary: 'Portal availability',
+    start: { dateTime: `${w.date}T${w.startTime}:00`, timeZone: w.timezone },
+    end: { dateTime: `${w.date}T${w.endTime}:00`, timeZone: w.timezone },
+    transparency: 'transparent',
+    extendedProperties: { private: { portalPlanning: id, portalRevision: String(window.revision) } },
+    ...(recurrence.length ? { recurrence } : {})
+  })
+  if (
+    written?.externalChangeKey ||
+    (written?.wasMissing && window.calendar_event_id && window.calendar_id === provider.write_calendar_id)
+  ) {
+    await enqueue(
+      pool,
+      `mirror-notice:${id}:${window.revision}:${written.externalChangeKey || 'missing'}`,
+      'mirror-notice',
+      { userId: window.user_id }
+    )
+  }
+  await rows('UPDATE planning.availability SET calendar_event_id=$2,calendar_id=$3 WHERE id=$1', [
+    id,
+    eventId,
+    provider.write_calendar_id
+  ])
+}
+async function refund(orderId: string, amount: number, key: string) {
+  const order = await getOrder(orderId)
+  if (!order || !order.payment_id || !amount) {
+    return
+  }
+  if (order.snapshot.storeMode === 'sandbox') {
+    await rows('UPDATE products.orders SET refunded=GREATEST(refunded,$2) WHERE id=$1', [orderId, amount])
+    await rows('UPDATE products.order_line SET refunded=GREATEST(refunded,$2) WHERE order_id=$1', [orderId, amount])
+  } else {
+    // Stripe's idempotency key prevents repeat refunds after task retries.
+    await stripeProvider.refund(order.payment_id, amount, key)
+    const state = await stripeProvider.lookupPayment(order.payment_id)
+    await rows('UPDATE products.orders SET refunded=$2 WHERE id=$1', [orderId, state.refunded])
+    await rows('UPDATE products.order_line SET refunded=$2 WHERE order_id=$1', [orderId, state.refunded])
+  }
+  await processOrder(orderId)
+}
+export async function runJobs(limit = 20) {
+  const pending = await rows<{ id: string; kind: string; payload: Record<string, unknown>; attempts: number }>(
+    'SELECT * FROM planning.job WHERE completed_at IS NULL AND available_at<=now() ORDER BY available_at LIMIT $1',
+    [limit]
+  )
+  let completed = 0,
+    failed = 0
+  for (const job of pending) {
+    const client = await pool.connect(),
+      key = `planning-job:${job.id}`
+    let acquired = false,
+      effectsKey: string | undefined
+    try {
+      acquired = (await client.query<{ locked: boolean }>('SELECT pg_try_advisory_lock(hashtext($1)) AS locked', [key]))
+        .rows[0]!.locked
+      if (!acquired) {
+        continue
+      }
+      const [current] = await rows<{ completed_at: Date | null }>(
+        'SELECT completed_at FROM planning.job WHERE id=$1',
+        [job.id],
+        client
+      )
+      if (current?.completed_at) {
+        continue
+      }
+      const p = job.payload
+      if (job.kind === 'appointment' || job.kind === 'repair') {
+        effectsKey = `planning-effects:${p.appointmentId}`
+        await client.query('SELECT pg_advisory_lock(hashtext($1))', [effectsKey])
+        await appointmentEffects(String(p.appointmentId), Number(p.revision), job.kind === 'appointment')
+      } else if (job.kind === 'availability') {
+        await availabilityEffects(String(p.id))
+      } else if (job.kind === 'refund') {
+        await refund(String(p.orderId), Number(p.amount), job.id)
+      } else if (job.kind === 'cleanup') {
+        if (p.calendarId && p.eventId) {
+          const [adopted] = await rows<{ id: string }>(
+            "SELECT id FROM planning.appointment WHERE calendar_id=$1 AND calendar_event_id=$2 AND status='confirmed'",
+            [p.calendarId, p.eventId]
+          )
+          if (!adopted) {
+            await calendarAdapter().remove(String(p.storeId), String(p.userId), String(p.calendarId), String(p.eventId))
+          }
+        }
+        if (p.meetingId) {
+          await meetingAdapter().remove(String(p.storeId), String(p.userId), String(p.meetingId))
+        }
+      } else if (job.kind === 'close-checkout') {
+        const order = await getOrder(String(p.orderId))
+        if (order?.checkout_id && !order.checkout_id.startsWith('sandbox:')) {
+          await stripeProvider.expireCheckout(order.checkout_id)
+          await reconcileCheckout(order.checkout_id)
+        }
+      } else if (job.kind === 'sync') {
+        await syncProvider(String(p.storeId), String(p.userId))
+      } else if (job.kind === 'failed-booking') {
+        const order = await getOrder(String(p.orderId))
+        if (order && (order.snapshot.storeMode !== 'sandbox' || developmentSandboxEffectsEnabled())) {
+          await sendPortalEmail({
+            moduleId: 'planning',
+            definition: appointmentEmail,
+            locale: order.snapshot.locale,
+            to: order.email,
+            values: {
+              product: order.lines[0]!.snapshot.title,
+              status:
+                order.snapshot.locale === 'nl'
+                  ? 'Afspraak kon niet worden bevestigd. Een eventuele betaling wordt terugbetaald.'
+                  : 'The appointment could not be confirmed. Any payment will be refunded.',
+              time: '',
+              meetingUrl: `${baseUrl()}/appointments`,
+              url: `${baseUrl()}/appointments`
+            },
+            idempotencyKey: job.id
+          })
+        }
+      } else if (job.kind === 'conflict' || job.kind === 'mirror-notice') {
+        const [provider] = await rows<{ email: string }>('SELECT email FROM public."user" WHERE id=$1', [p.userId])
+        if (provider) {
+          await sendPortalEmail({
+            moduleId: 'planning',
+            definition: appointmentEmail,
+            locale: 'en',
+            to: provider.email,
+            values: {
+              product: job.kind === 'conflict' ? 'Calendar conflict' : 'Calendar synchronization',
+              status:
+                job.kind === 'conflict'
+                  ? 'An external appointment overlaps a confirmed portal appointment. Resolve the conflict in your calendar or contact the customer.'
+                  : 'An externally changed or removed portal event was restored. Manage portal availability and appointments in the portal.',
+              time: '',
+              meetingUrl: `${baseUrl()}/planning`,
+              url: `${baseUrl()}/planning`
+            },
+            idempotencyKey: job.id
+          })
+        }
+      } else {
+        throw new Error('Unknown planning job')
+      }
+      await rows('UPDATE planning.job SET completed_at=now(),error=NULL WHERE id=$1', [job.id], client)
+      completed++
+    } catch (error) {
+      failed++
+      const message = error instanceof Error ? error.message : 'Planning task failed'
+      await rows(
+        "UPDATE planning.job SET attempts=attempts+1,error=$2,available_at=now()+($3::int*interval '1 second') WHERE id=$1",
+        [job.id, message, Math.min(3600, 30 * 2 ** Math.min(job.attempts, 7))],
+        client
+      )
+      if (job.kind === 'appointment') {
+        await rows(
+          'UPDATE planning.appointment SET effects_error=$2 WHERE id=$1',
+          [job.payload.appointmentId, message],
+          client
+        )
+      }
+    } finally {
+      if (effectsKey) {
+        await client.query('SELECT pg_advisory_unlock(hashtext($1))', [effectsKey]).catch(() => undefined)
+      }
+      if (acquired) {
+        await client.query('SELECT pg_advisory_unlock(hashtext($1))', [key]).catch(() => undefined)
+      }
+      client.release()
+    }
+  }
+  return { completed, failed }
+}
+export async function expireReservations() {
+  const overdue = await rows<Reservation>(
+    "SELECT * FROM planning.reservation WHERE status='reserved' AND expires_at<=now() ORDER BY expires_at LIMIT 50"
+  )
+  for (const hold of overdue) {
+    if (hold.order_id) {
+      const order = await getOrder(hold.order_id)
+      if (order?.checkout_id && !order.checkout_id.startsWith('sandbox:')) {
+        // Close first, then reconcile again: payment may complete while closing checkout.
+        await stripeProvider.expireCheckout(order.checkout_id)
+        await reconcileCheckout(order.checkout_id)
+      }
+      const current = await getOrder(hold.order_id)
+      if (current?.status === 'paid') {
+        await processOrder(current.id)
+        continue
+      }
+    }
+    await transaction(async (tx) => {
+      await lockProvider(tx, hold.user_id)
+      await tx.query("UPDATE planning.reservation SET status='expired' WHERE id=$1 AND status='reserved'", [hold.id])
+      if (hold.order_id) {
+        await tx.query("UPDATE products.orders SET status='expired' WHERE id=$1 AND status='pending'", [hold.order_id])
+      }
+    })
+  }
+  await rows('DELETE FROM planning.oauth_state WHERE expires_at<now()')
+}
+export async function syncProvider(storeId: string, userId: string) {
+  const [p] = await rows<{ busy_calendar_ids: string[] }>(
+    'SELECT busy_calendar_ids FROM planning.provider WHERE store_id=$1 AND user_id=$2',
+    [storeId, userId]
+  )
+  if (!p?.busy_calendar_ids.length) {
+    return
+  }
+  const from = new Date(),
+    to = new Date(Date.now() + 365 * 86400000)
+  const busy = await externalBusy(storeId, userId, p.busy_calendar_ids, from, to)
+  const appointments = await rows<Appointment>(
+    "SELECT * FROM planning.appointment WHERE store_id=$1 AND user_id=$2 AND status='confirmed' AND end_at>now()",
+    [storeId, userId]
+  )
+  for (const a of appointments) {
+    const conflict = busy.some(
+      (b) =>
+        a.start_at.getTime() < Date.parse(b.end) &&
+        a.end_at.getTime() + a.snapshot.graceMinutes * 60000 > Date.parse(b.start)
+    )
+    if (conflict !== a.conflict) {
+      await transaction(async (tx) => {
+        await tx.query('UPDATE planning.appointment SET conflict=$2 WHERE id=$1', [a.id, conflict])
+        if (conflict) {
+          await enqueue(tx, `conflict:${a.id}:${a.revision}:${randomUUID()}`, 'conflict', {
+            userId,
+            appointmentId: a.id
+          })
+        }
+      })
+    }
+  }
+  const repairBucket = Math.floor(Date.now() / 300000)
+  for (const a of appointments) {
+    await enqueue(pool, `repair:${a.id}:${a.revision}:${repairBucket}`, 'repair', {
+      appointmentId: a.id,
+      revision: a.revision
+    })
+  }
+  const windows = await rows<{ id: string }>(
+    'SELECT id FROM planning.availability WHERE store_id=$1 AND user_id=$2 AND NOT deleted',
+    [storeId, userId]
+  )
+  for (const w of windows) {
+    await enqueue(pool, `availability-repair:${w.id}:${repairBucket}`, 'availability', { id: w.id })
+  }
+  if (!baseUrl().startsWith('https://')) {
+    return
+  }
+  for (const calendarId of p.busy_calendar_ids) {
+    const [live] = await rows<{ id: string }>(
+      "SELECT id FROM planning.watch WHERE store_id=$1 AND user_id=$2 AND calendar_id=$3 AND expires_at>now()+interval '1 hour'",
+      [storeId, userId, calendarId]
+    )
+    if (live) {
+      continue
+    }
+    const id = randomUUID(),
+      token = secret()
+    // Persist before creating the channel because Google can send its initial notification immediately.
+    await rows(
+      "INSERT INTO planning.watch(id,store_id,user_id,calendar_id,token_hash,expires_at) VALUES($1,$2,$3,$4,$5,now()+interval '1 hour')",
+      [id, storeId, userId, calendarId, digest(token)]
+    )
+    const watch = await calendarAdapter().watch(storeId, userId, calendarId, id, token)
+    await rows('UPDATE planning.watch SET resource_id=$2,expires_at=$3 WHERE id=$1', [
+      id,
+      watch.resourceId,
+      new Date(Number(watch.expiration))
+    ])
+  }
+}

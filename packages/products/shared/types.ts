@@ -1,3 +1,4 @@
+import type { ProductPlanning } from './planning'
 import type { MarkdownStyle } from './markdown-style'
 import type { CheckoutAppearance } from './checkout-appearance'
 
@@ -13,6 +14,7 @@ export interface ProductCopy {
   description: string
 }
 export interface ProductData {
+  planning?: ProductPlanning
   isFree?: boolean
   slug: string
   type: 'digital' | 'service'
@@ -91,6 +93,11 @@ export interface Billing {
   clientId?: string
 }
 export interface OrderSnapshot {
+  planningReservationId?: string
+  planningExpiresAt?: string
+  planningChangeAppointmentId?: string
+  paymentCompletedAt?: string
+  planningFailure?: string
   billing: Billing
   locale: Locale
   returnUrl?: string
@@ -168,6 +175,8 @@ export interface CartLine {
   updated_at: string
 }
 export interface CatalogProduct {
+  planningEnabled: boolean
+  durationMinutes: number | null
   storeMode: 'sandbox' | 'live'
   markdownStyle: MarkdownStyle
   imagePolicy: ImagePolicy

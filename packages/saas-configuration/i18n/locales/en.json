@@ -81,7 +81,9 @@
         "products": "Products",
         "productsDescription": "Sell digital products and services.",
         "invoiceProducts": "Product invoices",
-        "invoiceProductsDescription": "Issue portal invoices for product purchases."
+        "invoiceProductsDescription": "Issue portal invoices for product purchases.",
+        "planning": "Planning",
+        "planningDescription": "Book service appointments with provider availability and calendars."
       },
       "actions": {
         "remove": "Remove",

@@ -213,6 +213,20 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
           throw createError({ statusCode: 409, message: 'Select an existing category', data: { field: 'categoryId' } })
         }
       }
+      if (data.planning.enabled) {
+        const members = await rows<{ user_id: string }>(
+          'SELECT user_id FROM public.member WHERE organization_id=$1 AND user_id=ANY($2::text[])',
+          [storeId, data.planning.providerUserIds],
+          tx
+        )
+        if (data.planning.providerUserIds.some((userId) => !members.some((m) => m.user_id === userId))) {
+          throw createError({
+            statusCode: 400,
+            message: 'Planning providers must belong to the store organization',
+            data: { field: 'planning.providerUserIds' }
+          })
+        }
+      }
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${id}`])
       const [existing] = await rows<ProductRow>('SELECT * FROM products.product WHERE id=$1', [id], tx)
       if (
@@ -379,7 +393,9 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     prices: product.prices.filter(
       (p) => product.isFree || (store.currencies.includes(p.currency) && (!currency || p.currency === currency))
     ),
-    purchaseUrl: `${baseUrl()}/store/${product.slug}`,
+    planningEnabled: !!product.planning?.enabled,
+    durationMinutes: product.planning?.durationMinutes ?? null,
+    purchaseUrl: `${baseUrl()}/store/${product.slug}${product.planning?.enabled ? '/book' : ''}`,
     locale,
     checkoutAppearance: checkoutAppearanceSchema.parse(store.checkout_appearance || {})
   } as CatalogProduct

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { productPlanningSchema, defaultPlanning } from './planning'
 import { markdownStyleSchema } from './markdown-style'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
 import { checkoutAppearanceSchema, defaultCheckoutAppearance } from './checkout-appearance'
@@ -40,6 +41,7 @@ export const priceSchema = z.object({
 })
 export const productSchema = z
   .object({
+    planning: productPlanningSchema.default(defaultPlanning()),
     isFree: z.boolean().default(false),
     slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     type: z.enum(['digital', 'service']),
@@ -61,6 +63,9 @@ export const productSchema = z
     prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
   })
   .superRefine((v, ctx) => {
+    if (v.planning.enabled && v.type !== 'service') {
+      ctx.addIssue({ code: 'custom', path: ['planning.enabled'], message: 'Only service products can be plannable' })
+    }
     const imageIds = new Set(v.imageIds)
     for (const [field, ids] of [
       ['galleryImageIds', v.galleryImageIds],
@@ -134,6 +139,7 @@ export const billingSchema = z
     }
   })
 export const checkoutSchema = z.object({
+  holdToken: z.string().min(32).max(200).optional(),
   productId: text(100).min(1),
   priceId: text(100).min(1),
   locale: localeSchema,
@@ -232,6 +238,7 @@ export const hasRequiredPrices = (
   currencies.every((currency) => product.prices.some((price) => price.currency === currency && price.amount > 0))
 
 export const emptyProduct = () => ({
+  planning: defaultPlanning(),
   isFree: false,
   slug: '',
   type: 'digital' as const,

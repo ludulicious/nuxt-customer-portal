@@ -496,6 +496,15 @@
     "accentColor": "Accentkleur",
     "actionColor": "Actiekleur",
     "focusColor": "Focuskleur",
-    "borderColor": "Randkleur"
+    "borderColor": "Randkleur",
+    "plannable": "Afspraak boeken verplicht",
+    "durationMinutes": "Afspraakduur (minuten)",
+    "planningProviders": "Beschikbare medewerkers",
+    "meetingProvider": "Vergaderprovider",
+    "noMeeting": "Geen online vergadering",
+    "overridePlanningPolicy": "Boekingsbeleid organisatie overschrijven",
+    "reservationUntil": "Gereserveerd tot {time}",
+    "reservationExpired": "Je reservering is verlopen. Kies een ander tijdstip voordat je afrekent.",
+    "chooseAnotherSlot": "Kies een ander tijdstip"
   }
 }

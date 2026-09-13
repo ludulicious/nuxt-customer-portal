@@ -70,6 +70,39 @@ function activeOrganizationName() {
 }
 
 const product = ref<CatalogProduct>()
+const holdToken = typeof route.query.holdToken === 'string' ? route.query.holdToken : undefined
+const hold = ref<{
+  productId: string
+  start: string
+  end: string
+  expiresAt: string
+  providerName: string
+  amount: number
+  currency: string
+  customerTimezone: string
+}>()
+const holdExpired = ref(false)
+let holdTimer: ReturnType<typeof setInterval> | undefined
+if (holdToken) {
+  try {
+    hold.value = await requestFetch('/api/store/planning/hold', { query: { holdToken }, cache: 'no-store' })
+  } catch {
+    holdExpired.value = true
+  }
+}
+onMounted(() => {
+  if (hold.value) {
+    holdTimer = setInterval(() => {
+      holdExpired.value = Date.parse(hold.value!.expiresAt) <= Date.now()
+    }, 1000)
+  }
+})
+onUnmounted(() => {
+  if (holdTimer) {
+    clearInterval(holdTimer)
+  }
+})
+useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
 const error = ref('')
 const busy = ref(false)
 const signInOpen = ref(false)
@@ -125,6 +158,13 @@ try {
     product.value = await api.catalog(String(route.params.slug), requestedLocale)
   }
   state.priceId = product.value.prices[0]?.id || ''
+  if (product.value.planningEnabled && !holdToken) {
+    await navigateTo({ path: `/store/${encodeURIComponent(product.value.slug)}/book`, query: route.query })
+  }
+  if (hold.value && hold.value.productId !== product.value.id) {
+    hold.value = undefined
+    holdExpired.value = true
+  }
   await applySession()
 } catch {
   error.value = t('products.unavailable')
@@ -167,7 +207,10 @@ const themeStyle = computed(() => ({
   '--checkout-display-font': appearance.value.displayFontFamily,
   '--checkout-body-font': appearance.value.bodyFontFamily
 }))
-const selectedPrice = computed(() => product.value?.prices.find((price) => price.id === state.priceId))
+const selectedPrice = computed(() => {
+  const price = product.value?.prices.find((price) => price.id === state.priceId)
+  return price && hold.value ? { ...price, amount: hold.value.amount, currency: hold.value.currency } : price
+})
 const currencyLocked = computed(
   () => Boolean(currency) && product.value?.prices.length === 1 && product.value.prices[0]?.currency === currency
 )
@@ -206,7 +249,8 @@ async function buy() {
       ...state,
       locale: product.value!.locale,
       returnUrl: checkoutReturnUrl.value,
-      requestId
+      requestId,
+      holdToken
     })
     await navigateTo(result.url, { external: true })
   } catch {
@@ -260,6 +304,41 @@ async function buy() {
               <p v-if="product.subtitle" class="order-subtitle">{{ product.subtitle }}</p>
             </div>
           </div>
+          <div v-if="hold" class="my-4 space-y-2">
+            <p>
+              {{
+                new Intl.DateTimeFormat(product.locale, {
+                  dateStyle: 'long',
+                  timeStyle: 'short',
+                  timeZone: hold.customerTimezone
+                }).format(new Date(hold.start))
+              }}
+              · {{ hold.providerName }}
+            </p>
+            <p>
+              {{
+                t('products.reservationUntil', {
+                  time: new Intl.DateTimeFormat(product.locale, {
+                    timeStyle: 'short',
+                    timeZone: hold.customerTimezone
+                  }).format(new Date(hold.expiresAt))
+                })
+              }}
+            </p>
+          </div>
+          <UAlert v-if="holdExpired" color="error" :title="t('products.reservationExpired')" />
+          <UButton
+            v-if="holdExpired"
+            :to="{
+              path:
+                typeof route.query.appointmentId === 'string'
+                  ? `/appointments/${encodeURIComponent(route.query.appointmentId)}`
+                  : `/store/${encodeURIComponent(product.slug)}/book`,
+              query: { locale: product.locale, currency }
+            }"
+            variant="outline"
+            >{{ t('products.chooseAnotherSlot') }}</UButton
+          >
           <p class="order-summary">{{ product.summary }}</p>
           <div class="order-price">
             <span>{{ t('products.total') }}</span
@@ -308,7 +387,7 @@ async function buy() {
 
           <UForm ref="checkoutForm" :state="state" :schema="schema" novalidate class="billing-form" @submit="buy">
             <h3>{{ t('products.billingDetails') }}</h3>
-            <UFormField v-if="!currencyLocked" name="priceId" :label="t('products.price')"
+            <UFormField v-if="!currencyLocked && !hold" name="priceId" :label="t('products.price')"
               ><USelect
                 v-model="state.priceId"
                 class="w-full"
@@ -384,7 +463,9 @@ async function buy() {
               type="submit"
               block
               size="xl"
-              :disabled="!product.pricingComplete || !selectedPrice"
+              :disabled="
+                !product.pricingComplete || !selectedPrice || holdExpired || (product.planningEnabled && !hold)
+              "
               :loading="busy"
               icon="i-lucide-lock-keyhole"
               >{{

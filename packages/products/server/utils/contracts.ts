@@ -28,3 +28,18 @@ export const runOrderFulfillmentHooks = async (client: PoolClient, order: Order)
     await hook(client, order)
   }
 }
+
+export interface PlanningOrderIntegration {
+  prepareCheckout(
+    event: import('h3').H3Event,
+    input: import('zod').z.infer<typeof import('../../shared/validation').checkoutSchema>
+  ): Promise<void>
+  bind(event: import('h3').H3Event, client: PoolClient, order: Order, holdToken: string): Promise<void>
+  prepareOrder(order: Order): Promise<void>
+  confirm(client: PoolClient, order: Order): Promise<void>
+}
+let planning: PlanningOrderIntegration | undefined
+export const registerPlanningOrderIntegration = (value: PlanningOrderIntegration) => {
+  planning = value
+}
+export const planningOrderIntegration = () => planning

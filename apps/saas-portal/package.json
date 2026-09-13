@@ -27,7 +27,8 @@
     "h3": "^1.15.11",
     "nuxt": "^4.5.1",
     "@nuxt-customer-portal/products": "workspace:*",
-    "@nuxt-customer-portal/invoice-products": "workspace:*"
+    "@nuxt-customer-portal/invoice-products": "workspace:*",
+    "@nuxt-customer-portal/planning": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",

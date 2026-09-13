@@ -81,7 +81,9 @@
         "products": "Producten",
         "productsDescription": "Verkoop digitale producten en diensten.",
         "invoiceProducts": "Productfacturen",
-        "invoiceProductsDescription": "Maak portaalfacturen voor productaankopen."
+        "invoiceProductsDescription": "Maak portaalfacturen voor productaankopen.",
+        "planning": "Planning",
+        "planningDescription": "Boek dienstafspraken met beschikbaarheid en agenda’s van aanbieders."
       },
       "actions": {
         "remove": "Verwijderen",

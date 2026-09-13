@@ -41,7 +41,13 @@ export async function handleWebhook(event: Stripe.Event) {
         event.type
       )
     ) {
-      id = await reconcileCheckout((event.data.object as Stripe.Checkout.Session).id)
+      const session = event.data.object as Stripe.Checkout.Session
+      id = await reconcileCheckout(
+        session.id,
+        session.payment_status === 'paid' && event.type !== 'checkout.session.expired'
+          ? new Date(event.created * 1000).toISOString()
+          : undefined
+      )
     }
     if (event.type === 'checkout.session.async_payment_failed') {
       const session = event.data.object as Stripe.Checkout.Session
