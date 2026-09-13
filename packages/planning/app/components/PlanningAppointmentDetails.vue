@@ -3,7 +3,7 @@ import type { AppointmentDetails, HoldResult } from '../composables/usePlanning'
 import type { Slot } from '../../shared/types'
 import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 
-const props = defineProps<{ id: string }>()
+const props = defineProps<{ id: string; timezone?: string }>()
 const emit = defineEmits<{ changed: [] }>()
 const api = usePlanning(),
   { t, locale } = useI18n(),
@@ -84,7 +84,7 @@ async function cancel() {
             new Intl.DateTimeFormat(locale, {
               dateStyle: 'full',
               timeStyle: 'short',
-              timeZone: item.customerTimezone
+              timeZone: timezone || item.customerTimezone
             }).format(new Date(item.start))
           }}
         </p>

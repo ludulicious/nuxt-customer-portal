@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { localParts, wallInstant } from '../../shared/availability'
 import { availabilitySchema } from '../../shared/validation'
 import type { AvailabilityWindow } from '../../shared/types'
 import type { ProviderConfiguration, AppointmentListItem } from '../composables/usePlanning'
-import { localParts } from '../../shared/availability'
 
 const { activeOrganizationRole } = usePortalSession()
 const canManagePlanning = computed(() => ['owner', 'admin'].includes(activeOrganizationRole.value || ''))
 
 const api = usePlanning(),
-  { t, locale } = useI18n(),
+  { t } = useI18n(),
   settings = ref<ProviderConfiguration>(),
   windows = ref<AvailabilityWindow[]>([]),
   appointments = ref<AppointmentListItem[]>([]),
@@ -21,6 +21,19 @@ const selected = ref<AvailabilityWindow>(),
   occurrence = ref(''),
   editOne = ref(false),
   week = ref(new Date().toISOString().slice(0, 10))
+const route = useRoute()
+const calendarTimezone = computed({
+  get: () =>
+    typeof route.query.timezone === 'string' && Intl.supportedValuesOf('timeZone').includes(route.query.timezone)
+      ? route.query.timezone
+      : providerState.timezone,
+  set: (timezone: string) => {
+    void navigateTo(
+      { query: { ...route.query, timezone: timezone === providerState.timezone ? undefined : timezone } },
+      { replace: true }
+    )
+  }
+})
 const providerState = reactive({
   timezone: 'Europe/Amsterdam',
   graceMinutes: 0,
@@ -58,17 +71,80 @@ const days = computed(() => {
   first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7))
   return Array.from({ length: 7 }, (_, i) => new Date(first.getTime() + i * 86400000).toISOString().slice(0, 10))
 })
-function dayWindows(date: string) {
-  return windows.value.filter(
-    (w) =>
-      date >= w.date &&
-      (!w.endDate || date <= w.endDate) &&
-      !w.exceptions.includes(date) &&
-      (w.recurring ? new Date(date).getUTCDay() === new Date(w.date).getUTCDay() : date === w.date)
-  )
+const canEditCalendar = computed(() => calendarTimezone.value === providerState.timezone)
+watch(canEditCalendar, (value) => {
+  if (!value) {
+    windowOpen.value = false
+    deleteOpen.value = false
+  }
+})
+type CalendarWindow = AvailabilityWindow & {
+  sourceDate: string
+  split: boolean
+  sourceRecurring: boolean
+  sourceStart: string
+  sourceEnd: string
 }
-function dayAppointments(date: string) {
-  return appointments.value.filter((a) => localParts(new Date(a.start), providerState.timezone).date === date)
+const calendarWindows = computed<CalendarWindow[]>(() => {
+  const result: CalendarWindow[] = []
+  const first = Date.parse(days.value[0]!) - 2 * 86400000
+  for (let i = 0; i < 11; i++) {
+    const date = new Date(first + i * 86400000).toISOString().slice(0, 10)
+    for (const window of windows.value) {
+      if (
+        date < window.date ||
+        (window.endDate && date > window.endDate) ||
+        window.exceptions.includes(date) ||
+        (window.recurring ? new Date(date).getUTCDay() !== new Date(window.date).getUTCDay() : date !== window.date)
+      ) {
+        continue
+      }
+      try {
+        const start = localParts(wallInstant(date, window.startTime, window.timezone), calendarTimezone.value)
+        const end = localParts(wallInstant(date, window.endTime, window.timezone), calendarTimezone.value)
+        const base = {
+          ...window,
+          recurring: false,
+          sourceRecurring: window.recurring,
+          sourceStart: wallInstant(date, window.startTime, window.timezone).toISOString(),
+          sourceEnd: wallInstant(date, window.endTime, window.timezone).toISOString(),
+          sourceDate: date,
+          timezone: calendarTimezone.value,
+          endDate: null,
+          exceptions: [],
+          split: start.date !== end.date
+        }
+        if (start.date === end.date) {
+          result.push({ ...base, date: start.date, startTime: start.time, endTime: end.time })
+        } else {
+          result.push({ ...base, date: start.date, startTime: start.time, endTime: '23:59' })
+          if (end.time !== '00:00') {
+            result.push({ ...base, date: end.date, startTime: '00:00', endTime: end.time })
+          }
+        }
+      } catch {
+        /* Nonexistent wall times do not produce availability. */
+      }
+    }
+  }
+  return result
+})
+function editCalendarWindow(date: string, displayed: AvailabilityWindow) {
+  if (!canEditCalendar.value) {
+    return
+  }
+  const source = windows.value.find((window) => window.id === displayed.id)
+  if (source) {
+    openWindow((displayed as CalendarWindow).sourceDate || date, source)
+  }
+}
+function providerRange(date: string, startTime: string, endTime: string) {
+  const start = localParts(wallInstant(date, startTime, calendarTimezone.value), providerState.timezone)
+  const end = localParts(wallInstant(date, endTime, calendarTimezone.value), providerState.timezone)
+  if (start.date !== end.date || end.time <= start.time) {
+    throw new Error('Range crosses provider midnight')
+  }
+  return { date: start.date, startTime: start.time, endTime: end.time }
 }
 watch(editOne, (value) => {
   if (selected.value) {
@@ -93,11 +169,62 @@ async function load() {
   }
 }
 onMounted(load)
+async function moveCalendarWindow(
+  date: string,
+  window: AvailabilityWindow,
+  targetDate: string,
+  startTime: string,
+  endTime: string
+) {
+  if (busy.value || !canEditCalendar.value) {
+    return
+  }
+  busy.value = true
+  error.value = ''
+  try {
+    const displayed = window as CalendarWindow
+    const source = windows.value.find((item) => item.id === window.id)!
+    if (displayed.split) {
+      throw new Error('Resize the complete window in its original timezone')
+    }
+    const converted = providerRange(targetDate, startTime, endTime)
+    await api.saveWindow(
+      {
+        ...source,
+        ...converted,
+        recurring: source.recurring ? false : source.recurring,
+        endDate: source.recurring ? null : source.endDate,
+        occurrenceDate: source.recurring ? displayed.sourceDate || date : undefined
+      },
+      window.id
+    )
+    await load()
+  } catch {
+    error.value = t('planning.actionError')
+  } finally {
+    busy.value = false
+  }
+}
+function selectCalendarRange(date: string, startTime: string, endTime: string) {
+  if (!canEditCalendar.value) {
+    return
+  }
+  try {
+    const converted = providerRange(date, startTime, endTime)
+    openWindow(converted.date)
+    Object.assign(windowState, converted)
+  } catch {
+    error.value = t('planning.timezoneRangeError')
+  }
+}
 function toggleProduct(id: string, checked: boolean) {
   const ids = windowState.productIds || []
   windowState.productIds = checked ? [...new Set([...ids, id])] : ids.filter((value) => value !== id)
 }
 function openWindow(date: string, window?: AvailabilityWindow) {
+  if (!canEditCalendar.value) {
+    return
+  }
   selected.value = window
   occurrence.value = date
   editOne.value = false
@@ -118,6 +245,9 @@ function openWindow(date: string, window?: AvailabilityWindow) {
   windowOpen.value = true
 }
 async function saveWindow() {
+  if (!canEditCalendar.value) {
+    return
+  }
   busy.value = true
   try {
     await api.saveWindow(
@@ -137,6 +267,9 @@ async function saveWindow() {
   }
 }
 async function removeWindow() {
+  if (!canEditCalendar.value) {
+    return
+  }
   if (!selected.value) {
     return
   }
@@ -169,63 +302,51 @@ async function removeWindow() {
         </template>
       </UAlert>
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-xl font-semibold">{{ t('planning.availability') }} · {{ providerState.timezone }}</h2>
-        <div class="flex gap-2">
+        <h2 class="text-xl font-semibold">
+          {{ t('planning.availability') }} · {{ calendarTimezone.replaceAll('_', ' ') }}
+        </h2>
+        <div class="flex flex-wrap items-center gap-2">
+          <PlanningTimezoneSelect v-model="calendarTimezone" :user-timezone="providerState.timezone" :disabled="busy" />
           <UButton
             icon="i-lucide-chevron-left"
             :aria-label="t('planning.previousWeek')"
             variant="outline"
             @click="moveWeek(-1)"
-          /><UButton
+          />
+
+          <UButton
             icon="i-lucide-chevron-right"
             :aria-label="t('planning.nextWeek')"
             variant="outline"
             @click="moveWeek(1)"
-          /><UButton @click="openWindow(week)">{{ t('planning.addWindow') }}</UButton>
+          />
+
+          <PlanningTimezoneReadOnlyHover
+            :readonly="!canEditCalendar"
+            :user-timezone="providerState.timezone"
+            @switch-timezone="calendarTimezone = providerState.timezone"
+          >
+            <UButton :disabled="!canEditCalendar || busy" @click="openWindow(week)">{{
+              t('planning.addWindow')
+            }}</UButton>
+          </PlanningTimezoneReadOnlyHover>
         </div>
       </div>
-      <div class="grid gap-3 md:grid-cols-7">
-        <UCard v-for="date in days" :key="date" :ui="{ body: 'p-2 sm:p-2' }"
-          ><h3 class="mb-3 text-sm font-semibold">
-            {{
-              new Intl.DateTimeFormat(locale, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                timeZone: 'UTC'
-              }).format(new Date(date))
-            }}
-          </h3>
-          <div class="space-y-2">
-            <UButton
-              v-for="window in dayWindows(date)"
-              :key="window.id"
-              variant="soft"
-              class="w-full justify-start whitespace-normal"
-              @click="openWindow(date, window)"
-              >{{ window.startTime }}–{{ window.endTime }} {{ window.recurring ? '↻' : '' }}<br />{{
-                window.productIds === null ? t('planning.allProducts') : t('planning.selectedProducts')
-              }}</UButton
-            >
-            <div
-              v-for="appointment in dayAppointments(date)"
-              :key="appointment.id"
-              class="rounded border border-default p-2 text-sm"
-            >
-              <span
-                >{{ localParts(new Date(appointment.start), providerState.timezone).time }} ·
-                {{ appointment.title }}</span
-              ><UBadge v-if="appointment.conflict" color="error">{{ t('planning.conflict') }}</UBadge>
-              <p v-if="appointment.effectsError" class="text-error">{{ t('planning.syncError') }}</p>
-            </div>
-            <UButton
-              variant="ghost"
-              icon="i-lucide-plus"
-              :aria-label="t('planning.addWindow') + ' ' + date"
-              @click="openWindow(date)"
-            /></div
-        ></UCard>
-      </div>
+      <PlanningAvailabilityCalendar
+        :days="days"
+        :disabled="busy || !canEditCalendar"
+        :timezone="calendarTimezone"
+        :user-timezone="providerState.timezone"
+        :readonly-timezone="!canEditCalendar"
+        :products="settings?.products || []"
+        :windows="calendarWindows"
+        :appointments="appointments"
+        @switch-timezone="calendarTimezone = providerState.timezone"
+        @select="selectCalendarRange"
+        @edit="editCalendarWindow"
+        @move="moveCalendarWindow"
+      />
+
       <UModal
         v-if="windowOpen"
         v-model:open="windowOpen"
@@ -343,6 +464,7 @@ async function removeWindow() {
           </UForm>
         </template>
       </UModal>
+
       <UModal v-if="deleteOpen" v-model:open="deleteOpen" :title="t('planning.delete')"
         ><template #body
           ><p>{{ t(editOne ? 'planning.deleteOccurrenceConfirm' : 'planning.deleteSeriesConfirm') }}</p>

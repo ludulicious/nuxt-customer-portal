@@ -10,6 +10,20 @@ const api = usePlanning(),
   selected = ref(''),
   createOpen = ref(false),
   access = ref({ staff: false, canManage: false })
+const { currentUser } = usePortalSession()
+const userTimezone = computed(() => currentUser.value?.timezone || 'Europe/Amsterdam')
+const displayTimezone = computed({
+  get: () =>
+    typeof route.query.timezone === 'string' && Intl.supportedValuesOf('timeZone').includes(route.query.timezone)
+      ? route.query.timezone
+      : userTimezone.value,
+  set: (timezone: string) => {
+    void navigateTo(
+      { query: { ...route.query, timezone: timezone === userTimezone.value ? undefined : timezone } },
+      { replace: true }
+    )
+  }
+})
 const filters = computed(() => ({
   search: typeof route.query.search === 'string' ? route.query.search : '',
   status: ['confirmed', 'cancelled'].includes(String(route.query.status)) ? String(route.query.status) : 'all',
@@ -124,13 +138,16 @@ async function toggle(id: string) {
               </p>
             </div>
           </div>
-          <UButton
-            v-if="access.canManage && pagination.total"
-            icon="i-lucide-plus"
-            variant="outline"
-            @click="toggleCreate"
-            >{{ t('planning.newAppointment') }}</UButton
-          >
+          <div class="flex flex-wrap items-center gap-3">
+            <PlanningTimezoneSelect v-model="displayTimezone" :user-timezone="userTimezone" />
+            <UButton
+              v-if="access.canManage && pagination.total"
+              icon="i-lucide-plus"
+              variant="outline"
+              @click="toggleCreate"
+              >{{ t('planning.newAppointment') }}</UButton
+            >
+          </div>
         </header>
         <div class="flex flex-wrap gap-3">
           <UInput
@@ -219,7 +236,7 @@ async function toggle(id: string) {
                       new Intl.DateTimeFormat(locale, {
                         dateStyle: 'long',
                         timeStyle: 'short',
-                        timeZone: item.customerTimezone || 'Europe/Amsterdam'
+                        timeZone: displayTimezone
                       }).format(new Date(item.start))
                     }}
                     · {{ item.providerName }}
@@ -264,7 +281,7 @@ async function toggle(id: string) {
                     :aria-label="t('planning.close')"
                     @click="selected = ''"
                   /></div></template
-              ><PlanningAppointmentDetails :id="item.id" @changed="load"
+              ><PlanningAppointmentDetails :id="item.id" :timezone="displayTimezone" @changed="load"
             /></UCard>
           </template>
         </div>

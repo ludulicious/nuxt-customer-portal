@@ -116,6 +116,16 @@
     "endDateHelp": "Optioneel. Laat leeg om te blijven herhalen.",
     "allProductsHelp": "Geldt voor alle toegewezen producten, ook toekomstige toewijzingen. Zet uit om specifieke producten te kiezen.",
     "saveAvailability": "Beschikbaarheid opslaan",
-    "selectAtLeastOneProduct": "Selecteer ten minste één product."
+    "selectAtLeastOneProduct": "Selecteer ten minste één product.",
+    "dragAvailabilityHelp": "Sleep in de kalender om beschikbaarheid toe te voegen. Selecteer een bestaand blok om het te wijzigen.",
+    "calendarAllProducts": "Alle producten",
+    "calendarTimezone": "Kalendertijdzone",
+    "timezoneRangeError": "Kies een tijdvak binnen één dag in de tijdzone van je kalenderinstellingen.",
+    "timezoneFavorites": "Favorieten",
+    "allTimezones": "Alle tijdzones",
+    "removeTimezoneFavorite": "Verwijder {timezone} uit favorieten",
+    "timezoneReadOnly": "Alleen bekijken. Schakel naar {timezone} om beschikbaarheid te wijzigen.",
+    "calendarReadOnly": "De kalender is alleen-lezen.",
+    "switchToUserTimezone": "Schakel naar mijn tijdzone"
   }
 }

@@ -116,6 +116,16 @@
     "endDateHelp": "Optional. Leave empty to keep repeating.",
     "allProductsHelp": "Includes all assigned products, including future assignments. Turn off to choose specific products.",
     "saveAvailability": "Save availability",
-    "selectAtLeastOneProduct": "Select at least one product."
+    "selectAtLeastOneProduct": "Select at least one product.",
+    "dragAvailabilityHelp": "Drag on the calendar to add availability. Select an existing block to edit it.",
+    "calendarAllProducts": "All products",
+    "calendarTimezone": "Calendar timezone",
+    "timezoneRangeError": "Choose a time range within one day in your calendar settings timezone.",
+    "timezoneFavorites": "Favorites",
+    "allTimezones": "All timezones",
+    "removeTimezoneFavorite": "Remove {timezone} from favorites",
+    "timezoneReadOnly": "Viewing only. Switch to {timezone} to edit availability.",
+    "calendarReadOnly": "Calendar is read-only.",
+    "switchToUserTimezone": "Switch to my timezone"
   }
 }

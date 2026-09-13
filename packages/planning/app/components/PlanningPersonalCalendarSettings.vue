@@ -66,7 +66,8 @@ async function saveSettings() {
         ><UFormField name="timezone" :label="t('planning.timezone')"
           ><USelectMenu
             v-model="providerState.timezone"
-            :items="Intl.supportedValuesOf('timeZone')"
+            :items="Intl.supportedValuesOf('timeZone').map((value) => ({ value, label: value.replaceAll('_', ' ') }))"
+            value-key="value"
             class="w-full" /></UFormField
         ><UFormField name="graceMinutes" :label="t('planning.graceMinutes')"
           ><UInputNumber v-model="providerState.graceMinutes" :min="0" class="w-full" /></UFormField
