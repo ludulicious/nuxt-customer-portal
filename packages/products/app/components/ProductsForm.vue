@@ -572,6 +572,7 @@ function removeFile(id: string, index: number) {
           <UFormField name="planning.meetingProvider" :label="t('products.meetingProvider')"
             ><USelect
               v-model="state.planning.meetingProvider"
+              class="w-full"
               :items="[
                 { value: 'none', label: t('products.noMeeting') },
                 { value: 'zoom', label: 'Zoom' }
