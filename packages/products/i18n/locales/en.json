@@ -499,7 +499,7 @@
     "borderColor": "Border color",
     "plannable": "Require appointment booking",
     "durationMinutes": "Appointment duration (minutes)",
-    "planningProviders": "Eligible provider users",
+    "planningProviders": "Eligible team members",
     "meetingProvider": "Meeting provider",
     "noMeeting": "No online meeting",
     "overridePlanningPolicy": "Override organization booking policy",
