@@ -10,7 +10,7 @@ import { fileExtension, withoutFileExtension } from '../../shared/file-name'
 const props = withDefaults(
     defineProps<{
       product?: Product
-      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'media' | 'images' | 'files'
+      section?: 'create' | 'all' | 'basic' | 'details' | 'pricing' | 'planning' | 'media' | 'images' | 'files'
       filesMode?: 'add' | 'edit'
       fileId?: string
       currency?: string
@@ -530,8 +530,8 @@ function removeFile(id: string, index: number) {
     >
       <UAlert v-if="error" color="error" :title="error" />
       <div
-        v-if="planningInstalled && state.type === 'service' && ['all', 'basic', 'details'].includes(section)"
-        class="space-y-4 rounded border border-default p-4"
+        v-if="planningInstalled && state.type === 'service' && ['all', 'planning'].includes(section)"
+        :class="section === 'planning' ? 'space-y-4' : 'space-y-4 rounded border border-default p-4'"
       >
         <UFormField name="planning.enabled" :label="t('products.plannable')"
           ><USwitch v-model="state.planning.enabled"

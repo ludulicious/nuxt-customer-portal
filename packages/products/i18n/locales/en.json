@@ -506,6 +506,8 @@
     "reservationUntil": "Reserved until {time}",
     "reservationExpired": "Your reservation has expired. Choose another time before checkout.",
     "chooseAnotherSlot": "Choose another time",
-    "planningMemberDisabled": "{name} (planning off)"
+    "planningMemberDisabled": "{name} (planning off)",
+    "planningTitle": "Planning",
+    "editPlanning": "Edit planning"
   }
 }

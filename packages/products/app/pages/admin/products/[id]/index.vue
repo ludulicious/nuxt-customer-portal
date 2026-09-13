@@ -7,7 +7,7 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'details' | 'pricing' | 'images' | 'files' | null>(
+const editing = ref<'basic' | 'details' | 'pricing' | 'planning' | 'images' | 'files' | null>(
   route.query.edit === 'true' ? 'basic' : null
 )
 const toast = useToast()
@@ -61,7 +61,7 @@ const languageOptions = computed(() => {
 const currencyOptions = computed(() => [...new Set(product.value?.prices.map((price) => price.currency) || [])])
 const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
-function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'files') {
+function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'planning' | 'files') {
   editing.value = editing.value === section ? null : section
 }
 function openMediaEditor() {
@@ -215,6 +215,22 @@ onMounted(async () => {
                 />
               </template>
             </ProductsPriceCard>
+            <ProductsPlanningCard
+              v-if="product.type === 'service'"
+              :product="product"
+              :editing="editing === 'planning'"
+              @edit="toggleEdit('planning')"
+            >
+              <template #editor>
+                <ProductsForm
+                  :key="`planning-${product.updatedAt}`"
+                  :product="product"
+                  section="planning"
+                  @saved="saved"
+                  @cancel="editing = null"
+                />
+              </template>
+            </ProductsPlanningCard>
           </div>
         </div>
         <ProductsFilesSection

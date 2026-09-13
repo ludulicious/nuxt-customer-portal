@@ -506,6 +506,8 @@
     "reservationUntil": "Gereserveerd tot {time}",
     "reservationExpired": "Je reservering is verlopen. Kies een ander tijdstip voordat je afrekent.",
     "chooseAnotherSlot": "Kies een ander tijdstip",
-    "planningMemberDisabled": "{name} (planning uit)"
+    "planningMemberDisabled": "{name} (planning uit)",
+    "planningTitle": "Planning",
+    "editPlanning": "Planning bewerken"
   }
 }
