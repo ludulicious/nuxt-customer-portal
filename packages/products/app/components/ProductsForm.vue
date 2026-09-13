@@ -559,7 +559,7 @@ function removeFile(id: string, index: number) {
         /></UFormField>
         <template v-if="state.planning.enabled">
           <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
-            ><UInputNumber v-model="state.planning.durationMinutes" :min="1"
+            ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
           /></UFormField>
           <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')"
             ><USelectMenu
