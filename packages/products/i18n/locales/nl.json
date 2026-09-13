@@ -505,6 +505,7 @@
     "overridePlanningPolicy": "Boekingsbeleid organisatie overschrijven",
     "reservationUntil": "Gereserveerd tot {time}",
     "reservationExpired": "Je reservering is verlopen. Kies een ander tijdstip voordat je afrekent.",
-    "chooseAnotherSlot": "Kies een ander tijdstip"
+    "chooseAnotherSlot": "Kies een ander tijdstip",
+    "planningMemberDisabled": "{name} (planning uit)"
   }
 }

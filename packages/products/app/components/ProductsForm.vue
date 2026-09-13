@@ -298,7 +298,16 @@ const createName = computed({
     }
   }
 })
-const planningProviders = ref<Array<{ userId: string; name: string }>>([])
+const planningProviders = ref<Array<{ userId: string; name: string; enabled: boolean }>>([])
+const planningProviderOptions = computed(() =>
+  planningProviders.value
+    .filter((member) => member.enabled || state.planning.providerUserIds.includes(member.userId))
+    .map((member) => ({
+      value: member.userId,
+      label: member.enabled ? member.name : t('products.planningMemberDisabled', { name: member.name }),
+      disabled: !member.enabled
+    }))
+)
 const planningInstalled = ref(false)
 const planningDefaults = ref(defaultPlanningPolicy())
 const planningOverrides = computed({
@@ -534,7 +543,7 @@ function removeFile(id: string, index: number) {
           <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')"
             ><USelectMenu
               v-model="state.planning.providerUserIds"
-              :items="planningProviders.map((p) => ({ value: p.userId, label: p.name }))"
+              :items="planningProviderOptions"
               value-key="value"
               multiple
               class="w-full"

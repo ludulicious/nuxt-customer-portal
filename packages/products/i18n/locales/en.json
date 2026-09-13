@@ -505,6 +505,7 @@
     "overridePlanningPolicy": "Override organization booking policy",
     "reservationUntil": "Reserved until {time}",
     "reservationExpired": "Your reservation has expired. Choose another time before checkout.",
-    "chooseAnotherSlot": "Choose another time"
+    "chooseAnotherSlot": "Choose another time",
+    "planningMemberDisabled": "{name} (planning off)"
   }
 }
