@@ -61,64 +61,66 @@ async function retry() {
 </script>
 
 <template>
-  <UContainer class="space-y-6 py-8"
-    ><h1 class="text-2xl font-bold">{{ t('planning.settings') }}</h1>
-    <UAlert v-if="error" variant="outline" color="error" :title="error" /><UCard
-      ><template #header
-        ><h2 class="font-semibold">{{ t('planning.providers') }}</h2></template
+  <div class="h-full min-h-0 overflow-y-auto">
+    <UContainer class="space-y-6 py-8"
+      ><h1 class="text-2xl font-bold">{{ t('planning.settings') }}</h1>
+      <UAlert v-if="error" variant="outline" color="error" :title="error" /><UCard
+        ><template #header
+          ><h2 class="font-semibold">{{ t('planning.providers') }}</h2></template
+        >
+        <div class="space-y-4">
+          <div v-for="provider in providers" :key="provider.userId" class="flex flex-wrap items-center gap-3">
+            <span class="grow">{{ provider.name }}</span
+            ><UBadge :color="provider.googleConnected ? 'success' : 'warning'">Google</UBadge
+            ><UBadge :color="provider.zoomConnected ? 'success' : 'warning'">Zoom</UBadge
+            ><USwitch
+              :model-value="provider.enabled"
+              :disabled="busy"
+              :aria-label="t('planning.planning') + ' ' + provider.name"
+              @update:model-value="toggle(provider.userId, $event)"
+            />
+          </div></div
+      ></UCard>
+      <UCard
+        ><template #header
+          ><h2 class="font-semibold">{{ t('planning.organizationPolicy') }}</h2></template
+        ><UForm :state="state" :schema="planningPolicySchema" novalidate class="space-y-4" @submit="save"
+          ><PlanningPolicyFields v-model="state" :currencies="currencies" /><UButton type="submit" :loading="busy">{{
+            t('planning.save')
+          }}</UButton></UForm
+        ></UCard
       >
-      <div class="space-y-4">
-        <div v-for="provider in providers" :key="provider.userId" class="flex flex-wrap items-center gap-3">
-          <span class="grow">{{ provider.name }}</span
-          ><UBadge :color="provider.googleConnected ? 'success' : 'warning'">Google</UBadge
-          ><UBadge :color="provider.zoomConnected ? 'success' : 'warning'">Zoom</UBadge
-          ><USwitch
-            :model-value="provider.enabled"
-            :disabled="busy"
-            :aria-label="t('planning.planning') + ' ' + provider.name"
-            @update:model-value="toggle(provider.userId, $event)"
-          />
-        </div></div
-    ></UCard>
-    <UCard
-      ><template #header
-        ><h2 class="font-semibold">{{ t('planning.organizationPolicy') }}</h2></template
-      ><UForm :state="state" :schema="planningPolicySchema" novalidate class="space-y-4" @submit="save"
-        ><PlanningPolicyFields v-model="state" :currencies="currencies" /><UButton type="submit" :loading="busy">{{
-          t('planning.save')
-        }}</UButton></UForm
-      ></UCard
-    >
-    <UCard
-      ><template #header
-        ><h2 class="font-semibold">{{ t('planning.appointments') }}</h2></template
+      <UCard
+        ><template #header
+          ><h2 class="font-semibold">{{ t('planning.appointments') }}</h2></template
+        >
+        <div class="space-y-3">
+          <div v-for="appointment in appointments" :key="appointment.id" class="border-b border-default pb-3">
+            <h3 class="font-semibold">{{ appointment.title }} · {{ appointment.providerName }}</h3>
+            <p>
+              {{
+                new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(
+                  new Date(appointment.start)
+                )
+              }}
+              · {{ appointment.email }} · {{ t(`planning.${appointment.status}`) }}
+            </p>
+            <UBadge v-if="appointment.conflict" color="error">{{ t('planning.conflict') }}</UBadge>
+            <p v-if="appointment.effectsError" class="text-error">{{ appointment.effectsError }}</p>
+          </div>
+        </div></UCard
       >
-      <div class="space-y-3">
-        <div v-for="appointment in appointments" :key="appointment.id" class="border-b border-default pb-3">
-          <h3 class="font-semibold">{{ appointment.title }} · {{ appointment.providerName }}</h3>
-          <p>
-            {{
-              new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(
-                new Date(appointment.start)
-              )
-            }}
-            · {{ appointment.email }} · {{ t(`planning.${appointment.status}`) }}
-          </p>
-          <UBadge v-if="appointment.conflict" color="error">{{ t('planning.conflict') }}</UBadge>
-          <p v-if="appointment.effectsError" class="text-error">{{ appointment.effectsError }}</p>
+      <UCard
+        ><template #header
+          ><h2 class="font-semibold">{{ t('planning.pendingTasks') }}</h2></template
+        >
+        <p v-if="!jobs.length">{{ t('planning.noPendingTasks') }}</p>
+        <div v-for="job in jobs" :key="job.id" class="mb-2">
+          <p>{{ job.kind }} · {{ t('planning.attempts', { count: job.attempts }) }}</p>
+          <p v-if="job.error" class="text-error">{{ job.error }}</p>
         </div>
-      </div></UCard
-    >
-    <UCard
-      ><template #header
-        ><h2 class="font-semibold">{{ t('planning.pendingTasks') }}</h2></template
+        <UButton v-if="jobs.length" :loading="busy" @click="retry">{{ t('planning.retry') }}</UButton></UCard
       >
-      <p v-if="!jobs.length">{{ t('planning.noPendingTasks') }}</p>
-      <div v-for="job in jobs" :key="job.id" class="mb-2">
-        <p>{{ job.kind }} · {{ t('planning.attempts', { count: job.attempts }) }}</p>
-        <p v-if="job.error" class="text-error">{{ job.error }}</p>
-      </div>
-      <UButton v-if="jobs.length" :loading="busy" @click="retry">{{ t('planning.retry') }}</UButton></UCard
-    >
-  </UContainer>
+    </UContainer>
+  </div>
 </template>

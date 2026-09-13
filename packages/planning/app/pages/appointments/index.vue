@@ -12,24 +12,26 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UContainer class="space-y-5 py-8"
-    ><h1 class="text-2xl font-bold">{{ t('planning.appointments') }}</h1>
-    <UAlert v-if="error" variant="outline" color="error" :title="error" />
-    <p v-if="!items.length">{{ t('planning.noAppointments') }}</p>
-    <UCard v-for="item in items" :key="item.id"
-      ><h2 class="font-semibold">{{ item.title }}</h2>
-      <p>
-        {{
-          new Intl.DateTimeFormat(locale, {
-            dateStyle: 'long',
-            timeStyle: 'short',
-            timeZone: item.customerTimezone || 'Europe/Amsterdam'
-          }).format(new Date(item.start))
-        }}
-        · {{ item.providerName }}
-      </p>
-      <p>{{ t(`planning.${item.status}`) }}</p>
-      <UButton :to="'/appointments/' + item.id" variant="outline">{{ t('planning.manage') }}</UButton></UCard
-    ></UContainer
-  >
+  <div class="h-full min-h-0 overflow-y-auto">
+    <UContainer class="space-y-5 py-8"
+      ><h1 class="text-2xl font-bold">{{ t('planning.appointments') }}</h1>
+      <UAlert v-if="error" variant="outline" color="error" :title="error" />
+      <p v-if="!items.length">{{ t('planning.noAppointments') }}</p>
+      <UCard v-for="item in items" :key="item.id"
+        ><h2 class="font-semibold">{{ item.title }}</h2>
+        <p>
+          {{
+            new Intl.DateTimeFormat(locale, {
+              dateStyle: 'long',
+              timeStyle: 'short',
+              timeZone: item.customerTimezone || 'Europe/Amsterdam'
+            }).format(new Date(item.start))
+          }}
+          · {{ item.providerName }}
+        </p>
+        <p>{{ t(`planning.${item.status}`) }}</p>
+        <UButton :to="'/appointments/' + item.id" variant="outline">{{ t('planning.manage') }}</UButton></UCard
+      ></UContainer
+    >
+  </div>
 </template>
