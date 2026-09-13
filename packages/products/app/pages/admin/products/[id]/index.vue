@@ -234,6 +234,7 @@ onMounted(async () => {
           </div>
         </div>
         <ProductsFilesSection
+          class="mt-6"
           :product="product"
           :editing="editing === 'files'"
           @edit="toggleEdit('files')"
