@@ -365,6 +365,25 @@ test(
           { statusCode: 409 }
         )
       })
+      await t.test('planning-only saves preserve unrelated product data and validate permissions', async () => {
+        const before = await catalog.getProduct('store', 'product')
+        const saved = await management.saveProductPlanning(event(ownerCookie), 'product', {
+          ...before.planning,
+          durationMinutes: 61
+        })
+        assert.equal(saved.planning.durationMinutes, 61)
+        assert.deepEqual(saved.content, before.content)
+        assert.deepEqual(saved.prices, before.prices)
+        assert.deepEqual(saved.imageIds, before.imageIds)
+        await assert.rejects(management.saveProductPlanning(event(providerCookie), 'product', before.planning), {
+          statusCode: 403
+        })
+        await assert.rejects(
+          management.saveProductPlanning(event(ownerCookie), 'product', { ...before.planning, durationMinutes: 0 }),
+          { statusCode: 400 }
+        )
+        await management.saveProductPlanning(event(ownerCookie), 'product', before.planning)
+      })
       await t.test('concurrent holds across products have one winner and bind to a cookie', async () => {
         await db.query('INSERT INTO products.product(id,store_id,slug,data) VALUES($1,$2,$3,$4)', [
           'other-product',

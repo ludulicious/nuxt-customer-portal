@@ -171,3 +171,19 @@ test('invitations preserve UID, sequence, UTF-8 folding and cancellation method'
   assert.ok(first.split('\r\n').every((line) => Buffer.byteLength(line) <= 75))
   assert.match(first.replace(/\r\n /g, ''), /Service\\, with\\; details\\n/)
 })
+
+test('empty product policy overrides inherit organization policy after validation', () => {
+  const planning = productPlanningSchema.parse({
+    enabled: true,
+    durationMinutes: 61,
+    providerUserIds: ['member'],
+    policyOverrides: {}
+  })
+  assert.deepEqual(planning.policyOverrides, {})
+  const policy = effectivePolicy(
+    { ...defaultPlanningPolicy(), cancellationEnabled: true, changeFees: { EUR: 2500 } },
+    planning.policyOverrides
+  )
+  assert.equal(policy.cancellationEnabled, true)
+  assert.deepEqual(policy.changeFees, { EUR: 2500 })
+})

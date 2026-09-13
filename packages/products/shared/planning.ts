@@ -13,13 +13,26 @@ export const planningPolicySchema = z.object({
   refundPercentage: z.number().int().min(0).max(100).default(100)
 })
 export type PlanningPolicy = z.infer<typeof planningPolicySchema>
+export const planningPolicyOverridesSchema = z.object({
+  reservationMinutes: planningPolicySchema.shape.reservationMinutes.removeDefault().optional(),
+  slotIntervalMinutes: planningPolicySchema.shape.slotIntervalMinutes.removeDefault().optional(),
+  bookingHorizonDays: planningPolicySchema.shape.bookingHorizonDays.removeDefault().optional(),
+  minimumNoticeMinutes: planningPolicySchema.shape.minimumNoticeMinutes.removeDefault().optional(),
+  freeChanges: planningPolicySchema.shape.freeChanges.removeDefault().optional(),
+  changeFees: planningPolicySchema.shape.changeFees.removeDefault().optional(),
+  rescheduleCutoffMinutes: planningPolicySchema.shape.rescheduleCutoffMinutes.removeDefault().optional(),
+  cancellationEnabled: planningPolicySchema.shape.cancellationEnabled.removeDefault().optional(),
+  cancellationCutoffMinutes: planningPolicySchema.shape.cancellationCutoffMinutes.removeDefault().optional(),
+  refundPercentage: planningPolicySchema.shape.refundPercentage.removeDefault().optional()
+})
+
 export const productPlanningSchema = z
   .object({
     enabled: z.boolean().default(false),
     durationMinutes: z.number().int().min(1).max(1440).nullable().default(null),
     providerUserIds: z.array(z.string().min(1).max(100)).max(100).default([]),
     meetingProvider: z.enum(['none', 'zoom']).default('none'),
-    policyOverrides: planningPolicySchema.partial().default({})
+    policyOverrides: planningPolicyOverridesSchema.default({})
   })
   .superRefine((value, ctx) => {
     if (value.enabled && !value.durationMinutes) {

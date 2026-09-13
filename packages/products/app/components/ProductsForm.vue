@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
-import { defaultPlanning, defaultPlanningPolicy } from '../../shared/planning'
+import { defaultPlanning, defaultPlanningPolicy, productPlanningSchema } from '../../shared/planning'
 import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
 import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
@@ -24,6 +24,7 @@ const props = withDefaults(
 const { t } = useI18n(),
   api = useProducts(),
   schema = useProductFormSchema(productSchema),
+  planningSchema = useProductFormSchema(z.object({ planning: productPlanningSchema })),
   toast = useToast()
 const state = reactive<z.infer<typeof productSchema>>(
   props.product
@@ -365,6 +366,26 @@ onMounted(async () => {
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
+  if (props.section === 'planning' && props.product) {
+    saving.value = true
+    error.value = ''
+    try {
+      const saved = await $fetch<Product>(`/api/planning/admin/products/${encodeURIComponent(props.product.id)}`, {
+        method: 'PUT',
+        body: state.planning
+      })
+      emit('saved', saved)
+    } catch (e) {
+      error.value = t('products.saveFailed')
+      const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
+      if (field) {
+        form.value?.setErrors([{ name: field, message: t('products.conflict') }])
+      }
+    } finally {
+      saving.value = false
+    }
+    return
+  }
   syncThumbnailImageId()
   const missingFileName = state.fileIds.flatMap((id) =>
     supportedLanguages.value
@@ -521,8 +542,8 @@ function removeFile(id: string, index: number) {
     <UForm
       ref="form"
       :state="state"
-      :schema="section === 'create' ? createSchema : schema"
-      :validate="pricingErrors"
+      :schema="section === 'create' ? createSchema : section === 'planning' ? planningSchema : schema"
+      :validate="section === 'planning' ? undefined : pricingErrors"
       novalidate
       class="space-y-5"
       @submit="save"

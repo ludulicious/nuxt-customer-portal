@@ -1,3 +1,4 @@
+import { productPlanningSchema } from '@nuxt-customer-portal/products/shared/planning'
 import { registerPortalOpenApiContracts } from '@nuxt-customer-portal/core/server/utils/openapi-contracts'
 import { z } from 'zod'
 import {
@@ -20,6 +21,7 @@ export default defineNitroPlugin(() =>
     },
     body: {
       storePlanningHoldsPost: holdSchema,
+      planningAdminProductsByIdPut: productPlanningSchema,
       planningProviderPut: providerSettingsSchema,
       planningAvailabilityPost: availabilitySchema,
       planningAvailabilityByIdPut: availabilityEditSchema,

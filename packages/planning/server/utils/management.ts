@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
 import { reconcileCheckout, getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
-import { planningPolicySchema } from '@nuxt-customer-portal/products/shared/planning'
+import { getProduct } from '@nuxt-customer-portal/products/server/utils/catalog'
+import { productPlanningSchema, planningPolicySchema } from '@nuxt-customer-portal/products/shared/planning'
 import { canChange, changeFee, refundAmount } from '../../shared/availability'
 import { availabilityEditSchema, providerSettingsSchema } from '../../shared/validation'
 import type { Appointment, ProviderSettings, AvailabilityWindow } from '../../shared/types'
@@ -358,4 +359,47 @@ export async function abandonChange(event: H3Event, id: string) {
     })
   }
   return appointmentDetails(event, id)
+}
+
+export async function saveProductPlanning(event: H3Event, id: string, body: unknown) {
+  const context = await planningAdmin(event)
+  const input = parseInput(productPlanningSchema, body)
+  await transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${id}`])
+    const [product] = await rows<{ data: { type: string; planning?: { providerUserIds: string[] } } }>(
+      'SELECT data FROM products.product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id, context.organizationId],
+      tx
+    )
+    if (!product) {
+      throw createError({ statusCode: 404, message: 'Product not found' })
+    }
+    if (product.data.type !== 'service') {
+      throw createError({ statusCode: 400, message: 'Only service products support planning' })
+    }
+    if (input.enabled) {
+      const members = await rows<{ user_id: string; enabled: boolean }>(
+        'SELECT m.user_id,COALESCE(p.enabled,false) AS enabled FROM public.member m LEFT JOIN planning.provider p ON p.store_id=m.organization_id AND p.user_id=m.user_id WHERE m.organization_id=$1 AND m.user_id=ANY($2::text[])',
+        [context.organizationId, input.providerUserIds],
+        tx
+      )
+      const previous = product.data.planning?.providerUserIds || []
+      if (
+        input.providerUserIds.some(
+          (userId) => !members.some((m) => m.user_id === userId && (m.enabled || previous.includes(userId)))
+        )
+      ) {
+        throw createError({
+          statusCode: 400,
+          message: 'Select organization team members with planning enabled',
+          data: { field: 'planning.providerUserIds' }
+        })
+      }
+    }
+    await tx.query(
+      "UPDATE products.product SET data=jsonb_set(data,'{planning}',$3::jsonb),updated_at=now() WHERE id=$1 AND store_id=$2",
+      [id, context.organizationId, JSON.stringify(input)]
+    )
+  })
+  return getProduct(context.organizationId, id)
 }
