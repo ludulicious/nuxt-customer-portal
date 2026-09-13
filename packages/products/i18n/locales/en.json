@@ -508,6 +508,15 @@
     "chooseAnotherSlot": "Choose another time",
     "planningMemberDisabled": "{name} (planning off)",
     "planningTitle": "Planning",
-    "editPlanning": "Edit planning"
+    "editPlanning": "Edit planning",
+    "appointmentDuration": "Appointment duration",
+    "minutesShort": "min",
+    "bookingRequired": "Booking required",
+    "planningTeamMembers": "Team members",
+    "planningOff": "Planning off",
+    "bookingPolicy": "Policy",
+    "customPolicy": "Product policy",
+    "organizationPolicy": "Organization policy",
+    "noAppointmentRequired": "Customers go directly to checkout."
   }
 }

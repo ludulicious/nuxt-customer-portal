@@ -508,6 +508,15 @@
     "chooseAnotherSlot": "Kies een ander tijdstip",
     "planningMemberDisabled": "{name} (planning uit)",
     "planningTitle": "Planning",
-    "editPlanning": "Planning bewerken"
+    "editPlanning": "Planning bewerken",
+    "appointmentDuration": "Afspraakduur",
+    "minutesShort": "min",
+    "bookingRequired": "Afspraak vereist",
+    "planningTeamMembers": "Medewerkers",
+    "planningOff": "Planning uit",
+    "bookingPolicy": "Beleid",
+    "customPolicy": "Productbeleid",
+    "organizationPolicy": "Organisatiebeleid",
+    "noAppointmentRequired": "Klanten gaan direct naar het afrekenen."
   }
 }
