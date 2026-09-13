@@ -13,7 +13,10 @@ export const availabilitySchema = z
     date,
     endDate: date.nullable().default(null),
     startTime: time,
-    endTime: time,
+    endTime: z
+      .string()
+      .transform((value) => (value === '00:00' ? '24:00' : value))
+      .pipe(z.union([time, z.literal('24:00')])),
     recurring: z.boolean().default(false),
     productIds: z.array(z.string().min(1).max(100)).min(1).max(100).nullable().default(null),
     exceptions: z.array(date).max(365).default([])
@@ -49,7 +52,8 @@ export const holdSchema = z.object({
   customerTimezone: timezoneSchema,
   currency: z.string().regex(/^[A-Z]{3}$/),
   locale: z.enum(['en', 'nl']).default('en'),
-  replacesId: z.uuid().optional()
+  replacesId: z.uuid().optional(),
+  previousHoldToken: z.string().min(32).max(200).optional()
 })
 export const holdCredentialSchema = z.object({ holdToken: z.string().min(32).max(200) })
 

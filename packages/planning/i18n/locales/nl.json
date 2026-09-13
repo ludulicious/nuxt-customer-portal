@@ -1,5 +1,6 @@
 {
   "planning": {
+    "midnight": "middernacht",
     "planning": "Planning",
     "appointments": "Afspraken",
     "availability": "Beschikbaarheid",
@@ -126,6 +127,14 @@
     "removeTimezoneFavorite": "Verwijder {timezone} uit favorieten",
     "timezoneReadOnly": "Alleen bekijken. Schakel naar {timezone} om beschikbaarheid te wijzigen.",
     "calendarReadOnly": "De kalender is alleen-lezen.",
-    "switchToUserTimezone": "Schakel naar mijn tijdzone"
+    "switchToUserTimezone": "Schakel naar mijn tijdzone",
+    "chooseAppointmentTime": "Kies je tijd",
+    "calendarDate": {
+      "available": "Beschikbare tijden",
+      "unavailable": "Geen tijden",
+      "past": "Datum verstreken",
+      "loading": "Tijden laden"
+    },
+    "slotTimesTimezone": "Tijden weergegeven in {timezone}"
   }
 }

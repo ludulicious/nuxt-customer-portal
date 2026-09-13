@@ -9,10 +9,11 @@ import { getProduct, selectCopy } from '@nuxt-customer-portal/products/server/ut
 import { defaultPlanningPolicy, effectivePolicy } from '@nuxt-customer-portal/products/shared/planning'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
 import type { checkoutSchema } from '@nuxt-customer-portal/products/shared/validation'
-import { availabilityQuerySchema, holdSchema } from '../../shared/validation'
+import { availabilityQuerySchema, holdSchema, holdCredentialSchema } from '../../shared/validation'
 import { generateSlots, canChange, changeFee } from '../../shared/availability'
 import type {
   Appointment,
+  Interval,
   AvailabilityWindow,
   Reservation,
   PlanningPolicy,
@@ -44,11 +45,25 @@ export async function policy(storeId: string) {
   ])
   return row?.policy || defaultPlanningPolicy()
 }
+export async function bookingBusy(
+  storeId: string,
+  userId: string,
+  calendarIds: string[],
+  from: Date,
+  to: Date,
+  mode?: string
+): Promise<Interval[]> {
+  if ((mode ?? (await getStore()).mode) === 'sandbox') {
+    return []
+  }
+  return calendarAdapter().busy(storeId, userId, calendarIds, from, to)
+}
 export async function providers(storeId: string, productId: string) {
   const product = await getProduct(storeId, productId)
   if (!product.planning?.enabled || product.status !== 'published') {
     throw createError({ statusCode: 404, message: 'This product is not available for booking' })
   }
+  const sandbox = (await getStore()).mode === 'sandbox'
   const users = await rows<{
     user_id: string
     name: string
@@ -58,8 +73,8 @@ export async function providers(storeId: string, productId: string) {
     busy_calendar_ids: string[]
     write_calendar_id: string
   }>(
-    `SELECT DISTINCT p.*,u.name,u.email FROM planning.provider p JOIN public.member m ON m.organization_id=p.store_id AND m.user_id=p.user_id JOIN public."user" u ON u.id=p.user_id JOIN planning.connection c ON c.store_id=p.store_id AND c.user_id=p.user_id AND c.provider='google' AND c.healthy WHERE p.store_id=$1 AND p.enabled AND p.write_calendar_id IS NOT NULL AND cardinality(p.busy_calendar_ids)>0 AND p.user_id=ANY($2::text[]) AND ($3='none' OR EXISTS(SELECT 1 FROM planning.connection z WHERE z.store_id=p.store_id AND z.user_id=p.user_id AND z.provider='zoom' AND z.healthy))`,
-    [storeId, product.planning.providerUserIds, product.planning.meetingProvider]
+    `SELECT DISTINCT p.*,u.name,u.email FROM planning.provider p JOIN public.member m ON m.organization_id=p.store_id AND m.user_id=p.user_id JOIN public."user" u ON u.id=p.user_id WHERE p.store_id=$1 AND p.enabled AND p.user_id=ANY($2::text[]) AND ($4::boolean OR (p.write_calendar_id IS NOT NULL AND cardinality(p.busy_calendar_ids)>0 AND EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=p.store_id AND c.user_id=p.user_id AND c.provider='google' AND c.healthy) AND ($3='none' OR EXISTS(SELECT 1 FROM planning.connection z WHERE z.store_id=p.store_id AND z.user_id=p.user_id AND z.provider='zoom' AND z.healthy))))`,
+    [storeId, product.planning.providerUserIds, product.planning.meetingProvider, sandbox]
   )
   return { product, users }
 }
@@ -83,7 +98,7 @@ export async function available(
     // Each provider failure closes their availability; do not offer stale slots.
     let busy
     try {
-      busy = await calendarAdapter().busy(
+      busy = await bookingBusy(
         store.organization_id,
         u.user_id,
         u.busy_calendar_ids,
@@ -141,6 +156,26 @@ function sessionKey(event: H3Event, create = false) {
   return value
 }
 export const holdHash = (event: H3Event, token: string) => digest(`${sessionKey(event)}:${token}`)
+export async function releaseHold(event: H3Event, body: unknown) {
+  const input = parseInput(holdCredentialSchema, body)
+  await transaction(async (tx) => {
+    const [hold] = await rows<Reservation>(
+      'SELECT * FROM planning.reservation WHERE token_hash=$1 FOR UPDATE',
+      [holdHash(event, input.holdToken)],
+      tx
+    )
+    if (!hold || hold.status !== 'reserved') {
+      return
+    }
+    if (hold.order_id) {
+      throw createError({
+        statusCode: 409,
+        message: 'Checkout already started; finish or wait for this reservation to expire'
+      })
+    }
+    await tx.query("UPDATE planning.reservation SET status='expired' WHERE id=$1 AND status='reserved'", [hold.id])
+  })
+}
 export async function reserve(event: H3Event, body: unknown) {
   const input = parseInput(holdSchema, body),
     store = await getStore(true),
@@ -188,7 +223,7 @@ export async function reserve(event: H3Event, body: unknown) {
   // External check precedes the short transaction; internal slots are validated again under lock.
   const end = new Date(Date.parse(input.start) + duration * minute),
     blockedUntil = new Date(end.getTime() + grace * minute)
-  const external = await calendarAdapter().busy(
+  const external = await bookingBusy(
     store.organization_id,
     provider.user_id,
     provider.busy_calendar_ids,
@@ -205,6 +240,19 @@ export async function reserve(event: H3Event, body: unknown) {
     id = randomUUID(),
     expiresAt = new Date(Date.now() + rules.reservationMinutes * minute)
   await transaction(async (tx) => {
+    if (input.previousHoldToken) {
+      const [previous] = await rows<Reservation>(
+        'SELECT * FROM planning.reservation WHERE token_hash=$1 FOR UPDATE',
+        [holdHash(event, input.previousHoldToken)],
+        tx
+      )
+      if (previous?.status === 'reserved') {
+        if (previous.product_id !== product.id || previous.order_id) {
+          throw createError({ statusCode: 409, message: 'Previous checkout cannot be replaced' })
+        }
+        await tx.query("UPDATE planning.reservation SET status='expired' WHERE id=$1", [previous.id])
+      }
+    }
     await lockProvider(tx, provider.user_id)
     const windows = await rows<{ id: string; data: AvailabilityWindow }>(
       'SELECT id,data FROM planning.availability WHERE store_id=$1 AND user_id=$2 AND NOT deleted',
@@ -319,7 +367,7 @@ export async function prepareCheckout(event: H3Event, input: z.infer<typeof chec
   if (!provider) {
     throw createError({ statusCode: 409, message: 'Provider unavailable' })
   }
-  const busy = await calendarAdapter().busy(
+  const busy = await bookingBusy(
     hold.store_id,
     hold.user_id,
     provider.busy_calendar_ids,
@@ -451,7 +499,7 @@ export async function prepareOrder(order: Order) {
     if (!member) {
       failure = 'Provider is no longer in the organization'
     }
-    const busy = await calendarAdapter().busy(
+    const busy = await bookingBusy(
       hold.store_id,
       hold.user_id,
       provider!.busy_calendar_ids,

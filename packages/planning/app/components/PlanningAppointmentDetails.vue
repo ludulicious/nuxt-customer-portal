@@ -5,6 +5,7 @@ import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 
 const props = defineProps<{ id: string; timezone?: string }>()
 const emit = defineEmits<{ changed: [] }>()
+const { appointmentRange } = usePlanningTimeDisplay()
 const api = usePlanning(),
   { t, locale } = useI18n(),
   item = ref<AppointmentDetails>(),
@@ -80,13 +81,7 @@ async function cancel() {
       <UAlert v-if="error" variant="outline" color="error" :title="error" /><template v-if="item"
         ><h1 class="text-2xl font-bold">{{ item.title }}</h1>
         <p>
-          {{
-            new Intl.DateTimeFormat(locale, {
-              dateStyle: 'full',
-              timeStyle: 'short',
-              timeZone: timezone || item.customerTimezone
-            }).format(new Date(item.start))
-          }}
+          {{ appointmentRange(item.start, item.end, timezone || item.customerTimezone) }}
         </p>
         <p>{{ item.providerName }} · {{ t(`planning.${item.status}`) }}</p>
         <UButton v-if="item.status === 'confirmed' && item.meetingUrl" :to="item.meetingUrl" target="_blank">{{

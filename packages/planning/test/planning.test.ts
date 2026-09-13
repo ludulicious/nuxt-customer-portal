@@ -3,10 +3,26 @@ import assert from 'node:assert/strict'
 import { defaultPlanningPolicy, effectivePolicy, productPlanningSchema } from '../../products/shared/planning'
 import { productSchema, emptyProduct } from '../../products/shared/validation'
 import { generateSlots, localParts, canChange, changeFee, refundAmount } from '../shared/availability'
-import { availabilitySchema } from '../shared/validation'
+import { availabilitySchema, holdSchema, holdCredentialSchema } from '../shared/validation'
 import { calendarInvitation } from '../shared/invitation'
 import { encrypt, decrypt } from '../server/utils/crypto'
 import type { AvailabilityWindow } from '../shared/types'
+
+test('hold release and replacement require bounded opaque credentials', () => {
+  assert.equal(holdCredentialSchema.safeParse({ holdToken: 'short' }).success, false)
+  assert.equal(holdCredentialSchema.safeParse({ holdToken: 'x'.repeat(201) }).success, false)
+  assert.equal(holdCredentialSchema.safeParse({ holdToken: 'x'.repeat(43) }).success, true)
+  const hold = {
+    productId: 'service',
+    providerUserId: 'provider',
+    start: '2026-09-29T20:30:00Z',
+    customerTimezone: 'Europe/Amsterdam',
+    currency: 'USD'
+  }
+  assert.equal(holdSchema.safeParse(hold).success, true)
+  assert.equal(holdSchema.safeParse({ ...hold, previousHoldToken: 'short' }).success, false)
+  assert.equal(holdSchema.safeParse({ ...hold, previousHoldToken: 'x'.repeat(43) }).success, true)
+})
 
 const window: AvailabilityWindow = {
   id: 'window',
@@ -186,4 +202,20 @@ test('empty product policy overrides inherit organization policy after validatio
   )
   assert.equal(policy.cancellationEnabled, true)
   assert.deepEqual(policy.changeFees, { EUR: 2500 })
+})
+
+test('midnight availability includes a 90-minute appointment ending at midnight', () => {
+  assert.equal(availabilitySchema.parse({ date: window.date, startTime: '19:00', endTime: '00:00' }).endTime, '24:00')
+  const slots = generateSlots({
+    ...input,
+    durationMinutes: 90,
+    windows: [{ ...window, startTime: '19:00', endTime: '24:00' }]
+  })
+  assert.ok(slots.some((slot) => slot.start === '2026-09-14T20:30:00.000Z' && slot.end === '2026-09-14T22:00:00.000Z'))
+  const shorter = generateSlots({
+    ...input,
+    durationMinutes: 90,
+    windows: [{ ...window, startTime: '19:00', endTime: '23:59' }]
+  })
+  assert.ok(!shorter.some((slot) => slot.start === '2026-09-14T20:30:00.000Z'))
 })

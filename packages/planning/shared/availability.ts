@@ -51,8 +51,10 @@ export function generateSlots(input: {
       }
       const first = localParts(new Date(start), w.timezone),
         last = localParts(new Date(end), w.timezone)
+      const endsAtMidnight =
+        w.endTime === '24:00' && last.time === '00:00' && Date.parse(last.date) === Date.parse(first.date) + 86400000
       if (
-        first.date !== last.date ||
+        (first.date !== last.date && !endsAtMidnight) ||
         first.date < w.date ||
         (w.endDate && first.date > w.endDate) ||
         w.exceptions.includes(first.date)
@@ -65,7 +67,7 @@ export function generateSlots(input: {
       const wallMinute = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3))
       return (
         first.time >= w.startTime &&
-        last.time <= w.endTime &&
+        (endsAtMidnight || last.time <= w.endTime) &&
         (wallMinute(first.time) - wallMinute(w.startTime)) % input.intervalMinutes === 0
       )
     })

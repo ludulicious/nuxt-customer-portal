@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { AppointmentListItem } from '../../composables/usePlanning'
 
+const { appointmentRange } = usePlanningTimeDisplay()
 const api = usePlanning(),
-  { t, locale } = useI18n(),
+  { t } = useI18n(),
   route = useRoute(),
   scroller = ref<HTMLElement | null>(null),
   nextSentinel = ref<HTMLElement | null>(null),
@@ -232,13 +233,7 @@ async function toggle(id: string) {
                 <div class="min-w-0">
                   <h2 class="font-semibold">{{ item.title }}</h2>
                   <p class="mt-1 text-sm text-muted">
-                    {{
-                      new Intl.DateTimeFormat(locale, {
-                        dateStyle: 'long',
-                        timeStyle: 'short',
-                        timeZone: displayTimezone
-                      }).format(new Date(item.start))
-                    }}
+                    {{ appointmentRange(item.start, item.end, displayTimezone) }}
                     · {{ item.providerName }}
                   </p>
                   <p v-if="access.staff" class="mt-1 break-words text-sm text-muted">{{ item.email }}</p>

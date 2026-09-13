@@ -1,7 +1,8 @@
 <script setup lang="ts">
 const props = defineProps<{ readonly: boolean; userTimezone: string; start?: string; end?: string }>()
 const emit = defineEmits<{ switchTimezone: [] }>()
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const { appointmentRange } = usePlanningTimeDisplay()
 const popupId = useId()
 const activePopup = useState<string | null>('planning.activeTimezoneHover', () => null)
 const isOpen = computed({
@@ -26,13 +27,7 @@ onBeforeUnmount(() => {
   isOpen.value = false
 })
 const ownTimezoneRange = computed(() =>
-  props.start && props.end
-    ? new Intl.DateTimeFormat(locale.value, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: props.userTimezone
-      }).formatRange(new Date(props.start), new Date(props.end))
-    : ''
+  props.start && props.end ? appointmentRange(props.start, props.end, props.userTimezone) : ''
 )
 </script>
 

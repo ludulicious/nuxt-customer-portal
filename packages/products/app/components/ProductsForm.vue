@@ -320,6 +320,8 @@ const planningProviderOptions = computed(() =>
       disabled: !member.enabled
     }))
 )
+const appointmentSetupRequired = computed(() => state.planning.enabled && !planningProviderOptions.value.length)
+
 function togglePlanningMember(id: string, checked: boolean) {
   state.planning.providerUserIds = checked
     ? [...new Set([...state.planning.providerUserIds, id])]
@@ -382,6 +384,9 @@ onMounted(async () => {
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
+  if (props.section === 'planning' && appointmentSetupRequired.value) {
+    return
+  }
   if (['basic', 'pricing'].includes(props.section) && props.product) {
     saving.value = true
     error.value = ''
@@ -601,15 +606,31 @@ function removeFile(id: string, index: number) {
         v-if="planningInstalled && state.type === 'service' && ['all', 'planning'].includes(section)"
         :class="section === 'planning' ? 'space-y-4' : 'space-y-4 rounded border border-default p-4'"
       >
-        <UFormField name="planning.enabled" :label="t('products.plannable')"
+        <UFormField v-if="!appointmentSetupRequired" name="planning.enabled" :label="t('products.plannable')"
           ><USwitch v-model="state.planning.enabled"
         /></UFormField>
         <template v-if="state.planning.enabled">
-          <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
+          <UFormField
+            v-if="!appointmentSetupRequired"
+            name="planning.durationMinutes"
+            :label="t('products.durationMinutes')"
             ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
           /></UFormField>
-          <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')">
+          <UFormField
+            name="planning.providerUserIds"
+            :label="appointmentSetupRequired ? undefined : t('products.planningProviders')"
+            :error="planningProviderOptions.length ? undefined : false"
+          >
             <div class="space-y-2">
+              <div
+                v-if="!planningProviderOptions.length"
+                class="space-y-3 rounded-lg border border-default bg-elevated p-3"
+              >
+                <p class="text-sm text-muted">{{ t('products.noEligibleAppointmentMembers') }}</p>
+                <UButton to="/admin/planning" size="sm" variant="soft" icon="i-lucide-users">{{
+                  t('products.enableTeamScheduling')
+                }}</UButton>
+              </div>
               <label
                 v-for="member in planningProviderOptions"
                 :key="member.value"
@@ -632,7 +653,10 @@ function removeFile(id: string, index: number) {
               </label>
             </div>
           </UFormField>
-          <UFormField name="planning.meetingProvider" :label="t('products.meetingProvider')"
+          <UFormField
+            v-if="!appointmentSetupRequired"
+            name="planning.meetingProvider"
+            :label="t('products.meetingProvider')"
             ><USelect
               v-model="state.planning.meetingProvider"
               class="w-full"
@@ -641,9 +665,11 @@ function removeFile(id: string, index: number) {
                 { value: 'zoom', label: 'Zoom' }
               ]"
           /></UFormField>
-          <UFormField :label="t('products.overridePlanningPolicy')"><USwitch v-model="planningOverrides" /></UFormField>
+          <UFormField v-if="!appointmentSetupRequired" :label="t('products.overridePlanningPolicy')"
+            ><USwitch v-model="planningOverrides"
+          /></UFormField>
           <PlanningPolicyFields
-            v-if="planningOverrides"
+            v-if="planningOverrides && !appointmentSetupRequired"
             v-model="planningPolicy"
             prefix="planning.policyOverrides."
             :currencies="currencies"
@@ -872,6 +898,7 @@ function removeFile(id: string, index: number) {
           @click="emit('cancel')"
           >{{ t('products.cancel') }}</UButton
         ><UButton
+          v-if="section !== 'planning' || !appointmentSetupRequired"
           type="submit"
           :loading="saving"
           :disabled="busy || saving || purchasedFilesUploading || !settingsReady"

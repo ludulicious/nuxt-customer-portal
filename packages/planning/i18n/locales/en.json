@@ -1,5 +1,6 @@
 {
   "planning": {
+    "midnight": "midnight",
     "planning": "Planning",
     "appointments": "Appointments",
     "availability": "Availability",
@@ -126,6 +127,14 @@
     "removeTimezoneFavorite": "Remove {timezone} from favorites",
     "timezoneReadOnly": "Viewing only. Switch to {timezone} to edit availability.",
     "calendarReadOnly": "Calendar is read-only.",
-    "switchToUserTimezone": "Switch to my timezone"
+    "switchToUserTimezone": "Switch to my timezone",
+    "chooseAppointmentTime": "Choose your time",
+    "calendarDate": {
+      "available": "Open slots",
+      "unavailable": "No slots",
+      "past": "Past date",
+      "loading": "Loading slots"
+    },
+    "slotTimesTimezone": "Times shown in {timezone}"
   }
 }

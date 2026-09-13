@@ -19,9 +19,15 @@ const api = usePlanning(),
   deleteOpen = ref(false)
 const selected = ref<AvailabilityWindow>(),
   occurrence = ref(''),
-  editOne = ref(false),
-  week = ref(new Date().toISOString().slice(0, 10))
+  editOne = ref(false)
 const route = useRoute()
+const week = ref(
+  typeof route.query.week === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(route.query.week) &&
+    Number.isFinite(Date.parse(route.query.week))
+    ? route.query.week
+    : new Date().toISOString().slice(0, 10)
+)
 const calendarTimezone = computed({
   get: () =>
     typeof route.query.timezone === 'string' && Intl.supportedValuesOf('timeZone').includes(route.query.timezone)
@@ -29,7 +35,13 @@ const calendarTimezone = computed({
       : providerState.timezone,
   set: (timezone: string) => {
     void navigateTo(
-      { query: { ...route.query, timezone: timezone === providerState.timezone ? undefined : timezone } },
+      {
+        query: {
+          ...route.query,
+          week: week.value,
+          timezone: timezone === providerState.timezone ? undefined : timezone
+        }
+      },
       { replace: true }
     )
   }
@@ -117,7 +129,7 @@ const calendarWindows = computed<CalendarWindow[]>(() => {
         if (start.date === end.date) {
           result.push({ ...base, date: start.date, startTime: start.time, endTime: end.time })
         } else {
-          result.push({ ...base, date: start.date, startTime: start.time, endTime: '23:59' })
+          result.push({ ...base, date: start.date, startTime: start.time, endTime: '24:00' })
           if (end.time !== '00:00') {
             result.push({ ...base, date: end.date, startTime: '00:00', endTime: end.time })
           }
@@ -138,13 +150,20 @@ function editCalendarWindow(date: string, displayed: AvailabilityWindow) {
     openWindow((displayed as CalendarWindow).sourceDate || date, source)
   }
 }
+const endTimeInput = computed({
+  get: () => (windowState.endTime === '24:00' ? '00:00' : windowState.endTime),
+  set: (value: string) => {
+    windowState.endTime = value === '00:00' ? '24:00' : value
+  }
+})
 function providerRange(date: string, startTime: string, endTime: string) {
   const start = localParts(wallInstant(date, startTime, calendarTimezone.value), providerState.timezone)
   const end = localParts(wallInstant(date, endTime, calendarTimezone.value), providerState.timezone)
-  if (start.date !== end.date || end.time <= start.time) {
+  const midnight = end.time === '00:00' && Date.parse(end.date) === Date.parse(start.date) + 86400000
+  if (!midnight && (start.date !== end.date || end.time <= start.time)) {
     throw new Error('Range crosses provider midnight')
   }
-  return { date: start.date, startTime: start.time, endTime: end.time }
+  return { date: start.date, startTime: start.time, endTime: midnight ? '24:00' : end.time }
 }
 watch(editOne, (value) => {
   if (selected.value) {
@@ -369,7 +388,7 @@ async function removeWindow() {
                   ><UInput v-model="windowState.startTime" type="time" class="w-full"
                 /></UFormField>
                 <UFormField name="endTime" :label="t('planning.endTime')"
-                  ><UInput v-model="windowState.endTime" type="time" class="w-full"
+                  ><UInput v-model="endTimeInput" type="time" class="w-full"
                 /></UFormField>
               </div>
             </div>

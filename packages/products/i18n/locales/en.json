@@ -159,6 +159,8 @@
     "total": "Total",
     "secureCheckout": "Secure checkout",
     "backToOffering": "Back to offering",
+    "backToTimeSelection": "Back to time selection",
+    "midnight": "midnight",
     "billingDetails": "Billing details",
     "purchasingAs": "Purchasing as",
     "logout": "Log out",
@@ -504,6 +506,8 @@
     "noMeeting": "No online meeting",
     "overridePlanningPolicy": "Override organization booking policy",
     "reservationUntil": "Reserved until {time}",
+    "reservationRemaining": "Time left to book",
+    "reservationReleaseFailed": "We couldn't release this reservation. If checkout has already started, finish it or wait for the reservation to expire, then try again.",
     "reservationExpired": "Your reservation has expired. Choose another time before checkout.",
     "chooseAnotherSlot": "Choose another time",
     "planningMemberDisabled": "{name} (planning off)",
@@ -518,6 +522,8 @@
     "customPolicy": "Product policy",
     "organizationPolicy": "Organization policy",
     "noAppointmentRequired": "Customers go directly to checkout.",
-    "noPaymentRequired": "No payment required"
+    "noPaymentRequired": "No payment required",
+    "noEligibleAppointmentMembers": "No team members have scheduling enabled yet. Enable scheduling for at least one team member in Planning settings, then select them here.",
+    "enableTeamScheduling": "Manage team scheduling"
   }
 }

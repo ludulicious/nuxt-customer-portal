@@ -3,6 +3,8 @@ import type { AvailabilityWindow } from '../../shared/types'
 import type { AppointmentListItem } from '../composables/usePlanning'
 import { localParts } from '../../shared/availability'
 
+const { appointmentTime } = usePlanningTimeDisplay()
+const displayTime = (value: number) => appointmentTime(new Date(Date.UTC(2026, 0, 1, 0, value)), 'UTC')
 const props = defineProps<{
   disabled?: boolean
   readonlyTimezone?: boolean
@@ -77,7 +79,7 @@ function moveBlock(event: PointerEvent) {
   const delta = Math.round((((event.clientY - m.y) / m.height) * visibleRange.value.duration) / 15) * 15
   if (m.mode === 'move') {
     const duration = m.initialEnd - m.initialStart
-    m.start = Math.max(0, Math.min(1439 - duration, m.initialStart + delta))
+    m.start = Math.max(0, Math.min(1440 - duration, m.initialStart + delta))
     m.end = m.start + duration
     const column = Array.from(scroller.value?.querySelectorAll<HTMLElement>('[data-calendar-date]') || []).find(
       (el) => {
@@ -89,7 +91,7 @@ function moveBlock(event: PointerEvent) {
   } else if (m.mode === 'start') {
     m.start = Math.max(0, Math.min(m.end - 15, m.initialStart + delta))
   } else {
-    m.end = Math.max(m.start + 15, Math.min(1439, m.initialEnd + delta))
+    m.end = Math.max(m.start + 15, Math.min(1440, m.initialEnd + delta))
   }
 }
 function finishBlock() {
@@ -132,7 +134,7 @@ const selection = computed(() =>
   drag.value
     ? {
         start: Math.min(drag.value.start, drag.value.current),
-        end: Math.min(1439, Math.max(drag.value.start, drag.value.current) + 15)
+        end: Math.min(1440, Math.max(drag.value.start, drag.value.current) + 15)
       }
     : null
 )
@@ -236,7 +238,7 @@ function finishDrag(event: PointerEvent) {
               :key="hour"
               class="absolute right-2 text-xs tabular-nums text-muted"
               :style="{ top: `${((hour * 60 - visibleRange.start) / visibleRange.duration) * 100}%` }"
-              >{{ time(hour * 60) }}</span
+              >{{ displayTime(hour * 60) }}</span
             >
           </div>
           <div
@@ -328,14 +330,14 @@ function finishDrag(event: PointerEvent) {
               class="pointer-events-none absolute inset-x-1 z-10 rounded-md border-2 border-primary bg-default px-2 py-1 text-xs font-semibold text-primary"
               :style="position(moving.start, moving.end)"
             >
-              {{ time(moving.start) }}–{{ time(moving.end) }}
+              {{ displayTime(moving.start) }}–{{ displayTime(moving.end) }}
             </div>
             <div
               v-if="drag?.date === date && selection"
               class="pointer-events-none absolute inset-x-1 z-10 rounded-md border border-primary bg-primary/25 px-2 py-1 text-xs font-semibold text-primary"
               :style="position(selection.start, selection.end)"
             >
-              {{ time(selection.start) }}–{{ time(selection.end) }}
+              {{ displayTime(selection.start) }}–{{ displayTime(selection.end) }}
             </div>
           </div>
         </div>

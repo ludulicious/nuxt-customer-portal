@@ -6,8 +6,8 @@ import { staffRescheduleSchema } from '../../shared/validation'
 import { generateSlots } from '../../shared/availability'
 import type { Appointment, AvailabilityWindow } from '../../shared/types'
 import { appointmentAccess, planningAdmin } from './access'
-import { providers, lockProvider, enqueue } from './booking'
-import { calendarAdapter } from './adapters'
+import { providers, lockProvider, enqueue, bookingBusy } from './booking'
+import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
 import { auditLock } from './jobs'
 import { digest } from './crypto'
 
@@ -20,7 +20,7 @@ export async function staffReschedule(event: H3Event, id: string, body: unknown)
   if (!provider) {
     throw createError({ statusCode: 409, message: 'Choose an eligible team member' })
   }
-  if (initial.snapshot.meetingProvider === 'zoom') {
+  if (initial.snapshot.meetingProvider === 'zoom' && (await getStore()).mode !== 'sandbox') {
     const [connection] = await rows(
       "SELECT user_id FROM planning.connection WHERE store_id=$1 AND user_id=$2 AND provider='zoom' AND healthy",
       [initial.store_id, provider.user_id]
@@ -32,13 +32,7 @@ export async function staffReschedule(event: H3Event, id: string, body: unknown)
   const start = new Date(input.start),
     end = new Date(start.getTime() + initial.snapshot.durationMinutes * 60000),
     blocked = new Date(end.getTime() + provider.grace_minutes * 60000)
-  const busy = await calendarAdapter().busy(
-    initial.store_id,
-    provider.user_id,
-    provider.busy_calendar_ids,
-    start,
-    blocked
-  )
+  const busy = await bookingBusy(initial.store_id, provider.user_id, provider.busy_calendar_ids, start, blocked)
   try {
     await transaction(async (tx) => {
       await auditLock(tx, id)

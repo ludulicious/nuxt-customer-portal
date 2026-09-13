@@ -74,6 +74,7 @@ Public portal-origin booking mutations:
 
 - `GET /api/store/planning/{productId}/availability?from=...&to=...`
 - `POST /api/store/planning/holds`
+- `DELETE /api/store/planning/hold` releases a session-bound hold before an order is created. Checkout waits for this release before returning to time selection. A new hold can supply `previousHoldToken` to atomically replace an unbound hold for the same product; failed slot validation rolls back the replacement. Browser-back/abandoned holds otherwise expire normally.
 - `GET /api/store/planning/hold?holdToken=...`
 - Existing `POST /api/store/checkout`, extended with `holdToken`.
 
@@ -99,3 +100,5 @@ The Appointments menu includes the appointment collection, provider availability
 Planning settings use separate components for the Team members, Booking policy, and Synchronization tabs, with the same tab styling as Store settings.
 
 Personal connections and preferences are managed under My appointment settings (`/planning/settings`): Calendar settings contains Google connection, timezone, grace time, and calendar selection; Meeting settings contains the Zoom connection. Availability (`/availability`) contains only the availability editor and appointment blocks.
+
+Sandbox bookings use internal availability, holds, and appointments without requiring Google or Zoom connections or external calendar conflict checks. Live bookings still require healthy connections and configured calendars.

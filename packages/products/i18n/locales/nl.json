@@ -159,6 +159,8 @@
     "total": "Totaal",
     "secureCheckout": "Veilig afrekenen",
     "backToOffering": "Terug naar het aanbod",
+    "backToTimeSelection": "Terug naar tijdstip kiezen",
+    "midnight": "middernacht",
     "billingDetails": "Factuurgegevens",
     "purchasingAs": "Je koopt als",
     "logout": "Uitloggen",
@@ -504,6 +506,8 @@
     "noMeeting": "Geen online vergadering",
     "overridePlanningPolicy": "Boekingsbeleid organisatie overschrijven",
     "reservationUntil": "Gereserveerd tot {time}",
+    "reservationRemaining": "Tijd om te boeken",
+    "reservationReleaseFailed": "We konden deze reservering niet vrijgeven. Als het afrekenen al is gestart, rond dit af of wacht tot de reservering verloopt en probeer het opnieuw.",
     "reservationExpired": "Je reservering is verlopen. Kies een ander tijdstip voordat je afrekent.",
     "chooseAnotherSlot": "Kies een ander tijdstip",
     "planningMemberDisabled": "{name} (planning uit)",
@@ -518,6 +522,8 @@
     "customPolicy": "Productbeleid",
     "organizationPolicy": "Organisatiebeleid",
     "noAppointmentRequired": "Klanten gaan direct naar het afrekenen.",
-    "noPaymentRequired": "Geen betaling nodig"
+    "noPaymentRequired": "Geen betaling nodig",
+    "noEligibleAppointmentMembers": "Er zijn nog geen medewerkers met planning ingeschakeld. Schakel planning in voor minstens één medewerker bij Planningsinstellingen en selecteer die hier.",
+    "enableTeamScheduling": "Planning van medewerkers beheren"
   }
 }
