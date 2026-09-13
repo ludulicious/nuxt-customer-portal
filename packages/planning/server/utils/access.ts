@@ -41,3 +41,40 @@ export async function verifiedCustomer(event: H3Event) {
   }
   return session
 }
+
+export async function appointmentScope(event: H3Event) {
+  const session = await requireSession(event)
+  let context
+  try {
+    context = await requireActiveOrganizationRole(event)
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode !== 403) {
+      throw error
+    }
+  }
+  const store = await getStore()
+  if (context?.organizationType === 'PROVIDER' && context.organizationId === store.organization_id) {
+    return {
+      staff: true,
+      canManage: ['owner', 'admin'].includes(context.role),
+      storeId: store.organization_id,
+      userId: session.user.id
+    }
+  }
+  const userId = await claimPurchases(event)
+  return { staff: false, canManage: true, storeId: store.organization_id, userId }
+}
+export async function appointmentAccess(event: H3Event, id: string, manage = false) {
+  const scope = await appointmentScope(event)
+  const [appointment] = await rows<Appointment>(
+    `SELECT a.* FROM planning.appointment a JOIN products.orders o ON o.id=a.order_id WHERE a.id=$1 AND a.store_id=$2 AND ($3::boolean OR o.buyer_id=$4)`,
+    [id, scope.storeId, scope.staff, scope.userId]
+  )
+  if (!appointment) {
+    throw createError({ statusCode: 404, message: 'Appointment not found' })
+  }
+  if (manage && !scope.canManage) {
+    throw createError({ statusCode: 403, message: 'Organization administrator access required' })
+  }
+  return { ...scope, appointment }
+}

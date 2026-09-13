@@ -2,6 +2,8 @@ import { productPlanningSchema } from '@nuxt-customer-portal/products/shared/pla
 import { registerPortalOpenApiContracts } from '@nuxt-customer-portal/core/server/utils/openapi-contracts'
 import { z } from 'zod'
 import {
+  appointmentListSchema,
+  staffRescheduleSchema,
   availabilityQuerySchema,
   availabilitySchema,
   availabilityEditSchema,
@@ -15,11 +17,13 @@ export default defineNitroPlugin(() =>
   registerPortalOpenApiContracts({
     owner: 'planning',
     query: {
+      planningAppointmentsGet: appointmentListSchema,
       storePlanningByProductIdAvailabilityGet: availabilityQuerySchema,
       storePlanningHoldGet: holdCredentialSchema,
       planningAppointmentsByIdAvailabilityGet: availabilityQuerySchema
     },
     body: {
+      planningAppointmentsByIdReschedulePut: staffRescheduleSchema,
       storePlanningHoldsPost: holdSchema,
       planningAdminProductsByIdPut: productPlanningSchema,
       planningProviderPut: providerSettingsSchema,

@@ -10,7 +10,7 @@ import { productPlanningSchema, planningPolicySchema } from '@nuxt-customer-port
 import { canChange, changeFee, refundAmount } from '../../shared/availability'
 import { availabilityEditSchema, providerSettingsSchema } from '../../shared/validation'
 import type { Appointment, ProviderSettings, AvailabilityWindow } from '../../shared/types'
-import { planningAdmin, providerAccess, customerAppointment } from './access'
+import { planningAdmin, providerAccess, appointmentAccess } from './access'
 import { calendarAdapter } from './adapters'
 import { enqueue, lockProvider, policy } from './booking'
 import { auditLock } from './jobs'
@@ -216,7 +216,7 @@ export async function deleteWindow(event: H3Event, id: string, occurrence?: stri
   })
 }
 export async function appointmentDetails(event: H3Event, id: string) {
-  const { appointment: a } = await customerAppointment(event, id),
+  const { appointment: a, staff, canManage } = await appointmentAccess(event, id),
     order = await getOrder(a.order_id),
     now = new Date()
   let fee: number | null = null
@@ -231,6 +231,9 @@ export async function appointmentDetails(event: H3Event, id: string) {
     [id]
   )
   return {
+    staff,
+    canManage,
+    revision: a.revision,
     pendingChangeExpiresAt: pending?.expires_at || null,
     id: a.id,
     productId: a.product_id,
@@ -248,19 +251,24 @@ export async function appointmentDetails(event: H3Event, id: string) {
     changeFee: fee,
     canReschedule:
       a.status === 'confirmed' &&
+      canManage &&
       !pending &&
-      fee !== null &&
-      canChange(a.start_at, now, a.snapshot.policy.rescheduleCutoffMinutes),
+      (staff || (fee !== null && canChange(a.start_at, now, a.snapshot.policy.rescheduleCutoffMinutes))),
     canCancel:
       a.status === 'confirmed' &&
-      a.snapshot.policy.cancellationEnabled &&
-      canChange(a.start_at, now, a.snapshot.policy.cancellationCutoffMinutes),
-    refundAmount: refundAmount(order!.total || 0, order!.refunded, a.snapshot.policy.refundPercentage),
+      canManage &&
+      (staff ||
+        (a.snapshot.policy.cancellationEnabled &&
+          canChange(a.start_at, now, a.snapshot.policy.cancellationCutoffMinutes))),
+    refundAmount:
+      a.snapshot.policy.cancellationEnabled && canChange(a.start_at, now, a.snapshot.policy.cancellationCutoffMinutes)
+        ? refundAmount(order!.total || 0, order!.refunded, a.snapshot.policy.refundPercentage)
+        : 0,
     conflict: a.conflict
   }
 }
 export async function cancel(event: H3Event, id: string) {
-  const { appointment: initial, userId } = await customerAppointment(event, id)
+  const { appointment: initial, userId, staff } = await appointmentAccess(event, id, true)
   return transaction(async (tx) => {
     await auditLock(tx, id)
     await lockProvider(tx, initial.user_id)
@@ -269,8 +277,9 @@ export async function cancel(event: H3Event, id: string) {
       return { success: true }
     }
     if (
-      !a!.snapshot.policy.cancellationEnabled ||
-      !canChange(a!.start_at, new Date(), a!.snapshot.policy.cancellationCutoffMinutes)
+      !staff &&
+      (!a!.snapshot.policy.cancellationEnabled ||
+        !canChange(a!.start_at, new Date(), a!.snapshot.policy.cancellationCutoffMinutes))
     ) {
       throw createError({ statusCode: 409, message: 'Cancellation is not permitted by this appointment policy' })
     }
@@ -279,7 +288,11 @@ export async function cancel(event: H3Event, id: string) {
       [a!.order_id],
       tx
     )
-    const amount = refundAmount(order!.total || 0, order!.refunded, a!.snapshot.policy.refundPercentage)
+    const amount =
+      a!.snapshot.policy.cancellationEnabled &&
+      canChange(a!.start_at, new Date(), a!.snapshot.policy.cancellationCutoffMinutes)
+        ? refundAmount(order!.total || 0, order!.refunded, a!.snapshot.policy.refundPercentage)
+        : 0
     await tx.query(
       "UPDATE planning.appointment SET status='cancelled',revision=revision+1,conflict=false WHERE id=$1",
       [id]
@@ -327,7 +340,7 @@ export async function savePolicy(event: H3Event, body: unknown) {
 }
 
 export async function abandonChange(event: H3Event, id: string) {
-  await customerAppointment(event, id)
+  await appointmentAccess(event, id, true)
   const pending = await rows<{ id: string; user_id: string; order_id: string | null }>(
     "SELECT id,user_id,order_id FROM planning.reservation WHERE replaces_id=$1 AND status='reserved'",
     [id]

@@ -91,3 +91,9 @@ PLANNING_TEST_DATABASE_URL=postgresql://.../portal_planning_test node --import t
 The database test requires an empty disposable database named `portal_planning_test` or `portal_planning_test_<suffix>` and applies actual core, client, product and planning migrations. It uses real portal authentication and PostgreSQL, with Google/Zoom/Stripe/email fixtures that never send external requests. Recreate the disposable database before rerunning.
 
 Before enabling live booking, connect Google/Zoom test accounts and verify consent/refresh, selected-calendar permissions, notification renewal, availability mirrors, real busy events, meeting creation and invitation delivery. These require provider credentials and approved test accounts; fixtures do not replace that deployment verification.
+
+### Appointment administration
+
+The Appointments menu includes the appointment collection, provider availability, and planning settings. Active members of the provider organization can view its appointments; organization owners and admins can reschedule or cancel them. Customers can view and manage only their own claimed purchases, subject to the policy recorded at booking. Staff reschedules preserve the customer change allowance. Cancellation retains order and appointment history, and refunds remain subject to eligibility. New appointments use booking and checkout.
+
+Planning settings use separate components for the Team members, Booking policy, and Synchronization tabs, with the same tab styling as Store settings.

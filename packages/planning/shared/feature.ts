@@ -8,10 +8,10 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   modules: [
     {
       id: 'planning',
-      labelKey: 'planning.planning',
+      labelKey: 'planning.appointments',
       icon: 'i-lucide-calendar-days',
-      to: '/planning',
-      routePrefixes: ['/planning', '/admin/planning'],
+      to: '/appointments',
+      routePrefixes: ['/appointments', '/planning', '/admin/planning'],
       audiences: ['providerAuthenticated'],
       menuItems: [
         {
@@ -21,6 +21,13 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           to: '/planning',
           audiences: ['providerAuthenticated'],
           exact: true
+        },
+        {
+          id: 'planning-appointments',
+          labelKey: 'planning.appointments',
+          icon: 'i-lucide-calendar-check',
+          to: '/appointments',
+          audiences: ['providerAuthenticated']
         },
         {
           id: 'planning-admin',

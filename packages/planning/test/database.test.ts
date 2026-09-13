@@ -80,6 +80,8 @@ test(
       const booking = await import('../server/utils/booking')
       const management = await import('../server/utils/management')
       const jobs = await import('../server/utils/jobs')
+      const appointmentLists = await import('../server/utils/appointments')
+      const staffAppointments = await import('../server/utils/staff-appointments')
       const orders = await import('../../products/server/utils/orders')
       const contracts = await import('../../products/server/utils/contracts')
       const { stripeProvider } = await import('../../products/server/utils/payments')
@@ -443,6 +445,37 @@ test(
           assert.equal((await management.listProviders(event(ownerCookie))).length, 2)
         }
       )
+      await t.test('appointment collection scopes provider readers and customers and protects management', async () => {
+        const staff = await appointmentLists.listAppointments(event(providerCookie), {})
+        const mine = await appointmentLists.listAppointments(event(buyerCookie), {})
+        const other = await appointmentLists.listAppointments(event(strangerCookie), {})
+        assert.equal(staff.pagination.total, 1)
+        assert.equal(staff.access.canManage, false)
+        assert.equal(mine.pagination.total, 1)
+        assert.equal(other.pagination.total, 0)
+        assert.equal(staff.pagination.pageSize, 20)
+        assert.equal(
+          (await appointmentLists.listAppointments(event(providerCookie), { search: 'nonexistent' })).pagination.total,
+          0
+        )
+        assert.equal(
+          (await appointmentLists.listAppointments(event(providerCookie), { status: 'cancelled' })).pagination.total,
+          0
+        )
+        const reader = await management.appointmentDetails(event(providerCookie), a.id)
+        assert.equal(reader.canReschedule, false)
+        assert.equal(reader.canCancel, false)
+        await assert.rejects(management.cancel(event(providerCookie), a.id), { statusCode: 403 })
+        await assert.rejects(
+          staffAppointments.staffReschedule(event(providerCookie), a.id, {
+            start: `${day}T19:00:00.000Z`,
+            providerUserId: 'provider',
+            customerTimezone: 'UTC',
+            revision: 1
+          }),
+          { statusCode: 403 }
+        )
+      })
       await t.test('calendar failure closes availability and prevents new reservations', async () => {
         calendarFailure = true
         assert.deepEqual(await booking.available('product', { from: `${day}T00:00:00Z`, to: `${day}T23:59:59Z` }), [])
@@ -487,6 +520,29 @@ test(
         await pay(fee.checkoutId)
         assert.equal((await appointment(initial.orderId)).changes, 2)
         await pay(fee.checkoutId)
+        assert.equal((await appointment(initial.orderId)).changes, 2)
+      })
+      await t.test('staff reschedules use locked availability without fees or consuming customer changes', async () => {
+        const current = await appointment(initial.orderId)
+        await staffAppointments.staffReschedule(event(ownerCookie), a.id, {
+          start: `${day}T19:00:00.000Z`,
+          providerUserId: 'provider',
+          customerTimezone: 'UTC',
+          revision: current.revision
+        })
+        const changed = await appointment(initial.orderId)
+        assert.equal(changed.changes, 2)
+        assert.equal(changed.start_at.toISOString(), `${day}T19:00:00.000Z`)
+        await assert.rejects(
+          staffAppointments.staffReschedule(event(ownerCookie), a.id, {
+            start: `${day}T18:00:00.000Z`,
+            providerUserId: 'provider',
+            customerTimezone: 'UTC',
+            revision: current.revision
+          }),
+          { statusCode: 409 }
+        )
+        await orders.processOrder(initial.orderId)
         assert.equal((await appointment(initial.orderId)).changes, 2)
       })
       await t.test('failed external effects remain retryable without duplicate meetings or invites', async () => {

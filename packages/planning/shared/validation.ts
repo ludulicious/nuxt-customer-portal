@@ -54,3 +54,18 @@ export const holdSchema = z.object({
 export const holdCredentialSchema = z.object({ holdToken: z.string().min(32).max(200) })
 
 export const availabilityEditSchema = availabilitySchema.safeExtend({ occurrenceDate: date.optional() })
+
+export const appointmentListSchema = z.object({
+  search: z.string().trim().max(200).default(''),
+  status: z.enum(['all', 'confirmed', 'cancelled']).default('all'),
+  conflicts: z.enum(['all', 'conflicts']).default('all'),
+  sortBy: z.enum(['start', 'title']).default('start'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  page: z.coerce.number().int().min(1).max(100000).default(1)
+})
+export const staffRescheduleSchema = z.object({
+  providerUserId: z.string().min(1).max(100),
+  start: z.iso.datetime({ offset: true }),
+  customerTimezone: timezoneSchema,
+  revision: z.number().int().min(0)
+})

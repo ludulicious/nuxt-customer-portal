@@ -3,8 +3,14 @@ import type { Slot } from '../../shared/types'
 import { localParts } from '../../shared/availability'
 import type { HoldResult } from '../composables/usePlanning'
 
-const props = defineProps<{ productId: string; currency: string; locale: 'en' | 'nl'; replacesId?: string }>()
-const emit = defineEmits<{ reserved: [hold: HoldResult] }>()
+const props = defineProps<{
+  productId: string
+  currency: string
+  locale: 'en' | 'nl'
+  replacesId?: string
+  selectOnly?: boolean
+}>()
+const emit = defineEmits<{ reserved: [hold: HoldResult]; selected: [slot: Slot, timezone: string] }>()
 const api = usePlanning(),
   { t } = useI18n()
 const timezone = ref('Europe/Amsterdam'),
@@ -90,6 +96,10 @@ function move(delta: number) {
   month.value = new Date(Date.UTC(month.value.getUTCFullYear(), month.value.getUTCMonth() + delta, 1))
 }
 async function choose(slot: Slot) {
+  if (props.selectOnly) {
+    emit('selected', slot, timezone.value)
+    return
+  }
   busy.value = true
   error.value = ''
   try {

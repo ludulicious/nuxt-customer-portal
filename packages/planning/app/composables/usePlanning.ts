@@ -25,6 +25,9 @@ export interface AppointmentDetails {
   freeChanges: number
   changeFee: number | null
   pendingChangeExpiresAt: string | null
+  staff: boolean
+  canManage: boolean
+  revision: number
   canReschedule: boolean
   canCancel: boolean
   refundAmount: number
@@ -58,6 +61,7 @@ export const usePlanning = () => ({
       { query }
     ),
   reserve: (body: Record<string, unknown>) => $fetch<HoldResult>('/api/store/planning/holds', { method: 'POST', body }),
+  bookableProducts: () => $fetch<Array<{ slug: string; title: string }>>('/api/planning/products'),
   provider: () => $fetch<ProviderConfiguration>('/api/planning/provider'),
   saveProvider: (body: Record<string, unknown>) =>
     $fetch<ProviderConfiguration>('/api/planning/provider', { method: 'PUT', body }),
@@ -78,7 +82,14 @@ export const usePlanning = () => ({
     $fetch(`/api/planning/admin/providers/${id}`, { method: 'PATCH', body: { enabled } }),
   policy: () => $fetch<PlanningPolicy>('/api/planning/admin/policy'),
   savePolicy: (body: PlanningPolicy) => $fetch<PlanningPolicy>('/api/planning/admin/policy', { method: 'PUT', body }),
-  appointments: () => $fetch<AppointmentListItem[]>('/api/planning/appointments'),
+  appointments: (query: Record<string, unknown> = {}, signal?: AbortSignal) =>
+    $fetch<{
+      items: AppointmentListItem[]
+      pagination: { total: number; page: number; pageSize: number; pageCount: number }
+      access: { staff: boolean; canManage: boolean }
+    }>('/api/planning/appointments', { query, signal }),
+  staffReschedule: (id: string, body: Record<string, unknown>) =>
+    $fetch(`/api/planning/appointments/${id}/reschedule`, { method: 'PUT', body }),
   appointment: (id: string) => $fetch<AppointmentDetails>(`/api/planning/appointments/${id}`),
   abandonChange: (id: string) => $fetch(`/api/planning/appointments/${id}/pending`, { method: 'DELETE' }),
   cancel: (id: string) => $fetch(`/api/planning/appointments/${id}/cancel`, { method: 'POST' }),
