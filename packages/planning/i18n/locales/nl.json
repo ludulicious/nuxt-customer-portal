@@ -107,6 +107,15 @@
     "editAppointment": "Afspraak beheren",
     "viewAppointment": "Afspraak bekijken",
     "appointmentCount": "{count} afspraken",
-    "pagination": "Afspraakpagina’s"
+    "pagination": "Afspraakpagina’s",
+    "myAppointmentSettings": "Mijn afspraakinstellingen",
+    "meetingSettings": "Vergaderinstellingen",
+    "editAvailability": "Beschikbaarheid wijzigen",
+    "availabilityFormDescription": "Kies wanneer klanten je kunnen boeken. Tijden zijn in {timezone}.",
+    "weeklyHelp": "Herhaal dit tijdvak op dezelfde weekdag.",
+    "endDateHelp": "Optioneel. Laat leeg om te blijven herhalen.",
+    "allProductsHelp": "Geldt voor alle toegewezen producten, ook toekomstige toewijzingen. Zet uit om specifieke producten te kiezen.",
+    "saveAvailability": "Beschikbaarheid opslaan",
+    "selectAtLeastOneProduct": "Selecteer ten minste één product."
   }
 }

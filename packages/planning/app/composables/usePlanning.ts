@@ -40,7 +40,7 @@ export interface ProviderConfiguration {
   busyCalendarIds: string[]
   writeCalendarId: string | null
   connections: Array<{ provider: string; healthy: boolean; error: string | null }>
-  products: Array<{ id: string; title: string }>
+  products: Array<{ id: string; title: string; thumbnailImageId: string | null }>
 }
 export interface AppointmentListItem {
   id: string

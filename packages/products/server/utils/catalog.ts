@@ -7,7 +7,13 @@ import { marked } from 'marked'
 import sanitizeHtml from 'sanitize-html'
 import type { z } from 'zod'
 import type { Product, ProductData, Price, Locale, CatalogProduct, Page } from '../../shared/types'
-import { productSchema, listSchema, hasRequiredPrices } from '../../shared/validation'
+import {
+  productSchema,
+  productContentSchema,
+  productPricingSchema,
+  listSchema,
+  hasRequiredPrices
+} from '../../shared/validation'
 import { publishChecks } from '../../shared/publish'
 import { withoutFileExtension } from '../../shared/file-name'
 import { rows, transaction } from './database'
@@ -149,6 +155,103 @@ export async function listProducts(storeId: string, input: unknown, published = 
     }
   }
 }
+export async function saveProductPricing(storeId: string, id: string, input: unknown): Promise<Product> {
+  const data = parseInput(productPricingSchema, input)
+  const store = await getStore()
+  if (store.organization_id !== storeId) {
+    throw createError({ statusCode: 403, message: 'Store access denied' })
+  }
+  const prices = data.isFree
+    ? [{ currency: store.currencies[0]!, amount: 0, taxBehavior: 'inclusive' as const }]
+    : data.prices
+  if (
+    !data.isFree &&
+    (!hasRequiredPrices({ prices }, store.currencies) ||
+      prices.some((p) => p.amount <= 0) ||
+      new Set(prices.map((p) => p.currency)).size !== prices.length ||
+      prices.some((p) => !store.currencies.includes(p.currency)))
+  ) {
+    throw createError({
+      statusCode: 400,
+      message: 'Configure a positive price for each store currency',
+      data: { field: 'prices' }
+    })
+  }
+  await transaction(async (tx) => {
+    const [product] = await rows<ProductRow>(
+      'SELECT * FROM products.product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id, storeId],
+      tx
+    )
+    if (!product) {
+      throw createError({ statusCode: 404, message: 'Product not found' })
+    }
+    await tx.query(
+      "UPDATE products.product SET data=jsonb_set(data,'{isFree}',to_jsonb($3::boolean)),updated_at=now() WHERE id=$1 AND store_id=$2",
+      [id, storeId, data.isFree]
+    )
+    const active = await rows<Price>(
+      'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active',
+      [id],
+      tx
+    )
+    for (const price of prices) {
+      price.taxBehavior = store.currency_tax_behavior[price.currency] || 'inclusive'
+    }
+    for (const old of active) {
+      if (
+        !prices.some((p) => p.currency === old.currency && p.amount === old.amount && p.taxBehavior === old.taxBehavior)
+      ) {
+        await tx.query('UPDATE products.price SET active=false WHERE id=$1', [old.id])
+      }
+    }
+    for (const price of prices) {
+      if (
+        !active.some(
+          (p) => p.currency === price.currency && p.amount === price.amount && p.taxBehavior === price.taxBehavior
+        )
+      ) {
+        await tx.query(
+          'INSERT INTO products.price(id,product_id,currency,amount,tax_behavior) VALUES($1,$2,$3,$4,$5)',
+          [randomUUID(), id, price.currency, price.amount, price.taxBehavior]
+        )
+      }
+    }
+  })
+  return getProduct(storeId, id)
+}
+
+export async function saveProductContent(storeId: string, id: string, input: unknown): Promise<Product> {
+  const data = parseInput(productContentSchema, input)
+  const store = await getStore()
+  if (store.organization_id !== storeId) {
+    throw createError({ statusCode: 403, message: 'Store access denied' })
+  }
+  await transaction(async (tx) => {
+    const [product] = await rows<ProductRow>(
+      'SELECT * FROM products.product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id, storeId],
+      tx
+    )
+    if (!product) {
+      throw createError({ statusCode: 404, message: 'Product not found' })
+    }
+    if (product.data.status === 'published' && !data.content[store.default_locale].title) {
+      throw createError({
+        statusCode: 400,
+        data: { field: `content.${store.default_locale}.title` },
+        message: 'A title in the store default language is required'
+      })
+    }
+    await rows(
+      "UPDATE products.product SET data=jsonb_set(jsonb_set(data,'{content}',$3::jsonb),'{nextSteps}',$4::jsonb),updated_at=now() WHERE id=$1 AND store_id=$2",
+      [id, storeId, JSON.stringify(data.content), JSON.stringify(data.nextSteps)],
+      tx
+    )
+  })
+  return getProduct(storeId, id)
+}
+
 export async function saveProduct(storeId: string, input: unknown, id: string = randomUUID()): Promise<Product> {
   const { prices: inputPrices, categoryId, ...data } = parseInput(productSchema, input)
   const store = await getStore()
@@ -234,13 +337,6 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
         (await tx.query('SELECT 1 FROM products.product WHERE id=$1 AND store_id=$2', [id, storeId])).rowCount !== 1
       ) {
         throw createError({ statusCode: 404, message: 'Product not found' })
-      }
-      if (existing?.data.status === 'published' && !!existing.data.isFree !== data.isFree) {
-        throw createError({
-          statusCode: 409,
-          message: 'Published products cannot switch between free and paid',
-          data: { field: 'isFree' }
-        })
       }
       if (existing?.data.isFree && !data.isFree) {
         for (const currency of currentStore!.currencies) {

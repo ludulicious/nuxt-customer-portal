@@ -42,6 +42,10 @@ export const useProducts = () => ({
       method: id ? 'PUT' : 'POST',
       body: input
     }),
+  savePricing: (id: string, input: Pick<ProductInput, 'isFree' | 'prices'>) =>
+    $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}/pricing`, { method: 'PUT', body: input }),
+  saveContent: (id: string, input: Pick<ProductInput, 'content' | 'nextSteps'>) =>
+    $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}/content`, { method: 'PUT', body: input }),
   deletion: (id: string) => $fetch<{ eligible: boolean }>(`/api/products/admin/products/${id}/deletion`),
   remove: (id: string, name: string) =>
     $fetch(`/api/products/admin/products/${id}`, { method: 'DELETE', body: { name } }),

@@ -11,14 +11,14 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       labelKey: 'planning.appointments',
       icon: 'i-lucide-calendar-days',
       to: '/appointments',
-      routePrefixes: ['/appointments', '/planning', '/admin/planning'],
+      routePrefixes: ['/appointments', '/availability', '/planning/settings', '/admin/planning'],
       audiences: ['providerAuthenticated'],
       menuItems: [
         {
           id: 'availability',
           labelKey: 'planning.availability',
           icon: 'i-lucide-calendar-days',
-          to: '/planning',
+          to: '/availability',
           audiences: ['providerAuthenticated'],
           exact: true
         },
@@ -28,6 +28,14 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           icon: 'i-lucide-calendar-check',
           to: '/appointments',
           audiences: ['providerAuthenticated']
+        },
+        {
+          id: 'planning-personal-settings',
+          labelKey: 'planning.myAppointmentSettings',
+          icon: 'i-lucide-calendar-cog',
+          to: '/planning/settings',
+          audiences: ['providerAuthenticated'],
+          exact: true
         },
         {
           id: 'planning-admin',

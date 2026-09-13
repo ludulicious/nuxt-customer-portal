@@ -65,37 +65,49 @@ async function changeStatus() {
       </div>
     </template>
     <slot v-if="editing" name="editor" />
-    <div v-else class="flex items-start gap-3">
-      <dl class="min-w-0 flex-1 space-y-4 text-sm">
-        <div>
-          <dt class="text-muted">{{ t('products.slug') }}</dt>
-          <dd class="mt-1 break-words">{{ product.slug }}</dd>
+    <div v-else class="space-y-5">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="flex items-center gap-2 text-sm text-muted">
+            <UIcon name="i-lucide-link" class="size-4 shrink-0" />{{ t('products.slug') }}
+          </p>
+          <p class="mt-2 break-all font-mono text-sm font-medium">/{{ product.slug }}</p>
         </div>
-        <div>
-          <dt class="text-muted">{{ t('products.category') }}</dt>
-          <dd class="mt-1 break-words">
+        <UButton
+          icon="i-lucide-pencil"
+          color="neutral"
+          variant="ghost"
+          class="shrink-0"
+          :aria-label="t('products.edit')"
+          :aria-expanded="editing"
+          :disabled="busy"
+          @click="emit('edit')"
+        />
+      </div>
+      <dl class="space-y-4 border-t border-default pt-4 text-sm">
+        <div class="flex items-start justify-between gap-4">
+          <dt class="flex items-center gap-2 text-muted">
+            <UIcon name="i-lucide-folder" class="size-4 shrink-0" />{{ t('products.category') }}
+          </dt>
+          <dd class="min-w-0 break-words text-right font-medium" :class="!product.categoryId ? 'text-muted' : ''">
             {{ product.categoryContent?.[language]?.name || product.categoryName || t('products.noCategory') }}
           </dd>
         </div>
-        <div>
-          <dt class="text-muted">{{ t('products.type') }}</dt>
-          <dd class="mt-1">{{ t(`products.${product.type}`) }}</dd>
-        </div>
-        <div>
-          <dt class="text-muted">{{ t('products.taxCode') }}</dt>
-          <dd class="mt-1 break-all">{{ product.taxCode }}</dd>
+        <div class="flex items-center justify-between gap-4">
+          <dt class="flex items-center gap-2 text-muted">
+            <UIcon name="i-lucide-package" class="size-4 shrink-0" />{{ t('products.type') }}
+          </dt>
+          <dd>
+            <UBadge color="neutral" variant="subtle">{{ t(`products.${product.type}`) }}</UBadge>
+          </dd>
         </div>
       </dl>
-      <UButton
-        icon="i-lucide-pencil"
-        color="neutral"
-        variant="ghost"
-        class="shrink-0"
-        :aria-label="t('products.edit')"
-        :aria-expanded="editing"
-        :disabled="busy"
-        @click="emit('edit')"
-      />
+      <div class="border-t border-default pt-4">
+        <p class="flex items-center gap-2 text-xs text-muted">
+          <UIcon name="i-lucide-receipt-text" class="size-4 shrink-0" />{{ t('products.taxCode') }}
+        </p>
+        <p class="mt-2 break-all font-mono text-xs text-muted">{{ product.taxCode }}</p>
+      </div>
     </div>
   </UCard>
   <ProductsPublishDialog

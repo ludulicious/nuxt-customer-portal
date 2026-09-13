@@ -1,5 +1,12 @@
 import { registerPortalOpenApiContracts } from '@nuxt-customer-portal/core/server/utils/openapi-contracts'
-import { productSchema, listSchema, checkoutSchema, settingsSchema } from '../../shared/validation'
+import {
+  productSchema,
+  productContentSchema,
+  productPricingSchema,
+  listSchema,
+  checkoutSchema,
+  settingsSchema
+} from '../../shared/validation'
 
 export default defineNitroPlugin(() =>
   registerPortalOpenApiContracts({
@@ -15,6 +22,8 @@ export default defineNitroPlugin(() =>
     body: {
       productsAdminProductsPost: productSchema,
       productsAdminProductsByIdPut: productSchema,
+      productsAdminProductsByIdContentPut: productContentSchema,
+      productsAdminProductsByIdPricingPut: productPricingSchema,
       storeCheckoutPost: checkoutSchema,
       productsAdminSettingsPut: settingsSchema
     }

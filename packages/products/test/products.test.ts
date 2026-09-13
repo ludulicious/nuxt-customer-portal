@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import {
   emptyProduct,
   productSchema,
+  productContentSchema,
+  productPricingSchema,
   productCreateSchema,
   priceSchema,
   checkoutSchema,
@@ -248,4 +250,33 @@ test('customer-facing file names omit the source extension', () => {
   assert.equal(withoutFileExtension('My document', 'original.pdf'), 'My document')
   assert.equal(withFileExtension('My document.pdf', 'original.pdf'), 'My document.pdf')
   assert.equal(withFileExtension('My document', 'original.pdf'), 'My document.pdf')
+})
+
+test('product text edits validate content independently of publish media requirements', () => {
+  const product = emptyProduct()
+  product.status = 'published'
+  product.isFree = true
+  product.content.en.title = 'Free consultation'
+  assert.equal(productSchema.safeParse(product).success, false)
+  assert.equal(productContentSchema.safeParse(product).success, true)
+  product.content.en.title = ''
+  assert.equal(productContentSchema.safeParse(product).success, false)
+})
+
+test('pricing validation loads independently and accepts free or paid inputs', () => {
+  assert.equal(productPricingSchema.safeParse({ isFree: true, prices: [] }).success, true)
+  assert.equal(
+    productPricingSchema.safeParse({
+      isFree: false,
+      prices: [{ currency: 'EUR', amount: 2500, taxBehavior: 'inclusive' }]
+    }).success,
+    true
+  )
+  assert.equal(
+    productPricingSchema.safeParse({
+      isFree: false,
+      prices: [{ currency: 'EUR', amount: -1, taxBehavior: 'inclusive' }]
+    }).success,
+    false
+  )
 })

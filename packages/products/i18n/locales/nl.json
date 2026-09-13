@@ -507,8 +507,8 @@
     "reservationExpired": "Je reservering is verlopen. Kies een ander tijdstip voordat je afrekent.",
     "chooseAnotherSlot": "Kies een ander tijdstip",
     "planningMemberDisabled": "{name} (planning uit)",
-    "planningTitle": "Planning",
-    "editPlanning": "Planning bewerken",
+    "planningTitle": "Afspraakinstellingen",
+    "editPlanning": "Afspraakinstellingen bewerken",
     "appointmentDuration": "Afspraakduur",
     "minutesShort": "min",
     "bookingRequired": "Afspraak vereist",
@@ -517,6 +517,7 @@
     "bookingPolicy": "Beleid",
     "customPolicy": "Productbeleid",
     "organizationPolicy": "Organisatiebeleid",
-    "noAppointmentRequired": "Klanten gaan direct naar het afrekenen."
+    "noAppointmentRequired": "Klanten gaan direct naar het afrekenen.",
+    "noPaymentRequired": "Geen betaling nodig"
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { availabilitySchema, providerSettingsSchema } from '../../shared/validation'
+import { availabilitySchema } from '../../shared/validation'
 import type { AvailabilityWindow } from '../../shared/types'
 import type { ProviderConfiguration, AppointmentListItem } from '../composables/usePlanning'
 import { localParts } from '../../shared/availability'
@@ -11,7 +11,6 @@ const canManagePlanning = computed(() => ['owner', 'admin'].includes(activeOrgan
 const api = usePlanning(),
   { t, locale } = useI18n(),
   settings = ref<ProviderConfiguration>(),
-  calendars = ref<Array<{ id: string; summary: string; accessRole: string }>>([]),
   windows = ref<AvailabilityWindow[]>([]),
   appointments = ref<AppointmentListItem[]>([]),
   error = ref(''),
@@ -37,16 +36,23 @@ const windowState = reactive<z.infer<typeof availabilitySchema>>({
   productIds: null,
   exceptions: []
 })
-const windowFormSchema = availabilitySchema.safeExtend({
-  endDate: z.union([availabilitySchema.shape.endDate, z.literal('')]).transform((v) => v || null)
-})
+const windowFormSchema = computed(() =>
+  availabilitySchema.safeExtend({
+    productIds: z
+      .array(z.string().min(1).max(100))
+      .min(1, t('planning.selectAtLeastOneProduct'))
+      .max(100)
+      .nullable()
+      .default(null),
+    endDate: z.union([availabilitySchema.shape.endDate, z.literal('')]).transform((v) => v || null)
+  })
+)
 const allProducts = computed({
   get: () => windowState.productIds === null,
   set: (value) => {
     windowState.productIds = value ? null : []
   }
 })
-const calendarOptions = computed(() => calendars.value.map((c) => ({ value: c.id, label: c.summary })))
 const days = computed(() => {
   const first = new Date(week.value)
   first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7))
@@ -82,46 +88,14 @@ async function load() {
     Object.assign(providerState, { ...settings.value, writeCalendarId: settings.value.writeCalendarId || '' })
     windows.value = await api.windows()
     appointments.value = await api.providerAppointments()
-    if (settings.value.connections.some((c) => c.provider === 'google' && c.healthy)) {
-      calendars.value = await api.calendars()
-    }
   } catch {
     error.value = t('planning.loadError')
   }
 }
 onMounted(load)
-async function connect(provider: string) {
-  busy.value = true
-  try {
-    await navigateTo((await api.connect(provider)).url, { external: true })
-  } catch {
-    error.value = t('planning.connectionError')
-  } finally {
-    busy.value = false
-  }
-}
-async function disconnect(provider: string) {
-  busy.value = true
-  try {
-    await api.disconnect(provider)
-    calendars.value = []
-    await load()
-  } catch {
-    error.value = t('planning.actionError')
-  } finally {
-    busy.value = false
-  }
-}
-async function saveSettings() {
-  busy.value = true
-  try {
-    await api.saveProvider(providerState)
-    await load()
-  } catch {
-    error.value = t('planning.actionError')
-  } finally {
-    busy.value = false
-  }
+function toggleProduct(id: string, checked: boolean) {
+  const ids = windowState.productIds || []
+  windowState.productIds = checked ? [...new Set([...ids, id])] : ids.filter((value) => value !== id)
 }
 function openWindow(date: string, window?: AvailabilityWindow) {
   selected.value = window
@@ -183,7 +157,7 @@ async function removeWindow() {
 <template>
   <div class="h-full min-h-0 overflow-y-auto">
     <UContainer class="space-y-6 py-8"
-      ><h1 class="text-2xl font-bold">{{ t('planning.planning') }}</h1>
+      ><h1 class="text-2xl font-bold">{{ t('planning.availability') }}</h1>
       <UAlert v-if="error" variant="outline" color="error" :title="error" /><UAlert
         v-if="settings && !settings.enabled"
         variant="outline"
@@ -194,69 +168,6 @@ async function removeWindow() {
           <UButton to="/admin/planning" color="neutral" variant="link">{{ t('planning.settings') }}</UButton>
         </template>
       </UAlert>
-      <UCard
-        ><template #header
-          ><h2 class="font-semibold">{{ t('planning.connections') }}</h2></template
-        >
-        <div class="space-y-4">
-          <div v-for="provider in ['google', 'zoom']" :key="provider" class="flex flex-wrap items-center gap-3">
-            <span class="font-semibold capitalize">{{ provider }}</span
-            ><UBadge
-              :color="settings?.connections.some((c) => c.provider === provider && c.healthy) ? 'success' : 'warning'"
-              >{{
-                t(
-                  settings?.connections.some((c) => c.provider === provider && c.healthy)
-                    ? 'planning.connected'
-                    : 'planning.notConnected'
-                )
-              }}</UBadge
-            ><UButton :loading="busy" variant="outline" @click="connect(provider)">{{ t('planning.connect') }}</UButton
-            ><UButton
-              v-if="settings?.connections.some((c) => c.provider === provider)"
-              color="neutral"
-              variant="ghost"
-              :disabled="busy"
-              @click="disconnect(provider)"
-              >{{ t('planning.disconnect') }}</UButton
-            >
-          </div>
-        </div></UCard
-      >
-      <UCard
-        ><template #header
-          ><h2 class="font-semibold">{{ t('planning.calendarSettings') }}</h2></template
-        ><UForm
-          :state="providerState"
-          :schema="providerSettingsSchema"
-          novalidate
-          class="grid gap-4 sm:grid-cols-2"
-          @submit="saveSettings"
-          ><UFormField name="timezone" :label="t('planning.timezone')"
-            ><USelectMenu
-              v-model="providerState.timezone"
-              :items="Intl.supportedValuesOf('timeZone')"
-              class="w-full" /></UFormField
-          ><UFormField name="graceMinutes" :label="t('planning.graceMinutes')"
-            ><UInputNumber v-model="providerState.graceMinutes" :min="0" /></UFormField
-          ><UFormField name="busyCalendarIds" :label="t('planning.busyCalendars')"
-            ><USelectMenu
-              v-model="providerState.busyCalendarIds"
-              :items="calendarOptions"
-              value-key="value"
-              multiple
-              class="w-full" /></UFormField
-          ><UFormField name="writeCalendarId" :label="t('planning.writeCalendar')"
-            ><USelect
-              v-model="providerState.writeCalendarId"
-              :items="
-                calendars
-                  .filter((c) => ['owner', 'writer'].includes(c.accessRole))
-                  .map((c) => ({ value: c.id, label: c.summary }))
-              "
-              class="w-full" /></UFormField
-          ><UButton type="submit" :loading="busy" class="justify-center">{{ t('planning.save') }}</UButton></UForm
-        ></UCard
-      >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-xl font-semibold">{{ t('planning.availability') }} · {{ providerState.timezone }}</h2>
         <div class="flex gap-2">
@@ -315,56 +226,123 @@ async function removeWindow() {
             /></div
         ></UCard>
       </div>
-      <UModal v-if="windowOpen" v-model:open="windowOpen" :title="t('planning.availability')"
-        ><template #body
-          ><UForm :state="windowState" :schema="windowFormSchema" novalidate class="space-y-4" @submit="saveWindow"
-            ><UFormField v-if="selected?.recurring" :label="t('planning.editOne')"
-              ><USwitch
-                v-model="editOne"
-                @update:model-value="
-                  (value) => {
-                    if (value) {
-                      windowState.date = occurrence
-                      windowState.recurring = false
-                    }
-                  }
-                " /></UFormField
-            ><UFormField name="date" :label="t('planning.date')"
-              ><UInput v-model="windowState.date" type="date"
-            /></UFormField>
-            <div class="grid grid-cols-2 gap-3">
-              <UFormField name="startTime" :label="t('planning.startTime')"
-                ><UInput v-model="windowState.startTime" type="time" /></UFormField
-              ><UFormField name="endTime" :label="t('planning.endTime')"
-                ><UInput v-model="windowState.endTime" type="time"
-              /></UFormField>
-            </div>
-            <UFormField name="recurring" :label="t('planning.weekly')"
-              ><USwitch v-model="windowState.recurring" :disabled="editOne" /></UFormField
-            ><UFormField v-if="windowState.recurring" name="endDate" :label="t('planning.endDate')"
-              ><UInput
-                :model-value="windowState.endDate || undefined"
-                type="date"
-                @update:model-value="windowState.endDate = $event || null" /></UFormField
-            ><UFormField :label="t('planning.allProducts')"><USwitch v-model="allProducts" /></UFormField
-            ><UFormField v-if="!allProducts" name="productIds" :label="t('planning.products')"
-              ><USelectMenu
-                :model-value="windowState.productIds || []"
-                :items="settings?.products.map((p) => ({ value: p.id, label: p.title })) || []"
-                value-key="value"
-                multiple
-                class="w-full"
-                @update:model-value="windowState.productIds = $event"
-            /></UFormField>
-            <div class="flex gap-3">
-              <UButton type="submit" :loading="busy">{{ t('planning.save') }}</UButton
-              ><UButton v-if="selected" color="error" variant="outline" @click="deleteOpen = true">{{
-                t('planning.delete')
-              }}</UButton>
-            </div></UForm
-          ></template
-        ></UModal
+      <UModal
+        v-if="windowOpen"
+        v-model:open="windowOpen"
+        :title="t(selected ? 'planning.editAvailability' : 'planning.addWindow')"
+        :description="t('planning.availabilityFormDescription', { timezone: providerState.timezone })"
+        :ui="{ content: 'sm:max-w-lg' }"
       >
+        <template #body>
+          <UForm :state="windowState" :schema="windowFormSchema" novalidate class="space-y-6" @submit="saveWindow">
+            <UAlert v-if="error" :title="error" color="error" variant="outline" />
+            <UFormField v-if="selected?.recurring" :label="t('planning.editOne')"
+              ><USwitch v-model="editOne"
+            /></UFormField>
+            <div class="space-y-4">
+              <UFormField name="date" :label="t('planning.date')"
+                ><UInput v-model="windowState.date" type="date" class="w-full"
+              /></UFormField>
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField name="startTime" :label="t('planning.startTime')"
+                  ><UInput v-model="windowState.startTime" type="time" class="w-full"
+                /></UFormField>
+                <UFormField name="endTime" :label="t('planning.endTime')"
+                  ><UInput v-model="windowState.endTime" type="time" class="w-full"
+                /></UFormField>
+              </div>
+            </div>
+            <div class="space-y-4 border-t border-default pt-5">
+              <UFormField name="recurring">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-sm font-medium">{{ t('planning.weekly') }}</p>
+                    <p class="mt-1 text-sm text-muted">{{ t('planning.weeklyHelp') }}</p>
+                  </div>
+                  <USwitch
+                    v-model="windowState.recurring"
+                    :disabled="editOne"
+                    :aria-label="t('planning.weekly')"
+                    class="mt-0.5 shrink-0"
+                  />
+                </div>
+              </UFormField>
+              <UFormField
+                v-if="windowState.recurring"
+                name="endDate"
+                :label="t('planning.endDate')"
+                :description="t('planning.endDateHelp')"
+              >
+                <UInput
+                  :model-value="windowState.endDate || undefined"
+                  type="date"
+                  class="w-full"
+                  @update:model-value="windowState.endDate = $event || null"
+                />
+              </UFormField>
+            </div>
+            <div class="space-y-4 border-t border-default pt-5">
+              <UFormField>
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-sm font-medium">{{ t('planning.allProducts') }}</p>
+                    <p class="mt-1 text-sm text-muted">{{ t('planning.allProductsHelp') }}</p>
+                  </div>
+                  <USwitch v-model="allProducts" :aria-label="t('planning.allProducts')" class="mt-0.5 shrink-0" />
+                </div>
+              </UFormField>
+              <UFormField v-if="!allProducts" name="productIds" :label="t('planning.products')">
+                <div class="space-y-2">
+                  <label
+                    v-for="product in settings?.products || []"
+                    :key="product.id"
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-elevated"
+                    :class="
+                      windowState.productIds?.includes(product.id) ? 'border-primary bg-primary/5' : 'border-default'
+                    "
+                  >
+                    <UCheckbox
+                      :model-value="windowState.productIds?.includes(product.id) || false"
+                      :aria-label="product.title"
+                      @update:model-value="toggleProduct(product.id, Boolean($event))"
+                    />
+                    <img
+                      v-if="product.thumbnailImageId"
+                      :src="`/api/store/media/${encodeURIComponent(product.thumbnailImageId)}`"
+                      alt=""
+                      class="h-12 w-12 shrink-0 rounded-md object-cover"
+                    />
+                    <div
+                      v-else
+                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-elevated text-muted"
+                    >
+                      <UIcon name="i-lucide-package" class="size-5" />
+                    </div>
+                    <span class="min-w-0 break-words text-sm font-medium">{{ product.title }}</span>
+                  </label>
+                </div>
+              </UFormField>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-default pt-5">
+              <UButton
+                v-if="selected"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                :disabled="busy"
+                @click="deleteOpen = true"
+                >{{ t('planning.delete') }}</UButton
+              >
+              <div class="ml-auto flex flex-wrap justify-end gap-2">
+                <UButton color="neutral" variant="outline" :disabled="busy" @click="windowOpen = false">{{
+                  t('planning.cancelAction')
+                }}</UButton>
+                <UButton type="submit" :loading="busy">{{ t('planning.saveAvailability') }}</UButton>
+              </div>
+            </div>
+          </UForm>
+        </template>
+      </UModal>
       <UModal v-if="deleteOpen" v-model:open="deleteOpen" :title="t('planning.delete')"
         ><template #body
           ><p>{{ t(editOne ? 'planning.deleteOccurrenceConfirm' : 'planning.deleteSeriesConfirm') }}</p>

@@ -20,9 +20,6 @@ const tab = computed({
     <UContainer class="space-y-6 py-8"
       ><div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-2xl font-bold">{{ t('planning.settings') }}</h1>
-        <UButton to="/appointments" icon="i-lucide-calendar-check" color="neutral" variant="outline">{{
-          t('planning.appointments')
-        }}</UButton>
       </div>
       <UTabs
         v-model="tab"

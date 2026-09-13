@@ -3,7 +3,14 @@ import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
 import { defaultPlanning, defaultPlanningPolicy, productPlanningSchema } from '../../shared/planning'
 import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
-import { emptyProduct, productSchema, productCreateSchema, hasRequiredPrices } from '../../shared/validation'
+import {
+  emptyProduct,
+  productSchema,
+  productCreateSchema,
+  productContentSchema,
+  productPricingSchema,
+  hasRequiredPrices
+} from '../../shared/validation'
 import { currencyScale } from '../../shared/money'
 import { fileExtension, withoutFileExtension } from '../../shared/file-name'
 
@@ -24,6 +31,8 @@ const props = withDefaults(
 const { t } = useI18n(),
   api = useProducts(),
   schema = useProductFormSchema(productSchema),
+  pricingSchema = useProductFormSchema(productPricingSchema),
+  contentSchema = useProductFormSchema(productContentSchema),
   planningSchema = useProductFormSchema(z.object({ planning: productPlanningSchema })),
   toast = useToast()
 const state = reactive<z.infer<typeof productSchema>>(
@@ -299,16 +308,23 @@ const createName = computed({
     }
   }
 })
-const planningProviders = ref<Array<{ userId: string; name: string; enabled: boolean }>>([])
+const planningProviders = ref<Array<{ userId: string; name: string; enabled: boolean; image?: string | null }>>([])
 const planningProviderOptions = computed(() =>
   planningProviders.value
     .filter((member) => member.enabled || state.planning.providerUserIds.includes(member.userId))
     .map((member) => ({
       value: member.userId,
+      name: member.name,
+      image: member.image,
       label: member.enabled ? member.name : t('products.planningMemberDisabled', { name: member.name }),
       disabled: !member.enabled
     }))
 )
+function togglePlanningMember(id: string, checked: boolean) {
+  state.planning.providerUserIds = checked
+    ? [...new Set([...state.planning.providerUserIds, id])]
+    : state.planning.providerUserIds.filter((value) => value !== id)
+}
 const planningInstalled = ref(false)
 const planningDefaults = ref(defaultPlanningPolicy())
 const planningOverrides = computed({
@@ -366,6 +382,27 @@ onMounted(async () => {
   root.value?.querySelector('input')?.focus({ preventScroll: true })
 })
 async function save() {
+  if (['basic', 'pricing'].includes(props.section) && props.product) {
+    saving.value = true
+    error.value = ''
+    try {
+      emit(
+        'saved',
+        props.section === 'pricing'
+          ? await api.savePricing(props.product.id, { isFree: state.isFree, prices: state.prices })
+          : await api.saveContent(props.product.id, { content: state.content, nextSteps: state.nextSteps })
+      )
+    } catch (e) {
+      error.value = t('products.saveFailed')
+      const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
+      if (field) {
+        form.value?.setErrors([{ name: field, message: t('products.conflict') }])
+      }
+    } finally {
+      saving.value = false
+    }
+    return
+  }
   if (props.section === 'planning' && props.product) {
     saving.value = true
     error.value = ''
@@ -542,8 +579,18 @@ function removeFile(id: string, index: number) {
     <UForm
       ref="form"
       :state="state"
-      :schema="section === 'create' ? createSchema : section === 'planning' ? planningSchema : schema"
-      :validate="section === 'planning' ? undefined : pricingErrors"
+      :schema="
+        section === 'create'
+          ? createSchema
+          : section === 'planning'
+            ? planningSchema
+            : section === 'pricing'
+              ? pricingSchema
+              : section === 'basic'
+                ? contentSchema
+                : schema
+      "
+      :validate="['planning', 'basic'].includes(section) ? undefined : pricingErrors"
       novalidate
       class="space-y-5"
       @submit="save"
@@ -561,14 +608,30 @@ function removeFile(id: string, index: number) {
           <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
             ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
           /></UFormField>
-          <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')"
-            ><USelectMenu
-              v-model="state.planning.providerUserIds"
-              :items="planningProviderOptions"
-              value-key="value"
-              multiple
-              class="w-full"
-          /></UFormField>
+          <UFormField name="planning.providerUserIds" :label="t('products.planningProviders')">
+            <div class="space-y-2">
+              <label
+                v-for="member in planningProviderOptions"
+                :key="member.value"
+                class="flex items-center gap-3 rounded-lg border p-3 transition-colors"
+                :class="[
+                  state.planning.providerUserIds.includes(member.value)
+                    ? 'border-primary bg-primary/5'
+                    : 'border-default',
+                  member.disabled ? 'opacity-60' : 'cursor-pointer hover:bg-elevated'
+                ]"
+              >
+                <UCheckbox
+                  :model-value="state.planning.providerUserIds.includes(member.value)"
+                  :disabled="member.disabled"
+                  :aria-label="member.label"
+                  @update:model-value="togglePlanningMember(member.value, Boolean($event))"
+                />
+                <UAvatar :src="member.image || undefined" :alt="member.name" size="sm" />
+                <span class="min-w-0 break-words text-sm font-medium">{{ member.label }}</span>
+              </label>
+            </div>
+          </UFormField>
           <UFormField name="planning.meetingProvider" :label="t('products.meetingProvider')"
             ><USelect
               v-model="state.planning.meetingProvider"
@@ -673,14 +736,12 @@ function removeFile(id: string, index: number) {
           </template>
         </UTabs>
       </template>
-      <template v-if="section === 'create' || section === 'all' || section === 'details'">
-        <UFormField
-          name="isFree"
-          :label="t('products.freeProduct')"
-          :help="product?.status === 'published' ? t('products.publishedPricingLocked') : undefined"
-        >
-          <USwitch v-model="state.isFree" :disabled="product?.status === 'published'" />
+      <template v-if="section === 'create' || section === 'all' || section === 'details' || section === 'pricing'">
+        <UFormField name="isFree" :label="t('products.freeProduct')">
+          <USwitch v-model="state.isFree" />
         </UFormField>
+      </template>
+      <template v-if="section === 'create' || section === 'all' || section === 'details'">
         <UFormField v-if="section !== 'create'" name="taxCode" :label="t('products.taxCode')"
           ><UInput v-model="state.taxCode" class="w-full sm:max-w-xs"
         /></UFormField>

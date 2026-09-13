@@ -111,6 +111,19 @@ export const productSchema = z
       ctx.addIssue({ code: 'custom', path: ['detailImageIds'], message: 'Choose at least one product details image' })
     }
   })
+export const productPricingSchema = z.object({ isFree: productSchema.shape.isFree, prices: productSchema.shape.prices })
+
+export const productContentSchema = z
+  .object({
+    content: z.object({ en: copy, nl: copy }),
+    nextSteps: z.object({ en: text(5000), nl: text(5000) })
+  })
+  .superRefine((value, ctx) => {
+    if (!value.content.en.title && !value.content.nl.title) {
+      ctx.addIssue({ code: 'custom', path: ['content.en.title'], message: 'A title is required' })
+    }
+  })
+
 export const productCreateSchema = productSchema.safeExtend({ categoryId: text(100).min(1) })
 
 export const billingSchema = z

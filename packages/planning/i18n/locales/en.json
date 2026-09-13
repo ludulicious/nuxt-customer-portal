@@ -107,6 +107,15 @@
     "editAppointment": "Manage appointment",
     "viewAppointment": "View appointment",
     "appointmentCount": "{count} appointments",
-    "pagination": "Appointment pages"
+    "pagination": "Appointment pages",
+    "myAppointmentSettings": "My appointment settings",
+    "meetingSettings": "Meeting settings",
+    "editAvailability": "Edit availability",
+    "availabilityFormDescription": "Choose when customers can book you. Times are in {timezone}.",
+    "weeklyHelp": "Repeat this time window on the same weekday.",
+    "endDateHelp": "Optional. Leave empty to keep repeating.",
+    "allProductsHelp": "Includes all assigned products, including future assignments. Turn off to choose specific products.",
+    "saveAvailability": "Save availability",
+    "selectAtLeastOneProduct": "Select at least one product."
   }
 }

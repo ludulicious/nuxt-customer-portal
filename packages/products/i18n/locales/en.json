@@ -507,8 +507,8 @@
     "reservationExpired": "Your reservation has expired. Choose another time before checkout.",
     "chooseAnotherSlot": "Choose another time",
     "planningMemberDisabled": "{name} (planning off)",
-    "planningTitle": "Planning",
-    "editPlanning": "Edit planning",
+    "planningTitle": "Appointment settings",
+    "editPlanning": "Edit appointment settings",
     "appointmentDuration": "Appointment duration",
     "minutesShort": "min",
     "bookingRequired": "Booking required",
@@ -517,6 +517,7 @@
     "bookingPolicy": "Policy",
     "customPolicy": "Product policy",
     "organizationPolicy": "Organization policy",
-    "noAppointmentRequired": "Customers go directly to checkout."
+    "noAppointmentRequired": "Customers go directly to checkout.",
+    "noPaymentRequired": "No payment required"
   }
 }

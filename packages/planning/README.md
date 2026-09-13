@@ -40,7 +40,7 @@ Register redirect URLs using the portal's configured public origin:
 
 For local development use `http://localhost:3052`, including in provider application configuration. Google authorization requests Calendar events, Calendar list read access, free/busy access, and identity/email. Configure the Zoom user-managed application to read the connected user, list/read/create/update/delete their meetings; use the current granular scopes for those operations. Enable appropriate test users or publish/verify the provider applications before connecting other users. Zoom account meeting limits still apply.
 
-In hosts using SaaS configuration, enable the Planning module alongside Products. Admins enable planning per organization member at `/admin/planning`. Providers connect accounts, choose calendars, timezone and after-appointment grace time, and create availability at `/planning`. Choose several calendars for conflicts and one writable calendar; the writable calendar is automatically included in conflict checks. Assign providers to a service in the existing product editor and supply a positive duration. A product may be free, and may require Zoom or have no online meeting.
+In hosts using SaaS configuration, enable the Planning module alongside Products. Admins enable planning per organization member at `/admin/planning`. Providers connect accounts, choose calendars, timezone and after-appointment grace time, and create availability at `/availability`. Choose several calendars for conflicts and one writable calendar; the writable calendar is automatically included in conflict checks. Assign providers to a service in the existing product editor and supply a positive duration. A product may be free, and may require Zoom or have no online meeting.
 
 ## Availability and reservations
 
@@ -97,3 +97,5 @@ Before enabling live booking, connect Google/Zoom test accounts and verify conse
 The Appointments menu includes the appointment collection, provider availability, and planning settings. Active members of the provider organization can view its appointments; organization owners and admins can reschedule or cancel them. Customers can view and manage only their own claimed purchases, subject to the policy recorded at booking. Staff reschedules preserve the customer change allowance. Cancellation retains order and appointment history, and refunds remain subject to eligibility. New appointments use booking and checkout.
 
 Planning settings use separate components for the Team members, Booking policy, and Synchronization tabs, with the same tab styling as Store settings.
+
+Personal connections and preferences are managed under My appointment settings (`/planning/settings`): Calendar settings contains Google connection, timezone, grace time, and calendar selection; Meeting settings contains the Zoom connection. Availability (`/availability`) contains only the availability editor and appointment blocks.

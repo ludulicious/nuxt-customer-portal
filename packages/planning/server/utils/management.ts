@@ -18,7 +18,7 @@ import { auditLock } from './jobs'
 export async function listProviders(event: H3Event): Promise<ProviderSettings[]> {
   const context = await planningAdmin(event)
   return rows<ProviderSettings>(
-    `SELECT u.id AS "userId",u.name,COALESCE(p.enabled,false) AS enabled,COALESCE(p.timezone,u.timezone,os.timezone,'Europe/Amsterdam') AS timezone,COALESCE(p.grace_minutes,0) AS "graceMinutes",COALESCE(p.busy_calendar_ids,'{}') AS "busyCalendarIds",p.write_calendar_id AS "writeCalendarId",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='google' AND c.healthy) AS "googleConnected",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='zoom' AND c.healthy) AS "zoomConnected" FROM public.member m JOIN public."user" u ON u.id=m.user_id LEFT JOIN planning.provider p ON p.store_id=m.organization_id AND p.user_id=u.id LEFT JOIN public.organization_settings os ON os.organization_id=m.organization_id WHERE m.organization_id=$1 ORDER BY u.name`,
+    `SELECT u.id AS "userId",u.name,u.image,COALESCE(p.enabled,false) AS enabled,COALESCE(p.timezone,u.timezone,os.timezone,'Europe/Amsterdam') AS timezone,COALESCE(p.grace_minutes,0) AS "graceMinutes",COALESCE(p.busy_calendar_ids,'{}') AS "busyCalendarIds",p.write_calendar_id AS "writeCalendarId",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='google' AND c.healthy) AS "googleConnected",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='zoom' AND c.healthy) AS "zoomConnected" FROM public.member m JOIN public."user" u ON u.id=m.user_id LEFT JOIN planning.provider p ON p.store_id=m.organization_id AND p.user_id=u.id LEFT JOIN public.organization_settings os ON os.organization_id=m.organization_id WHERE m.organization_id=$1 ORDER BY u.name`,
     [context.organizationId]
   )
 }
@@ -55,8 +55,8 @@ export async function ownSettings(event: H3Event) {
     'SELECT provider,healthy,error FROM planning.connection WHERE store_id=$1 AND user_id=$2',
     [storeId, userId]
   )
-  const products = await rows<{ id: string; title: string }>(
-    `SELECT id,COALESCE(NULLIF(data->'content'->'en'->>'title',''),data->'content'->'nl'->>'title') AS title FROM products.product WHERE store_id=$1 AND data->'planning'->>'enabled'='true' AND data->'planning'->'providerUserIds' ? $2 AND data->>'status'<>'archived' ORDER BY title`,
+  const products = await rows<{ id: string; title: string; thumbnailImageId: string | null }>(
+    `SELECT id,COALESCE(NULLIF(data->'content'->'en'->>'title',''),data->'content'->'nl'->>'title') AS title, COALESCE(data->>'thumbnailImageId', data->'imageIds'->>0) AS "thumbnailImageId" FROM products.product WHERE store_id=$1 AND data->'planning'->>'enabled'='true' AND data->'planning'->'providerUserIds' ? $2 AND data->>'status'<>'archived' ORDER BY title`,
     [storeId, userId]
   )
   return {
