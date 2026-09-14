@@ -6,7 +6,7 @@ const sandbox = useRoute().query.sandbox as 'paid' | 'failed' | 'expired' | unde
 
 <template>
   <main class="mx-auto max-w-xl space-y-5 p-8">
-    <UAlert v-if="sandbox" color="warning" icon="i-lucide-flask-conical" :title="t('products.sandboxBanner')" />
+    <p v-if="sandbox" class="text-right text-sm font-semibold text-red-700">{{ t('products.testCheckoutLabel') }}</p>
     <UIcon
       :name="sandbox === 'paid' ? 'i-lucide-circle-check' : sandbox ? 'i-lucide-circle-x' : 'i-lucide-mail-check'"
       class="size-12"

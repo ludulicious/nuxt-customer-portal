@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const planningPolicySchema = z.object({
   reservationMinutes: z.number().int().min(30).max(1440).default(60),
   slotIntervalMinutes: z.number().int().min(5).max(120).default(15),
+  displayIntervalMinutes: z.number().int().min(5).max(120).default(30),
   bookingHorizonDays: z.number().int().min(1).max(365).default(90),
   minimumNoticeMinutes: z.number().int().min(0).max(525600).default(1440),
   freeChanges: z.number().int().min(0).max(100).default(1),
@@ -16,6 +17,7 @@ export type PlanningPolicy = z.infer<typeof planningPolicySchema>
 export const planningPolicyOverridesSchema = z.object({
   reservationMinutes: planningPolicySchema.shape.reservationMinutes.removeDefault().optional(),
   slotIntervalMinutes: planningPolicySchema.shape.slotIntervalMinutes.removeDefault().optional(),
+  displayIntervalMinutes: planningPolicySchema.shape.displayIntervalMinutes.removeDefault().optional(),
   bookingHorizonDays: planningPolicySchema.shape.bookingHorizonDays.removeDefault().optional(),
   minimumNoticeMinutes: planningPolicySchema.shape.minimumNoticeMinutes.removeDefault().optional(),
   freeChanges: planningPolicySchema.shape.freeChanges.removeDefault().optional(),

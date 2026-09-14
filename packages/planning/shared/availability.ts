@@ -2,6 +2,13 @@ import type { AvailabilityWindow, Interval, Slot } from './types'
 
 const minute = 60000
 const formatters = new Map<string, Intl.DateTimeFormat>()
+/** Keep display spacing anchored to local midnight, not the first remaining available slot. */
+export function isDisplaySlot(slot: Slot, timezone: string, maximumInterval = 30): boolean {
+  const interval = Math.min((Date.parse(slot.end) - Date.parse(slot.start)) / minute, maximumInterval)
+  const { time } = localParts(new Date(slot.start), timezone)
+  const wallMinutes = Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
+  return interval > 0 && wallMinutes % interval === 0
+}
 export function localParts(instant: Date, timezone: string) {
   let formatter = formatters.get(timezone)
   if (!formatter) {
@@ -28,6 +35,7 @@ export function generateSlots(input: {
   durationMinutes: number
   graceMinutes: number
   intervalMinutes: number
+  displayIntervalMinutes?: number
   noticeMinutes: number
   horizonDays: number
   productId: string
@@ -45,6 +53,7 @@ export function generateSlots(input: {
     if (end > upper) {
       break
     }
+    let slotTimezone = 'UTC'
     const fits = input.windows.some((w) => {
       if (w.productIds && !w.productIds.includes(input.productId)) {
         return false
@@ -65,21 +74,28 @@ export function generateSlots(input: {
         return false
       }
       const wallMinute = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3))
-      return (
+      const matches =
         first.time >= w.startTime &&
         (endsAtMidnight || last.time <= w.endTime) &&
         (wallMinute(first.time) - wallMinute(w.startTime)) % input.intervalMinutes === 0
-      )
+      if (matches) {
+        slotTimezone = w.timezone
+      }
+      return matches
     })
     if (!fits || busy.some((b) => start < b.end && end + input.graceMinutes * minute > b.start)) {
       continue
     }
-    slots.push({
+    const slot = {
       start: new Date(start).toISOString(),
       end: new Date(end).toISOString(),
       providerUserId: input.providerUserId,
       providerName: input.providerName
-    })
+    }
+    if (input.displayIntervalMinutes && !isDisplaySlot(slot, slotTimezone, input.displayIntervalMinutes)) {
+      continue
+    }
+    slots.push(slot)
   }
   return slots
 }

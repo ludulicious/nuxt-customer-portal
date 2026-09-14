@@ -43,7 +43,7 @@ export async function policy(storeId: string) {
   const [row] = await rows<{ policy: PlanningPolicy }>('SELECT policy FROM planning.settings WHERE store_id=$1', [
     storeId
   ])
-  return row?.policy || defaultPlanningPolicy()
+  return effectivePolicy(defaultPlanningPolicy(), row?.policy || {})
 }
 export async function bookingBusy(
   storeId: string,
@@ -121,6 +121,7 @@ export async function available(
         durationMinutes: options.duration || product.planning!.durationMinutes!,
         graceMinutes: options.grace ?? u.grace_minutes,
         intervalMinutes: rules.slotIntervalMinutes,
+        displayIntervalMinutes: rules.displayIntervalMinutes ?? 30,
         noticeMinutes: rules.minimumNoticeMinutes,
         horizonDays: rules.bookingHorizonDays,
         productId,
@@ -271,6 +272,7 @@ export async function reserve(event: H3Event, body: unknown) {
       durationMinutes: duration,
       graceMinutes: grace,
       intervalMinutes: rules.slotIntervalMinutes,
+      displayIntervalMinutes: rules.displayIntervalMinutes ?? 30,
       noticeMinutes: rules.minimumNoticeMinutes,
       horizonDays: rules.bookingHorizonDays,
       productId: product.id,

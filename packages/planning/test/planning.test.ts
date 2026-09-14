@@ -2,11 +2,27 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { defaultPlanningPolicy, effectivePolicy, productPlanningSchema } from '../../products/shared/planning'
 import { productSchema, emptyProduct } from '../../products/shared/validation'
-import { generateSlots, localParts, canChange, changeFee, refundAmount } from '../shared/availability'
+import { generateSlots, isDisplaySlot, localParts, canChange, changeFee, refundAmount } from '../shared/availability'
 import { availabilitySchema, holdSchema, holdCredentialSchema } from '../shared/validation'
 import { calendarInvitation } from '../shared/invitation'
 import { encrypt, decrypt } from '../server/utils/crypto'
 import type { AvailabilityWindow } from '../shared/types'
+
+test('display slots stay clock-aligned when notice removes earlier starts', () => {
+  const slot = (time: string) => ({
+    start: `2026-09-15T${time}:00Z`,
+    end: new Date(Date.parse(`2026-09-15T${time}:00Z`) + 3600000).toISOString(),
+    providerUserId: 'provider',
+    providerName: 'Provider'
+  })
+  assert.equal(isDisplaySlot(slot('07:15'), 'Europe/Amsterdam'), false)
+  assert.equal(isDisplaySlot(slot('07:30'), 'Europe/Amsterdam'), true)
+  assert.equal(isDisplaySlot(slot('07:45'), 'Europe/Amsterdam'), false)
+  assert.equal(isDisplaySlot(slot('08:00'), 'Europe/Amsterdam'), true)
+  assert.equal(isDisplaySlot(slot('07:15'), 'Europe/Amsterdam', 15), true)
+  assert.equal(isDisplaySlot(slot('07:30'), 'Europe/Amsterdam', 60), false)
+  assert.equal(isDisplaySlot(slot('08:00'), 'Europe/Amsterdam', 60), true)
+})
 
 test('hold release and replacement require bounded opaque credentials', () => {
   assert.equal(holdCredentialSchema.safeParse({ holdToken: 'short' }).success, false)

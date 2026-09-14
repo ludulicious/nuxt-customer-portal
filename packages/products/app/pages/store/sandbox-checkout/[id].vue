@@ -35,12 +35,7 @@ async function finish(scenario: 'paid' | 'failed' | 'expired') {
 
 <template>
   <main class="mx-auto max-w-xl space-y-6 p-6">
-    <UAlert
-      color="warning"
-      icon="i-lucide-flask-conical"
-      :title="t('products.sandboxBanner')"
-      :description="t('products.sandboxBannerHelp')"
-    />
+    <p class="text-right text-sm font-semibold text-red-700">{{ t('products.testCheckoutLabel') }}</p>
     <UAlert
       v-if="checkout.developmentEffectsEnabled"
       color="warning"

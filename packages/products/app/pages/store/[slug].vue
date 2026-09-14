@@ -152,16 +152,13 @@ async function backToTimeSelection() {
   try {
     await $fetch('/api/store/planning/hold', { method: 'DELETE', body: { holdToken } })
     sessionStorage.removeItem(`planning-hold:${product.value.id}`)
-    await navigateTo(
-      {
-        path:
-          typeof route.query.appointmentId === 'string'
-            ? `/appointments/${encodeURIComponent(route.query.appointmentId)}`
-            : `/store/${encodeURIComponent(product.value.slug)}/book`,
-        query: { locale: product.value.locale, currency, returnUrl: checkoutReturnUrl.value || undefined }
-      },
-      { external: true }
-    )
+    await navigateTo({
+      path:
+        typeof route.query.appointmentId === 'string'
+          ? `/appointments/${encodeURIComponent(route.query.appointmentId)}`
+          : `/store/${encodeURIComponent(product.value.slug)}/book`,
+      query: { locale: product.value.locale, currency, returnUrl: checkoutReturnUrl.value || undefined }
+    })
   } catch {
     error.value = t('products.reservationReleaseFailed')
   } finally {
@@ -169,7 +166,6 @@ async function backToTimeSelection() {
   }
 }
 const signInOpen = ref(false)
-const sandboxAlertVisible = ref(true)
 const displayNameCustomized = ref(false)
 const checkoutForm = useTemplateRef('checkoutForm')
 const { currentUser, isAuthenticated } = usePortalSession()
@@ -342,19 +338,10 @@ async function buy() {
         >
         <img v-if="appearance.logoUrl" :src="appearance.logoUrl" :alt="appearance.hostName" class="checkout-logo" />
         <span v-else class="checkout-wordmark">{{ appearance.hostName }}</span>
-        <span class="checkout-secure">{{ t('products.secureCheckout') }}</span>
+        <span class="checkout-secure" :class="{ 'checkout-test': product?.storeMode === 'sandbox' }">{{
+          t(product?.storeMode === 'sandbox' ? 'products.testCheckoutLabel' : 'products.secureCheckout')
+        }}</span>
       </header>
-      <div v-if="product?.storeMode === 'sandbox' && sandboxAlertVisible" class="sandbox-alert">
-        <UAlert color="warning" icon="i-lucide-flask-conical" :title="t('products.sandboxBanner')" />
-        <button
-          type="button"
-          class="sandbox-alert-close"
-          :aria-label="t('products.close')"
-          @click="sandboxAlertVisible = false"
-        >
-          <UIcon name="i-lucide-x" aria-hidden="true" />
-        </button>
-      </div>
       <UAlert v-if="error" color="error" :title="error" role="alert" />
 
       <div v-if="product" class="checkout-grid">
@@ -397,19 +384,26 @@ async function buy() {
               </span>
             </div>
           </div>
-          <UAlert v-if="holdExpired" color="error" :title="t('products.reservationExpired')" />
-          <UButton
-            v-if="holdExpired"
-            :to="{
-              path:
-                typeof route.query.appointmentId === 'string'
-                  ? `/appointments/${encodeURIComponent(route.query.appointmentId)}`
-                  : `/store/${encodeURIComponent(product.slug)}/book`,
-              query: { locale: product.locale, currency }
-            }"
-            variant="outline"
-            >{{ t('products.chooseAnotherSlot') }}</UButton
-          >
+          <div v-if="holdExpired" class="reservation-expired" role="alert">
+            <div class="reservation-expired-heading">
+              <UIcon name="i-lucide-calendar-clock" aria-hidden="true" />
+              <strong>{{ t('products.reservationExpiredTitle') }}</strong>
+            </div>
+            <p>{{ t('products.reservationExpiredDescription') }}</p>
+            <UButton
+              :to="{
+                path:
+                  typeof route.query.appointmentId === 'string'
+                    ? `/appointments/${encodeURIComponent(route.query.appointmentId)}`
+                    : `/store/${encodeURIComponent(product.slug)}/book`,
+                query: { locale: product.locale, currency, returnUrl: checkoutReturnUrl || undefined }
+              }"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-arrow-left"
+              >{{ t('products.chooseAnotherSlot') }}</UButton
+            >
+          </div>
           <p class="order-summary">{{ product.summary }}</p>
           <div class="order-price">
             <span>{{ t('products.total') }}</span

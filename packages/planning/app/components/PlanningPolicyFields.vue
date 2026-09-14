@@ -11,6 +11,7 @@ const { t } = useI18n()
 const numeric = [
   'reservationMinutes',
   'slotIntervalMinutes',
+  'displayIntervalMinutes',
   'bookingHorizonDays',
   'minimumNoticeMinutes',
   'freeChanges',

@@ -34,7 +34,6 @@ const themeStyle = computed(() => ({
   '--checkout-body-font': appearance.value.bodyFontFamily
 }))
 const selectedPrice = computed(() => product.prices.find((price) => price.currency === currency.value))
-const sandboxAlertVisible = ref(true)
 const endpoint = String(useRuntimeConfig().public.productsImageKitUrlEndpoint || '').replace(/\/$/, '')
 const imageSource = (url: string) => (endpoint && url.startsWith(`${endpoint}/`) ? url.slice(endpoint.length) : url)
 const imageProvider = (url: string) => (endpoint && url.startsWith(`${endpoint}/`) ? 'imagekit' : undefined)
@@ -48,25 +47,16 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
 </script>
 
 <template>
-  <main class="checkout-page" :style="themeStyle">
+  <main class="checkout-page booking-page" :style="themeStyle">
     <div class="checkout-shell">
       <header class="checkout-header">
         <a v-if="returnUrl" :href="returnUrl" class="checkout-back">← {{ t('products.backToOffering') }}</a>
         <img v-if="appearance.logoUrl" :src="appearance.logoUrl" :alt="appearance.hostName" class="checkout-logo" />
         <span v-else class="checkout-wordmark">{{ appearance.hostName }}</span>
-        <span class="checkout-secure">{{ t('products.secureCheckout') }}</span>
+        <span class="checkout-secure" :class="{ 'checkout-test': product.storeMode === 'sandbox' }">{{
+          t(product.storeMode === 'sandbox' ? 'products.testCheckoutLabel' : 'products.secureCheckout')
+        }}</span>
       </header>
-      <div v-if="product.storeMode === 'sandbox' && sandboxAlertVisible" class="sandbox-alert">
-        <UAlert color="warning" icon="i-lucide-flask-conical" :title="t('products.sandboxBanner')" />
-        <button
-          type="button"
-          class="sandbox-alert-close"
-          :aria-label="t('products.close')"
-          @click="sandboxAlertVisible = false"
-        >
-          <UIcon name="i-lucide-x" aria-hidden="true" />
-        </button>
-      </div>
       <div class="checkout-grid">
         <aside class="order-card" aria-labelledby="order-title">
           <p class="checkout-eyebrow">{{ t('products.yourSelection') }}</p>
@@ -87,6 +77,10 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
             </div>
           </div>
           <p class="order-summary">{{ product.summary }}</p>
+          <details class="mobile-offering-details">
+            <summary>{{ t('planning.offeringDetails') }}</summary>
+            <p>{{ product.summary }}</p>
+          </details>
           <p class="booking-duration">
             <UIcon name="i-lucide-clock" aria-hidden="true" />{{
               t('planning.duration', { minutes: product.durationMinutes })
@@ -120,6 +114,7 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
           <h2 id="booking-title">{{ t('planning.chooseAppointmentTime') }}</h2>
           <PlanningSlotPicker
             :key="currency"
+            docked
             :product-id="product.id"
             :currency="currency"
             :locale="product.locale"
@@ -134,6 +129,136 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
 <style scoped src="../../../../products/app/assets/css/checkout.css"></style>
 
 <style scoped>
+/* Hallmark · component: mobile booking · theme: existing checkout · tone: soft
+ * pre-emit critique: P4 H5 E4 S5 R5 V4
+ */
+.mobile-offering-details {
+  display: none;
+}
+.booking-page .booking-panel {
+  --booking-field-background: var(--checkout-surface);
+  background: var(--checkout-surface);
+  border: 1px solid var(--checkout-border);
+  border-radius: var(--checkout-radius);
+  padding: clamp(20px, 3vw, 32px);
+}
+@media (min-width: 961px) {
+  .booking-page .booking-panel > .checkout-eyebrow {
+    margin-bottom: 12px;
+  }
+  .booking-page .order-product {
+    align-items: start;
+  }
+  .booking-page #order-title,
+  .booking-page #booking-title {
+    line-height: 1.08;
+  }
+}
+@media (max-width: 960px) {
+  .booking-page .booking-panel {
+    padding: 16px 12px;
+  }
+  .booking-page .checkout-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .booking-page .order-card {
+    position: static;
+  }
+  .booking-page .checkout-shell {
+    padding-top: 8px;
+  }
+  .booking-page .checkout-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 48px;
+    margin-bottom: 12px;
+  }
+  .booking-page .checkout-secure {
+    display: none;
+  }
+  .booking-page .checkout-test {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .booking-page .checkout-logo {
+    max-height: 36px;
+    max-width: 120px;
+  }
+  .booking-page .checkout-back {
+    font-size: 0.75rem;
+  }
+  .booking-page .checkout-grid {
+    gap: 16px;
+  }
+  .booking-page .order-card {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 12px;
+  }
+  .booking-page .order-product {
+    grid-column: 1 / -1;
+  }
+  .booking-page .order-card > .mt-5 {
+    grid-column: 1 / -1;
+  }
+  .booking-page .order-card > .checkout-eyebrow,
+  .booking-page .order-summary,
+  .booking-page .order-subtitle,
+  .booking-page .booking-panel > .checkout-eyebrow {
+    display: none;
+  }
+  .booking-page .order-product {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .booking-page .order-thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+  .booking-page h1 {
+    font-size: 1.25rem;
+    line-height: 1.15;
+  }
+  .booking-page .booking-duration {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.85rem;
+  }
+  .booking-page .order-price {
+    padding-top: 0;
+    border: 0;
+    font-size: 0.85rem;
+  }
+  .booking-page .order-price > span {
+    display: none;
+  }
+  .booking-page .order-price strong {
+    font-size: 1rem;
+  }
+  .mobile-offering-details {
+    display: block;
+    margin-top: 0;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    color: var(--checkout-muted);
+    font-size: 0.85rem;
+  }
+  .mobile-offering-details summary {
+    cursor: pointer;
+    min-height: 28px;
+  }
+  .mobile-offering-details p {
+    margin-block: 8px;
+    line-height: 1.55;
+  }
+  .booking-page .booking-panel > h2 {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+}
 .booking-panel > h2 {
   margin-bottom: 28px;
 }

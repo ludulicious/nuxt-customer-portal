@@ -55,6 +55,10 @@
 .checkout-secure {
   justify-self: end;
 }
+.checkout-test {
+  color: #b91c1c;
+  font-weight: 600;
+}
 .sandbox-alert {
   position: relative;
 }
@@ -209,6 +213,29 @@ h3 {
 }
 .booking-reservation-expired .booking-countdown {
   color: var(--checkout-muted);
+}
+.reservation-expired {
+  margin-top: 16px;
+  padding: 16px 0;
+  border-block: 1px solid var(--checkout-border);
+}
+.reservation-expired-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--checkout-display);
+}
+.reservation-expired-heading > span {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--checkout-accent);
+}
+.reservation-expired p {
+  margin: 8px 0 16px;
+  color: var(--checkout-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 .order-price {
   display: flex;
@@ -414,6 +441,11 @@ a:focus-visible {
   }
   .checkout-secure {
     display: none;
+  }
+  .checkout-test {
+    display: block;
+    grid-column: 1 / -1;
+    order: 3;
   }
   .checkout-grid {
     grid-template-columns: minmax(0, 1fr);

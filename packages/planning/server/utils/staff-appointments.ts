@@ -85,6 +85,7 @@ export async function staffReschedule(event: H3Event, id: string, body: unknown)
         durationMinutes: a.snapshot.durationMinutes,
         graceMinutes: provider.grace_minutes,
         intervalMinutes: a.snapshot.policy.slotIntervalMinutes,
+        displayIntervalMinutes: a.snapshot.policy.displayIntervalMinutes ?? 30,
         noticeMinutes: 0,
         horizonDays: a.snapshot.policy.bookingHorizonDays,
         productId: a.product_id,
