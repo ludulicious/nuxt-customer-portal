@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { browserCountry, countryCodes } from '../../../shared/countries'
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
 import { z } from 'zod'
 import { formatAppointmentRange } from '@nuxt-customer-portal/core/shared/appointment-time'
@@ -25,7 +26,7 @@ interface PersonalAddress {
   archived: boolean
 }
 
-definePageMeta({ public: true, layout: 'store' })
+definePageMeta({ public: true, layout: 'store', key: (route) => `checkout:${route.path}` })
 const { t, locale, setLocale } = useI18n()
 const route = useRoute()
 const browserDateLocale = ref<string[]>()
@@ -170,6 +171,9 @@ const displayNameCustomized = ref(false)
 const checkoutForm = useTemplateRef('checkoutForm')
 const { currentUser, isAuthenticated } = usePortalSession()
 const canBuyAsBusiness = ref(initialBillingProfile?.canBuyAsBusiness ?? true)
+function toggleBuyerType() {
+  state.billing.type = state.billing.type === 'person' ? 'organization' : 'person'
+}
 const clients = ref<Array<{ id: string; name: string }>>([])
 const state = reactive({
   priceId: '',
@@ -186,6 +190,15 @@ const state = reactive({
     registrationNumber: '',
     vatNumber: ''
   }
+})
+const countryOptions = computed(() => {
+  const names = new Intl.DisplayNames(locale.value, { type: 'region' })
+  return countryCodes
+    .map((value) => ({ value, label: `${names.of(value) || value} (${value})` }))
+    .sort((a, b) => a.label.localeCompare(b.label, locale.value))
+})
+onMounted(() => {
+  state.billing.country = browserCountry(navigator.languages) || state.billing.country
 })
 const schema = useProductFormSchema(z.object({ priceId: z.string().min(1), billing: billingSchema }))
 let requestId = crypto.randomUUID()
@@ -291,7 +304,7 @@ async function logout() {
     company: '',
     clientId: '',
     address: '',
-    country: 'NL',
+    country: browserCountry(navigator.languages) || 'NL',
     registrationNumber: '',
     vatNumber: ''
   })
@@ -466,7 +479,7 @@ async function buy() {
                   }))
                 "
             /></UFormField>
-            <UFormField v-if="!isAuthenticated || canBuyAsBusiness" name="billing.type" :label="t('products.buyingAs')"
+            <UFormField v-if="isAuthenticated && canBuyAsBusiness" name="billing.type" :label="t('products.buyingAs')"
               ><USelect
                 v-model="state.billing.type"
                 class="w-full"
@@ -490,7 +503,7 @@ async function buy() {
             <div class="field-grid">
               <template v-if="state.billing.type === 'person'">
                 <UFormField name="billing.firstName" :label="t('products.firstName')" required
-                  ><UInput v-model="state.billing.firstName" autocomplete="given-name" class="w-full"
+                  ><UInput v-model="state.billing.firstName" autocomplete="given-name" autofocus class="w-full"
                 /></UFormField>
                 <UFormField name="billing.lastName" :label="t('products.lastName')" required
                   ><UInput v-model="state.billing.lastName" autocomplete="family-name" class="w-full"
@@ -506,12 +519,33 @@ async function buy() {
               <UFormField name="billing.email" :label="t('products.email')"
                 ><UInput v-model="state.billing.email" type="email" autocomplete="email" class="w-full"
               /></UFormField>
-              <UFormField name="billing.country" :label="t('products.country')"
-                ><UInput v-model="state.billing.country" maxlength="2" autocomplete="country" class="w-full"
-              /></UFormField>
-              <UFormField name="billing.address" :label="t('products.address')"
+              <UFormField name="billing.address" :label="t('products.address')" class="col-span-full"
                 ><UTextarea v-model="state.billing.address" autocomplete="street-address" class="w-full"
               /></UFormField>
+              <UFormField name="billing.country" :label="t('products.country')" class="col-span-full"
+                ><USelectMenu v-model="state.billing.country" :items="countryOptions" value-key="value" class="w-full"
+              /></UFormField>
+              <div v-if="!isAuthenticated" class="col-span-full">
+                <UButton
+                  v-if="state.billing.type === 'person'"
+                  type="button"
+                  color="neutral"
+                  variant="link"
+                  class="buyer-type-link text-sm p-0"
+                  @click="toggleBuyerType"
+                  >{{ t('products.buyingAsCompany') }}</UButton
+                >
+                <UButton
+                  v-else
+                  type="button"
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-arrow-left"
+                  class="cursor-pointer"
+                  @click="toggleBuyerType"
+                  >{{ t('products.switchToPrivatePurchase') }}</UButton
+                >
+              </div>
               <template v-if="state.billing.type === 'organization'">
                 <UFormField name="billing.company" :label="t('products.company')"
                   ><UInput v-model="state.billing.company" autocomplete="organization" class="w-full"
@@ -521,8 +555,8 @@ async function buy() {
                 /></UFormField>
               </template>
             </div>
-            <p class="checkout-note">
-              {{ t(product.storeMode === 'sandbox' ? 'products.sandboxFinalTax' : 'products.finalTax') }}
+            <p v-if="product.storeMode !== 'sandbox'" class="checkout-note">
+              {{ t('products.finalTax') }}
             </p>
             <UButton
               type="submit"

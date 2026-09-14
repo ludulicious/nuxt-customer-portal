@@ -59,6 +59,23 @@
   color: #b91c1c;
   font-weight: 600;
 }
+.buyer-type-link {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--checkout-muted);
+  text-underline-offset: 3px;
+  transition: color 150ms ease;
+}
+.buyer-type-link:hover {
+  color: var(--checkout-display);
+  text-decoration: underline;
+}
+.buyer-type-link:focus-visible {
+  color: var(--checkout-display);
+  text-decoration: underline;
+  outline: 2px solid var(--checkout-focus);
+  outline-offset: 4px;
+}
 .sandbox-alert {
   position: relative;
 }
