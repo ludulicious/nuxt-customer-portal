@@ -9,5 +9,5 @@ export default defineEventHandler(async (event) => {
     String(query.state || ''),
     String(query.code || '')
   )
-  return sendRedirect(event, '/planning?connected=1', 303)
+  return sendRedirect(event, '/planning/settings?connected=1', 303)
 })
