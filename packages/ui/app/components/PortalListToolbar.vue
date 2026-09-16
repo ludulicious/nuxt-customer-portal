@@ -19,7 +19,7 @@ const showFilters = ref(false)
 const showSort = ref(false)
 const toolbar = ref<HTMLElement | null>(null)
 const { width } = useElementSize(toolbar)
-const isMobile = computed(() => width.value < Math.max(660, 160 + props.filters.length * 120 + 232))
+const isMobile = computed(() => width.value < Math.max(660, 160 + props.filters.length * 208 + 232))
 </script>
 
 <template>
@@ -40,7 +40,11 @@ const isMobile = computed(() => width.value < Math.max(660, 160 + props.filters.
           value-key="value"
           :placeholder="filter.placeholder"
           :aria-label="filter.placeholder"
-          class="w-44 min-w-28 shrink"
+          class="w-52 shrink-0"
+          :ui="{
+            content: 'w-max min-w-[var(--reka-select-trigger-width)]',
+            itemLabel: 'whitespace-nowrap'
+          }"
           @update:model-value="emit('filter', filter.key, $event)"
         />
         <div class="ml-auto flex shrink-0 items-center gap-2">

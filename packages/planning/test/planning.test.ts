@@ -13,8 +13,44 @@ import {
 } from '../shared/availability'
 import { availabilitySchema, holdSchema, holdCredentialSchema } from '../shared/validation'
 import { calendarInvitation } from '../shared/invitation'
+import { appointmentCalendarDescription, appointmentCalendarTitle } from '../shared/appointment-calendar'
 import { encrypt, decrypt } from '../server/utils/crypto'
 import type { AvailabilityWindow } from '../shared/types'
+
+test('appointment calendar descriptions include the tooltip client and timezone details', () => {
+  const billing = {
+    type: 'person' as const,
+    firstName: 'Jenni',
+    lastName: 'Iyoyo van AGC',
+    name: 'Jenni Iyoyo van AGC',
+    email: 'jenni@marpos.nl',
+    company: '',
+    address: '',
+    country: 'US',
+    registrationNumber: '',
+    vatNumber: ''
+  }
+  const description = appointmentCalendarDescription({
+    start: new Date('2026-09-17T19:00:00.000Z'),
+    end: new Date('2026-09-17T19:30:00.000Z'),
+    providerTimezone: 'Europe/Amsterdam',
+    customerTimezone: 'Europe/London',
+    locale: 'en',
+    billing,
+    email: 'jenni@marpos.nl',
+    meetingUrl: 'https://example.test/meeting',
+    graceMinutes: 0
+  })
+
+  assert.match(description, /Appointment time:\nEurope\/Amsterdam/)
+  assert.match(description, /Client:\nJenni Iyoyo van AGC\njenni@marpos.nl\nUnited States/)
+  assert.match(description, /Client time:\nEurope\/London/)
+  assert.match(description, /September 17, 2026/)
+  assert.match(description, /https:\/\/example.test\/meeting/)
+  assert.match(description, /0 minutes grace time/)
+  assert.equal(appointmentCalendarTitle('Discover Yourself', billing), 'Jenni Iyoyo van AGC - Discover Yourself')
+  assert.equal(appointmentCalendarTitle('Discover Yourself', { ...billing, name: '', firstName: '', lastName: '' }), 'Discover Yourself')
+})
 
 test('display slots stay clock-aligned when notice removes earlier starts', () => {
   const slot = (time: string) => ({

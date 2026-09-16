@@ -9,6 +9,7 @@ import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products
 import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
 import { calendarInvitation } from '../../shared/invitation'
 import { calendarWallDateTime, wallInstant } from '../../shared/availability'
+import { appointmentCalendarDescription, appointmentCalendarTitle } from '../../shared/appointment-calendar'
 import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
 import { digest, secret } from './crypto'
 import { enqueue, lockProvider } from './booking'
@@ -69,11 +70,21 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
     }
     const written = await calendarAdapter().put(a.store_id, a.user_id, provider.write_calendar_id, {
       id: eventId,
-      summary: a.snapshot.title,
+      summary: appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
       start: { dateTime: a.start_at.toISOString(), timeZone: a.snapshot.timezone },
       end: { dateTime: a.end_at.toISOString(), timeZone: a.snapshot.timezone },
       transparency: 'opaque',
-      description: `${a.meeting_url || ''}\n${a.snapshot.graceMinutes} minutes grace time after this appointment. Manage in the portal.`,
+      description: appointmentCalendarDescription({
+        start: a.start_at,
+        end: a.end_at,
+        providerTimezone: a.snapshot.timezone,
+        customerTimezone: a.snapshot.customerTimezone,
+        locale: a.snapshot.locale,
+        billing: order.snapshot.billing,
+        email: order.email,
+        meetingUrl: a.meeting_url,
+        graceMinutes: a.snapshot.graceMinutes
+      }),
       extendedProperties: { private: { portalPlanning: id, portalRevision: String(revision) } }
     })
     if (
