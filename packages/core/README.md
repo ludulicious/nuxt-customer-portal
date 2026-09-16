@@ -30,6 +30,10 @@ const products = usePaginatedResource<Product, ProductFilters>({
 })
 ```
 
+A failed page load never rejects: it resolves with no result and exposes the
+cause on `error`, so a list awaited at the top level of `setup()` still renders.
+Callers check the returned result before using it and render `error` themselves.
+
 Use `useAutoPagination` with a list container and trailing sentinel when the next
 page should load automatically. Conventional pagination controls can use the
 same `pagination` state alongside it.

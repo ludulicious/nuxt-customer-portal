@@ -21,10 +21,7 @@ defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boo
           <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1"><slot name="actions" /></div>
         </header>
         <div v-if="$slots.controls" class="shrink-0"><slot name="controls" /></div>
-        <div
-          data-products-scroll
-          :class="constrained ? 'min-h-0 flex-1 overflow-y-auto' : ''"
-        >
+        <div data-products-scroll :class="constrained ? 'min-h-0 flex-1 overflow-y-auto' : ''">
           <slot />
         </div>
       </div>

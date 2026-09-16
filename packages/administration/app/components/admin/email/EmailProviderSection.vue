@@ -40,7 +40,9 @@ const save = async () => {
     state.apiKey = ''
     credential.configured = result.configured
     credential.keyLastFour = result.keyLastFour
-    if (result.configured) await checkProvider(false)
+    if (result.configured) {
+      await checkProvider(false)
+    }
     toast.add({ title: t('admin.email.saved'), color: 'success' })
   } catch (error) {
     toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
@@ -63,12 +65,16 @@ const checkProvider = async (notify = true) => {
   } catch (error) {
     providerStatus.value = null
     providerError.value = String(error)
-    if (notify) toast.add({ title: t('admin.email.providerInvalid'), description: providerError.value, color: 'error' })
+    if (notify) {
+      toast.add({ title: t('admin.email.providerInvalid'), description: providerError.value, color: 'error' })
+    }
   } finally {
     busy.value = false
   }
 }
-if (credential.configured) await checkProvider(false)
+if (credential.configured) {
+  await checkProvider(false)
+}
 </script>
 
 <template>

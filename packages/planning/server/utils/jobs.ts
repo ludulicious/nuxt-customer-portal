@@ -429,7 +429,11 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
       } else {
         throw new Error('Unknown planning job')
       }
-      await rows('UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1', [job.id], client)
+      await rows(
+        'UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1',
+        [job.id],
+        client
+      )
       completed++
     } catch (error) {
       failed++

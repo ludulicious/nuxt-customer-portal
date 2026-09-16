@@ -51,26 +51,16 @@ async function disconnect(provider: string) {
       <div class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
           <span class="font-semibold capitalize">{{ provider }}</span
-          ><UBadge
-            variant="subtle"
-            :color="connection?.healthy ? 'success' : 'warning'"
-            >{{
-              t(
-                connection?.healthy ? 'planning.connected' : 'planning.notConnected'
-              )
-            }}</UBadge
+          ><UBadge variant="subtle" :color="connection?.healthy ? 'success' : 'warning'">{{
+            t(connection?.healthy ? 'planning.connected' : 'planning.notConnected')
+          }}</UBadge
           ><span v-if="connection?.healthy && connection.externalUserLabel" class="text-sm text-muted">{{
             connection.externalUserLabel
           }}</span
           ><UButton :loading="busy" variant="outline" @click="connect(provider)">{{ t('planning.connect') }}</UButton
-          ><UButton
-            v-if="connection"
-            color="neutral"
-            variant="ghost"
-            :disabled="busy"
-            @click="disconnect(provider)"
-            >{{ t('planning.disconnect') }}</UButton
-          >
+          ><UButton v-if="connection" color="neutral" variant="ghost" :disabled="busy" @click="disconnect(provider)">{{
+            t('planning.disconnect')
+          }}</UButton>
         </div>
       </div></UCard
     >

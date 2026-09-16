@@ -16,12 +16,14 @@ export const newAppointmentEmail = {
     en: {
       subject: 'Your appointment is confirmed: {{product}}',
       body: 'Dear {{recipient_name}},\n\nYour new appointment has been confirmed. You can find the details below.\n\n- **Appointment:** {{product}}\n- **Date and time:** {{time}}\n\n[Join the meeting]({{meetingUrl}})\n\nYou can review or manage your appointment at any time from [your appointments]({{url}}).',
-      footer: 'We look forward to seeing you. If anything changes, you can always find the most recent information through the appointment link above.'
+      footer:
+        'We look forward to seeing you. If anything changes, you can always find the most recent information through the appointment link above.'
     },
     nl: {
       subject: 'Je afspraak is bevestigd: {{product}}',
       body: 'Beste {{recipient_name}},\n\nJe nieuwe afspraak is bevestigd. Hieronder vind je de gegevens.\n\n- **Afspraak:** {{product}}\n- **Datum en tijd:** {{time}}\n\n[Deelnemen aan de afspraak]({{meetingUrl}})\n\nJe kunt je afspraak op elk moment bekijken of beheren via [je afspraken]({{url}}).',
-      footer: 'We kijken ernaar uit je te zien. Als er iets verandert, vind je via de bovenstaande link altijd de meest recente informatie.'
+      footer:
+        'We kijken ernaar uit je te zien. Als er iets verandert, vind je via de bovenstaande link altijd de meest recente informatie.'
     }
   },
   placeholders: appointmentPlaceholders
@@ -35,12 +37,14 @@ export const updatedAppointmentEmail = {
     en: {
       subject: 'Your appointment has been updated: {{product}}',
       body: 'Dear {{recipient_name}},\n\nYour appointment has been updated. You can find the latest details below.\n\n**{{status}}**\n\n- **Appointment:** {{product}}\n- **Date and time:** {{time}}\n\n[Join the meeting]({{meetingUrl}})\n\nYou can review or manage your appointment at any time from [your appointments]({{url}}).',
-      footer: 'We look forward to seeing you. If anything changes, you can always find the most recent information through the appointment link above.'
+      footer:
+        'We look forward to seeing you. If anything changes, you can always find the most recent information through the appointment link above.'
     },
     nl: {
       subject: 'Je afspraak is bijgewerkt: {{product}}',
       body: 'Beste {{recipient_name}},\n\nJe afspraak is bijgewerkt. Hieronder vind je de meest recente gegevens.\n\n**{{status}}**\n\n- **Afspraak:** {{product}}\n- **Datum en tijd:** {{time}}\n\n[Deelnemen aan de afspraak]({{meetingUrl}})\n\nJe kunt je afspraak op elk moment bekijken of beheren via [je afspraken]({{url}}).',
-      footer: 'We kijken ernaar uit je te zien. Als er iets verandert, vind je via de bovenstaande link altijd de meest recente informatie.'
+      footer:
+        'We kijken ernaar uit je te zien. Als er iets verandert, vind je via de bovenstaande link altijd de meest recente informatie.'
     }
   },
   placeholders: appointmentStatusPlaceholders

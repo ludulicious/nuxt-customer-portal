@@ -17,8 +17,12 @@ const providerState = reactive({
 })
 const mainCalendar = computed(() => calendars.value.find((calendar) => calendar.id === providerState.writeCalendarId))
 const mainConfigured = computed(() => googleConnected.value && !!providerState.writeCalendarId)
-const writableCalendars = computed(() => calendars.value.filter((calendar) => ['owner', 'writer'].includes(calendar.accessRole)))
-const additionalCalendars = computed(() => calendars.value.filter((calendar) => calendar.id !== providerState.writeCalendarId))
+const writableCalendars = computed(() =>
+  calendars.value.filter((calendar) => ['owner', 'writer'].includes(calendar.accessRole))
+)
+const additionalCalendars = computed(() =>
+  calendars.value.filter((calendar) => calendar.id !== providerState.writeCalendarId)
+)
 const additionalCalendarIds = computed({
   get: () => providerState.busyCalendarIds.filter((id) => id !== providerState.writeCalendarId),
   set: (ids: string[]) => {
@@ -32,7 +36,9 @@ async function load() {
   error.value = ''
   try {
     const settings = await api.provider()
-    googleConnected.value = settings.connections.some((connection) => connection.provider === 'google' && connection.healthy)
+    googleConnected.value = settings.connections.some(
+      (connection) => connection.provider === 'google' && connection.healthy
+    )
     Object.assign(providerState, {
       timezone: settings.timezone,
       graceMinutes: settings.graceMinutes,
@@ -116,7 +122,11 @@ async function saveSettings() {
                 <UBadge v-if="mainConfigured" color="success" variant="subtle">{{ t('planning.connected') }}</UBadge>
               </div>
               <p class="mt-1 text-sm text-muted">
-                {{ mainConfigured ? t('planning.mainCalendarFixedDescription') : t('planning.chooseMainCalendarDescription') }}
+                {{
+                  mainConfigured
+                    ? t('planning.mainCalendarFixedDescription')
+                    : t('planning.chooseMainCalendarDescription')
+                }}
               </p>
             </div>
             <UBadge color="primary" variant="outline">{{ t('planning.readWrite') }}</UBadge>
@@ -162,11 +172,15 @@ async function saveSettings() {
             class="w-full"
           />
         </UFormField>
-        <p v-if="!additionalCalendars.length" class="mt-3 text-sm text-muted">{{ t('planning.noAdditionalCalendars') }}</p>
+        <p v-if="!additionalCalendars.length" class="mt-3 text-sm text-muted">
+          {{ t('planning.noAdditionalCalendars') }}
+        </p>
       </UCard>
 
       <UCard>
-        <template #header><h2 class="font-semibold">{{ t('planning.schedulingPreferences') }}</h2></template>
+        <template #header
+          ><h2 class="font-semibold">{{ t('planning.schedulingPreferences') }}</h2></template
+        >
         <div class="grid gap-4 sm:grid-cols-2">
           <UFormField
             name="availabilityCalendarTitle"
@@ -191,7 +205,9 @@ async function saveSettings() {
       </UCard>
 
       <div class="flex justify-end">
-        <UButton type="submit" :loading="busy">{{ mainConfigured ? t('planning.save') : t('planning.setMainCalendar') }}</UButton>
+        <UButton type="submit" :loading="busy">{{
+          mainConfigured ? t('planning.save') : t('planning.setMainCalendar')
+        }}</UButton>
       </div>
     </UForm>
   </div>

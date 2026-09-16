@@ -126,6 +126,39 @@
       "languages": {
         "label": "Supported UI languages",
         "help": "Choose at least one language for the portal interface. If the current language is disabled, the portal switches to the first supported language."
+      },
+      "appearance": {
+        "presets": "Appearance presets",
+        "presetHint": "Soft editorial pairs elegant headings with lavender surfaces and sea-blue accents. Applying a preset replaces the styling below; save to publish your changes.",
+        "softEditorial": "Apply Soft editorial",
+        "reset": "Use theme defaults",
+        "themeDefault": "Theme default",
+        "headingFont": "Heading font",
+        "bodyFont": "Body font",
+        "shape": "Buttons and cards",
+        "soft": "Rounded with soft shadows",
+        "headerBranding": "Header branding",
+        "markName": "Icon and portal name",
+        "fullLogo": "Full logo",
+        "logoFallback": "Uses the icon and portal name when a full logo is unavailable.",
+        "secondaryLight": "Secondary accent — light",
+        "secondaryDark": "Secondary accent — dark",
+        "backgroundLight": "Page background — light",
+        "backgroundDark": "Page background — dark",
+        "surfaceLight": "Card surface — light",
+        "surfaceDark": "Card surface — dark",
+        "preview": "Live preview",
+        "previewHint": "Draft appearance only. Changes are published when you save.",
+        "previewMode": "Preview color mode",
+        "light": "Light",
+        "dark": "Dark",
+        "dashboard": "Dashboard",
+        "account": "My account",
+        "welcome": "Welcome to your portal",
+        "workspace": "Your workspace",
+        "sampleDescription": "Your information and next steps, together in one place.",
+        "primaryAction": "View details",
+        "secondaryAccent": "Secondary accent"
       }
     }
   }

@@ -58,7 +58,9 @@ const customerTimezoneRange = computed(() =>
 const hasPopover = computed(() => props.readonly || Boolean(props.title))
 const timezoneName = (timezone: string) => timezone.replaceAll('_', ' ')
 const countryName = computed(() => {
-  if (!props.country) return ''
+  if (!props.country) {
+    return ''
+  }
   try {
     return new Intl.DisplayNames([locale.value], { type: 'region' }).of(props.country.toUpperCase()) || props.country
   } catch {
@@ -135,13 +137,7 @@ function edit() {
               t('planning.switchToUserTimezone')
             }}</UButton>
           </template>
-          <UButton
-            v-else-if="editable"
-            icon="i-lucide-pencil"
-            size="sm"
-            variant="soft"
-            @click="edit"
-          >
+          <UButton v-else-if="editable" icon="i-lucide-pencil" size="sm" variant="soft" @click="edit">
             {{ t('planning.editAvailability') }}
           </UButton>
         </div>

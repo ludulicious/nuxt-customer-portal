@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
+import { portalAppearanceSchema } from './appearance'
 
 export const portalModuleIds = [
   'timesheets',
@@ -19,7 +20,6 @@ export const portalOnboardingSteps = ['branding', 'languages', 'clients', 'modul
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
 
 const text = (maximum: number) => z.string().trim().max(maximum)
-const color = z.string().regex(/^#[0-9a-f]{6}$/i, 'Use a six-digit hexadecimal color')
 const image = z
   .string()
   .max(2_800_000)
@@ -79,12 +79,7 @@ export const portalSettingsSchema = z
       .default([...portalLanguageCodes]),
     clients: portalClientsSchema.default({ allowedTypes: ['organization'], personalSelfRegistration: false }),
     branding: portalBrandingSchema,
-    appearance: z.object({
-      theme: z.enum(portalThemeNames),
-      colorMode: z.enum(portalColorModePolicies),
-      primaryLight: color,
-      primaryDark: color
-    }),
+    appearance: portalAppearanceSchema,
     enabledModules: z
       .array(z.enum(portalModuleIds))
       .min(1)
@@ -180,7 +175,12 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     logoLight: '',
     logoDark: ''
   },
-  appearance: { theme: 'apex', colorMode: 'user-choice', primaryLight: '#ea580c', primaryDark: '#fb923c' },
+  appearance: portalAppearanceSchema.parse({
+    theme: 'apex',
+    colorMode: 'user-choice',
+    primaryLight: '#ea580c',
+    primaryDark: '#fb923c'
+  }),
   clients: { allowedTypes: ['organization'], personalSelfRegistration: false },
   enabledModules: ['timesheets', 'invoices', 'invoice-timesheets'],
   content: { en: defaultLocaleContent('en'), nl: defaultLocaleContent('nl') }

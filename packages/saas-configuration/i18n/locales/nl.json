@@ -126,6 +126,39 @@
       "languages": {
         "label": "Ondersteunde interfacetalen",
         "help": "Kies minstens één taal voor de portaalinterface. Als de huidige taal wordt uitgeschakeld, schakelt het portaal over naar de eerste ondersteunde taal."
+      },
+      "appearance": {
+        "presets": "Stijlvoorinstellingen",
+        "presetHint": "Zacht redactioneel combineert elegante koppen met lavendelkleurige vlakken en zeeblauwe accenten. Een voorinstelling vervangt de stijl hieronder; sla op om uw wijzigingen te publiceren.",
+        "softEditorial": "Zacht redactioneel toepassen",
+        "reset": "Themastandaarden gebruiken",
+        "themeDefault": "Themastandaard",
+        "headingFont": "Lettertype voor koppen",
+        "bodyFont": "Lettertype voor tekst",
+        "shape": "Knoppen en kaarten",
+        "soft": "Afgerond met zachte schaduwen",
+        "headerBranding": "Logo in de kopbalk",
+        "markName": "Pictogram en portaalnaam",
+        "fullLogo": "Volledig logo",
+        "logoFallback": "Gebruikt het pictogram en de portaalnaam als er geen volledig logo beschikbaar is.",
+        "secondaryLight": "Secundair accent — licht",
+        "secondaryDark": "Secundair accent — donker",
+        "backgroundLight": "Pagina-achtergrond — licht",
+        "backgroundDark": "Pagina-achtergrond — donker",
+        "surfaceLight": "Kaartachtergrond — licht",
+        "surfaceDark": "Kaartachtergrond — donker",
+        "preview": "Live voorbeeld",
+        "previewHint": "Alleen een voorbeeld. Wijzigingen worden gepubliceerd wanneer u opslaat.",
+        "previewMode": "Kleurmodus van het voorbeeld",
+        "light": "Licht",
+        "dark": "Donker",
+        "dashboard": "Dashboard",
+        "account": "Mijn account",
+        "welcome": "Welkom in uw portaal",
+        "workspace": "Uw werkplek",
+        "sampleDescription": "Uw informatie en vervolgstappen samen op één plek.",
+        "primaryAction": "Details bekijken",
+        "secondaryAccent": "Secundair accent"
       }
     }
   }

@@ -100,7 +100,7 @@ const reset = async () => {
       `/api/admin/email/texts/${encodeURIComponent(item.moduleId)}/${encodeURIComponent(item.definition.id)}/${selectedLocale.value}`,
       { method: 'DELETE' }
     )
-    delete overrides[overrideKey.value]
+    Reflect.deleteProperty(overrides, overrideKey.value)
     Object.assign(overrides, result.textOverrides)
     toast.add({ title: t('admin.email.textReset'), color: 'success' })
   } catch (error) {

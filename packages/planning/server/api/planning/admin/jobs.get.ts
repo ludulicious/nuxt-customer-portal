@@ -119,9 +119,13 @@ export default defineEventHandler(async (event) => {
     )
     const byId = new Map(entities.map((entity) => [entity.id, entity]))
     for (const item of items) {
-      if (item.kind !== 'availability' || !item.subject) continue
+      if (item.kind !== 'availability' || !item.subject) {
+        continue
+      }
       const entity = byId.get(item.subject)
-      if (!entity) continue
+      if (!entity) {
+        continue
+      }
       item.subject = entity.providerName
       item.entity = {
         type: 'availability',
@@ -144,10 +148,9 @@ export default defineEventHandler(async (event) => {
   return {
     items,
     kinds: (
-      await rows<{ kind: string }>(
-        `${scopedJobs} SELECT DISTINCT kind FROM scoped WHERE store_id=$1 ORDER BY kind`,
-        [store.organization_id]
-      )
+      await rows<{ kind: string }>(`${scopedJobs} SELECT DISTINCT kind FROM scoped WHERE store_id=$1 ORDER BY kind`, [
+        store.organization_id
+      ])
     ).map((row) => row.kind),
     pagination: { total, page: query.page, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) }
   }

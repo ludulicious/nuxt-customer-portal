@@ -614,7 +614,11 @@ function removeFile(id: string, index: number) {
           </div>
         </UFormField>
         <template v-if="state.planning.enabled">
-          <div v-if="!appointmentSetupRequired" class="grid gap-4" :class="{ 'sm:grid-cols-2': section !== 'planning' }">
+          <div
+            v-if="!appointmentSetupRequired"
+            class="grid gap-4"
+            :class="{ 'sm:grid-cols-2': section !== 'planning' }"
+          >
             <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
               ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
             /></UFormField>

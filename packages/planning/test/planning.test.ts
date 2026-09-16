@@ -49,7 +49,10 @@ test('appointment calendar descriptions include the tooltip client and timezone 
   assert.match(description, /https:\/\/example.test\/meeting/)
   assert.match(description, /0 minutes grace time/)
   assert.equal(appointmentCalendarTitle('Discover Yourself', billing), 'Jenni Iyoyo van AGC - Discover Yourself')
-  assert.equal(appointmentCalendarTitle('Discover Yourself', { ...billing, name: '', firstName: '', lastName: '' }), 'Discover Yourself')
+  assert.equal(
+    appointmentCalendarTitle('Discover Yourself', { ...billing, name: '', firstName: '', lastName: '' }),
+    'Discover Yourself'
+  )
 })
 
 test('display slots stay clock-aligned when notice removes earlier starts', () => {

@@ -1,26 +1,39 @@
-import { primaryForeground } from '../../shared/primary-contrast'
+import { appearanceStylesheet } from '../../shared/appearance'
 
 export default defineNuxtPlugin(async () => {
-  const { refreshPublicSettings } = usePortalSettings()
-  const settings = await refreshPublicSettings().catch(() => null)
-  if (!settings) {
-    return
-  }
+  const { settings, refreshPublicSettings } = usePortalSettings()
+  await refreshPublicSettings().catch(() => null)
   const colorMode = useColorMode()
-  if (settings.appearance.colorMode === 'light-only') {
-    colorMode.preference = 'light'
-  }
-  if (settings.appearance.colorMode === 'dark-only') {
-    colorMode.preference = 'dark'
-  }
-
-  useHead(() => ({
-    htmlAttrs: { 'data-portal-theme': settings.appearance.theme },
-    style: [
-      {
-        key: 'portal-primary-colors',
-        innerHTML: `:root{--portal-primary:${settings.appearance.primaryLight};--portal-on-primary:${primaryForeground(settings.appearance.primaryLight)};--ui-primary:${settings.appearance.primaryLight};--color-primary-500:${settings.appearance.primaryLight};--color-primary-600:${settings.appearance.primaryLight}}html.dark{--portal-primary:${settings.appearance.primaryDark};--portal-on-primary:${primaryForeground(settings.appearance.primaryDark)};--ui-primary:${settings.appearance.primaryDark};--color-primary-500:${settings.appearance.primaryDark};--color-primary-600:${settings.appearance.primaryDark}}`
+  watch(
+    () => settings.value?.appearance.colorMode,
+    (policy) => {
+      if (policy === 'light-only') {
+        colorMode.preference = 'light'
       }
-    ]
-  }))
+      if (policy === 'dark-only') {
+        colorMode.preference = 'dark'
+      }
+    },
+    { immediate: true }
+  )
+
+  useHead(() => {
+    const appearance = settings.value?.appearance
+    if (!appearance) {
+      return {}
+    }
+    return {
+      htmlAttrs: {
+        'data-portal-theme': appearance.theme,
+        'data-portal-shape': appearance.shape,
+        'data-portal-heading-font': appearance.headingFont,
+        'data-portal-body-font': appearance.bodyFont,
+        'data-portal-surfaces':
+          appearance.backgroundLight || appearance.backgroundDark || appearance.surfaceLight || appearance.surfaceDark
+            ? 'custom'
+            : 'theme'
+      },
+      style: [{ key: 'portal-primary-colors', innerHTML: appearanceStylesheet(appearance) }]
+    }
+  })
 })

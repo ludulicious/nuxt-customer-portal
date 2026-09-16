@@ -61,6 +61,7 @@ export default defineEventHandler(async (event) => {
     organizationRole: orgRole || null,
     activeOrganization: activeOrganization,
     organizationType: activeOrganization?.organizationType ?? null,
-    isPersonalClient: activeOrganization?.organizationType === 'CLIENT' && (await isPersonalClient(activeOrganization.id))
+    isPersonalClient:
+      activeOrganization?.organizationType === 'CLIENT' && (await isPersonalClient(activeOrganization.id))
   }
 })

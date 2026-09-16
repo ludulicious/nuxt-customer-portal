@@ -45,8 +45,13 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { modules: registeredModules } = usePortalFeatures()
-  const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType, activeOrganizationIsPersonal } =
-    usePortalSession()
+  const {
+    isAuthenticated,
+    isSystemAdmin,
+    activeOrganizationRole,
+    activeOrganizationType,
+    activeOrganizationIsPersonal
+  } = usePortalSession()
 
   const accessibleModules = computed(() =>
     registeredModules.value

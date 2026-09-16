@@ -15,10 +15,18 @@ const extension = computed(() => {
 })
 const icon = computed(() => {
   const type = props.file.content_type
-  if (type === 'application/pdf' || extension.value === 'PDF') return 'i-lucide-file-text'
-  if (type.startsWith('image/')) return 'i-lucide-file-image'
-  if (type.startsWith('audio/')) return 'i-lucide-file-audio'
-  if (type.startsWith('video/')) return 'i-lucide-file-video'
+  if (type === 'application/pdf' || extension.value === 'PDF') {
+    return 'i-lucide-file-text'
+  }
+  if (type.startsWith('image/')) {
+    return 'i-lucide-file-image'
+  }
+  if (type.startsWith('audio/')) {
+    return 'i-lucide-file-audio'
+  }
+  if (type.startsWith('video/')) {
+    return 'i-lucide-file-video'
+  }
   if (type.includes('spreadsheet') || ['CSV', 'XLS', 'XLSX', 'ODS'].includes(extension.value)) {
     return 'i-lucide-file-spreadsheet'
   }
@@ -39,7 +47,9 @@ const icon = computed(() => {
   return 'i-lucide-file'
 })
 const size = computed(() => {
-  if (props.file.size < 1024) return `${props.file.size} B`
+  if (props.file.size < 1024) {
+    return `${props.file.size} B`
+  }
   const units = ['KB', 'MB', 'GB']
   let value = props.file.size / 1024
   let unit = units[0]!
@@ -83,13 +93,7 @@ const size = computed(() => {
         </UButton>
       </div>
     </div>
-    <audio
-      v-if="file.content_type.startsWith('audio/')"
-      :src="source"
-      controls
-      preload="none"
-      class="mt-4 w-full"
-    />
+    <audio v-if="file.content_type.startsWith('audio/')" :src="source" controls preload="none" class="mt-4 w-full" />
     <video
       v-else-if="file.content_type.startsWith('video/')"
       :src="source"

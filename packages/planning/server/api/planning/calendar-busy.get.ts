@@ -19,7 +19,9 @@ export default defineEventHandler(async (event) => {
     'SELECT busy_calendar_ids,write_calendar_id FROM planning.provider WHERE store_id=$1 AND user_id=$2',
     [storeId, userId]
   )
-  const calendarIds = [...new Set([...(provider?.busy_calendar_ids || []), provider?.write_calendar_id].filter(Boolean))] as string[]
+  const calendarIds = [
+    ...new Set([...(provider?.busy_calendar_ids || []), provider?.write_calendar_id].filter(Boolean))
+  ] as string[]
   if (!calendarIds.length) {
     return []
   }

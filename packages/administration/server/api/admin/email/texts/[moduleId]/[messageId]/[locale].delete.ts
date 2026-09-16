@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
   const current = await getPortalEmailSettings()
   const textOverrides = { ...current.textOverrides }
-  delete textOverrides[`${moduleId}.${messageId}.${locale}`]
+  Reflect.deleteProperty(textOverrides, `${moduleId}.${messageId}.${locale}`)
   return savePortalEmailSettings(session.user.id, {
     fromName: current.fromName,
     fromEmail: current.fromEmail,

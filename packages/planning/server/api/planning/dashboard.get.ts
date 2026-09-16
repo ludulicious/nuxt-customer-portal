@@ -1,10 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { appointmentScope } from '@nuxt-customer-portal/planning/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
-import type {
-  PlanningDashboardAppointment,
-  PlanningDashboardDto
-} from '@nuxt-customer-portal/planning/shared/types'
+import type { PlanningDashboardAppointment, PlanningDashboardDto } from '@nuxt-customer-portal/planning/shared/types'
 
 export default defineEventHandler(async (event): Promise<PlanningDashboardDto> => {
   const scope = await appointmentScope(event)

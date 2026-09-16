@@ -37,7 +37,9 @@ function timezoneRange(start: Date, end: Date, timezone: string, locale: Locale)
 }
 
 function countryName(country: string, locale: Locale) {
-  if (!country) return ''
+  if (!country) {
+    return ''
+  }
   try {
     return new Intl.DisplayNames([locale], { type: 'region' }).of(country.toUpperCase()) || country
   } catch {
@@ -72,7 +74,9 @@ export function appointmentCalendarDescription(input: AppointmentCalendarDescrip
       ].join('\n')
     )
   }
-  if (input.meetingUrl) sections.push(input.meetingUrl)
+  if (input.meetingUrl) {
+    sections.push(input.meetingUrl)
+  }
   sections.push(text.grace(input.graceMinutes))
   return sections.join('\n\n')
 }

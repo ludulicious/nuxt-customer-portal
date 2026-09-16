@@ -231,7 +231,10 @@ useAutoPagination({
           {
             key: 'kind',
             placeholder: t('planning.taskType'),
-            items: [{ value: 'all', label: t('planning.allTaskTypes') }, ...kinds.map((kind) => ({ value: kind, label: kindLabel(kind) }))]
+            items: [
+              { value: 'all', label: t('planning.allTaskTypes') },
+              ...kinds.map((kind) => ({ value: kind, label: kindLabel(kind) }))
+            ]
           }
         ]"
         :filter-values="{ status: filters.status, kind: filters.kind }"
@@ -257,8 +260,16 @@ useAutoPagination({
       </div>
       <div v-else-if="!error && !jobs.length" class="py-12 text-center">
         <UIcon name="i-lucide-circle-check-big" class="mx-auto size-10 text-success" />
-        <h3 class="mt-3 font-semibold">{{ t(filters.status === 'failed' ? 'planning.noPendingTasks' : 'planning.noMatchingTasks') }}</h3>
-        <p class="mt-1 text-sm text-muted">{{ t(filters.status === 'failed' ? 'planning.noPendingTasksDescription' : 'planning.noMatchingTasksDescription') }}</p>
+        <h3 class="mt-3 font-semibold">
+          {{ t(filters.status === 'failed' ? 'planning.noPendingTasks' : 'planning.noMatchingTasks') }}
+        </h3>
+        <p class="mt-1 text-sm text-muted">
+          {{
+            t(
+              filters.status === 'failed' ? 'planning.noPendingTasksDescription' : 'planning.noMatchingTasksDescription'
+            )
+          }}
+        </p>
       </div>
       <div v-else class="grid gap-3">
         <div v-if="resource.hasPreviousPage.value" ref="previousSentinel" class="h-px" aria-hidden="true" />
@@ -268,33 +279,70 @@ useAutoPagination({
         <article v-for="job in jobs" :key="job.id" class="rounded-lg border border-default bg-default p-4 shadow-xs">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex min-w-0 items-start gap-3">
-              <span class="flex size-9 shrink-0 items-center justify-center rounded-md" :class="job.completedAt ? 'bg-success/10 text-success' : job.error ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning'">
-                <UIcon :name="job.completedAt ? 'i-lucide-circle-check' : job.error ? 'i-lucide-triangle-alert' : 'i-lucide-clock-3'" class="size-5" />
+              <span
+                class="flex size-9 shrink-0 items-center justify-center rounded-md"
+                :class="
+                  job.completedAt
+                    ? 'bg-success/10 text-success'
+                    : job.error
+                      ? 'bg-error/10 text-error'
+                      : 'bg-warning/10 text-warning'
+                "
+              >
+                <UIcon
+                  :name="
+                    job.completedAt
+                      ? 'i-lucide-circle-check'
+                      : job.error
+                        ? 'i-lucide-triangle-alert'
+                        : 'i-lucide-clock-3'
+                  "
+                  class="size-5"
+                />
               </span>
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <h3 class="font-semibold text-highlighted">{{ kindLabel(job.kind) }}</h3>
-                  <UBadge :color="job.completedAt ? 'success' : job.error ? 'error' : 'warning'" variant="subtle">{{ t(job.completedAt ? 'planning.succeeded' : job.error ? 'planning.failed' : 'planning.queued') }}</UBadge>
-                  <UBadge v-if="job.trigger === 'reconciliation'" color="neutral" variant="subtle">{{ t('planning.scheduledCheck') }}</UBadge>
+                  <UBadge :color="job.completedAt ? 'success' : job.error ? 'error' : 'warning'" variant="subtle">{{
+                    t(job.completedAt ? 'planning.succeeded' : job.error ? 'planning.failed' : 'planning.queued')
+                  }}</UBadge>
+                  <UBadge v-if="job.trigger === 'reconciliation'" color="neutral" variant="subtle">{{
+                    t('planning.scheduledCheck')
+                  }}</UBadge>
                 </div>
                 <p v-if="job.subject" class="mt-1 truncate text-sm text-muted">{{ job.subject }}</p>
                 <p class="mt-1 text-xs text-dimmed">
-                  {{ t('planning.lastEventValue', { date: dateTime(job.lastEventAt) }) }} · {{ t('planning.attempts', { count: job.attempts }) }}
+                  {{ t('planning.lastEventValue', { date: dateTime(job.lastEventAt) }) }} ·
+                  {{ t('planning.attempts', { count: job.attempts }) }}
                 </p>
               </div>
             </div>
-            <UButton v-if="!job.completedAt" icon="i-lucide-rotate-cw" size="sm" variant="outline" :loading="retryingId === job.id" :disabled="Boolean(retryingId) || retryingAll" @click="retryJob(job.id)">
+            <UButton
+              v-if="!job.completedAt"
+              icon="i-lucide-rotate-cw"
+              size="sm"
+              variant="outline"
+              :loading="retryingId === job.id"
+              :disabled="Boolean(retryingId) || retryingAll"
+              @click="retryJob(job.id)"
+            >
               {{ t('planning.retryTask') }}
             </UButton>
           </div>
-          <div v-if="job.entity?.type === 'availability'" class="mt-3 grid gap-x-6 gap-y-2 text-sm text-muted sm:grid-cols-2">
+          <div
+            v-if="job.entity?.type === 'availability'"
+            class="mt-3 grid gap-x-6 gap-y-2 text-sm text-muted sm:grid-cols-2"
+          >
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
               <span class="truncate">{{ job.entity.providerEmail }}</span>
             </p>
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-clock-3" class="size-4 shrink-0" />
-              <span>{{ job.entity.date }}<template v-if="job.entity.endDate"> – {{ job.entity.endDate }}</template>, {{ job.entity.startTime }}–{{ job.entity.endTime }} · {{ job.entity.timezone }}</span>
+              <span
+                >{{ job.entity.date }}<template v-if="job.entity.endDate"> – {{ job.entity.endDate }}</template
+                >, {{ job.entity.startTime }}–{{ job.entity.endTime }} · {{ job.entity.timezone }}</span
+              >
             </p>
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-package" class="size-4 shrink-0" />
@@ -307,7 +355,9 @@ useAutoPagination({
           </div>
           <div v-if="job.error" class="mt-3 rounded-md bg-error/5 px-3 py-2 text-sm text-error">
             <p class="break-words">{{ job.error }}</p>
-            <p class="mt-1 text-xs opacity-75">{{ t('planning.nextRetryValue', { date: dateTime(job.availableAt) }) }}</p>
+            <p class="mt-1 text-xs opacity-75">
+              {{ t('planning.nextRetryValue', { date: dateTime(job.availableAt) }) }}
+            </p>
           </div>
         </article>
         <div v-if="resource.hasNextPage.value" ref="nextSentinel" class="h-px" aria-hidden="true" />
@@ -317,7 +367,10 @@ useAutoPagination({
       </div>
     </div>
 
-    <footer v-if="!error" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default bg-default px-4 py-3 text-sm text-muted">
+    <footer
+      v-if="!error"
+      class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default bg-default px-4 py-3 text-sm text-muted"
+    >
       <span>{{ t('planning.taskCount', { count: pagination.total }) }}</span>
     </footer>
   </section>

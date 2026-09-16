@@ -11,7 +11,9 @@ test('email recipient name prefers first name and falls back to display name', (
 })
 
 test('portal email text renders Markdown while allowing exceptional inline HTML', () => {
-  const html = renderPortalEmailMarkdown('Hello **there**.\n\n[Open portal](https://example.test)\n\n<span>Custom HTML</span>')
+  const html = renderPortalEmailMarkdown(
+    'Hello **there**.\n\n[Open portal](https://example.test)\n\n<span>Custom HTML</span>'
+  )
   assert.match(html, /<strong>there<\/strong>/)
   assert.match(html, /<a href="https:\/\/example.test">Open portal<\/a>/)
   assert.match(html, /<span>Custom HTML<\/span>/)

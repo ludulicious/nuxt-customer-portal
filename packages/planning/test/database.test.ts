@@ -468,7 +468,8 @@ test(
           0
         )
         assert.equal(
-          (await appointmentLists.listAppointments(event(providerCookie), { host: 'another-provider' })).pagination.total,
+          (await appointmentLists.listAppointments(event(providerCookie), { host: 'another-provider' })).pagination
+            .total,
           0
         )
         const reader = await management.appointmentDetails(event(providerCookie), a.id)

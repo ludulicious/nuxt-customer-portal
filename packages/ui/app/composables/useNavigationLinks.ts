@@ -45,8 +45,13 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { navigation } = usePortalFeatures()
-  const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType, activeOrganizationIsPersonal } =
-    usePortalSession()
+  const {
+    isAuthenticated,
+    isSystemAdmin,
+    activeOrganizationRole,
+    activeOrganizationType,
+    activeOrganizationIsPersonal
+  } = usePortalSession()
 
   const visibleItems = computed(() =>
     navigation.value.filter(

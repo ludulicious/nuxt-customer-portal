@@ -95,8 +95,9 @@ export const usePaginatedResource = <Item, Filters extends object>(
       if (sequence !== requestSequence || (cause instanceof Error && cause.name === 'AbortError')) {
         return
       }
+      // Resolve with no result rather than rejecting: callers await this at the top level of
+      // `setup()`, where a rejection aborts the whole route instead of rendering `error`.
       error.value = cause instanceof Error ? cause : new Error('Failed to load data')
-      throw cause
     } finally {
       if (sequence === requestSequence) {
         pending.value = false

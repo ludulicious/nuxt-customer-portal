@@ -83,10 +83,7 @@ const fileSource = (assetId: string) => `/api/planning/appointments/${props.item
           :show-summary="false"
           @changed="emit('changed')"
         />
-        <section
-          v-if="files.length || filesError"
-          class="overflow-hidden rounded-lg border border-default bg-muted/20"
-        >
+        <section v-if="files.length || filesError" class="overflow-hidden rounded-lg border border-default bg-muted/20">
           <header class="border-b border-default px-4 py-3">
             <h2 class="font-semibold">{{ t(staff ? 'products.purchasedFiles' : 'products.yourFiles') }}</h2>
           </header>

@@ -116,7 +116,9 @@ export const refundAmount = (paid: number, alreadyRefunded: number, percentage: 
 
 /** Format a local wall time for calendar APIs, which require midnight as the following day's 00:00. */
 export function calendarWallDateTime(date: string, time: string) {
-  if (time !== '24:00') return `${date}T${time}:00`
+  if (time !== '24:00') {
+    return `${date}T${time}:00`
+  }
   const nextDate = new Date(`${date}T00:00:00Z`)
   nextDate.setUTCDate(nextDate.getUTCDate() + 1)
   return `${nextDate.toISOString().slice(0, 10)}T00:00:00`

@@ -40,7 +40,7 @@ const groups = [
 ] as const
 const cancellationFields = ['cancellationEnabled', 'cancellationCutoffMinutes', 'refundPercentage'] as const
 function overrideFields(group: (typeof groups)[number]) {
-  return group.key === 'changes' ? [...group.fields, 'changeFees'] as const : group.fields
+  return group.key === 'changes' ? ([...group.fields, 'changeFees'] as const) : group.fields
 }
 function sectionEnabled(fields: readonly (keyof PlanningPolicy)[]) {
   return overrides.value === undefined || fields.some((key) => Object.hasOwn(overrides.value!, key))
@@ -93,7 +93,10 @@ function setFee(currency: string, value: number | null | undefined) {
       :class="compact ? 'p-3' : 'p-4'"
     >
       <div class="flex items-start gap-3" :class="compact ? 'mb-3' : 'mb-4'">
-        <span class="flex shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary" :class="compact ? 'size-8' : 'size-9'">
+        <span
+          class="flex shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
+          :class="compact ? 'size-8' : 'size-9'"
+        >
           <UIcon :name="group.icon" :class="compact ? 'size-4' : 'size-5'" />
         </span>
         <div class="min-w-0 flex-1">
@@ -143,7 +146,10 @@ function setFee(currency: string, value: number | null | undefined) {
 
     <section class="rounded-lg border border-default bg-muted/20" :class="compact ? 'p-3' : 'p-4'">
       <div class="flex items-start gap-3" :class="compact ? 'mb-3' : 'mb-4'">
-        <span class="flex shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary" :class="compact ? 'size-8' : 'size-9'">
+        <span
+          class="flex shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
+          :class="compact ? 'size-8' : 'size-9'"
+        >
           <UIcon name="i-lucide-calendar-x-2" :class="compact ? 'size-4' : 'size-5'" />
         </span>
         <div class="min-w-0 flex-1">
@@ -170,10 +176,7 @@ function setFee(currency: string, value: number | null | undefined) {
         </div>
       </UFormField>
       <div v-if="sectionEnabled(cancellationFields)" class="grid gap-4" :class="{ 'sm:grid-cols-2': !compact }">
-        <UFormField
-          :name="prefix + 'cancellationCutoffMinutes'"
-          :label="t('planning.cancellationCutoffMinutes')"
-        >
+        <UFormField :name="prefix + 'cancellationCutoffMinutes'" :label="t('planning.cancellationCutoffMinutes')">
           <UInputNumber
             :model-value="state.cancellationCutoffMinutes"
             :class="compact ? 'w-full' : 'w-36 max-w-full'"

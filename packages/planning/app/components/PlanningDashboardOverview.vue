@@ -11,7 +11,9 @@ const staff = computed(() => data.value?.access.staff ?? false)
         <div>
           <h2 class="font-semibold">{{ t('planning.dashboard.overview') }}</h2>
           <p class="mt-1 text-sm text-muted">
-            {{ t(staff ? 'planning.dashboard.hostOverviewDescription' : 'planning.dashboard.clientOverviewDescription') }}
+            {{
+              t(staff ? 'planning.dashboard.hostOverviewDescription' : 'planning.dashboard.clientOverviewDescription')
+            }}
           </p>
         </div>
         <UIcon name="i-lucide-calendar-range" class="size-5 shrink-0 text-primary" />
@@ -48,13 +50,7 @@ const staff = computed(() => data.value?.access.staff ?? false)
         <UButton v-if="staff" to="/availability" variant="outline" icon="i-lucide-calendar-days">
           {{ t('planning.dashboard.manageAvailability') }}
         </UButton>
-        <UButton
-          v-if="staff"
-          to="/planning/settings"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-calendar-cog"
-        >
+        <UButton v-if="staff" to="/planning/settings" color="neutral" variant="outline" icon="i-lucide-calendar-cog">
           {{ t('planning.myAppointmentSettings') }}
         </UButton>
         <UButton v-else to="/appointments" variant="outline" icon="i-lucide-calendar-check">
