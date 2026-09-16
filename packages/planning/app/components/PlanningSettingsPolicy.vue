@@ -8,16 +8,14 @@ const api = usePlanning(),
   error = ref(''),
   busy = ref(false),
   ready = ref(false)
-onMounted(async () => {
-  try {
-    const [policy, settings] = await Promise.all([api.policy(), useProducts().settings()])
-    state.value = policy
-    currencies.value = settings.currencies
-    ready.value = true
-  } catch {
-    error.value = t('planning.loadError')
-  }
-})
+try {
+  const [policy, settings] = await Promise.all([api.policy(), useProducts().settings()])
+  state.value = policy
+  currencies.value = settings.currencies
+  ready.value = true
+} catch {
+  error.value = t('planning.loadError')
+}
 async function save() {
   busy.value = true
   try {

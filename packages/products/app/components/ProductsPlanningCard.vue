@@ -11,14 +11,12 @@ const planning = computed(() => props.product.planning || defaultPlanning())
 const assigned = computed(() =>
   members.value.filter((member) => planning.value.providerUserIds.includes(member.userId))
 )
-onMounted(async () => {
-  try {
-    members.value = await $fetch('/api/planning/admin/providers')
-    installed.value = true
-  } catch {
-    /* Planning is an optional layer. */
-  }
-})
+try {
+  members.value = await $fetch('/api/planning/admin/providers')
+  installed.value = true
+} catch {
+  /* Planning is an optional layer. */
+}
 </script>
 
 <template>

@@ -126,7 +126,7 @@ async function loadAssets() {
   }
 }
 
-onMounted(loadAssets)
+await loadAssets()
 watch(() => props.product.updatedAt, loadAssets)
 </script>
 

@@ -369,11 +369,9 @@ const refreshEmailStatuses = async (forceRefresh = false) => {
   }
 }
 
-onMounted(() => {
-  if (!isClient.value) {
-    void refreshEmailStatuses()
-  }
-})
+if (!isClient.value) {
+  await refreshEmailStatuses()
+}
 </script>
 
 <template>

@@ -8,13 +8,11 @@ const emit = defineEmits<{ cancel: [] }>(),
   state = reactive({ slug: '' }),
   error = ref('')
 const schema = computed(() => z.object({ slug: z.string().min(1, t('planning.chooseProduct')) }))
-onMounted(async () => {
-  try {
-    products.value = await api.bookableProducts()
-  } catch {
-    error.value = t('planning.loadError')
-  }
-})
+try {
+  products.value = await api.bookableProducts()
+} catch {
+  error.value = t('planning.loadError')
+}
 async function book() {
   await navigateTo({ path: `/store/${encodeURIComponent(state.slug)}/book`, query: { locale: locale.value } })
 }

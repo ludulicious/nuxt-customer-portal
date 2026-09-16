@@ -60,19 +60,17 @@ const backRoute = computed(() => {
   return { path: '/requests', query }
 })
 
-onMounted(async () => {
-  try {
-    request.value = await getRequest(requestId)
-  } catch {
-    toast.add({
-      title: t('common.error'),
-      description: t('features.serviceRequests.messages.fetchError'),
-      color: 'error'
-    })
-  } finally {
-    loading.value = false
-  }
-})
+try {
+  request.value = await getRequest(requestId)
+} catch {
+  toast.add({
+    title: t('common.error'),
+    description: t('features.serviceRequests.messages.fetchError'),
+    color: 'error'
+  })
+} finally {
+  loading.value = false
+}
 
 const handleUpdate = async (data: ServiceRequestUpdateInput) => {
   updating.value = true

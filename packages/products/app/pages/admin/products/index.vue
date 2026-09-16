@@ -132,15 +132,12 @@ watch(
   },
   { immediate: true }
 )
+try {
+  categories.value = await api.categories()
+} catch {
+  error.value = t('products.loadFailed')
+}
 onMounted(() => {
-  api
-    .categories()
-    .then((value) => {
-      categories.value = value
-    })
-    .catch(() => {
-      error.value = t('products.loadFailed')
-    })
   observer = new IntersectionObserver(
     (entries) => {
       if (pending.value || !loaded.size || !result.value) {

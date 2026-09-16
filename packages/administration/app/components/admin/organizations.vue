@@ -85,9 +85,7 @@ watch(searchQuery, () => {
   }, 300)
 })
 
-onMounted(() => {
-  loadOrganizations()
-})
+await loadOrganizations()
 
 onUnmounted(() => {
   if (searchTimeout) {

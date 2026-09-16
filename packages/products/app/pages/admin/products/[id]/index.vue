@@ -82,31 +82,27 @@ async function saved() {
     error.value = t('products.loadFailed')
   }
 }
-onMounted(async () => {
+try {
+  preview.value = await api.preview(String(route.params.id))
+  language.value = (languageOptions.value[0]?.value || preview.value.defaultLocale) as Locale
+  currency.value = currencyOptions.value.includes('EUR') ? 'EUR' : currencyOptions.value[0] || ''
+} catch {
+  error.value = t('products.loadFailed')
+} finally {
+  pending.value = false
+}
+onMounted(() => {
   try {
-    preview.value = await api.preview(String(route.params.id))
-    language.value = (languageOptions.value[0]?.value || preview.value.defaultLocale) as Locale
-    try {
-      const storedLanguage = localStorage.getItem(languageStorageKey)
-      if (languageOptions.value.some((item) => item.value === storedLanguage)) {
-        language.value = storedLanguage as Locale
-      }
-    } catch {
-      // Use the store default when browser storage is unavailable.
+    const storedLanguage = localStorage.getItem(languageStorageKey)
+    if (languageOptions.value.some((item) => item.value === storedLanguage)) {
+      language.value = storedLanguage as Locale
     }
-    currency.value = currencyOptions.value.includes('EUR') ? 'EUR' : currencyOptions.value[0] || ''
-    try {
-      const storedCurrency = localStorage.getItem(currencyStorageKey)
-      if (storedCurrency && currencyOptions.value.includes(storedCurrency)) {
-        currency.value = storedCurrency
-      }
-    } catch {
-      // Use an available currency when browser storage is unavailable.
+    const storedCurrency = localStorage.getItem(currencyStorageKey)
+    if (storedCurrency && currencyOptions.value.includes(storedCurrency)) {
+      currency.value = storedCurrency
     }
   } catch {
-    error.value = t('products.loadFailed')
-  } finally {
-    pending.value = false
+    // Keep the defaults selected during setup when browser storage is unavailable.
   }
 })
 </script>

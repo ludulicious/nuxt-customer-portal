@@ -128,9 +128,7 @@ function onListScroll() {
   }
 }
 
-onMounted(() => {
-  loadOrganizations()
-})
+await loadOrganizations()
 
 onUnmounted(() => {
   if (searchTimeout) {

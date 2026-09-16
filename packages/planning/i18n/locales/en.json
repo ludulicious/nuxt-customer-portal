@@ -73,7 +73,7 @@
     "notConnected": "Not connected",
     "connect": "Connect or reconnect",
     "disconnect": "Disconnect",
-    "connectionError": "Could not start the connection. Your administrator may need to configure Google or Zoom.",
+    "connectionError": "Could not connect to Zoom. Your administrator may need to configure Zoom.",
     "googleConnectionError": "Google Calendar is not configured for this portal yet. Ask an administrator to add the Google OAuth credentials.",
     "connectMainCalendar": "Connect your main calendar",
     "connectMainCalendarDescription": "Start with the Google Calendar that will receive your portal appointments.",

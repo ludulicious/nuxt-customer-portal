@@ -20,7 +20,7 @@ async function load() {
     error.value = t('planning.loadError')
   }
 }
-onMounted(load)
+await load()
 async function reserved(hold: HoldResult) {
   await navigateTo({
     path: `/store/${encodeURIComponent(item.value!.productSlug)}`,

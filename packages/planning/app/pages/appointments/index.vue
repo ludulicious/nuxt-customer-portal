@@ -49,7 +49,7 @@ async function load() {
     selected.value = ''
   }
 }
-onMounted(load)
+await load()
 watch(
   () => JSON.stringify(route.query),
   async (value) => {

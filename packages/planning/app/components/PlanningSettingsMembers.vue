@@ -13,7 +13,7 @@ async function load() {
     error.value = t('planning.loadError')
   }
 }
-onMounted(load)
+await load()
 async function toggle(id: string, enabled: boolean) {
   busy.value = true
   try {

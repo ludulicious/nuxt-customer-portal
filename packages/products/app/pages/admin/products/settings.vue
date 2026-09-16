@@ -43,7 +43,7 @@ async function load() {
     error.value = t('products.loadFailed')
   }
 }
-onMounted(load)
+await load()
 async function save(tab: 'general' | 'styles') {
   busy.value = true
   error.value = ''

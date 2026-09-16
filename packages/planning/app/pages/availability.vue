@@ -16,6 +16,7 @@ const api = usePlanning(),
   externalBusy = ref<CalendarBusyPeriod[]>([]),
   error = ref(''),
   busy = ref(false),
+  calendarNavigationDirection = ref<'previous' | 'next'>(),
   windowOpen = ref(false),
   deleteOpen = ref(false)
 const selected = ref<AvailabilityWindow>(),
@@ -79,11 +80,12 @@ const allProducts = computed({
     windowState.productIds = value ? null : []
   }
 })
-const days = computed(() => {
-  const first = new Date(week.value)
+function daysForWeek(value: string) {
+  const first = new Date(value)
   first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7))
   return Array.from({ length: 7 }, (_, i) => new Date(first.getTime() + i * 86400000).toISOString().slice(0, 10))
-})
+}
+const days = computed(() => daysForWeek(week.value))
 const canEditCalendar = computed(() => calendarTimezone.value === providerState.timezone)
 watch(canEditCalendar, (value) => {
   if (!value) {
@@ -175,8 +177,25 @@ watch(editOne, (value) => {
     )
   }
 })
-function moveWeek(delta: number) {
-  week.value = new Date(Date.parse(week.value) + delta * 7 * 86400000).toISOString().slice(0, 10)
+let preloadedCalendarKey = ''
+async function moveWeek(delta: number) {
+  if (calendarNavigationDirection.value) {
+    return
+  }
+  calendarNavigationDirection.value = delta < 0 ? 'previous' : 'next'
+  error.value = ''
+  const targetWeek = new Date(Date.parse(week.value) + delta * 7 * 86400000).toISOString().slice(0, 10)
+  const targetTimezone = calendarTimezone.value
+  try {
+    const targetBusy = await fetchExternalBusy(daysForWeek(targetWeek), targetTimezone)
+    preloadedCalendarKey = `${targetWeek}:${targetTimezone}`
+    week.value = targetWeek
+    externalBusy.value = targetBusy
+  } catch {
+    error.value = t('planning.externalCalendarLoadError')
+  } finally {
+    calendarNavigationDirection.value = undefined
+  }
 }
 async function load() {
   try {
@@ -190,22 +209,31 @@ async function load() {
   }
 }
 async function loadExternalBusy() {
+  externalBusy.value = await fetchExternalBusy(days.value)
+}
+async function fetchExternalBusy(targetDays: string[], timezone = calendarTimezone.value) {
   if (!providerState.busyCalendarIds.length && !providerState.writeCalendarId) {
-    externalBusy.value = []
-    return
+    return []
   }
-  const from = wallInstant(days.value[0]!, '00:00', calendarTimezone.value)
+  const from = wallInstant(targetDays[0]!, '00:00', timezone)
   const to = wallInstant(
-    new Date(Date.parse(days.value[days.value.length - 1]!) + 86400000).toISOString().slice(0, 10),
+    new Date(Date.parse(targetDays[targetDays.length - 1]!) + 86400000).toISOString().slice(0, 10),
     '00:00',
-    calendarTimezone.value
+    timezone
   )
   const periods = await api.calendarBusy({ from: from.toISOString(), to: to.toISOString() })
-  externalBusy.value = Array.isArray(periods) ? periods : []
+  return Array.isArray(periods) ? periods : []
 }
-onMounted(load)
+// Suspend the page setup until the calendar and its external events are ready.
+// This ensures the all-day row has its final layout on the first rendered frame.
+await load()
 watch([week, calendarTimezone], () => {
   if (settings.value) {
+    const calendarKey = `${week.value}:${calendarTimezone.value}`
+    if (preloadedCalendarKey === calendarKey) {
+      preloadedCalendarKey = ''
+      return
+    }
     void loadExternalBusy().catch(() => {
       error.value = t('planning.externalCalendarLoadError')
     })
@@ -340,16 +368,20 @@ async function removeWindow() {
         <div class="flex flex-wrap items-center gap-2">
           <PlanningTimezoneSelect v-model="calendarTimezone" :user-timezone="providerState.timezone" :disabled="busy" />
           <UButton
-            icon="i-lucide-chevron-left"
+            :icon="calendarNavigationDirection === 'previous' ? 'i-lucide-loader-circle' : 'i-lucide-chevron-left'"
             :aria-label="t('planning.previousWeek')"
+            :aria-busy="calendarNavigationDirection === 'previous'"
             variant="outline"
+            :ui="{ leadingIcon: calendarNavigationDirection === 'previous' ? 'animate-spin' : '' }"
             @click="moveWeek(-1)"
           />
 
           <UButton
-            icon="i-lucide-chevron-right"
+            :icon="calendarNavigationDirection === 'next' ? 'i-lucide-loader-circle' : 'i-lucide-chevron-right'"
             :aria-label="t('planning.nextWeek')"
+            :aria-busy="calendarNavigationDirection === 'next'"
             variant="outline"
+            :ui="{ leadingIcon: calendarNavigationDirection === 'next' ? 'animate-spin' : '' }"
             @click="moveWeek(1)"
           />
 

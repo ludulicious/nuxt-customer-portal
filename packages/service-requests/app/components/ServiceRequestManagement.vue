@@ -48,16 +48,14 @@ const reset = () => {
   }
 }
 watch(request, reset, { immediate: true })
-onMounted(async () => {
-  try {
-    assignees.value = await getAssignees()
-    reset()
-  } catch {
-    toast.add({ title: t('features.serviceRequests.messages.fetchError'), color: 'error' })
-  } finally {
-    loading.value = false
-  }
-})
+try {
+  assignees.value = await getAssignees()
+  reset()
+} catch {
+  toast.add({ title: t('features.serviceRequests.messages.fetchError'), color: 'error' })
+} finally {
+  loading.value = false
+}
 const save = async () => {
   updating.value = true
   try {

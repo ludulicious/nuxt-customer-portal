@@ -11,13 +11,11 @@ const settings = ref<ProviderConfiguration>(),
 async function load() {
   settings.value = await api.provider()
 }
-onMounted(async () => {
-  try {
-    await load()
-  } catch {
-    error.value = t('planning.loadError')
-  }
-})
+try {
+  await load()
+} catch {
+  error.value = t('planning.loadError')
+}
 async function connect(provider: string) {
   busy.value = true
   try {

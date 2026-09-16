@@ -73,7 +73,7 @@
     "notConnected": "Niet verbonden",
     "connect": "Verbinden of opnieuw verbinden",
     "disconnect": "Verbinding verbreken",
-    "connectionError": "De verbinding kon niet worden gestart. Je beheerder moet mogelijk Google of Zoom instellen.",
+    "connectionError": "De verbinding met Zoom kon niet worden gestart. Je beheerder moet Zoom mogelijk instellen.",
     "googleConnectionError": "Google Agenda is nog niet ingesteld voor dit portaal. Vraag een beheerder om de Google OAuth-gegevens toe te voegen.",
     "connectMainCalendar": "Verbind je hoofdagenda",
     "connectMainCalendarDescription": "Begin met de Google Agenda waarin je portaalafspraken moeten komen.",

@@ -168,11 +168,11 @@ watch(month, load)
 watch([timezone, provider, () => props.currency], () => {
   selectedSlot.value = undefined
 })
-onMounted(() => {
+if (import.meta.client) {
   userTimezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone
   timezone.value = userTimezone.value
-  void load()
-})
+  await load()
+}
 </script>
 
 <template>

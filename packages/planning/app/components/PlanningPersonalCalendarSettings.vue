@@ -46,7 +46,7 @@ async function load() {
     error.value = t('planning.loadError')
   }
 }
-onMounted(load)
+await load()
 
 async function connectMainCalendar() {
   busy.value = true

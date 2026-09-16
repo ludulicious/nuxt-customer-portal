@@ -342,7 +342,7 @@ const planningPolicy = computed({
   }
 })
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
-onMounted(async () => {
+async function loadInitialData() {
   try {
     planningProviders.value = await $fetch('/api/planning/admin/providers')
     planningDefaults.value = await $fetch('/api/planning/admin/policy')
@@ -380,9 +380,9 @@ onMounted(async () => {
     syncThumbnailImageId()
     normalizeFileNames()
   }
-  await nextTick()
-  root.value?.querySelector('input')?.focus({ preventScroll: true })
-})
+}
+await loadInitialData()
+onMounted(() => root.value?.querySelector('input')?.focus({ preventScroll: true }))
 async function save() {
   if (props.section === 'planning' && appointmentSetupRequired.value) {
     return

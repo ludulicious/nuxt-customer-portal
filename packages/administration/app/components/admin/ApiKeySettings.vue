@@ -93,7 +93,7 @@ async function revoke() {
   }
 }
 
-onMounted(loadKeys)
+await loadKeys()
 </script>
 
 <template>

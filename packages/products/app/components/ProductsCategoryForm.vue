@@ -36,25 +36,26 @@ const validateNames = () =>
 const valid = computed(
   () => languages.value.length > 0 && categorySchema.safeParse(state).success && validateNames().length === 0
 )
+try {
+  const settings = await api.settings()
+  languages.value = [
+    settings.defaultLocale,
+    ...settings.languages.filter((language) => language !== settings.defaultLocale)
+  ]
+  selectedLanguage.value = settings.defaultLocale
+} catch {
+  error.value = t('products.loadFailed')
+}
 onMounted(async () => {
-  try {
-    const settings = await api.settings()
-    languages.value = [
-      settings.defaultLocale,
-      ...settings.languages.filter((language) => language !== settings.defaultLocale)
-    ]
-    selectedLanguage.value = settings.defaultLocale
-    await nextTick()
-    if (import.meta.client && root.value) {
-      if (!props.embedded) {
-        const height = root.value.getBoundingClientRect().height
-        root.value.scrollIntoView({ behavior: 'smooth', block: height < window.innerHeight - 120 ? 'center' : 'start' })
-      }
-      root.value.querySelector('input')?.focus({ preventScroll: true })
-    }
-  } catch {
-    error.value = t('products.loadFailed')
+  await nextTick()
+  if (!root.value) {
+    return
   }
+  if (!props.embedded) {
+    const height = root.value.getBoundingClientRect().height
+    root.value.scrollIntoView({ behavior: 'smooth', block: height < window.innerHeight - 120 ? 'center' : 'start' })
+  }
+  root.value.querySelector('input')?.focus({ preventScroll: true })
 })
 function invalid(event: { errors: Array<{ name?: string }> }) {
   const language = event.errors.find((issue) => issue.name?.startsWith('content.'))?.name?.split('.')[1]

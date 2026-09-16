@@ -72,7 +72,7 @@ if (credential.configured) await checkProvider(false)
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" class="space-y-6" @submit="save">
+  <UForm :schema="schema" :state="state" novalidate class="space-y-6" @submit="save">
     <UCard>
       <template #header
         ><h2 class="font-semibold">{{ t('admin.email.provider') }}</h2></template
@@ -165,7 +165,7 @@ if (credential.configured) await checkProvider(false)
         variant="outline"
         icon="i-lucide-badge-check"
         :loading="busy"
-        @click="checkProvider"
+        @click="checkProvider()"
         >{{ t('admin.email.validateProvider') }}</UButton
       >
     </UCard>
