@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { portalAppearanceSchema } from './appearance'
 
 export const portalModuleIds = ['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'] as const
 export type PortalModuleId = (typeof portalModuleIds)[number]
@@ -10,7 +11,6 @@ export const portalOnboardingSteps = ['branding', 'modules', 'home', 'legal', 'r
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
 
 const text = (maximum: number) => z.string().trim().max(maximum)
-const color = z.string().regex(/^#[0-9a-f]{6}$/i, 'Use a six-digit hexadecimal color')
 const image = z
   .string()
   .max(2_800_000)
@@ -54,12 +54,7 @@ const localizedContentSchema = z.object({ home: homeSchema, terms: legalSchema, 
 export const portalSettingsSchema = z
   .object({
     branding: portalBrandingSchema,
-    appearance: z.object({
-      theme: z.enum(portalThemeNames),
-      colorMode: z.enum(portalColorModePolicies),
-      primaryLight: color,
-      primaryDark: color
-    }),
+    appearance: portalAppearanceSchema,
     enabledModules: z
       .array(z.enum(portalModuleIds))
       .min(1)
@@ -140,7 +135,12 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     logoLight: '',
     logoDark: ''
   },
-  appearance: { theme: 'apex', colorMode: 'user-choice', primaryLight: '#ea580c', primaryDark: '#fb923c' },
+  appearance: portalAppearanceSchema.parse({
+    theme: 'apex',
+    colorMode: 'user-choice',
+    primaryLight: '#ea580c',
+    primaryDark: '#fb923c'
+  }),
   enabledModules: ['timesheets', 'invoices', 'invoice-timesheets'],
   content: { en: defaultLocaleContent('en'), nl: defaultLocaleContent('nl') }
 })

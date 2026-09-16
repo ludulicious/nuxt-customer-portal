@@ -61,6 +61,9 @@ const primaryColorStyle = computed<Record<string, string>>(() => {
     return {} as Record<string, string>
   }
   const primary = colorMode.value === 'dark' ? appearance.primaryDark : appearance.primaryLight
+  if (!/^#[0-9a-f]{6}$/i.test(primary)) {
+    return {}
+  }
   return {
     '--portal-primary': primary,
     '--portal-on-primary': primaryForeground(primary),

@@ -2,6 +2,7 @@
 @import '@nuxt/ui';
 @import './tokens.css';
 @import './themes/brutal.css';
+@import './appearance.css';
 
 :root {
   --font-sans: 'Bricolage Grotesque', sans-serif;

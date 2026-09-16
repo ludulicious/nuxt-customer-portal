@@ -24,7 +24,7 @@ const apexTheme = {
     dark: '#0a0f1a'
   },
   props: {},
-  ui: {}
+  ui: { card: { root: 'portal-appearance-card' }, pageCard: { root: 'portal-appearance-card' } }
 } satisfies PortalThemeDefinition
 
 const brutalTheme = {
@@ -48,7 +48,7 @@ const brutalTheme = {
       base: 'brutal-button'
     },
     card: {
-      root: 'brutal-card',
+      root: 'brutal-card portal-appearance-card',
       header: 'brutal-card-header',
       footer: 'brutal-card-footer'
     },
@@ -76,7 +76,7 @@ const brutalTheme = {
       link: 'brutal-navigation-link'
     },
     pageCard: {
-      root: 'brutal-card'
+      root: 'brutal-card portal-appearance-card'
     },
     popover: {
       content: 'brutal-overlay-surface'

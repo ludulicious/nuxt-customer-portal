@@ -3,7 +3,9 @@
     "navigation": "Portaalinstellingen",
     "title": "Portaalinstellingen",
     "onboardingTitle": "Stel je portaal in",
-    "public": { "myDashboard": "Mijn dashboard" },
+    "public": {
+      "myDashboard": "Mijn dashboard"
+    },
     "bootstrap": {
       "title": "Maak de portaalbeheerder aan",
       "description": "Dit nieuwe portaal is gereserveerd voor de aangewezen beheerder. Maak eerst dit account aan; na het inloggen configureer je het portaal."
@@ -55,7 +57,10 @@
         "logoLight": "Breed logo voor kopteksten en pagina's met een lichte achtergrond.",
         "logoDark": "Breed logo voor kopteksten en pagina's met een donkere achtergrond."
       },
-      "themes": { "apex": "Apex", "brutal": "Brutal" },
+      "themes": {
+        "apex": "Apex",
+        "brutal": "Brutal"
+      },
       "colorModes": {
         "userChoice": "Keuze van de gebruiker",
         "lightOnly": "Alleen licht",
@@ -99,6 +104,39 @@
         "invalidImage": "Gebruik een geldige PNG-, JPEG- of WebP-afbeelding kleiner dan 2 MB.",
         "imageTooLarge": "De afmetingen mogen niet groter zijn dan 2400×2400 pixels.",
         "markTooSmall": "Compacte pictogrammen moeten minimaal 64×64 pixels zijn."
+      },
+      "appearance": {
+        "presets": "Stijlvoorinstellingen",
+        "presetHint": "Zacht redactioneel combineert elegante koppen met lavendelkleurige vlakken en zeeblauwe accenten. Een voorinstelling vervangt de stijl hieronder; sla op om uw wijzigingen te publiceren.",
+        "softEditorial": "Zacht redactioneel toepassen",
+        "reset": "Themastandaarden gebruiken",
+        "themeDefault": "Themastandaard",
+        "headingFont": "Lettertype voor koppen",
+        "bodyFont": "Lettertype voor tekst",
+        "shape": "Knoppen en kaarten",
+        "soft": "Afgerond met zachte schaduwen",
+        "headerBranding": "Logo in de kopbalk",
+        "markName": "Pictogram en portaalnaam",
+        "fullLogo": "Volledig logo",
+        "logoFallback": "Gebruikt het pictogram en de portaalnaam als er geen volledig logo beschikbaar is.",
+        "secondaryLight": "Secundair accent — licht",
+        "secondaryDark": "Secundair accent — donker",
+        "backgroundLight": "Pagina-achtergrond — licht",
+        "backgroundDark": "Pagina-achtergrond — donker",
+        "surfaceLight": "Kaartachtergrond — licht",
+        "surfaceDark": "Kaartachtergrond — donker",
+        "preview": "Live voorbeeld",
+        "previewHint": "Alleen een voorbeeld. Wijzigingen worden gepubliceerd wanneer u opslaat.",
+        "previewMode": "Kleurmodus van het voorbeeld",
+        "light": "Licht",
+        "dark": "Donker",
+        "dashboard": "Dashboard",
+        "account": "Mijn account",
+        "welcome": "Welkom in uw portaal",
+        "workspace": "Uw werkplek",
+        "sampleDescription": "Uw informatie en vervolgstappen samen op één plek.",
+        "primaryAction": "Details bekijken",
+        "secondaryAccent": "Secundair accent"
       }
     }
   }
