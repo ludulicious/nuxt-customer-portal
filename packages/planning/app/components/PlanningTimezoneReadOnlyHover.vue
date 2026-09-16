@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   readonly: boolean
+  editable?: boolean
   userTimezone: string
   timezone?: string
   title?: string
@@ -9,10 +10,11 @@ const props = defineProps<{
   customerName?: string
   email?: string
   country?: string
+  customerTimezone?: string
   start?: string
   end?: string
 }>()
-const emit = defineEmits<{ switchTimezone: [] }>()
+const emit = defineEmits<{ switchTimezone: []; edit: [] }>()
 const { t, locale } = useI18n()
 const { appointmentRange } = usePlanningTimeDisplay()
 const popupId = useId()
@@ -48,6 +50,11 @@ const viewedTimezoneRange = computed(() =>
       ? appointmentRange(props.start, props.end, props.timezone)
       : ''
 )
+const customerTimezoneRange = computed(() =>
+  props.start && props.end && props.customerTimezone && props.customerTimezone !== props.timezone
+    ? appointmentRange(props.start, props.end, props.customerTimezone)
+    : ''
+)
 const hasPopover = computed(() => props.readonly || Boolean(props.title))
 const timezoneName = (timezone: string) => timezone.replaceAll('_', ' ')
 const countryName = computed(() => {
@@ -58,6 +65,10 @@ const countryName = computed(() => {
     return props.country
   }
 })
+function edit() {
+  isOpen.value = false
+  emit('edit')
+}
 </script>
 
 <template>
@@ -66,12 +77,17 @@ const countryName = computed(() => {
       v-if="hasPopover"
       v-model:open="isOpen"
       mode="hover"
-      :content="{ side: 'top' }"
-      :ui="{ content: 'bg-transparent p-0 ring-0 shadow-none' }"
+      :open-delay="300"
+      :close-delay="500"
+      :content="{ side: 'top', sideOffset: 14, collisionPadding: 16 }"
+      :ui="{
+        content:
+          'planning-calendar-tooltip w-72 space-y-3 rounded-md border border-accented bg-default p-4 text-default shadow-xl ring-0'
+      }"
     >
       <span class="block h-full w-full" tabindex="0"><slot /></span>
       <template #content>
-        <div class="w-72 space-y-3 rounded-lg border border-accented bg-elevated p-4 text-default shadow-xl">
+        <div class="space-y-3">
           <div v-if="title || viewedTimezoneRange" class="space-y-2 border-b border-accented pb-3">
             <p v-if="title" class="flex items-center gap-2 text-sm font-semibold">
               <UIcon :name="icon || 'i-lucide-calendar-check-2'" class="size-4 shrink-0 text-info" />
@@ -82,7 +98,10 @@ const countryName = computed(() => {
               <p class="text-sm font-semibold">{{ viewedTimezoneRange }}</p>
             </div>
           </div>
-          <div v-if="customerName || email || countryName" class="space-y-2 border-b border-accented pb-3 text-sm">
+          <div
+            v-if="customerName || email || countryName || customerTimezoneRange"
+            class="space-y-2 border-b border-accented pb-3 text-sm"
+          >
             <p v-if="customerName" class="flex items-center gap-2">
               <UIcon name="i-lucide-user" class="size-4 shrink-0 text-muted" />
               <span>{{ customerName }}</span>
@@ -95,6 +114,13 @@ const countryName = computed(() => {
               <UIcon name="i-lucide-map-pin" class="size-4 shrink-0 text-muted" />
               <span>{{ countryName }}</span>
             </p>
+            <div v-if="customerTimezoneRange" class="flex items-start gap-2">
+              <UIcon name="i-lucide-clock-3" class="mt-0.5 size-4 shrink-0 text-muted" />
+              <div>
+                <p class="text-xs text-muted">{{ timezoneName(customerTimezone || '') }}</p>
+                <p class="font-medium">{{ customerTimezoneRange }}</p>
+              </div>
+            </div>
           </div>
           <div
             v-if="readonly && ownTimezoneRange && userTimezone !== timezone"
@@ -109,9 +135,42 @@ const countryName = computed(() => {
               t('planning.switchToUserTimezone')
             }}</UButton>
           </template>
+          <UButton
+            v-else-if="editable"
+            icon="i-lucide-pencil"
+            size="sm"
+            variant="soft"
+            @click="edit"
+          >
+            {{ t('planning.editAvailability') }}
+          </UButton>
         </div>
       </template>
     </UPopover>
     <slot v-else />
   </span>
 </template>
+
+<style>
+.planning-calendar-tooltip::after {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  content: '';
+  background: var(--ui-bg);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.planning-calendar-tooltip[data-side='top']::after {
+  bottom: -7px;
+  border-right: 1px solid var(--ui-border-accented);
+  border-bottom: 1px solid var(--ui-border-accented);
+}
+
+.planning-calendar-tooltip[data-side='bottom']::after {
+  top: -7px;
+  border-top: 1px solid var(--ui-border-accented);
+  border-left: 1px solid var(--ui-border-accented);
+}
+</style>

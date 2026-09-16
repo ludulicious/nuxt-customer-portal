@@ -10,7 +10,7 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
       id: 'planning',
       labelKey: 'planning.appointments',
       icon: 'i-lucide-calendar-days',
-      to: '/appointments',
+      to: '/availability',
       routePrefixes: ['/appointments', '/availability', '/planning/settings', '/admin/planning'],
       audiences: ['providerAuthenticated'],
       menuItems: [

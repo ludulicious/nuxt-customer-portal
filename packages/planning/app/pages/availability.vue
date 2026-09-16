@@ -330,8 +330,8 @@ async function removeWindow() {
 </script>
 
 <template>
-  <div class="h-full min-h-0 overflow-y-auto">
-    <UContainer class="space-y-6 py-8"
+  <div class="h-full min-h-0 overflow-hidden">
+    <UContainer class="flex h-full min-h-0 flex-col gap-6 py-8"
       ><h1 class="text-2xl font-bold">{{ t('planning.availability') }}</h1>
       <UAlert v-if="error" variant="outline" color="error" :title="error" /><UAlert
         v-if="settings && !settings.enabled"
@@ -375,6 +375,7 @@ async function removeWindow() {
         </div>
       </div>
       <PlanningAvailabilityCalendar
+        class="min-h-0 flex-1"
         :days="days"
         :disabled="busy || !canEditCalendar"
         :timezone="calendarTimezone"

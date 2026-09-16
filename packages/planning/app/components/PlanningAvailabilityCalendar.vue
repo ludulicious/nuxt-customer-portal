@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>()
 const { t, locale } = useI18n()
 const scroller = ref<HTMLElement>()
-const drag = ref<{ date: string; start: number; current: number; pointerId: number }>()
+const drag = ref<{ date: string; start: number; current: number; pointerId: number; y: number; moved: boolean }>()
 const moving = ref<{
   window: AvailabilityWindow
   date: string
@@ -137,7 +137,7 @@ const hours = computed(() =>
 )
 const hasAllDayEvents = computed(() => props.days.some((date) => allDayBusyFor(date).length > 0))
 const selection = computed(() =>
-  drag.value
+  drag.value?.moved
     ? {
         start: Math.min(drag.value.start, drag.value.current),
         end: Math.min(1440, Math.max(drag.value.start, drag.value.current) + 15)
@@ -239,6 +239,7 @@ function eventStyle(date: string, key: string, start: number, end: number) {
   return {
     top: `calc(${verticalPosition.top} + 5px)`,
     height: `calc(${verticalPosition.height} - 10px)`,
+    minHeight: '20px',
     left: `calc(${(lane / laneCount) * 100}% + 10px)`,
     width: `calc(${100 / laneCount}% - 20px)`
   }
@@ -274,15 +275,29 @@ function startDrag(event: PointerEvent, date: string) {
   }
   const target = event.currentTarget as HTMLElement
   target.setPointerCapture(event.pointerId)
-  drag.value = { date, start: point(event), current: point(event), pointerId: event.pointerId }
+  drag.value = {
+    date,
+    start: point(event),
+    current: point(event),
+    pointerId: event.pointerId,
+    y: event.clientY,
+    moved: false
+  }
 }
 function moveDrag(event: PointerEvent) {
   if (drag.value?.pointerId === event.pointerId) {
+    if (Math.abs(event.clientY - drag.value.y) >= 4) {
+      drag.value.moved = true
+    }
     drag.value.current = point(event)
   }
 }
 function finishDrag(event: PointerEvent) {
-  if (!drag.value || drag.value.pointerId !== event.pointerId || !selection.value) {
+  if (!drag.value || drag.value.pointerId !== event.pointerId) {
+    return
+  }
+  if (!selection.value) {
+    drag.value = undefined
     return
   }
   const date = drag.value.date,
@@ -293,15 +308,15 @@ function finishDrag(event: PointerEvent) {
 </script>
 
 <template>
-  <div class="space-y-3">
-    <p class="flex items-center gap-2 text-sm text-muted">
+  <div class="flex min-h-0 flex-col gap-3">
+    <p class="flex shrink-0 items-center gap-2 text-sm text-muted">
       <UIcon name="i-lucide-mouse-pointer-2" class="size-4 shrink-0" />{{
         t(disabled ? 'planning.calendarReadOnly' : 'planning.dragAvailabilityHelp')
       }}
     </p>
-    <div ref="scroller" class="overflow-auto rounded-xl border border-default">
+    <div ref="scroller" class="min-h-0 flex-1 overflow-auto rounded-xl border border-default">
       <div class="min-w-[840px]">
-        <div class="sticky top-0 z-20 grid grid-cols-[56px_repeat(7,minmax(0,1fr))] border-b border-default bg-default">
+        <div class="sticky top-0 z-20 grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-default bg-default">
           <div class="flex items-center justify-center text-xs text-muted">
             <UIcon name="i-lucide-clock" class="size-4" />
           </div>
@@ -322,7 +337,7 @@ function finishDrag(event: PointerEvent) {
         </div>
         <div
           v-if="hasAllDayEvents"
-          class="grid grid-cols-[56px_repeat(7,minmax(0,1fr))] border-b border-default bg-muted/30"
+          class="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-default bg-muted/30"
         >
           <div class="flex items-center justify-end px-2 py-1 text-[10px] text-muted">
             {{ t('planning.allDay') }}
@@ -349,12 +364,12 @@ function finishDrag(event: PointerEvent) {
             </PlanningTimezoneReadOnlyHover>
           </div>
         </div>
-        <div class="grid grid-cols-[56px_repeat(7,minmax(0,1fr))]">
+        <div class="grid grid-cols-[72px_repeat(7,minmax(0,1fr))]">
           <div class="relative bg-default" :style="{ height: 'clamp(576px, calc(100dvh - 280px), 1152px)' }">
             <span
               v-for="hour in hours"
               :key="hour"
-              class="absolute right-2 text-xs tabular-nums text-muted"
+              class="absolute right-2 whitespace-nowrap text-xs tabular-nums text-muted"
               :style="{ top: `${((hour * 60 - visibleRange.start) / visibleRange.duration) * 100}%` }"
               >{{ displayTime(hour * 60) }}</span
             >
@@ -390,11 +405,13 @@ function finishDrag(event: PointerEvent) {
               :timezone="timezone"
               :title="t('planning.availability')"
               icon="i-lucide-calendar-clock"
+              :editable="!disabled && !readonlyTimezone"
               :start="window.sourceStart"
               :end="window.sourceEnd"
               class="absolute z-[3] min-w-0"
               :style="windowStyle(window)"
               @switch-timezone="emit('switchTimezone')"
+              @edit="emit('edit', date, window)"
             >
               <button
                 type="button"
@@ -434,26 +451,26 @@ function finishDrag(event: PointerEvent) {
             <PlanningTimezoneReadOnlyHover
               v-for="appointment in appointmentsFor(date)"
               :key="appointment.id"
-              :readonly="Boolean(readonlyTimezone)"
+              :readonly="false"
               :user-timezone="userTimezone || timezone"
               :timezone="timezone"
               :title="appointment.title"
               :customer-name="appointment.customerName"
               :email="appointment.email"
               :country="appointment.country"
+              :customer-timezone="appointment.customerTimezone"
               :start="appointment.start"
               :end="appointment.end"
               class="absolute z-10 min-w-0"
               :style="eventStyle(date, `appointment-${appointment.id}`, appointment.startMinute, appointment.endMinute)"
-              @switch-timezone="emit('switchTimezone')"
             >
               <NuxtLink
                 :to="`/appointments/${appointment.id}`"
-                class="block h-full w-full overflow-hidden rounded-md border border-info/50 bg-[color-mix(in_oklab,var(--ui-info)_24%,var(--ui-bg))] px-2 py-1 text-xs text-info shadow-sm"
+                class="flex h-full w-full items-center overflow-hidden rounded-md border border-info/50 bg-[color-mix(in_oklab,var(--ui-info)_24%,var(--ui-bg))] px-1.5 py-0 text-xs leading-none text-info shadow-sm"
                 @pointerdown.stop
               >
-                <span class="flex min-w-0 items-start gap-1 font-semibold">
-                  <UIcon name="i-lucide-calendar-check-2" class="mt-0.5 size-3 shrink-0" />
+                <span class="flex min-w-0 items-center gap-1 font-semibold">
+                  <UIcon name="i-lucide-calendar-check-2" class="size-3 shrink-0" />
                   <span class="truncate">{{ appointment.title }}</span>
                 </span>
                 <span v-if="appointment.conflict" class="text-error">{{ t('planning.conflict') }}</span>
@@ -473,10 +490,10 @@ function finishDrag(event: PointerEvent) {
               :style="eventStyle(date, `external-${period.id}`, period.startMinute, period.endMinute)"
             >
               <span
-                class="block h-full w-full overflow-hidden rounded-md border border-default bg-elevated/80 px-2 py-1 text-xs text-muted shadow-sm"
+                class="flex h-full w-full items-center overflow-hidden rounded-md border border-default bg-elevated/80 px-1.5 py-0 text-xs leading-none text-muted shadow-sm"
                 :aria-label="period.title || t('planning.externalCalendarBusy')"
               >
-                <span class="flex items-center gap-1 font-medium">
+                <span class="flex min-w-0 items-center gap-1 font-medium">
                   <UIcon name="i-lucide-lock" class="size-3 shrink-0" />
                   <span v-if="period.endMinute - period.startMinute >= 30" class="truncate">{{
                     period.title || t('planning.externalCalendarBusy')

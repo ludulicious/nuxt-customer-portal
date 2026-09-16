@@ -50,10 +50,9 @@ export async function bookingBusy(
   userId: string,
   calendarIds: string[],
   from: Date,
-  to: Date,
-  mode?: string
+  to: Date
 ): Promise<Interval[]> {
-  if ((mode ?? (await getStore()).mode) === 'sandbox') {
+  if (!calendarIds.length) {
     return []
   }
   return calendarAdapter().busy(storeId, userId, calendarIds, from, to)
