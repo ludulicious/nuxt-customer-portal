@@ -5,6 +5,7 @@ import type { PoolClient } from 'pg'
 import type { z } from 'zod'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
+import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import { getProduct, selectCopy } from '@nuxt-customer-portal/products/server/utils/catalog'
 import { defaultPlanningPolicy, effectivePolicy } from '@nuxt-customer-portal/products/shared/planning'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
@@ -62,7 +63,7 @@ export async function providers(storeId: string, productId: string) {
   if (!product.planning?.enabled || product.status !== 'published') {
     throw createError({ statusCode: 404, message: 'This product is not available for booking' })
   }
-  const sandbox = (await getStore()).mode === 'sandbox'
+  const sandbox = (await getStore()).mode === 'sandbox' && !developmentSandboxEffectsEnabled()
   const users = await rows<{
     user_id: string
     name: string

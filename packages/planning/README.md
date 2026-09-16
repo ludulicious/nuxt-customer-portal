@@ -38,7 +38,18 @@ Register redirect URLs using the portal's configured public origin:
 - `/api/planning/oauth/google/callback`
 - `/api/planning/oauth/zoom/callback`
 
-For local Google development use `http://localhost:3052`. Zoom requires the portal's configured public origin to be reachable over HTTPS; a local reverse proxy with a stable HTTPS hostname can forward to `http://localhost:3052`. Register the standard `/api/planning/oauth/zoom/callback` path on that hostname. Google authorization requests Calendar events, Calendar list read access, free/busy access, and identity/email. Configure the Zoom user-managed application to list/read/create/update/delete the authorized user's meetings and add Users → Get a user (`user:read:user`) so the portal can identify the connected account. Use the user-level granular scopes, without the `:admin` variants. Enable appropriate test users or publish/verify the provider applications before connecting other users. Zoom account meeting limits still apply.
+For local Google development use `http://localhost:3052`. Zoom requires the portal's configured public origin to be reachable over HTTPS; a local reverse proxy with a stable HTTPS hostname can forward to `http://localhost:3052`. Register the standard `/api/planning/oauth/zoom/callback` path on that hostname. Google authorization requests Calendar events, Calendar list read access, free/busy access, and identity/email.
+
+Configure the Zoom user-managed application with these user-level granular scopes (without the `:admin` variants):
+
+- Users → Get a user: `user:read:user`
+- Meetings → List meetings: `meeting:read:list_meetings`
+- Meetings → Get a meeting: `meeting:read:meeting`
+- Meetings → Create a meeting: `meeting:write:meeting`
+- Meetings → Update a meeting: `meeting:update:meeting`
+- Meetings → Delete a meeting: `meeting:delete:meeting`
+
+Enable appropriate test users or publish/verify the provider applications before connecting other users. Zoom account meeting limits still apply.
 
 In hosts using SaaS configuration, enable the Planning module alongside Products. Admins enable planning per organization member at `/admin/planning`. Providers connect accounts, choose calendars, timezone and after-appointment grace time, and create availability at `/availability`. Choose several calendars for conflicts and one writable calendar; the writable calendar is automatically included in conflict checks. Assign providers to a service in the existing product editor and supply a positive duration. A product may be free, and may require Zoom or have no online meeting.
 

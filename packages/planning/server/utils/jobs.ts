@@ -25,7 +25,7 @@ import {
 export async function auditLock(tx: Pick<import('pg').PoolClient, 'query'>, id: string) {
   await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`planning-effects:${id}`])
 }
-async function appointmentEffects(id: string, revision: number, notify = true) {
+async function appointmentEffects(id: string, revision: number, notify = true, notificationKey?: string) {
   const [a] = await rows<Appointment>('SELECT * FROM planning.appointment WHERE id=$1', [id])
   if (!a || a.revision !== revision) {
     return
@@ -50,7 +50,7 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
       await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
     }
   } else {
-    if (a.snapshot.meetingProvider === 'zoom' && order.snapshot.storeMode !== 'sandbox') {
+    if (a.snapshot.meetingProvider === 'zoom') {
       const meeting = await meetingAdapter().ensure(
         a.store_id,
         a.user_id,
@@ -167,7 +167,7 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
         contentType: `text/calendar; method=${a.status === 'cancelled' ? 'CANCEL' : 'REQUEST'}; charset=UTF-8`
       }
     ],
-    idempotencyKey: `appointment:${id}:${revision}`,
+    idempotencyKey: notificationKey || `appointment:${id}:${revision}`,
     subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
   })
   await rows('UPDATE planning.appointment SET effects_error=NULL WHERE id=$1', [id])
@@ -326,7 +326,13 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
       if (job.kind === 'appointment' || job.kind === 'repair') {
         effectsKey = `planning-effects:${p.appointmentId}`
         await client.query('SELECT pg_advisory_lock(hashtext($1))', [effectsKey])
-        await appointmentEffects(String(p.appointmentId), Number(p.revision), job.kind === 'appointment')
+        const repairNotification = job.kind === 'repair' && p.notifyCustomer === true
+        await appointmentEffects(
+          String(p.appointmentId),
+          Number(p.revision),
+          job.kind === 'appointment' || repairNotification,
+          repairNotification ? job.id : undefined
+        )
       } else if (job.kind === 'availability') {
         await availabilityEffects(String(p.id))
       } else if (job.kind === 'refund') {
