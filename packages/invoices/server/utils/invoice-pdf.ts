@@ -98,7 +98,8 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   const money = (minor: number) =>
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
       style: 'currency',
-      currency: invoice.currency
+      currency: invoice.currency,
+      currencyDisplay: 'narrowSymbol'
     }).format(minor / currencyScale(invoice.currency))
   const number = (milli: number) =>
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {

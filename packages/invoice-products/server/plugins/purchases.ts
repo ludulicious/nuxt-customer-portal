@@ -13,7 +13,7 @@ const details = (order: Order, actorId: string) => ({
   storeId: order.store_id,
   clientId: order.client_id!,
   actorId,
-  title: order.lines.map((line) => line.snapshot.title).join(', '),
+  title: `${order.snapshot.locale === 'nl' ? 'Aankoop' : 'Purchase'} ${order.booking_reference}`,
   currency: order.lines[0]!.snapshot.price.currency,
   net: order.net!,
   tax: order.tax!,

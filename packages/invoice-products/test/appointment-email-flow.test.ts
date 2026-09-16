@@ -10,5 +10,7 @@ test('appointment purchases suppress the generic receipt and delay invoice deliv
   assert.match(orders, /order\.snapshot\.planningReservationId[\s\S]+notified=true/)
   assert.match(integration, /INSERT INTO invoice_products\.email_job/)
   assert.match(integration, /now\(\)\+interval '5 minutes'/)
+  assert.match(integration, /order\.snapshot\.locale === 'nl' \? 'Aankoop' : 'Purchase'/)
+  assert.match(integration, /order\.booking_reference/)
   assert.match(migration, /available_at timestamptz NOT NULL DEFAULT now\(\) \+ interval '5 minutes'/)
 })
