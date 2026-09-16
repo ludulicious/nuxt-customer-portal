@@ -35,9 +35,29 @@ const selectedText = computed<PortalEmailText>({
     overrides[overrideKey.value] = value
   }
 })
-const messages = computed(() =>
-  catalog.value.map((item, index) => ({ label: t(item.definition.labelKey), value: index }))
-)
+const modulePresentation: Record<string, { labelKey: string; icon: string; order: number }> = {
+  planning: { labelKey: 'admin.email.modules.appointments', icon: 'i-lucide-calendar-check-2', order: 10 },
+  invoices: { labelKey: 'admin.email.modules.invoicing', icon: 'i-lucide-receipt-text', order: 20 },
+  timesheets: { labelKey: 'admin.email.modules.timesheets', icon: 'i-lucide-clock-3', order: 30 },
+  'portal-core': { labelKey: 'admin.email.modules.account', icon: 'i-lucide-shield-check', order: 40 }
+}
+const messageGroups = computed(() => {
+  const groups = new Map<string, Array<{ label: string; value: number }>>()
+  catalog.value.forEach((item, index) => {
+    const entries = groups.get(item.moduleId) ?? []
+    entries.push({ label: t(item.definition.labelKey), value: index })
+    groups.set(item.moduleId, entries)
+  })
+  return [...groups.entries()]
+    .map(([moduleId, items]) => ({
+      moduleId,
+      label: t(modulePresentation[moduleId]?.labelKey ?? moduleId),
+      icon: modulePresentation[moduleId]?.icon ?? 'i-lucide-mail',
+      order: modulePresentation[moduleId]?.order ?? 100,
+      items
+    }))
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
+})
 const locales = [
   { label: 'English', value: 'en' as const },
   { label: 'Nederlands', value: 'nl' as const }
@@ -109,18 +129,24 @@ const sendTest = async () => {
         ><h2 class="font-semibold">{{ t('admin.email.texts') }}</h2></template
       >
       <div class="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <nav class="space-y-1" :aria-label="t('admin.email.messageNavigation')">
-          <UButton
-            v-for="item in messages"
-            :key="item.value"
-            type="button"
-            block
-            :label="item.label"
-            :color="selected === item.value ? 'primary' : 'neutral'"
-            :variant="selected === item.value ? 'soft' : 'ghost'"
-            class="justify-start"
-            @click="selected = item.value"
-          />
+        <nav class="space-y-5" :aria-label="t('admin.email.messageNavigation')">
+          <section v-for="group in messageGroups" :key="group.moduleId" class="space-y-1">
+            <h3 class="flex items-center gap-2 px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+              <UIcon :name="group.icon" class="size-4 shrink-0" />
+              {{ group.label }}
+            </h3>
+            <UButton
+              v-for="item in group.items"
+              :key="item.value"
+              type="button"
+              block
+              :label="item.label"
+              :color="selected === item.value ? 'primary' : 'neutral'"
+              :variant="selected === item.value ? 'soft' : 'ghost'"
+              class="justify-start"
+              @click="selected = item.value"
+            />
+          </section>
         </nav>
         <div class="space-y-4">
           <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
