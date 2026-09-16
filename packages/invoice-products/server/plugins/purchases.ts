@@ -5,6 +5,7 @@ import {
 } from '@nuxt-customer-portal/invoices/server/utils/commerce'
 import { getInvoiceEmailPreview, deliverInvoiceEmail } from '@nuxt-customer-portal/invoices/server/utils/invoice-email'
 import { pool } from '@nuxt-customer-portal/core/server/utils/db'
+import { getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
 
 const details = (order: Order, actorId: string) => ({
@@ -32,6 +33,73 @@ const details = (order: Order, actorId: string) => ({
     taxDetails: line.tax_details
   }))
 })
+async function deliverOrderInvoice(order: Order, actorId: string) {
+  if (!order.invoice_id) {
+    return
+  }
+  const sent = await pool.query(
+    "SELECT 1 FROM invoices.invoice_email_delivery WHERE invoice_id=$1 AND status='SENT' AND purpose='INVOICE'",
+    [order.invoice_id]
+  )
+  if (sent.rowCount) {
+    return
+  }
+  const preview = await getInvoiceEmailPreview(order.store_id, order.invoice_id)
+  await deliverInvoiceEmail(
+    order.store_id,
+    actorId,
+    order.invoice_id,
+    {
+      to: preview.to,
+      cc: [],
+      locale: order.snapshot.locale,
+      subject: order.snapshot.storeMode === 'sandbox' ? `[TEST] ${preview.subject}` : preview.subject,
+      body: preview.body
+    },
+    false
+  )
+}
+
+export async function processInvoiceEmailJobs(limit = 20) {
+  const claimed = await pool.query<{ order_id: string; actor_id: string; attempts: number }>(
+    `UPDATE invoice_products.email_job j
+     SET attempts=j.attempts+1,available_at=now()+interval '5 minutes'
+     WHERE j.order_id IN (
+       SELECT order_id FROM invoice_products.email_job
+       WHERE completed_at IS NULL AND available_at<=now()
+       ORDER BY available_at
+       FOR UPDATE SKIP LOCKED
+       LIMIT $1
+     )
+     RETURNING j.order_id,j.actor_id,j.attempts`,
+    [limit]
+  )
+  let completed = 0,
+    failed = 0
+  for (const job of claimed.rows) {
+    try {
+      const order = await getOrder(job.order_id)
+      if (!order) {
+        throw new Error('Invoice order missing')
+      }
+      await deliverOrderInvoice(order, job.actor_id)
+      await pool.query('UPDATE invoice_products.email_job SET completed_at=now(),error=NULL WHERE order_id=$1', [
+        job.order_id
+      ])
+      completed++
+    } catch (error) {
+      failed++
+      const message = error instanceof Error ? error.message : 'Invoice email failed'
+      await pool.query(
+        `UPDATE invoice_products.email_job
+         SET error=$2,available_at=now()+($3::int*interval '1 second')
+         WHERE order_id=$1`,
+        [job.order_id, message, Math.min(3600, 30 * 2 ** Math.min(job.attempts, 7))]
+      )
+    }
+  }
+  return { completed, failed }
+}
 export default defineNitroPlugin(() => {
   registerOrderIntegration({
     assertReady: assertCommerceInvoicesReady,
@@ -84,31 +152,16 @@ export default defineNitroPlugin(() => {
       if (!order.invoice_id) {
         return
       }
-      const sent = await pool.query(
-        "SELECT 1 FROM invoices.invoice_email_delivery WHERE invoice_id=$1 AND status='SENT' AND purpose='INVOICE'",
-        [order.invoice_id]
-      )
-      if (sent.rowCount) {
-        return
-      }
       try {
-        const preview = await getInvoiceEmailPreview(order.store_id, order.invoice_id)
-        await deliverInvoiceEmail(
-          order.store_id,
-          actorId,
-          order.invoice_id,
-          {
-            to: preview.to,
-            cc: [],
-            locale: order.snapshot.locale,
-            subject: order.snapshot.storeMode === 'sandbox' ? `[TEST] ${preview.subject}` : preview.subject,
-            body: preview.body
-          },
-          false
+        await pool.query(
+          `INSERT INTO invoice_products.email_job(order_id,actor_id,available_at)
+           VALUES($1,$2,now()+interval '5 minutes')
+           ON CONFLICT(order_id) DO NOTHING`,
+          [order.id, actorId]
         )
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(`Invoice email failed: ${message}`, { cause: error })
+        throw new Error(`Invoice email scheduling failed: ${message}`, { cause: error })
       }
     }
   })

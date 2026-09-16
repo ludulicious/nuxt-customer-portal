@@ -1,4 +1,4 @@
-import { pgSchema, text, integer, primaryKey } from 'drizzle-orm/pg-core'
+import { pgSchema, text, integer, primaryKey, timestamp, index } from 'drizzle-orm/pg-core'
 import { invoice } from '@nuxt-customer-portal/invoices/schema'
 import { orders } from '@nuxt-customer-portal/products/schema'
 
@@ -25,4 +25,18 @@ export const refundCredit = schema.table(
       .references(() => invoice.id)
   },
   (t) => [primaryKey({ columns: [t.orderId, t.cumulativeAmount] })]
+)
+export const invoiceEmailJob = schema.table(
+  'email_job',
+  {
+    orderId: text('order_id')
+      .primaryKey()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    actorId: text('actor_id').notNull(),
+    availableAt: timestamp('available_at', { withTimezone: true }).notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    error: text('error')
+  },
+  (t) => [index('invoice_products_email_job_pending').on(t.availableAt)]
 )

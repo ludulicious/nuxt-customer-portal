@@ -67,6 +67,7 @@ export interface InvoiceDto {
   senderName: string
   senderLogo: string | null
   senderAddress: string
+  senderCountry: string | null
   senderRegistration: string | null
   senderVatNumber: string | null
   senderIban: string | null
@@ -142,6 +143,7 @@ export interface InvoiceSettingsDto {
   currency: string
   defaultVatRateBasisPoints: number
   address: string
+  country: string | null
   registrationNumber: string | null
   vatNumber: string | null
   iban: string | null

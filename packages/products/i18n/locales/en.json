@@ -176,6 +176,7 @@
     "yourName": "Your name",
     "email": "Email",
     "country": "Country",
+    "selectCountry": "Select a country",
     "buyingAsCompany": "Buying as a company?",
     "buyingAsPrivatePerson": "Buying as a private person?",
     "switchToPrivatePurchase": "Switch to private purchase",

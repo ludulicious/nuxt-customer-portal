@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { OrganizationInvoiceProfileDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
+import { countryCodes } from '@nuxt-customer-portal/core/shared/countries'
 
 const props = defineProps<{
   profile: OrganizationInvoiceProfileDto
   refresh: () => Promise<unknown>
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const invoices = useInvoices()
 const { isSystemAdmin } = usePortalSession()
@@ -20,6 +21,7 @@ const { data: domainStatus, refresh: refreshDomainStatus } = await useFetch<Doma
 )
 const draft = reactive({
   address: '',
+  country: '',
   registrationNumber: '',
   vatNumber: '',
   iban: '',
@@ -29,6 +31,7 @@ const draft = reactive({
 const schema = computed(() =>
   z.object({
     address: z.string().trim().min(1, t('features.invoices.validation.required')).max(1000),
+    country: z.string().refine((value) => countryCodes.includes(value), t('features.invoices.validation.required')),
     registrationNumber: z.string().trim().min(1, t('features.invoices.validation.required')).max(200),
     vatNumber: z.string().trim().min(1, t('features.invoices.validation.required')).max(100),
     iban: z.string().trim().min(1, t('features.invoices.validation.required')).max(100),
@@ -41,6 +44,12 @@ const schema = computed(() =>
       .max(320)
   })
 )
+const countryOptions = computed(() => {
+  const names = new Intl.DisplayNames(locale.value, { type: 'region' })
+  return countryCodes
+    .map((value) => ({ value, label: `${names.of(value) || value} (${value})` }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+})
 
 const checkDomain = async (forceRefresh = true) => {
   checkingDomain.value = true
@@ -73,6 +82,7 @@ watch(
   (profile) => {
     Object.assign(draft, {
       address: profile.address,
+      country: profile.country ?? '',
       registrationNumber: profile.registrationNumber ?? '',
       vatNumber: profile.vatNumber ?? '',
       iban: profile.iban ?? '',
@@ -203,6 +213,15 @@ const save = async () => {
       </UAlert>
       <UFormField name="address" :label="t('features.invoices.admin.address')" required>
         <UTextarea v-model="draft.address" class="w-full" />
+      </UFormField>
+      <UFormField name="country" :label="t('features.invoices.admin.country')" required>
+        <USelectMenu
+          v-model="draft.country"
+          :items="countryOptions"
+          value-key="value"
+          :placeholder="t('features.invoices.admin.selectCountry')"
+          class="w-full"
+        />
       </UFormField>
       <div class="grid gap-3 md:grid-cols-2">
         <UFormField name="registrationNumber" :label="t('features.invoices.admin.registration')" required>

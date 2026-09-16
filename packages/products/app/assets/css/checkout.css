@@ -8,9 +8,31 @@
 .checkout-page {
   min-height: 100vh;
   overflow-x: clip;
+  color-scheme: light;
   background: var(--checkout-paper);
   color: var(--checkout-ink);
   font-family: var(--checkout-body-font);
+  /*
+   * Checkout appearance is configured independently from the portal color
+   * mode. Keep Nuxt UI form controls on those checkout tokens when the
+   * browser or operating system prefers a dark color scheme (notably Safari).
+   */
+  --ui-primary: var(--checkout-action);
+  --ui-text-dimmed: var(--checkout-muted);
+  --ui-text-muted: var(--checkout-muted);
+  --ui-text-toned: var(--checkout-ink);
+  --ui-text: var(--checkout-ink);
+  --ui-text-highlighted: var(--checkout-ink);
+  --ui-text-inverted: var(--checkout-surface);
+  --ui-bg: var(--checkout-surface);
+  --ui-bg-muted: var(--checkout-paper);
+  --ui-bg-elevated: var(--checkout-surface);
+  --ui-bg-accented: var(--checkout-paper);
+  --ui-bg-inverted: var(--checkout-ink);
+  --ui-border: var(--checkout-border);
+  --ui-border-muted: var(--checkout-border);
+  --ui-border-accented: var(--checkout-border);
+  --ui-border-inverted: var(--checkout-ink);
 }
 .checkout-shell {
   width: min(1120px, calc(100% - 32px));

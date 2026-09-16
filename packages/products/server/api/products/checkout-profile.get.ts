@@ -14,8 +14,13 @@ export default defineEventHandler(async (event) => {
           [organizationId]
         ).then((organizations) => organizations[0])
       : null,
-    rows<{ name: string; email: string; firstName: string | null; lastName: string | null }>(
-      'SELECT name,email,first_name AS "firstName",last_name AS "lastName" FROM public."user" WHERE id=$1 LIMIT 1',
+    rows<{ name: string; email: string; firstName: string | null; lastName: string | null; country: string | null }>(
+      `SELECT u.name,u.email,u.first_name AS "firstName",u.last_name AS "lastName",
+        (SELECT o.snapshot->'billing'->>'country'
+         FROM products.orders o
+         WHERE o.buyer_id=u.id AND o.status='paid' AND o.snapshot->'billing'->>'country' IS NOT NULL
+         ORDER BY o.created_at DESC LIMIT 1) AS country
+       FROM public."user" u WHERE u.id=$1 LIMIT 1`,
       [user.id]
     ).then((accounts) => accounts[0]),
     organizationId
@@ -61,6 +66,7 @@ export default defineEventHandler(async (event) => {
     firstName: account?.firstName || derivedFirstName,
     lastName: account?.lastName || derivedLastName.join(' '),
     email: account?.email || user.email || '',
+    country: account?.country || null,
     buyerType: isBusinessOrganization ? ('organization' as const) : ('person' as const),
     canBuyAsBusiness: hasBusinessMembership || !hasPersonalClient,
     organizationName: isBusinessOrganization ? officialCompanyName : ''

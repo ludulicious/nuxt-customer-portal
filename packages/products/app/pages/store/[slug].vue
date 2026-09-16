@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { browserCountry, countryCodes } from '../../../shared/countries'
+import { countryCodes } from '../../../shared/countries'
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
 import { z } from 'zod'
 import { formatAppointmentRange } from '@nuxt-customer-portal/core/shared/appointment-time'
@@ -16,6 +16,7 @@ interface CheckoutProfile {
   firstName: string
   lastName: string
   email: string
+  country: string | null
   buyerType: 'person' | 'organization'
   canBuyAsBusiness: boolean
   organizationName: string
@@ -186,7 +187,10 @@ const state = reactive({
     company: activeOrganizationName() || initialBillingProfile?.organizationName || '',
     clientId: '',
     address: initialBillingProfile?.buyerType === 'person' ? savedPersonalAddress.value : '',
-    country: 'NL',
+    country:
+      initialBillingProfile?.country && countryCodes.includes(initialBillingProfile.country)
+        ? initialBillingProfile.country
+        : '',
     registrationNumber: '',
     vatNumber: ''
   }
@@ -196,9 +200,6 @@ const countryOptions = computed(() => {
   return countryCodes
     .map((value) => ({ value, label: `${names.of(value) || value} (${value})` }))
     .sort((a, b) => a.label.localeCompare(b.label, locale.value))
-})
-onMounted(() => {
-  state.billing.country = browserCountry(navigator.languages) || state.billing.country
 })
 const schema = useProductFormSchema(z.object({ priceId: z.string().min(1), billing: billingSchema }))
 let requestId = crypto.randomUUID()
@@ -215,6 +216,7 @@ async function applySession() {
   state.billing.lastName = profile?.lastName || ''
   state.billing.name = profile?.name || currentUser.value?.name || ''
   state.billing.email = profile?.email || currentUser.value?.email || ''
+  state.billing.country = profile?.country && countryCodes.includes(profile.country) ? profile.country : ''
   state.billing.company = activeOrganizationName() || profile?.organizationName || ''
   savedPersonalAddress.value = personalAddress && !personalAddress.archived ? personalAddress.address : ''
   state.billing.address = profile?.buyerType === 'person' ? savedPersonalAddress.value : ''
@@ -304,7 +306,7 @@ async function logout() {
     company: '',
     clientId: '',
     address: '',
-    country: browserCountry(navigator.languages) || 'NL',
+    country: '',
     registrationNumber: '',
     vatNumber: ''
   })
@@ -523,7 +525,12 @@ async function buy() {
                 ><UTextarea v-model="state.billing.address" autocomplete="street-address" class="w-full"
               /></UFormField>
               <UFormField name="billing.country" :label="t('products.country')" class="col-span-full"
-                ><USelectMenu v-model="state.billing.country" :items="countryOptions" value-key="value" class="w-full"
+                ><USelectMenu
+                  v-model="state.billing.country"
+                  :items="countryOptions"
+                  value-key="value"
+                  :placeholder="t('products.selectCountry')"
+                  class="w-full"
               /></UFormField>
               <div v-if="!isAuthenticated" class="col-span-full">
                 <UButton

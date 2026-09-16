@@ -20,6 +20,8 @@ const props = withDefaults(
 )
 const isClient = computed(() => props.mode === 'client')
 const { t, locale } = useI18n()
+const countryName = (country: string | null) =>
+  country ? new Intl.DisplayNames(locale.value, { type: 'region' }).of(country) || country : ''
 const portalRuntimeSettings = useState<{
   branding?: { portalName?: string; markLight?: string; markDark?: string }
 } | null>('portal-runtime-settings', () => null)
@@ -628,6 +630,7 @@ if (!isClient.value) {
             <span v-for="(line, index) in addressLines(invoice.senderAddress)" :key="index" class="block">{{
               line
             }}</span>
+            <span v-if="invoice.senderCountry" class="block">{{ countryName(invoice.senderCountry) }}</span>
           </address>
         </div>
       </div>

@@ -195,6 +195,7 @@ const senderInvoiceDetailsComplete = computed(() => {
   const profile = props.data.organizationProfile
   return [
     profile.address,
+    profile.country,
     profile.registrationNumber,
     profile.vatNumber,
     profile.iban,

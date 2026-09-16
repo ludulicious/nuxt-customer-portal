@@ -189,7 +189,15 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     color: muted
   })
   y -= 14
-  for (const line of wrap(regular, `${invoice.senderName}\n${invoice.senderAddress}`, 9, 205)) {
+  const senderCountry = invoice.senderCountry
+    ? new Intl.DisplayNames(locale, { type: 'region' }).of(invoice.senderCountry) || invoice.senderCountry
+    : ''
+  for (const line of wrap(
+    regular,
+    [invoice.senderName, invoice.senderAddress, senderCountry].filter(Boolean).join('\n'),
+    9,
+    205
+  )) {
     text(line, width - margin - regular.widthOfTextAtSize(line, 9))
     y -= 12
   }

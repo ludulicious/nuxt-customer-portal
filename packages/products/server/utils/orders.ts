@@ -294,7 +294,11 @@ async function notifyOrder(id: string) {
   // provider idempotency key. Do not hold an order transaction over PDF and
   // external email work.
   await orderIntegration().notify(order, store.actor_id)
-  if (order.snapshot.planningFailure || order.snapshot.planningChangeAppointmentId) {
+  if (
+    order.snapshot.planningReservationId ||
+    order.snapshot.planningFailure ||
+    order.snapshot.planningChangeAppointmentId
+  ) {
     await rows('UPDATE products.orders SET notified=true,error=NULL WHERE id=$1', [id])
     return
   }

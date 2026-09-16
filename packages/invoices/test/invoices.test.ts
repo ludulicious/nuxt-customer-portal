@@ -114,6 +114,7 @@ test('settings, billing contacts, email, and numbering validate', () => {
       currency: 'eur',
       defaultVatRateBasisPoints: 2100,
       address: '',
+      country: null,
       registrationNumber: null,
       vatNumber: null,
       iban: null,

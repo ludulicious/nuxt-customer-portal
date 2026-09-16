@@ -33,7 +33,7 @@ export interface CommerceDocument {
 export async function assertCommerceInvoicesReady(storeId: string) {
   await requireInvoicesEnabled(storeId)
   const sender = await getOrganizationInvoiceProfile(storeId)
-  if (!sender.address || !sender.registrationNumber || !sender.vatNumber || !sender.invoiceEmail) {
+  if (!sender.address || !sender.country || !sender.registrationNumber || !sender.vatNumber || !sender.invoiceEmail) {
     throw createError({
       statusCode: 409,
       message: 'Complete the invoice sender address, registration, VAT number and email first'
@@ -110,8 +110,8 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
   const id = randomUUID(),
     today = new Date().toISOString().slice(0, 10)
   await tx.query(
-    `INSERT INTO invoices.invoice(id,organization_id,client_organization_id,number,status,currency,issue_date,due_date,subject,notes,sender_name,sender_logo,sender_address,sender_registration,sender_vat_number,sender_iban,sender_bic,recipient_name,recipient_address,recipient_email,recipient_locale,created_by_id,issued_at,document_type,original_invoice_id,external_reference,automated)
- VALUES($1,$2,$3,$4,'PAID',$5,$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,now(),$21,$22,$23,true)`,
+    `INSERT INTO invoices.invoice(id,organization_id,client_organization_id,number,status,currency,issue_date,due_date,subject,notes,sender_name,sender_logo,sender_address,sender_country,sender_registration,sender_vat_number,sender_iban,sender_bic,recipient_name,recipient_address,recipient_email,recipient_locale,created_by_id,issued_at,document_type,original_invoice_id,external_reference,automated)
+ VALUES($1,$2,$3,$4,'PAID',$5,$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,now(),$22,$23,$24,true)`,
     [
       id,
       input.storeId,
@@ -124,6 +124,7 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
       sender.name,
       sender.logo,
       sender.address,
+      sender.country,
       sender.registrationNumber,
       sender.vatNumber,
       sender.iban,

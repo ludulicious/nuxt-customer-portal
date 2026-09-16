@@ -643,9 +643,15 @@ export const createInvoiceInTransaction = async (
   }
   const sender = await getOrganizationInvoiceProfile(organizationId)
   if (
-    ![sender.address, sender.registrationNumber, sender.vatNumber, sender.iban, sender.bic, sender.invoiceEmail].every(
-      (value) => value?.trim()
-    )
+    ![
+      sender.address,
+      sender.country,
+      sender.registrationNumber,
+      sender.vatNumber,
+      sender.iban,
+      sender.bic,
+      sender.invoiceEmail
+    ].every((value) => value?.trim())
   ) {
     throw createError({
       statusCode: 409,
@@ -680,6 +686,7 @@ export const createInvoiceInTransaction = async (
       senderName: sender.name,
       senderLogo: sender.logo,
       senderAddress: sender.address,
+      senderCountry: sender.country,
       senderRegistration: sender.registrationNumber,
       senderVatNumber: sender.vatNumber,
       senderIban: sender.iban,

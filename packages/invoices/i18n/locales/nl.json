@@ -244,6 +244,8 @@
         "completeClientDetails": "Klantgegevens bewerken",
         "senderInvoiceDetails": "Factuurgegevens afzender",
         "invoiceEmail": "E-mailadres voor facturen",
+        "country": "Land",
+        "selectCountry": "Selecteer een land",
         "emailMessages": {
           "invoice": "Factuur",
           "paymentReminder": "Betalingsherinnering"

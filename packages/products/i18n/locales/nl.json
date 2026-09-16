@@ -176,6 +176,7 @@
     "yourName": "Je naam",
     "email": "E-mail",
     "country": "Land",
+    "selectCountry": "Selecteer een land",
     "buyingAsCompany": "Kopen als bedrijf?",
     "buyingAsPrivatePerson": "Kopen als particulier?",
     "switchToPrivatePurchase": "Terug naar particuliere aankoop",
