@@ -62,20 +62,43 @@ export async function finishOAuth(event: H3Event, provider: 'google' | 'zoom', s
   if (!credentials.refresh_token) {
     throw createError({ statusCode: 400, message: 'Offline authorization required; reconnect with consent' })
   }
-  const response = await fetch(
-    provider === 'google' ? 'https://openidconnect.googleapis.com/v1/userinfo' : 'https://api.zoom.us/v2/users/me',
-    { headers: { Authorization: `Bearer ${credentials.access_token}` }, signal: AbortSignal.timeout(15000) }
-  )
-  if (!response.ok) {
-    throw new Error('Could not identify connected account')
-  }
-  const profile = (await response.json()) as { sub?: string; id?: string }
-  const externalId = profile.sub || profile.id
-  if (!externalId) {
-    throw new Error('Connected account identity missing')
+  let externalId: string,
+    externalLabel: string | null = null
+  if (provider === 'google') {
+    const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+      headers: { Authorization: `Bearer ${credentials.access_token}` },
+      signal: AbortSignal.timeout(15000)
+    })
+    if (!response.ok) {
+      throw new Error('Could not identify connected account')
+    }
+    const profile = (await response.json()) as { sub?: string }
+    if (!profile.sub) {
+      throw new Error('Connected account identity missing')
+    }
+    externalId = profile.sub
+  } else {
+    const response = await fetch('https://api.zoom.us/v2/users/me', {
+      headers: { Authorization: `Bearer ${credentials.access_token}` },
+      signal: AbortSignal.timeout(15000)
+    })
+    if (!response.ok) {
+      throw new Error('Could not identify connected Zoom account')
+    }
+    const profile = (await response.json()) as {
+      id?: string
+      email?: string
+      first_name?: string
+      last_name?: string
+    }
+    if (!profile.id) {
+      throw new Error('Connected Zoom account identity missing')
+    }
+    externalId = profile.id
+    externalLabel = profile.email || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.id
   }
   await rows(
-    'INSERT INTO planning.connection(store_id,user_id,provider,credentials,external_user_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT(store_id,user_id,provider) DO UPDATE SET credentials=$4,external_user_id=$5,healthy=true,error=NULL',
-    [storeId, userId, provider, encrypt(credentials), externalId]
+    'INSERT INTO planning.connection(store_id,user_id,provider,credentials,external_user_id,external_user_label) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(store_id,user_id,provider) DO UPDATE SET credentials=$4,external_user_id=$5,external_user_label=$6,healthy=true,error=NULL',
+    [storeId, userId, provider, encrypt(credentials), externalId, externalLabel]
   )
 }

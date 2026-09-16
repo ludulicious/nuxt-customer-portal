@@ -1,5 +1,10 @@
 import portal from './portal.config'
 
+const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
+
 export default defineNuxtConfig({
   extends: portal.nuxtLayers,
   modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
@@ -19,6 +24,7 @@ export default defineNuxtConfig({
       route: '/api-docs/openapi.raw.json'
     }
   },
+  vite: { server: { allowedHosts } },
   eslint: { config: { stylistic: { commaDangle: 'never', braceStyle: '1tbs' } } },
   fonts: {
     families: [
@@ -42,5 +48,5 @@ export default defineNuxtConfig({
       alwaysRedirect: false,
       fallbackLocale: 'en'
     }
-  }
+  },
 })

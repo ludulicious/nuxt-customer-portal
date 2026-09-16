@@ -159,6 +159,7 @@
     },
     "product": "Product",
     "status": "Status",
+    "overridePolicySection": "Deze sectie overschrijven",
     "time": "Tijd",
     "meetingUrl": "Vergaderlink",
     "url": "Portaallink",

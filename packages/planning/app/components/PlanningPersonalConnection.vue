@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { ProviderConfiguration } from '../composables/usePlanning'
 
-defineProps<{ provider: 'google' | 'zoom' }>()
+const { provider } = defineProps<{ provider: 'google' | 'zoom' }>()
 const emit = defineEmits<{ changed: [] }>()
 const api = usePlanning(),
-  { t } = useI18n()
+  { t } = useI18n(),
+  route = useRoute()
 const settings = ref<ProviderConfiguration>(),
   busy = ref(false),
-  error = ref('')
+  error = ref(route.query.connection === 'error' ? t('planning.connectionError') : '')
+const connection = computed(() => settings.value?.connections.find((item) => item.provider === provider))
 async function load() {
   settings.value = await api.provider()
 }
@@ -19,10 +21,9 @@ try {
 async function connect(provider: string) {
   busy.value = true
   try {
-    await navigateTo((await api.connect(provider)).url, { external: true })
+    window.location.assign((await api.connect(provider)).url)
   } catch {
     error.value = t('planning.connectionError')
-  } finally {
     busy.value = false
   }
 }
@@ -52,17 +53,18 @@ async function disconnect(provider: string) {
           <span class="font-semibold capitalize">{{ provider }}</span
           ><UBadge
             variant="subtle"
-            :color="settings?.connections.some((c) => c.provider === provider && c.healthy) ? 'success' : 'warning'"
+            :color="connection?.healthy ? 'success' : 'warning'"
             >{{
               t(
-                settings?.connections.some((c) => c.provider === provider && c.healthy)
-                  ? 'planning.connected'
-                  : 'planning.notConnected'
+                connection?.healthy ? 'planning.connected' : 'planning.notConnected'
               )
             }}</UBadge
+          ><span v-if="connection?.healthy && connection.externalUserLabel" class="text-sm text-muted">{{
+            connection.externalUserLabel
+          }}</span
           ><UButton :loading="busy" variant="outline" @click="connect(provider)">{{ t('planning.connect') }}</UButton
           ><UButton
-            v-if="settings?.connections.some((c) => c.provider === provider)"
+            v-if="connection"
             color="neutral"
             variant="ghost"
             :disabled="busy"

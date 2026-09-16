@@ -39,7 +39,12 @@ export interface ProviderConfiguration {
   graceMinutes: number
   busyCalendarIds: string[]
   writeCalendarId: string | null
-  connections: Array<{ provider: string; healthy: boolean; error: string | null }>
+  connections: Array<{
+    provider: string
+    healthy: boolean
+    error: string | null
+    externalUserLabel: string | null
+  }>
   products: Array<{ id: string; title: string; thumbnailImageId: string | null }>
 }
 export interface AppointmentListItem {

@@ -329,16 +329,12 @@ function togglePlanningMember(id: string, checked: boolean) {
 }
 const planningInstalled = ref(false)
 const planningDefaults = ref(defaultPlanningPolicy())
-const planningOverrides = computed({
-  get: () => Object.keys(state.planning.policyOverrides).length > 0,
-  set: (value) => {
-    state.planning.policyOverrides = value ? structuredClone(toRaw(planningDefaults.value)) : {}
-  }
-})
 const planningPolicy = computed({
   get: () => ({ ...planningDefaults.value, ...state.planning.policyOverrides }),
   set: (value) => {
-    state.planning.policyOverrides = value
+    state.planning.policyOverrides = Object.fromEntries(
+      Object.keys(state.planning.policyOverrides).map((key) => [key, value[key as keyof typeof value]])
+    ) as typeof state.planning.policyOverrides
   }
 })
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
@@ -606,16 +602,32 @@ function removeFile(id: string, index: number) {
         v-if="planningInstalled && state.type === 'service' && ['all', 'planning'].includes(section)"
         :class="section === 'planning' ? 'space-y-4' : 'space-y-4 rounded border border-default p-4'"
       >
-        <UFormField v-if="!appointmentSetupRequired" name="planning.enabled" :label="t('products.plannable')"
-          ><USwitch v-model="state.planning.enabled"
-        /></UFormField>
+        <UFormField v-if="!appointmentSetupRequired" name="planning.enabled">
+          <div class="flex items-center justify-between gap-4 rounded-lg border border-default bg-muted/20 p-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <UIcon name="i-lucide-calendar-check-2" class="size-4" />
+              </span>
+              <span class="text-sm font-semibold text-highlighted">{{ t('products.plannable') }}</span>
+            </div>
+            <USwitch v-model="state.planning.enabled" :aria-label="t('products.plannable')" />
+          </div>
+        </UFormField>
         <template v-if="state.planning.enabled">
-          <UFormField
-            v-if="!appointmentSetupRequired"
-            name="planning.durationMinutes"
-            :label="t('products.durationMinutes')"
-            ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
-          /></UFormField>
+          <div v-if="!appointmentSetupRequired" class="grid gap-4" :class="{ 'sm:grid-cols-2': section !== 'planning' }">
+            <UFormField name="planning.durationMinutes" :label="t('products.durationMinutes')"
+              ><UInputNumber v-model="state.planning.durationMinutes" :min="1" class="w-full"
+            /></UFormField>
+            <UFormField name="planning.meetingProvider" :label="t('products.meetingProvider')"
+              ><USelect
+                v-model="state.planning.meetingProvider"
+                class="w-full"
+                :items="[
+                  { value: 'none', label: t('products.noMeeting') },
+                  { value: 'zoom', label: 'Zoom' }
+                ]"
+            /></UFormField>
+          </div>
           <UFormField
             name="planning.providerUserIds"
             :label="appointmentSetupRequired ? undefined : t('products.planningProviders')"
@@ -653,26 +665,16 @@ function removeFile(id: string, index: number) {
               </label>
             </div>
           </UFormField>
-          <UFormField
-            v-if="!appointmentSetupRequired"
-            name="planning.meetingProvider"
-            :label="t('products.meetingProvider')"
-            ><USelect
-              v-model="state.planning.meetingProvider"
-              class="w-full"
-              :items="[
-                { value: 'none', label: t('products.noMeeting') },
-                { value: 'zoom', label: 'Zoom' }
-              ]"
-          /></UFormField>
-          <UFormField v-if="!appointmentSetupRequired" :label="t('products.overridePlanningPolicy')"
-            ><USwitch v-model="planningOverrides"
-          /></UFormField>
+          <div v-if="!appointmentSetupRequired" class="border-t border-default pt-4">
+            <p class="text-sm font-semibold text-highlighted">{{ t('products.overridePlanningPolicy') }}</p>
+          </div>
           <PlanningPolicyFields
-            v-if="planningOverrides && !appointmentSetupRequired"
+            v-if="!appointmentSetupRequired"
             v-model="planningPolicy"
+            v-model:overrides="state.planning.policyOverrides"
             prefix="planning.policyOverrides."
             :currencies="currencies"
+            :compact="section === 'planning'"
           />
         </template>
       </div>

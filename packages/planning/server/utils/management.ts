@@ -52,8 +52,13 @@ export async function ownSettings(event: H3Event) {
     busy_calendar_ids: string[]
     write_calendar_id: string | null
   }>('SELECT * FROM planning.provider WHERE store_id=$1 AND user_id=$2', [storeId, userId])
-  const connections = await rows<{ provider: string; healthy: boolean; error: string | null }>(
-    'SELECT provider,healthy,error FROM planning.connection WHERE store_id=$1 AND user_id=$2',
+  const connections = await rows<{
+    provider: string
+    healthy: boolean
+    error: string | null
+    externalUserLabel: string | null
+  }>(
+    'SELECT provider,healthy,error,external_user_label AS "externalUserLabel" FROM planning.connection WHERE store_id=$1 AND user_id=$2',
     [storeId, userId]
   )
   const products = await rows<{ id: string; title: string; thumbnailImageId: string | null }>(

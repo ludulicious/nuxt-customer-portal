@@ -60,6 +60,7 @@ export const connection = schema.table(
     provider: text('provider').notNull(),
     credentials: text('credentials').notNull(),
     externalUserId: text('external_user_id').notNull(),
+    externalUserLabel: text('external_user_label'),
     healthy: boolean('healthy').notNull().default(true),
     error: text('error')
   },

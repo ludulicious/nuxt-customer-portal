@@ -159,6 +159,7 @@
     },
     "product": "Product",
     "status": "Status",
+    "overridePolicySection": "Override this section",
     "time": "Time",
     "meetingUrl": "Meeting link",
     "url": "Portal link",
