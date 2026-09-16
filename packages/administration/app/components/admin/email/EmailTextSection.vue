@@ -26,6 +26,7 @@ const selectedItem = computed(() => catalog.value[selected.value] ?? catalog.val
 const overrideKey = computed(() =>
   selectedItem.value ? `${selectedItem.value.moduleId}.${selectedItem.value.definition.id}.${selectedLocale.value}` : ''
 )
+const hasOverride = computed(() => Boolean(overrides[overrideKey.value]))
 const selectedText = computed<PortalEmailText>({
   get: () =>
     selectedItem.value
@@ -91,6 +92,23 @@ const save = async () => {
     busy.value = false
   }
 }
+const reset = async () => {
+  busy.value = true
+  try {
+    const item = selectedItem.value!
+    const result = await $fetch<PortalEmailSettings>(
+      `/api/admin/email/texts/${encodeURIComponent(item.moduleId)}/${encodeURIComponent(item.definition.id)}/${selectedLocale.value}`,
+      { method: 'DELETE' }
+    )
+    delete overrides[overrideKey.value]
+    Object.assign(overrides, result.textOverrides)
+    toast.add({ title: t('admin.email.textReset'), color: 'success' })
+  } catch (error) {
+    toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
+  } finally {
+    busy.value = false
+  }
+}
 const preview = async () => {
   previewHtml.value = ''
   try {
@@ -123,7 +141,7 @@ const sendTest = async () => {
 </script>
 
 <template>
-  <UForm v-if="selectedItem" :schema="schema" :state="selectedText" class="space-y-6" @submit="save">
+  <UForm v-if="selectedItem" novalidate :schema="schema" :state="selectedText" class="space-y-6" @submit="save">
     <UCard>
       <template #header
         ><h2 class="font-semibold">{{ t('admin.email.texts') }}</h2></template
@@ -149,16 +167,29 @@ const sendTest = async () => {
           </section>
         </nav>
         <div class="space-y-4">
-          <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
+              <UButton
+                v-for="locale in locales"
+                :key="locale.value"
+                type="button"
+                :label="locale.label"
+                :color="selectedLocale === locale.value ? 'primary' : 'neutral'"
+                :variant="selectedLocale === locale.value ? 'soft' : 'outline'"
+                @click="selectedLocale = locale.value"
+              />
+            </div>
             <UButton
-              v-for="locale in locales"
-              :key="locale.value"
               type="button"
-              :label="locale.label"
-              :color="selectedLocale === locale.value ? 'primary' : 'neutral'"
-              :variant="selectedLocale === locale.value ? 'soft' : 'outline'"
-              @click="selectedLocale = locale.value"
-            />
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              :disabled="!hasOverride"
+              :loading="busy"
+              @click="reset"
+            >
+              {{ t('admin.email.resetText') }}
+            </UButton>
           </div>
           <UFormField name="subject" :label="t('admin.email.subject')"
             ><UInput
