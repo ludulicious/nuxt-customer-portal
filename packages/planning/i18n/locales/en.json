@@ -46,6 +46,25 @@
     "refundPercentage": "Cancellation refund (%)",
     "cancellationEnabled": "Allow customer cancellations",
     "changeFeeCurrency": "Change fee ({currency})",
+    "changeFees": "Change fees",
+    "policyGroup": {
+      "schedule": {
+        "title": "Appointment timing",
+        "description": "Set appointment holds and the spacing between offered start times."
+      },
+      "bookingWindow": {
+        "title": "Booking window",
+        "description": "Control how early and how far ahead customers can book."
+      },
+      "changes": {
+        "title": "Appointment changes",
+        "description": "Configure included changes, deadlines and any applicable fees."
+      },
+      "cancellations": {
+        "title": "Cancellations and refunds",
+        "description": "Choose whether customers can cancel and what refund they receive."
+      }
+    },
     "connections": "Calendar and meeting connections",
     "connected": "Connected",
     "notConnected": "Not connected",

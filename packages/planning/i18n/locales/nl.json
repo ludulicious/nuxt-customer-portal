@@ -46,6 +46,25 @@
     "refundPercentage": "Terugbetaling bij annulering (%)",
     "cancellationEnabled": "Klantannuleringen toestaan",
     "changeFeeCurrency": "Wijzigingskosten ({currency})",
+    "changeFees": "Wijzigingskosten",
+    "policyGroup": {
+      "schedule": {
+        "title": "Tijdsindeling afspraken",
+        "description": "Stel reserveringen en de afstand tussen aangeboden starttijden in."
+      },
+      "bookingWindow": {
+        "title": "Boekingsperiode",
+        "description": "Bepaal hoe vroeg en hoe ver vooruit klanten kunnen boeken."
+      },
+      "changes": {
+        "title": "Afspraakwijzigingen",
+        "description": "Stel inbegrepen wijzigingen, termijnen en eventuele kosten in."
+      },
+      "cancellations": {
+        "title": "Annuleringen en terugbetalingen",
+        "description": "Bepaal of klanten kunnen annuleren en welke terugbetaling zij ontvangen."
+      }
+    },
     "connections": "Agenda- en vergaderverbindingen",
     "connected": "Verbonden",
     "notConnected": "Niet verbonden",

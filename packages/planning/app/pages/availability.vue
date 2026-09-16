@@ -331,22 +331,12 @@ async function removeWindow() {
 
 <template>
   <div class="h-full min-h-0 overflow-hidden">
-    <UContainer class="flex h-full min-h-0 flex-col gap-6 py-8"
-      ><h1 class="text-2xl font-bold">{{ t('planning.availability') }}</h1>
-      <UAlert v-if="error" variant="outline" color="error" :title="error" /><UAlert
-        v-if="settings && !settings.enabled"
-        variant="outline"
-        color="warning"
-        :title="t(canManagePlanning ? 'planning.planningDisabledAdmin' : 'planning.planningDisabled')"
-      >
-        <template v-if="canManagePlanning" #actions>
-          <UButton to="/admin/planning" color="neutral" variant="link">{{ t('planning.settings') }}</UButton>
-        </template>
-      </UAlert>
+    <UContainer class="flex h-full min-h-0 flex-col gap-6 py-8">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-xl font-semibold">
-          {{ t('planning.availability') }} · {{ calendarTimezone.replaceAll('_', ' ') }}
-        </h2>
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-calendar-days" class="mt-1 size-6 shrink-0 text-primary" />
+          <h1 class="text-2xl font-semibold">{{ t('planning.availability') }}</h1>
+        </div>
         <div class="flex flex-wrap items-center gap-2">
           <PlanningTimezoneSelect v-model="calendarTimezone" :user-timezone="providerState.timezone" :disabled="busy" />
           <UButton
@@ -374,6 +364,16 @@ async function removeWindow() {
           </PlanningTimezoneReadOnlyHover>
         </div>
       </div>
+      <UAlert v-if="error" variant="outline" color="error" :title="error" /><UAlert
+        v-if="settings && !settings.enabled"
+        variant="outline"
+        color="warning"
+        :title="t(canManagePlanning ? 'planning.planningDisabledAdmin' : 'planning.planningDisabled')"
+      >
+        <template v-if="canManagePlanning" #actions>
+          <UButton to="/admin/planning" color="neutral" variant="link">{{ t('planning.settings') }}</UButton>
+        </template>
+      </UAlert>
       <PlanningAvailabilityCalendar
         class="min-h-0 flex-1"
         :days="days"
