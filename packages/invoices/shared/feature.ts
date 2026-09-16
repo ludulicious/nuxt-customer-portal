@@ -73,11 +73,13 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       defaults: {
         en: {
           subject: 'Invoice {{invoice_number}} from {{sender_name}}',
-          body: 'Dear Sir or Madam,\n\nPlease find invoice **{{invoice_number}}** attached.\n\nKind regards,  \n{{sender_name}}'
+          body: 'Dear {{recipient_name}},\n\nThank you for working with us. Please find invoice **{{invoice_number}}** attached to this email for your records.\n\nIf you have any questions about the invoice, please reply to this email and we will be happy to help.\n\nKind regards,  \n{{sender_name}}',
+          footer: 'Please keep this email and the attached invoice for your administration.'
         },
         nl: {
           subject: 'Factuur {{invoice_number}} van {{sender_name}}',
-          body: 'Geachte heer/mevrouw,\n\nIn de bijlage vindt u factuur **{{invoice_number}}**.\n\nMet vriendelijke groet,  \n{{sender_name}}'
+          body: 'Beste {{recipient_name}},\n\nBedankt voor de prettige samenwerking. In de bijlage vindt u factuur **{{invoice_number}}** voor uw administratie.\n\nHeeft u vragen over de factuur? Beantwoord dan gerust deze e-mail; we helpen u graag verder.\n\nMet vriendelijke groet,  \n{{sender_name}}',
+          footer: 'Bewaar deze e-mail en de bijgevoegde factuur voor uw administratie.'
         }
       },
       placeholders: [
@@ -114,11 +116,13 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       defaults: {
         en: {
           subject: 'Payment reminder for invoice {{invoice_number}} from {{sender_name}}',
-          body: 'Dear Sir or Madam,\n\nInvoice **{{invoice_number}}**, due on {{due_date}}, remains outstanding for **{{outstanding_amount}}**. Please arrange payment.\n\nKind regards,  \n{{sender_name}}'
+          body: 'Dear {{recipient_name}},\n\nThis is a friendly reminder that invoice **{{invoice_number}}**, which was due on **{{due_date}}**, still has an outstanding balance of **{{outstanding_amount}}**.\n\nIt may simply have escaped your attention. Would you please arrange payment when convenient? If you have already paid, you can disregard this reminder.\n\nIf anything is unclear or you would like to discuss the invoice, please reply to this email.\n\nKind regards,  \n{{sender_name}}',
+          footer: 'Thank you for your attention and for your continued cooperation.'
         },
         nl: {
           subject: 'Betalingsherinnering factuur {{invoice_number}} van {{sender_name}}',
-          body: 'Geachte heer/mevrouw,\n\nFactuur **{{invoice_number}}**, met vervaldatum {{due_date}}, staat nog open voor **{{outstanding_amount}}**. Wij verzoeken u vriendelijk te betalen.\n\nMet vriendelijke groet,  \n{{sender_name}}'
+          body: 'Beste {{recipient_name}},\n\nDit is een vriendelijke herinnering dat factuur **{{invoice_number}}**, met vervaldatum **{{due_date}}**, nog openstaat voor een bedrag van **{{outstanding_amount}}**.\n\nMogelijk is de factuur aan uw aandacht ontsnapt. Wilt u de betaling uitvoeren wanneer dat uitkomt? Als u inmiddels heeft betaald, kunt u deze herinnering als niet verzonden beschouwen.\n\nIs iets niet duidelijk of wilt u de factuur bespreken? Beantwoord dan gerust deze e-mail.\n\nMet vriendelijke groet,  \n{{sender_name}}',
+          footer: 'Bedankt voor uw aandacht en de prettige samenwerking.'
         }
       },
       placeholders: [

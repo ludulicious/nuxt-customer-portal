@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { pool } from '@nuxt-customer-portal/core/server/utils/db'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
+import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { getOrder, reconcileCheckout, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
@@ -125,6 +126,11 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
     locale,
     to: order.email,
     values: {
+      recipient_name: emailRecipientName({
+        firstName: order.snapshot.billing.firstName,
+        displayName: order.snapshot.billing.name,
+        email: order.email
+      }),
       product: a.snapshot.title,
       status:
         a.status === 'cancelled'
@@ -345,6 +351,11 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
             locale: order.snapshot.locale,
             to: order.email,
             values: {
+              recipient_name: emailRecipientName({
+                firstName: order.snapshot.billing.firstName,
+                displayName: order.snapshot.billing.name,
+                email: order.email
+              }),
               product: order.lines[0]!.snapshot.title,
               status:
                 order.snapshot.locale === 'nl'
@@ -358,7 +369,10 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
           })
         }
       } else if (job.kind === 'conflict' || job.kind === 'mirror-notice') {
-        const [provider] = await rows<{ email: string }>('SELECT email FROM public."user" WHERE id=$1', [p.userId])
+        const [provider] = await rows<{ email: string; first_name: string | null; name: string | null }>(
+          'SELECT email,first_name,name FROM public."user" WHERE id=$1',
+          [p.userId]
+        )
         if (provider) {
           await sendPortalEmail({
             moduleId: 'planning',
@@ -366,6 +380,11 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
             locale: 'en',
             to: provider.email,
             values: {
+              recipient_name: emailRecipientName({
+                firstName: provider.first_name,
+                displayName: provider.name,
+                email: provider.email
+              }),
               product: job.kind === 'conflict' ? 'Calendar conflict' : 'Calendar synchronization',
               status:
                 job.kind === 'conflict'

@@ -103,6 +103,7 @@
       },
       "placeholders": {
         "title": "Beschikbare velden",
+        "recipientName": "Naam ontvanger",
         "otp": "Verificatiecode",
         "inviterName": "Naam uitnodiger",
         "organizationName": "Organisatienaam",

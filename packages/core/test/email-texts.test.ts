@@ -2,6 +2,13 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getOTPEmailContent } from '../server/utils/email-texts'
 import { renderPortalEmailMarkdown } from '../server/utils/portal-email'
+import { emailRecipientName } from '../shared/email-recipient'
+
+test('email recipient name prefers first name and falls back to display name', () => {
+  assert.equal(emailRecipientName({ firstName: ' Jenni ', displayName: 'Jenni Iyoyo' }), 'Jenni')
+  assert.equal(emailRecipientName({ firstName: ' ', displayName: ' Jenni Iyoyo ' }), 'Jenni Iyoyo')
+  assert.equal(emailRecipientName({ displayName: ' ', email: 'jenni@example.test' }), 'jenni@example.test')
+})
 
 test('portal email text renders Markdown while allowing exceptional inline HTML', () => {
   const html = renderPortalEmailMarkdown('Hello **there**.\n\n[Open portal](https://example.test)\n\n<span>Custom HTML</span>')

@@ -103,6 +103,7 @@
       },
       "placeholders": {
         "title": "Available placeholders",
+        "recipientName": "Recipient name",
         "otp": "Verification code",
         "inviterName": "Inviter name",
         "organizationName": "Organization name",

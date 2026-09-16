@@ -4,6 +4,7 @@ import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils
 import { and, desc, eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
+import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import {
   getPortalEmailProviderStatus,
   renderPortalEmail,
@@ -70,7 +71,10 @@ export const getInvoiceEmailPreview = async (
   const values = {
     invoice_number: selected.number,
     sender_name: selected.senderName,
-    recipient_name: selected.recipientName,
+    recipient_name: emailRecipientName({
+      displayName: selected.recipientName,
+      email: selected.recipientEmail
+    }),
     due_date: date,
     outstanding_amount: outstanding
   }
@@ -184,7 +188,10 @@ export const deliverInvoiceEmail = async (
       values: {
         invoice_number: currentInvoice.number,
         sender_name: currentInvoice.senderName,
-        recipient_name: currentInvoice.recipientName,
+        recipient_name: emailRecipientName({
+          displayName: currentInvoice.recipientName,
+          email: currentInvoice.recipientEmail
+        }),
         due_date: dueDate,
         outstanding_amount: outstandingAmount
       },
