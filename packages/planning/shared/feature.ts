@@ -5,6 +5,22 @@ import { canceledAppointmentEmail, newAppointmentEmail, updatedAppointmentEmail 
 export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   id: 'planning',
   emails: [newAppointmentEmail, updatedAppointmentEmail, canceledAppointmentEmail],
+  dashboardWidgets: [
+    {
+      id: 'planning-upcoming',
+      component: 'PlanningDashboardUpcomingAppointments',
+      area: 'main',
+      size: 'half',
+      order: 5
+    },
+    {
+      id: 'planning-overview',
+      component: 'PlanningDashboardOverview',
+      area: 'main',
+      size: 'half',
+      order: 6
+    }
+  ],
   modules: [
     {
       id: 'planning',

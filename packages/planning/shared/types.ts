@@ -84,3 +84,25 @@ export interface ProviderSettings {
   googleConnected: boolean
   zoomConnected: boolean
 }
+
+export interface PlanningDashboardAppointment {
+  id: string
+  title: string
+  start: string
+  end: string
+  meetingProvider: 'none' | 'zoom'
+  meetingUrl: string | null
+  providerName: string
+  providerTimezone: string
+  customerName: string
+  customerTimezone: string
+  conflict: boolean
+}
+
+export interface PlanningDashboardDto {
+  access: { staff: boolean; canManage: boolean }
+  upcomingCount: number
+  todayCount: number
+  conflictCount: number
+  appointments: PlanningDashboardAppointment[]
+}

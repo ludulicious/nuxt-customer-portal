@@ -25,13 +25,12 @@ const selected = ref<AvailabilityWindow>(),
   occurrence = ref(''),
   editOne = ref(false)
 const route = useRoute()
-const week = ref(
-  typeof route.query.week === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(route.query.week) &&
-    Number.isFinite(Date.parse(route.query.week))
-    ? route.query.week
+function weekFromQuery(value: unknown) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))
+    ? value
     : new Date().toISOString().slice(0, 10)
-)
+}
+const week = ref(weekFromQuery(route.query.week))
 const calendarTimezone = computed({
   get: () =>
     typeof route.query.timezone === 'string' && Intl.supportedValuesOf('timeZone').includes(route.query.timezone)
@@ -193,6 +192,7 @@ async function moveWeek(delta: number) {
     preloadedCalendarKey = `${targetWeek}:${targetTimezone}`
     week.value = targetWeek
     externalBusy.value = targetBusy
+    await navigateTo({ query: { ...route.query, week: targetWeek } })
   } catch {
     error.value = t('planning.externalCalendarLoadError')
   } finally {
@@ -229,6 +229,15 @@ async function fetchExternalBusy(targetDays: string[], timezone = calendarTimezo
 // Suspend the page setup until the calendar and its external events are ready.
 // This ensures the all-day row has its final layout on the first rendered frame.
 await load()
+watch(
+  () => route.query.week,
+  (value) => {
+    const routeWeek = weekFromQuery(value)
+    if (routeWeek !== week.value) {
+      week.value = routeWeek
+    }
+  }
+)
 watch([week, calendarTimezone], () => {
   if (settings.value) {
     const calendarKey = `${week.value}:${calendarTimezone.value}`
