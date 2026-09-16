@@ -18,7 +18,9 @@ const api = usePlanning(),
   busy = ref(false),
   calendarNavigationDirection = ref<'previous' | 'next'>(),
   windowOpen = ref(false),
-  deleteOpen = ref(false)
+  deleteOpen = ref(false),
+  appointmentDrawerOpen = ref(false),
+  drawerAppointment = ref<AppointmentListItem>()
 const selected = ref<AvailabilityWindow>(),
   occurrence = ref(''),
   editOne = ref(false)
@@ -314,6 +316,10 @@ function openWindow(date: string, window?: AvailabilityWindow) {
   )
   windowOpen.value = true
 }
+function openAppointment(item: AppointmentListItem) {
+  drawerAppointment.value = item
+  appointmentDrawerOpen.value = true
+}
 async function saveWindow() {
   if (!canEditCalendar.value) {
     return
@@ -420,7 +426,17 @@ async function removeWindow() {
         @switch-timezone="calendarTimezone = providerState.timezone"
         @select="selectCalendarRange"
         @edit="editCalendarWindow"
+        @appointment="openAppointment"
         @move="moveCalendarWindow"
+      />
+
+      <PlanningAppointmentDrawer
+        v-if="appointmentDrawerOpen && drawerAppointment"
+        v-model:open="appointmentDrawerOpen"
+        :item="drawerAppointment"
+        :timezone="calendarTimezone"
+        staff
+        @changed="load"
       />
 
       <UModal

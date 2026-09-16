@@ -52,8 +52,12 @@ function updateSearch(value: string | number) {
 }
 
 function updateFilter(key: string, value: string | undefined) {
-  if (key === 'status') void update({ status: value || 'all' })
-  if (key === 'kind') void update({ kind: value || 'all' })
+  if (key === 'status') {
+    void update({ status: value || 'all' })
+  }
+  if (key === 'kind') {
+    void update({ kind: value || 'all' })
+  }
 }
 
 const query = computed(() => ({
@@ -93,7 +97,9 @@ watch(
 watch(
   () => filters.value.page,
   (page) => {
-    if (page >= resource.firstLoadedPage.value && page <= resource.lastLoadedPage.value) return
+    if (page >= resource.firstLoadedPage.value && page <= resource.lastLoadedPage.value) {
+      return
+    }
     void loadPage(page)
   }
 )
@@ -139,15 +145,21 @@ const productSummary = (job: PlanningJobListItem) =>
 
 async function loadNext() {
   const result = await resource.loadNextPage(query.value)
-  if (result) await update({}, result.pagination.page)
+  if (result) {
+    await update({}, result.pagination.page)
+  }
 }
 
 async function loadPrevious() {
   previousScrollHeight = list.value?.scrollHeight ?? 0
   const result = await resource.loadPreviousPage(query.value)
-  if (!result) return
+  if (!result) {
+    return
+  }
   await nextTick()
-  if (list.value) list.value.scrollTop += list.value.scrollHeight - previousScrollHeight
+  if (list.value) {
+    list.value.scrollTop += list.value.scrollHeight - previousScrollHeight
+  }
   await update({}, result.pagination.page)
 }
 
@@ -174,16 +186,33 @@ useAutoPagination({
       <div class="flex flex-wrap items-start justify-between gap-3 p-4">
         <div class="flex items-start gap-3">
           <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <UIcon name="i-lucide-refresh-cw" class="size-5" />
+            <UIcon name="i-lucide-list-checks" class="size-5" />
           </span>
           <div>
             <h2 class="font-semibold text-highlighted">{{ t('planning.pendingTasks') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ t('planning.pendingTasksDescription') }}</p>
           </div>
         </div>
-        <UButton v-if="pagination.total && filters.status === 'failed'" icon="i-lucide-refresh-cw" variant="outline" :loading="retryingAll" @click="retryAll">
-          {{ t('planning.retryAll') }}
-        </UButton>
+        <div class="flex shrink-0 items-center gap-1">
+          <UButton
+            v-if="pagination.total && filters.status === 'failed'"
+            icon="i-lucide-refresh-cw"
+            variant="outline"
+            :loading="retryingAll"
+            @click="retryAll"
+          >
+            {{ t('planning.retryAll') }}
+          </UButton>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :loading="pending"
+            :aria-label="t('common.refresh')"
+            @click="loadPage()"
+          />
+        </div>
       </div>
       <PortalListToolbar
         :search="searchDraft"

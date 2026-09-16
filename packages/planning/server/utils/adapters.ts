@@ -49,6 +49,7 @@ export interface MeetingAdapter {
     title: string,
     start: Date,
     duration: number,
+    details: { agenda: string; inviteeEmail: string },
     existingId?: string
   ): Promise<{ id: string; url: string }>
   remove(storeId: string, userId: string, id: string): Promise<void>
@@ -387,7 +388,14 @@ export async function externalBusyDetails(
   return events
 }
 export const zoomMeeting: MeetingAdapter = {
-  async ensure(s, u, identity, title, start, duration, existingId) {
+  async ensure(s, u, identity, title, start, duration, details, existingId) {
+    const agenda = `${details.agenda}\n\nPortal reference: ${identity}`,
+      settings = {
+        waiting_room: true,
+        join_before_host: false,
+        meeting_invitees: [{ email: details.inviteeEmail }]
+      },
+      update = { topic: title, start_time: start.toISOString(), duration, timezone: 'UTC', agenda, settings }
     if (existingId) {
       const meeting = await api<{ id: number; join_url: string } | undefined>(
         'zoom',
@@ -399,12 +407,7 @@ export const zoomMeeting: MeetingAdapter = {
         [404]
       )
       if (meeting) {
-        await api('zoom', s, u, `/meetings/${encodeURIComponent(existingId)}`, 'PATCH', {
-          topic: title,
-          start_time: start.toISOString(),
-          duration,
-          timezone: 'UTC'
-        })
+        await api('zoom', s, u, `/meetings/${encodeURIComponent(existingId)}`, 'PATCH', update)
         return { id: String(meeting.id), url: meeting.join_url }
       }
     }
@@ -418,26 +421,18 @@ export const zoomMeeting: MeetingAdapter = {
           u,
           `/users/me/meetings?${new URLSearchParams({ type: 'scheduled', page_size: '300', ...(page ? { next_page_token: page } : {}) })}`
         )
-      const existing = result.meetings.find((m) => m.agenda === identity)
+      const existing = result.meetings.find(
+        (meeting) => meeting.agenda === identity || meeting.agenda?.endsWith(`Portal reference: ${identity}`)
+      )
       if (existing) {
-        await api('zoom', s, u, `/meetings/${existing.id}`, 'PATCH', {
-          topic: title,
-          start_time: start.toISOString(),
-          duration,
-          timezone: 'UTC'
-        })
+        await api('zoom', s, u, `/meetings/${existing.id}`, 'PATCH', update)
         return { id: String(existing.id), url: existing.join_url }
       }
       page = result.next_page_token
     } while (page)
     const value = await api<{ id: number; join_url: string }>('zoom', s, u, '/users/me/meetings', 'POST', {
-      topic: title,
-      type: 2,
-      start_time: start.toISOString(),
-      duration,
-      timezone: 'UTC',
-      agenda: identity,
-      settings: { waiting_room: true, join_before_host: false }
+      ...update,
+      type: 2
     })
     return { id: String(value.id), url: value.join_url }
   },

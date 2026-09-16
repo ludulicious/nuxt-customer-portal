@@ -55,9 +55,22 @@ async function appointmentEffects(id: string, revision: number, notify = true, n
         a.store_id,
         a.user_id,
         `portal:${id}`,
-        a.snapshot.title,
+        appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
         a.start_at,
         a.snapshot.durationMinutes,
+        {
+          agenda: appointmentCalendarDescription({
+            start: a.start_at,
+            end: a.end_at,
+            providerTimezone: a.snapshot.timezone,
+            customerTimezone: a.snapshot.customerTimezone,
+            locale: a.snapshot.locale,
+            billing: order.snapshot.billing,
+            email: order.email,
+            graceMinutes: a.snapshot.graceMinutes
+          }),
+          inviteeEmail: order.email
+        },
         a.meeting_id || undefined
       )
       a.meeting_id = meeting.id

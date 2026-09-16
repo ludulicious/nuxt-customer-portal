@@ -20,6 +20,7 @@ export interface AppointmentDetails {
   status: 'confirmed' | 'cancelled'
   customerTimezone: string
   currency: string
+  meetingProvider: 'none' | 'zoom'
   meetingUrl: string | null
   changes: number
   freeChanges: number
@@ -53,7 +54,12 @@ export interface AppointmentListItem {
   start: string
   end: string
   status: string
+  meetingProvider?: 'none' | 'zoom'
+  meetingUrl?: string | null
+  providerUserId?: string
   providerName?: string
+  providerEmail?: string
+  providerTimezone?: string
   customerTimezone?: string
   conflict?: boolean
   effectsError?: string
@@ -130,6 +136,7 @@ export const usePlanning = () => ({
       items: AppointmentListItem[]
       pagination: { total: number; page: number; pageSize: number; pageCount: number }
       access: { staff: boolean; canManage: boolean }
+      hosts: Array<{ id: string; name: string }>
     }>('/api/planning/appointments', { query, signal }),
   staffReschedule: (id: string, body: Record<string, unknown>) =>
     $fetch(`/api/planning/appointments/${id}/reschedule`, { method: 'PUT', body }),

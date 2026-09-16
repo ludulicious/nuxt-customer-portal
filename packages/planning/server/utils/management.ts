@@ -253,6 +253,7 @@ export async function appointmentDetails(event: H3Event, id: string) {
     status: a.status,
     customerTimezone: a.snapshot.customerTimezone,
     currency: a.snapshot.currency,
+    meetingProvider: a.snapshot.meetingProvider,
     meetingUrl: a.meeting_url,
     changes: a.changes,
     freeChanges: a.snapshot.policy.freeChanges,

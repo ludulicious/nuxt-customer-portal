@@ -3,7 +3,9 @@ import type { AppointmentDetails, HoldResult } from '../composables/usePlanning'
 import type { Slot } from '../../shared/types'
 import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 
-const props = defineProps<{ id: string; timezone?: string }>()
+const props = withDefaults(defineProps<{ id: string; timezone?: string; showSummary?: boolean }>(), {
+  showSummary: true
+})
 const emit = defineEmits<{ changed: [] }>()
 const { appointmentRange } = usePlanningTimeDisplay()
 const api = usePlanning(),
@@ -78,15 +80,20 @@ async function cancel() {
 <template>
   <div>
     <div class="space-y-5">
-      <UAlert v-if="error" variant="outline" color="error" :title="error" /><template v-if="item"
-        ><h1 class="text-2xl font-bold">{{ item.title }}</h1>
-        <p>
-          {{ appointmentRange(item.start, item.end, timezone || item.customerTimezone) }}
-        </p>
-        <p>{{ item.providerName }} · {{ t(`planning.${item.status}`) }}</p>
-        <UButton v-if="item.status === 'confirmed' && item.meetingUrl" :to="item.meetingUrl" target="_blank">{{
-          t('planning.joinMeeting')
-        }}</UButton>
+      <UAlert v-if="error" variant="outline" color="error" :title="error" /><template v-if="item">
+        <template v-if="showSummary">
+          <h1 class="text-2xl font-bold">{{ item.title }}</h1>
+          <p>
+            {{ appointmentRange(item.start, item.end, timezone || item.customerTimezone) }}
+          </p>
+          <p>{{ item.providerName }} · {{ t(`planning.${item.status}`) }}</p>
+        </template>
+        <UButton
+          v-if="showSummary && item.status === 'confirmed' && item.meetingUrl"
+          :to="item.meetingUrl"
+          target="_blank"
+          >{{ t(item.meetingProvider === 'zoom' ? 'planning.joinZoom' : 'planning.joinMeeting') }}</UButton
+        >
         <UAlert v-if="item.pendingChangeExpiresAt" variant="outline" :title="t('planning.pendingChange')" />
         <UButton
           v-if="item.pendingChangeExpiresAt && item.canManage"
@@ -96,15 +103,25 @@ async function cancel() {
           >{{ t('planning.abandonChange') }}</UButton
         >
         <div class="flex gap-3">
-          <UButton v-if="item.canReschedule" @click="changeOpen = true">{{ t('planning.reschedule') }}</UButton
-          ><UButton v-if="item.canCancel" color="error" variant="outline" @click="cancelOpen = true">{{
-            t('planning.cancel')
-          }}</UButton>
+          <UButton
+            v-if="item.canReschedule"
+            icon="i-lucide-calendar-sync"
+            variant="outline"
+            @click="changeOpen = true"
+            >{{ t('planning.reschedule') }}</UButton
+          ><UButton
+            v-if="item.canCancel"
+            icon="i-lucide-calendar-x-2"
+            color="error"
+            variant="soft"
+            @click="cancelOpen = true"
+            >{{ t('planning.cancelAppointmentAction') }}</UButton
+          >
         </div>
         <p v-if="!item.staff">
           {{ t('planning.changesUsed', { used: item.changes, free: item.freeChanges }) }}
-        </p></template
-      >
+        </p>
+      </template>
       <UModal v-if="changeOpen" v-model:open="changeOpen" :title="t('planning.reschedule')"
         ><template #body
           ><p v-if="item" class="mb-4">

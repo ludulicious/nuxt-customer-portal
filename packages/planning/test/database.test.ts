@@ -451,6 +451,11 @@ test(
         const other = await appointmentLists.listAppointments(event(strangerCookie), {})
         assert.equal(staff.pagination.total, 1)
         assert.equal(staff.access.canManage, false)
+        assert.deepEqual(staff.hosts, [{ id: 'provider', name: 'Provider' }])
+        assert.equal(staff.items[0]?.providerTimezone, 'UTC')
+        assert.equal(staff.items[0]?.providerUserId, 'provider')
+        assert.equal(staff.items[0]?.meetingProvider, 'zoom')
+        assert.match(staff.items[0]?.meetingUrl || '', /^https:\/\//)
         assert.equal(mine.pagination.total, 1)
         assert.equal(other.pagination.total, 0)
         assert.equal(staff.pagination.pageSize, 20)
@@ -460,6 +465,10 @@ test(
         )
         assert.equal(
           (await appointmentLists.listAppointments(event(providerCookie), { status: 'cancelled' })).pagination.total,
+          0
+        )
+        assert.equal(
+          (await appointmentLists.listAppointments(event(providerCookie), { host: 'another-provider' })).pagination.total,
           0
         )
         const reader = await management.appointmentDetails(event(providerCookie), a.id)

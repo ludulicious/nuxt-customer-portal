@@ -8,11 +8,16 @@ const api = usePlanning(),
   scroller = ref<HTMLElement | null>(null),
   nextSentinel = ref<HTMLElement | null>(null),
   previousSentinel = ref<HTMLElement | null>(null),
-  selected = ref(''),
   createOpen = ref(false),
-  access = ref({ staff: false, canManage: false })
+  drawerOpen = ref(false),
+  drawerAppointment = ref<AppointmentListItem>(),
+  access = ref({ staff: false, canManage: false }),
+  hosts = ref<Array<{ id: string; name: string }>>([]),
+  searchDraft = ref(typeof route.query.search === 'string' ? route.query.search : '')
 const { currentUser } = usePortalSession()
-const userTimezone = computed(() => currentUser.value?.timezone || 'Europe/Amsterdam')
+const userTimezone = computed(
+  () => (currentUser.value as typeof currentUser.value & { timezone?: string })?.timezone || 'Europe/Amsterdam'
+)
 const displayTimezone = computed({
   get: () =>
     typeof route.query.timezone === 'string' && Intl.supportedValuesOf('timeZone').includes(route.query.timezone)
@@ -29,8 +34,9 @@ const filters = computed(() => ({
   search: typeof route.query.search === 'string' ? route.query.search : '',
   status: ['confirmed', 'cancelled'].includes(String(route.query.status)) ? String(route.query.status) : 'all',
   conflicts: route.query.conflicts === 'conflicts' ? 'conflicts' : 'all',
+  host: typeof route.query.host === 'string' ? route.query.host : 'all',
   sortBy: route.query.sortBy === 'title' ? 'title' : 'start',
-  sortOrder: route.query.sortOrder === 'asc' ? 'asc' : 'desc'
+  sortOrder: route.query.sortOrder === 'asc' ? ('asc' as const) : ('desc' as const)
 }))
 const page = computed(() => Math.max(1, Number(route.query.page) || 1))
 const resource = usePaginatedResource<AppointmentListItem, typeof filters.value>({
@@ -38,6 +44,7 @@ const resource = usePaginatedResource<AppointmentListItem, typeof filters.value>
   fetchPage: async ({ filters, page, signal }) => {
     const result = await api.appointments({ ...filters, page }, signal)
     access.value = result.access
+    hosts.value = result.hosts
     return result
   }
 })
@@ -45,9 +52,6 @@ const { items, pagination, pending, loadingPreviousPage, hasNextPage, hasPreviou
 let skipQuery = ''
 async function load() {
   await resource.loadPage(filters.value, { page: page.value })
-  if (selected.value && !items.value.some((i) => i.id === selected.value)) {
-    selected.value = ''
-  }
 }
 await load()
 watch(
@@ -57,13 +61,30 @@ watch(
       skipQuery = ''
       return
     }
-    selected.value = ''
     createOpen.value = false
+    drawerOpen.value = false
+    drawerAppointment.value = undefined
+    searchDraft.value = filters.value.search
     await load()
   }
 )
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+function updateSearch(value: string) {
+  searchDraft.value = value
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => void update({ search: value }), 250)
+}
+onBeforeUnmount(() => clearTimeout(searchTimer))
+function updateFilter(key: string, value: string | undefined) {
+  void update({ [key]: value || 'all' })
+}
 async function update(patch: Record<string, string | number>, target = 1) {
-  const query: Record<string, string | number | undefined> = { ...filters.value, ...patch, page: target }
+  const query: Record<string, string | number | undefined> = {
+    timezone: typeof route.query.timezone === 'string' ? route.query.timezone : undefined,
+    ...filters.value,
+    ...patch,
+    page: target
+  }
   for (const key of Object.keys(query)) {
     if (
       query[key] === '' ||
@@ -113,15 +134,12 @@ useAutoPagination({
 function toggleCreate() {
   createOpen.value = !createOpen.value
 }
-async function toggle(id: string) {
-  createOpen.value = false
-  selected.value = selected.value === id ? '' : id
-  await nextTick()
-  const editor = scroller.value?.querySelector<HTMLElement>('[data-appointment-editor]')
-  editor?.scrollIntoView({
-    behavior: 'smooth',
-    block: editor.getBoundingClientRect().height < window.innerHeight - 100 ? 'center' : 'start'
-  })
+function manage(item: AppointmentListItem) {
+  drawerAppointment.value = item
+  drawerOpen.value = true
+}
+function visibleTimezone(timezone: string | undefined) {
+  return timezone || userTimezone.value
 }
 </script>
 
@@ -148,54 +166,63 @@ async function toggle(id: string) {
               @click="toggleCreate"
               >{{ t('planning.newAppointment') }}</UButton
             >
+            <UButton
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              :loading="pending"
+              :aria-label="t('common.refresh')"
+              @click="load"
+            />
           </div>
         </header>
-        <div class="flex flex-wrap gap-3">
-          <UInput
-            :model-value="filters.search"
-            icon="i-lucide-search"
-            :placeholder="t('planning.searchAppointments')"
-            :aria-label="t('planning.searchAppointments')"
-            class="min-w-0 flex-1"
-            @update:model-value="update({ search: String($event) })"
-          />
-          <USelect
-            :model-value="filters.status"
-            :items="[
-              { value: 'all', label: t('planning.allStatuses') },
-              { value: 'confirmed', label: t('planning.confirmed') },
-              { value: 'cancelled', label: t('planning.cancelled') }
-            ]"
-            :aria-label="t('planning.status')"
-            @update:model-value="update({ status: String($event) })"
-          />
-          <USelect
-            v-if="access.staff"
-            :model-value="filters.conflicts"
-            :items="[
-              { value: 'all', label: t('planning.allAppointments') },
-              { value: 'conflicts', label: t('planning.conflict') }
-            ]"
-            :aria-label="t('planning.conflict')"
-            @update:model-value="update({ conflicts: String($event) })"
-          />
-          <USelect
-            :model-value="filters.sortBy"
-            :items="[
-              { value: 'start', label: t('planning.sortDate') },
-              { value: 'title', label: t('planning.sortTitle') }
-            ]"
-            :aria-label="t('planning.sort')"
-            @update:model-value="update({ sortBy: String($event) })"
-          />
-          <UButton
-            color="neutral"
-            variant="outline"
-            :icon="filters.sortOrder === 'desc' ? 'i-lucide-arrow-down-wide-narrow' : 'i-lucide-arrow-up-wide-narrow'"
-            :aria-label="t(filters.sortOrder === 'desc' ? 'planning.sortAscending' : 'planning.sortDescending')"
-            @click="update({ sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc' })"
-          />
-        </div>
+        <PortalListToolbar
+          :search="searchDraft"
+          :search-placeholder="t('planning.searchAppointments')"
+          :filters="[
+            {
+              key: 'status',
+              placeholder: t('planning.status'),
+              items: [
+                { value: 'all', label: t('planning.allStatuses') },
+                { value: 'confirmed', label: t('planning.confirmed') },
+                { value: 'cancelled', label: t('planning.cancelled') }
+              ]
+            },
+            ...(access.staff
+              ? [
+                  {
+                    key: 'host',
+                    placeholder: t('planning.host'),
+                    items: [
+                      { value: 'all', label: t('planning.allHosts') },
+                      ...hosts.map((host) => ({ value: host.id, label: host.name }))
+                    ]
+                  },
+                  {
+                    key: 'conflicts',
+                    placeholder: t('planning.conflict'),
+                    items: [
+                      { value: 'all', label: t('planning.allAppointments') },
+                      { value: 'conflicts', label: t('planning.conflictsOnly') }
+                    ]
+                  }
+                ]
+              : [])
+          ]"
+          :filter-values="{ status: filters.status, host: filters.host, conflicts: filters.conflicts }"
+          :sort-options="[
+            { value: 'start', label: t('planning.sortDate') },
+            { value: 'title', label: t('planning.sortTitle') }
+          ]"
+          :sort-by="filters.sortBy"
+          :sort-dir="filters.sortOrder"
+          @update:search="updateSearch"
+          @filter="updateFilter"
+          @sort="update({ sortBy: $event })"
+          @toggle-direction="update({ sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc' })"
+        />
         <UAlert v-if="error" color="error" variant="outline" :title="t('planning.loadError')" />
         <PlanningAppointmentCreateForm v-if="createOpen" @cancel="createOpen = false" />
         <div v-if="hasPreviousPage" ref="previousSentinel" class="h-px" aria-hidden="true" />
@@ -205,7 +232,7 @@ async function toggle(id: string) {
           <h2 class="mt-3 font-semibold">
             {{
               t(
-                filters.search || filters.status !== 'all' || filters.conflicts !== 'all'
+                filters.search || filters.status !== 'all' || filters.host !== 'all' || filters.conflicts !== 'all'
                   ? 'planning.noMatchingAppointments'
                   : 'planning.noAppointments'
               )
@@ -221,64 +248,111 @@ async function toggle(id: string) {
           >
         </div>
         <div class="flex flex-col gap-3">
-          <template v-for="item in items" :key="item.id">
-            <UCard
-              role="button"
-              tabindex="0"
-              :aria-expanded="selected === item.id"
-              @click="toggle(item.id)"
-              @keydown.enter.prevent="toggle(item.id)"
-              @keydown.space.prevent="toggle(item.id)"
-              ><div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
+          <UCard v-for="item in items" :key="item.id">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
                   <h2 class="font-semibold">{{ item.title }}</h2>
-                  <p class="mt-1 text-sm text-muted">
-                    {{ appointmentRange(item.start, item.end, displayTimezone) }}
-                    · {{ item.providerName }}
-                  </p>
-                  <p v-if="access.staff" class="mt-1 break-words text-sm text-muted">{{ item.email }}</p>
-                </div>
-                <div class="flex items-center gap-2" @click.stop @keydown.stop>
                   <UBadge :color="item.status === 'confirmed' ? 'success' : 'neutral'" variant="subtle">{{
                     t(`planning.${item.status}`)
-                  }}</UBadge
-                  ><UButton
-                    :icon="access.canManage ? 'i-lucide-pencil' : 'i-lucide-eye'"
-                    color="neutral"
-                    variant="ghost"
-                    :aria-label="t(access.canManage ? 'planning.editAppointment' : 'planning.viewAppointment')"
-                    :aria-expanded="selected === item.id"
-                    @click="toggle(item.id)"
-                  />
+                  }}</UBadge>
+                  <UBadge v-if="item.conflict" color="error" variant="subtle">{{ t('planning.conflict') }}</UBadge>
+                </div>
+                <div class="mt-3 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+                  <p class="flex min-w-0 items-start gap-2">
+                    <UIcon name="i-lucide-calendar-clock" class="mt-0.5 size-4 shrink-0 text-muted" />
+                    <span>
+                      <span class="font-medium text-highlighted">{{
+                        appointmentRange(item.start, item.end, displayTimezone)
+                      }}</span>
+                      <span class="block text-muted">{{ displayTimezone }}</span>
+                    </span>
+                  </p>
+                  <p class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-user-round" class="size-4 shrink-0 text-muted" />
+                    <span class="min-w-0">
+                      <span class="block truncate">{{ item.providerName || t('planning.unknownHost') }}</span>
+                      <span v-if="access.staff && item.providerEmail" class="block truncate text-muted">{{
+                        item.providerEmail
+                      }}</span>
+                    </span>
+                  </p>
+                  <p v-if="access.staff" class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-contact-round" class="size-4 shrink-0 text-muted" />
+                    <span class="truncate">{{ item.customerName || item.email }}</span>
+                  </p>
+                  <p v-if="access.staff" class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-mail" class="size-4 shrink-0 text-muted" />
+                    <span class="truncate">{{ item.email }}</span>
+                  </p>
+                  <p v-if="access.staff && item.country" class="flex min-w-0 items-center gap-2">
+                    <UIcon name="i-lucide-map-pin" class="size-4 shrink-0 text-muted" />
+                    <span class="truncate">{{ item.country }}</span>
+                  </p>
+                  <div v-if="item.meetingProvider === 'zoom'" class="flex min-w-0 items-center gap-2">
+                    <UButton
+                      v-if="item.status === 'confirmed' && item.meetingUrl"
+                      :to="item.meetingUrl"
+                      target="_blank"
+                      icon="i-lucide-video"
+                      size="xs"
+                      variant="outline"
+                    >
+                      {{ t('planning.joinZoom') }}
+                    </UButton>
+                    <template v-else>
+                      <UIcon name="i-lucide-video" class="size-4 shrink-0 text-primary" />
+                      <span>
+                        <span class="font-medium text-highlighted">{{ t('planning.zoomMeeting') }}</span>
+                        <span v-if="item.status === 'confirmed'" class="block text-muted">{{
+                          t('planning.zoomLinkPending')
+                        }}</span>
+                      </span>
+                    </template>
+                  </div>
+                  <p
+                    v-if="visibleTimezone(item.providerTimezone) !== displayTimezone"
+                    class="flex min-w-0 items-start gap-2"
+                  >
+                    <UIcon name="i-lucide-clock-3" class="mt-0.5 size-4 shrink-0 text-muted" />
+                    <span>
+                      <span class="text-muted">{{ t('planning.hostTimezone') }}</span>
+                      <span class="block">{{
+                        appointmentRange(item.start, item.end, visibleTimezone(item.providerTimezone))
+                      }}</span>
+                      <span class="block text-muted">{{ visibleTimezone(item.providerTimezone) }}</span>
+                    </span>
+                  </p>
+                  <p
+                    v-if="visibleTimezone(item.customerTimezone) !== displayTimezone"
+                    class="flex min-w-0 items-start gap-2"
+                  >
+                    <UIcon name="i-lucide-globe-2" class="mt-0.5 size-4 shrink-0 text-muted" />
+                    <span>
+                      <span class="text-muted">{{ t('planning.customerTimezone') }}</span>
+                      <span class="block">{{
+                        appointmentRange(item.start, item.end, visibleTimezone(item.customerTimezone))
+                      }}</span>
+                      <span class="block text-muted">{{ visibleTimezone(item.customerTimezone) }}</span>
+                    </span>
+                  </p>
                 </div>
               </div>
-              <UBadge v-if="item.conflict" color="error" variant="subtle" class="mt-3">{{
-                t('planning.conflict')
-              }}</UBadge>
-              <p v-if="item.effectsError && access.staff" class="mt-2 break-words text-sm text-error">
-                {{ t('planning.syncError') }}
-              </p></UCard
-            >
-            <UCard
-              v-if="selected === item.id"
-              data-appointment-editor
-              class="scroll-mt-24"
-              @keydown.esc.stop="selected = ''"
-              ><template #header
-                ><div class="flex items-center justify-between">
-                  <h2 class="font-semibold">
-                    {{ t(access.canManage ? 'planning.editAppointment' : 'planning.viewAppointment') }}
-                  </h2>
-                  <UButton
-                    icon="i-lucide-x"
-                    color="neutral"
-                    variant="ghost"
-                    :aria-label="t('planning.close')"
-                    @click="selected = ''"
-                  /></div></template
-              ><PlanningAppointmentDetails :id="item.id" :timezone="displayTimezone" @changed="load"
-            /></UCard>
-          </template>
+              <div class="flex flex-wrap items-center justify-end gap-2">
+                <UButton
+                  :icon="access.canManage ? 'i-lucide-settings-2' : 'i-lucide-eye'"
+                  color="neutral"
+                  variant="outline"
+                  @click="manage(item)"
+                >
+                  {{ t(access.canManage ? 'planning.manageAppointment' : 'planning.viewAppointment') }}
+                </UButton>
+              </div>
+            </div>
+            <p v-if="item.effectsError && access.staff" class="mt-2 break-words text-sm text-error">
+              {{ t('planning.syncError') }}
+            </p>
+          </UCard>
         </div>
         <p v-if="pending" role="status">{{ t('planning.loading') }}</p>
         <div v-if="hasNextPage" ref="nextSentinel" class="h-px" aria-hidden="true" />
@@ -298,5 +372,13 @@ async function toggle(id: string) {
         @update:page="update({}, $event)"
       />
     </footer>
+    <PlanningAppointmentDrawer
+      v-if="drawerOpen && drawerAppointment"
+      v-model:open="drawerOpen"
+      :item="drawerAppointment"
+      :timezone="displayTimezone"
+      :staff="access.staff"
+      @changed="load"
+    />
   </div>
 </template>

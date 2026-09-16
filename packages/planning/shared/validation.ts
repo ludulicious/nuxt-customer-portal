@@ -64,6 +64,7 @@ export const appointmentListSchema = z.object({
   search: z.string().trim().max(200).default(''),
   status: z.enum(['all', 'confirmed', 'cancelled']).default('all'),
   conflicts: z.enum(['all', 'conflicts']).default('all'),
+  host: z.string().trim().min(1).max(100).default('all'),
   sortBy: z.enum(['start', 'title']).default('start'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).max(100000).default(1)

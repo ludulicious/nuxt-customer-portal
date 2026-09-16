@@ -20,6 +20,7 @@ const emit = defineEmits<{
   switchTimezone: []
   select: [date: string, startTime: string, endTime: string]
   edit: [date: string, window: AvailabilityWindow]
+  appointment: [appointment: AppointmentListItem]
   move: [date: string, window: AvailabilityWindow, targetDate: string, startTime: string, endTime: string]
 }>()
 const { t, locale } = useI18n()
@@ -211,7 +212,7 @@ function eventStyle(date: string, key: string, start: number, end: number) {
       end: period.endMinute
     }))
   ].sort((a, b) => a.start - b.start || a.end - b.end || a.key.localeCompare(b.key))
-  const groups: typeof items[] = []
+  const groups: (typeof items)[] = []
   for (const item of items) {
     const group = groups.at(-1)
     const groupEnd = group ? Math.max(...group.map((candidate) => candidate.end)) : -1
@@ -464,17 +465,18 @@ function finishDrag(event: PointerEvent) {
               class="absolute z-10 min-w-0"
               :style="eventStyle(date, `appointment-${appointment.id}`, appointment.startMinute, appointment.endMinute)"
             >
-              <NuxtLink
-                :to="`/appointments/${appointment.id}`"
+              <button
+                type="button"
                 class="flex h-full w-full items-center overflow-hidden rounded-md border border-info/50 bg-[color-mix(in_oklab,var(--ui-info)_24%,var(--ui-bg))] px-1.5 py-0 text-xs leading-none text-info shadow-sm"
                 @pointerdown.stop
+                @click.stop="emit('appointment', appointment)"
               >
                 <span class="flex min-w-0 items-center gap-1 font-semibold">
                   <UIcon name="i-lucide-calendar-check-2" class="size-3 shrink-0" />
                   <span class="truncate">{{ appointment.title }}</span>
                 </span>
                 <span v-if="appointment.conflict" class="text-error">{{ t('planning.conflict') }}</span>
-              </NuxtLink>
+              </button>
             </PlanningTimezoneReadOnlyHover>
             <PlanningTimezoneReadOnlyHover
               v-for="period in externalBusyFor(date)"
