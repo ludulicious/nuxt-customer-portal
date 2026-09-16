@@ -73,11 +73,11 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       defaults: {
         en: {
           subject: 'Invoice {{invoice_number}} from {{sender_name}}',
-          body: 'Dear Sir or Madam,<br><br>Please find invoice {{invoice_number}} attached.<br><br>Kind regards,<br>{{sender_name}}'
+          body: 'Dear Sir or Madam,\n\nPlease find invoice **{{invoice_number}}** attached.\n\nKind regards,  \n{{sender_name}}'
         },
         nl: {
           subject: 'Factuur {{invoice_number}} van {{sender_name}}',
-          body: 'Geachte heer/mevrouw,<br><br>In de bijlage vindt u factuur {{invoice_number}}.<br><br>Met vriendelijke groet,<br>{{sender_name}}'
+          body: 'Geachte heer/mevrouw,\n\nIn de bijlage vindt u factuur **{{invoice_number}}**.\n\nMet vriendelijke groet,  \n{{sender_name}}'
         }
       },
       placeholders: [
@@ -114,11 +114,11 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       defaults: {
         en: {
           subject: 'Payment reminder for invoice {{invoice_number}} from {{sender_name}}',
-          body: 'Dear Sir or Madam,<br><br>Invoice {{invoice_number}}, due on {{due_date}}, remains outstanding for {{outstanding_amount}}. Please arrange payment.<br><br>Kind regards,<br>{{sender_name}}'
+          body: 'Dear Sir or Madam,\n\nInvoice **{{invoice_number}}**, due on {{due_date}}, remains outstanding for **{{outstanding_amount}}**. Please arrange payment.\n\nKind regards,  \n{{sender_name}}'
         },
         nl: {
           subject: 'Betalingsherinnering factuur {{invoice_number}} van {{sender_name}}',
-          body: 'Geachte heer/mevrouw,<br><br>Factuur {{invoice_number}}, met vervaldatum {{due_date}}, staat nog open voor {{outstanding_amount}}. Wij verzoeken u vriendelijk te betalen.<br><br>Met vriendelijke groet,<br>{{sender_name}}'
+          body: 'Geachte heer/mevrouw,\n\nFactuur **{{invoice_number}}**, met vervaldatum {{due_date}}, staat nog open voor **{{outstanding_amount}}**. Wij verzoeken u vriendelijk te betalen.\n\nMet vriendelijke groet,  \n{{sender_name}}'
         }
       },
       placeholders: [

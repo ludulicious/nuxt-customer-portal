@@ -7,11 +7,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Internal approval requested — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>Please review the timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nPlease review the timesheet.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Interne goedkeuring gevraagd — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>Beoordeel de urenstaat.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nBeoordeel de urenstaat.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -64,11 +64,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet approved internally — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been approved internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nYour timesheet has been approved internally.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Urenstaat intern goedgekeurd — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is intern goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nUw urenstaat is intern goedgekeurd.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -121,11 +121,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet rejected internally — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been rejected internally.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nYour timesheet has been rejected internally.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Urenstaat intern afgewezen — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is intern afgewezen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nUw urenstaat is intern afgewezen.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -178,11 +178,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet reopened — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>Your timesheet has been reopened for editing.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nYour timesheet has been reopened for editing.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Urenstaat heropend — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>Uw urenstaat is heropend voor wijzigingen.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nUw urenstaat is heropend voor wijzigingen.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -235,11 +235,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Client approval requested — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>Please review the timesheet for your organization.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nPlease review the timesheet for your organization.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Klantgoedkeuring gevraagd — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>Beoordeel de urenstaat voor uw organisatie.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nBeoordeel de urenstaat voor uw organisatie.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -292,11 +292,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet approved by client — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>The client has approved your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nThe client has approved your timesheet.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Urenstaat goedgekeurd door klant — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>De klant heeft uw urenstaat goedgekeurd.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nDe klant heeft uw urenstaat goedgekeurd.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [
@@ -349,11 +349,11 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     defaults: {
       en: {
         subject: 'Timesheet disputed by client — {{person_name}} ({{period}})',
-        body: 'Dear {{recipient_name}},<br><br>The client has disputed your timesheet.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Open timesheets</a>'
+        body: 'Dear {{recipient_name}},\n\nThe client has disputed your timesheet.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Open timesheets]({{action_url}})'
       },
       nl: {
         subject: 'Urenstaat betwist door klant — {{person_name}} ({{period}})',
-        body: 'Beste {{recipient_name}},<br><br>De klant heeft uw urenstaat betwist.<br><br>{{organization_name}}<br>{{person_name}}: {{period}}<br>{{client_name}}<br>{{comment}}<br><br><a href="{{action_url}}" class="button">Urenstaten openen</a>'
+        body: 'Beste {{recipient_name}},\n\nDe klant heeft uw urenstaat betwist.\n\n**{{organization_name}}**  \n{{person_name}}: {{period}}  \n{{client_name}}  \n{{comment}}\n\n[Urenstaten openen]({{action_url}})'
       }
     },
     placeholders: [

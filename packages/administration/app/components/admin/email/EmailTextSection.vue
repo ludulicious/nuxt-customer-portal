@@ -204,6 +204,7 @@ const sendTest = async () => {
               class="w-full font-mono text-xs"
               @update:model-value="selectedText = { ...selectedText, body: String($event) }"
           /></UFormField>
+          <p class="-mt-2 text-xs text-muted">{{ t('admin.email.markdownHelp') }}</p>
           <UFormField name="footer" :label="t('admin.email.footer')"
             ><UTextarea
               :model-value="selectedText.footer"

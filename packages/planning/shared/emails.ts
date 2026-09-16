@@ -4,11 +4,11 @@ export const appointmentEmail = {
   defaults: {
     en: {
       subject: 'Appointment: {{product}}',
-      body: '{{status}}<br>{{product}}<br>{{time}}<br><a href="{{meetingUrl}}">Meeting</a><br><a href="{{url}}">Manage your appointment</a>'
+      body: '**{{status}}**\n\n{{product}}  \n{{time}}\n\n[Meeting]({{meetingUrl}}) · [Manage your appointment]({{url}})'
     },
     nl: {
       subject: 'Afspraak: {{product}}',
-      body: '{{status}}<br>{{product}}<br>{{time}}<br><a href="{{meetingUrl}}">Deelnemen</a><br><a href="{{url}}">Beheer je afspraak</a>'
+      body: '**{{status}}**\n\n{{product}}  \n{{time}}\n\n[Deelnemen]({{meetingUrl}}) · [Beheer je afspraak]({{url}})'
     }
   },
   placeholders: ['product', 'status', 'time', 'meetingUrl', 'url'].map((key) => ({
