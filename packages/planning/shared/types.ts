@@ -78,6 +78,7 @@ export interface ProviderSettings {
   enabled: boolean
   timezone: string
   graceMinutes: number
+  availabilityCalendarTitle: string
   busyCalendarIds: string[]
   writeCalendarId: string | null
   googleConnected: boolean

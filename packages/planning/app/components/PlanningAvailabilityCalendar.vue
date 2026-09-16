@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AvailabilityWindow } from '../../shared/types'
-import type { AppointmentListItem } from '../composables/usePlanning'
+import type { AppointmentListItem, CalendarBusyPeriod } from '../composables/usePlanning'
 import { localParts } from '../../shared/availability'
 
 const { appointmentTime } = usePlanningTimeDisplay()
@@ -14,6 +14,7 @@ const props = defineProps<{
   products: Array<{ id: string; title: string }>
   windows: Array<AvailabilityWindow & { sourceRecurring?: boolean; sourceStart?: string; sourceEnd?: string }>
   appointments: AppointmentListItem[]
+  externalBusy: CalendarBusyPeriod[]
 }>()
 const emit = defineEmits<{
   switchTimezone: []
@@ -122,6 +123,10 @@ const visibleRange = computed(() => {
       starts.push(appointment.startMinute)
       ends.push(appointment.endMinute)
     }
+    for (const period of externalBusyFor(date)) {
+      starts.push(period.startMinute)
+      ends.push(period.endMinute)
+    }
   }
   const start = Math.floor(Math.min(...starts) / 60) * 60
   const end = Math.min(1440, Math.ceil(Math.max(...ends) / 60) * 60)
@@ -130,6 +135,7 @@ const visibleRange = computed(() => {
 const hours = computed(() =>
   Array.from({ length: visibleRange.value.duration / 60 }, (_, i) => visibleRange.value.start / 60 + i)
 )
+const hasAllDayEvents = computed(() => props.days.some((date) => allDayBusyFor(date).length > 0))
 const selection = computed(() =>
   drag.value
     ? {
@@ -167,6 +173,89 @@ function appointmentsFor(date: string) {
       const end = localParts(new Date(a.end), props.timezone)
       return { ...a, startMinute: start, endMinute: end.date > date ? 1440 : minutes(end.time) }
     })
+}
+function externalBusyFor(date: string) {
+  return (Array.isArray(props.externalBusy) ? props.externalBusy : [])
+    .filter((period) => !period.allDay)
+    .map((period, index) => {
+      const start = localParts(new Date(period.start), props.timezone)
+      const end = localParts(new Date(period.end), props.timezone)
+      if (start.date > date || end.date < date || (end.date === date && end.time === '00:00')) {
+        return null
+      }
+      return {
+        ...period,
+        id: `${period.start}-${period.end}-${index}`,
+        startMinute: start.date < date ? 0 : minutes(start.time),
+        endMinute: end.date > date ? 1440 : minutes(end.time)
+      }
+    })
+    .filter((period): period is NonNullable<typeof period> => !!period && period.endMinute > period.startMinute)
+}
+function allDayBusyFor(date: string) {
+  return (Array.isArray(props.externalBusy) ? props.externalBusy : []).filter(
+    (period) => period.allDay && period.startDate && period.endDate && date >= period.startDate && date < period.endDate
+  )
+}
+function eventStyle(date: string, key: string, start: number, end: number) {
+  const verticalPosition = position(start, end)
+  const items = [
+    ...appointmentsFor(date).map((appointment) => ({
+      key: `appointment-${appointment.id}`,
+      start: appointment.startMinute,
+      end: appointment.endMinute
+    })),
+    ...externalBusyFor(date).map((period) => ({
+      key: `external-${period.id}`,
+      start: period.startMinute,
+      end: period.endMinute
+    }))
+  ].sort((a, b) => a.start - b.start || a.end - b.end || a.key.localeCompare(b.key))
+  const groups: typeof items[] = []
+  for (const item of items) {
+    const group = groups.at(-1)
+    const groupEnd = group ? Math.max(...group.map((candidate) => candidate.end)) : -1
+    if (!group || item.start >= groupEnd) {
+      groups.push([item])
+    } else {
+      group.push(item)
+    }
+  }
+  const laidOut = groups.flatMap((group) => {
+    const laneEnds: number[] = []
+    const entries = group.map((item) => {
+      let lane = laneEnds.findIndex((laneEnd) => laneEnd <= item.start)
+      if (lane === -1) {
+        lane = laneEnds.length
+      }
+      laneEnds[lane] = item.end
+      return { ...item, lane }
+    })
+    return entries.map((item) => ({ ...item, laneCount: Math.max(1, laneEnds.length) }))
+  })
+  const layout = laidOut.find((item) => item.key === key)
+  const lane = layout?.lane || 0
+  const laneCount = layout?.laneCount || 1
+  return {
+    top: `calc(${verticalPosition.top} + 5px)`,
+    height: `calc(${verticalPosition.height} - 10px)`,
+    left: `calc(${(lane / laneCount) * 100}% + 10px)`,
+    width: `calc(${100 / laneCount}% - 20px)`
+  }
+}
+function windowStyle(window: AvailabilityWindow) {
+  return {
+    ...position(minutes(window.startTime), minutes(window.endTime)),
+    left: '4px',
+    width: 'calc(100% - 8px)'
+  }
+}
+function windowHasBusyOverlap(date: string, window: AvailabilityWindow) {
+  const start = minutes(window.startTime)
+  const end = minutes(window.endTime)
+  return [...appointmentsFor(date), ...externalBusyFor(date)].some(
+    (item) => item.startMinute < end && item.endMinute > start
+  )
 }
 function point(event: PointerEvent) {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
@@ -231,6 +320,35 @@ function finishDrag(event: PointerEvent) {
             }}
           </div>
         </div>
+        <div
+          v-if="hasAllDayEvents"
+          class="grid grid-cols-[56px_repeat(7,minmax(0,1fr))] border-b border-default bg-muted/30"
+        >
+          <div class="flex items-center justify-end px-2 py-1 text-[10px] text-muted">
+            {{ t('planning.allDay') }}
+          </div>
+          <div v-for="date in days" :key="date" class="min-h-8 space-y-1 border-l border-default p-1">
+            <PlanningTimezoneReadOnlyHover
+              v-for="period in allDayBusyFor(date)"
+              :key="`${period.start}-${period.end}-${period.title}`"
+              :readonly="false"
+              :user-timezone="userTimezone || timezone"
+              :timezone="timezone"
+              :title="period.title || t('planning.externalCalendarBusy')"
+              icon="i-lucide-lock"
+              :start="period.start"
+              :end="period.end"
+              all-day
+            >
+              <span
+                class="flex items-center gap-1 overflow-hidden rounded border border-default bg-elevated px-1.5 py-1 text-xs text-muted"
+              >
+                <UIcon name="i-lucide-lock" class="size-3 shrink-0" />
+                <span class="truncate">{{ period.title || t('planning.externalCalendarBusy') }}</span>
+              </span>
+            </PlanningTimezoneReadOnlyHover>
+          </div>
+        </div>
         <div class="grid grid-cols-[56px_repeat(7,minmax(0,1fr))]">
           <div class="relative bg-default" :style="{ height: 'clamp(576px, calc(100dvh - 280px), 1152px)' }">
             <span
@@ -269,10 +387,13 @@ function finishDrag(event: PointerEvent) {
               :key="window.id"
               :readonly="Boolean(readonlyTimezone)"
               :user-timezone="userTimezone || timezone"
+              :timezone="timezone"
+              :title="t('planning.availability')"
+              icon="i-lucide-calendar-clock"
               :start="window.sourceStart"
               :end="window.sourceEnd"
-              class="absolute inset-x-1 z-10"
-              :style="position(minutes(window.startTime), minutes(window.endTime))"
+              class="absolute z-[3] min-w-0"
+              :style="windowStyle(window)"
               @switch-timezone="emit('switchTimezone')"
             >
               <button
@@ -292,12 +413,16 @@ function finishDrag(event: PointerEvent) {
                   @pointermove.stop="moveBlock"
                   @pointerup.stop="finishBlock"
                 />
-                <span class="block font-semibold tabular-nums"
+                <span
+                  v-if="!windowHasBusyOverlap(date, window)"
+                  class="block w-full truncate font-semibold tabular-nums"
                   >{{ window.startTime }}–{{ window.endTime }}
                   {{ window.recurring || window.sourceRecurring ? '↻' : '' }}</span
-                ><span v-for="(name, index) in productNames(window)" :key="index" class="block break-words">{{
-                  name
-                }}</span>
+                ><template v-if="!windowHasBusyOverlap(date, window)">
+                  <span v-for="(name, index) in productNames(window)" :key="index" class="block w-full truncate">{{
+                    name
+                  }}</span>
+                </template>
                 <span
                   class="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-primary/30"
                   @pointerdown.stop="startBlock($event, date, window, 'end')"
@@ -311,19 +436,53 @@ function finishDrag(event: PointerEvent) {
               :key="appointment.id"
               :readonly="Boolean(readonlyTimezone)"
               :user-timezone="userTimezone || timezone"
+              :timezone="timezone"
+              :title="appointment.title"
+              :customer-name="appointment.customerName"
+              :email="appointment.email"
+              :country="appointment.country"
               :start="appointment.start"
               :end="appointment.end"
-              class="absolute inset-x-1 z-10"
-              :style="position(appointment.startMinute, appointment.endMinute)"
+              class="absolute z-10 min-w-0"
+              :style="eventStyle(date, `appointment-${appointment.id}`, appointment.startMinute, appointment.endMinute)"
               @switch-timezone="emit('switchTimezone')"
             >
               <NuxtLink
                 :to="`/appointments/${appointment.id}`"
-                class="block h-full w-full overflow-hidden rounded-md border border-default bg-elevated px-2 py-1 text-xs"
+                class="block h-full w-full overflow-hidden rounded-md border border-info/50 bg-[color-mix(in_oklab,var(--ui-info)_24%,var(--ui-bg))] px-2 py-1 text-xs text-info shadow-sm"
                 @pointerdown.stop
-                ><span class="block font-semibold">{{ appointment.title }}</span
-                ><span v-if="appointment.conflict" class="text-error">{{ t('planning.conflict') }}</span></NuxtLink
               >
+                <span class="flex min-w-0 items-start gap-1 font-semibold">
+                  <UIcon name="i-lucide-calendar-check-2" class="mt-0.5 size-3 shrink-0" />
+                  <span class="truncate">{{ appointment.title }}</span>
+                </span>
+                <span v-if="appointment.conflict" class="text-error">{{ t('planning.conflict') }}</span>
+              </NuxtLink>
+            </PlanningTimezoneReadOnlyHover>
+            <PlanningTimezoneReadOnlyHover
+              v-for="period in externalBusyFor(date)"
+              :key="period.id"
+              :readonly="false"
+              :user-timezone="userTimezone || timezone"
+              :timezone="timezone"
+              :title="period.title || t('planning.externalCalendarBusy')"
+              icon="i-lucide-lock"
+              :start="period.start"
+              :end="period.end"
+              class="absolute z-[5] min-w-0"
+              :style="eventStyle(date, `external-${period.id}`, period.startMinute, period.endMinute)"
+            >
+              <span
+                class="block h-full w-full overflow-hidden rounded-md border border-default bg-elevated/80 px-2 py-1 text-xs text-muted shadow-sm"
+                :aria-label="period.title || t('planning.externalCalendarBusy')"
+              >
+                <span class="flex items-center gap-1 font-medium">
+                  <UIcon name="i-lucide-lock" class="size-3 shrink-0" />
+                  <span v-if="period.endMinute - period.startMinute >= 30" class="truncate">{{
+                    period.title || t('planning.externalCalendarBusy')
+                  }}</span>
+                </span>
+              </span>
             </PlanningTimezoneReadOnlyHover>
             <div
               v-if="moving?.targetDate === date"

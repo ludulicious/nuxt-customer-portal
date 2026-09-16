@@ -320,6 +320,62 @@ export async function externalBusy(
   }
   return busy
 }
+export async function externalBusyDetails(
+  storeId: string,
+  userId: string,
+  calendarIds: string[],
+  from: Date,
+  to: Date
+): Promise<Array<Interval & { title?: string; allDay?: boolean; startDate?: string; endDate?: string }>> {
+  const events: Array<Interval & { title?: string; allDay?: boolean; startDate?: string; endDate?: string }> = []
+  for (const calendarId of calendarIds) {
+    try {
+      let pageToken: string | undefined
+      do {
+        const result: {
+          items?: Array<{
+            summary?: string
+            status?: string
+            transparency?: string
+            start: { dateTime?: string; date?: string }
+            end: { dateTime?: string; date?: string }
+            extendedProperties?: { private?: Record<string, string> }
+          }>
+          timeZone?: string
+          nextPageToken?: string
+        } = await api(
+          'google',
+          storeId,
+          userId,
+          `${calendarPath(calendarId)}?${new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: 'true', maxResults: '2500', fields: 'items(summary,status,transparency,start,end,extendedProperties),nextPageToken,timeZone', ...(pageToken ? { pageToken } : {}) })}`
+        )
+        for (const event of result.items || []) {
+          if (
+            event.status === 'cancelled' ||
+            event.transparency === 'transparent' ||
+            event.extendedProperties?.private?.portalPlanning
+          ) {
+            continue
+          }
+          events.push({
+            start:
+              event.start.dateTime || wallInstant(event.start.date!, '00:00', result.timeZone || 'UTC').toISOString(),
+            end: event.end.dateTime || wallInstant(event.end.date!, '00:00', result.timeZone || 'UTC').toISOString(),
+            title: event.summary?.trim() || undefined,
+            allDay: Boolean(event.start.date && event.end.date),
+            startDate: event.start.date,
+            endDate: event.end.date
+          })
+        }
+        pageToken = result.nextPageToken
+      } while (pageToken)
+    } catch {
+      // Calendars shared as free/busy-only cannot expose titles, but still block time.
+      events.push(...(await googleCalendar.busy(storeId, userId, [calendarId], from, to)))
+    }
+  }
+  return events
+}
 export const zoomMeeting: MeetingAdapter = {
   async ensure(s, u, identity, title, start, duration, existingId) {
     if (existingId) {

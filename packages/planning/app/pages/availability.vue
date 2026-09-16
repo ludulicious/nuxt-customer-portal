@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { localParts, wallInstant } from '../../shared/availability'
 import { availabilitySchema } from '../../shared/validation'
 import type { AvailabilityWindow } from '../../shared/types'
-import type { ProviderConfiguration, AppointmentListItem } from '../composables/usePlanning'
+import type { ProviderConfiguration, AppointmentListItem, CalendarBusyPeriod } from '../composables/usePlanning'
 
 const { activeOrganizationRole } = usePortalSession()
 const canManagePlanning = computed(() => ['owner', 'admin'].includes(activeOrganizationRole.value || ''))
@@ -13,6 +13,7 @@ const api = usePlanning(),
   settings = ref<ProviderConfiguration>(),
   windows = ref<AvailabilityWindow[]>([]),
   appointments = ref<AppointmentListItem[]>([]),
+  externalBusy = ref<CalendarBusyPeriod[]>([]),
   error = ref(''),
   busy = ref(false),
   windowOpen = ref(false),
@@ -183,11 +184,33 @@ async function load() {
     Object.assign(providerState, { ...settings.value, writeCalendarId: settings.value.writeCalendarId || '' })
     windows.value = await api.windows()
     appointments.value = await api.providerAppointments()
+    await loadExternalBusy()
   } catch {
     error.value = t('planning.loadError')
   }
 }
+async function loadExternalBusy() {
+  if (!providerState.busyCalendarIds.length && !providerState.writeCalendarId) {
+    externalBusy.value = []
+    return
+  }
+  const from = wallInstant(days.value[0]!, '00:00', calendarTimezone.value)
+  const to = wallInstant(
+    new Date(Date.parse(days.value[days.value.length - 1]!) + 86400000).toISOString().slice(0, 10),
+    '00:00',
+    calendarTimezone.value
+  )
+  const periods = await api.calendarBusy({ from: from.toISOString(), to: to.toISOString() })
+  externalBusy.value = Array.isArray(periods) ? periods : []
+}
 onMounted(load)
+watch([week, calendarTimezone], () => {
+  if (settings.value) {
+    void loadExternalBusy().catch(() => {
+      error.value = t('planning.externalCalendarLoadError')
+    })
+  }
+})
 async function moveCalendarWindow(
   date: string,
   window: AvailabilityWindow,
@@ -360,6 +383,7 @@ async function removeWindow() {
         :products="settings?.products || []"
         :windows="calendarWindows"
         :appointments="appointments"
+        :external-busy="externalBusy"
         @switch-timezone="calendarTimezone = providerState.timezone"
         @select="selectCalendarRange"
         @edit="editCalendarWindow"

@@ -72,6 +72,8 @@
     "setMainCalendar": "Set main calendar",
     "calendarSettings": "Calendar settings",
     "graceMinutes": "Grace time after portal appointments (minutes)",
+    "availabilityCalendarTitle": "Availability calendar event title",
+    "availabilityCalendarTitleDescription": "Shown as the title of availability events in your main calendar.",
     "busyCalendars": "Calendars that block availability",
     "writeCalendar": "Calendar for portal availability and bookings",
     "save": "Save",
@@ -150,6 +152,9 @@
     "removeTimezoneFavorite": "Remove {timezone} from favorites",
     "timezoneReadOnly": "Viewing only. Switch to {timezone} to edit availability.",
     "calendarReadOnly": "Calendar is read-only.",
+    "externalCalendarBusy": "Busy on another calendar",
+    "allDay": "All day",
+    "externalCalendarLoadError": "Availability from your additional calendars could not be loaded.",
     "switchToUserTimezone": "Switch to my timezone",
     "chooseAppointmentTime": "Choose your time",
     "calendarDate": {

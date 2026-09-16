@@ -72,6 +72,8 @@
     "setMainCalendar": "Hoofdagenda instellen",
     "calendarSettings": "Agenda-instellingen",
     "graceMinutes": "Rusttijd na portaalafspraken (minuten)",
+    "availabilityCalendarTitle": "Titel van beschikbaarheid in agenda",
+    "availabilityCalendarTitleDescription": "Wordt als titel getoond bij beschikbaarheid in je hoofdagenda.",
     "busyCalendars": "Agenda’s die beschikbaarheid blokkeren",
     "writeCalendar": "Agenda voor beschikbaarheid en boekingen",
     "save": "Opslaan",
@@ -150,6 +152,9 @@
     "removeTimezoneFavorite": "Verwijder {timezone} uit favorieten",
     "timezoneReadOnly": "Alleen bekijken. Schakel naar {timezone} om beschikbaarheid te wijzigen.",
     "calendarReadOnly": "De kalender is alleen-lezen.",
+    "externalCalendarBusy": "Bezet in een andere agenda",
+    "allDay": "Hele dag",
+    "externalCalendarLoadError": "Beschikbaarheid uit je aanvullende agenda's kon niet worden geladen.",
     "switchToUserTimezone": "Schakel naar mijn tijdzone",
     "chooseAppointmentTime": "Kies je tijd",
     "calendarDate": {

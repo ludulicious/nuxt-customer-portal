@@ -48,6 +48,7 @@ export async function ownSettings(event: H3Event) {
     enabled: boolean
     timezone: string
     grace_minutes: number
+    availability_calendar_title: string
     busy_calendar_ids: string[]
     write_calendar_id: string | null
   }>('SELECT * FROM planning.provider WHERE store_id=$1 AND user_id=$2', [storeId, userId])
@@ -63,6 +64,7 @@ export async function ownSettings(event: H3Event) {
     enabled: p!.enabled,
     timezone: p!.timezone,
     graceMinutes: p!.grace_minutes,
+    availabilityCalendarTitle: p!.availability_calendar_title,
     busyCalendarIds: p!.busy_calendar_ids,
     writeCalendarId: p!.write_calendar_id,
     connections,
@@ -82,14 +84,15 @@ export async function saveOwnSettings(event: H3Event, body: unknown) {
   await transaction(async (tx) => {
     await lockProvider(tx, userId)
     await tx.query(
-      'UPDATE planning.provider SET timezone=$3,grace_minutes=$4,busy_calendar_ids=$5,write_calendar_id=$6 WHERE store_id=$1 AND user_id=$2',
+      'UPDATE planning.provider SET timezone=$3,grace_minutes=$4,busy_calendar_ids=$5,write_calendar_id=$6,availability_calendar_title=$7 WHERE store_id=$1 AND user_id=$2',
       [
         storeId,
         userId,
         input.timezone,
         input.graceMinutes,
         [...new Set([...input.busyCalendarIds, input.writeCalendarId])],
-        input.writeCalendarId
+        input.writeCalendarId,
+        input.availabilityCalendarTitle
       ]
     )
     const windows = await rows<{ id: string; revision: number }>(

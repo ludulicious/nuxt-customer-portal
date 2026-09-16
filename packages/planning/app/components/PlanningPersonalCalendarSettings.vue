@@ -11,6 +11,7 @@ const calendars = ref<Array<{ id: string; summary: string; accessRole: string }>
 const providerState = reactive({
   timezone: 'Europe/Amsterdam',
   graceMinutes: 0,
+  availabilityCalendarTitle: 'Portal availability',
   busyCalendarIds: [] as string[],
   writeCalendarId: ''
 })
@@ -35,6 +36,7 @@ async function load() {
     Object.assign(providerState, {
       timezone: settings.timezone,
       graceMinutes: settings.graceMinutes,
+      availabilityCalendarTitle: settings.availabilityCalendarTitle,
       busyCalendarIds: settings.busyCalendarIds,
       writeCalendarId: settings.writeCalendarId || ''
     })
@@ -166,6 +168,14 @@ async function saveSettings() {
       <UCard>
         <template #header><h2 class="font-semibold">{{ t('planning.schedulingPreferences') }}</h2></template>
         <div class="grid gap-4 sm:grid-cols-2">
+          <UFormField
+            name="availabilityCalendarTitle"
+            :label="t('planning.availabilityCalendarTitle')"
+            :description="t('planning.availabilityCalendarTitleDescription')"
+            class="sm:col-span-2"
+          >
+            <UInput v-model="providerState.availabilityCalendarTitle" class="w-full" />
+          </UFormField>
           <UFormField name="timezone" :label="t('planning.timezone')">
             <USelectMenu
               v-model="providerState.timezone"

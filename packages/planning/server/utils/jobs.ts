@@ -43,7 +43,7 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
       await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
     }
   } else {
-    if (a.snapshot.meetingProvider === 'zoom') {
+    if (a.snapshot.meetingProvider === 'zoom' && order.snapshot.storeMode !== 'sandbox') {
       const meeting = await meetingAdapter().ensure(
         a.store_id,
         a.user_id,
@@ -165,8 +165,8 @@ async function availabilityEffects(id: string) {
     return
   }
   const eventId = window.calendar_event_id || `a${id.replace(/-/g, '')}`
-  const [provider] = await rows<{ write_calendar_id: string }>(
-    'SELECT write_calendar_id FROM planning.provider WHERE store_id=$1 AND user_id=$2',
+  const [provider] = await rows<{ write_calendar_id: string; availability_calendar_title: string }>(
+    'SELECT write_calendar_id,availability_calendar_title FROM planning.provider WHERE store_id=$1 AND user_id=$2',
     [window.store_id, window.user_id]
   )
   if (window.deleted) {
@@ -183,6 +183,19 @@ async function availabilityEffects(id: string) {
   }
   const w = window.data,
     recurrence: string[] = []
+  const products = await rows<{ title: string }>(
+    `SELECT COALESCE(NULLIF(data->'content'->'en'->>'title',''),data->'content'->'nl'->>'title',id) AS title
+     FROM products.product
+     WHERE store_id=$1
+       AND data->>'status'<>'archived'
+       AND ($3::boolean OR id=ANY($4::text[]))
+       AND ($3::boolean IS FALSE OR (data->'planning'->>'enabled'='true' AND data->'planning'->'providerUserIds' ? $2))
+     ORDER BY title`,
+    [window.store_id, window.user_id, w.productIds === null, w.productIds || []]
+  )
+  const productDescription = products.length
+    ? `Products:\n${products.map((product) => `• ${product.title}`).join('\n')}`
+    : 'Products: none'
   if (w.recurring) {
     // UNTIL uses the final occurrence’s actual instant in the series timezone.
     recurrence.push(
@@ -203,7 +216,8 @@ async function availabilityEffects(id: string) {
   }
   const written = await calendarAdapter().put(window.store_id, window.user_id, provider.write_calendar_id, {
     id: eventId,
-    summary: 'Portal availability',
+    summary: provider.availability_calendar_title,
+    description: productDescription,
     start: { dateTime: `${w.date}T${w.startTime}:00`, timeZone: w.timezone },
     end: { dateTime: `${w.date}T${w.endTime}:00`, timeZone: w.timezone },
     transparency: 'transparent',

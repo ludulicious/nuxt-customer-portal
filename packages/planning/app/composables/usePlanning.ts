@@ -53,6 +53,16 @@ export interface AppointmentListItem {
   conflict?: boolean
   effectsError?: string
   email?: string
+  customerName?: string
+  country?: string
+}
+export interface CalendarBusyPeriod {
+  start: string
+  end: string
+  title?: string
+  allDay?: boolean
+  startDate?: string
+  endDate?: string
 }
 export const usePlanning = () => ({
   available: (id: string, query: Record<string, unknown>, replacesId?: string) =>
@@ -66,6 +76,8 @@ export const usePlanning = () => ({
   saveProvider: (body: Record<string, unknown>) =>
     $fetch<ProviderConfiguration>('/api/planning/provider', { method: 'PUT', body }),
   calendars: () => $fetch<Array<{ id: string; summary: string; accessRole: string }>>('/api/planning/calendars'),
+  calendarBusy: (query: { from: string; to: string }) =>
+    $fetch<CalendarBusyPeriod[]>('/api/planning/calendar-busy', { query }),
   connect: (provider: string) => $fetch<{ url: string }>(`/api/planning/oauth/${provider}/start`, { method: 'POST' }),
   disconnect: (provider: string) => $fetch(`/api/planning/oauth/${provider}`, { method: 'DELETE' }),
   windows: () => $fetch<AvailabilityWindow[]>('/api/planning/availability'),
