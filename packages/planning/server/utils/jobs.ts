@@ -15,7 +15,12 @@ import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
 import { digest, secret } from './crypto'
 import { enqueue, lockProvider } from './booking'
 
-import { appointmentEmail } from '../../shared/emails'
+import {
+  appointmentEmail,
+  canceledAppointmentEmail,
+  newAppointmentEmail,
+  updatedAppointmentEmail
+} from '../../shared/emails'
 
 export async function auditLock(tx: Pick<import('pg').PoolClient, 'query'>, id: string) {
   await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`planning-effects:${id}`])
@@ -122,7 +127,12 @@ async function appointmentEffects(id: string, revision: number, notify = true) {
   // Stable organizer, attendee and UID prevent duplicate customer appointments.
   await sendPortalEmail({
     moduleId: 'planning',
-    definition: appointmentEmail,
+    definition:
+      a.status === 'cancelled'
+        ? canceledAppointmentEmail
+        : revision === 1
+          ? newAppointmentEmail
+          : updatedAppointmentEmail,
     locale,
     to: order.email,
     values: {

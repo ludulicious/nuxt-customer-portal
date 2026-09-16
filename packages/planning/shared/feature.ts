@@ -1,10 +1,10 @@
 import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/types/feature'
 
-import { appointmentEmail } from './emails'
+import { canceledAppointmentEmail, newAppointmentEmail, updatedAppointmentEmail } from './emails'
 
 export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   id: 'planning',
-  emails: [appointmentEmail],
+  emails: [newAppointmentEmail, updatedAppointmentEmail, canceledAppointmentEmail],
   modules: [
     {
       id: 'planning',
