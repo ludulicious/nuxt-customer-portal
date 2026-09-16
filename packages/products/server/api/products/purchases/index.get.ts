@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
         title: line.snapshot.title,
         locale: order.snapshot.locale,
         type: line.snapshot.product.type,
+        planningEnabled: !!line.snapshot.product.planning?.enabled,
         amount: line.total ?? line.unit_amount * line.quantity,
         currency: line.snapshot.price.currency,
         access: hasAccess(order, line),

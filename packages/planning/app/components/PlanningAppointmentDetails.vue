@@ -102,25 +102,30 @@ async function cancel() {
           @click="abandonChange"
           >{{ t('planning.abandonChange') }}</UButton
         >
-        <div class="flex gap-3">
-          <UButton
-            v-if="item.canReschedule"
-            icon="i-lucide-calendar-sync"
-            variant="outline"
-            @click="changeOpen = true"
-            >{{ t('planning.reschedule') }}</UButton
-          ><UButton
-            v-if="item.canCancel"
-            icon="i-lucide-calendar-x-2"
-            color="error"
-            variant="soft"
-            @click="cancelOpen = true"
-            >{{ t('planning.cancelAppointmentAction') }}</UButton
-          >
+        <div
+          v-if="item.canReschedule || item.canCancel || !item.staff"
+          class="space-y-3 rounded-lg border border-default bg-muted/20 p-4"
+        >
+          <div v-if="item.canReschedule || item.canCancel" class="flex flex-wrap gap-3">
+            <UButton
+              v-if="item.canReschedule"
+              icon="i-lucide-calendar-sync"
+              variant="outline"
+              @click="changeOpen = true"
+              >{{ t('planning.reschedule') }}</UButton
+            ><UButton
+              v-if="item.canCancel"
+              icon="i-lucide-calendar-x-2"
+              color="error"
+              variant="soft"
+              @click="cancelOpen = true"
+              >{{ t('planning.cancelAppointmentAction') }}</UButton
+            >
+          </div>
+          <p v-if="!item.staff" class="text-sm text-muted">
+            {{ t('planning.changesUsed', { used: item.changes, free: item.freeChanges }) }}
+          </p>
         </div>
-        <p v-if="!item.staff">
-          {{ t('planning.changesUsed', { used: item.changes, free: item.freeChanges }) }}
-        </p>
       </template>
       <UModal v-if="changeOpen" v-model:open="changeOpen" :title="t('planning.reschedule')"
         ><template #body

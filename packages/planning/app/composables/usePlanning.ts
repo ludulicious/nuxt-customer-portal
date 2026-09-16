@@ -75,6 +75,12 @@ export interface CalendarBusyPeriod {
   startDate?: string
   endDate?: string
 }
+export interface AppointmentFile {
+  id: string
+  name: string
+  content_type: string
+  size: number
+}
 export interface PlanningJobListItem {
   id: string
   kind: string
@@ -141,6 +147,7 @@ export const usePlanning = () => ({
   staffReschedule: (id: string, body: Record<string, unknown>) =>
     $fetch(`/api/planning/appointments/${id}/reschedule`, { method: 'PUT', body }),
   appointment: (id: string) => $fetch<AppointmentDetails>(`/api/planning/appointments/${id}`),
+  appointmentFiles: (id: string) => $fetch<AppointmentFile[]>(`/api/planning/appointments/${id}/files`),
   abandonChange: (id: string) => $fetch(`/api/planning/appointments/${id}/pending`, { method: 'DELETE' }),
   cancel: (id: string) => $fetch(`/api/planning/appointments/${id}/cancel`, { method: 'POST' }),
   adminAppointments: () => $fetch<AppointmentListItem[]>('/api/planning/admin/appointments'),

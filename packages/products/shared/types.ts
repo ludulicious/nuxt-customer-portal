@@ -217,6 +217,7 @@ export interface Purchase {
   title: string
   locale: Locale
   type: ProductData['type']
+  planningEnabled: boolean
   amount: number
   currency: string
   access: boolean

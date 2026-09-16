@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import type { AppointmentListItem } from '../composables/usePlanning'
+import type { AppointmentFile, AppointmentListItem } from '../composables/usePlanning'
 
-defineProps<{ item: AppointmentListItem; timezone: string; staff?: boolean }>()
+const props = defineProps<{ item: AppointmentListItem; timezone: string; staff?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const { appointmentRange } = usePlanningTimeDisplay()
+const files = ref<AppointmentFile[]>([])
+const filesError = ref(false)
+try {
+  files.value = await usePlanning().appointmentFiles(props.item.id)
+} catch {
+  filesError.value = true
+}
+const fileSource = (assetId: string) => `/api/planning/appointments/${props.item.id}/files/${assetId}`
 </script>
 
 <template>
@@ -75,6 +83,29 @@ const { appointmentRange } = usePlanningTimeDisplay()
           :show-summary="false"
           @changed="emit('changed')"
         />
+        <section
+          v-if="files.length || filesError"
+          class="overflow-hidden rounded-lg border border-default bg-muted/20"
+        >
+          <header class="border-b border-default px-4 py-3">
+            <h2 class="font-semibold">{{ t(staff ? 'products.purchasedFiles' : 'products.yourFiles') }}</h2>
+          </header>
+          <UAlert
+            v-if="filesError"
+            class="m-4"
+            color="error"
+            variant="subtle"
+            :title="t('products.purchaseFilesFailed')"
+          />
+          <div v-else class="grid gap-3 p-4 sm:grid-cols-2">
+            <ProductsPurchasedFileCard
+              v-for="file in files"
+              :key="file.id"
+              :file="file"
+              :source="fileSource(file.id)"
+            />
+          </div>
+        </section>
       </div>
     </template>
   </UDrawer>
