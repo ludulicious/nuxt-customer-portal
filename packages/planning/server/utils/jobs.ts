@@ -8,7 +8,7 @@ import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
 import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
 import { calendarInvitation } from '../../shared/invitation'
-import { wallInstant } from '../../shared/availability'
+import { calendarWallDateTime, wallInstant } from '../../shared/availability'
 import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
 import { digest, secret } from './crypto'
 import { enqueue, lockProvider } from './booking'
@@ -218,8 +218,8 @@ async function availabilityEffects(id: string) {
     id: eventId,
     summary: provider.availability_calendar_title,
     description: productDescription,
-    start: { dateTime: `${w.date}T${w.startTime}:00`, timeZone: w.timezone },
-    end: { dateTime: `${w.date}T${w.endTime}:00`, timeZone: w.timezone },
+    start: { dateTime: calendarWallDateTime(w.date, w.startTime), timeZone: w.timezone },
+    end: { dateTime: calendarWallDateTime(w.date, w.endTime), timeZone: w.timezone },
     transparency: 'transparent',
     extendedProperties: { private: { portalPlanning: id, portalRevision: String(window.revision) } },
     ...(recurrence.length ? { recurrence } : {})
@@ -258,10 +258,21 @@ async function refund(orderId: string, amount: number, key: string) {
   }
   await processOrder(orderId)
 }
-export async function runJobs(limit = 20) {
+export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
   const pending = await rows<{ id: string; kind: string; payload: Record<string, unknown>; attempts: number }>(
-    'SELECT * FROM planning.job WHERE completed_at IS NULL AND available_at<=now() ORDER BY available_at LIMIT $1',
-    [limit]
+    `WITH scoped AS (
+       SELECT j.*,
+         COALESCE(
+           j.payload->>'storeId',
+           (SELECT a.store_id FROM planning.appointment a WHERE a.id::text=j.payload->>'appointmentId'),
+           (SELECT w.store_id FROM planning.availability w WHERE w.id::text=j.payload->>'id'),
+           (SELECT o.store_id FROM products.orders o WHERE o.id::text=j.payload->>'orderId')
+         ) AS store_id
+       FROM planning.job j
+       WHERE j.completed_at IS NULL AND j.available_at<=now()
+     )
+     SELECT * FROM scoped WHERE ($2::text IS NULL OR store_id=$2) AND ($3::text IS NULL OR id=$3) ORDER BY available_at LIMIT $1`,
+    [limit, storeId, jobId]
   )
   let completed = 0,
     failed = 0
@@ -359,13 +370,13 @@ export async function runJobs(limit = 20) {
       } else {
         throw new Error('Unknown planning job')
       }
-      await rows('UPDATE planning.job SET completed_at=now(),error=NULL WHERE id=$1', [job.id], client)
+      await rows('UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1', [job.id], client)
       completed++
     } catch (error) {
       failed++
       const message = error instanceof Error ? error.message : 'Planning task failed'
       await rows(
-        "UPDATE planning.job SET attempts=attempts+1,error=$2,available_at=now()+($3::int*interval '1 second') WHERE id=$1",
+        "UPDATE planning.job SET attempts=attempts+1,last_attempt_at=now(),error=$2,available_at=now()+($3::int*interval '1 second') WHERE id=$1",
         [job.id, message, Math.min(3600, 30 * 2 ** Math.min(job.attempts, 7))],
         client
       )
@@ -453,7 +464,8 @@ export async function syncProvider(storeId: string, userId: string) {
   for (const a of appointments) {
     await enqueue(pool, `repair:${a.id}:${a.revision}:${repairBucket}`, 'repair', {
       appointmentId: a.id,
-      revision: a.revision
+      revision: a.revision,
+      trigger: 'reconciliation'
     })
   }
   const windows = await rows<{ id: string }>(
@@ -461,7 +473,10 @@ export async function syncProvider(storeId: string, userId: string) {
     [storeId, userId]
   )
   for (const w of windows) {
-    await enqueue(pool, `availability-repair:${w.id}:${repairBucket}`, 'availability', { id: w.id })
+    await enqueue(pool, `availability-repair:${w.id}:${repairBucket}`, 'availability', {
+      id: w.id,
+      trigger: 'reconciliation'
+    })
   }
   if (!baseUrl().startsWith('https://')) {
     return

@@ -64,6 +64,32 @@ export interface CalendarBusyPeriod {
   startDate?: string
   endDate?: string
 }
+export interface PlanningJobListItem {
+  id: string
+  kind: string
+  attempts: number
+  error: string | null
+  subject: string | null
+  availableAt: string
+  lastEventAt: string
+  completedAt: string | null
+  trigger: string | null
+  entity?: {
+    type: 'availability'
+    id: string
+    providerName: string
+    providerEmail: string
+    calendarId: string | null
+    date: string
+    endDate: string | null
+    startTime: string
+    endTime: string
+    timezone: string
+    recurring: boolean
+    allProducts: boolean
+    productTitles: string[]
+  }
+}
 export const usePlanning = () => ({
   available: (id: string, query: Record<string, unknown>, replacesId?: string) =>
     $fetch<Slot[]>(
@@ -106,7 +132,12 @@ export const usePlanning = () => ({
   abandonChange: (id: string) => $fetch(`/api/planning/appointments/${id}/pending`, { method: 'DELETE' }),
   cancel: (id: string) => $fetch(`/api/planning/appointments/${id}/cancel`, { method: 'POST' }),
   adminAppointments: () => $fetch<AppointmentListItem[]>('/api/planning/admin/appointments'),
-  jobs: () =>
-    $fetch<Array<{ id: string; kind: string; attempts: number; error: string | null }>>('/api/planning/admin/jobs'),
-  retry: () => $fetch('/api/planning/admin/retry', { method: 'POST' })
+  jobs: (query: Record<string, unknown> = {}, signal?: AbortSignal) =>
+    $fetch<{
+      items: PlanningJobListItem[]
+      kinds: string[]
+      pagination: { total: number; page: number; pageSize: number; pageCount: number }
+    }>('/api/planning/admin/jobs', { query, signal }),
+  retry: () => $fetch('/api/planning/admin/retry', { method: 'POST' }),
+  retryJob: (id: string) => $fetch(`/api/planning/admin/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' })
 })

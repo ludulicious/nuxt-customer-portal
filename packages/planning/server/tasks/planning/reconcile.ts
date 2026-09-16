@@ -21,7 +21,8 @@ export default defineTask({
     for (const u of users) {
       await enqueue(pool, `sync:${u.store_id}:${u.user_id}:${Math.floor(Date.now() / 300000)}`, 'sync', {
         storeId: u.store_id,
-        userId: u.user_id
+        userId: u.user_id,
+        trigger: 'reconciliation'
       })
     }
     return { result: { ...(await runJobs()), expiryError } }

@@ -114,6 +114,14 @@ export function changeFee(changes: number, freeChanges: number, fees: Record<str
 export const refundAmount = (paid: number, alreadyRefunded: number, percentage: number) =>
   Math.max(0, Math.min(paid - alreadyRefunded, Math.round((paid * percentage) / 100)))
 
+/** Format a local wall time for calendar APIs, which require midnight as the following day's 00:00. */
+export function calendarWallDateTime(date: string, time: string) {
+  if (time !== '24:00') return `${date}T${time}:00`
+  const nextDate = new Date(`${date}T00:00:00Z`)
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1)
+  return `${nextDate.toISOString().slice(0, 10)}T00:00:00`
+}
+
 /** Resolve explicit local wall time; reject nonexistent times instead of silently changing them. */
 export function wallInstant(date: string, time: string, timezone: string): Date {
   const target = Date.parse(`${date}T${time}:00Z`)

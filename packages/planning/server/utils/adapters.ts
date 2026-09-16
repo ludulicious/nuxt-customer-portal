@@ -149,7 +149,17 @@ async function api<T>(
         [storeId, userId, provider, 'Authorization expired; reconnect']
       )
     }
-    throw new Error(`${provider} API failed (${response.status})`)
+    let detail = ''
+    try {
+      const payload = (await response.json()) as { error?: { message?: string }; message?: string }
+      detail = String(payload.error?.message || payload.message || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 500)
+    } catch {
+      // Some provider error responses have no JSON body.
+    }
+    throw new Error(`${provider} API failed (${response.status})${detail ? `: ${detail}` : ''}`)
   }
   if (response.status === 204 || allowed.includes(response.status)) {
     return undefined as T

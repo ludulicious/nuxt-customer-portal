@@ -2,7 +2,15 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { defaultPlanningPolicy, effectivePolicy, productPlanningSchema } from '../../products/shared/planning'
 import { productSchema, emptyProduct } from '../../products/shared/validation'
-import { generateSlots, isDisplaySlot, localParts, canChange, changeFee, refundAmount } from '../shared/availability'
+import {
+  generateSlots,
+  isDisplaySlot,
+  localParts,
+  canChange,
+  changeFee,
+  refundAmount,
+  calendarWallDateTime
+} from '../shared/availability'
 import { availabilitySchema, holdSchema, holdCredentialSchema } from '../shared/validation'
 import { calendarInvitation } from '../shared/invitation'
 import { encrypt, decrypt } from '../server/utils/crypto'
@@ -221,6 +229,8 @@ test('empty product policy overrides inherit organization policy after validatio
 })
 
 test('midnight availability includes a 90-minute appointment ending at midnight', () => {
+  assert.equal(calendarWallDateTime('2026-09-15', '19:00'), '2026-09-15T19:00:00')
+  assert.equal(calendarWallDateTime('2026-09-15', '24:00'), '2026-09-16T00:00:00')
   assert.equal(availabilitySchema.parse({ date: window.date, startTime: '19:00', endTime: '00:00' }).endTime, '24:00')
   const slots = generateSlots({
     ...input,

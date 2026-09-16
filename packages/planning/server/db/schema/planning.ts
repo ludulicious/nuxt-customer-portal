@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   index,
+  uniqueIndex,
   check,
   type AnyPgColumn
 } from 'drizzle-orm/pg-core'
@@ -182,13 +183,18 @@ export const job = schema.table(
     payload: jsonb('payload').notNull(),
     attempts: integer('attempts').notNull().default(0),
     availableAt: instant('available_at').notNull().defaultNow(),
+    createdAt: instant('created_at').notNull().defaultNow(),
+    lastAttemptAt: instant('last_attempt_at'),
     completedAt: instant('completed_at'),
     error: text('error')
   },
   (t) => [
     index('job_pending')
       .on(t.availableAt)
-      .where(sql`${t.completedAt} IS NULL`)
+      .where(sql`${t.completedAt} IS NULL`),
+    uniqueIndex('job_pending_availability_target')
+      .on(sql`(${t.payload}->>'id')`)
+      .where(sql`${t.completedAt} IS NULL AND ${t.kind} = 'availability'`)
   ]
 )
 export const watch = schema.table(
