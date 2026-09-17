@@ -287,6 +287,441 @@ export async function seedDemoData(client: PoolClient, day: string) {
       }
     }
   }
+  const planningPolicy = {
+    reservationMinutes: 60,
+    slotIntervalMinutes: 15,
+    displayIntervalMinutes: 30,
+    bookingHorizonDays: 90,
+    minimumNoticeMinutes: 1440,
+    freeChanges: 1,
+    changeFees: {},
+    rescheduleCutoffMinutes: 1440,
+    cancellationEnabled: true,
+    cancellationCutoffMinutes: 1440,
+    refundPercentage: 100
+  }
+  await insert('products.store', {
+    id: true,
+    organization_id: 'demo-studio',
+    actor_id: 'demo-owner',
+    enabled: true,
+    mode: 'sandbox',
+    default_locale: 'en',
+    languages: ['en', 'nl'],
+    currencies: ['EUR'],
+    currency_tax_behavior: { EUR: 'inclusive' },
+    markdown_style: {},
+    checkout_appearance: {}
+  })
+  await insert('planning.settings', { store_id: 'demo-studio', policy: planningPolicy })
+  for (const [id, code, en, nl] of [
+    ['demo-category-coaching', 'coaching', 'Coaching', 'Coaching'],
+    ['demo-category-resources', 'resources', 'Resources', 'Materialen']
+  ]) {
+    await insert('products.category', {
+      id,
+      store_id: 'demo-studio',
+      code,
+      name: en,
+      content: {
+        en: {
+          name: en,
+          description:
+            code === 'coaching'
+              ? 'Personal sessions with the Northstar team.'
+              : 'Practical resources to use at your own pace.'
+        },
+        nl: {
+          name: nl,
+          description:
+            code === 'coaching'
+              ? 'Persoonlijke sessies met het Northstar-team.'
+              : 'Praktische materialen om in je eigen tempo te gebruiken.'
+        }
+      }
+    })
+  }
+  const products = [
+    {
+      id: 'demo-product-discovery',
+      categoryId: 'demo-category-coaching',
+      slug: 'discovery-session',
+      type: 'service',
+      amount: 12500,
+      planning: {
+        enabled: true,
+        durationMinutes: 60,
+        providerUserIds: ['demo-owner', 'demo-manager'],
+        meetingProvider: 'none',
+        policyOverrides: {}
+      },
+      en: {
+        title: 'Discovery session',
+        subtitle: 'Find your next clear step',
+        summary: 'A focused one-hour conversation to turn a challenge into a practical plan.',
+        description: 'We explore your goals, identify the strongest opportunity, and finish with concrete next steps.',
+        next: 'Choose an available time. Your appointment details will appear in the confirmation email.'
+      },
+      nl: {
+        title: 'Ontdekkingssessie',
+        subtitle: 'Vind je volgende heldere stap',
+        summary: 'Een gericht gesprek van een uur om een uitdaging om te zetten in een praktisch plan.',
+        description: 'We onderzoeken je doelen, bepalen de beste kans en sluiten af met concrete vervolgstappen.',
+        next: 'Kies een beschikbaar moment. De afspraakgegevens staan in de bevestigingsmail.'
+      }
+    },
+    {
+      id: 'demo-product-sprint',
+      categoryId: 'demo-category-coaching',
+      slug: 'strategy-sprint',
+      type: 'service',
+      amount: 22500,
+      planning: {
+        enabled: true,
+        durationMinutes: 90,
+        providerUserIds: ['demo-manager'],
+        meetingProvider: 'none',
+        policyOverrides: { minimumNoticeMinutes: 2880 }
+      },
+      en: {
+        title: 'Strategy sprint',
+        subtitle: 'Make a decision and move',
+        summary: 'A 90-minute working session for teams facing a complex product decision.',
+        description:
+          'Bring your current options and constraints. Together we map the trade-offs and create a short action plan.',
+        next: 'Book a time with Sam. Preparation prompts are included in your purchase confirmation.'
+      },
+      nl: {
+        title: 'Strategiesprint',
+        subtitle: 'Neem een besluit en kom in beweging',
+        summary: 'Een werksessie van 90 minuten voor teams met een complex productbesluit.',
+        description:
+          'Neem je opties en randvoorwaarden mee. Samen brengen we de afwegingen in kaart en maken we een kort actieplan.',
+        next: 'Boek een moment met Sam. Je ontvangt de voorbereiding in de aankoopbevestiging.'
+      }
+    },
+    {
+      id: 'demo-product-workbook',
+      categoryId: 'demo-category-resources',
+      slug: 'planning-workbook',
+      type: 'digital',
+      amount: 0,
+      planning: {
+        enabled: false,
+        durationMinutes: null,
+        providerUserIds: [],
+        meetingProvider: 'none',
+        policyOverrides: {}
+      },
+      en: {
+        title: 'Weekly planning workbook',
+        subtitle: 'A simple rhythm for focused work',
+        summary: 'A free guided workbook for reviewing the week and choosing what matters next.',
+        description:
+          'Use the prompts during a weekly review to celebrate progress, clear loose ends, and select three priorities.',
+        next: 'The workbook is available from My purchases.'
+      },
+      nl: {
+        title: 'Werkboek weekplanning',
+        subtitle: 'Een eenvoudig ritme voor gericht werk',
+        summary: 'Een gratis werkboek om je week te evalueren en te kiezen wat hierna telt.',
+        description:
+          'Gebruik de vragen tijdens je weekreview om voortgang te vieren, losse eindjes op te ruimen en drie prioriteiten te kiezen.',
+        next: 'Het werkboek is beschikbaar bij Mijn aankopen.'
+      }
+    }
+  ] as const
+  const productData = (item: (typeof products)[number]) => ({
+    slug: item.slug,
+    type: item.type,
+    status: 'published' as const,
+    isFree: item.amount === 0,
+    planning: item.planning,
+    content: {
+      en: {
+        title: item.en.title,
+        subtitle: item.en.subtitle,
+        buyButtonLabel: item.amount ? 'Book now' : 'Get workbook',
+        secondaryCta: '',
+        summary: item.en.summary,
+        description: item.en.description
+      },
+      nl: {
+        title: item.nl.title,
+        subtitle: item.nl.subtitle,
+        buyButtonLabel: item.amount ? 'Boek nu' : 'Download werkboek',
+        secondaryCta: '',
+        summary: item.nl.summary,
+        description: item.nl.description
+      }
+    },
+    taxCode: 'txcd_10000000',
+    nextSteps: { en: item.en.next, nl: item.nl.next },
+    imageIds: [],
+    thumbnailImageId: null,
+    galleryImageIds: [],
+    detailImageIds: [],
+    fileIds: [],
+    fileNames: {},
+    videoUrl: ''
+  })
+  for (const item of products) {
+    const data = productData(item)
+    await insert('products.product', {
+      id: item.id,
+      store_id: 'demo-studio',
+      category_id: item.categoryId,
+      slug: item.slug,
+      data,
+      created_at: ago(100),
+      updated_at: ago(2)
+    })
+    await insert('products.price', {
+      id: `${item.id}-eur`,
+      product_id: item.id,
+      currency: 'EUR',
+      amount: item.amount,
+      tax_behavior: 'inclusive',
+      active: true
+    })
+  }
+  for (const [userId, graceMinutes] of [
+    ['demo-owner', 15],
+    ['demo-manager', 0]
+  ] as const) {
+    await insert('planning.provider', {
+      store_id: 'demo-studio',
+      user_id: userId,
+      enabled: true,
+      timezone: 'Europe/Amsterdam',
+      grace_minutes: graceMinutes,
+      availability_calendar_title: 'Northstar demo availability',
+      busy_calendar_ids: []
+    })
+    await insert('planning.availability', {
+      id: userId === 'demo-owner' ? '10000000-0000-4000-8000-000000000001' : '10000000-0000-4000-8000-000000000002',
+      store_id: 'demo-studio',
+      user_id: userId,
+      data: {
+        id: userId === 'demo-owner' ? '10000000-0000-4000-8000-000000000001' : '10000000-0000-4000-8000-000000000002',
+        userId,
+        timezone: 'Europe/Amsterdam',
+        date: day,
+        endDate: new Date(now.getTime() + 90 * 86400000).toISOString().slice(0, 10),
+        startTime: userId === 'demo-owner' ? '09:00' : '12:00',
+        endTime: userId === 'demo-owner' ? '13:00' : '17:00',
+        recurring: true,
+        productIds:
+          userId === 'demo-owner' ? ['demo-product-discovery'] : ['demo-product-discovery', 'demo-product-sprint'],
+        exceptions: []
+      }
+    })
+  }
+  const appointmentSamples = [
+    {
+      suffix: 'upcoming',
+      product: products[0],
+      buyerId: 'demo-client-owner',
+      buyer: 'Noor Jansen',
+      providerId: 'demo-owner',
+      offset: 4,
+      hour: 9,
+      status: 'confirmed',
+      meetingUrl: 'https://example.test/demo-meeting/upcoming'
+    },
+    {
+      suffix: 'past',
+      product: products[1],
+      buyerId: 'demo-client-admin',
+      buyer: 'Taylor Singh',
+      providerId: 'demo-manager',
+      offset: -6,
+      hour: 13,
+      status: 'confirmed',
+      meetingUrl: 'https://example.test/demo-meeting/past'
+    },
+    {
+      suffix: 'cancelled',
+      product: products[0],
+      buyerId: 'demo-client-member',
+      buyer: 'Casey Vos',
+      providerId: 'demo-manager',
+      offset: 9,
+      hour: 15,
+      status: 'cancelled',
+      meetingUrl: null
+    }
+  ] as const
+  const orderSnapshot = (buyer: string, buyerId: string, planningReservationId?: string) => ({
+    ...(planningReservationId ? { planningReservationId } : {}),
+    billing: {
+      type: 'person',
+      firstName: buyer.split(' ')[0],
+      lastName: buyer.split(' ').slice(1).join(' '),
+      name: buyer,
+      email: `${buyerId}@example.test`,
+      company: '',
+      address: 'Sample Lane 8, Utrecht',
+      country: 'NL',
+      registrationNumber: '',
+      vatNumber: '',
+      clientId: 'demo-garden'
+    },
+    locale: 'en',
+    storeMode: 'sandbox',
+    paymentCompletedAt: ago(1).toISOString()
+  })
+  for (let index = 0; index < appointmentSamples.length; index++) {
+    const sample = appointmentSamples[index]!
+    const reservationId = `20000000-0000-4000-8000-00000000000${index + 1}`
+    const appointmentId = `30000000-0000-4000-8000-00000000000${index + 1}`
+    const orderId = `demo-order-${sample.suffix}`
+    const lineId = `${orderId}-line`
+    const startAt = new Date(now.getTime() + sample.offset * 86400000)
+    startAt.setUTCHours(sample.hour, 0, 0, 0)
+    const endAt = new Date(startAt.getTime() + sample.product.planning.durationMinutes! * 60000)
+    const snapshot = {
+      title: sample.product.en.title,
+      durationMinutes: sample.product.planning.durationMinutes,
+      graceMinutes: 0,
+      timezone: 'Europe/Amsterdam',
+      customerTimezone: 'Europe/Amsterdam',
+      policy: planningPolicy,
+      currency: 'EUR',
+      unitAmount: sample.product.amount,
+      meetingProvider: 'none',
+      locale: 'en'
+    }
+    await insert('products.orders', {
+      id: orderId,
+      booking_reference: `BK-DEMO-${sample.suffix.toUpperCase()}`,
+      store_id: 'demo-studio',
+      request_id: `${orderId}-request`,
+      request_hash: `${orderId}-hash`,
+      buyer_id: sample.buyerId,
+      client_id: 'demo-garden',
+      email: `${sample.buyerId}@example.test`,
+      snapshot: orderSnapshot(sample.buyer, sample.buyerId, reservationId),
+      status: 'paid',
+      total: sample.product.amount,
+      net: sample.product.amount,
+      tax: 0,
+      tax_details: [],
+      refunded: sample.status === 'cancelled' ? sample.product.amount : 0,
+      notified: true,
+      processing: 'completed',
+      created_at: ago(Math.max(1, -sample.offset + 2)),
+      updated_at: ago(1)
+    })
+    await insert('products.order_line', {
+      id: lineId,
+      order_id: orderId,
+      position: 0,
+      product_id: sample.product.id,
+      price_id: `${sample.product.id}-eur`,
+      quantity: 1,
+      snapshot: {
+        product: productData(sample.product),
+        title: sample.product.en.title,
+        price: {
+          id: `${sample.product.id}-eur`,
+          currency: 'EUR',
+          amount: sample.product.amount,
+          taxBehavior: 'inclusive'
+        }
+      },
+      unit_amount: sample.product.amount,
+      total: sample.product.amount,
+      net: sample.product.amount,
+      tax: 0,
+      tax_details: [],
+      refunded: sample.status === 'cancelled' ? sample.product.amount : 0,
+      fulfilled: true,
+      created_at: ago(1)
+    })
+    await insert('planning.reservation', {
+      id: reservationId,
+      store_id: 'demo-studio',
+      user_id: sample.providerId,
+      product_id: sample.product.id,
+      token_hash: `${orderId}-token`,
+      start_at: startAt,
+      end_at: endAt,
+      blocked_until: new Date(endAt.getTime() + 15 * 60000),
+      expires_at: ago(1),
+      confirmed_at: ago(1),
+      status: sample.status,
+      order_id: orderId,
+      snapshot
+    })
+    await insert('planning.appointment', {
+      id: appointmentId,
+      store_id: 'demo-studio',
+      reservation_id: reservationId,
+      order_line_id: lineId,
+      order_id: orderId,
+      user_id: sample.providerId,
+      product_id: sample.product.id,
+      start_at: startAt,
+      end_at: endAt,
+      status: sample.status,
+      changes: sample.suffix === 'upcoming' ? 1 : 0,
+      revision: 1,
+      snapshot,
+      meeting_id: sample.meetingUrl ? `demo-${sample.suffix}` : null,
+      meeting_url: sample.meetingUrl,
+      conflict: false
+    })
+    await insert('planning.audit', {
+      id: `40000000-0000-4000-8000-00000000000${index + 1}`,
+      appointment_id: appointmentId,
+      actor_id: sample.buyerId,
+      action: sample.status === 'cancelled' ? 'cancelled' : 'confirmed',
+      data: {},
+      created_at: ago(1)
+    })
+  }
+  const workbook = products[2]
+  await insert('products.orders', {
+    id: 'demo-order-workbook',
+    booking_reference: 'BK-DEMO-WORKBOOK',
+    store_id: 'demo-studio',
+    request_id: 'demo-order-workbook-request',
+    request_hash: 'demo-order-workbook-hash',
+    buyer_id: 'demo-client-owner',
+    client_id: 'demo-garden',
+    email: 'demo-client-owner@example.test',
+    snapshot: orderSnapshot('Noor Jansen', 'demo-client-owner'),
+    status: 'paid',
+    total: 0,
+    net: 0,
+    tax: 0,
+    tax_details: [],
+    notified: true,
+    processing: 'completed',
+    created_at: ago(12),
+    updated_at: ago(12)
+  })
+  await insert('products.order_line', {
+    id: 'demo-order-workbook-line',
+    order_id: 'demo-order-workbook',
+    position: 0,
+    product_id: workbook.id,
+    price_id: `${workbook.id}-eur`,
+    quantity: 1,
+    snapshot: {
+      product: productData(workbook),
+      title: workbook.en.title,
+      price: { id: `${workbook.id}-eur`, currency: 'EUR', amount: 0, taxBehavior: 'inclusive' }
+    },
+    unit_amount: 0,
+    total: 0,
+    net: 0,
+    tax: 0,
+    tax_details: [],
+    fulfilled: true,
+    created_at: ago(12)
+  })
   for (let month = 0; month < 6; month++) {
     for (const clientId of ['demo-garden', 'demo-cycle']) {
       const id = `${clientId}-invoice-${month}`

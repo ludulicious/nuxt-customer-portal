@@ -47,12 +47,21 @@ importers:
       '@nuxt-customer-portal/invoices':
         specifier: workspace:*
         version: link:../../packages/invoices
+      '@nuxt-customer-portal/invoice-products':
+        specifier: workspace:*
+        version: link:../../packages/invoice-products
       '@nuxt-customer-portal/kit':
         specifier: workspace:*
         version: link:../../packages/kit
+      '@nuxt-customer-portal/planning':
+        specifier: workspace:*
+        version: link:../../packages/planning
       '@nuxt-customer-portal/preset':
         specifier: workspace:*
         version: link:../../packages/preset
+      '@nuxt-customer-portal/products':
+        specifier: workspace:*
+        version: link:../../packages/products
       '@nuxt-customer-portal/service-requests':
         specifier: workspace:*
         version: link:../../packages/service-requests
@@ -117,12 +126,21 @@ importers:
       '@nuxt-customer-portal/invoices':
         specifier: workspace:*
         version: link:../../packages/invoices
+      '@nuxt-customer-portal/invoice-products':
+        specifier: workspace:*
+        version: link:../../packages/invoice-products
       '@nuxt-customer-portal/kit':
         specifier: workspace:*
         version: link:../../packages/kit
+      '@nuxt-customer-portal/planning':
+        specifier: workspace:*
+        version: link:../../packages/planning
       '@nuxt-customer-portal/preset':
         specifier: workspace:*
         version: link:../../packages/preset
+      '@nuxt-customer-portal/products':
+        specifier: workspace:*
+        version: link:../../packages/products
       '@nuxt-customer-portal/service-requests':
         specifier: workspace:*
         version: link:../../packages/service-requests

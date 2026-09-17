@@ -10,12 +10,20 @@ try {
     (SELECT count(*)::int FROM public."user") AS users,
     (SELECT count(*)::int FROM timesheets.time_entry) AS entries,
     (SELECT count(*)::int FROM invoices.invoice) AS invoices,
-    (SELECT count(*)::int FROM service_requests.service_request) AS requests`)
+    (SELECT count(*)::int FROM service_requests.service_request) AS requests,
+    (SELECT count(*)::int FROM products.product) AS products,
+    (SELECT count(*)::int FROM products.orders) AS orders,
+    (SELECT count(*)::int FROM planning.provider) AS providers,
+    (SELECT count(*)::int FROM planning.appointment) AS appointments`)
     ).rows[0]
   const before = await counts()
   assert.equal(before.users, 7)
   assert.equal(before.invoices, 12)
   assert.equal(before.requests, 36)
+  assert.equal(before.products, 3)
+  assert.equal(before.orders, 4)
+  assert.equal(before.providers, 2)
+  assert.equal(before.appointments, 3)
   assert.ok(before.entries >= 540)
   await demoPool.query(
     "UPDATE service_requests.service_request SET title = 'Visitor edit' WHERE id = 'demo-garden-invoice-0-request-0'"
