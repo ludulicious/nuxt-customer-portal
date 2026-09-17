@@ -139,9 +139,25 @@ const dateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const kindLabel = (kind: string) => t(`planning.jobKinds.${kind}`, kind)
 const productSummary = (job: PlanningJobListItem) =>
-  job.entity?.allProducts
+  job.entity?.type === 'availability' && job.entity.allProducts
     ? t('planning.jobAllProducts')
-    : job.entity?.productTitles.join(', ') || t('planning.noProducts')
+    : job.entity?.type === 'availability'
+      ? job.entity.productTitles.join(', ') || t('planning.noProducts')
+      : t('planning.noProducts')
+const appointmentTime = (job: PlanningJobListItem) => {
+  if (job.entity?.type !== 'appointment') {
+    return ''
+  }
+  const format = new Intl.DateTimeFormat(locale.value, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: job.entity.timezone
+  })
+  return `${format.format(new Date(job.entity.startAt))} – ${new Intl.DateTimeFormat(locale.value, {
+    timeStyle: 'short',
+    timeZone: job.entity.timezone
+  }).format(new Date(job.entity.endAt))} · ${job.entity.timezone}`
+}
 
 async function loadNext() {
   const result = await resource.loadNextPage(query.value)
@@ -351,6 +367,37 @@ useAutoPagination({
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
               <span class="truncate">{{ job.entity.calendarId || t('planning.noDestinationCalendar') }}</span>
+            </p>
+          </div>
+          <div
+            v-else-if="job.entity?.type === 'appointment'"
+            class="mt-3 grid gap-x-6 gap-y-2 rounded-md border border-default bg-muted/20 p-3 text-sm text-muted sm:grid-cols-2"
+          >
+            <p class="flex min-w-0 items-center gap-2">
+              <UIcon name="i-lucide-calendar-clock" class="size-4 shrink-0" />
+              <span>{{ appointmentTime(job) }}</span>
+            </p>
+            <p class="flex min-w-0 items-center gap-2">
+              <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
+              <span class="truncate">{{ t('planning.host') }}: {{ job.entity.hostName }} · {{ job.entity.hostEmail }}</span>
+            </p>
+            <p class="flex min-w-0 items-center gap-2">
+              <UIcon name="i-lucide-contact-round" class="size-4 shrink-0" />
+              <span class="truncate"
+                >{{ t('planning.customer') }}: {{ job.entity.customerName }} · {{ job.entity.customerEmail }}</span
+              >
+            </p>
+            <p class="flex min-w-0 items-center gap-2">
+              <UIcon name="i-lucide-receipt-text" class="size-4 shrink-0" />
+              <span>{{ t('planning.bookingReference') }}: {{ job.entity.bookingReference }}</span>
+            </p>
+            <p class="flex min-w-0 items-center gap-2 sm:col-span-2">
+              <UIcon name="i-lucide-video" class="size-4 shrink-0" />
+              <span>
+                {{ t('planning.zoomMeeting') }}:
+                {{ job.entity.meetingUrl ? t('planning.zoomLinkReady') : t('planning.zoomLinkPending') }}
+                <template v-if="job.entity.meetingId"> · {{ job.entity.meetingId }}</template>
+              </span>
             </p>
           </div>
           <div v-if="job.error" class="mt-3 rounded-md bg-error/5 px-3 py-2 text-sm text-error">

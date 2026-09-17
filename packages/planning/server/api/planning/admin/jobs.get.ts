@@ -15,6 +15,7 @@ const querySchema = z.object({
 
 const scopedJobs = `WITH scoped AS (
   SELECT j.id,j.kind,j.attempts,j.error,j.available_at,j.completed_at,j.payload->>'trigger' AS trigger,
+    j.payload->>'appointmentId' AS appointment_id,
     COALESCE(j.completed_at,j.last_attempt_at,j.created_at) AS last_event_at,
     COALESCE(
       j.payload->>'storeId',
@@ -74,11 +75,52 @@ export default defineEventHandler(async (event) => {
     lastEventAt: Date
     completedAt: Date | null
     trigger: string | null
+    appointmentId: string | null
     entity?: unknown
   }>(
-    `${scopedJobs} SELECT id,kind,attempts,error,subject,trigger,available_at AS "availableAt",last_event_at AS "lastEventAt",completed_at AS "completedAt" FROM scoped WHERE ${where} ORDER BY ${order} ${direction},id ${direction} LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    `${scopedJobs} SELECT id,kind,attempts,error,subject,trigger,appointment_id AS "appointmentId",available_at AS "availableAt",last_event_at AS "lastEventAt",completed_at AS "completedAt" FROM scoped WHERE ${where} ORDER BY ${order} ${direction},id ${direction} LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   )
+  const appointmentIds = [...new Set(items.map((item) => item.appointmentId).filter(Boolean))] as string[]
+  if (appointmentIds.length) {
+    const entities = await rows<{
+      id: string
+      status: string
+      title: string
+      startAt: Date
+      endAt: Date
+      timezone: string
+      hostName: string
+      hostEmail: string
+      customerName: string
+      customerEmail: string
+      bookingReference: string
+      meetingId: string | null
+      meetingUrl: string | null
+    }>(
+      `SELECT a.id::text AS id,a.status,a.snapshot->>'title' AS title,a.start_at AS "startAt",a.end_at AS "endAt",
+        COALESCE(a.snapshot->>'timezone','UTC') AS timezone,u.name AS "hostName",u.email AS "hostEmail",
+        COALESCE(NULLIF(o.snapshot->'billing'->>'name',''),NULLIF(o.snapshot->'billing'->>'firstName',''),o.email) AS "customerName",
+        o.email AS "customerEmail",o.booking_reference AS "bookingReference",a.meeting_id AS "meetingId",a.meeting_url AS "meetingUrl"
+       FROM planning.appointment a
+       JOIN public."user" u ON u.id=a.user_id
+       JOIN products.orders o ON o.id=a.order_id
+       WHERE a.store_id=$1 AND a.id=ANY($2::uuid[])`,
+      [store.organization_id, appointmentIds]
+    )
+    const byId = new Map(entities.map((entity) => [entity.id, entity]))
+    for (const item of items) {
+      if (!item.appointmentId) {
+        continue
+      }
+      const entity = byId.get(item.appointmentId)
+      if (!entity) {
+        continue
+      }
+      item.subject = entity.title
+      item.entity = { type: 'appointment', ...entity }
+    }
+  }
   const availabilityIds = items
     .filter((item) => item.kind === 'availability' && item.subject)
     .map((item) => item.subject as string)

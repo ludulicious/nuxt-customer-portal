@@ -91,21 +91,38 @@ export interface PlanningJobListItem {
   lastEventAt: string
   completedAt: string | null
   trigger: string | null
-  entity?: {
-    type: 'availability'
-    id: string
-    providerName: string
-    providerEmail: string
-    calendarId: string | null
-    date: string
-    endDate: string | null
-    startTime: string
-    endTime: string
-    timezone: string
-    recurring: boolean
-    allProducts: boolean
-    productTitles: string[]
-  }
+  entity?:
+    | {
+        type: 'availability'
+        id: string
+        providerName: string
+        providerEmail: string
+        calendarId: string | null
+        date: string
+        endDate: string | null
+        startTime: string
+        endTime: string
+        timezone: string
+        recurring: boolean
+        allProducts: boolean
+        productTitles: string[]
+      }
+    | {
+        type: 'appointment'
+        id: string
+        status: string
+        title: string
+        startAt: string
+        endAt: string
+        timezone: string
+        hostName: string
+        hostEmail: string
+        customerName: string
+        customerEmail: string
+        bookingReference: string
+        meetingId: string | null
+        meetingUrl: string | null
+      }
 }
 export const usePlanning = () => ({
   available: (id: string, query: Record<string, unknown>, replacesId?: string) =>

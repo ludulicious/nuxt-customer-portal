@@ -200,7 +200,9 @@
     "manageAppointment": "Afspraak beheren",
     "viewAppointment": "Afspraak bekijken",
     "zoomMeeting": "Zoom-vergadering",
+    "zoomLinkReady": "Link gereed",
     "zoomLinkPending": "De Zoom-link wordt voorbereid",
+    "bookingReference": "Boekingsreferentie",
     "joinZoom": "Deelnemen aan Zoom-vergadering",
     "dashboard": {
       "hostUpcoming": "Je komende afspraken",

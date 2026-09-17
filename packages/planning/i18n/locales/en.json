@@ -200,7 +200,9 @@
     "manageAppointment": "Manage appointment",
     "viewAppointment": "View appointment",
     "zoomMeeting": "Zoom meeting",
+    "zoomLinkReady": "Link ready",
     "zoomLinkPending": "The Zoom link is being prepared",
+    "bookingReference": "Booking reference",
     "joinZoom": "Join Zoom Meeting",
     "dashboard": {
       "hostUpcoming": "Your upcoming appointments",
