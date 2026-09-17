@@ -1,5 +1,24 @@
 # @nuxt-customer-portal/ui
 
+## 0.4.0
+
+### Minor Changes
+
+- 59c8921: Add reusable appearance presets, validated typography and surface overrides, a light/dark live preview and optional full header logos. Apply saved branding reactively and preserve existing portals through backward-compatible defaults.
+- 59c8921: Configure supported store content and SaaS interface languages using the shared bundled language list. Preserve disabled translations and switch unavailable UI locales to an enabled language.
+
+### Patch Changes
+
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+  - @nuxt-customer-portal/core@0.4.0
+
 ## 0.3.3
 
 ### Patch Changes

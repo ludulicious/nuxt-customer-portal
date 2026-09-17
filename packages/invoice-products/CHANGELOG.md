@@ -1,5 +1,51 @@
 # Product invoices
 
+## 0.4.0
+
+### Minor Changes
+
+- 59c8921: Add the Products store module and product invoice integration: translated digital products and services, secret catalog API keys, Stripe one-time checkout, guest invitations, purchaser-only delivery, exact multi-currency invoices, and refund credit notes. Add narrowly scoped external authentication routes, API documentation contracts, and configurable module activation. Existing stores remain closed until explicitly configured and enabled.
+- 59c8921: Replace the unused single-product purchase record with multi-item-ready orders, order lines, carts, and cart lines while preserving the current one-product checkout experience. Generate invoice lines from immutable order lines.
+
+### Patch Changes
+
+- 59c8921: Send one appointment confirmation instead of an additional generic purchase email, and queue automated invoice delivery for five minutes after checkout.
+- 59c8921: Use compact currency symbols in invoice PDFs and give future product invoices a localized purchase-reference subject distinct from their product line descriptions.
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+  - @nuxt-customer-portal/core@0.4.0
+  - @nuxt-customer-portal/products@0.4.0
+  - @nuxt-customer-portal/invoices@0.4.0
+
 ## Unreleased
 
 - Reconcile product payments into portal invoices and refund credit notes with exact checkout totals.

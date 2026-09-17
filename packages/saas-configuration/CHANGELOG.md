@@ -1,5 +1,30 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.4.0
+
+### Minor Changes
+
+- 59c8921: Add the Products store module and product invoice integration: translated digital products and services, secret catalog API keys, Stripe one-time checkout, guest invitations, purchaser-only delivery, exact multi-currency invoices, and refund credit notes. Add narrowly scoped external authentication routes, API documentation contracts, and configurable module activation. Existing stores remain closed until explicitly configured and enabled.
+- 59c8921: Allow SaaS administrators to configure allowed client types and personal self-registration in Portal Settings. Apply saved preferences to server authorization, onboarding, client forms and navigation, preserving configuration defaults for existing portals. Prevent disabling client types that still have records, including during concurrent creation.
+- 59c8921: Add reusable appearance presets, validated typography and surface overrides, a light/dark live preview and optional full header logos. Apply saved branding reactively and preserve existing portals through backward-compatible defaults.
+- 59c8921: Configure supported store content and SaaS interface languages using the shared bundled language list. Preserve disabled translations and switch unavailable UI locales to an enabled language.
+
+### Patch Changes
+
+- 59c8921: Add optional plannable service products with provider availability, Google Calendar and Zoom connections, 60-minute checkout reservations, appointment invitations, paid rescheduling, and policy-based cancellation refunds. Extend the product catalog and checkout integration while preserving ordinary purchases.
+- 59c8921: Align Sharp with the Products layer so macOS development servers load one libvips runtime.
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+- Updated dependencies [59c8921]
+  - @nuxt-customer-portal/core@0.4.0
+  - @nuxt-customer-portal/ui@0.4.0
+
 ## 0.3.3
 
 ### Patch Changes

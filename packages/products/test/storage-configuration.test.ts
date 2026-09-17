@@ -11,7 +11,8 @@ test('stored S3 secrets are authenticated, encrypted, and bound to the configure
   const encrypted = encryptStorageSecret('super-secret-access-key')
   assert.notEqual(encrypted, 'super-secret-access-key')
   assert.equal(decryptStorageSecret(encrypted), 'super-secret-access-key')
-  assert.throws(() => decryptStorageSecret(`${encrypted.slice(0, -1)}x`), /could not be decrypted/)
+  const replacement = encrypted.endsWith('x') ? 'y' : 'x'
+  assert.throws(() => decryptStorageSecret(`${encrypted.slice(0, -1)}${replacement}`), /could not be decrypted/)
   process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = 'second-products-storage-encryption-key'
   assert.throws(() => decryptStorageSecret(encrypted), /could not be decrypted/)
   delete process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
