@@ -17,5 +17,15 @@ export default defineEventHandler(async (event) => {
     )=$1`,
     [store.organization_id]
   )
-  return runJobs(20, store.organization_id)
+  let completed = 0,
+    failed = 0
+  for (let batch = 0; batch < 10; batch++) {
+    const result = await runJobs(20, store.organization_id)
+    completed += result.completed
+    failed += result.failed
+    if (result.completed + result.failed < 20) {
+      break
+    }
+  }
+  return { completed, failed }
 })

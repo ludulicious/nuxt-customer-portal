@@ -156,7 +156,8 @@ test(
       await db.query('INSERT INTO planning.settings(store_id,policy) VALUES($1,$2)', ['store', policy])
       const external: Array<{ start: string; end: string }> = []
       let calendarFailure = false,
-        effectFailure = false
+        effectFailure = false,
+        meetingEnsures = 0
       const mirrors = new Map<string, unknown>(),
         meetings = new Map<string, { id: string; url: string }>()
       registerPlanningAdapters({
@@ -182,6 +183,7 @@ test(
         },
         meeting: {
           ensure: async (_s, _u, id) => {
+            meetingEnsures++
             if (!meetings.has(id)) {
               meetings.set(id, { id: String(meetings.size + 1), url: 'https://zoom.example.test/' + id })
             }
@@ -567,6 +569,13 @@ test(
         assert.equal(meetings.size, 1)
         assert.equal(mirrors.size, 1)
         assert.ok(emails.some((email) => Array.isArray(email.attachments)))
+      })
+      await t.test('scheduled repairs do not update an existing meeting', async () => {
+        const before = meetingEnsures
+        await jobs.syncProvider('store', 'provider')
+        await jobs.runJobs()
+        assert.equal(meetingEnsures, before)
+        assert.equal(meetings.size, 1)
       })
       await t.test('cancellation releases the slot and refunds policy amount exactly once', async () => {
         await management.cancel(event(buyerCookie), a.id)

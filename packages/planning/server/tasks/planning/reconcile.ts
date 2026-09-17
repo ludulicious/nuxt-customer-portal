@@ -19,7 +19,7 @@ export default defineTask({
       `SELECT p.store_id,p.user_id FROM planning.provider p JOIN planning.connection c ON c.store_id=p.store_id AND c.user_id=p.user_id AND c.provider='google' AND c.healthy WHERE cardinality(p.busy_calendar_ids)>0`
     )
     for (const u of users) {
-      await enqueue(pool, `sync:${u.store_id}:${u.user_id}:${Math.floor(Date.now() / 300000)}`, 'sync', {
+      await enqueue(pool, `sync:${u.store_id}:${u.user_id}:${Math.floor(Date.now() / 900000)}`, 'sync', {
         storeId: u.store_id,
         userId: u.user_id,
         trigger: 'reconciliation'

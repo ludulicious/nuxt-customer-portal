@@ -397,7 +397,22 @@ export const zoomMeeting: MeetingAdapter = {
       },
       update = { topic: title, start_time: start.toISOString(), duration, timezone: 'UTC', agenda, settings }
     if (existingId) {
-      const meeting = await api<{ id: number; join_url: string } | undefined>(
+      const meeting = await api<
+        | {
+            id: number
+            join_url: string
+            topic: string
+            start_time: string
+            duration: number
+            agenda: string
+            settings?: {
+              waiting_room?: boolean
+              join_before_host?: boolean
+              meeting_invitees?: Array<{ email?: string }>
+            }
+          }
+        | undefined
+      >(
         'zoom',
         s,
         u,
@@ -407,7 +422,18 @@ export const zoomMeeting: MeetingAdapter = {
         [404]
       )
       if (meeting) {
-        await api('zoom', s, u, `/meetings/${encodeURIComponent(existingId)}`, 'PATCH', update)
+        const invitee = details.inviteeEmail.toLowerCase()
+        const unchanged =
+          meeting.topic === title &&
+          Date.parse(meeting.start_time) === start.getTime() &&
+          meeting.duration === duration &&
+          meeting.agenda === agenda &&
+          meeting.settings?.waiting_room === true &&
+          meeting.settings?.join_before_host === false &&
+          meeting.settings.meeting_invitees?.some((item) => item.email?.toLowerCase() === invitee)
+        if (!unchanged) {
+          await api('zoom', s, u, `/meetings/${encodeURIComponent(existingId)}`, 'PATCH', update)
+        }
         return { id: String(meeting.id), url: meeting.join_url }
       }
     }

@@ -16,7 +16,8 @@ export default defineEventHandler(async (event) => {
   if (watch) {
     await enqueue(pool, `sync:${watch.store_id}:${watch.user_id}:${Math.floor(Date.now() / 1000)}`, 'sync', {
       storeId: watch.store_id,
-      userId: watch.user_id
+      userId: watch.user_id,
+      trigger: 'notification'
     })
   }
   setResponseStatus(event, 204)

@@ -25,7 +25,13 @@ import {
 export async function auditLock(tx: Pick<import('pg').PoolClient, 'query'>, id: string) {
   await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`planning-effects:${id}`])
 }
-async function appointmentEffects(id: string, revision: number, notify = true, notificationKey?: string) {
+async function appointmentEffects(
+  id: string,
+  revision: number,
+  notify = true,
+  notificationKey?: string,
+  ensureMeeting = true
+) {
   const [a] = await rows<Appointment>('SELECT * FROM planning.appointment WHERE id=$1', [id])
   if (!a || a.revision !== revision) {
     return
@@ -50,7 +56,7 @@ async function appointmentEffects(id: string, revision: number, notify = true, n
       await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
     }
   } else {
-    if (a.snapshot.meetingProvider === 'zoom') {
+    if (a.snapshot.meetingProvider === 'zoom' && (ensureMeeting || !a.meeting_id || !a.meeting_url)) {
       const meeting = await meetingAdapter().ensure(
         a.store_id,
         a.user_id,
@@ -340,12 +346,23 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
         effectsKey = `planning-effects:${p.appointmentId}`
         await client.query('SELECT pg_advisory_lock(hashtext($1))', [effectsKey])
         const repairNotification = job.kind === 'repair' && p.notifyCustomer === true
-        await appointmentEffects(
-          String(p.appointmentId),
-          Number(p.revision),
-          job.kind === 'appointment' || repairNotification,
-          repairNotification ? job.id : undefined
-        )
+        const [pendingAppointment] =
+          job.kind === 'repair'
+            ? await rows<{ id: string }>(
+                `SELECT id FROM planning.job WHERE kind='appointment' AND completed_at IS NULL AND payload->>'appointmentId'=$1 AND payload->>'revision'=$2 LIMIT 1`,
+                [String(p.appointmentId), String(p.revision)],
+                client
+              )
+            : []
+        if (!pendingAppointment) {
+          await appointmentEffects(
+            String(p.appointmentId),
+            Number(p.revision),
+            job.kind === 'appointment' || repairNotification,
+            repairNotification ? job.id : undefined,
+            job.kind === 'appointment'
+          )
+        }
       } else if (job.kind === 'availability') {
         await availabilityEffects(String(p.id))
       } else if (job.kind === 'refund') {
@@ -370,7 +387,7 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
           await reconcileCheckout(order.checkout_id)
         }
       } else if (job.kind === 'sync') {
-        await syncProvider(String(p.storeId), String(p.userId))
+        await syncProvider(String(p.storeId), String(p.userId), String(p.trigger || 'reconciliation'))
       } else if (job.kind === 'failed-booking') {
         const order = await getOrder(String(p.orderId))
         if (order && (order.snapshot.storeMode !== 'sandbox' || developmentSandboxEffectsEnabled())) {
@@ -438,9 +455,18 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
     } catch (error) {
       failed++
       const message = error instanceof Error ? error.message : 'Planning task failed'
+      const now = new Date()
+      const retrySeconds = message.includes('zoom API failed (429)')
+        ? Math.max(
+            60,
+            Math.ceil(
+              (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) - now.getTime()) / 1000
+            ) + 60
+          )
+        : Math.min(3600, 30 * 2 ** Math.min(job.attempts, 7))
       await rows(
         "UPDATE planning.job SET attempts=attempts+1,last_attempt_at=now(),error=$2,available_at=now()+($3::int*interval '1 second') WHERE id=$1",
-        [job.id, message, Math.min(3600, 30 * 2 ** Math.min(job.attempts, 7))],
+        [job.id, message, retrySeconds],
         client
       )
       if (job.kind === 'appointment') {
@@ -490,7 +516,7 @@ export async function expireReservations() {
   }
   await rows('DELETE FROM planning.oauth_state WHERE expires_at<now()')
 }
-export async function syncProvider(storeId: string, userId: string) {
+export async function syncProvider(storeId: string, userId: string, trigger = 'reconciliation') {
   const [p] = await rows<{ busy_calendar_ids: string[] }>(
     'SELECT busy_calendar_ids FROM planning.provider WHERE store_id=$1 AND user_id=$2',
     [storeId, userId]
@@ -523,12 +549,12 @@ export async function syncProvider(storeId: string, userId: string) {
       })
     }
   }
-  const repairBucket = Math.floor(Date.now() / 300000)
+  const repairBucket = Math.floor(Date.now() / (trigger === 'notification' ? 300000 : 86400000))
   for (const a of appointments) {
     await enqueue(pool, `repair:${a.id}:${a.revision}:${repairBucket}`, 'repair', {
       appointmentId: a.id,
       revision: a.revision,
-      trigger: 'reconciliation'
+      trigger
     })
   }
   const windows = await rows<{ id: string }>(
@@ -538,7 +564,7 @@ export async function syncProvider(storeId: string, userId: string) {
   for (const w of windows) {
     await enqueue(pool, `availability-repair:${w.id}:${repairBucket}`, 'availability', {
       id: w.id,
-      trigger: 'reconciliation'
+      trigger
     })
   }
   if (!baseUrl().startsWith('https://')) {
