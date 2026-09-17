@@ -138,10 +138,10 @@ export const coreFeature: PortalFeatureDefinition = {
             'This personal invitation will expire soon. If you were not expecting it, you can safely ignore this email.'
         },
         nl: {
-          subject: 'U bent uitgenodigd voor {{organization_name}}',
-          body: 'Beste {{recipient_name}},\n\n**{{inviter_name}}** heeft u uitgenodigd om als **{{role}}** lid te worden van **{{organization_name}}**. Na acceptatie krijgt u toegang tot de organisatie en de functies die bij uw rol horen.\n\n[Uitnodiging bekijken en accepteren]({{action_url}})\n\nWe heten u graag welkom.',
+          subject: 'Je bent uitgenodigd voor {{organization_name}}',
+          body: 'Beste {{recipient_name}},\n\n**{{inviter_name}}** heeft je uitgenodigd om als **{{role}}** lid te worden van **{{organization_name}}**. Na acceptatie krijg je toegang tot de organisatie en de functies die bij je rol horen.\n\n[Uitnodiging bekijken en accepteren]({{action_url}})\n\nWe heten je graag welkom.',
           footer:
-            'Deze persoonlijke uitnodiging verloopt binnenkort. Verwachtte u deze uitnodiging niet? Dan kunt u deze e-mail veilig negeren.'
+            'Deze persoonlijke uitnodiging verloopt binnenkort. Verwachtte je deze uitnodiging niet? Dan kun je deze e-mail veilig negeren.'
         }
       },
       placeholders: [
@@ -163,10 +163,10 @@ export const coreFeature: PortalFeatureDefinition = {
             'This account setup link expires soon. If you did not expect this message, you can safely ignore it.'
         },
         nl: {
-          subject: 'Stel uw persoonlijke portaalaccount in',
-          body: 'Beste {{recipient_name}},\n\nEr is een persoonlijk portaalprofiel voor u aangemaakt. Stel uw account in om toegang te krijgen tot uw aankopen, afspraken, facturen en gedeelde bestanden.\n\n[Uw account instellen]({{action_url}})\n\nGebruik hetzelfde e-mailadres waarop u dit bericht heeft ontvangen.',
+          subject: 'Stel je persoonlijke portaalaccount in',
+          body: 'Beste {{recipient_name}},\n\nEr is een persoonlijk portaalprofiel voor je aangemaakt. Stel je account in om toegang te krijgen tot je aankopen, afspraken, facturen en gedeelde bestanden.\n\n[Je account instellen]({{action_url}})\n\nGebruik hetzelfde e-mailadres waarop je dit bericht hebt ontvangen.',
           footer:
-            'Deze link om uw account in te stellen verloopt binnenkort. Verwachtte u dit bericht niet? Dan kunt u het veilig negeren.'
+            'Deze link om je account in te stellen verloopt binnenkort. Verwachtte je dit bericht niet? Dan kun je het veilig negeren.'
         }
       },
       placeholders: [

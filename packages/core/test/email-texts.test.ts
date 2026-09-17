@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getOTPEmailContent } from '../server/utils/email-texts'
+import { coreFeature } from '../shared/core-feature'
 import { renderPortalEmailMarkdown } from '../server/utils/portal-email'
 import { emailRecipientName } from '../shared/email-recipient'
 
@@ -39,4 +40,14 @@ test('OTP email subjects keep the customer-portal default brand', () => {
     getOTPEmailContent({ otp: '123456', type: 'email-verification' }).subject,
     'Verify your Nuxt Customer Portal email address'
   )
+})
+
+test('Dutch invitation emails consistently use informal language', () => {
+  for (const messageId of ['invitation', 'personal-account-invitation']) {
+    const definition = coreFeature.emails?.find((email) => email.id === messageId)
+    assert.ok(definition)
+    const text = [definition.defaults.nl.subject, definition.defaults.nl.body, definition.defaults.nl.footer].join(' ')
+    assert.doesNotMatch(text, /\b(?:u|uw)\b/i)
+    assert.match(text, /\b(?:je|jouw)\b/i)
+  }
 })

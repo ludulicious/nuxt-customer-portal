@@ -34,6 +34,7 @@ import {
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
 import { runUserIdentityChangedHooks } from './business-hooks'
+import { socialAuthProviderEnabled } from '../../shared/social-auth'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -43,13 +44,20 @@ export function generateId(): string {
   return nanoid()
 }
 
-const envFlag = (value: string | undefined, fallback = true) => (value === undefined ? fallback : value === 'true')
 const portalAuthConfig = useRuntimeConfig().portalAuth
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? process.env.PORTAL_REGISTRATION_MODE
   : portalAuthConfig.registrationMode
-const githubEnabled = envFlag(process.env.PORTAL_GITHUB_ENABLED, portalAuthConfig.githubEnabled)
-const googleEnabled = envFlag(process.env.PORTAL_GOOGLE_ENABLED, portalAuthConfig.googleEnabled)
+const githubEnabled = socialAuthProviderEnabled(
+  process.env.PORTAL_GITHUB_ENABLED,
+  process.env.GITHUB_CLIENT_ID,
+  process.env.GITHUB_CLIENT_SECRET
+)
+const googleEnabled = socialAuthProviderEnabled(
+  process.env.PORTAL_GOOGLE_ENABLED,
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+)
 const systemAdminEmails = isPortalDemo() ? new Set<string>() : parseSystemAdminEmails(process.env.ADMIN_EMAILS)
 
 export const auth = betterAuth({
@@ -238,7 +246,7 @@ export const auth = betterAuth({
     }
   },
   socialProviders: {
-    ...(githubEnabled && process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+    ...(githubEnabled
       ? {
           github: {
             clientId: process.env.GITHUB_CLIENT_ID,
@@ -246,7 +254,7 @@ export const auth = betterAuth({
           }
         }
       : {}),
-    ...(googleEnabled && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ...(googleEnabled
       ? {
           google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
