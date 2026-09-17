@@ -63,6 +63,17 @@ export default defineNitroPlugin(() => {
   registerClientTimezoneResolver(async (id) => (await profile(id))?.timezone ?? null)
   registerClientAccountPolicy({
     isPersonal: async (id) => (await profile(id))?.clientType === 'person',
+    getIdentity: async (id) => {
+      const client = await profile(id)
+      if (!client) {
+        return null
+      }
+      return {
+        name: client.officialName,
+        ...(client.firstName ? { firstName: client.firstName } : {}),
+        ...(client.lastName ? { lastName: client.lastName } : {})
+      }
+    },
     assertAcceptance: async (id, userId) => {
       const client = await profile(id)
       if (client?.archivedAt) {

@@ -48,8 +48,20 @@ const providers = computed(() =>
 async function complete() {
   const pendingInvitationId = localStorage.getItem('pendingInvitationId')
   if (pendingInvitationId) {
-    const result = await authClient.organization.acceptInvitation({ invitationId: pendingInvitationId })
-    if (!result.error) {
+    const session = await authClient.getSession()
+    try {
+      const invitation = await $fetch<{ email?: string }>(
+        `/api/organizations/get-invitation?id=${encodeURIComponent(pendingInvitationId)}`
+      )
+      if (session.data?.user.email?.toLowerCase() === invitation.email?.toLowerCase()) {
+        await $fetch('/api/organizations/accept-invitation', {
+          method: 'POST',
+          body: { invitationId: pendingInvitationId }
+        })
+      }
+    } catch (error) {
+      console.warn('Could not complete the pending invitation after login:', error)
+    } finally {
       localStorage.removeItem('pendingInvitationId')
     }
   }

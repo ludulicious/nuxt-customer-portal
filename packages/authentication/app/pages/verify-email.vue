@@ -230,22 +230,17 @@ const acceptPendingInvitation = async () => {
   acceptingInvitation.value = true
   try {
     console.log('Accepting invitation:', invitationId.value)
-    const result = await authClient.organization.acceptInvitation({
-      invitationId: invitationId.value
+    await $fetch('/api/organizations/accept-invitation', {
+      method: 'POST',
+      body: { invitationId: invitationId.value }
     })
-
-    if (result.error) {
-      console.error('Failed to accept invitation:', result.error)
-      // Don't show error to user, just log it - they can accept manually later
-    } else {
-      console.log('Invitation accepted successfully')
-      // Clear stored invitation ID
-      if (import.meta.client) {
-        localStorage.removeItem('pendingInvitationId')
-      }
+    console.log('Invitation accepted successfully')
+    if (import.meta.client) {
+      localStorage.removeItem('pendingInvitationId')
     }
   } catch (err) {
     console.error('Error accepting invitation:', err)
+    throw err
   } finally {
     acceptingInvitation.value = false
   }

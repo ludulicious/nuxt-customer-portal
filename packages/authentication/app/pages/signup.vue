@@ -2,6 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
+import type { AuthSessionResponse } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import type { ApiError } from '@nuxt-customer-portal/core/shared/types/index'
 
 definePageMeta({
@@ -34,7 +35,8 @@ if (
 }
 
 const fields = computed(() => [
-  {
+  ...(!invitationId
+    ? [{
     name: 'firstName',
     type: 'text' as const,
     label: t('signup.fields.firstName'),
@@ -45,12 +47,20 @@ const fields = computed(() => [
     type: 'text' as const,
     label: t('signup.fields.lastName'),
     autocomplete: 'family-name'
-  },
+  }]
+    : []),
   {
     name: 'email',
     type: 'text' as const,
     label: t('signup.fields.email'),
-    placeholder: t('signup.fields.emailPlaceholder')
+    placeholder: t('signup.fields.emailPlaceholder'),
+    autocomplete: 'email',
+    ...(invitationId
+      ? {
+          defaultValue: invitationInfo.value?.email || '',
+          readonly: true
+        }
+      : {})
   },
   {
     name: 'password',
@@ -81,18 +91,22 @@ const providers = computed(() =>
   ].filter((provider) => provider.enabled)
 )
 
-const schema = computed(() =>
-  z.object({
-    firstName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80),
-    lastName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80),
+const schema = computed(() => {
+  const base = z.object({
     email: z.email(t('signup.validation.invalidEmail')),
     password: z.string().min(8, t('signup.validation.passwordMinLength'))
   })
-)
+  return invitationId
+    ? base
+    : base.extend({
+        firstName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80),
+        lastName: z.string().trim().min(1, t('signup.validation.nameRequired')).max(80)
+      })
+})
 
 type Schema = {
-  firstName: string
-  lastName: string
+  firstName?: string
+  lastName?: string
   email: string
   password: string
 }
@@ -101,6 +115,8 @@ const error = ref<string | null>(null)
 const isLoading = ref(false)
 const invitationInfo = ref<{ organizationName?: string; role?: string; email?: string } | null>(null)
 const acceptingInvitation = ref(false)
+const accountSwitchOpen = ref(false)
+const switchingAccount = ref(false)
 
 // User store for checking authentication
 const userStore = useUserStore()
@@ -177,18 +193,18 @@ const handleLoggedInInvitation = async (invId: string) => {
       return
     }
 
+    invitationInfo.value = {
+      organizationName: invitationData.organizationName,
+      role: invitationData.role,
+      email: invitationData.email
+    }
+
     // Check if invitation email matches logged-in user's email
     const userEmail = currentUser.value?.email?.toLowerCase()
     const invitationEmail = invitationData.email?.toLowerCase()
 
     if (userEmail !== invitationEmail) {
-      const errorMessage = t('signup.invitation.loggedIn.emailMismatch')
-      error.value = errorMessage
-      toast.add({
-        title: t('common.error'),
-        description: errorMessage,
-        color: 'error'
-      })
+      accountSwitchOpen.value = true
       acceptingInvitation.value = false
       return
     }
@@ -261,6 +277,24 @@ const handleLoggedInInvitation = async (invId: string) => {
   }
 }
 
+const switchAccount = async () => {
+  switchingAccount.value = true
+  try {
+    await authClient.signOut()
+    userStore.clearUserData()
+    localStorage.setItem('pendingInvitationId', String(invitationId))
+    window.location.assign(route.fullPath)
+  } catch (err) {
+    const apiError = err as ApiError
+    toast.add({
+      title: t('common.error'),
+      description: apiError.message || t('signup.errors.unknownError'),
+      color: 'error'
+    })
+    switchingAccount.value = false
+  }
+}
+
 const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   console.log('Submitted', payload)
   error.value = null
@@ -273,10 +307,40 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   }
 
   try {
+    if (invId) {
+      const result = await $fetch<{ success: boolean; organization: { id: string; name: string } }>(
+        '/api/organizations/invitation-signup',
+        {
+          method: 'POST',
+          body: {
+            invitationId: invId,
+            email: payload.data.email,
+            password: payload.data.password
+          }
+        }
+      )
+      const signInResult = await authClient.signIn.email({
+        email: payload.data.email,
+        password: payload.data.password
+      })
+      if (signInResult.error) {
+        throw new Error(signInResult.error.message || t('signup.errors.unknownError'))
+      }
+      localStorage.removeItem('pendingInvitationId')
+      const session = await authClient.getSession()
+      if (!session.data) {
+        throw new Error(t('signup.errors.unknownError'))
+      }
+      await userStore.setSession(session.data as unknown as AuthSessionResponse)
+      await userStore.setActiveOrganizationId(result.organization.id)
+      await navigateTo('/dashboard')
+      return
+    }
+
     const response = await authClient.signUp.email({
-      name: `${payload.data.firstName} ${payload.data.lastName}`,
-      firstName: payload.data.firstName,
-      lastName: payload.data.lastName,
+      name: `${payload.data.firstName!} ${payload.data.lastName!}`,
+      firstName: payload.data.firstName!,
+      lastName: payload.data.lastName!,
       email: payload.data.email,
       password: payload.data.password
     })
@@ -287,7 +351,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     } else {
       // Redirect to OTP verification page with email parameter and invitation ID if present
       const personal = personalSignup.value
-      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}${personal ? '&redirect=%2Fpersonal-onboarding&purpose=personal' : ''}`
+      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${personal ? '&redirect=%2Fpersonal-onboarding&purpose=personal' : ''}`
       navigateTo(verifyUrl)
     }
   } catch (err) {
@@ -310,18 +374,23 @@ if (invId) {
     // User is not logged in, store for later use
     localStorage.setItem('pendingInvitationId', invId)
     // Try to fetch invitation details to show context
-    fetchInvitationDetails(invId)
+    await fetchInvitationDetails(invId)
   }
 }
 
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
+const socialLoginRedirect = computed(() => {
+  if (invitationId) {
+    return `/signup?invitationId=${encodeURIComponent(String(invitationId))}`
+  }
+  return personalSignup.value ? '/personal-onboarding' : route.query.redirect?.toString() || '/dashboard'
+})
 const handleGitHubLogin = async () => {
   loading.value = true
   errorMessage.value = null
   try {
-    const redirectTo = personalSignup.value ? '/personal-onboarding' : route.query.redirect?.toString() || '/dashboard'
-    await signIn.social({ provider: 'github', callbackURL: redirectTo })
+    await signIn.social({ provider: 'github', callbackURL: socialLoginRedirect.value })
   } catch (error) {
     console.error('GitHub sign in initiation failed:', error)
     errorMessage.value = t('login.errors.githubError')
@@ -333,8 +402,7 @@ const handleGoogleLogin = async () => {
   loading.value = true
   errorMessage.value = null
   try {
-    const redirectTo = personalSignup.value ? '/personal-onboarding' : route.query.redirect?.toString() || '/dashboard'
-    await signIn.social({ provider: 'google', callbackURL: redirectTo })
+    await signIn.social({ provider: 'google', callbackURL: socialLoginRedirect.value })
   } catch (error) {
     console.error('Google sign in initiation failed:', error)
     errorMessage.value = t('login.errors.googleError')
@@ -345,6 +413,31 @@ const handleGoogleLogin = async () => {
 
 <template>
   <div>
+    <UModal
+      v-if="accountSwitchOpen"
+      v-model:open="accountSwitchOpen"
+      :title="t('signup.invitation.accountSwitch.title')"
+      :ui="{ footer: 'justify-end' }"
+    >
+      <template #body>
+        <p class="text-sm text-muted">
+          {{
+            t('signup.invitation.accountSwitch.description', {
+              currentEmail: currentUser?.email || '',
+              invitationEmail: invitationInfo?.email || ''
+            })
+          }}
+        </p>
+      </template>
+      <template #footer>
+        <UButton color="neutral" variant="outline" :disabled="switchingAccount" @click="accountSwitchOpen = false">
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton icon="i-lucide-log-out" :loading="switchingAccount" @click="switchAccount">
+          {{ t('signup.invitation.accountSwitch.confirm') }}
+        </UButton>
+      </template>
+    </UModal>
     <UAlert v-if="errorMessage" color="error" :description="errorMessage" variant="outline" />
     <!-- Company Logo -->
     <div class="flex justify-center mb-8">
@@ -362,14 +455,24 @@ const handleGoogleLogin = async () => {
       @submit="onSubmit"
     >
       <template #description>
-        {{ t('signup.description') }}
-        <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }} </ULink>.
+        <span v-if="invitationId && providers.length" class="block">
+          {{ t('signup.invitation.socialDescription', { email: invitationInfo?.email || '' }) }}
+        </span>
+        <span class="mt-2 block">
+          {{ t('signup.description') }}
+          <ULink to="/login" class="font-semibold text-primary underline underline-offset-4">
+            {{ t('signup.loginLink') }}
+          </ULink>
+          .
+        </span>
       </template>
 
       <template #footer>
         {{ t('signup.footer') }}
-        <ULink :to="portalAuth.termsUrl" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink
-        >.
+        <ULink :to="portalAuth.termsUrl" class="font-semibold text-primary underline underline-offset-4">
+          {{ t('signup.termsLink') }}
+        </ULink>
+        .
       </template>
     </UAuthForm>
   </div>

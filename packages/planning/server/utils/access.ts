@@ -48,7 +48,7 @@ export async function appointmentScope(event: H3Event) {
   try {
     context = await requireActiveOrganizationRole(event)
   } catch (error) {
-    if ((error as { statusCode?: number }).statusCode !== 403) {
+    if (![400, 403].includes((error as { statusCode?: number }).statusCode ?? 500)) {
       throw error
     }
   }

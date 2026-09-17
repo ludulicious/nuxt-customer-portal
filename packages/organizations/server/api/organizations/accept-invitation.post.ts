@@ -79,17 +79,6 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // Check if user is already a member
-      const [existingMember] = await tx
-        .select()
-        .from(memberTable)
-        .where(and(eq(memberTable.organizationId, invitation.organizationId), eq(memberTable.userId, user.id)))
-        .limit(1)
-
-      if (existingMember) {
-        throw createError({ statusCode: 400, message: 'You are already a member of this organization' })
-      }
-
       // Get organization details
       const [organization] = await tx
         .select()
@@ -99,6 +88,23 @@ export default defineEventHandler(async (event) => {
 
       if (!organization) {
         throw createError({ statusCode: 404, message: 'Organization not found' })
+      }
+
+      // Reconcile an interrupted Better Auth acceptance where membership was
+      // created but the invitation was left pending.
+      const [existingMember] = await tx
+        .select()
+        .from(memberTable)
+        .where(and(eq(memberTable.organizationId, invitation.organizationId), eq(memberTable.userId, user.id)))
+        .limit(1)
+
+      if (existingMember) {
+        await tx.update(invitationTable).set({ status: 'accepted' }).where(eq(invitationTable.id, invitationId))
+        return {
+          success: true,
+          member: existingMember,
+          organization: { id: organization.id, name: organization.name }
+        }
       }
 
       await assertClientInvitationAcceptance(invitation.organizationId, user.id)

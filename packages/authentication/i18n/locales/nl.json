@@ -65,6 +65,12 @@
   "signup": {
     "description": "Heb je al een account?",
     "invitation": {
+      "socialDescription": "Gebruik een sociaal account dat is geregistreerd met {email}, of maak hieronder een account aan.",
+      "accountSwitch": {
+        "title": "Een ander account gebruiken?",
+        "description": "Je bent ingelogd als {currentEmail}, maar deze uitnodiging is verstuurd naar {invitationEmail}. Log uit om door te gaan met het uitgenodigde account.",
+        "confirm": "Uitloggen en doorgaan"
+      },
       "loggedIn": {
         "success": "Succesvol lid geworden van {organizationName} als {role}",
         "emailMismatch": "Deze uitnodiging is verzonden naar een ander e-mailadres. Log uit en gebruik het e-mailadres waarop de uitnodiging is verzonden.",

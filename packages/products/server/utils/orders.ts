@@ -192,10 +192,17 @@ export async function claimPurchases(event: H3Event) {
   if (!session.user.emailVerified || !session.user.email) {
     throw createError({ statusCode: 403, message: 'Verify your email before accessing purchases' })
   }
-  await rows(`UPDATE products.orders SET buyer_id=$1 WHERE buyer_id IS NULL AND email=$2 AND status='paid'`, [
-    session.user.id,
-    session.user.email.toLowerCase()
-  ])
+  await rows(
+    `UPDATE products.orders o SET buyer_id=$1
+     WHERE o.buyer_id IS NULL AND o.status='paid' AND (
+       lower(o.email)=lower($2)
+       OR EXISTS (
+         SELECT 1 FROM public.member m
+         WHERE m.user_id=$1 AND m.organization_id=o.client_id
+       )
+     )`,
+    [session.user.id, session.user.email]
+  )
   return session.user.id
 }
 export async function processOrder(id: string) {
