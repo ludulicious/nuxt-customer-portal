@@ -11,7 +11,8 @@ export default defineConfig({
       url: 'http://localhost:4181',
       reuseExistingServer: !process.env.CI,
       env: {
-        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/customer_portal_e2e',
+        DATABASE_URL:
+          process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/customer_portal_e2e',
         PUBLIC_URL: 'http://localhost:4181',
         BETTER_AUTH_URL: 'http://localhost:4181',
         BETTER_AUTH_SECRET: 'demo-e2e-secret-at-least-32-characters'
@@ -22,7 +23,8 @@ export default defineConfig({
       url: 'http://localhost:4182',
       reuseExistingServer: !process.env.CI,
       env: {
-        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/customer_portal_e2e',
+        DATABASE_URL:
+          process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/customer_portal_e2e',
         PUBLIC_URL: 'http://localhost:4182',
         BETTER_AUTH_URL: 'http://localhost:4182',
         BETTER_AUTH_SECRET: 'demo-e2e-secret-at-least-32-characters'
