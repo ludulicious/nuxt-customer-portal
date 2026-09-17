@@ -38,6 +38,33 @@ export function getInvitationEmailContent(params: InvitationEmailParams) {
   }
 }
 
+export interface PersonalAccountInvitationEmailParams {
+  invitationLink: string
+  recipientName?: string | null
+}
+
+export function getPersonalAccountInvitationEmailContent(params: PersonalAccountInvitationEmailParams) {
+  return {
+    messageId: 'personal-account-invitation',
+    values: {
+      ...(params.recipientName?.trim() ? { recipient_name: params.recipientName.trim() } : {}),
+      action_url: params.invitationLink
+    },
+    subject: 'Set up your personal portal account',
+    params: {
+      greeting: 'Hello,',
+      body_text: `A personal portal profile has been created for you. Set up your account to access your purchases, appointments, invoices, and shared files.
+             <p style="text-align: center;">
+                <a href="${params.invitationLink}" class="button">Set up your account</a>
+            </p>
+        `,
+      action_url: params.invitationLink,
+      action_text: 'Set up your account',
+      footer_text: 'This account setup link expires soon. If you did not expect this message, please ignore it.'
+    }
+  }
+}
+
 /**
  * Centralized OTP email content
  * Used for email verification, sign-in, and password reset OTP codes

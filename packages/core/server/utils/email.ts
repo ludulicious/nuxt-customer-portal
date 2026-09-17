@@ -20,10 +20,11 @@ interface SendEmailArgs {
   messageId?: string
   values?: Record<string, string>
   locale?: string
+  idempotencyKey?: string
 }
 
 // Updated sendEmail function using the template
-export const sendEmail = async ({ to, subject, params, messageId, values = {}, locale }: SendEmailArgs) => {
+export const sendEmail = async ({ to, subject, params, messageId, values = {}, locale, idempotencyKey }: SendEmailArgs) => {
   const definition = coreFeature.emails?.find((item) => item.id === messageId)
   if (!definition) {
     throw new Error(`Unknown core email definition: ${messageId}`)
@@ -45,6 +46,7 @@ export const sendEmail = async ({ to, subject, params, messageId, values = {}, l
       ...values
     },
     to,
+    idempotencyKey,
     text: messageId ? undefined : { subject, body: params.body_text, footer: params.footer_text }
   })
 }

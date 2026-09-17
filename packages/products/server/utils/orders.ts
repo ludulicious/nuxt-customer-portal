@@ -5,6 +5,8 @@ import { getSession, requireSession } from '@nuxt-customer-portal/core/server/po
 import { requireAllowedClientType } from '@nuxt-customer-portal/clients/server/utils/client-configuration'
 import { provisionPurchaseClient } from '@nuxt-customer-portal/clients/server/utils/purchase-client'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
+import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
+import { getPersonalAccountInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
 import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
@@ -257,6 +259,33 @@ export async function notifyOrder(id: string) {
     return
   }
   const store = await getStore()
+  if (order.invitation_id) {
+    const [invitation] = await rows<{
+      id: string
+      email: string
+      firstName: string | null
+      recipientName: string
+    }>(
+      `SELECT i.id,i.email,p.first_name AS "firstName",o.name AS "recipientName"
+       FROM public.invitation i
+       JOIN public.organization o ON o.id=i.organization_id
+       LEFT JOIN clients.client_profile p ON p.organization_id=i.organization_id
+       WHERE i.id=$1 AND i.status='pending'`,
+      [order.invitation_id]
+    )
+    if (invitation) {
+      const invitationLink = `${baseUrl()}/signup?invitationId=${encodeURIComponent(invitation.id)}`
+      await sendEmail({
+        to: invitation.email,
+        locale: order.snapshot.locale,
+        ...getPersonalAccountInvitationEmailContent({
+          recipientName: invitation.firstName || invitation.recipientName,
+          invitationLink
+        }),
+        idempotencyKey: `purchase-personal-account-invitation:v2:${invitation.id}`
+      })
+    }
+  }
   const url = order.invitation_id
     ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
     : `${baseUrl()}/purchases`

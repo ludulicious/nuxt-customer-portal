@@ -30,8 +30,10 @@ export const useInvoices = () => ({
     $fetch(`/api/invoices/admin/invoices/${id}`, { method: 'PATCH' as never, body: input }),
   changeInvoiceStatus: (id: string, action: 'VOID' | 'UNVOID') =>
     $fetch(`/api/invoices/admin/invoices/${id}`, { method: 'PATCH' as never, body: { action } }),
-  getInvoiceEmailPreview: (id: string, locale?: string) =>
-    $fetch<InvoiceEmailPreviewDto>(`/api/invoices/admin/invoices/${id}/email-preview`, { query: { locale } }),
+  getInvoiceEmailPreview: (id: string, locale?: string, purpose?: 'resend') =>
+    $fetch<InvoiceEmailPreviewDto>(`/api/invoices/admin/invoices/${id}/email-preview`, {
+      query: { locale, purpose }
+    }),
   issueAndSendInvoice: (id: string, input: Record<string, unknown>) =>
     $fetch(`/api/invoices/admin/invoices/${id}/issue`, { method: 'POST', body: input }),
   resendInvoice: (id: string, input: Record<string, unknown>) =>

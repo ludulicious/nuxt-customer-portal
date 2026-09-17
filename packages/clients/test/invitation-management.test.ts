@@ -33,10 +33,25 @@ test('client and user views share confirmed revocation and validated role editin
   ])
   assert.match(actions, /:schema="invitationRoleSchema"/)
   assert.match(actions, /<ConfirmationModal/)
+  assert.match(actions, /api\.resend\(props\.endpoint\)/)
   assert.match(actions, /@confirm="revoke"/)
-  assert.match(client, /<InvitationActions/)
+  assert.match(client, /<InvitationActions[\s\S]+can-resend/)
   assert.match(users, /<AdminPendingInvitations/)
   assert.match(pending, /<InvitationActions/)
+})
+
+test('resending a client invitation renews it and selects personal account copy when needed', async () => {
+  const source = await readFile(
+    new URL('../server/api/clients/[id]/invitations/[invitationId]/resend.post.ts', import.meta.url),
+    'utf8'
+  )
+  assert.match(source, /requireClientMemberManager/)
+  assert.match(source, /eq\(invitation\.organizationId, organizationId\)/)
+  assert.match(source, /eq\(invitation\.status, 'pending'\)/)
+  assert.match(source, /expiresAt = new Date/)
+  assert.match(source, /getPersonalAccountInvitationEmailContent/)
+  assert.match(source, /recipientName: pending\.firstName \|\| pending\.organizationName/)
+  assert.match(source, /getInvitationEmailContent/)
 })
 
 test('invitation management translations have matching English and Dutch keys', async () => {

@@ -316,6 +316,7 @@ const toggleEditing = () => {
                   :email="invitation.email"
                   :role="invitation.role"
                   :can-edit="client.clientType !== 'person'"
+                  can-resend
                   can-revoke
                   @refresh="refresh()"
                 />

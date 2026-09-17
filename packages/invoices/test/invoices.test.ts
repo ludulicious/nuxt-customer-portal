@@ -32,6 +32,42 @@ test('conditionally mounted invoice email modal loads its preview in setup', () 
   assert.doesNotMatch(modal, /watch\(\s*open/)
 })
 
+test('invoice resend is available for both issued and paid invoices', () => {
+  const detail = readFileSync(new URL('../app/components/InvoicesInvoiceDetail.vue', import.meta.url), 'utf8')
+  assert.match(detail, /status === 'ISSUED' \|\| props\.invoice\.status === 'PAID'/)
+  assert.match(detail, /v-if="canResendInvoice"/)
+  assert.match(detail, /if \(canResendInvoice\.value\)/)
+})
+
+test('resending uses dedicated editable email copy', () => {
+  const feature = readFileSync(new URL('../shared/feature.ts', import.meta.url), 'utf8')
+  const email = readFileSync(new URL('../server/utils/invoice-email.ts', import.meta.url), 'utf8')
+  const endpoint = readFileSync(
+    new URL('../server/api/invoices/admin/invoices/[id]/email.post.ts', import.meta.url),
+    'utf8'
+  )
+  const modal = readFileSync(new URL('../app/components/InvoicesInvoiceEmailModal.vue', import.meta.url), 'utf8')
+  assert.match(feature, /id: 'invoice-resend'/)
+  assert.match(feature, /Copy of invoice \{\{invoice_number\}\}/)
+  assert.match(email, /purpose === 'RESEND' \? 'invoice-resend'/)
+  assert.match(endpoint, /'RESEND'/)
+  assert.match(modal, /props\.mode === 'resend' \? 'resend'/)
+})
+
+test('invoice email greetings prefer the client first name', () => {
+  const email = readFileSync(new URL('../server/utils/invoice-email.ts', import.meta.url), 'utf8')
+  assert.match(email, /firstName: client\?\.firstName/)
+  assert.match(email, /displayName: selected\.recipientName/)
+  assert.match(email, /recipient_name: await recipientNameForInvoice\(selected\)/)
+  assert.match(email, /recipient_name: await recipientNameForInvoice\(currentInvoice\)/)
+})
+
+test('invoice email previews preserve paragraph breaks in the editable message', () => {
+  const email = readFileSync(new URL('../server/utils/invoice-email.ts', import.meta.url), 'utf8')
+  assert.match(email, /p\|div\|h\[1-6\]\|li/)
+  assert.match(email, /replace\(\/\\n\{3,\}\/g, '\\n\\n'\)/)
+})
+
 test('both invoice creation flows open the newly created invoice detail', () => {
   const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
   const save = component.split('const save = async () => {')[1]!.split('const statusColor')[0]!

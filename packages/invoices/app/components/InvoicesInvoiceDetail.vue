@@ -47,6 +47,9 @@ const paymentOpen = ref(false)
 const editOpen = ref(false)
 const emailOpen = ref(false)
 const emailMode = ref<'issue' | 'resend' | 'reminder'>('issue')
+const canResendInvoice = computed(
+  () => !isClient.value && (props.invoice.status === 'ISSUED' || props.invoice.status === 'PAID')
+)
 const attachment = ref<File | null>(null)
 const attachmentDeletion = ref<{ id: string; name: string } | null>(null)
 const attachmentDeleteOpen = ref(false)
@@ -316,7 +319,7 @@ const mobileMenuItems = computed(() => {
       onSelect: () => openEmail('issue')
     })
   }
-  if (!isClient.value && props.invoice.status === 'ISSUED' && !props.invoice.isOverdue) {
+  if (canResendInvoice.value) {
     items.push({
       label: t('features.invoices.admin.resendInvoice'),
       icon: 'i-lucide-mail',
@@ -437,7 +440,7 @@ if (!isClient.value) {
           {{ t('features.invoices.admin.issueAndSend') }}
         </UButton>
         <UButton
-          v-if="!isClient && invoice.status === 'ISSUED' && !invoice.isOverdue"
+          v-if="canResendInvoice"
           class="invoice-actions-wide"
           icon="i-lucide-mail"
           variant="outline"

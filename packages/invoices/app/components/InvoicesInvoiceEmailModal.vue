@@ -50,7 +50,7 @@ const loadPreview = async (locale?: string) => {
     const result =
       props.mode === 'reminder'
         ? await api.getInvoiceReminderPreview(props.invoiceId, locale)
-        : await api.getInvoiceEmailPreview(props.invoiceId, locale)
+        : await api.getInvoiceEmailPreview(props.invoiceId, locale, props.mode === 'resend' ? 'resend' : undefined)
     preview.value = result
     Object.assign(draft, {
       to: result.to,

@@ -248,6 +248,7 @@
         "selectCountry": "Select a country",
         "emailMessages": {
           "invoice": "Invoice",
+          "invoiceResend": "Resent invoice",
           "paymentReminder": "Payment reminder"
         },
         "emailPlaceholders": {

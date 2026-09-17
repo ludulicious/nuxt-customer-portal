@@ -248,6 +248,7 @@
         "selectCountry": "Selecteer een land",
         "emailMessages": {
           "invoice": "Factuur",
+          "invoiceResend": "Opnieuw verzonden factuur",
           "paymentReminder": "Betalingsherinnering"
         },
         "emailPlaceholders": {

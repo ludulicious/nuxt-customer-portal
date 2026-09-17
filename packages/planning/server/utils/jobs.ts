@@ -191,28 +191,44 @@ async function appointmentEffects(
     url: a.meeting_url,
     cancelled: a.status === 'cancelled'
   })
-  // Stable organizer, attendee and UID prevent duplicate customer appointments.
-  await sendPortalEmail({
-    moduleId: 'planning',
-    definition:
-      a.status === 'cancelled'
-        ? canceledAppointmentEmail
-        : revision === 1
-          ? newAppointmentEmail
-          : updatedAppointmentEmail,
-    locale,
-    to: order.email,
-    values: emailValues,
-    attachments: [
-      {
-        filename: 'appointment.ics',
-        content: Buffer.from(invitation),
-        contentType: `text/calendar; method=${a.status === 'cancelled' ? 'CANCEL' : 'REQUEST'}; charset=UTF-8`
+  if (notificationKey || a.snapshot.customerNotificationRevision !== revision) {
+    try {
+      // Stable organizer, attendee and UID prevent duplicate customer appointments.
+      await sendPortalEmail({
+        moduleId: 'planning',
+        definition:
+          a.status === 'cancelled'
+            ? canceledAppointmentEmail
+            : revision === 1
+              ? newAppointmentEmail
+              : updatedAppointmentEmail,
+        locale,
+        to: order.email,
+        values: emailValues,
+        attachments: [
+          {
+            filename: 'appointment.ics',
+            content: Buffer.from(invitation),
+            contentType: `text/calendar; method=${a.status === 'cancelled' ? 'CANCEL' : 'REQUEST'}; charset=UTF-8`
+          }
+        ],
+        idempotencyKey: notificationKey || `appointment:${id}:${revision}`,
+        subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : ''
+      if (!message.includes('idempotency key has been used') || !message.includes('request body was modified')) {
+        throw error
       }
-    ],
-    idempotencyKey: notificationKey || `appointment:${id}:${revision}`,
-    subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
-  })
+    }
+    a.snapshot.customerNotificationRevision = revision
+    await rows(
+      `UPDATE planning.appointment
+       SET snapshot=jsonb_set(snapshot,'{customerNotificationRevision}',to_jsonb($2::int))
+       WHERE id=$1`,
+      [id, revision]
+    )
+  }
   if (a.status === 'confirmed' && a.snapshot.meetingProvider === 'zoom') {
     if (!a.meeting_url) {
       a.snapshot.zoomLinkNotificationPending = true

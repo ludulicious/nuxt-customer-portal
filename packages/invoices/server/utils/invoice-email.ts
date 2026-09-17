@@ -1,6 +1,7 @@
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { createHash } from 'node:crypto'
 import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils/client-email-locale'
+import { getClient } from '@nuxt-customer-portal/clients/server/utils/client-repository'
 import { and, desc, eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
@@ -22,9 +23,22 @@ import { generateInvoicePdf } from './invoice-pdf'
 import { getInvoice, getOrganizationInvoiceProfile } from './invoice-repository'
 
 export const MAX_EMAIL_ATTACHMENT_SIZE = 40 * 1024 * 1024
+type InvoiceEmailContentPurpose = InvoiceEmailPurpose | 'RESEND'
 const domainFor = (email: string) => email.split('@')[1]?.toLowerCase() ?? ''
-const emailDefinition = (purpose: InvoiceEmailPurpose) => {
-  const id = purpose === 'REMINDER' ? 'payment-reminder' : 'invoice'
+const recipientNameForInvoice = async (selected: {
+  clientOrganizationId: string | null
+  recipientName: string
+  recipientEmail: string | null
+}) => {
+  const client = selected.clientOrganizationId ? await getClient(selected.clientOrganizationId) : null
+  return emailRecipientName({
+    firstName: client?.firstName,
+    displayName: selected.recipientName,
+    email: selected.recipientEmail
+  })
+}
+const emailDefinition = (purpose: InvoiceEmailContentPurpose) => {
+  const id = purpose === 'REMINDER' ? 'payment-reminder' : purpose === 'RESEND' ? 'invoice-resend' : 'invoice'
   const definition = invoicesFeature.emails?.find((item) => item.id === id)
   if (!definition) {
     throw new Error(`Missing invoice email definition: ${id}`)
@@ -34,14 +48,18 @@ const emailDefinition = (purpose: InvoiceEmailPurpose) => {
 const htmlToPlainText = (value: string) =>
   value
     .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/\s*(?:p|div|h[1-6]|li)\s*>/gi, '\n\n')
+    .replace(/<li(?:\s[^>]*)?>/gi, '- ')
     .replace(/<[^>]+>/g, '')
+    .replace(/\n[\t ]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 
 export const getInvoiceEmailPreview = async (
   organizationId: string,
   id: string,
   _localeOverride?: string,
-  purpose: InvoiceEmailPurpose = 'INVOICE'
+  purpose: InvoiceEmailContentPurpose = 'INVOICE'
 ): Promise<InvoiceEmailPreviewDto> => {
   const [selected, sender, files, providerStatus] = await Promise.all([
     getInvoice(organizationId, id),
@@ -71,10 +89,7 @@ export const getInvoiceEmailPreview = async (
   const values = {
     invoice_number: selected.number,
     sender_name: selected.senderName,
-    recipient_name: emailRecipientName({
-      displayName: selected.recipientName,
-      email: selected.recipientEmail
-    }),
+    recipient_name: await recipientNameForInvoice(selected),
     due_date: date,
     outstanding_amount: outstanding
   }
@@ -109,7 +124,7 @@ export const deliverInvoiceEmail = async (
   id: string,
   input: { to: string; cc: string[]; locale: 'nl' | 'en'; subject: string; body: string },
   issue: boolean,
-  purpose: InvoiceEmailPurpose = 'INVOICE'
+  purpose: InvoiceEmailContentPurpose = 'INVOICE'
 ) => {
   const selected = await getInvoice(organizationId, id)
   if (purpose === 'REMINDER' && !selected.isOverdue) {
@@ -136,6 +151,7 @@ export const deliverInvoiceEmail = async (
     })
   }
   const payloadHash = createHash('sha256').update(JSON.stringify({ purpose, input })).digest('hex')
+  const deliveryPurpose: InvoiceEmailPurpose = purpose === 'RESEND' ? 'INVOICE' : purpose
   const currentInvoice = await getInvoice(organizationId, id)
   if (purpose === 'REMINDER' && !currentInvoice.isOverdue) {
     throw createError({ statusCode: 409, message: 'Only overdue invoices can receive payment reminders' })
@@ -158,7 +174,7 @@ export const deliverInvoiceEmail = async (
           id: nanoid(),
           invoiceId: id,
           actorUserId,
-          purpose,
+          purpose: deliveryPurpose,
           status: 'PENDING',
           recipientEmail: input.to,
           ccEmails: JSON.stringify(input.cc),
@@ -188,10 +204,7 @@ export const deliverInvoiceEmail = async (
       values: {
         invoice_number: currentInvoice.number,
         sender_name: currentInvoice.senderName,
-        recipient_name: emailRecipientName({
-          displayName: currentInvoice.recipientName,
-          email: currentInvoice.recipientEmail
-        }),
+        recipient_name: await recipientNameForInvoice(currentInvoice),
         due_date: dueDate,
         outstanding_amount: outstandingAmount
       },

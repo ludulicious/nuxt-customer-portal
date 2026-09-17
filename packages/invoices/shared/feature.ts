@@ -111,6 +111,49 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
       ]
     },
     {
+      id: 'invoice-resend',
+      labelKey: 'features.invoices.admin.emailMessages.invoiceResend',
+      defaults: {
+        en: {
+          subject: 'Copy of invoice {{invoice_number}} from {{sender_name}}',
+          body: 'Dear {{recipient_name}},\n\nAs requested, we are sending invoice **{{invoice_number}}** again. You will find a new copy attached to this email.\n\nIf you have any questions about the invoice, please reply to this email and we will be happy to help.\n\nKind regards,  \n{{sender_name}}',
+          footer: 'This is a resent copy of an invoice that was sent previously.'
+        },
+        nl: {
+          subject: 'Kopie van factuur {{invoice_number}} van {{sender_name}}',
+          body: 'Beste {{recipient_name}},\n\nZoals verzocht sturen we factuur **{{invoice_number}}** opnieuw. In de bijlage vindt u een nieuwe kopie.\n\nHeeft u vragen over de factuur? Beantwoord dan gerust deze e-mail; we helpen u graag verder.\n\nMet vriendelijke groet,  \n{{sender_name}}',
+          footer: 'Dit is een opnieuw verzonden kopie van een factuur die eerder is verstuurd.'
+        }
+      },
+      placeholders: [
+        {
+          key: 'invoice_number',
+          labelKey: 'features.invoices.admin.emailPlaceholders.invoiceNumber',
+          example: '2026-001'
+        },
+        {
+          key: 'sender_name',
+          labelKey: 'features.invoices.admin.emailPlaceholders.senderName',
+          example: 'Example Company'
+        },
+        {
+          key: 'recipient_name',
+          labelKey: 'features.invoices.admin.emailPlaceholders.recipientName',
+          example: 'Example Client'
+        },
+        {
+          key: 'due_date',
+          labelKey: 'features.invoices.admin.emailPlaceholders.dueDate',
+          example: '30 September 2026'
+        },
+        {
+          key: 'outstanding_amount',
+          labelKey: 'features.invoices.admin.emailPlaceholders.outstandingAmount',
+          example: '€1,250.00'
+        }
+      ]
+    },
+    {
       id: 'payment-reminder',
       labelKey: 'features.invoices.admin.emailMessages.paymentReminder',
       defaults: {

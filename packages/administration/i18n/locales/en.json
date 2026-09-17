@@ -99,6 +99,7 @@
         "passwordReset": "Password reset",
         "changeEmail": "Email address change",
         "invitation": "Organization invitation",
+        "personalAccountInvitation": "Personal account invitation",
         "accountDeletion": "Account deletion"
       },
       "placeholders": {

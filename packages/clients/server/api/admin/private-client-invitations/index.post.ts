@@ -3,7 +3,7 @@ import { and, eq, gt, sql } from 'drizzle-orm'
 import { db, requireSession } from '@nuxt-customer-portal/core/server/portal'
 import { invitation, member, user } from '@nuxt-customer-portal/core/schema'
 import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
-import { getInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
+import { getPersonalAccountInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
 import { clientProfile } from '../../../db/schema/clients'
 import { getClientConfiguration } from '../../../utils/client-configuration'
 import { createClientInTransaction, getClient } from '../../../utils/client-repository'
@@ -124,11 +124,8 @@ export default defineEventHandler(async (event) => {
     try {
       await sendEmail({
         to: input.email,
-        ...getInvitationEmailContent({
-          inviterName: session.user.name || '',
-          inviterEmail: session.user.email || '',
-          organizationName: client!.name,
-          role: 'owner',
+        ...getPersonalAccountInvitationEmailContent({
+          recipientName: client?.firstName || client?.name,
           invitationLink: `${baseURL}/signup?invitationId=${result.invitation.id}`
         })
       })

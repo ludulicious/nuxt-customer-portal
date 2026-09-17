@@ -153,6 +153,28 @@ export const coreFeature: PortalFeatureDefinition = {
       ]
     },
     {
+      id: 'personal-account-invitation',
+      labelKey: 'admin.email.messages.personalAccountInvitation',
+      defaults: {
+        en: {
+          subject: 'Set up your personal portal account',
+          body: 'Dear {{recipient_name}},\n\nA personal portal profile has been created for you. Set up your account to access your purchases, appointments, invoices, and shared files.\n\n[Set up your account]({{action_url}})\n\nUse the same email address that received this message.',
+          footer:
+            'This account setup link expires soon. If you did not expect this message, you can safely ignore it.'
+        },
+        nl: {
+          subject: 'Stel uw persoonlijke portaalaccount in',
+          body: 'Beste {{recipient_name}},\n\nEr is een persoonlijk portaalprofiel voor u aangemaakt. Stel uw account in om toegang te krijgen tot uw aankopen, afspraken, facturen en gedeelde bestanden.\n\n[Uw account instellen]({{action_url}})\n\nGebruik hetzelfde e-mailadres waarop u dit bericht heeft ontvangen.',
+          footer:
+            'Deze link om uw account in te stellen verloopt binnenkort. Verwachtte u dit bericht niet? Dan kunt u het veilig negeren.'
+        }
+      },
+      placeholders: [
+        recipientNamePlaceholder,
+        { key: 'action_url', labelKey: 'admin.email.placeholders.actionUrl', example: 'https://example.com/signup' }
+      ]
+    },
+    {
       id: 'account-deletion',
       labelKey: 'admin.email.messages.accountDeletion',
       defaults: {

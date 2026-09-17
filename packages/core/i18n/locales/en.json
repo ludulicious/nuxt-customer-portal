@@ -5,9 +5,12 @@
     "edit": "Change invitation role",
     "role": "Role",
     "save": "Save role",
+    "resend": "Resend invitation",
     "revoke": "Revoke invitation",
     "confirmRevoke": "Revoke the invitation for {email}? This invitation link will no longer work.",
     "updated": "Invitation role updated",
+    "resent": "Invitation resent",
+    "resendFailed": "The invitation could not be resent. Try again.",
     "revoked": "Invitation revoked",
     "failed": "Could not change this invitation. Refresh the page and try again."
   },

@@ -99,6 +99,7 @@
         "passwordReset": "Wachtwoord herstellen",
         "changeEmail": "E-mailadres wijzigen",
         "invitation": "Organisatie-uitnodiging",
+        "personalAccountInvitation": "Uitnodiging voor persoonlijk account",
         "accountDeletion": "Account verwijderen"
       },
       "placeholders": {

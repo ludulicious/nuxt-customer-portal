@@ -4,9 +4,13 @@ import { db } from '@nuxt-customer-portal/core/server/portal'
 import { generateId } from '@nuxt-customer-portal/core/server/utils/auth'
 import { invitation, organization, member } from '@nuxt-customer-portal/core/schema'
 import { sendEmail } from '@nuxt-customer-portal/core/server/utils/email'
-import { getInvitationEmailContent } from '@nuxt-customer-portal/core/server/utils/email-texts'
+import {
+  getInvitationEmailContent,
+  getPersonalAccountInvitationEmailContent
+} from '@nuxt-customer-portal/core/server/utils/email-texts'
 import { requireClientMemberManager } from '@nuxt-customer-portal/clients/server/utils/client-access'
 import { genericClientInvitationSchema } from '@nuxt-customer-portal/clients/server/utils/client-validation'
+import { clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
 
 export default defineEventHandler(async (event) => {
   const organizationId = getRouterParam(event, 'id')!
@@ -16,7 +20,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'A valid email address and role are required' })
   }
   const input = parsedInput.data
-  if (await isPersonalClient(organizationId)) {
+  const personalClient = await isPersonalClient(organizationId)
+  if (personalClient) {
     input.role = 'owner'
     const existing = await db
       .select({ id: member.id })
@@ -42,8 +47,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, message: 'A pending invitation already exists' })
   }
   const [client] = await db
-    .select({ name: organization.name })
+    .select({ name: organization.name, firstName: clientProfile.firstName })
     .from(organization)
+    .leftJoin(clientProfile, eq(clientProfile.organizationId, organization.id))
     .where(and(eq(organization.id, organizationId), eq(organization.organizationType, 'CLIENT')))
     .limit(1)
   if (!client) {
@@ -66,13 +72,18 @@ export default defineEventHandler(async (event) => {
   const baseURL = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3000'
   await sendEmail({
     to: input.email,
-    ...getInvitationEmailContent({
-      inviterName: context.session.user.name || '',
-      inviterEmail: context.session.user.email ?? '',
-      organizationName: client.name,
-      role: input.role,
-      invitationLink: `${baseURL}/signup?invitationId=${id}`
-    })
+    ...(personalClient
+      ? getPersonalAccountInvitationEmailContent({
+          recipientName: client.firstName || client.name,
+          invitationLink: `${baseURL}/signup?invitationId=${id}`
+        })
+      : getInvitationEmailContent({
+          inviterName: context.session.user.name || '',
+          inviterEmail: context.session.user.email ?? '',
+          organizationName: client.name,
+          role: input.role,
+          invitationLink: `${baseURL}/signup?invitationId=${id}`
+        }))
   })
   return created
 })
