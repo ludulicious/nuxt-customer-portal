@@ -128,7 +128,7 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
 
   await page.goto('/reference/server-api')
   await expect(page.getByRole('heading', { level: 2, name: 'Current product surface' })).toBeVisible()
-  await expect(page.getByText('contains 156 Nitro API handler files', { exact: false })).toBeVisible()
+  await expect(page.getByText('contains 238 Nitro API handler files', { exact: false })).toBeVisible()
   await expect(page.getByRole('row', { name: /timesheets 57/ })).toBeVisible()
 
   await page.setViewportSize({ width: 375, height: 812 })
