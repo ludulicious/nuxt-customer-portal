@@ -57,7 +57,9 @@ const { data: access, error } = await useAsyncData(
           t(`features.invoices.clientAccess.${member.canView ? 'granted' : 'denied'}`)
         }}</UBadge>
       </div>
-      <p class="text-sm text-muted">{{ t('features.invoices.clientAccess.contactsExplanation') }}</p>
+      <p v-if="client.clientType !== 'person'" class="text-sm text-muted">
+        {{ t('features.invoices.clientAccess.contactsExplanation') }}
+      </p>
     </div>
   </UCard>
 </template>

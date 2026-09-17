@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { timezoneSchema } from '@nuxt-customer-portal/core/server/utils/timezone-validation'
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 const id = z.string().min(1).max(128)
@@ -195,7 +196,7 @@ export const settingsUpdateSchema = z.object({
     .length(3)
     .transform((v) => v.toUpperCase())
     .optional(),
-  timezone: z.string().min(3).max(100).optional()
+  timezone: timezoneSchema.optional()
 })
 
 export const reviewSchema = z

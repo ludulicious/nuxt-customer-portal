@@ -48,16 +48,14 @@ const reset = () => {
   }
 }
 watch(request, reset, { immediate: true })
-onMounted(async () => {
-  try {
-    assignees.value = await getAssignees()
-    reset()
-  } catch {
-    toast.add({ title: t('features.serviceRequests.messages.fetchError'), color: 'error' })
-  } finally {
-    loading.value = false
-  }
-})
+try {
+  assignees.value = await getAssignees()
+  reset()
+} catch {
+  toast.add({ title: t('features.serviceRequests.messages.fetchError'), color: 'error' })
+} finally {
+  loading.value = false
+}
 const save = async () => {
   updating.value = true
   try {
@@ -102,7 +100,9 @@ const save = async () => {
       /></UFormField>
       <div class="flex justify-end gap-2 border-t border-default pt-4">
         <UButton color="neutral" variant="outline" :disabled="updating" @click="reset">{{ t('common.cancel') }}</UButton
-        ><UButton type="submit" :loading="updating">{{ t('features.serviceRequests.actions.saveChanges') }}</UButton>
+        ><UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="updating">{{
+          t('features.serviceRequests.actions.saveChanges')
+        }}</UButton>
       </div>
     </UForm>
   </UCard>

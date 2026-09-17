@@ -17,6 +17,8 @@ const users = ref<AdminUserResponse[]>([])
 const loading = ref(true)
 const error = ref('')
 const showCreateModal = ref(false)
+const showPrivateInvitation = ref(false)
+const clientConfiguration = useClientConfiguration()
 const searchQuery = ref(String(route.query.search ?? ''))
 const roleFilter = ref(['admin', 'user'].includes(String(route.query.role)) ? String(route.query.role) : 'all')
 const statusFilter = ref(['active', 'banned'].includes(String(route.query.status)) ? String(route.query.status) : 'all')
@@ -169,6 +171,16 @@ await loadUsers()
           </div>
           <div class="flex shrink-0 items-center gap-1">
             <UButton
+              v-if="clientConfiguration.allowedTypes?.includes('person')"
+              icon="i-lucide-mail-plus"
+              size="sm"
+              variant="outline"
+              :aria-label="t('admin.user.list.invitePrivateClient')"
+              @click="showPrivateInvitation = true"
+            >
+              <span class="hidden sm:inline">{{ t('admin.user.list.invitePrivateClient') }}</span>
+            </UButton>
+            <UButton
               class="rounded-full sm:hidden"
               icon="i-lucide-plus"
               :aria-label="t('admin.user.list.newUser')"
@@ -241,7 +253,7 @@ await loadUsers()
               />
             </template>
           </div>
-          <UModal v-model:open="showFilters" :title="t('common.filters')">
+          <UModal v-if="showFilters" v-model:open="showFilters" :title="t('common.filters')">
             <template #body>
               <div class="space-y-4">
                 <UFormField :label="t('admin.user.list.role')">
@@ -252,7 +264,7 @@ await loadUsers()
               </div>
             </template>
           </UModal>
-          <UModal v-model:open="showSort" :title="t('common.sort')">
+          <UModal v-if="showSort" v-model:open="showSort" :title="t('common.sort')">
             <template #body>
               <div class="space-y-4">
                 <UFormField :label="t('common.sortBy')">
@@ -351,6 +363,12 @@ await loadUsers()
       }}</span>
     </footer>
 
-    <AdminCreateUserModal v-model:open="showCreateModal" @success="loadUsers" />
+    <component
+      :is="resolveComponent('ClientsPrivateInvitation')"
+      v-if="clientConfiguration.allowedTypes?.includes('person')"
+      v-model:open="showPrivateInvitation"
+      @success="loadUsers"
+    />
+    <AdminCreateUserModal v-if="showCreateModal" v-model:open="showCreateModal" @success="loadUsers" />
   </div>
 </template>

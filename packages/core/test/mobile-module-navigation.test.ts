@@ -34,5 +34,5 @@ test('mobile navigation combines collapsible modules and their subitems in the h
   assert.doesNotMatch(moduleNavigation, /\?\? modules\.value\[0\]/)
   assert.match(layout, /:items="activeModuleMenuItems"/)
   assert.match(layout, /:min-size="18"/)
-  assert.match(layout, /data-\[collapsed=true\]:min-w-0/)
+  assert.match(layout, /<UMain class="flex-1 min-h-0 min-w-0"/)
 })

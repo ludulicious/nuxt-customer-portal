@@ -45,7 +45,9 @@ const save = async () => {
         />
       </UFormField>
       <div class="flex justify-end">
-        <UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.timesheets.save') }}</UButton>
+        <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+          t('features.timesheets.save')
+        }}</UButton>
       </div>
     </UForm>
   </UCard>

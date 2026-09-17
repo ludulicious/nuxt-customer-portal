@@ -26,6 +26,7 @@ const selectedItem = computed(() => catalog.value[selected.value] ?? catalog.val
 const overrideKey = computed(() =>
   selectedItem.value ? `${selectedItem.value.moduleId}.${selectedItem.value.definition.id}.${selectedLocale.value}` : ''
 )
+const hasOverride = computed(() => Boolean(overrides[overrideKey.value]))
 const selectedText = computed<PortalEmailText>({
   get: () =>
     selectedItem.value
@@ -35,9 +36,29 @@ const selectedText = computed<PortalEmailText>({
     overrides[overrideKey.value] = value
   }
 })
-const messages = computed(() =>
-  catalog.value.map((item, index) => ({ label: t(item.definition.labelKey), value: index }))
-)
+const modulePresentation: Record<string, { labelKey: string; icon: string; order: number }> = {
+  planning: { labelKey: 'admin.email.modules.appointments', icon: 'i-lucide-calendar-check-2', order: 10 },
+  invoices: { labelKey: 'admin.email.modules.invoicing', icon: 'i-lucide-receipt-text', order: 20 },
+  timesheets: { labelKey: 'admin.email.modules.timesheets', icon: 'i-lucide-clock-3', order: 30 },
+  'portal-core': { labelKey: 'admin.email.modules.account', icon: 'i-lucide-shield-check', order: 40 }
+}
+const messageGroups = computed(() => {
+  const groups = new Map<string, Array<{ label: string; value: number }>>()
+  catalog.value.forEach((item, index) => {
+    const entries = groups.get(item.moduleId) ?? []
+    entries.push({ label: t(item.definition.labelKey), value: index })
+    groups.set(item.moduleId, entries)
+  })
+  return [...groups.entries()]
+    .map(([moduleId, items]) => ({
+      moduleId,
+      label: t(modulePresentation[moduleId]?.labelKey ?? moduleId),
+      icon: modulePresentation[moduleId]?.icon ?? 'i-lucide-mail',
+      order: modulePresentation[moduleId]?.order ?? 100,
+      items
+    }))
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
+})
 const locales = [
   { label: 'English', value: 'en' as const },
   { label: 'Nederlands', value: 'nl' as const }
@@ -65,6 +86,23 @@ const save = async () => {
     )
     Object.assign(overrides, result.textOverrides)
     toast.add({ title: t('admin.email.saved'), color: 'success' })
+  } catch (error) {
+    toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
+  } finally {
+    busy.value = false
+  }
+}
+const reset = async () => {
+  busy.value = true
+  try {
+    const item = selectedItem.value!
+    const result = await $fetch<PortalEmailSettings>(
+      `/api/admin/email/texts/${encodeURIComponent(item.moduleId)}/${encodeURIComponent(item.definition.id)}/${selectedLocale.value}`,
+      { method: 'DELETE' }
+    )
+    Reflect.deleteProperty(overrides, overrideKey.value)
+    Object.assign(overrides, result.textOverrides)
+    toast.add({ title: t('admin.email.textReset'), color: 'success' })
   } catch (error) {
     toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
   } finally {
@@ -103,36 +141,55 @@ const sendTest = async () => {
 </script>
 
 <template>
-  <UForm v-if="selectedItem" :schema="schema" :state="selectedText" class="space-y-6" @submit="save">
+  <UForm v-if="selectedItem" novalidate :schema="schema" :state="selectedText" class="space-y-6" @submit="save">
     <UCard>
       <template #header
         ><h2 class="font-semibold">{{ t('admin.email.texts') }}</h2></template
       >
       <div class="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <nav class="space-y-1" :aria-label="t('admin.email.messageNavigation')">
-          <UButton
-            v-for="item in messages"
-            :key="item.value"
-            type="button"
-            block
-            :label="item.label"
-            :color="selected === item.value ? 'primary' : 'neutral'"
-            :variant="selected === item.value ? 'soft' : 'ghost'"
-            class="justify-start"
-            @click="selected = item.value"
-          />
+        <nav class="space-y-5" :aria-label="t('admin.email.messageNavigation')">
+          <section v-for="group in messageGroups" :key="group.moduleId" class="space-y-1">
+            <h3 class="flex items-center gap-2 px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+              <UIcon :name="group.icon" class="size-4 shrink-0" />
+              {{ group.label }}
+            </h3>
+            <UButton
+              v-for="item in group.items"
+              :key="item.value"
+              type="button"
+              block
+              :label="item.label"
+              :color="selected === item.value ? 'primary' : 'neutral'"
+              :variant="selected === item.value ? 'soft' : 'ghost'"
+              class="justify-start"
+              @click="selected = item.value"
+            />
+          </section>
         </nav>
         <div class="space-y-4">
-          <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
+              <UButton
+                v-for="locale in locales"
+                :key="locale.value"
+                type="button"
+                :label="locale.label"
+                :color="selectedLocale === locale.value ? 'primary' : 'neutral'"
+                :variant="selectedLocale === locale.value ? 'soft' : 'outline'"
+                @click="selectedLocale = locale.value"
+              />
+            </div>
             <UButton
-              v-for="locale in locales"
-              :key="locale.value"
               type="button"
-              :label="locale.label"
-              :color="selectedLocale === locale.value ? 'primary' : 'neutral'"
-              :variant="selectedLocale === locale.value ? 'soft' : 'outline'"
-              @click="selectedLocale = locale.value"
-            />
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-rotate-ccw"
+              :disabled="!hasOverride"
+              :loading="busy"
+              @click="reset"
+            >
+              {{ t('admin.email.resetText') }}
+            </UButton>
           </div>
           <UFormField name="subject" :label="t('admin.email.subject')"
             ><UInput
@@ -147,6 +204,7 @@ const sendTest = async () => {
               class="w-full font-mono text-xs"
               @update:model-value="selectedText = { ...selectedText, body: String($event) }"
           /></UFormField>
+          <p class="-mt-2 text-xs text-muted">{{ t('admin.email.markdownHelp') }}</p>
           <UFormField name="footer" :label="t('admin.email.footer')"
             ><UTextarea
               :model-value="selectedText.footer"
@@ -180,7 +238,9 @@ const sendTest = async () => {
       </div>
     </UCard>
     <div class="flex justify-end">
-      <UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('admin.email.saveText') }}</UButton>
+      <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+        t('admin.email.saveText')
+      }}</UButton>
     </div>
   </UForm>
 </template>

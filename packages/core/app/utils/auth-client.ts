@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/vue' // Use the Vue-specific import
-import { adminClient, emailOTPClient, organizationClient } from 'better-auth/client/plugins'
+import { adminClient, emailOTPClient, organizationClient, inferAdditionalFields } from 'better-auth/client/plugins'
 import { ac, user, admin as adminRole } from '@nuxt-customer-portal/core/shared/permissions'
 
 const baseURL = process.env.BETTER_AUTH_URL
@@ -7,6 +7,9 @@ const baseURL = process.env.BETTER_AUTH_URL
 export const authClient = createAuthClient({
   baseURL: baseURL,
   plugins: [
+    inferAdditionalFields({
+      user: { firstName: { type: 'string', required: false }, lastName: { type: 'string', required: false } }
+    }),
     adminClient({
       ac,
       roles: {

@@ -152,6 +152,7 @@
         "paymentAmount": "Betaald bedrag",
         "paid": "Betaald",
         "backToInvoices": "Terug naar facturen",
+        "backToOrders": "Terug naar aankopen",
         "invoiceTitle": "Factuur {number}",
         "invoiceDocumentTitle": "FACTUUR",
         "print": "Afdrukken",
@@ -243,7 +244,13 @@
         "completeClientDetails": "Klantgegevens bewerken",
         "senderInvoiceDetails": "Factuurgegevens afzender",
         "invoiceEmail": "E-mailadres voor facturen",
-        "emailMessages": { "invoice": "Factuur", "paymentReminder": "Betalingsherinnering" },
+        "country": "Land",
+        "selectCountry": "Selecteer een land",
+        "emailMessages": {
+          "invoice": "Factuur",
+          "invoiceResend": "Opnieuw verzonden factuur",
+          "paymentReminder": "Betalingsherinnering"
+        },
         "emailPlaceholders": {
           "invoiceNumber": "Factuurnummer",
           "senderName": "Naam afzender",
@@ -294,7 +301,8 @@
           "sortTotal": "Totaalbedrag"
         },
         "to": "Tot",
-        "amount": "Bedrag"
+        "amount": "Bedrag",
+        "creditTitle": "Creditnota {number}"
       },
       "messages": {
         "saved": "Tijd opgeslagen",

@@ -152,7 +152,13 @@ const openBanModal = (user: AdminUserResponse) => {
       <template #role-cell="{ row }">
         <div v-if="!isMobile && editingUserId === row.original.id" class="flex items-center gap-2">
           <USelect v-model="editingRole" :items="roles" size="sm" class="w-32" />
-          <UButton size="xs" :loading="updating" @click="updateUserRole(row.original.id)">
+          <UButton
+            size="xs"
+            icon="i-lucide-save"
+            class="ml-auto flex min-w-28 justify-center"
+            :loading="updating"
+            @click="updateUserRole(row.original.id)"
+          >
             {{ t('common.save') }}
           </UButton>
           <UButton size="xs" variant="outline" @click="editingUserId = null">{{ t('common.cancel') }}</UButton>
@@ -286,7 +292,12 @@ const openBanModal = (user: AdminUserResponse) => {
       @success="emit('refresh')"
     />
 
-    <UModal v-model:open="showEditRoleModal" :title="t('admin.user.list.role')" :ui="{ footer: 'justify-end' }">
+    <UModal
+      v-if="showEditRoleModal"
+      v-model:open="showEditRoleModal"
+      :title="t('admin.user.list.role')"
+      :ui="{ footer: 'justify-end' }"
+    >
       <template #body>
         <div class="space-y-4">
           <p v-if="selectedUser" class="text-sm text-gray-600 dark:text-gray-400">
@@ -299,7 +310,12 @@ const openBanModal = (user: AdminUserResponse) => {
             <UButton variant="outline" :disabled="updating" @click="showEditRoleModal = false">
               {{ t('common.cancel') }}
             </UButton>
-            <UButton :loading="updating" @click="selectedUser && updateUserRole(selectedUser.id)">
+            <UButton
+              icon="i-lucide-save"
+              class="ml-auto flex min-w-28 justify-center"
+              :loading="updating"
+              @click="selectedUser && updateUserRole(selectedUser.id)"
+            >
               {{ t('common.save') }}
             </UButton>
           </div>

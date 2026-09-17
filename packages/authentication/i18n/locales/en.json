@@ -65,6 +65,12 @@
   "signup": {
     "description": "Already have an account?",
     "invitation": {
+      "socialDescription": "Use a social account registered with {email}, or create an account below.",
+      "accountSwitch": {
+        "title": "Use another account?",
+        "description": "You are signed in as {currentEmail}, but this invitation was sent to {invitationEmail}. Sign out to continue with the invited account.",
+        "confirm": "Sign out and continue"
+      },
       "loggedIn": {
         "success": "Successfully joined {organizationName} as {role}",
         "emailMismatch": "This invitation was sent to a different email address. Please log out and use the email address the invitation was sent to.",
@@ -81,7 +87,9 @@
       "name": "Name",
       "namePlaceholder": "Enter your name",
       "password": "Password",
-      "passwordPlaceholder": "Enter your password"
+      "passwordPlaceholder": "Enter your password",
+      "firstName": "First name",
+      "lastName": "Last name"
     },
     "footer": "By signing up, you agree to our",
     "loginLink": "Login",
@@ -111,5 +119,6 @@
     "subtitle": "Enter the 6-digit code sent to {email}",
     "success": "Email verified successfully!",
     "title": "Verify Your Email"
-  }
+  },
+  "personalRegistration": "Register as a private client"
 }

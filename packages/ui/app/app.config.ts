@@ -24,6 +24,11 @@ export default defineAppConfig({
         content: dropdownContent,
         item: 'data-highlighted:before:bg-accented data-[state=open]:before:bg-accented'
       }
+    },
+    tabs: {
+      slots: {
+        trigger: 'hover:bg-elevated'
+      }
     }
   }
 })

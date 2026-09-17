@@ -14,9 +14,11 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const { organizationId } = await requireFeatureAccess(event, invoicesFeature.policy, 'manage')
   const locale = getQuery(event).locale
+  const purpose = getQuery(event).purpose === 'resend' ? 'RESEND' : 'INVOICE'
   return getInvoiceEmailPreview(
     organizationId,
     getRouterParam(event, 'id')!,
-    typeof locale === 'string' ? locale : undefined
+    typeof locale === 'string' ? locale : undefined,
+    purpose
   )
 })

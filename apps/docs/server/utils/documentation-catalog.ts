@@ -96,6 +96,18 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     description: 'Standalone sales and received invoices with PDF, email, payment, and access workflows.'
   },
   {
+    path: '/modules/products',
+    title: 'Products and Store',
+    description:
+      'Configure a storefront for digital products and services with checkout, delivery, and invoice integration.'
+  },
+  {
+    path: '/modules/planning',
+    title: 'Planning and Appointments',
+    description:
+      'Add provider availability, appointment booking, calendars, meetings, and retryable synchronization to service products.'
+  },
+  {
     path: '/modules/service-requests',
     title: 'Service Requests example',
     description: 'A compact reference feature showing the complete Customer Portal layer lifecycle.'

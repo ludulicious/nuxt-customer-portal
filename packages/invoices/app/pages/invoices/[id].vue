@@ -3,6 +3,7 @@ const route = useRoute()
 const { t } = useI18n()
 const api = useInvoices()
 const invoiceId = computed(() => String(route.params.id))
+const fromOrder = computed(() => route.query.from === 'orders')
 const {
   data: invoice,
   pending,
@@ -32,6 +33,13 @@ useSeoMeta({
       :title="t('features.invoices.admin.invoiceNotFound')"
       variant="outline"
     />
-    <InvoicesInvoiceDetail v-else-if="invoice" :invoice="invoice" :refresh="refresh" mode="client" />
+    <InvoicesInvoiceDetail
+      v-else-if="invoice"
+      :invoice="invoice"
+      :refresh="refresh"
+      mode="client"
+      :back-to="fromOrder ? '/purchases' : undefined"
+      :back-label="fromOrder ? t('features.invoices.admin.backToOrders') : undefined"
+    />
   </InvoicesPageShell>
 </template>

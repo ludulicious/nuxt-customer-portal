@@ -20,7 +20,7 @@ const links = [
       exact: true
     },
     {
-      label: t('settings.organization'),
+      label: t('timezones.accountSettings'),
       icon: 'i-lucide-users',
       to: '/settings/organization'
     },

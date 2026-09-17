@@ -5,7 +5,7 @@
  * icons: pass (30) · mobile: pass (34, 49, 50–57)
  */
 
-html[data-portal-theme='brutal'] {
+:is(html, .portal-appearance-preview)[data-portal-theme='brutal'] {
   --font-display: 'Bricolage Grotesque', ui-sans-serif, sans-serif;
   --font-body: 'Geist', ui-sans-serif, sans-serif;
   --font-sans: var(--font-body);
@@ -116,7 +116,7 @@ html[data-portal-theme='brutal'] {
   --portal-logo-ink: var(--color-paper);
 }
 
-html.dark[data-portal-theme='brutal'] {
+:is(html, .portal-appearance-preview).dark[data-portal-theme='brutal'] {
   --color-paper: oklch(14.5% 0.014 25);
   --color-paper-2: oklch(19.5% 0.016 25);
   --color-paper-3: oklch(24% 0.016 28);

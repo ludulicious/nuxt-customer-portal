@@ -6,6 +6,7 @@ const props = defineProps<{
   email: string
   role: string | null
   canEdit?: boolean
+  canResend?: boolean
   canRevoke?: boolean
 }>()
 const emit = defineEmits<{ refresh: [] }>()
@@ -46,6 +47,18 @@ const revoke = async () => {
     busy.value = false
   }
 }
+const resend = async () => {
+  busy.value = true
+  try {
+    await api.resend(props.endpoint)
+    toast.add({ title: t('invitationManagement.resent'), color: 'success' })
+    emit('refresh')
+  } catch {
+    toast.add({ title: t('invitationManagement.resendFailed'), color: 'error' })
+  } finally {
+    busy.value = false
+  }
+}
 </script>
 
 <template>
@@ -54,23 +67,36 @@ const revoke = async () => {
       v-if="canEdit"
       icon="i-lucide-pencil"
       color="neutral"
-      variant="ghost"
-      size="sm"
+      variant="outline"
+      size="xs"
       :disabled="busy"
       :aria-label="t('invitationManagement.edit')"
       @click="openEditor"
-    />
+      >{{ t('invitationManagement.edit') }}</UButton
+    >
+    <UButton
+      v-if="canResend"
+      icon="i-lucide-send"
+      color="neutral"
+      variant="outline"
+      size="xs"
+      :loading="busy"
+      :aria-label="t('invitationManagement.resend')"
+      @click="resend"
+      >{{ t('invitationManagement.resend') }}</UButton
+    >
     <UButton
       v-if="canRevoke"
       icon="i-lucide-x"
       color="error"
-      variant="ghost"
-      size="sm"
+      variant="outline"
+      size="xs"
       :disabled="busy"
       :aria-label="t('invitationManagement.revoke')"
       @click="revoking = true"
-    />
-    <UModal v-model:open="editing" :title="t('invitationManagement.edit')">
+      >{{ t('invitationManagement.revoke') }}</UButton
+    >
+    <UModal v-if="editing" v-model:open="editing" :title="t('invitationManagement.edit')">
       <template #body>
         <UForm :state="state" :schema="invitationRoleSchema" novalidate class="space-y-4" @submit="save">
           <p>{{ email }}</p>
@@ -79,12 +105,15 @@ const revoke = async () => {
           </UFormField>
           <div class="flex justify-end gap-2">
             <UButton color="neutral" variant="outline" @click="editing = false">{{ t('common.cancel') }}</UButton>
-            <UButton type="submit" :loading="busy">{{ t('invitationManagement.save') }}</UButton>
+            <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+              t('invitationManagement.save')
+            }}</UButton>
           </div>
         </UForm>
       </template>
     </UModal>
     <ConfirmationModal
+      v-if="revoking"
       v-model:open="revoking"
       title="invitationManagement.revoke"
       message="invitationManagement.confirmRevoke"

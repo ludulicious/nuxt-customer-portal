@@ -23,6 +23,20 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: customer_portal_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -38,6 +52,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm pack:check
+      - name: Migrate demo test database
+        working-directory: apps/demo-apex
+        run: node ../../packages/kit/bin/nuxt-customer-portal.mjs db migrate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e:demos
       - run: pnpm test:e2e:docs

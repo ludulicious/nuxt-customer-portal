@@ -1,3 +1,6 @@
+overrides:
+  nuxt-site-config>h3: 1.15.4
+
 ignoredBuiltDependencies:
   - '@parcel/watcher'
   - '@tailwindcss/oxide'

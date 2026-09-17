@@ -60,19 +60,17 @@ const backRoute = computed(() => {
   return { path: '/requests', query }
 })
 
-onMounted(async () => {
-  try {
-    request.value = await getRequest(requestId)
-  } catch {
-    toast.add({
-      title: t('common.error'),
-      description: t('features.serviceRequests.messages.fetchError'),
-      color: 'error'
-    })
-  } finally {
-    loading.value = false
-  }
-})
+try {
+  request.value = await getRequest(requestId)
+} catch {
+  toast.add({
+    title: t('common.error'),
+    description: t('features.serviceRequests.messages.fetchError'),
+    color: 'error'
+  })
+} finally {
+  loading.value = false
+}
 
 const handleUpdate = async (data: ServiceRequestUpdateInput) => {
   updating.value = true
@@ -140,7 +138,7 @@ const handleDelete = async () => {
       />
 
       <ServiceRequestManagement v-if="can('manage')" :request="request" @updated="request = $event" />
-      <UModal v-model:open="showEditModal" :title="t('features.serviceRequests.edit')">
+      <UModal v-if="showEditModal" v-model:open="showEditModal" :title="t('features.serviceRequests.edit')">
         <template #body>
           <CustomerRequestForm
             :initial-data="request"
@@ -151,6 +149,7 @@ const handleDelete = async () => {
         </template>
       </UModal>
       <ConfirmationModal
+        v-if="showDeleteConfirm"
         v-model:open="showDeleteConfirm"
         title="features.serviceRequests.delete"
         message="features.serviceRequests.confirmDelete"

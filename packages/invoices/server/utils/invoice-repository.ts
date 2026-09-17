@@ -1,3 +1,4 @@
+import { invoiceRecipientEmail } from '../../shared/recipient-email'
 import { and, asc, desc, eq, inArray } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import {
@@ -94,7 +95,10 @@ export const listInvoiceClients = async (_organizationId: string) => {
     : []
   return clients.map((client) => ({
     ...client,
-    contacts: contacts.filter((contact) => contact.organizationId === client.organizationId)
+    contacts:
+      client.clientType === 'person'
+        ? []
+        : contacts.filter((contact) => contact.organizationId === client.organizationId)
   }))
 }
 
@@ -107,7 +111,10 @@ const requireInvoiceClient = async (clientOrganizationId: string) => {
 }
 
 export const listBillingContacts = async (clientOrganizationId: string) => {
-  await requireInvoiceClient(clientOrganizationId)
+  const client = await requireInvoiceClient(clientOrganizationId)
+  if (client.clientType === 'person') {
+    return []
+  }
   return db
     .select()
     .from(billingContact)
@@ -115,11 +122,18 @@ export const listBillingContacts = async (clientOrganizationId: string) => {
     .orderBy(asc(billingContact.name))
 }
 
+const requireCompanyBillingContacts = async (clientOrganizationId: string) => {
+  const client = await requireInvoiceClient(clientOrganizationId)
+  if (client.clientType === 'person') {
+    throw createError({ statusCode: 403, message: 'Private clients cannot have billing contact persons' })
+  }
+}
+
 export const createBillingContact = async (
   clientOrganizationId: string,
   input: { userId?: string | null; name: string; email: string; phone?: string | null; jobTitle?: string | null }
 ) => {
-  await requireInvoiceClient(clientOrganizationId)
+  await requireCompanyBillingContacts(clientOrganizationId)
   try {
     const [created] = await db
       .insert(billingContact)
@@ -142,7 +156,7 @@ export const updateBillingContact = async (
   id: string,
   input: Record<string, unknown>
 ) => {
-  await requireInvoiceClient(clientOrganizationId)
+  await requireCompanyBillingContacts(clientOrganizationId)
   try {
     const [updated] = await db
       .update(billingContact)
@@ -459,7 +473,12 @@ export const setClientInvoiceViewer = async (
 }
 
 const totals = (
-  lines: Array<{ quantityMilli: number; unitPriceMinor: number; vatRateBasisPoints: number }>,
+  lines: Array<{
+    quantityMilli: number
+    unitPriceMinor: number
+    vatRateBasisPoints: number
+    exactTaxMinor?: number | null
+  }>,
   payments: Array<{ amountMinor: number }>
 ) => {
   const subtotalMinor = lines.reduce(
@@ -468,19 +487,23 @@ const totals = (
   )
   const vatMinor = lines.reduce((sum, line) => {
     const amount = Math.round((line.quantityMilli * line.unitPriceMinor) / 1000)
-    return sum + Math.round((amount * line.vatRateBasisPoints) / 10_000)
+    return sum + (line.exactTaxMinor ?? Math.round((amount * line.vatRateBasisPoints) / 10_000))
   }, 0)
   const totalMinor = subtotalMinor + vatMinor
   const paidMinor = payments.reduce((sum, payment) => sum + payment.amountMinor, 0)
   return { subtotalMinor, vatMinor, totalMinor, paidMinor, outstandingMinor: Math.max(0, totalMinor - paidMinor) }
 }
 
-export const listInvoices = async (organizationId: string): Promise<InvoiceDto[]> => {
+export const listInvoices = async (organizationId: string, invoiceId?: string): Promise<InvoiceDto[]> => {
   await requireInvoicesEnabled(organizationId)
   const rows = await db
     .select()
     .from(invoice)
-    .where(eq(invoice.organizationId, organizationId))
+    .where(
+      invoiceId
+        ? and(eq(invoice.organizationId, organizationId), eq(invoice.id, invoiceId))
+        : eq(invoice.organizationId, organizationId)
+    )
     .orderBy(desc(invoice.issueDate), desc(invoice.createdAt))
   if (!rows.length) {
     return []
@@ -534,7 +557,7 @@ export const listInvoices = async (organizationId: string): Promise<InvoiceDto[]
 }
 
 export const getInvoice = async (organizationId: string, id: string): Promise<InvoiceDto> => {
-  const selected = (await listInvoices(organizationId)).find((item) => item.id === id)
+  const [selected] = await listInvoices(organizationId, id)
   if (!selected) {
     throw createError({ statusCode: 404, message: 'Invoice not found' })
   }
@@ -620,14 +643,28 @@ export const createInvoiceInTransaction = async (
   }
   const sender = await getOrganizationInvoiceProfile(organizationId)
   if (
-    ![sender.address, sender.registrationNumber, sender.vatNumber, sender.iban, sender.bic, sender.invoiceEmail].every(
-      (value) => value?.trim()
-    )
+    ![
+      sender.address,
+      sender.country,
+      sender.registrationNumber,
+      sender.vatNumber,
+      sender.iban,
+      sender.bic,
+      sender.invoiceEmail
+    ].every((value) => value?.trim())
   ) {
     throw createError({
       statusCode: 409,
       message: 'Sender invoice details must be completed before creating an invoice'
     })
+  }
+  if (client.clientType === 'person') {
+    if (input.contactId) {
+      throw createError({ statusCode: 400, message: 'Private clients cannot have a contact person' })
+    }
+    if (!client.address.trim() || !client.invoiceEmail?.trim()) {
+      throw createError({ statusCode: 409, message: 'Private client address and invoice email must be completed' })
+    }
   }
   const contacts = await db
     .select()
@@ -649,6 +686,7 @@ export const createInvoiceInTransaction = async (
       senderName: sender.name,
       senderLogo: sender.logo,
       senderAddress: sender.address,
+      senderCountry: sender.country,
       senderRegistration: sender.registrationNumber,
       senderVatNumber: sender.vatNumber,
       senderIban: sender.iban,
@@ -656,7 +694,7 @@ export const createInvoiceInTransaction = async (
       recipientName: client.officialName || client.name,
       recipientAddress: client.address,
       recipientContactName: contact?.name ?? null,
-      recipientEmail: contact?.email ?? null,
+      recipientEmail: invoiceRecipientEmail(client, contact),
       recipientLocale: client.preferredLocale
     })
     .returning()

@@ -49,7 +49,7 @@ const unbanUser = async () => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('admin.user.unban.title')" :ui="{ footer: 'justify-end' }">
+  <UModal v-if="open" v-model:open="open" :title="t('admin.user.unban.title')" :ui="{ footer: 'justify-end' }">
     <template #body>
       <div class="space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">

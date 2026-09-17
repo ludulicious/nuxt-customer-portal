@@ -13,7 +13,8 @@ test('removing a client member requires an explicit confirmation', async () => {
   assert.doesNotMatch(source, /@click="removeMember\(item\.id\)"/)
   assert.match(source, /message="features\.clients\.confirmRemoveMember"/)
   assert.match(source, /@confirm="removeMember"/)
-  assert.match(source, /@cancel="memberToRemove = null"/)
+  assert.match(source, /v-if="showRemoveMemberConfirmation"/)
+  assert.match(source, /v-model:open="showRemoveMemberConfirmation"/)
 })
 
 test('client cards open a dedicated detail route and preserve collection state', async () => {
@@ -38,8 +39,8 @@ test('client cards open a dedicated detail route and preserve collection state',
   const toolbar = await readFile(new URL('../../ui/app/components/PortalListToolbar.vue', import.meta.url), 'utf8')
   assert.match(toolbar, /:aria-label="t\('common\.filters'\)"/)
   assert.match(toolbar, /:aria-label="t\('common\.sort'\)"/)
-  assert.match(toolbar, /<UModal\s+v-model:open="showFilters"/)
-  assert.match(toolbar, /<UModal\s+v-model:open="showSort"/)
+  assert.match(toolbar, /<UModal\s+v-if="showFilters"\s+v-model:open="showFilters"/)
+  assert.match(toolbar, /<UModal\s+v-if="showSort"\s+v-model:open="showSort"/)
   assert.doesNotMatch(list, /editingId/)
   assert.match(detailPage, /features\.clients\.backToClients/)
   assert.match(detailPage, /value\.startsWith\('\/clients\?'\)/)
@@ -62,7 +63,7 @@ test('client status filters support a default active view and a durable all view
 test('client invitations use UForm with Zod validation and surface request failures', async () => {
   const detailComponent = await readFile(detailComponentUrl, 'utf8')
 
-  assert.match(detailComponent, /<UForm\s+:state="invitationForm"\s+:schema="invitationSchema"/)
+  assert.match(detailComponent, /<UForm[^>]*:state="invitationForm"\s+:schema="invitationSchema"/)
   assert.match(detailComponent, /:schema="invitationSchema"\s+novalidate/)
   assert.match(detailComponent, /<UFormField name="email">/)
   assert.match(detailComponent, /email: z\.string\(\)\.trim\(\)\.email/)

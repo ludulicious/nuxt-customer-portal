@@ -12,6 +12,12 @@ export default defineNuxtConfig({
     ]
   },
   runtimeConfig: {
-    public: { clients: { defaultModules: [] as string[] } }
+    public: {
+      clients: {
+        defaultModules: [] as string[],
+        allowedTypes: ['organization'] as string[],
+        personalSelfRegistration: false
+      }
+    }
   }
 })

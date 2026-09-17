@@ -1,11 +1,11 @@
 import { and, count, eq } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { member } from '@nuxt-customer-portal/core/schema'
-import { requireClientProfileManager } from '@nuxt-customer-portal/clients/server/utils/client-access'
+import { requireClientMemberManager } from '@nuxt-customer-portal/clients/server/utils/client-access'
 
 export default defineEventHandler(async (event) => {
   const organizationId = getRouterParam(event, 'id')!
-  await requireClientProfileManager(event, organizationId)
+  await requireClientMemberManager(event, organizationId)
   const memberId = getRouterParam(event, 'memberId')!
   const [selected] = await db
     .select({ role: member.role })

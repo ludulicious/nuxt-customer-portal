@@ -1,6 +1,27 @@
 import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
 
 export const useClients = () => ({
+  invitablePrivateClients: () =>
+    $fetch<{ id: string; name: string; email: string | null }[]>('/api/admin/private-client-invitations'),
+  invitePrivateClient: (input: {
+    requestId: string
+    email: string
+    clientId?: string
+    name?: string
+    preferredLocale?: 'en' | 'nl'
+  }) =>
+    $fetch<{ invitationId: string; deliveryFailed: boolean }>('/api/admin/private-client-invitations', {
+      method: 'POST',
+      body: input
+    }),
+  personalAddress: () => $fetch<{ address: string; archived: boolean } | null>('/api/personal-client/address'),
+  updatePersonalAddress: (address: string) =>
+    $fetch<{ address: string; archived: boolean }>('/api/personal-client/address', {
+      method: 'PATCH',
+      body: { address }
+    }),
+  onboard: (input: { firstName: string; lastName: string; preferredLocale: 'nl' | 'en'; timezone: string | null }) =>
+    $fetch<GenericClientDto>('/api/personal-client', { method: 'POST', body: input }),
   list: (query: Record<string, string | number | undefined>) => $fetch<ClientListResponse>('/api/clients', { query }),
   get: (id: string) => $fetch<GenericClientDto>(`/api/clients/${id}`),
   create: (input: Record<string, unknown>) => $fetch<GenericClientDto>('/api/clients', { method: 'POST', body: input }),

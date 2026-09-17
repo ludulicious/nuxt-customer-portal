@@ -292,7 +292,7 @@ await listing.load()
         </footer>
       </article>
       <UModal
-        v-if="isReview && selected && isApprovalItem(selected)"
+        v-if="disputeOpen && isReview && selected && isApprovalItem(selected)"
         v-model:open="disputeOpen"
         :title="t(`features.timesheets.clientPortal.${reviewAction === 'APPROVE' ? 'approve' : 'dispute'}`)"
       >

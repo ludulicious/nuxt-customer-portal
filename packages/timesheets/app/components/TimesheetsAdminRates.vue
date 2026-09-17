@@ -72,10 +72,12 @@ watch(
           </UFormField>
           <UButton
             icon="i-lucide-save"
+            class="ml-auto flex min-w-28 justify-center"
             :aria-label="t('features.timesheets.save')"
             :loading="busy"
             @click="saveMember(member.id)"
-          />
+            >{{ t('features.timesheets.save') }}</UButton
+          >
         </div>
       </div>
     </UCard>

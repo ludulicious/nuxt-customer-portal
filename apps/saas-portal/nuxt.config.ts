@@ -1,5 +1,10 @@
 import portal from './portal.config'
 
+const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
+
 export default defineNuxtConfig({
   extends: portal.nuxtLayers,
   modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
@@ -9,7 +14,8 @@ export default defineNuxtConfig({
     portalEmail: { brandingSource: 'portal-settings' },
     public: { clients: portal.clients, portalAuth: { termsUrl: '/terms' } }
   },
-  devServer: { port: 3052 },
+  // Nginx runs in Docker and reaches the local dev server through host.docker.internal.
+  devServer: { host: '0.0.0.0', port: 3052 },
   compatibilityDate: '2025-10-24',
   nitro: {
     experimental: { openAPI: true },
@@ -19,11 +25,14 @@ export default defineNuxtConfig({
       route: '/api-docs/openapi.raw.json'
     }
   },
+  vite: { server: { allowedHosts } },
   eslint: { config: { stylistic: { commaDangle: 'never', braceStyle: '1tbs' } } },
   fonts: {
     families: [
       { name: 'Bricolage Grotesque', provider: 'google', weights: [400, 700, 800, 900], global: true },
-      { name: 'Geist', provider: 'google', weights: [400, 600, 700], global: true }
+      { name: 'Geist', provider: 'google', weights: [400, 600, 700], global: true },
+      { name: 'Playfair Display', provider: 'google', weights: [400, 600, 700], global: true },
+      { name: 'Lato', provider: 'google', weights: [300, 400, 700], global: true }
     ]
   },
   i18n: {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { countryCodes } from '@nuxt-customer-portal/core/shared/countries'
 import { hasNumericInvoiceSequence } from '@nuxt-customer-portal/invoices/shared/invoice-number'
 
 const id = z.string().trim().min(1).max(200)
@@ -67,6 +68,7 @@ export const invoiceSettingsSchema = z.object({
   currency: z.string().trim().toUpperCase().length(3),
   defaultVatRateBasisPoints: z.number().int().min(0).max(10_000),
   address: z.string().trim().max(5000),
+  country: z.enum(countryCodes as [string, ...string[]]).nullable(),
   registrationNumber: z.string().trim().max(200).nullable(),
   vatNumber: z.string().trim().max(200).nullable(),
   iban: z.string().trim().max(100).nullable(),

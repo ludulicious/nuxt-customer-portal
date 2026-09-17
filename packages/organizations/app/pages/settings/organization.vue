@@ -9,6 +9,7 @@ import type {
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import { canViewOrganizationDirectory as canViewDirectory } from '@nuxt-customer-portal/core/shared/feature-registry'
 
+const runtimeConfig = useRuntimeConfig()
 const userStore = useUserStore()
 const { activeOrganizationId } = storeToRefs(userStore)
 const { hasPermission } = userStore
@@ -26,7 +27,10 @@ const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showEditModal = ref(false)
 const userOrganizationRole = ref<MemberRole | null>(null)
-const canViewOrganizationDirectory = computed(() => canViewDirectory(userOrganizationRole.value))
+const personalAccount = ref(false)
+const canViewOrganizationDirectory = computed(
+  () => !personalAccount.value && canViewDirectory(userOrganizationRole.value)
+)
 
 // Load organization details
 const loadOrganization = async () => {
@@ -49,6 +53,13 @@ const loadOrganization = async () => {
       throw roleError
     }
     userOrganizationRole.value = (roleData?.role as MemberRole | undefined) ?? null
+    personalAccount.value = false
+    if (runtimeConfig.public.clients) {
+      const accounts = await $fetch<{ organizationId: string; clientType: string }[]>('/api/client-account')
+      personalAccount.value = accounts.some(
+        (account) => account.organizationId === activeOrganizationId.value && account.clientType === 'person'
+      )
+    }
     organization.value = await $fetch<Organization>(`/api/organizations/${activeOrganizationId.value}`)
     if (organization.value && canViewOrganizationDirectory.value) {
       await loadMembers()
@@ -138,7 +149,13 @@ watch(
 
     <!-- Organization Details -->
     <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">
+      <TimezonePreferences
+        v-if="organization.organizationType === 'PROVIDER' && ['owner', 'admin'].includes(userOrganizationRole || '')"
+        provider
+      />
+      <component :is="resolveComponent('ClientsPersonalProfile')" v-if="personalAccount" :client-id="organization.id" />
       <OrganizationDetailsCard
+        v-else
         :organization="organization"
         :role="userOrganizationRole"
         :can-edit="userOrganizationRole === 'owner'"

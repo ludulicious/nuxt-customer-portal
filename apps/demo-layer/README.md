@@ -46,7 +46,7 @@ The server initializes the sample data on startup, then schedules the next midni
 
 A PostgreSQL advisory lock serializes resets across replicas. API requests hold shared locks through their response, so a reset waits for in-flight business operations. All portal business tables, identities, sessions, credentials and settings are truncated and reseeded in one transaction. Migration metadata is preserved. A failed seed rolls back the whole reset, and errors remain visible in server logs. Only this layer's private server code can trigger resets; there is no public reset endpoint.
 
-The dataset includes two clients, three activities, two projects, tariffs and approval assignments, 28 weeks of timesheets for four provider users, draft/submitted/rejected/approved periods, client reviews, 12 invoices with payments, 36 service requests and a pending invitation. Dates are relative to the Amsterdam reset date.
+The dataset includes two clients, three activities, two projects, tariffs and approval assignments, 28 weeks of timesheets for four provider users, draft/submitted/rejected/approved periods, client reviews, 12 invoices with payments, 36 service requests and a pending invitation. The store is enabled in sandbox mode with three bilingual published products (two bookable services and one free digital resource), two planning providers with recurring availability, four purchases and three appointments covering upcoming, completed and cancelled examples. Dates are relative to the Amsterdam reset date.
 
 ## Verification
 

@@ -2,6 +2,7 @@ import { defineEventHandler, createError } from 'h3'
 import { statement } from '@nuxt-customer-portal/core/shared/permissions'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { getUserPermissions } from '@nuxt-customer-portal/core/server/utils/permissions'
+import { isPersonalClient } from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 
 defineRouteMeta({
   openAPI: {
@@ -59,6 +60,8 @@ export default defineEventHandler(async (event) => {
     role: currentRole,
     organizationRole: orgRole || null,
     activeOrganization: activeOrganization,
-    organizationType: activeOrganization?.organizationType ?? null
+    organizationType: activeOrganization?.organizationType ?? null,
+    isPersonalClient:
+      activeOrganization?.organizationType === 'CLIENT' && (await isPersonalClient(activeOrganization.id))
   }
 })

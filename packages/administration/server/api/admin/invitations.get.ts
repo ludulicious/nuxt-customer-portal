@@ -1,6 +1,7 @@
 import { and, asc, count, eq, ilike, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
+import { isPersonalClient } from '@nuxt-customer-portal/core/server/utils/client-account-policy'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
 import { invitation, organization } from '@nuxt-customer-portal/core/schema'
 import type { SessionUser } from '@nuxt-customer-portal/core/shared/types/index'
@@ -46,5 +47,10 @@ export default defineEventHandler(async (event) => {
       .innerJoin(organization, eq(organization.id, invitation.organizationId))
       .where(where)
   ])
-  return { items, total: totals[0]?.total ?? 0 }
+  return {
+    items: await Promise.all(
+      items.map(async (item) => ({ ...item, isPersonalClient: await isPersonalClient(item.organizationId) }))
+    ),
+    total: totals[0]?.total ?? 0
+  }
 })

@@ -4,6 +4,7 @@ import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { getPortalEmailSettings, sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
+import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import { timesheetEmails } from '../../shared/emails'
 import {
   internalApproverAssignment,
@@ -48,7 +49,7 @@ export const notifyTimesheetEvent = async (
     const baseUrl = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051'
     const send = async (
       id: string,
-      recipient: { id: string; email: string; name: string },
+      recipient: { id: string; email: string; name: string; firstName?: string | null },
       path: string,
       clientName = '',
       comment = '',
@@ -63,7 +64,13 @@ export const notifyTimesheetEvent = async (
           to: recipient.email,
           idempotencyKey: `timesheet/${submission.id}/${submission.version}/${id}/${scope}/${recipient.id}`,
           values: {
-            recipient_name: escapeHtml(recipient.name),
+            recipient_name: escapeHtml(
+              emailRecipientName({
+                firstName: recipient.firstName,
+                displayName: recipient.name,
+                email: recipient.email
+              })
+            ),
             person_name: escapeHtml(person.name),
             organization_name: escapeHtml(workspace.name),
             period: escapeHtml(formatTimesheetPeriod(submission.periodStartsOn, submission.periodEndsOn, emailLocale)),

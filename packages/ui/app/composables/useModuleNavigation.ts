@@ -6,7 +6,8 @@ const hasAudience = (
   isAuthenticated: boolean,
   isAdmin: boolean,
   organizationRole: string | null,
-  organizationType: 'PROVIDER' | 'CLIENT' | null
+  organizationType: 'PROVIDER' | 'CLIENT' | null,
+  isPersonalClient: boolean
 ) =>
   audiences.some((audience) => {
     if (audience === 'public') {
@@ -30,6 +31,13 @@ const hasAudience = (
     if (audience === 'clientAdmin') {
       return organizationType === 'CLIENT' && (organizationRole === 'owner' || organizationRole === 'admin')
     }
+    if (audience === 'clientOrganizationAdmin') {
+      return (
+        organizationType === 'CLIENT' &&
+        !isPersonalClient &&
+        (organizationRole === 'owner' || organizationRole === 'admin')
+      )
+    }
     return organizationType === 'PROVIDER' && (organizationRole === 'owner' || organizationRole === 'admin')
   })
 
@@ -37,9 +45,15 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { modules: registeredModules } = usePortalFeatures()
-  const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType } = usePortalSession()
+  const {
+    isAuthenticated,
+    isSystemAdmin,
+    activeOrganizationRole,
+    activeOrganizationType,
+    activeOrganizationIsPersonal
+  } = usePortalSession()
 
-  const modules = computed(() =>
+  const accessibleModules = computed(() =>
     registeredModules.value
       .filter((module) =>
         hasAudience(
@@ -47,15 +61,28 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
           isAuthenticated.value,
           isSystemAdmin.value,
           activeOrganizationRole.value,
-          activeOrganizationType.value
+          activeOrganizationType.value,
+          activeOrganizationIsPersonal.value
         )
       )
       .map((module) => ({ ...module, label: t(module.labelKey) }))
   )
+  const modules = computed(() =>
+    accessibleModules.value.filter((module) =>
+      hasAudience(
+        module.navigationAudiences ?? module.audiences,
+        isAuthenticated.value,
+        isSystemAdmin.value,
+        activeOrganizationRole.value,
+        activeOrganizationType.value,
+        activeOrganizationIsPersonal.value
+      )
+    )
+  )
 
   const activeModule = computed(
     () =>
-      modules.value
+      accessibleModules.value
         .map((module) => ({
           module,
           matchLength: Math.max(
@@ -78,7 +105,8 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
             isAuthenticated.value,
             isSystemAdmin.value,
             activeOrganizationRole.value,
-            activeOrganizationType.value
+            activeOrganizationType.value,
+            activeOrganizationIsPersonal.value
           )
         )
         .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
@@ -104,7 +132,8 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
           isAuthenticated.value,
           isSystemAdmin.value,
           activeOrganizationRole.value,
-          activeOrganizationType.value
+          activeOrganizationType.value,
+          activeOrganizationIsPersonal.value
         )
       )
       .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))

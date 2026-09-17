@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import type { ClientInvoiceSummaryDto, InvoiceStatus } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
 const { t, locale } = useI18n()
@@ -45,7 +46,7 @@ const sortOptions = computed(() => [
   { label: t('features.invoices.admin.list.sortTotal'), value: 'totalMinor' }
 ])
 const money = (minor: number, currency: string) =>
-  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(minor / 100)
+  new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(minor / currencyScale(currency))
 const date = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`))
 const statusColor = (status: InvoiceStatus) => (status === 'PAID' ? 'success' : 'info')

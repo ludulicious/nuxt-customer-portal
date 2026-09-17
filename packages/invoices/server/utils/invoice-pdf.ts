@@ -1,3 +1,4 @@
+import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import type { ClientInvoiceDto, InvoiceDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
@@ -6,6 +7,7 @@ type InvoicePdfLocale = 'en' | 'nl'
 const labels = {
   en: {
     title: 'INVOICE',
+    creditTitle: 'CREDIT NOTE',
     from: 'From',
     to: 'Invoice to',
     number: 'Invoice number',
@@ -24,6 +26,7 @@ const labels = {
   },
   nl: {
     title: 'FACTUUR',
+    creditTitle: 'CREDITNOTA',
     from: 'Van',
     to: 'Factuur aan',
     number: 'Factuurnummer',
@@ -95,8 +98,9 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   const money = (minor: number) =>
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
       style: 'currency',
-      currency: invoice.currency
-    }).format(minor / 100)
+      currency: invoice.currency,
+      currencyDisplay: 'narrowSymbol'
+    }).format(minor / currencyScale(invoice.currency))
   const number = (milli: number) =>
     new Intl.NumberFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
       minimumFractionDigits: 2,
@@ -170,8 +174,8 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   if (!logoDrawn) {
     text(invoice.senderName, margin, 16, bold, accent)
   }
-  page.drawText(l.title, {
-    x: width - margin - bold.widthOfTextAtSize(l.title, 22),
+  page.drawText(invoice.documentType === 'credit' ? l.creditTitle : l.title, {
+    x: width - margin - bold.widthOfTextAtSize(invoice.documentType === 'credit' ? l.creditTitle : l.title, 22),
     y,
     size: 22,
     font: bold,
@@ -186,7 +190,15 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
     color: muted
   })
   y -= 14
-  for (const line of wrap(regular, `${invoice.senderName}\n${invoice.senderAddress}`, 9, 205)) {
+  const senderCountry = invoice.senderCountry
+    ? new Intl.DisplayNames(locale, { type: 'region' }).of(invoice.senderCountry) || invoice.senderCountry
+    : ''
+  for (const line of wrap(
+    regular,
+    [invoice.senderName, invoice.senderAddress, senderCountry].filter(Boolean).join('\n'),
+    9,
+    205
+  )) {
     text(line, width - margin - regular.widthOfTextAtSize(line, 9))
     y -= 12
   }

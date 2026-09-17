@@ -4,7 +4,11 @@ import { genericClientCreateSchema } from '@nuxt-customer-portal/clients/server/
 
 export default defineEventHandler(async (event) => {
   const { session } = await requireOwnerClientManager(event)
-  const input = genericClientCreateSchema.parse(await readBody(event))
+  const parsed = genericClientCreateSchema.safeParse(await readBody(event))
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, message: 'Invalid client details', data: { issues: parsed.error.issues } })
+  }
+  const input = parsed.data
   const organizationId = await createClient(session.user.id, input)
   return getClient(organizationId)
 })

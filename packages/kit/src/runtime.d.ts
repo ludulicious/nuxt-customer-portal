@@ -33,13 +33,17 @@ export type PortalLayerSource = string | LocalPortalLayerDefinition
 export interface PortalConfig {
   layers: PortalLayerSource[]
   nuxtLayers: string[]
-  clients: { defaultModules: string[] }
+  clients: { defaultModules: string[]; allowedTypes: ('organization' | 'person')[]; personalSelfRegistration: boolean }
 }
 
 export function localPortalLayer(input: LocalPortalLayerInput): LocalPortalLayerDefinition
 export function definePortalConfig(input: {
   layers: PortalLayerSource[]
-  clients?: { defaultModules?: string[] }
+  clients?: {
+    defaultModules?: string[]
+    allowedTypes?: ('organization' | 'person')[]
+    personalSelfRegistration?: boolean
+  }
 }): PortalConfig
 export function assertCompatiblePortalVersions(manifests: PortalLayerManifest[]): void
 export function resolvePortalManifests(config: PortalConfig, cwd?: string): Promise<PortalLayerManifest[]>

@@ -7,6 +7,7 @@ export type PortalAudience =
   | 'providerAdmin'
   | 'clientAuthenticated'
   | 'clientAdmin'
+  | 'clientOrganizationAdmin'
 export type PortalOrganizationRole = 'owner' | 'admin' | 'member'
 export type PortalOrganizationType = 'PROVIDER' | 'CLIENT'
 
@@ -58,6 +59,7 @@ export interface PortalModuleContribution {
   to: string
   routePrefixes: string[]
   audiences: PortalAudience[]
+  navigationAudiences?: PortalAudience[]
   order?: number
   menuItems?: readonly PortalModuleMenuItem[]
 }
@@ -117,6 +119,13 @@ export interface PortalEmailDefinition {
   placeholders: readonly PortalEmailPlaceholder[]
 }
 
+export interface PortalApiScopeDefinition {
+  id: string
+  action: string
+  labelKey: string
+  descriptionKey?: string
+}
+
 export interface PortalFeatureDefinition<Action extends string = string> {
   id: string
   navigation?: readonly PortalNavigationItem[]
@@ -126,5 +135,7 @@ export interface PortalFeatureDefinition<Action extends string = string> {
   surfaces?: readonly PortalSurfaceContribution[]
   clientIntegration?: PortalClientIntegration
   emails?: readonly PortalEmailDefinition[]
+  /** API capabilities this module intentionally exposes to organization API keys. */
+  apiScopes?: readonly PortalApiScopeDefinition[]
   policy: PortalFeaturePolicy<Action>
 }

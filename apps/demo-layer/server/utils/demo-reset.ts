@@ -34,11 +34,11 @@ export async function resetDemoIfDue() {
         }
       }
       const { rows: tables } = await client.query(`SELECT schemaname, tablename FROM pg_tables WHERE
-        schemaname IN ('clients', 'timesheets', 'invoices', 'invoice_timesheets', 'service_requests', 'saas_configuration')
+        schemaname IN ('clients', 'timesheets', 'invoices', 'invoice_timesheets', 'service_requests', 'saas_configuration', 'products', 'planning', 'invoice_products')
         OR (schemaname = 'public' AND tablename IN ('user', 'session', 'account', 'verification', 'organization', 'member', 'invitation', 'portal_email_settings', 'organization_email_credential'))`)
       const quote = (name: string) => '"' + name.replaceAll('"', '""') + '"'
       await client.query(
-        `TRUNCATE ${tables.map((table) => `${quote(table.schemaname)}.${quote(table.tablename)}`).join(', ')} RESTART IDENTITY`
+        `TRUNCATE ${tables.map((table) => `${quote(table.schemaname)}.${quote(table.tablename)}`).join(', ')} RESTART IDENTITY CASCADE`
       )
       await seedDemoData(client, day)
       await client.query(

@@ -101,7 +101,7 @@ const removeMember = async () => {
     />
 
     <AdminLinkOrganizationMemberModal
-      v-if="canLink"
+      v-if="canLink && showLinkModal"
       v-model:open="showLinkModal"
       :organization-id="organizationId"
       :member-user-ids="members.map((member) => member.userId)"

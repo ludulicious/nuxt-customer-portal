@@ -6,6 +6,7 @@ type OpenApiOperation = Record<string, unknown>
 
 export interface PortalOpenApiContracts {
   owner: string
+  securitySchemes?: Record<string, Record<string, unknown>>
   query?: Record<string, z.ZodType>
   body?: Record<string, z.ZodType>
   requestBody?: Record<string, Record<string, unknown>>
@@ -120,6 +121,13 @@ const addContract = (operation: OpenApiOperation): void => {
 }
 
 export const enrichOpenApiContracts = <T extends OpenApiDocument>(document: T): T => {
+  const components = (document.components ?? {}) as Record<string, unknown>
+  components.securitySchemes = Object.assign(
+    {},
+    components.securitySchemes,
+    ...(contractRegistry[contractRegistryKey] ?? []).map((item) => item.securitySchemes ?? {})
+  )
+  Object.assign(document, { components })
   for (const pathItem of Object.values(document.paths ?? {})) {
     for (const operation of Object.values(pathItem)) {
       addContract(operation)

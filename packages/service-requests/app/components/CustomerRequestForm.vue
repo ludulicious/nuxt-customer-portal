@@ -153,7 +153,14 @@ const handleSubmit = () => {
           >
             {{ t('common.cancel') }}
           </UButton>
-          <UButton type="submit" color="primary" size="lg" :loading="loading">
+          <UButton
+            type="submit"
+            color="primary"
+            size="lg"
+            :icon="editMode ? 'i-lucide-save' : 'i-lucide-plus'"
+            class="ml-auto flex min-w-28 justify-center"
+            :loading="loading"
+          >
             {{ editMode ? t('common.save') : t('common.create') }}
           </UButton>
         </div>

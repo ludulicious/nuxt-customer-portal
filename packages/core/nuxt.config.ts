@@ -1,13 +1,24 @@
 import { fileURLToPath } from 'node:url'
+import { socialAuthProviderEnabled } from './shared/social-auth'
 
-const envFlag = (value: string | undefined, fallback = true) => (value === undefined ? fallback : value === 'true')
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? (process.env.PORTAL_REGISTRATION_MODE as 'open' | 'invitation-only' | 'disabled')
   : 'open'
+const githubEnabled = socialAuthProviderEnabled(
+  process.env.PORTAL_GITHUB_ENABLED,
+  process.env.GITHUB_CLIENT_ID,
+  process.env.GITHUB_CLIENT_SECRET
+)
+const googleEnabled = socialAuthProviderEnabled(
+  process.env.PORTAL_GOOGLE_ENABLED,
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+)
 
 export default defineNuxtConfig({
   $meta: { name: 'nuxt-customer-portal-core' },
   compatibilityDate: '2025-10-24',
+  components: [{ path: fileURLToPath(new URL('./app/components', import.meta.url)), global: true }],
   modules: ['@nuxtjs/i18n', '@vueuse/nuxt'],
   i18n: {
     defaultLocale: 'en',
@@ -33,14 +44,14 @@ export default defineNuxtConfig({
     },
     portalAuth: {
       registrationMode,
-      githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),
-      googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED)
+      githubEnabled,
+      googleEnabled
     },
     public: {
       portalAuth: {
         registrationMode,
-        githubEnabled: envFlag(process.env.PORTAL_GITHUB_ENABLED),
-        googleEnabled: envFlag(process.env.PORTAL_GOOGLE_ENABLED),
+        githubEnabled,
+        googleEnabled,
         termsUrl: process.env.PORTAL_TERMS_URL || '/'
       }
     }

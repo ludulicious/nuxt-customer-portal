@@ -18,9 +18,23 @@ const props = withDefaults(
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
 const portalRuntimeSettings = useState<{
-  branding?: { portalName?: string; tagline?: string; markLight?: string; markDark?: string }
-  appearance?: { colorMode?: string }
+  branding?: {
+    portalName?: string
+    tagline?: string
+    markLight?: string
+    markDark?: string
+    logoLight?: string
+    logoDark?: string
+  }
+  appearance?: { colorMode?: string; headerBranding?: string }
+  languages?: string[]
 } | null>('portal-runtime-settings', () => null)
+const availableLanguages = computed(() =>
+  [en, nl].filter(
+    (language) =>
+      !portalRuntimeSettings.value?.languages || portalRuntimeSettings.value.languages.includes(language.code)
+  )
+)
 const colorMode = useColorMode()
 const runtimeBrandName = computed(() => portalRuntimeSettings.value?.branding?.portalName || props.brandName)
 const runtimeTagline = computed(() => portalRuntimeSettings.value?.branding?.tagline || props.brandTagline)
@@ -32,6 +46,15 @@ const runtimeMark = computed(() => {
   return colorMode.value === 'dark'
     ? branding.markDark || branding.markLight || ''
     : branding.markLight || branding.markDark || ''
+})
+const runtimeFullLogo = computed(() => {
+  if (portalRuntimeSettings.value?.appearance?.headerBranding !== 'full-logo') {
+    return ''
+  }
+  const branding = portalRuntimeSettings.value.branding
+  return colorMode.value === 'dark'
+    ? branding?.logoDark || branding?.logoLight || ''
+    : branding?.logoLight || branding?.logoDark || ''
 })
 const showColorModeControl = computed(
   () => !portalRuntimeSettings.value || portalRuntimeSettings.value.appearance?.colorMode === 'user-choice'
@@ -173,7 +196,13 @@ const stopImpersonating = async () => {
           class="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           :aria-label="runtimeBrandName"
         >
-          <div class="relative">
+          <img
+            v-if="runtimeFullLogo"
+            :src="runtimeFullLogo"
+            :alt="runtimeBrandName"
+            class="h-12 w-auto max-w-44 object-contain"
+          />
+          <div v-else class="relative">
             <img v-if="runtimeMark" :src="runtimeMark" alt="" class="size-10 rounded-lg object-contain" />
             <svg
               v-else
@@ -199,7 +228,7 @@ const stopImpersonating = async () => {
           </div>
 
           <!-- Neutral fallback wordmark; host shells can replace the layout entirely. -->
-          <div class="hidden flex-col sm:flex">
+          <div v-if="!runtimeFullLogo" class="hidden flex-col sm:flex">
             <span class="portal-wordmark text-2xl font-bold text-gray-900 dark:text-white leading-tight">
               {{ runtimeBrandName }}
             </span>
@@ -245,8 +274,9 @@ const stopImpersonating = async () => {
       <div class="hidden lg:flex items-center gap-3 ml-auto">
         <UButton icon="i-lucide-search" color="neutral" variant="ghost" size="sm" square @click="searchOpen = true" />
         <ULocaleSelect
+          v-if="availableLanguages.length > 1"
           v-model="currentLocale"
-          :locales="[en, nl]"
+          :locales="availableLanguages"
           :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
         />
         <UColorModeButton v-if="showColorModeControl" />
@@ -256,7 +286,12 @@ const stopImpersonating = async () => {
       </div>
 
       <!-- Organization Switcher Modal -->
-      <UModal v-model:open="showOrgSwitcherModal" :title="t('menu.switchOrganization')" :ui="{ footer: 'justify-end' }">
+      <UModal
+        v-if="showOrgSwitcherModal"
+        v-model:open="showOrgSwitcherModal"
+        :title="t('menu.switchOrganization')"
+        :ui="{ footer: 'justify-end' }"
+      >
         <template #body>
           <OrganizationSwitcher
             v-if="isAuthenticated"
@@ -283,8 +318,9 @@ const stopImpersonating = async () => {
             @click="searchOpen = true"
           />
           <ULocaleSelect
+            v-if="availableLanguages.length > 1"
             v-model="currentLocale"
-            :locales="[en, nl]"
+            :locales="availableLanguages"
             class="w-32"
             :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
           />

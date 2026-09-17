@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { isValidTimezone } from '@nuxt-customer-portal/core/shared/timezone'
 import type { TimesheetsAdminBootstrap } from '@nuxt-customer-portal/timesheets/app/composables/useTimesheets'
 
 const props = defineProps<{
@@ -23,7 +24,7 @@ const schema = computed(() =>
   z.object({
     timerRoundingMinutes: z.number().int().min(1).max(60),
     currency: z.string().trim().length(3, t('features.timesheets.validation.currencyLength')),
-    timezone: z.string().trim().min(3, t('features.timesheets.validation.required')).max(100)
+    timezone: z.string().trim().max(100).refine(isValidTimezone, t('timezones.invalid'))
   })
 )
 
@@ -72,7 +73,7 @@ const save = async () => {
       >
         <UInput v-model.number="draft.timerRoundingMinutes" type="number" :min="1" :max="60" class="w-full sm:w-28" />
       </UFormField>
-      <UButton type="submit" class="w-full justify-center sm:w-auto" icon="i-lucide-save" :loading="busy">
+      <UButton type="submit" class="ml-auto flex min-w-28 justify-center" icon="i-lucide-save" :loading="busy">
         {{ t('features.timesheets.save') }}
       </UButton>
     </UForm>

@@ -14,6 +14,7 @@ interface PermissionsResponse {
   organizationRole: string | null
   activeOrganization: Organization | null
   organizationType: 'PROVIDER' | 'CLIENT' | null
+  isPersonalClient: boolean
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -95,6 +96,7 @@ export const useUserStore = defineStore('user', () => {
   const role = ref<string | null>(null)
   const organizationRole = ref<string | null>(null)
   const activeOrganizationFromPermissions = ref<Organization | null>(null)
+  const activeOrganizationIsPersonal = ref(false)
   const isLoading = ref(false)
   const activeOrganization = computed(() => {
     // Prefer the one from permissions API if available, otherwise use organizationsHelper
@@ -201,6 +203,7 @@ export const useUserStore = defineStore('user', () => {
         role.value = data.role
         organizationRole.value = data.organizationRole
         activeOrganizationFromPermissions.value = data.activeOrganization
+        activeOrganizationIsPersonal.value = data.isPersonalClient
       } else {
         console.warn('Permissions API returned no data. Clearing user data as a precaution.')
         clearUserData() // Clear data if API returns nothing, as state is uncertain
@@ -217,6 +220,7 @@ export const useUserStore = defineStore('user', () => {
     role.value = null
     organizationRole.value = null
     activeOrganizationFromPermissions.value = null
+    activeOrganizationIsPersonal.value = false
     currentSession.value = null
     currentUser.value = null
     activeOrganizationRoleValue.value = null
@@ -445,6 +449,7 @@ export const useUserStore = defineStore('user', () => {
     activeOrganization,
     activeOrganizationRole,
     activeOrganizationType,
+    activeOrganizationIsPersonal,
     myOrganizations,
     loadingOrganization,
     refreshOrganizations,

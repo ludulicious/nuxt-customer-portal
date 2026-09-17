@@ -94,6 +94,30 @@
       "apiFamilies": ["/api/invoice-timesheets/**"]
     },
     {
+      "id": "products",
+      "kind": "business",
+      "documentationPath": "/modules/products",
+      "pageCount": 16,
+      "apiHandlerCount": 45,
+      "apiFamilies": ["/api/products/**", "/api/store/**"]
+    },
+    {
+      "id": "planning",
+      "kind": "business",
+      "documentationPath": "/modules/planning",
+      "pageCount": 6,
+      "apiHandlerCount": 37,
+      "apiFamilies": ["/api/planning/**", "/api/store/planning/**"]
+    },
+    {
+      "id": "invoice-products",
+      "kind": "business",
+      "documentationPath": "/modules/products",
+      "pageCount": 0,
+      "apiHandlerCount": 0,
+      "apiFamilies": []
+    },
+    {
       "id": "preset",
       "kind": "foundation",
       "documentationPath": "/modules/platform-layers",

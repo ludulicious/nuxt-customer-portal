@@ -27,21 +27,32 @@ export const administrationFeature: PortalFeatureDefinition = {
           labelKey: 'admin.menu.organizations',
           icon: 'i-lucide-building-2',
           to: '/admin/organizations',
-          audiences: ['admin']
+          audiences: ['admin'],
+          order: 10
         },
         {
           id: 'admin-users',
           labelKey: 'admin.menu.users',
           icon: 'i-lucide-users',
           to: '/admin/users',
-          audiences: ['admin']
+          audiences: ['admin'],
+          order: 20
+        },
+        {
+          id: 'admin-api-keys',
+          labelKey: 'admin.apiKeys.title',
+          icon: 'i-lucide-key-round',
+          to: '/admin/api-keys',
+          audiences: ['admin'],
+          order: 30
         },
         {
           id: 'admin-email',
           labelKey: 'admin.email.title',
           icon: 'i-lucide-mail',
           to: '/admin/email',
-          audiences: ['admin']
+          audiences: ['admin'],
+          order: 40
         }
       ]
     }

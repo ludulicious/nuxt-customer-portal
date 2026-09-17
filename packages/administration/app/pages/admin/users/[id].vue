@@ -187,7 +187,13 @@ await loadUser()
                 <USelect v-model="role" :items="roles" value-key="value" class="w-full" :disabled="isCurrentUser" />
               </UFormField>
               <div class="flex justify-end">
-                <UButton :loading="updatingRole" :disabled="isCurrentUser || role === user.role" @click="saveRole">
+                <UButton
+                  icon="i-lucide-save"
+                  class="ml-auto flex min-w-28 justify-center"
+                  :loading="updatingRole"
+                  :disabled="isCurrentUser || role === user.role"
+                  @click="saveRole"
+                >
                   {{ t('admin.user.updateRole.confirm') }}
                 </UButton>
               </div>

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   switched: []
 }>()
 
+const runtimeConfig = useRuntimeConfig()
 const toast = useToast()
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -25,6 +26,18 @@ const { activeOrganizationId } = storeToRefs(userStore)
 const selectedOrg = ref('')
 const error = ref('')
 const organizations = authClient.useListOrganizations()
+const clientAccounts = ref<{ organizationId: string; clientType: string }[]>([])
+watch(
+  () => organizations.value.data?.map((org) => org.id).join(','),
+  async () => {
+    if (runtimeConfig.public.clients && organizations.value.data?.length) {
+      clientAccounts.value = await $fetch('/api/client-account')
+    } else {
+      clientAccounts.value = []
+    }
+  },
+  { immediate: true }
+)
 
 // Sync selectedOrg with activeOrganizationId from store
 watch(
@@ -58,7 +71,7 @@ const selectItems = computed<SelectItem[]>(() => {
     return []
   }
   return organizations.value.data.map((org) => ({
-    label: org.name,
+    label: `${org.name}${clientAccounts.value.some((account) => account.organizationId === org.id && account.clientType === 'person') ? ` · ${t('timezones.personalAccount')}` : ''}`,
     value: org.id
   }))
 })
@@ -108,12 +121,12 @@ const createNewOrg = () => {
         />
       </div>
       <div v-else class="flex flex-col gap-4">
-        <UFormField label="Select Organization" name="organization">
+        <UFormField :label="t('timezones.selectAccount')" name="organization">
           <USelect
             id="org-select"
             v-model="selectedOrg"
             :items="selectItems"
-            placeholder="Select Organization"
+            :placeholder="t('timezones.selectAccount')"
             value-key="value"
             class="w-full"
             @update:model-value="switchOrganization"
@@ -145,7 +158,7 @@ const createNewOrg = () => {
           id="org-select-header"
           v-model="selectedOrg"
           :items="selectItems"
-          placeholder="Organization"
+          :placeholder="t('timezones.selectAccount')"
           value-key="value"
           size="sm"
           class="min-w-[160px]"

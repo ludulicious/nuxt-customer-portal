@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     session.user.id,
     getRouterParam(event, 'id')!,
     invoiceEmailDeliverySchema.parse(await readBody(event)),
-    false
+    false,
+    'RESEND'
   )
 })

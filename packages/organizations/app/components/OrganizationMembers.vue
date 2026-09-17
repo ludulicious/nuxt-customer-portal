@@ -193,7 +193,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <UModal v-model="showInviteModal" @close="showInviteModal = false">
+    <UModal v-if="showInviteModal" v-model:open="showInviteModal">
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold">Invite Member</h3>

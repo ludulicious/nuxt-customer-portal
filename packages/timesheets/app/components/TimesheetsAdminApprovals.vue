@@ -372,7 +372,7 @@ const reject = () =>
       </div>
     </details>
 
-    <UModal v-model:open="requestOpen" :title="t('features.timesheets.submissions.title')">
+    <UModal v-if="requestOpen" v-model:open="requestOpen" :title="t('features.timesheets.submissions.title')">
       <template #body>
         <UForm
           :schema="requestSchema"
@@ -395,7 +395,7 @@ const reject = () =>
         </UForm>
       </template>
     </UModal>
-    <UModal v-model:open="clientReplyOpen" :title="t('features.timesheets.submissions.reply')">
+    <UModal v-if="clientReplyOpen" v-model:open="clientReplyOpen" :title="t('features.timesheets.submissions.reply')">
       <template #body>
         <UForm
           :schema="clientReplySchema"
@@ -411,7 +411,7 @@ const reject = () =>
         </UForm>
       </template>
     </UModal>
-    <UModal v-model:open="approvalOpen" :title="t('features.timesheets.admin.approve')">
+    <UModal v-if="approvalOpen" v-model:open="approvalOpen" :title="t('features.timesheets.admin.approve')">
       <template #body>
         <UForm :state="approvalState" :schema="approvalSchema" novalidate class="space-y-4" @submit="approve">
           <UFormField name="comment" :label="t('features.timesheets.submissions.remark')">
@@ -428,7 +428,7 @@ const reject = () =>
         </UForm>
       </template>
     </UModal>
-    <UModal v-model:open="rejectionOpen" :title="t('features.timesheets.admin.rejectTimesheet')">
+    <UModal v-if="rejectionOpen" v-model:open="rejectionOpen" :title="t('features.timesheets.admin.rejectTimesheet')">
       <template #body>
         <UForm novalidate :state="rejectionState" :schema="rejectionSchema" class="space-y-4" @submit="reject">
           <UFormField name="comment" :label="t('features.timesheets.admin.rejectionReason')" required>

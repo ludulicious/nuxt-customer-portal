@@ -10,6 +10,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 useSeoMeta({
   title: t('forgotPassword.title'),
@@ -168,7 +169,7 @@ const resetPassword = async (
     })
 
     if (resetResult.data?.success) {
-      router.push('/dashboard')
+      router.push(route.query.redirect?.toString() || '/dashboard')
     } else {
       console.error(resetResult.error)
       error.value = t('forgotPassword.messages.resetError')

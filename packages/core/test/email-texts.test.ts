@@ -1,6 +1,24 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getOTPEmailContent } from '../server/utils/email-texts'
+import { coreFeature } from '../shared/core-feature'
+import { renderPortalEmailMarkdown } from '../server/utils/portal-email'
+import { emailRecipientName } from '../shared/email-recipient'
+
+test('email recipient name prefers first name and falls back to display name', () => {
+  assert.equal(emailRecipientName({ firstName: ' Jenni ', displayName: 'Jenni Iyoyo' }), 'Jenni')
+  assert.equal(emailRecipientName({ firstName: ' ', displayName: ' Jenni Iyoyo ' }), 'Jenni Iyoyo')
+  assert.equal(emailRecipientName({ displayName: ' ', email: 'jenni@example.test' }), 'jenni@example.test')
+})
+
+test('portal email text renders Markdown while allowing exceptional inline HTML', () => {
+  const html = renderPortalEmailMarkdown(
+    'Hello **there**.\n\n[Open portal](https://example.test)\n\n<span>Custom HTML</span>'
+  )
+  assert.match(html, /<strong>there<\/strong>/)
+  assert.match(html, /<a href="https:\/\/example.test">Open portal<\/a>/)
+  assert.match(html, /<span>Custom HTML<\/span>/)
+})
 
 test('OTP email subjects use the configured portal brand name', () => {
   assert.equal(
@@ -22,4 +40,14 @@ test('OTP email subjects keep the customer-portal default brand', () => {
     getOTPEmailContent({ otp: '123456', type: 'email-verification' }).subject,
     'Verify your Nuxt Customer Portal email address'
   )
+})
+
+test('Dutch invitation emails consistently use informal language', () => {
+  for (const messageId of ['invitation', 'personal-account-invitation']) {
+    const definition = coreFeature.emails?.find((email) => email.id === messageId)
+    assert.ok(definition)
+    const text = [definition.defaults.nl.subject, definition.defaults.nl.body, definition.defaults.nl.footer].join(' ')
+    assert.doesNotMatch(text, /\b(?:u|uw)\b/i)
+    assert.match(text, /\b(?:je|jouw)\b/i)
+  }
 })

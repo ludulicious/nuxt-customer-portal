@@ -3,7 +3,9 @@
     "navigation": "Portal settings",
     "title": "Portal settings",
     "onboardingTitle": "Set up your portal",
-    "public": { "myDashboard": "My dashboard" },
+    "public": {
+      "myDashboard": "My dashboard"
+    },
     "bootstrap": {
       "title": "Create the portal administrator",
       "description": "This new portal is reserved for its designated administrator. Create that account first; you will configure the portal after signing in."
@@ -19,7 +21,9 @@
         "modules": "Modules",
         "home": "Home page",
         "legal": "Legal pages",
-        "review": "Review"
+        "review": "Review",
+        "clients": "Clients",
+        "languages": "Languages"
       },
       "appearanceSection": "Appearance",
       "logoSection": "Logos for the selected color mode",
@@ -55,8 +59,15 @@
         "logoLight": "Wide logo for headers and pages with a light background.",
         "logoDark": "Wide logo for headers and pages with a dark background."
       },
-      "themes": { "apex": "Apex", "brutal": "Brutal" },
-      "colorModes": { "userChoice": "User choice", "lightOnly": "Light only", "darkOnly": "Dark only" },
+      "themes": {
+        "apex": "Apex",
+        "brutal": "Brutal"
+      },
+      "colorModes": {
+        "userChoice": "User choice",
+        "lightOnly": "Light only",
+        "darkOnly": "Dark only"
+      },
       "modules": {
         "timesheets": "Timesheets",
         "timesheetsDescription": "Register hours by employee, client, project, and activity.",
@@ -66,7 +77,13 @@
         "serviceRequestsDescription": "Let customers submit requests and follow their progress.",
         "invoiceTimesheets": "Invoice from timesheets",
         "invoiceTimesheetsDescription": "Turn approved timesheet entries into invoice lines; requires Timesheets and Invoices.",
-        "preserved": "Data is preserved when this module is disabled."
+        "preserved": "Data is preserved when this module is disabled.",
+        "products": "Products",
+        "productsDescription": "Sell digital products and services.",
+        "invoiceProducts": "Product invoices",
+        "invoiceProductsDescription": "Issue portal invoices for product purchases.",
+        "planning": "Planning",
+        "planningDescription": "Book service appointments with provider availability and calendars."
       },
       "actions": {
         "remove": "Remove",
@@ -95,6 +112,53 @@
         "invalidImage": "Use a valid PNG, JPEG, or WebP image smaller than 2 MB.",
         "imageTooLarge": "The image dimensions must not exceed 2400×2400 pixels.",
         "markTooSmall": "Compact icons must be at least 64×64 pixels."
+      },
+      "clients": {
+        "description": "Choose whether this portal serves organizations, private persons, or both.",
+        "allowedTypes": "Allowed client types",
+        "existing": "A type cannot be disabled while clients of that type exist, including archived clients.",
+        "organization": "Organizations (B2B)",
+        "person": "Private persons (B2C)",
+        "registration": "Allow personal self-registration",
+        "registrationDescription": "Verified users can complete personal onboarding and open their own client account. When disabled, you can still create and invite private clients.",
+        "registrationDisabled": "Self-registration requires open registration in the authentication configuration."
+      },
+      "languages": {
+        "label": "Supported UI languages",
+        "help": "Choose at least one language for the portal interface. If the current language is disabled, the portal switches to the first supported language."
+      },
+      "appearance": {
+        "presets": "Appearance presets",
+        "presetHint": "Soft editorial pairs elegant headings with lavender surfaces and sea-blue accents. Applying a preset replaces the styling below; save to publish your changes.",
+        "softEditorial": "Apply Soft editorial",
+        "reset": "Use theme defaults",
+        "themeDefault": "Theme default",
+        "headingFont": "Heading font",
+        "bodyFont": "Body font",
+        "shape": "Buttons and cards",
+        "soft": "Rounded with soft shadows",
+        "headerBranding": "Header branding",
+        "markName": "Icon and portal name",
+        "fullLogo": "Full logo",
+        "logoFallback": "Uses the icon and portal name when a full logo is unavailable.",
+        "secondaryLight": "Secondary accent — light",
+        "secondaryDark": "Secondary accent — dark",
+        "backgroundLight": "Page background — light",
+        "backgroundDark": "Page background — dark",
+        "surfaceLight": "Card surface — light",
+        "surfaceDark": "Card surface — dark",
+        "preview": "Live preview",
+        "previewHint": "Draft appearance only. Changes are published when you save.",
+        "previewMode": "Preview color mode",
+        "light": "Light",
+        "dark": "Dark",
+        "dashboard": "Dashboard",
+        "account": "My account",
+        "welcome": "Welcome to your portal",
+        "workspace": "Your workspace",
+        "sampleDescription": "Your information and next steps, together in one place.",
+        "primaryAction": "View details",
+        "secondaryAccent": "Secondary accent"
       }
     }
   }

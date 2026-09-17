@@ -113,7 +113,7 @@ function removeImage(field: BrandAssetField) {
       required
       :label="t('saasSettings.editor.fields.primaryLight')"
     >
-      <input v-model="state.appearance.primaryLight" type="color" class="color-input" />
+      <UInput v-model="state.appearance.primaryLight" type="color" class="w-full" />
     </UFormField>
     <UFormField
       v-if="state.appearance.colorMode !== 'light-only'"
@@ -121,8 +121,9 @@ function removeImage(field: BrandAssetField) {
       required
       :label="t('saasSettings.editor.fields.primaryDark')"
     >
-      <input v-model="state.appearance.primaryDark" type="color" class="color-input" />
+      <UInput v-model="state.appearance.primaryDark" type="color" class="w-full" />
     </UFormField>
+    <PortalSettingsAppearanceControls v-model="state" />
     <h2 class="section-heading">{{ t('saasSettings.editor.logoSection') }}</h2>
     <UFormField
       v-for="field in assetFields"

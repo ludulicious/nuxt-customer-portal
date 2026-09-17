@@ -1,3 +1,4 @@
+import { isPersonalClient } from './client-account-policy'
 import { and, eq, gt } from 'drizzle-orm'
 import { createError } from 'h3'
 import { invitationChangeSchema } from '../../shared/invitation-validation'
@@ -10,6 +11,9 @@ export const changePendingInvitation = async (organizationId: string, invitation
     throw createError({ statusCode: 400, message: 'Invalid invitation change' })
   }
   const change = parsed.data
+  if ('role' in change && (await isPersonalClient(organizationId))) {
+    throw createError({ statusCode: 403, message: 'Personal invitation roles cannot be changed' })
+  }
   const [updated] = await db
     .update(invitation)
     .set(change)

@@ -147,7 +147,7 @@ export async function createStarter(input, options = {}) {
   if (input.packageManager === 'pnpm') {
     await writeFile(
       join(directory, 'pnpm-workspace.yaml'),
-      "packages:\n  - '.'\nonlyBuiltDependencies:\n  - sharp\n  - esbuild\n"
+      "packages:\n  - '.'\nallowBuilds:\n  '@parcel/watcher': false\n  '@tailwindcss/oxide': false\n  esbuild: true\n  sharp: true\n  unrs-resolver: true\n  vue-demi: true\n"
     )
   }
   if (input.packageManager === 'yarn') {

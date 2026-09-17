@@ -35,12 +35,12 @@ const { data, refresh, error } = await useAsyncData(
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <UBadge variant="soft" color="neutral">{{ item.role }}</UBadge>
+          <UBadge v-if="!item.isPersonalClient" variant="soft" color="neutral">{{ item.role }}</UBadge>
           <InvitationActions
             :endpoint="`/api/admin/organizations/${item.organizationId}/invitations/${item.id}`"
             :email="item.email"
             :role="item.role"
-            can-edit
+            :can-edit="!item.isPersonalClient"
             can-revoke
             @refresh="refresh()"
           />

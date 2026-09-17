@@ -1,16 +1,25 @@
 import { z } from 'zod'
+import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
+import { portalAppearanceSchema } from './appearance'
 
-export const portalModuleIds = ['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'] as const
+export const portalModuleIds = [
+  'timesheets',
+  'invoices',
+  'service-requests',
+  'invoice-timesheets',
+  'products',
+  'planning',
+  'invoice-products'
+] as const
 export type PortalModuleId = (typeof portalModuleIds)[number]
 export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
 export const portalColorModePolicies = ['light-only', 'dark-only', 'user-choice'] as const
 export type PortalColorModePolicy = (typeof portalColorModePolicies)[number]
-export const portalOnboardingSteps = ['branding', 'modules', 'home', 'legal', 'review'] as const
+export const portalOnboardingSteps = ['branding', 'languages', 'clients', 'modules', 'home', 'legal', 'review'] as const
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
 
 const text = (maximum: number) => z.string().trim().max(maximum)
-const color = z.string().regex(/^#[0-9a-f]{6}$/i, 'Use a six-digit hexadecimal color')
 const image = z
   .string()
   .max(2_800_000)
@@ -51,15 +60,26 @@ const homeSchema = z.object({
 const legalSchema = z.object({ title: text(160), body: text(30000) })
 const localizedContentSchema = z.object({ home: homeSchema, terms: legalSchema, privacy: legalSchema })
 
+export const portalClientsSchema = z
+  .object({
+    allowedTypes: z.array(z.enum(['organization', 'person'])).min(1),
+    personalSelfRegistration: z.boolean()
+  })
+  .refine((value) => !value.personalSelfRegistration || value.allowedTypes.includes('person'), {
+    path: ['personalSelfRegistration'],
+    message: 'Personal self-registration requires private clients'
+  })
+
 export const portalSettingsSchema = z
   .object({
+    languages: z
+      .array(z.enum(portalLanguageCodes))
+      .min(1)
+      .refine((values) => new Set(values).size === values.length)
+      .default([...portalLanguageCodes]),
+    clients: portalClientsSchema.default({ allowedTypes: ['organization'], personalSelfRegistration: false }),
     branding: portalBrandingSchema,
-    appearance: z.object({
-      theme: z.enum(portalThemeNames),
-      colorMode: z.enum(portalColorModePolicies),
-      primaryLight: color,
-      primaryDark: color
-    }),
+    appearance: portalAppearanceSchema,
     enabledModules: z
       .array(z.enum(portalModuleIds))
       .min(1)
@@ -67,6 +87,20 @@ export const portalSettingsSchema = z
     content: z.object({ en: localizedContentSchema, nl: localizedContentSchema })
   })
   .superRefine((value, context) => {
+    if (value.enabledModules.includes('planning') && !value.enabledModules.includes('products')) {
+      context.addIssue({ code: 'custom', path: ['enabledModules'], message: 'Planning requires Products' })
+    }
+    if (
+      (value.enabledModules.includes('products') && !value.enabledModules.includes('invoice-products')) ||
+      (value.enabledModules.includes('invoice-products') &&
+        (!value.enabledModules.includes('products') || !value.enabledModules.includes('invoices')))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['enabledModules'],
+        message: 'Products requires Invoices and the product invoice integration'
+      })
+    }
     if (
       value.enabledModules.includes('invoice-timesheets') &&
       (!value.enabledModules.includes('timesheets') || !value.enabledModules.includes('invoices'))
@@ -84,7 +118,7 @@ export type PortalContent = z.infer<typeof localizedContentSchema>
 export type PortalSettings = z.infer<typeof portalSettingsSchema>
 export interface PublicPortalSettings extends Pick<
   PortalSettings,
-  'branding' | 'appearance' | 'enabledModules' | 'content'
+  'branding' | 'appearance' | 'enabledModules' | 'content' | 'clients' | 'languages'
 > {
   completed: boolean
 }
@@ -130,6 +164,7 @@ const defaultLocaleContent = (locale: 'en' | 'nl'): PortalContent =>
       }
 
 export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings => ({
+  languages: [...portalLanguageCodes],
   branding: {
     portalName: name,
     tagline: 'Customer workspace',
@@ -140,7 +175,13 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     logoLight: '',
     logoDark: ''
   },
-  appearance: { theme: 'apex', colorMode: 'user-choice', primaryLight: '#ea580c', primaryDark: '#fb923c' },
+  appearance: portalAppearanceSchema.parse({
+    theme: 'apex',
+    colorMode: 'user-choice',
+    primaryLight: '#ea580c',
+    primaryDark: '#fb923c'
+  }),
+  clients: { allowedTypes: ['organization'], personalSelfRegistration: false },
   enabledModules: ['timesheets', 'invoices', 'invoice-timesheets'],
   content: { en: defaultLocaleContent('en'), nl: defaultLocaleContent('nl') }
 })

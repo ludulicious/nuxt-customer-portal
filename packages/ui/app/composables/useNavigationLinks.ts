@@ -6,7 +6,8 @@ const hasAudience = (
   isAuthenticated: boolean,
   isAdmin: boolean,
   organizationRole: string | null,
-  organizationType: 'PROVIDER' | 'CLIENT' | null
+  organizationType: 'PROVIDER' | 'CLIENT' | null,
+  isPersonalClient: boolean
 ) =>
   audiences.some((audience) => {
     if (audience === 'public') {
@@ -30,6 +31,13 @@ const hasAudience = (
     if (audience === 'clientAdmin') {
       return organizationType === 'CLIENT' && (organizationRole === 'owner' || organizationRole === 'admin')
     }
+    if (audience === 'clientOrganizationAdmin') {
+      return (
+        organizationType === 'CLIENT' &&
+        !isPersonalClient &&
+        (organizationRole === 'owner' || organizationRole === 'admin')
+      )
+    }
     return organizationType === 'PROVIDER' && (organizationRole === 'owner' || organizationRole === 'admin')
   })
 
@@ -37,7 +45,13 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { navigation } = usePortalFeatures()
-  const { isAuthenticated, isSystemAdmin, activeOrganizationRole, activeOrganizationType } = usePortalSession()
+  const {
+    isAuthenticated,
+    isSystemAdmin,
+    activeOrganizationRole,
+    activeOrganizationType,
+    activeOrganizationIsPersonal
+  } = usePortalSession()
 
   const visibleItems = computed(() =>
     navigation.value.filter(
@@ -47,7 +61,8 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
           isAuthenticated.value,
           isSystemAdmin.value,
           activeOrganizationRole.value,
-          activeOrganizationType.value
+          activeOrganizationType.value,
+          activeOrganizationIsPersonal.value
         ) &&
         (route.path === '/' || !item.audiences.every((audience) => audience === 'public'))
     )

@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { eq } from 'drizzle-orm'
 import { createError } from 'h3'
 import { Resend } from 'resend'
+import { marked } from 'marked'
 import type {
   PortalEmailDefinition,
   PortalEmailLocale,
@@ -46,6 +47,9 @@ const TEMPLATE_PLACEHOLDERS = new Set([
 ])
 const placeholderPattern = /{{\s*([a-z0-9_]+)\s*}}/gi
 const senderPattern = /^\s*([^<>]+?)\s*<\s*([^<>]+)\s*>\s*$/
+
+export const renderPortalEmailMarkdown = (value: string) =>
+  marked.parse(value, { async: false, breaks: true, gfm: true }) as string
 
 const parseSender = (value = '') => {
   const match = value.match(senderPattern)
@@ -341,8 +345,10 @@ export const renderPortalEmail = async (input: {
   const messageValues = { ...input.values, brand_name: brandName }
   const allowed = new Set([...input.definition.placeholders.map((item) => item.key), 'brand_name'])
   const subject = replacePlaceholders(text.subject, messageValues, allowed)
-  const body = replacePlaceholders(text.body, messageValues, allowed)
-  const footer = replacePlaceholders(text.footer ?? '', messageValues, allowed)
+  const bodySource = replacePlaceholders(text.body, messageValues, allowed)
+  const footerSource = replacePlaceholders(text.footer ?? '', messageValues, allowed)
+  const body = renderPortalEmailMarkdown(bodySource)
+  const footer = renderPortalEmailMarkdown(footerSource)
   const htmlTemplate = input.htmlTemplate ?? settings.htmlTemplate
   validatePortalEmailTemplate(htmlTemplate)
   const inlineAttachments: PortalEmailAttachment[] = []
@@ -392,6 +398,7 @@ export const sendPortalEmail = async (input: {
   fromName?: string
   attachments?: PortalEmailAttachment[]
   idempotencyKey?: string
+  subjectPrefix?: string
 }) => {
   if (isPortalDemo()) {
     rejectDemoAction()
@@ -400,6 +407,7 @@ export const sendPortalEmail = async (input: {
     renderPortalEmail({ ...input, inlineBrandAssets: true }),
     providerConfiguration()
   ])
+  const subject = `${input.subjectPrefix ?? ''}${rendered.subject}`
   const fromEmail = input.fromEmail || provider.fromEmail
   const fromName = input.fromName || provider.fromName
   const from = fromName ? `${fromName.replace(/[<>\r\n]/g, '')} <${fromEmail}>` : fromEmail
@@ -408,7 +416,7 @@ export const sendPortalEmail = async (input: {
       from,
       to: [input.to],
       cc: input.cc?.length ? input.cc : undefined,
-      subject: rendered.subject,
+      subject,
       html: rendered.html,
       text: rendered.text,
       attachments: [...rendered.inlineAttachments, ...(input.attachments ?? [])]
@@ -418,7 +426,7 @@ export const sendPortalEmail = async (input: {
   if (error) {
     throw new Error(error.message)
   }
-  return { ...data, rendered }
+  return { ...data, rendered: { ...rendered, subject } }
 }
 
 export const retrievePortalEmail = async (providerMessageId: string) => {

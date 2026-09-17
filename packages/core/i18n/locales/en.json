@@ -5,9 +5,12 @@
     "edit": "Change invitation role",
     "role": "Role",
     "save": "Save role",
+    "resend": "Resend invitation",
     "revoke": "Revoke invitation",
     "confirmRevoke": "Revoke the invitation for {email}? This invitation link will no longer work.",
     "updated": "Invitation role updated",
+    "resent": "Invitation resent",
+    "resendFailed": "The invitation could not be resent. Try again.",
     "revoked": "Invitation revoked",
     "failed": "Could not change this invitation. Refresh the page and try again."
   },
@@ -15,6 +18,7 @@
     "refresh": "Refresh",
     "cancel": "Cancel",
     "close": "Close",
+    "collapseSidebar": "Collapse sidebar",
     "confirm": "Confirm",
     "create": "Create",
     "createdAt": "Created at",
@@ -22,6 +26,7 @@
     "descending": "Descending",
     "direction": "Direction",
     "edit": "Edit",
+    "expandSidebar": "Expand sidebar",
     "error": "An error occurred",
     "filters": "Filters",
     "loaded": "Loaded",
@@ -77,5 +82,22 @@
     "admin": "Admin",
     "blog": "Blog",
     "contact": "Contact"
+  },
+  "timezones": {
+    "label": "Timezone",
+    "provider": "Business timezone",
+    "preference": "Display timezone",
+    "inherit": "Use default timezone ({timezone})",
+    "invalid": "Choose a valid timezone",
+    "savedPreference": "Your saved timezone stays the same when you travel.",
+    "current": "Currently: {timezone}",
+    "useDevice": "Use device timezone",
+    "save": "Save",
+    "saved": "Timezone saved",
+    "failed": "Could not save timezone",
+    "openPersonalAccount": "Open personal account",
+    "personalAccount": "Personal account",
+    "selectAccount": "Select account",
+    "accountSettings": "Account details"
   }
 }

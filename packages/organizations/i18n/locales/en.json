@@ -183,7 +183,11 @@
       "namePlaceholder": "Enter your name",
       "profilePicture": "Profile Picture",
       "profilePictureDescription": "JPG, GIF or PNG. 1MB Max.",
-      "chooseAvatar": "Choose"
+      "chooseAvatar": "Choose",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "displayName": "Display name",
+      "displayNameDescription": "The name shown in the portal. This can differ from your first and last name."
     },
     "messages": {
       "error": "Error",
@@ -202,7 +206,10 @@
       "atLeastOneField": "At least one field (name or image) must be provided",
       "imageInvalidUrl": "Image must be a valid URL",
       "nameMaxLength": "Name must be less than 255 characters",
-      "nameRequired": "Name is required"
+      "nameRequired": "Name is required",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "namePartMaxLength": "Use at most 80 characters"
     }
   }
 }

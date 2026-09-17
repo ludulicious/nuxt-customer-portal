@@ -128,9 +128,7 @@ function onListScroll() {
   }
 }
 
-onMounted(() => {
-  loadOrganizations()
-})
+await loadOrganizations()
 
 onUnmounted(() => {
   if (searchTimeout) {
@@ -252,7 +250,7 @@ watch(
               @click="showSort = true"
             />
           </div>
-          <UModal v-model:open="showSort" :title="t('common.sort')">
+          <UModal v-if="showSort" v-model:open="showSort" :title="t('common.sort')">
             <template #body>
               <div class="space-y-4">
                 <UFormField :label="t('common.sortBy')">

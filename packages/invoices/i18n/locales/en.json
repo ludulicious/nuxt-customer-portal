@@ -152,6 +152,7 @@
         "paymentAmount": "Payment amount",
         "paid": "Paid",
         "backToInvoices": "Back to invoices",
+        "backToOrders": "Back to purchases",
         "invoiceTitle": "Invoice {number}",
         "invoiceDocumentTitle": "INVOICE",
         "print": "Print",
@@ -243,7 +244,13 @@
         "completeClientDetails": "Edit client details",
         "senderInvoiceDetails": "Sender invoice details",
         "invoiceEmail": "Invoice email address",
-        "emailMessages": { "invoice": "Invoice", "paymentReminder": "Payment reminder" },
+        "country": "Country",
+        "selectCountry": "Select a country",
+        "emailMessages": {
+          "invoice": "Invoice",
+          "invoiceResend": "Resent invoice",
+          "paymentReminder": "Payment reminder"
+        },
         "emailPlaceholders": {
           "invoiceNumber": "Invoice number",
           "senderName": "Sender name",
@@ -294,7 +301,8 @@
           "sortTotal": "Total amount"
         },
         "to": "To",
-        "amount": "Amount"
+        "amount": "Amount",
+        "creditTitle": "Credit note {number}"
       },
       "messages": {
         "saved": "Time saved",

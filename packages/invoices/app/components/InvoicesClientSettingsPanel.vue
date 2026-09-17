@@ -35,7 +35,10 @@ const schema = computed(() =>
   })
 )
 const endpoint = `/api/invoices/admin/clients/${props.client.organizationId}/contacts`
-const { data: contacts, refresh } = await useFetch<InvoiceContactDto[]>(endpoint, { default: () => [] })
+const { data: contacts, refresh } = await useFetch<InvoiceContactDto[]>(endpoint, {
+  default: () => [],
+  immediate: props.client.clientType !== 'person'
+})
 const reset = () => {
   editingId.value = ''
   formOpen.value = false
@@ -77,7 +80,7 @@ const remove = async (contact: InvoiceContactDto) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div v-if="client.clientType !== 'person'" class="space-y-6">
     <InvoicesClientAccessPanel :client="client" />
     <UCard>
       <template #header>
@@ -141,7 +144,9 @@ const remove = async (contact: InvoiceContactDto) => {
           <div class="flex justify-end gap-2 md:col-span-2">
             <UButton type="button" color="neutral" variant="outline" @click="reset">
               {{ t('features.invoices.cancel') }} </UButton
-            ><UButton type="submit" :loading="busy">{{ t('features.invoices.save') }}</UButton>
+            ><UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+              t('features.invoices.save')
+            }}</UButton>
           </div>
         </UForm>
       </div>
