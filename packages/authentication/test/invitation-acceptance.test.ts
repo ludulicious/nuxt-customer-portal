@@ -29,10 +29,7 @@ test('server acceptance marks the invitation accepted and reconciles an existing
 test('invitation signup uses the invitation as email proof and creates a signed-in session', async () => {
   const [signupPage, endpoint] = await Promise.all([
     readFile(new URL('../app/pages/signup.vue', import.meta.url), 'utf8'),
-    readFile(
-      new URL('../../organizations/server/api/organizations/invitation-signup.post.ts', import.meta.url),
-      'utf8'
-    )
+    readFile(new URL('../../organizations/server/api/organizations/invitation-signup.post.ts', import.meta.url), 'utf8')
   ])
   assert.match(signupPage, /\/api\/organizations\/invitation-signup/)
   assert.match(signupPage, /\/signup\?invitationId=/)

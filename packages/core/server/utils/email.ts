@@ -24,7 +24,15 @@ interface SendEmailArgs {
 }
 
 // Updated sendEmail function using the template
-export const sendEmail = async ({ to, subject, params, messageId, values = {}, locale, idempotencyKey }: SendEmailArgs) => {
+export const sendEmail = async ({
+  to,
+  subject,
+  params,
+  messageId,
+  values = {},
+  locale,
+  idempotencyKey
+}: SendEmailArgs) => {
   const definition = coreFeature.emails?.find((item) => item.id === messageId)
   if (!definition) {
     throw new Error(`Unknown core email definition: ${messageId}`)

@@ -36,18 +36,20 @@ if (
 
 const fields = computed(() => [
   ...(!invitationId
-    ? [{
-    name: 'firstName',
-    type: 'text' as const,
-    label: t('signup.fields.firstName'),
-    autocomplete: 'given-name'
-  },
-  {
-    name: 'lastName',
-    type: 'text' as const,
-    label: t('signup.fields.lastName'),
-    autocomplete: 'family-name'
-  }]
+    ? [
+        {
+          name: 'firstName',
+          type: 'text' as const,
+          label: t('signup.fields.firstName'),
+          autocomplete: 'given-name'
+        },
+        {
+          name: 'lastName',
+          type: 'text' as const,
+          label: t('signup.fields.lastName'),
+          autocomplete: 'family-name'
+        }
+      ]
     : []),
   {
     name: 'email',

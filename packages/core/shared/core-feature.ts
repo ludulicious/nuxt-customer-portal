@@ -159,8 +159,7 @@ export const coreFeature: PortalFeatureDefinition = {
         en: {
           subject: 'Set up your personal portal account',
           body: 'Dear {{recipient_name}},\n\nA personal portal profile has been created for you. Set up your account to access your purchases, appointments, invoices, and shared files.\n\n[Set up your account]({{action_url}})\n\nUse the same email address that received this message.',
-          footer:
-            'This account setup link expires soon. If you did not expect this message, you can safely ignore it.'
+          footer: 'This account setup link expires soon. If you did not expect this message, you can safely ignore it.'
         },
         nl: {
           subject: 'Stel je persoonlijke portaalaccount in',

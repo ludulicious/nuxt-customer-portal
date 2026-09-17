@@ -52,7 +52,11 @@ test('every translated layer has matching English and Dutch key trees', async ()
 
 test('packages use public package exports rather than host or filesystem contracts', async () => {
   const files = (await walk(join(root, 'packages'))).filter(
-    (file) => /\.(?:ts|vue)$/.test(file) && !file.includes('/node_modules/') && !file.includes('/test/')
+    (file) =>
+      /\.(?:ts|vue)$/.test(file) &&
+      !file.includes('/node_modules/') &&
+      !file.includes('/test/') &&
+      !file.includes('/.nuxt/')
   )
   const violations: string[] = []
   for (const file of files) {

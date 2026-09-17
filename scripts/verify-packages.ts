@@ -219,21 +219,17 @@ try {
         doctor: 'nuxt-customer-portal doctor'
       }
     }
-    if (manager === 'pnpm') {
-      fixtureManifest.pnpm = {
-        overrides: {
-          ...dependencies,
-          '@unhead/vue': '3.2.3',
-          '@nuxt/devtools': '3.4.0',
-          vue: '3.5.40',
-          '@vue/compiler-sfc': '3.5.40',
-          '@vue/compiler-ssr': '3.5.40',
-          '@vue/runtime-core': '3.5.40',
-          '@vue/runtime-dom': '3.5.40',
-          '@vue/reactivity': '3.5.40',
-          '@vue/shared': '3.5.40'
-        }
-      }
+    const pnpmOverrides = {
+      ...dependencies,
+      '@unhead/vue': '3.2.3',
+      '@nuxt/devtools': '3.4.0',
+      vue: '3.5.40',
+      '@vue/compiler-sfc': '3.5.40',
+      '@vue/compiler-ssr': '3.5.40',
+      '@vue/runtime-core': '3.5.40',
+      '@vue/runtime-dom': '3.5.40',
+      '@vue/reactivity': '3.5.40',
+      '@vue/shared': '3.5.40'
     }
     if (manager === 'npm') {
       fixtureManifest.overrides = {
@@ -256,8 +252,15 @@ try {
       fixtureManifest.overrides = dependencies
     }
     writeFileSync(join(fixture, 'package.json'), JSON.stringify(fixtureManifest, null, 2) + '\n')
-    if (manager === 'pnpm' && !starter) {
-      writeFileSync(join(fixture, 'pnpm-workspace.yaml'), "packages:\n  - '.'\nminimumReleaseAge: 1440\n")
+    if (manager === 'pnpm') {
+      const yamlString = (value: string) => `'${value.replaceAll("'", "''")}'`
+      const overrides = Object.entries(pnpmOverrides)
+        .map(([name, version]) => `  ${yamlString(name)}: ${yamlString(version)}`)
+        .join('\n')
+      writeFileSync(
+        join(fixture, 'pnpm-workspace.yaml'),
+        `packages:\n  - '.'\n${starter ? "allowBuilds:\n  '@parcel/watcher': false\n  '@tailwindcss/oxide': false\n  esbuild: true\n  sharp: true\n  unrs-resolver: true\n  vue-demi: true\n" : 'minimumReleaseAge: 1440\n'}overrides:\n${overrides}\n`
+      )
     }
     if (!starter) {
       writeFileSync(

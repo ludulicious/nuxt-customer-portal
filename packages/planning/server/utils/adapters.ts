@@ -412,15 +412,7 @@ export const zoomMeeting: MeetingAdapter = {
             }
           }
         | undefined
-      >(
-        'zoom',
-        s,
-        u,
-        `/meetings/${encodeURIComponent(existingId)}`,
-        'GET',
-        undefined,
-        [404]
-      )
+      >('zoom', s, u, `/meetings/${encodeURIComponent(existingId)}`, 'GET', undefined, [404])
       if (meeting) {
         const invitee = details.inviteeEmail.toLowerCase()
         const unchanged =

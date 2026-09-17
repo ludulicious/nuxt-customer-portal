@@ -1,4 +1,13 @@
-const appointmentPlaceholders = ['recipient_name', 'product', 'time', 'timezone', 'meetingUrl', 'meetingDetails', 'instructions', 'url'].map((key) => ({
+const appointmentPlaceholders = [
+  'recipient_name',
+  'product',
+  'time',
+  'timezone',
+  'meetingUrl',
+  'meetingDetails',
+  'instructions',
+  'url'
+].map((key) => ({
   key,
   labelKey: `planning.${key}`,
   example: key === 'recipient_name' ? 'Alex' : key

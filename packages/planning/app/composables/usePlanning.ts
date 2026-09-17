@@ -38,6 +38,7 @@ export interface ProviderConfiguration {
   enabled: boolean
   timezone: string
   graceMinutes: number
+  availabilityCalendarTitle: string
   busyCalendarIds: string[]
   writeCalendarId: string | null
   connections: Array<{

@@ -386,7 +386,9 @@ useAutoPagination({
             </p>
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-user-round" class="size-4 shrink-0" />
-              <span class="truncate">{{ t('planning.host') }}: {{ job.entity.hostName }} · {{ job.entity.hostEmail }}</span>
+              <span class="truncate"
+                >{{ t('planning.host') }}: {{ job.entity.hostName }} · {{ job.entity.hostEmail }}</span
+              >
             </p>
             <p class="flex min-w-0 items-center gap-2">
               <UIcon name="i-lucide-contact-round" class="size-4 shrink-0" />

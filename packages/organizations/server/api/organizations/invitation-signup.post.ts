@@ -69,9 +69,16 @@ export default defineEventHandler(async (event) => {
   if (new Date(invitation.expiresAt) < new Date()) {
     throw createError({ statusCode: 400, message: 'Invitation has expired' })
   }
-  const [existingUser] = await db.select({ id: userTable.id }).from(userTable).where(eq(userTable.email, email)).limit(1)
+  const [existingUser] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(eq(userTable.email, email))
+    .limit(1)
   if (existingUser) {
-    throw createError({ statusCode: 409, message: 'An account already exists for this email. Sign in to accept the invitation.' })
+    throw createError({
+      statusCode: 409,
+      message: 'An account already exists for this email. Sign in to accept the invitation.'
+    })
   }
 
   const identity = await getClientAccountIdentity(invitation.organizationId)
@@ -117,7 +124,9 @@ export default defineEventHandler(async (event) => {
       }
 
       await assertClientInvitationAcceptance(lockedInvitation.organizationId, createdUserId)
-      const role = (await isPersonalClient(lockedInvitation.organizationId)) ? 'owner' : lockedInvitation.role || 'member'
+      const role = (await isPersonalClient(lockedInvitation.organizationId))
+        ? 'owner'
+        : lockedInvitation.role || 'member'
       const [existingMember] = await tx
         .select({ id: memberTable.id })
         .from(memberTable)
@@ -136,7 +145,10 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      await tx.update(userTable).set({ emailVerified: true, updatedAt: new Date() }).where(eq(userTable.id, createdUserId))
+      await tx
+        .update(userTable)
+        .set({ emailVerified: true, updatedAt: new Date() })
+        .where(eq(userTable.id, createdUserId))
       await tx.update(invitationTable).set({ status: 'accepted' }).where(eq(invitationTable.id, lockedInvitation.id))
       return targetOrganization
     })

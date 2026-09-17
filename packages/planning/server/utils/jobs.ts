@@ -3,7 +3,12 @@ import { pool } from '@nuxt-customer-portal/core/server/utils/db'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
-import { getOrder, reconcileCheckout, processOrder, notifyOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import {
+  getOrder,
+  reconcileCheckout,
+  processOrder,
+  notifyOrder
+} from '@nuxt-customer-portal/products/server/utils/orders'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
 import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
 import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'

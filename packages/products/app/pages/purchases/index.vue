@@ -139,8 +139,8 @@ onBeforeUnmount(() => {
               placeholder: t('products.purchaseType'),
               items: [
                 { value: 'all', label: t('products.allPurchaseTypes') },
-                { value: 'service', label: t('products.services') },
-                { value: 'digital', label: t('products.digitalProducts') }
+                { value: 'service', label: t('products.service') },
+                { value: 'digital', label: t('products.digital') }
               ]
             },
             {

@@ -5,6 +5,12 @@ const { t } = useI18n()
 const timezoneIds = Intl.supportedValuesOf('timeZone')
 const recentTimezones = useState<string[]>('planning.recentTimezones', () => [])
 const timezoneStorageKey = 'planning.recentTimezones'
+type TimezoneMenuItem = {
+  type?: 'label' | 'separator'
+  label?: string
+  value?: string
+  favorite?: boolean
+}
 function normalizeTimezones(values: unknown): string[] {
   return Array.isArray(values)
     ? [
@@ -37,7 +43,7 @@ function rememberTimezone(timezone: string) {
   )
   persistRecentTimezones()
 }
-const timezoneOptions = computed(() => {
+const timezoneOptions = computed<TimezoneMenuItem[]>(() => {
   const favorites = [props.userTimezone, ...normalizeTimezones(recentTimezones.value).slice(0, 5)]
   const item = (value: string, favorite = false) => ({ favorite, value, label: value.replaceAll('_', ' ') })
   return [
@@ -80,7 +86,7 @@ const selectedTimezone = computed({
   >
     <template #item-trailing="{ item }"
       ><UButton
-        v-if="'value' in item && item.favorite && item.value !== userTimezone && item.value !== model"
+        v-if="item.value && item.favorite && item.value !== userTimezone && item.value !== model"
         icon="i-lucide-x"
         color="neutral"
         variant="ghost"
