@@ -8,7 +8,7 @@ RUN npm i -g pnpm@$PNPM_VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++
 
 # Install exactly the dependency graph committed in the lockfile
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
