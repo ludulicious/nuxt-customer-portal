@@ -251,7 +251,14 @@ onKeyStroke('Escape', () => {
           />
         </div>
         <div class="flex justify-end">
-          <UButton size="sm" variant="outline" icon="i-lucide-save" :loading="busy" @click="saveRates">
+          <UButton
+            size="sm"
+            variant="outline"
+            icon="i-lucide-save"
+            class="ml-auto flex min-w-28 justify-center"
+            :loading="busy"
+            @click="saveRates"
+          >
             {{ t('features.timesheets.admin.saveOverrides') }}
           </UButton>
         </div>

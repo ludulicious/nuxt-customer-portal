@@ -267,7 +267,10 @@ test(
         type: 'checkout.session.completed',
         data: { object: { id: 'cs_test' } }
       })
-      const signature = stripeClient().webhooks.generateTestHeaderString({ payload, secret: 'whsec_local_fixture' })
+      const signature = (await stripeClient()).webhooks.generateTestHeaderString({
+        payload,
+        secret: 'whsec_local_fixture'
+      })
       assert.equal(stripeProvider.verify(payload, signature).id, 'evt_signed')
       assert.throws(() => stripeProvider.verify(payload + ' ', signature))
       assert.equal((await catalog.deletion('store', product.id)).eligible, false)

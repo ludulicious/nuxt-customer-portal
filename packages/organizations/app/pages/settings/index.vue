@@ -266,7 +266,13 @@ onUnmounted(() => {
         <UButton type="button" variant="ghost" color="neutral" :disabled="!isDirty || isLoading" @click="handleReset">
           {{ $t('common.reset') }}
         </UButton>
-        <UButton type="submit" :loading="isLoading" :disabled="!isDirty">
+        <UButton
+          type="submit"
+          icon="i-lucide-save"
+          class="ml-auto flex min-w-28 justify-center"
+          :loading="isLoading"
+          :disabled="!isDirty"
+        >
           {{ $t('common.save') }}
         </UButton>
       </div>

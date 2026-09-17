@@ -206,7 +206,12 @@ const createActivity = async () => {
         <UButton v-if="showCancel" type="button" color="neutral" variant="outline" @click="emit('cancel')">
           {{ t('features.timesheets.cancel') }}
         </UButton>
-        <UButton type="submit" :loading="busy">
+        <UButton
+          type="submit"
+          :icon="editing ? 'i-lucide-save' : 'i-lucide-plus'"
+          class="ml-auto flex min-w-28 justify-center"
+          :loading="busy"
+        >
           {{ editing ? t('features.timesheets.save') : t('features.timesheets.admin.createProject') }}
         </UButton>
       </div>

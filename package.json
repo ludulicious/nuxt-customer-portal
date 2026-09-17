@@ -9,6 +9,7 @@
     "dev:brutal": "pnpm --filter @nuxt-customer-portal/demo-brutal dev",
     "dev:saas-portal": "pnpm --filter @nuxt-customer-portal/saas-portal dev",
     "dev:docs": "pnpm --filter @nuxt-customer-portal/docs dev",
+    "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.dispute.created,charge.dispute.updated,charge.dispute.closed,charge.dispute.funds_withdrawn,charge.dispute.funds_reinstated --forward-to http://localhost:3052/api/store/webhooks/stripe",
     "format": "prettier --write . && eslint . --fix && prettier --write . && eslint .",
     "format:check": "prettier --check . && eslint .",
     "lint": "pnpm -r --if-present lint",

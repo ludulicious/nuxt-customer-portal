@@ -8,14 +8,15 @@ import { stripeClient } from '@nuxt-customer-portal/products/server/utils/paymen
 import { storage } from '@nuxt-customer-portal/products/server/utils/storage'
 import { getPortalEmailProviderStatus } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { getClientConfiguration } from '@nuxt-customer-portal/clients/server/utils/client-configuration'
+import { stripeSummary } from '@nuxt-customer-portal/products/server/utils/stripe-configuration'
 
 export default defineEventHandler(async (event) => {
   const context = await admin(event),
     input = parseInput(settingsSchema, await readBody(event))
   if (input.enabled && input.mode === 'live') {
-    stripeClient()
+    await stripeClient()
     await storage()
-    if (!process.env.PRODUCTS_STRIPE_WEBHOOK_SECRET) {
+    if (!(await stripeSummary()).webhookConfigured) {
       throw createError({ statusCode: 409, message: 'Configure Stripe webhooks' })
     }
     await orderIntegration().assertReady(context.organizationId)

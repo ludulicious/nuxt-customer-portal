@@ -53,6 +53,9 @@ export const store = schema.table('store', {
   storageSecretAccessKey: text('storage_secret_access_key'),
   storagePathStyle: boolean('storage_path_style').default(false).notNull(),
   storageTestedAt: timestamp('storage_tested_at', { withTimezone: true }),
+  stripeSecretKey: text('stripe_secret_key'),
+  stripeWebhookSecret: text('stripe_webhook_secret'),
+  stripeTestedAt: timestamp('stripe_tested_at', { withTimezone: true }),
   imagePolicy: jsonb('image_policy')
     .$type<{
       thumbnail: { width: number; height: number }

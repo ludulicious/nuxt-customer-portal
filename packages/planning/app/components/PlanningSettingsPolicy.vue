@@ -36,7 +36,9 @@ async function save() {
       ><UForm :state="state" :schema="planningPolicySchema" novalidate class="space-y-4" @submit="save"
         ><PlanningPolicyFields v-model="state" :currencies="currencies" />
         <div class="flex justify-end">
-          <UButton type="submit" :loading="busy">{{ t('planning.save') }}</UButton>
+          <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+            t('planning.save')
+          }}</UButton>
         </div></UForm
       ></UCard
     >

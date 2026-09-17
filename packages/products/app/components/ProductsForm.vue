@@ -906,6 +906,8 @@ function removeFile(id: string, index: number) {
         ><UButton
           v-if="section !== 'planning' || !appointmentSetupRequired"
           type="submit"
+          icon="i-lucide-save"
+          class="ml-auto flex min-w-28 justify-center"
           :loading="saving"
           :disabled="busy || saving || purchasedFilesUploading || !settingsReady"
           >{{ t('products.save') }}</UButton

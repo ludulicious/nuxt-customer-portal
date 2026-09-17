@@ -238,6 +238,8 @@ function selectLogo(event: Event, field: 'logo' | 'avatarLogo' = 'logo') {
       </UButton>
       <UButton
         type="submit"
+        icon="i-lucide-save"
+        class="ml-auto flex min-w-28 justify-center"
         :loading="saving"
         :disabled="saving || !state.name.trim() || !state.slug.trim() || !state.officialCompanyName.trim()"
       >

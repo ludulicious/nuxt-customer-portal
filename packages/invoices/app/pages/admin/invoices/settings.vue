@@ -70,7 +70,13 @@ const saveGeneral = async () => {
               <UInputNumber v-model="general.defaultVatRate" :min="0" :max="100" :step="0.01" class="w-full" />
             </UFormField>
             <div class="flex items-end justify-end">
-              <UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.invoices.save') }}</UButton>
+              <UButton
+                type="submit"
+                icon="i-lucide-save"
+                class="ml-auto flex min-w-28 justify-center"
+                :loading="busy"
+                >{{ t('features.invoices.save') }}</UButton
+              >
             </div>
           </form>
         </UCard>

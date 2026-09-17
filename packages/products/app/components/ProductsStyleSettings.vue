@@ -74,6 +74,8 @@ const colors = [
       </div>
     </fieldset>
     <ProductsMarkdownSettings v-if="settings.markdownStyle" v-model="settings.markdownStyle" class="border-t-0 pt-0" />
-    <UButton type="submit" :loading="saving">{{ t('products.save') }}</UButton>
+    <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="saving">{{
+      t('products.save')
+    }}</UButton>
   </UForm>
 </template>

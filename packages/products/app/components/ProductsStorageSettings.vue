@@ -210,7 +210,14 @@ async function remove() {
           @click="test"
           >{{ t('products.storageTest') }}</UButton
         >
-        <UButton type="submit" :disabled="locked" :loading="busy">{{ t('products.save') }}</UButton>
+        <UButton
+          type="submit"
+          icon="i-lucide-save"
+          class="ml-auto flex min-w-28 justify-center"
+          :disabled="locked"
+          :loading="busy"
+          >{{ t('products.save') }}</UButton
+        >
       </div>
     </UForm>
     <ConfirmationModal

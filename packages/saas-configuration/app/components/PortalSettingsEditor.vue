@@ -215,11 +215,19 @@ async function submitForm() {
                 @click="step = portalOnboardingSteps[stepIndex - 1]!"
               >
                 {{ t('saasSettings.editor.actions.back') }} </UButton
-              ><span /><UButton v-if="!props.onboarding" type="submit" icon="i-lucide-save" :loading="busy">
+              ><span /><UButton
+                v-if="!props.onboarding"
+                type="submit"
+                icon="i-lucide-save"
+                class="ml-auto flex min-w-28 justify-center"
+                :loading="busy"
+              >
                 {{ t('saasSettings.editor.actions.save') }} </UButton
               ><UButton
                 v-else-if="step !== 'review'"
                 type="submit"
+                icon="i-lucide-save"
+                class="ml-auto flex min-w-28 justify-center"
                 :loading="busy"
                 trailing-icon="i-lucide-arrow-right"
               >

@@ -10,6 +10,7 @@ import type {
   ImagePolicy,
   ImagePurpose,
   StorageSettings,
+  StripeSettings,
   CheckoutAppearance,
   Purchase
 } from '../../shared/types'
@@ -105,6 +106,7 @@ export const useProducts = () => ({
       webhookConfigured: boolean
       storageConfigured: boolean
       storage: StorageSettings
+      stripe: StripeSettings
       imagePolicy: ImagePolicy
     }>('/api/products/admin/settings'),
   saveSettings: (body: Record<string, unknown>) => $fetch('/api/products/admin/settings', { method: 'PUT', body }),
@@ -113,6 +115,14 @@ export const useProducts = () => ({
   testStorage: (body: Record<string, unknown>) =>
     $fetch('/api/products/admin/settings/storage/test', { method: 'POST', body }),
   removeStorage: () => $fetch('/api/products/admin/settings/storage', { method: 'DELETE' }),
+  saveStripe: (body: { secretKey?: string; webhookSecret?: string }) =>
+    $fetch('/api/products/admin/settings/stripe', { method: 'PUT', body }),
+  testStripe: (body: { secretKey?: string }) =>
+    $fetch<{ accountId: string; livemode: boolean }>('/api/products/admin/settings/stripe/test', {
+      method: 'POST',
+      body
+    }),
+  removeStripe: () => $fetch('/api/products/admin/settings/stripe', { method: 'DELETE' }),
   purchases: (query: Record<string, unknown>, signal?: AbortSignal) =>
     $fetch<Page<Purchase>>('/api/products/purchases', { query, signal }),
   files: (id: string) =>

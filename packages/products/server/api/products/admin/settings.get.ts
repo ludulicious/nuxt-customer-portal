@@ -3,6 +3,7 @@ import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { storageSummary } from '@nuxt-customer-portal/products/server/utils/storage-configuration'
 import { checkoutAppearanceSchema } from '@nuxt-customer-portal/products/shared/checkout-appearance'
+import { stripeSummary } from '@nuxt-customer-portal/products/server/utils/stripe-configuration'
 
 export default defineEventHandler(async (event) => {
   await admin(event)
@@ -10,6 +11,7 @@ export default defineEventHandler(async (event) => {
     'SELECT markdown_style,checkout_appearance AS "checkoutAppearance",image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
   )
   const storage = await storageSummary()
+  const stripe = await stripeSummary()
   return {
     checkoutAppearance: checkoutAppearanceSchema.parse(store?.checkoutAppearance || {}),
     markdownStyle: markdownStyleSchema.parse(store?.markdown_style || {}),
@@ -24,8 +26,9 @@ export default defineEventHandler(async (event) => {
       gallery: { width: 800, height: 1000 },
       detail: { width: 1200, height: 900 }
     },
-    stripeConfigured: !!process.env.PRODUCTS_STRIPE_SECRET_KEY,
-    webhookConfigured: !!process.env.PRODUCTS_STRIPE_WEBHOOK_SECRET,
+    stripeConfigured: stripe.configured,
+    webhookConfigured: stripe.webhookConfigured,
+    stripe,
     storageConfigured: storage.configured,
     storage
   }

@@ -133,7 +133,14 @@ async function save() {
         </UTabs>
         <div class="flex justify-end gap-3">
           <UButton color="neutral" variant="outline" @click="emit('cancel')">{{ t('products.cancel') }}</UButton
-          ><UButton type="submit" :loading="busy" :disabled="!valid || busy">{{ t('products.save') }}</UButton>
+          ><UButton
+            type="submit"
+            icon="i-lucide-save"
+            class="ml-auto flex min-w-28 justify-center"
+            :loading="busy"
+            :disabled="!valid || busy"
+            >{{ t('products.save') }}</UButton
+          >
         </div>
       </UForm>
     </component>

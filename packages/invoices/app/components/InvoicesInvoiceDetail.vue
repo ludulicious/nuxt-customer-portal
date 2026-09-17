@@ -562,7 +562,9 @@ if (!isClient.value) {
         <div class="flex justify-end gap-2">
           <UButton type="button" color="neutral" variant="ghost" @click="editOpen = false">
             {{ t('features.invoices.cancel') }} </UButton
-          ><UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('features.invoices.save') }}</UButton>
+          ><UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+            t('features.invoices.save')
+          }}</UButton>
         </div>
       </UForm>
     </UCard>

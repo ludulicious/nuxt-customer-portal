@@ -109,7 +109,9 @@ function save() {
         {{ t(settings.mode === 'live' ? 'products.configHelp' : 'products.sandboxConfigHelp') }}
       </p>
 
-      <UButton type="submit" :loading="saving">{{ t('products.save') }}</UButton></UForm
+      <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="saving">{{
+        t('products.save')
+      }}</UButton></UForm
     >
   </div>
 </template>

@@ -205,9 +205,13 @@ async function saveSettings() {
       </UCard>
 
       <div class="flex justify-end">
-        <UButton type="submit" :loading="busy">{{
-          mainConfigured ? t('planning.save') : t('planning.setMainCalendar')
-        }}</UButton>
+        <UButton
+          type="submit"
+          :icon="mainConfigured ? 'i-lucide-save' : 'i-lucide-calendar-check'"
+          class="ml-auto flex min-w-28 justify-center"
+          :loading="busy"
+          >{{ mainConfigured ? t('planning.save') : t('planning.setMainCalendar') }}</UButton
+        >
       </div>
     </UForm>
   </div>

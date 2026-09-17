@@ -304,6 +304,8 @@ onUnmounted(() => {
         </UButton>
         <UButton
           type="submit"
+          icon="i-lucide-save"
+          class="ml-auto flex min-w-28 justify-center"
           :loading="updating"
           :disabled="updating || !isOwner || (slugChanged && slugStatus !== 'available')"
         >

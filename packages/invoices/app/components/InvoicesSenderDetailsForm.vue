@@ -240,9 +240,11 @@ const save = async () => {
           <UInput v-model="draft.invoiceEmail" type="email" class="w-full" />
         </UFormField>
       </div>
-      <UButton type="submit" block icon="i-lucide-save" :loading="busy">
-        {{ t('features.invoices.save') }}
-      </UButton>
+      <div class="flex justify-end">
+        <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">
+          {{ t('features.invoices.save') }}
+        </UButton>
+      </div>
     </UForm>
   </UCard>
 </template>

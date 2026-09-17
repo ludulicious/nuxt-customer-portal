@@ -63,7 +63,9 @@ const suggest = () => {
         <UButton v-if="!provider" type="button" variant="outline" @click="suggest">{{
           t('timezones.useDevice')
         }}</UButton>
-        <UButton type="submit" :loading="busy">{{ t('timezones.save') }}</UButton>
+        <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+          t('timezones.save')
+        }}</UButton>
       </div>
     </UForm>
   </UCard>

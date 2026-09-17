@@ -5,6 +5,7 @@ import { defaultMarkdownStyle } from '../../../../shared/markdown-style'
 import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
 
 const { t } = useI18n(),
+  route = useRoute(),
   api = useProducts(),
   toast = useToast(),
   settings = reactive<z.output<typeof settingsSchema>>({
@@ -73,39 +74,38 @@ async function save(tab: 'general' | 'styles') {
     busy.value = false
   }
 }
-const activeTab = ref('general')
 const tabs = computed(() => [
-  { label: t('products.generalSettings'), value: 'general', slot: 'general' },
-  { label: t('products.styles'), value: 'styles', slot: 'styles' },
-  { label: t('products.storageTab'), value: 'storage', slot: 'storage' }
+  { label: t('products.generalSettings'), value: '/admin/products/settings' },
+  { label: t('products.styles'), value: '/admin/products/settings/styles' },
+  ...(health.value?.stripe.source === 'environment'
+    ? []
+    : [{ label: t('products.stripeTab'), value: '/admin/products/settings/stripe' }]),
+  { label: t('products.storageTab'), value: '/admin/products/settings/storage' }
 ])
+const activeTab = computed(() => route.path.replace(/\/$/, '') || '/admin/products/settings')
+function selectTab(value: string | number) {
+  return navigateTo(String(value))
+}
 </script>
 
 <template>
   <ProductsShell :title="t('products.settings')" :subtitle="t('products.settingsIntro')">
     <UAlert v-if="error" color="error" :title="error" />
     <UTabs
-      v-model="activeTab"
+      :model-value="activeTab"
       :items="tabs"
+      :content="false"
       variant="link"
-      :unmount-on-hide="false"
       :ui="{ list: 'justify-start', trigger: 'grow-0' }"
-    >
-      <template #general>
-        <ProductsGeneralSettings
-          :model-value="settings"
-          :health="health"
-          :saving="busy"
-          class="pt-4"
-          @save="save('general')"
-        />
-      </template>
-      <template #styles>
-        <ProductsStyleSettings :model-value="settings" :saving="busy" class="mt-4" @save="save('styles')" />
-      </template>
-      <template #storage>
-        <ProductsStorageSettings v-if="health" :storage="health.storage" @changed="load" />
-      </template>
-    </UTabs>
+      @update:model-value="selectTab"
+    />
+    <NuxtPage
+      :settings="settings"
+      :health="health"
+      :saving="busy"
+      @save-general="save('general')"
+      @save-styles="save('styles')"
+      @changed="load"
+    />
   </ProductsShell>
 </template>

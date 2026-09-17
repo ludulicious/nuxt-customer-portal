@@ -73,7 +73,7 @@ const save = async () => {
       >
         <UInput v-model.number="draft.timerRoundingMinutes" type="number" :min="1" :max="60" class="w-full sm:w-28" />
       </UFormField>
-      <UButton type="submit" class="w-full justify-center sm:w-auto" icon="i-lucide-save" :loading="busy">
+      <UButton type="submit" class="ml-auto flex min-w-28 justify-center" icon="i-lucide-save" :loading="busy">
         {{ t('features.timesheets.save') }}
       </UButton>
     </UForm>

@@ -4,13 +4,11 @@ import { createError } from 'h3'
 import type { Order } from '../../shared/types'
 import { baseUrl } from './access'
 import { checkoutReturnPath, hostThankYouUrl } from './checkout-return'
+import { resolveStripeConfiguration } from './stripe-configuration'
 
-export const stripeClient = () => {
-  const secret = process.env.PRODUCTS_STRIPE_SECRET_KEY
-  if (!secret) {
-    throw createError({ statusCode: 503, message: 'Configure Stripe before opening checkout' })
-  }
-  return new Stripe(secret)
+export const stripeClient = async () => {
+  const config = await resolveStripeConfiguration()
+  return new Stripe(config.secretKey)
 }
 export interface PaymentProvider {
   paymentCompletedAt(id: string, since: string): Promise<string>
@@ -19,14 +17,16 @@ export interface PaymentProvider {
   lookupPayment(id: string): Promise<{ refunded: number; disputed: boolean }>
   lookupCheckout(id: string): Promise<Stripe.Checkout.Session>
   checkout(order: Order): Promise<{ id: string; url: string | null }>
-  verify(body: string, signature: string): Stripe.Event
+  verify(body: string, signature: string): Promise<Stripe.Event>
 }
 export const stripeProvider: PaymentProvider = {
   async paymentCompletedAt(id, since) {
     // Reconciliation needs authoritative success time, rather than webhook arrival time.
     let cursor: string | undefined
     do {
-      const events = await stripeClient().events.list({
+      const events = await (
+        await stripeClient()
+      ).events.list({
         type: 'payment_intent.succeeded',
         created: { gte: Math.floor(Date.parse(since) / 1000) },
         limit: 100,
@@ -44,7 +44,7 @@ export const stripeProvider: PaymentProvider = {
     throw new Error('Awaiting authoritative payment completion time')
   },
   async refund(id, amount, key) {
-    const stripe = stripeClient(),
+    const stripe = await stripeClient(),
       identity = createHash('sha256').update(key).digest('hex')
     let cursor: string | undefined, existing: Stripe.Refund | undefined
     do {
@@ -70,13 +70,14 @@ export const stripeProvider: PaymentProvider = {
     }
   },
   async expireCheckout(id) {
-    const session = await stripeClient().checkout.sessions.retrieve(id)
+    const stripe = await stripeClient()
+    const session = await stripe.checkout.sessions.retrieve(id)
     if (session.status === 'open') {
-      await stripeClient().checkout.sessions.expire(id)
+      await stripe.checkout.sessions.expire(id)
     }
   },
   async lookupPayment(id) {
-    const stripe = stripeClient()
+    const stripe = await stripeClient()
     const payment = await stripe.paymentIntents.retrieve(id, { expand: ['latest_charge'] })
     const charge = payment.latest_charge as Stripe.Charge | null
     const disputes = await stripe.disputes.list({ payment_intent: id, limit: 100 })
@@ -85,7 +86,8 @@ export const stripeProvider: PaymentProvider = {
       disputed: disputes.data.some((dispute) => !['won', 'warning_closed'].includes(dispute.status))
     }
   },
-  lookupCheckout: (id) => stripeClient().checkout.sessions.retrieve(id, { expand: ['line_items.data.taxes.rate'] }),
+  lookupCheckout: async (id) =>
+    (await stripeClient()).checkout.sessions.retrieve(id, { expand: ['line_items.data.taxes.rate'] }),
   async checkout(order) {
     const primaryLine = order.lines[0]!
     const successUrl =
@@ -106,7 +108,7 @@ export const stripeProvider: PaymentProvider = {
         outcome: 'success',
         bookingReference: order.booking_reference
       })}`
-    return stripeClient().checkout.sessions.create(
+    return (await stripeClient()).checkout.sessions.create(
       {
         mode: 'payment',
         ...(order.snapshot.planningReservationId
@@ -153,11 +155,11 @@ export const stripeProvider: PaymentProvider = {
       { idempotencyKey: `products:${order.id}` }
     )
   },
-  verify(body, signature) {
-    const secret = process.env.PRODUCTS_STRIPE_WEBHOOK_SECRET
-    if (!secret) {
+  async verify(body, signature) {
+    const config = await resolveStripeConfiguration()
+    if (!config.webhookSecret) {
       throw createError({ statusCode: 503, message: 'Configure Stripe webhook signing' })
     }
-    return stripeClient().webhooks.constructEvent(body, signature, secret)
+    return (await stripeClient()).webhooks.constructEvent(body, signature, config.webhookSecret)
   }
 }

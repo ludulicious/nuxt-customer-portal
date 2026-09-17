@@ -4,11 +4,12 @@ import { handleWebhook } from '../../utils/webhooks'
 import { stripeClient } from '../../utils/payments'
 import type { Order } from '../../../shared/types'
 import { cleanupOrphanedAssets } from '../../utils/storage'
+import { stripeSummary } from '../../utils/stripe-configuration'
 
 export default defineTask({
   meta: { name: 'products:reconcile', description: 'Retry unfinished purchases and failed payment notifications' },
   async run() {
-    const paymentsConfigured = !!process.env.PRODUCTS_STRIPE_SECRET_KEY
+    const paymentsConfigured = (await stripeSummary()).configured
     const orders = await rows<Order>(
       `SELECT * FROM products.orders WHERE (status='paid' AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
     )
@@ -36,7 +37,7 @@ export default defineTask({
     )
     for (const event of paymentsConfigured ? events : []) {
       try {
-        await handleWebhook(await stripeClient().events.retrieve(event.id))
+        await handleWebhook(await (await stripeClient()).events.retrieve(event.id))
       } catch {
         failed++
       }

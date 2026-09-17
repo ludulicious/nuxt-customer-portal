@@ -176,7 +176,9 @@ if (credential.configured) {
       >
     </UCard>
     <div class="flex justify-end">
-      <UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('admin.email.saveProvider') }}</UButton>
+      <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+        t('admin.email.saveProvider')
+      }}</UButton>
     </div>
   </UForm>
 </template>

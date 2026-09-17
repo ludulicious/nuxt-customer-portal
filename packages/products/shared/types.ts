@@ -79,6 +79,13 @@ export interface StorageSettings {
   pathStyle: boolean
   accessKeySuffix: string
 }
+export interface StripeSettings {
+  source: 'environment' | 'store' | 'missing'
+  configured: boolean
+  webhookConfigured: boolean
+  tested: boolean
+  secretKeySuffix: string
+}
 export interface Billing {
   type: 'person' | 'organization'
   firstName: string

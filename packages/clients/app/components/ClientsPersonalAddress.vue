@@ -45,9 +45,14 @@ async function save() {
       </UFormField>
       <UAlert v-if="client.archived" color="warning" :title="t('features.clients.archived')" />
       <UAlert v-if="error" color="error" :title="t('features.clients.saveFailed')" />
-      <UButton type="submit" :loading="busy" :disabled="client.archived || state.address === client.address">{{
-        t('features.clients.save')
-      }}</UButton>
+      <UButton
+        type="submit"
+        icon="i-lucide-save"
+        class="ml-auto flex min-w-28 justify-center"
+        :loading="busy"
+        :disabled="client.archived || state.address === client.address"
+        >{{ t('features.clients.save') }}</UButton
+      >
     </UForm>
   </AppCard>
 </template>

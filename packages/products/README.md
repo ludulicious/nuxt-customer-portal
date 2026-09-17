@@ -24,6 +24,7 @@ Configure these server-only environment variables; never put them in public runt
 | `IS_DEVELOPMENT`                             | Explicitly enable non-Stripe sandbox side effects outside production            |
 | `PRODUCTS_STRIPE_SECRET_KEY`                 | Stripe account secret; use a test-mode key during testing                       |
 | `PRODUCTS_STRIPE_WEBHOOK_SECRET`             | Signing secret for this endpoint and Stripe mode                                |
+| `PRODUCTS_STRIPE_ENCRYPTION_KEY`             | Encrypts saved Stripe credentials; falls back to the storage encryption key     |
 | `PRODUCTS_S3_BUCKET`                         | Private S3-compatible bucket                                                    |
 | `PRODUCTS_S3_REGION`                         | Bucket region, default `us-east-1`                                              |
 | `PRODUCTS_S3_ENDPOINT`                       | Optional endpoint for compatible storage                                        |
@@ -38,13 +39,15 @@ Configure these server-only environment variables; never put them in public runt
 
 Configure Stripe Tax and the seller's registrations in Stripe. Assign the appropriate Stripe tax code to each product. The initial catalog supports EUR, USD, GBP, CAD, AUD, NZD, CHF, DKK, NOK, SEK, PLN, CZK, HUF, RON, JPY, HKD, SGD, and AED. Availability still depends on the Stripe account and payment method. Other currencies require an adapter/validation extension; currencies with special Stripe amount representations are deliberately excluded. See [Stripe currency rules](https://docs.stripe.com/currencies). Prices are explicitly entered per currency; no exchange-rate conversion occurs. Store settings defines whether tax is included or added for each supported currency. Product saves use that setting. Changing it creates new active price versions and preserves historical prices and orders. The migration seeds settings from the most recently updated product with an active price in each currency, defaulting to tax included when none exists. Checkout confirms the final tax and total. Portal invoices preserve that exact tax amount rather than reconstructing it from a rounded percentage.
 
-Register `POST /api/store/webhooks/stripe` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, and `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`. Use the Stripe CLI to forward test events to the same route on `localhost`. Keep test and live keys, webhook secrets, and data in separate installations.
+Register `POST /api/store/webhooks/stripe` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, and `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`, `charge.dispute.funds_withdrawn`, `charge.dispute.funds_reinstated`. Run `pnpm stripe:listen` to forward these test-mode events to the same route on `localhost:3052`; copy the signing secret printed by the listener into **Store settings → Stripe**. Keep test and live keys, webhook secrets, and data in separate installations.
 
 Complete the invoice sender profile and the portal email provider configuration before opening the store. No Stripe invoice is created; the portal issues the sales invoice and records the payment. Stripe may send its payment receipt according to the account's settings.
 
 ### Storage
 
 Storage can be supplied by deployment environment variables or configured in **Store settings → Storage**. Environment configuration takes precedence and locks the form. Saved access credentials are encrypted with `PRODUCTS_STORAGE_ENCRYPTION_KEY`, are never returned to the browser, and must pass a write/head/delete connection probe before they replace a working configuration.
+
+Stripe can likewise be configured under **Store settings → Stripe** when neither Stripe environment variable is present. Environment configuration takes precedence and hides this tab. Store-managed credentials are encrypted with `PRODUCTS_STRIPE_ENCRYPTION_KEY`; the secret key is verified with Stripe before it replaces a working configuration.
 
 The Storage tab supports Amazon S3, generic S3-compatible services, and Bunny's proprietary HTTP Storage API. Bunny configuration needs the regional API endpoint, Storage Zone name, and Storage Zone password. Browser uploads stream through an authenticated portal endpoint, keeping that password server-side; downloads of purchased files are streamed through the existing purchaser-authorized route. Set `PRODUCTS_STORAGE_PROVIDER=bunny` together with the `PRODUCTS_BUNNY_STORAGE_*` variables when Bunny is deployment-managed.
 

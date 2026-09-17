@@ -79,7 +79,9 @@ const revoke = async () => {
           </UFormField>
           <div class="flex justify-end gap-2">
             <UButton color="neutral" variant="outline" @click="editing = false">{{ t('common.cancel') }}</UButton>
-            <UButton type="submit" :loading="busy">{{ t('invitationManagement.save') }}</UButton>
+            <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+              t('invitationManagement.save')
+            }}</UButton>
           </div>
         </UForm>
       </template>

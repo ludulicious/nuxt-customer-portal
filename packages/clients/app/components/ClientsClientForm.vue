@@ -234,7 +234,12 @@ const submit = () =>
         <UButton type="button" color="neutral" variant="outline" @click="emit('cancel')">
           {{ t('features.clients.cancel') }}
         </UButton>
-        <UButton type="submit" :loading="busy" icon="i-lucide-save">
+        <UButton
+          type="submit"
+          :icon="editing ? 'i-lucide-save' : 'i-lucide-plus'"
+          class="ml-auto flex min-w-28 justify-center"
+          :loading="busy"
+        >
           {{ t(editing ? 'features.clients.save' : 'features.clients.create') }}
         </UButton>
       </div>

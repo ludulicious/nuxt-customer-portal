@@ -1284,7 +1284,13 @@ const runningDuration = computed(() => {
               <UButton type="button" color="neutral" variant="outline" @click="modalOpen = false">
                 {{ t('features.timesheets.cancel') }}
               </UButton>
-              <UButton type="submit" :loading="saving" :disabled="tariffMissing">
+              <UButton
+                type="submit"
+                icon="i-lucide-save"
+                class="ml-auto flex min-w-28 justify-center"
+                :loading="saving"
+                :disabled="tariffMissing"
+              >
                 {{ t('features.timesheets.save') }}
               </UButton>
             </div>
