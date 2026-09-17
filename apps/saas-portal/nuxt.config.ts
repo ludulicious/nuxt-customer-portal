@@ -14,7 +14,8 @@ export default defineNuxtConfig({
     portalEmail: { brandingSource: 'portal-settings' },
     public: { clients: portal.clients, portalAuth: { termsUrl: '/terms' } }
   },
-  devServer: { port: 3052 },
+  // Nginx runs in Docker and reaches the local dev server through host.docker.internal.
+  devServer: { host: '0.0.0.0', port: 3052 },
   compatibilityDate: '2025-10-24',
   nitro: {
     experimental: { openAPI: true },
