@@ -105,7 +105,7 @@ export interface PlanningJobListItem {
         timezone: string
         recurring: boolean
         allProducts: boolean
-        productTitles: string[]
+        productTitles: readonly string[]
       }
     | {
         type: 'appointment'

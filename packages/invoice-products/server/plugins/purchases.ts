@@ -109,6 +109,12 @@ export default defineNitroPlugin(() => {
         'INSERT INTO invoice_products.order_invoice(order_id,invoice_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
         [order.id, id]
       )
+      await tx.query(
+        `INSERT INTO invoice_products.email_job(order_id,actor_id,available_at)
+         VALUES($1,$2,now()+interval '5 minutes')
+         ON CONFLICT(order_id) DO NOTHING`,
+        [order.id, actorId]
+      )
       return id
     },
     async refund(tx, order, actorId) {

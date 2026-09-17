@@ -2,15 +2,32 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('appointment purchases suppress the generic receipt and delay invoice delivery', async () => {
+test('appointment purchases send confirmation independently and schedule delayed invoice delivery', async () => {
   const orders = await readFile(new URL('../../products/server/utils/orders.ts', import.meta.url), 'utf8')
   const integration = await readFile(new URL('../server/plugins/purchases.ts', import.meta.url), 'utf8')
   const migration = await readFile(new URL('../migrations/0001_invoice_email_job.sql', import.meta.url), 'utf8')
+  const jobs = await readFile(new URL('../../planning/server/utils/jobs.ts', import.meta.url), 'utf8')
+  const emails = await readFile(new URL('../../planning/shared/emails.ts', import.meta.url), 'utf8')
+  const feature = await readFile(new URL('../../planning/shared/feature.ts', import.meta.url), 'utf8')
+  const productEmails = await readFile(new URL('../../products/shared/emails.ts', import.meta.url), 'utf8')
+  const productFeature = await readFile(new URL('../../products/shared/feature.ts', import.meta.url), 'utf8')
 
   assert.match(orders, /order\.snapshot\.planningReservationId[\s\S]+notified=true/)
-  assert.match(integration, /INSERT INTO invoice_products\.email_job/)
+  assert.match(orders, /await orderIntegration\(\)\.notify\(order, store\.actor_id\)[\s\S]+if \(order\.notified\)/)
+  assert.match(integration, /async invoice[\s\S]+INSERT INTO invoice_products\.email_job/)
   assert.match(integration, /now\(\)\+interval '5 minutes'/)
   assert.match(integration, /order\.snapshot\.locale === 'nl' \? 'Aankoop' : 'Purchase'/)
   assert.match(integration, /order\.booking_reference/)
   assert.match(migration, /available_at timestamptz NOT NULL DEFAULT now\(\) \+ interval '5 minutes'/)
+  assert.match(jobs, /catch \(error\) \{\s+effectsFailure = error[\s\S]+await sendPortalEmail/)
+  assert.match(jobs, /instructions: order\.lines\[0\]![\s\S]+nextSteps\[locale\]/)
+  assert.match(jobs, /The meeting link will be added later/)
+  assert.match(jobs, /Duration:[\s\S]+durationMinutes/)
+  assert.match(emails, /\{\{meetingDetails\}\}[\s\S]+\{\{instructions\}\}/)
+  assert.match(emails, /id: 'appointment-zoom-ready'/)
+  assert.match(feature, /zoomLinkReadyEmail/)
+  assert.match(jobs, /zoomLinkNotificationPending[\s\S]+appointment-zoom-ready:/)
+  assert.match(jobs, /await notifyOrder\(order\.id\)/)
+  assert.match(productEmails, /id: 'purchase'/)
+  assert.match(productFeature, /emails: \[purchaseConfirmationEmail\]/)
 })

@@ -9,6 +9,7 @@ import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-reci
 import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
 import { resolveCheckoutReturnUrl } from '../../shared/checkout-query'
+import { purchaseConfirmationEmail } from '../../shared/emails'
 import { checkoutReturnPath } from './checkout-return'
 import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
@@ -250,32 +251,9 @@ export async function processOrder(id: string) {
     throw error
   }
 }
-const purchaseEmail = {
-  id: 'purchase',
-  labelKey: 'products.purchases',
-  defaults: {
-    en: {
-      subject: 'Your purchase: {{product}}',
-      body: 'Dear {{recipient_name}},\n\nThank you for your purchase of **{{product}}**. We are pleased to confirm that your order has been completed successfully.\n\n- **Booking reference:** {{bookingReference}}\n\n{{instructions}}\n\nYou can find your purchase details and any available materials in [your portal]({{url}}).',
-      footer: 'Please keep this email for your records. We hope you enjoy your purchase.'
-    },
-    nl: {
-      subject: 'Je aankoop: {{product}}',
-      body: 'Beste {{recipient_name}},\n\nBedankt voor je aankoop van **{{product}}**. We bevestigen graag dat je bestelling succesvol is afgerond.\n\n- **Boekingsnummer:** {{bookingReference}}\n\n{{instructions}}\n\nJe vindt de gegevens van je aankoop en eventuele beschikbare materialen in [je portaal]({{url}}).',
-      footer: 'Bewaar deze e-mail voor je administratie. We wensen je veel plezier met je aankoop.'
-    }
-  },
-  placeholders: [
-    { key: 'recipient_name', labelKey: 'admin.email.placeholders.recipientName', example: 'Alex' },
-    { key: 'product', labelKey: 'products.title', example: 'Audio' },
-    { key: 'bookingReference', labelKey: 'products.bookingReference', example: 'BK-7F3A9C12D4E8' },
-    { key: 'instructions', labelKey: 'products.nextSteps', example: 'Welcome' },
-    { key: 'url', labelKey: 'products.purchases', example: 'https://example.com/purchases' }
-  ]
-}
-async function notifyOrder(id: string) {
+export async function notifyOrder(id: string) {
   const order = await getOrder(id)
-  if (!order || order.status !== 'paid' || order.notified) {
+  if (!order || order.status !== 'paid') {
     return
   }
   const store = await getStore()
@@ -286,6 +264,9 @@ async function notifyOrder(id: string) {
   // provider idempotency key. Do not hold an order transaction over PDF and
   // external email work.
   await orderIntegration().notify(order, store.actor_id)
+  if (order.notified) {
+    return
+  }
   if (
     order.snapshot.planningReservationId ||
     order.snapshot.planningFailure ||
@@ -297,7 +278,7 @@ async function notifyOrder(id: string) {
   const primaryLine = order.lines[0]!
   await sendPortalEmail({
     moduleId: 'products',
-    definition: purchaseEmail,
+    definition: purchaseConfirmationEmail,
     locale: order.snapshot.locale,
     to: order.email,
     values: {

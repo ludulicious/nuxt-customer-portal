@@ -16,7 +16,14 @@ const searchDraft = ref(typeof route.query.syncSearch === 'string' ? route.query
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let previousScrollHeight = 0
 
-const filters = computed(() => ({
+const filters = computed<{
+  search: string
+  status: string
+  kind: string
+  sort: string
+  direction: 'asc' | 'desc'
+  page: number
+}>(() => ({
   search: typeof route.query.syncSearch === 'string' ? route.query.syncSearch : '',
   status: ['all', 'failed', 'queued', 'succeeded'].includes(String(route.query.syncStatus))
     ? String(route.query.syncStatus)

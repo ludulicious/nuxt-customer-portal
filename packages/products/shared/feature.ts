@@ -1,7 +1,9 @@
 import type { PortalFeatureDefinition } from '@nuxt-customer-portal/core/shared/types/feature'
+import { purchaseConfirmationEmail } from './emails'
 
 export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   id: 'products',
+  emails: [purchaseConfirmationEmail],
   apiScopes: [
     {
       id: 'products.catalog',

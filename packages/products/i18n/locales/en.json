@@ -4,6 +4,7 @@
     "store": "Store",
     "purchasesModule": "Purchases",
     "purchases": "My purchases",
+    "emailPurchaseConfirmation": "Purchase confirmation",
     "catalog": "Products",
     "orders": "Orders",
     "settings": "Store settings",

@@ -32,6 +32,7 @@ export interface AppointmentSnapshot {
   currency: string
   unitAmount: number
   meetingProvider: 'none' | 'zoom'
+  zoomLinkNotificationPending?: boolean
   locale: 'en' | 'nl'
 }
 export interface Reservation {

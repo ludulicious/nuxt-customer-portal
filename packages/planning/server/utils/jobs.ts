@@ -3,7 +3,7 @@ import { pool } from '@nuxt-customer-portal/core/server/utils/db'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
-import { getOrder, reconcileCheckout, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
+import { getOrder, reconcileCheckout, processOrder, notifyOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
 import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
 import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
@@ -19,7 +19,8 @@ import {
   appointmentEmail,
   canceledAppointmentEmail,
   newAppointmentEmail,
-  updatedAppointmentEmail
+  updatedAppointmentEmail,
+  zoomLinkReadyEmail
 } from '../../shared/emails'
 
 export async function auditLock(tx: Pick<import('pg').PoolClient, 'query'>, id: string) {
@@ -40,6 +41,9 @@ async function appointmentEffects(
   if (!order) {
     throw new Error('Appointment order missing')
   }
+  // Repair invoice delivery for older paid appointments whose invoice was
+  // created before invoice email jobs were scheduled transactionally.
+  await notifyOrder(order.id)
   if (order.snapshot.storeMode === 'sandbox' && !developmentSandboxEffectsEnabled()) {
     return
   }
@@ -48,97 +52,141 @@ async function appointmentEffects(
     [a.store_id, a.user_id]
   )
   const eventId = a.calendar_event_id || `p${id.replace(/-/g, '')}`
-  if (a.status === 'cancelled') {
-    if (a.calendar_event_id && a.calendar_id) {
-      await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
-    }
-    if (a.meeting_id) {
-      await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
-    }
-  } else {
-    if (a.snapshot.meetingProvider === 'zoom' && (ensureMeeting || !a.meeting_id || !a.meeting_url)) {
-      const meeting = await meetingAdapter().ensure(
-        a.store_id,
-        a.user_id,
-        `portal:${id}`,
-        appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
-        a.start_at,
-        a.snapshot.durationMinutes,
-        {
-          agenda: appointmentCalendarDescription({
-            start: a.start_at,
-            end: a.end_at,
-            providerTimezone: a.snapshot.timezone,
-            customerTimezone: a.snapshot.customerTimezone,
-            locale: a.snapshot.locale,
-            billing: order.snapshot.billing,
-            email: order.email,
-            graceMinutes: a.snapshot.graceMinutes
-          }),
-          inviteeEmail: order.email
-        },
-        a.meeting_id || undefined
+  let effectsFailure: unknown
+  try {
+    if (a.status === 'cancelled') {
+      if (a.calendar_event_id && a.calendar_id) {
+        await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
+      }
+      if (a.meeting_id) {
+        await meetingAdapter().remove(a.store_id, a.user_id, a.meeting_id)
+      }
+    } else {
+      if (a.snapshot.meetingProvider === 'zoom' && (ensureMeeting || !a.meeting_id || !a.meeting_url)) {
+        const meeting = await meetingAdapter().ensure(
+          a.store_id,
+          a.user_id,
+          `portal:${id}`,
+          appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
+          a.start_at,
+          a.snapshot.durationMinutes,
+          {
+            agenda: appointmentCalendarDescription({
+              start: a.start_at,
+              end: a.end_at,
+              providerTimezone: a.snapshot.timezone,
+              customerTimezone: a.snapshot.customerTimezone,
+              locale: a.snapshot.locale,
+              billing: order.snapshot.billing,
+              email: order.email,
+              graceMinutes: a.snapshot.graceMinutes
+            }),
+            inviteeEmail: order.email
+          },
+          a.meeting_id || undefined
+        )
+        a.meeting_id = meeting.id
+        a.meeting_url = meeting.url
+        await rows('UPDATE planning.appointment SET meeting_id=$2,meeting_url=$3 WHERE id=$1', [
+          id,
+          meeting.id,
+          meeting.url
+        ])
+      }
+      if (!provider?.write_calendar_id) {
+        throw new Error('Select a writable calendar')
+      }
+      if (a.calendar_id && a.calendar_id !== provider.write_calendar_id && a.calendar_event_id) {
+        await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
+      }
+      const written = await calendarAdapter().put(a.store_id, a.user_id, provider.write_calendar_id, {
+        id: eventId,
+        summary: appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
+        start: { dateTime: a.start_at.toISOString(), timeZone: a.snapshot.timezone },
+        end: { dateTime: a.end_at.toISOString(), timeZone: a.snapshot.timezone },
+        transparency: 'opaque',
+        description: appointmentCalendarDescription({
+          start: a.start_at,
+          end: a.end_at,
+          providerTimezone: a.snapshot.timezone,
+          customerTimezone: a.snapshot.customerTimezone,
+          locale: a.snapshot.locale,
+          billing: order.snapshot.billing,
+          email: order.email,
+          meetingUrl: a.meeting_url,
+          graceMinutes: a.snapshot.graceMinutes
+        }),
+        extendedProperties: { private: { portalPlanning: id, portalRevision: String(revision) } }
+      })
+      if (
+        written?.externalChangeKey ||
+        (written?.wasMissing && a.calendar_event_id && a.calendar_id === provider.write_calendar_id)
+      ) {
+        await enqueue(
+          pool,
+          `mirror-notice:${id}:${revision}:${written.externalChangeKey || 'missing'}`,
+          'mirror-notice',
+          { userId: a.user_id }
+        )
+      }
+      await rows(
+        'UPDATE planning.appointment SET calendar_event_id=$2,calendar_id=$3,calendar_user_id=user_id WHERE id=$1',
+        [id, written?.id || eventId, provider.write_calendar_id]
       )
-      a.meeting_id = meeting.id
-      a.meeting_url = meeting.url
-      await rows('UPDATE planning.appointment SET meeting_id=$2,meeting_url=$3 WHERE id=$1', [
-        id,
-        meeting.id,
-        meeting.url
-      ])
     }
-    if (!provider?.write_calendar_id) {
-      throw new Error('Select a writable calendar')
-    }
-    if (a.calendar_id && a.calendar_id !== provider.write_calendar_id && a.calendar_event_id) {
-      await calendarAdapter().remove(a.store_id, a.calendar_user_id || a.user_id, a.calendar_id, a.calendar_event_id)
-    }
-    const written = await calendarAdapter().put(a.store_id, a.user_id, provider.write_calendar_id, {
-      id: eventId,
-      summary: appointmentCalendarTitle(a.snapshot.title, order.snapshot.billing),
-      start: { dateTime: a.start_at.toISOString(), timeZone: a.snapshot.timezone },
-      end: { dateTime: a.end_at.toISOString(), timeZone: a.snapshot.timezone },
-      transparency: 'opaque',
-      description: appointmentCalendarDescription({
-        start: a.start_at,
-        end: a.end_at,
-        providerTimezone: a.snapshot.timezone,
-        customerTimezone: a.snapshot.customerTimezone,
-        locale: a.snapshot.locale,
-        billing: order.snapshot.billing,
-        email: order.email,
-        meetingUrl: a.meeting_url,
-        graceMinutes: a.snapshot.graceMinutes
-      }),
-      extendedProperties: { private: { portalPlanning: id, portalRevision: String(revision) } }
-    })
-    if (
-      written?.externalChangeKey ||
-      (written?.wasMissing && a.calendar_event_id && a.calendar_id === provider.write_calendar_id)
-    ) {
-      await enqueue(
-        pool,
-        `mirror-notice:${id}:${revision}:${written.externalChangeKey || 'missing'}`,
-        'mirror-notice',
-        { userId: a.user_id }
-      )
-    }
-    await rows(
-      'UPDATE planning.appointment SET calendar_event_id=$2,calendar_id=$3,calendar_user_id=user_id WHERE id=$1',
-      [id, written?.id || eventId, provider.write_calendar_id]
-    )
+  } catch (error) {
+    effectsFailure = error
   }
   if (!notify) {
+    if (effectsFailure) {
+      throw effectsFailure
+    }
     return
   }
   const locale = a.snapshot.locale
+  const appointmentUrl = order.invitation_id
+    ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
+    : `${baseUrl()}/appointments`
+  const meetingDetails = a.meeting_url
+    ? locale === 'nl'
+      ? `**Duur:** ${a.snapshot.durationMinutes} minuten\n\n[Deelnemen aan de afspraak](${a.meeting_url})`
+      : `**Duration:** ${a.snapshot.durationMinutes} minutes\n\n[Join the meeting](${a.meeting_url})`
+    : locale === 'nl'
+      ? `**Duur:** ${a.snapshot.durationMinutes} minuten\n\nDe vergaderlink wordt later toegevoegd. Je vindt de actuele link altijd bij je afspraken.`
+      : `**Duration:** ${a.snapshot.durationMinutes} minutes\n\nThe meeting link will be added later. You can always find the current link under your appointments.`
+  const emailValues = {
+    recipient_name: emailRecipientName({
+      firstName: order.snapshot.billing.firstName,
+      displayName: order.snapshot.billing.name,
+      email: order.email
+    }),
+    product: a.snapshot.title,
+    status:
+      a.status === 'cancelled'
+        ? locale === 'nl'
+          ? 'Afspraak geannuleerd'
+          : 'Appointment cancelled'
+        : locale === 'nl'
+          ? 'Afspraak bevestigd'
+          : 'Appointment confirmed',
+    time: new Intl.DateTimeFormat(locale, {
+      dateStyle: 'full',
+      timeStyle: 'short',
+      timeZone: a.snapshot.customerTimezone
+    }).format(a.start_at),
+    timezone: a.snapshot.customerTimezone,
+    meetingUrl: a.meeting_url || appointmentUrl,
+    meetingDetails,
+    instructions: order.lines[0]!.snapshot.product.nextSteps[locale] || '',
+    url: appointmentUrl
+  }
   const invitation = calendarInvitation({
     id,
     revision,
     title: a.snapshot.title,
     start: a.start_at,
     end: a.end_at,
-    organizer: a.snapshot.organizerEmail || provider!.email,
+    organizer: a.snapshot.organizerEmail || provider?.email || '',
     attendee: order.email,
     url: a.meeting_url,
     cancelled: a.status === 'cancelled'
@@ -154,31 +202,7 @@ async function appointmentEffects(
           : updatedAppointmentEmail,
     locale,
     to: order.email,
-    values: {
-      recipient_name: emailRecipientName({
-        firstName: order.snapshot.billing.firstName,
-        displayName: order.snapshot.billing.name,
-        email: order.email
-      }),
-      product: a.snapshot.title,
-      status:
-        a.status === 'cancelled'
-          ? locale === 'nl'
-            ? 'Afspraak geannuleerd'
-            : 'Appointment cancelled'
-          : locale === 'nl'
-            ? 'Afspraak bevestigd'
-            : 'Appointment confirmed',
-      time: new Intl.DateTimeFormat(locale, {
-        dateStyle: 'full',
-        timeStyle: 'short',
-        timeZone: a.snapshot.customerTimezone
-      }).format(a.start_at),
-      meetingUrl: a.meeting_url || `${baseUrl()}/appointments`,
-      url: order.invitation_id
-        ? `${baseUrl()}/signup?invitationId=${encodeURIComponent(order.invitation_id)}`
-        : `${baseUrl()}/appointments`
-    },
+    values: emailValues,
     attachments: [
       {
         filename: 'appointment.ics',
@@ -189,6 +213,31 @@ async function appointmentEffects(
     idempotencyKey: notificationKey || `appointment:${id}:${revision}`,
     subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
   })
+  if (a.status === 'confirmed' && a.snapshot.meetingProvider === 'zoom') {
+    if (!a.meeting_url) {
+      a.snapshot.zoomLinkNotificationPending = true
+      await rows(
+        `UPDATE planning.appointment
+         SET snapshot=jsonb_set(snapshot,'{zoomLinkNotificationPending}','true'::jsonb)
+         WHERE id=$1`,
+        [id]
+      )
+    } else if (a.snapshot.zoomLinkNotificationPending) {
+      await sendPortalEmail({
+        moduleId: 'planning',
+        definition: zoomLinkReadyEmail,
+        locale,
+        to: order.email,
+        values: emailValues,
+        idempotencyKey: `appointment-zoom-ready:${id}:${revision}`,
+        subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined
+      })
+      await rows("UPDATE planning.appointment SET snapshot=snapshot-'zoomLinkNotificationPending' WHERE id=$1", [id])
+    }
+  }
+  if (effectsFailure) {
+    throw effectsFailure
+  }
   await rows('UPDATE planning.appointment SET effects_error=NULL WHERE id=$1', [id])
 }
 async function availabilityEffects(id: string) {
@@ -408,7 +457,10 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
                   ? 'Afspraak kon niet worden bevestigd. Een eventuele betaling wordt terugbetaald.'
                   : 'The appointment could not be confirmed. Any payment will be refunded.',
               time: '',
+              timezone: '',
               meetingUrl: `${baseUrl()}/appointments`,
+              meetingDetails: '',
+              instructions: '',
               url: `${baseUrl()}/appointments`
             },
             idempotencyKey: job.id
@@ -437,7 +489,10 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
                   ? 'An external appointment overlaps a confirmed portal appointment. Resolve the conflict in your calendar or contact the customer.'
                   : 'An externally changed or removed portal event was restored. Manage portal availability and appointments in the portal.',
               time: '',
+              timezone: '',
               meetingUrl: `${baseUrl()}/planning`,
+              meetingDetails: '',
+              instructions: '',
               url: `${baseUrl()}/planning`
             },
             idempotencyKey: job.id
