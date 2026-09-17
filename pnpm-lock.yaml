@@ -360,9 +360,6 @@ importers:
       '@types/pg':
         specifier: 8.15.5
         version: 8.15.5
-      '@types/sanitize-html':
-        specifier: ^2.16.0
-        version: 2.16.1
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)
@@ -767,6 +764,9 @@ importers:
       '@types/pg':
         specifier: 8.15.5
         version: 8.15.5
+      '@types/sanitize-html':
+        specifier: ^2.16.0
+        version: 2.16.1
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.15.5)(better-sqlite3@12.11.1)(kysely@0.29.4)(pg@8.22.0)(prisma@5.22.0)
