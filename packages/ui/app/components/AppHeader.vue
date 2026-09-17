@@ -274,6 +274,7 @@ const stopImpersonating = async () => {
       <div class="hidden lg:flex items-center gap-3 ml-auto">
         <UButton icon="i-lucide-search" color="neutral" variant="ghost" size="sm" square @click="searchOpen = true" />
         <ULocaleSelect
+          v-if="availableLanguages.length > 1"
           v-model="currentLocale"
           :locales="availableLanguages"
           :ui="{ content: 'w-max min-w-40', itemLabel: 'whitespace-nowrap' }"
@@ -317,6 +318,7 @@ const stopImpersonating = async () => {
             @click="searchOpen = true"
           />
           <ULocaleSelect
+            v-if="availableLanguages.length > 1"
             v-model="currentLocale"
             :locales="availableLanguages"
             class="w-32"

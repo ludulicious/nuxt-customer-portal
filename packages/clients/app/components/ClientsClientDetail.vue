@@ -286,7 +286,7 @@ const toggleEditing = () => {
           {{ t('features.clients.noMembers') }}
         </p>
 
-        <div v-if="client.clientType !== 'person' || client.invitations.length" class="border-t border-default pt-4">
+        <div v-if="client.clientType !== 'person' || client.invitations.length">
           <h3 class="mb-3 text-sm font-semibold">
             {{ t('features.clients.pendingInvitations') }} ({{ client.invitations.length }})
           </h3>
