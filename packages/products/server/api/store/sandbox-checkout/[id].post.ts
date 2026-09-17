@@ -3,7 +3,7 @@ import { baseUrl, getStore, publicLimit } from '@nuxt-customer-portal/products/s
 import { getOrder, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
-import { checkoutReturnPath, hostThankYouUrl } from '@nuxt-customer-portal/products/server/utils/checkout-return'
+import { checkoutReturnPath } from '@nuxt-customer-portal/products/server/utils/checkout-return'
 import { z } from 'zod'
 import { planningOrderIntegration } from '../../../utils/contracts'
 
@@ -72,24 +72,16 @@ export default defineEventHandler(async (event) => {
   const line = order!.lines[0]!
   if (input.scenario === 'paid') {
     return {
-      url:
-        (order!.snapshot.planningChangeAppointmentId
-          ? `${baseUrl()}/appointments/${order!.snapshot.planningChangeAppointmentId}?payment=success`
-          : undefined) ||
-        hostThankYouUrl({
-          returnUrl: order!.snapshot.returnUrl,
-          slug: line.snapshot.product.slug,
-          locale: order!.snapshot.locale,
-          currency: line.snapshot.price.currency,
-          bookingReference: order!.booking_reference
-        }) ||
-        checkoutReturnPath({
-          slug: line.snapshot.product.slug,
-          locale: order!.snapshot.locale,
-          currency: line.snapshot.price.currency,
-          outcome: 'success',
-          bookingReference: order!.booking_reference
-        })
+      url: order!.snapshot.planningChangeAppointmentId
+        ? `${baseUrl()}/appointments/${order!.snapshot.planningChangeAppointmentId}?payment=success`
+        : checkoutReturnPath({
+            slug: line.snapshot.product.slug,
+            locale: order!.snapshot.locale,
+            currency: line.snapshot.price.currency,
+            outcome: 'success',
+            returnUrl: order!.snapshot.returnUrl,
+            bookingReference: order!.booking_reference
+          })
     }
   }
   return {

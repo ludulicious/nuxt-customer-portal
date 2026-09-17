@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { createError } from 'h3'
 import type { Order } from '../../shared/types'
 import { baseUrl } from './access'
-import { checkoutReturnPath, hostThankYouUrl } from './checkout-return'
+import { checkoutReturnPath } from './checkout-return'
 import { resolveStripeConfiguration } from './stripe-configuration'
 
 export const stripeClient = async () => {
@@ -90,24 +90,16 @@ export const stripeProvider: PaymentProvider = {
     (await stripeClient()).checkout.sessions.retrieve(id, { expand: ['line_items.data.taxes.rate'] }),
   async checkout(order) {
     const primaryLine = order.lines[0]!
-    const successUrl =
-      (order.snapshot.planningChangeAppointmentId
-        ? `${baseUrl()}/appointments/${order.snapshot.planningChangeAppointmentId}?payment=success`
-        : undefined) ||
-      hostThankYouUrl({
-        returnUrl: order.snapshot.returnUrl,
-        slug: primaryLine.snapshot.product.slug,
-        locale: order.snapshot.locale,
-        currency: primaryLine.snapshot.price.currency,
-        bookingReference: order.booking_reference
-      }) ||
-      `${baseUrl()}${checkoutReturnPath({
-        slug: primaryLine.snapshot.product.slug,
-        locale: order.snapshot.locale,
-        currency: primaryLine.snapshot.price.currency,
-        outcome: 'success',
-        bookingReference: order.booking_reference
-      })}`
+    const successUrl = order.snapshot.planningChangeAppointmentId
+      ? `${baseUrl()}/appointments/${order.snapshot.planningChangeAppointmentId}?payment=success`
+      : `${baseUrl()}${checkoutReturnPath({
+          slug: primaryLine.snapshot.product.slug,
+          locale: order.snapshot.locale,
+          currency: primaryLine.snapshot.price.currency,
+          outcome: 'success',
+          returnUrl: order.snapshot.returnUrl,
+          bookingReference: order.booking_reference
+        })}`
     return (await stripeClient()).checkout.sessions.create(
       {
         mode: 'payment',

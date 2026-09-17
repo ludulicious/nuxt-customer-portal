@@ -9,7 +9,7 @@ import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-reci
 import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
 import { resolveCheckoutReturnUrl } from '../../shared/checkout-query'
-import { checkoutReturnPath, hostThankYouUrl } from './checkout-return'
+import { checkoutReturnPath } from './checkout-return'
 import { rows, transaction } from './database'
 import { getStore, hash, baseUrl } from './access'
 import { getProduct, selectCopy } from './catalog'
@@ -149,24 +149,16 @@ export async function createCheckout(event: H3Event, body: unknown) {
       await transaction((tx) => planningIntegration!.confirm(tx, current!))
     }
     return {
-      url:
-        (order.snapshot.planningChangeAppointmentId
-          ? `${baseUrl()}/appointments/${order.snapshot.planningChangeAppointmentId}?payment=success`
-          : undefined) ||
-        hostThankYouUrl({
-          returnUrl: order.snapshot.returnUrl,
-          slug: primaryLine.snapshot.product.slug,
-          locale: order.snapshot.locale,
-          currency: primaryLine.snapshot.price.currency,
-          bookingReference: order.booking_reference
-        }) ||
-        `${baseUrl()}${checkoutReturnPath({
-          slug: primaryLine.snapshot.product.slug,
-          locale: order.snapshot.locale,
-          currency: primaryLine.snapshot.price.currency,
-          outcome: 'success',
-          bookingReference: order.booking_reference
-        })}`
+      url: order.snapshot.planningChangeAppointmentId
+        ? `${baseUrl()}/appointments/${order.snapshot.planningChangeAppointmentId}?payment=success`
+        : `${baseUrl()}${checkoutReturnPath({
+            slug: primaryLine.snapshot.product.slug,
+            locale: order.snapshot.locale,
+            currency: primaryLine.snapshot.price.currency,
+            outcome: 'success',
+            returnUrl: order.snapshot.returnUrl,
+            bookingReference: order.booking_reference
+          })}`
     }
   }
   if (order.status !== 'pending') {
