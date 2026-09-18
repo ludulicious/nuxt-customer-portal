@@ -1,5 +1,26 @@
 # Nuxt Customer Portal
 
+## 0.4.0
+
+Add the Products and Planning modules, including a localized storefront,
+multi-currency pricing, Stripe checkout, digital delivery, appointment booking,
+provider availability, calendar synchronization, Zoom meetings, cancellations,
+refunds, and customer purchase history.
+
+Extend the shared portal with personal clients, invitation-based onboarding,
+user timezones, configurable interface and store languages, appearance presets,
+organization API keys, product media storage, and planning dashboard and repair
+workflows. Invoice integration now creates immutable order-based invoice lines,
+credit notes, localized purchase references, and delayed automated delivery.
+
+The demo layer includes sample products, purchases, appointments, providers, and
+planning policies. Documentation covers the new modules, storefront setup,
+payments, storage, booking, and deployment configuration.
+
+All 16 public packages use `0.4.0`. Keep the official packages on the same
+version when upgrading and apply the package migrations before starting the
+portal.
+
 ## 0.3.3
 
 Generate lint-clean standalone portals with ESLint and Prettier configuration,

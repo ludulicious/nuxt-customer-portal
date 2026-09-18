@@ -1,6 +1,6 @@
 export default {
   id: 'invoice-products',
-  version: '0.3.3',
+  version: '0.4.0',
   source: '@nuxt-customer-portal/invoice-products',
   dependsOn: ['core', 'invoices', 'products'],
   schema: './server/db/schema/invoice-products.ts',
