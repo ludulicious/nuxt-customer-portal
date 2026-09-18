@@ -37,6 +37,20 @@ test('the deployable app includes its settings migration and image contract', as
   assert.match(migration, /CHECK \("id" = true\)/)
 })
 
+test('fresh SaaS signup enters organization onboarding without enabling public personal signup', async () => {
+  const [config, signupPage, onboardingMiddleware] = await Promise.all([
+    readFile(new URL('../../../apps/saas-portal/portal.config.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../../authentication/app/pages/signup.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../app/middleware/00-portal-onboarding.global.ts', import.meta.url), 'utf8')
+  ])
+
+  assert.match(config, /allowedTypes: \['organization', 'person'\]/)
+  assert.match(config, /personalSelfRegistration: false/)
+  assert.match(signupPage, /personalSelfRegistration[\s\S]+!route\.query\.invitationId/)
+  assert.match(signupPage, /personalSignup\.value \? '\/personal-onboarding'[\s\S]+\|\| '\/dashboard'/)
+  assert.match(onboardingMiddleware, /session\.value\?\.user\?\.role === 'admin'[\s\S]+navigateTo\('\/onboarding'/)
+})
+
 test('UI languages use the bundled language set with at least one selected', () => {
   const settings = defaultPortalSettings()
   assert.deepEqual(settings.languages, ['en', 'nl'])

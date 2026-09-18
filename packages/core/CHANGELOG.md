@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.4.1
+
+### Patch Changes
+
+- Keep fresh SaaS portal registration on the organization bootstrap flow. Disable public personal-client self-registration by default while preserving invitation-only personal-client access.
+
 ## 0.4.0
 
 ### Minor Changes
