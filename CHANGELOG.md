@@ -1,5 +1,14 @@
 # Nuxt Customer Portal
 
+## 0.4.1
+
+Keep fresh SaaS portal registration on the organization bootstrap flow instead
+of treating the first administrator as a self-registering private client.
+Personal clients remain available through invitations, while public personal
+self-registration is disabled by default in the deployable SaaS portal.
+
+All 16 public packages use `0.4.1`.
+
 ## 0.4.0
 
 Add the Products and Planning modules, including a localized storefront,

@@ -9,7 +9,7 @@ Start with client access, timesheets, approvals, and invoicing. Extend it with m
 ## Create your portal
 
 ```bash
-npx @nuxt-customer-portal/kit@0.4.0 init my-portal
+npx @nuxt-customer-portal/kit@0.4.1 init my-portal
 ```
 
 The wizard creates the configurable application, generates secrets, installs
