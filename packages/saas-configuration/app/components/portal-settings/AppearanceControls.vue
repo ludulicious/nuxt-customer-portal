@@ -61,7 +61,10 @@ function applyPreset(preset: PortalAppearancePreset) {
         @click="applyPreset(preset.value)"
       >
         <span class="style-option__marker" aria-hidden="true" />
-        <span><strong>{{ preset.label }}</strong><small>{{ preset.description }}</small></span>
+        <span
+          ><strong>{{ preset.label }}</strong
+          ><small>{{ preset.description }}</small></span
+        >
       </button>
     </div>
   </section>
