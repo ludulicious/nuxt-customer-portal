@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/timesheets
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [0f05ccf]
+  - @nuxt-customer-portal/ui@0.4.2
+  - @nuxt-customer-portal/clients@0.4.2
+  - @nuxt-customer-portal/core@0.4.2
+  - @nuxt-customer-portal/organizations@0.4.2
+
 ## 0.4.1
 
 ### Patch Changes

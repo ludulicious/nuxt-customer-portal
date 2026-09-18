@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { defaultPortalSettings, portalSettingsSchema, resolveBrandAsset } from '../shared/settings'
+import {
+  defaultPortalSettings,
+  normalizePortalOnboardingStep,
+  portalOnboardingSteps,
+  portalSettingsSchema,
+  resolveBrandAsset
+} from '../shared/settings'
 
 test('default SaaS portal settings are complete and bilingual', () => {
   const settings = defaultPortalSettings('Acme Portal')
@@ -21,6 +27,30 @@ test('branding assets fall back across color modes', () => {
   const branding = defaultPortalSettings().branding
   branding.logoLight = 'data:image/png;base64,YQ=='
   assert.equal(resolveBrandAsset(branding, 'logo', true), branding.logoLight)
+})
+
+test('onboarding splits general settings from appearance and resumes legacy branding safely', () => {
+  assert.deepEqual(portalOnboardingSteps.slice(0, 2), ['general', 'appearance'])
+  assert.equal(normalizePortalOnboardingStep('branding'), 'general')
+  assert.equal(normalizePortalOnboardingStep('appearance'), 'appearance')
+  assert.equal(normalizePortalOnboardingStep('unknown'), 'general')
+})
+
+test('configuration UI keeps general fields separate, hides theme selection, and uses a scrollable shell', async () => {
+  const [editor, generalStep, appearanceStep, centerFormLayout] = await Promise.all([
+    readFile(new URL('../app/components/PortalSettingsEditor.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../app/components/portal-settings/GeneralStep.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../app/components/portal-settings/BrandingStep.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../../ui/app/layouts/centerform.vue', import.meta.url), 'utf8')
+  ])
+  assert.match(editor, /step === "general"|step === 'general'/)
+  assert.match(editor, /step === "appearance"|step === 'appearance'/)
+  assert.match(generalStep, /branding\.portalName/)
+  assert.doesNotMatch(generalStep, /appearance\./)
+  assert.match(appearanceStep, /PortalSettingsAppearanceControls/)
+  assert.doesNotMatch(appearanceStep, /appearance\.theme/)
+  assert.match(centerFormLayout, /overflow-y-auto/)
+  assert.match(centerFormLayout, /min-h-dvh/)
 })
 
 test('the deployable app includes its settings migration and image contract', async () => {

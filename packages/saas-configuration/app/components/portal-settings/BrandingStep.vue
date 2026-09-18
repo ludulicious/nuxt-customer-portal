@@ -73,56 +73,6 @@ function removeImage(field: BrandAssetField) {
 
 <template>
   <div class="settings-grid">
-    <UFormField name="branding.portalName" required :label="t('saasSettings.editor.fields.portalName')">
-      <UInput v-model="state.branding.portalName" class="w-full" />
-    </UFormField>
-    <UFormField name="branding.tagline" :label="t('saasSettings.editor.fields.tagline')">
-      <UInput v-model="state.branding.tagline" class="w-full" />
-    </UFormField>
-    <UFormField name="branding.supportEmail" :label="t('saasSettings.editor.fields.supportEmail')">
-      <UInput v-model="state.branding.supportEmail" type="email" class="w-full" />
-    </UFormField>
-    <UFormField name="branding.supportUrl" :label="t('saasSettings.editor.fields.supportUrl')">
-      <UInput v-model="state.branding.supportUrl" class="w-full" />
-    </UFormField>
-    <h2 class="section-heading">{{ t('saasSettings.editor.appearanceSection') }}</h2>
-    <UFormField name="appearance.theme" required :label="t('saasSettings.editor.fields.theme')">
-      <USelect
-        v-model="state.appearance.theme"
-        :items="[
-          { label: t('saasSettings.editor.themes.apex'), value: 'apex' },
-          { label: t('saasSettings.editor.themes.brutal'), value: 'brutal' }
-        ]"
-        class="w-full"
-      />
-    </UFormField>
-    <UFormField name="appearance.colorMode" required :label="t('saasSettings.editor.fields.colorMode')">
-      <USelect
-        v-model="state.appearance.colorMode"
-        :items="[
-          { label: t('saasSettings.editor.colorModes.userChoice'), value: 'user-choice' },
-          { label: t('saasSettings.editor.colorModes.lightOnly'), value: 'light-only' },
-          { label: t('saasSettings.editor.colorModes.darkOnly'), value: 'dark-only' }
-        ]"
-        class="w-full"
-      />
-    </UFormField>
-    <UFormField
-      v-if="state.appearance.colorMode !== 'dark-only'"
-      name="appearance.primaryLight"
-      required
-      :label="t('saasSettings.editor.fields.primaryLight')"
-    >
-      <UInput v-model="state.appearance.primaryLight" type="color" class="w-full" />
-    </UFormField>
-    <UFormField
-      v-if="state.appearance.colorMode !== 'light-only'"
-      name="appearance.primaryDark"
-      required
-      :label="t('saasSettings.editor.fields.primaryDark')"
-    >
-      <UInput v-model="state.appearance.primaryDark" type="color" class="w-full" />
-    </UFormField>
     <PortalSettingsAppearanceControls v-model="state" />
     <h2 class="section-heading">{{ t('saasSettings.editor.logoSection') }}</h2>
     <UFormField
@@ -193,7 +143,7 @@ function removeImage(field: BrandAssetField) {
 }
 @media (max-width: 768px) {
   .settings-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

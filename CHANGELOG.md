@@ -1,5 +1,14 @@
 # Nuxt Customer Portal
 
+## 0.4.2
+
+Split portal configuration into focused General settings and Appearance
+workflows. Add explicit Business and Soft Editorial starting styles, preserve
+legacy onboarding progress and stored themes, and keep long setup forms fully
+scrollable.
+
+All 16 public packages use `0.4.2`.
+
 ## 0.4.1
 
 Keep fresh SaaS portal registration on the organization bootstrap flow instead

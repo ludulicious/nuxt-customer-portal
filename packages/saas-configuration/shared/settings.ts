@@ -16,8 +16,24 @@ export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
 export const portalColorModePolicies = ['light-only', 'dark-only', 'user-choice'] as const
 export type PortalColorModePolicy = (typeof portalColorModePolicies)[number]
-export const portalOnboardingSteps = ['branding', 'languages', 'clients', 'modules', 'home', 'legal', 'review'] as const
+export const portalOnboardingSteps = [
+  'general',
+  'appearance',
+  'languages',
+  'clients',
+  'modules',
+  'home',
+  'legal',
+  'review'
+] as const
 export type PortalOnboardingStep = (typeof portalOnboardingSteps)[number]
+
+export const normalizePortalOnboardingStep = (step: string): PortalOnboardingStep => {
+  if (step === 'branding') {
+    return 'general'
+  }
+  return portalOnboardingSteps.includes(step as PortalOnboardingStep) ? (step as PortalOnboardingStep) : 'general'
+}
 
 const text = (maximum: number) => z.string().trim().max(maximum)
 const image = z

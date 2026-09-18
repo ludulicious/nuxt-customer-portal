@@ -17,7 +17,8 @@
       "loading": "Instellingen laden…",
       "unavailable": "Instellingen niet beschikbaar",
       "steps": {
-        "branding": "Huisstijl en weergave",
+        "general": "Algemene instellingen",
+        "appearance": "Weergave",
         "modules": "Modules",
         "home": "Homepage",
         "legal": "Juridische pagina's",
@@ -99,7 +100,7 @@
       "showSupport": "Ondersteuningssectie tonen",
       "review": {
         "portal": "Portaal",
-        "theme": "Thema",
+        "style": "Stijl",
         "colorMode": "Kleurmodus",
         "activeModules": "Actieve modules",
         "description": "Na het voltooien van de installatie worden de openbare pagina's en de rest van het portaal geopend."
@@ -128,10 +129,17 @@
         "help": "Kies minstens één taal voor de portaalinterface. Als de huidige taal wordt uitgeschakeld, schakelt het portaal over naar de eerste ondersteunde taal."
       },
       "appearance": {
-        "presets": "Stijlvoorinstellingen",
-        "presetHint": "Zacht redactioneel combineert elegante koppen met lavendelkleurige vlakken en zeeblauwe accenten. Een voorinstelling vervangt de stijl hieronder; sla op om uw wijzigingen te publiceren.",
-        "softEditorial": "Zacht redactioneel toepassen",
-        "reset": "Themastandaarden gebruiken",
+        "presets": "Beginstijl",
+        "presetHint": "Kies een duidelijk startpunt en pas daarna elk detail hieronder naar wens aan.",
+        "business": "Standaard (Zakelijk)",
+        "businessDescription": "Heldere systeemtypografie, gerichte oranje acties en neutrale vlakken.",
+        "softEditorial": "Zacht redactioneel",
+        "softEditorialDescription": "Elegante koppen, lavendelkleurige vlakken en zeeblauwe accenten.",
+        "custom": "Aangepast",
+        "common": "Kleur en weergave",
+        "commonHint": "Bepaal wie de kleurmodus kiest en stel de primaire actiekleuren in.",
+        "advanced": "Geavanceerde aanpassingen",
+        "advancedHint": "Verfijn typografie, vorm, kopbalklogo, accenten en oppervlakken.",
         "themeDefault": "Themastandaard",
         "headingFont": "Lettertype voor koppen",
         "bodyFont": "Lettertype voor tekst",

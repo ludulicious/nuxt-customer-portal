@@ -4,6 +4,7 @@ import { getSession } from '@nuxt-customer-portal/core/server'
 import { pool } from '@nuxt-customer-portal/core/server/utils/db'
 import {
   defaultPortalSettings,
+  normalizePortalOnboardingStep,
   portalOnboardingSteps,
   portalSettingsSchema,
   type PortalOnboardingState,
@@ -37,12 +38,7 @@ export async function readPortalSettings(): Promise<{
   )
   const row = result.rows[0]
   if (row) {
-    const step =
-      row.onboarding_step === 'appearance'
-        ? 'branding'
-        : portalOnboardingSteps.includes(row.onboarding_step as PortalOnboardingStep)
-          ? (row.onboarding_step as PortalOnboardingStep)
-          : 'branding'
+    const step = normalizePortalOnboardingStep(row.onboarding_step)
     return {
       settings: portalSettingsSchema.parse({
         ...row.settings,
@@ -58,7 +54,7 @@ export async function readPortalSettings(): Promise<{
     `INSERT INTO saas_configuration.portal_settings (id, settings) VALUES (true, $1::jsonb) ON CONFLICT (id) DO NOTHING`,
     [JSON.stringify(defaults)]
   )
-  return { settings: defaults, step: 'branding', completed: false }
+  return { settings: defaults, step: 'general', completed: false }
 }
 
 export async function readPortalOnboardingState(): Promise<PortalOnboardingState> {
