@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @nuxt-customer-portal/core@0.4.2
+  - @nuxt-customer-portal/products@0.4.2
+  - @nuxt-customer-portal/ui@0.4.2
+
 ## 0.4.1
 
 ### Patch Changes

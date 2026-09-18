@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/ui
 
+## 0.4.2
+
+### Patch Changes
+
+- 0f05ccf: Split portal general settings from appearance, add explicit Business and Soft Editorial starting styles, preserve legacy onboarding progress, and keep oversized centered forms vertically reachable.
+  - @nuxt-customer-portal/core@0.4.2
+
 ## 0.4.1
 
 ### Patch Changes
