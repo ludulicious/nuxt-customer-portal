@@ -46,19 +46,33 @@ while (remaining.size) {
 
 // Check every package before publishing any, including packages that were
 // successfully published by an interrupted earlier run.
-const pending = []
+const pendingExisting = []
+const pendingNew = []
 for (const pkg of ordered) {
   const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg.manifest.name)}/${version}`, {
     signal: AbortSignal.timeout(30_000)
   })
   if (response.status === 404) {
-    pending.push(pkg)
+    const packageResponse = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg.manifest.name)}`, {
+      signal: AbortSignal.timeout(30_000)
+    })
+    if (packageResponse.status === 404) {
+      pendingNew.push(pkg)
+    } else if (packageResponse.ok) {
+      pendingExisting.push(pkg)
+    } else {
+      throw new Error(`Registry check failed for ${pkg.manifest.name}: HTTP ${packageResponse.status}`)
+    }
   } else if (response.ok) {
     console.log(`Already published: ${pkg.manifest.name}@${version}`)
   } else {
     throw new Error(`Registry check failed for ${pkg.manifest.name}: HTTP ${response.status}`)
   }
 }
+
+// Publish new versions of existing packages first. New package names cannot use
+// trusted publishing until their initial version has created the npm package.
+const pending = [...pendingExisting, ...pendingNew]
 
 const temporary = mkdtempSync(join(tmpdir(), 'portal-release-'))
 try {
