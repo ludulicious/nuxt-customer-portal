@@ -57,3 +57,4 @@ jobs:
         run: pnpm release-packages
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
