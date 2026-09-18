@@ -29,21 +29,24 @@ export const portalAppearanceSchema = z.object({
   headerBranding: z.enum(['mark-name', 'full-logo']).default('mark-name')
 })
 export type PortalAppearance = z.infer<typeof portalAppearanceSchema>
-export type PortalAppearancePreset = 'theme' | 'soft-editorial'
+export type PortalAppearancePreset = 'business' | 'soft-editorial'
 
-// Applying a preset is an explicit editor action. Color-mode policy is preserved.
-export function applyAppearancePreset(current: PortalAppearance, preset: PortalAppearancePreset): PortalAppearance {
-  if (preset === 'theme') {
-    return portalAppearanceSchema.parse({
-      theme: current.theme,
-      colorMode: current.colorMode,
-      primaryLight: current.primaryLight,
-      primaryDark: current.primaryDark
-    })
-  }
-  return portalAppearanceSchema.parse({
-    theme: 'apex',
-    colorMode: current.colorMode,
+const presetValues: Record<PortalAppearancePreset, Omit<PortalAppearance, 'theme' | 'colorMode'>> = {
+  business: {
+    primaryLight: '#ea580c',
+    primaryDark: '#fb923c',
+    headingFont: 'theme',
+    bodyFont: 'theme',
+    secondaryLight: '',
+    secondaryDark: '',
+    backgroundLight: '',
+    backgroundDark: '',
+    surfaceLight: '',
+    surfaceDark: '',
+    shape: 'theme',
+    headerBranding: 'mark-name'
+  },
+  'soft-editorial': {
     primaryLight: '#543178',
     primaryDark: '#e4d5ff',
     secondaryLight: '#488b98',
@@ -56,7 +59,24 @@ export function applyAppearancePreset(current: PortalAppearance, preset: PortalA
     bodyFont: 'lato',
     shape: 'soft',
     headerBranding: 'full-logo'
+  }
+}
+
+// Applying a preset is an explicit editor action. Color-mode policy is preserved.
+export function applyAppearancePreset(current: PortalAppearance, preset: PortalAppearancePreset): PortalAppearance {
+  return portalAppearanceSchema.parse({
+    theme: current.theme,
+    colorMode: current.colorMode,
+    ...presetValues[preset]
   })
+}
+
+export function activeAppearancePreset(appearance: PortalAppearance): PortalAppearancePreset | null {
+  return (
+    (Object.entries(presetValues).find(([, values]) =>
+      Object.entries(values).every(([key, value]) => appearance[key as keyof PortalAppearance] === value)
+    )?.[0] as PortalAppearancePreset | undefined) ?? null
+  )
 }
 
 export function appearanceVariables(input: PortalAppearance, dark: boolean): Record<string, string> {

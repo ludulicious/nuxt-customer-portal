@@ -17,7 +17,8 @@
       "loading": "Loading settings…",
       "unavailable": "Settings unavailable",
       "steps": {
-        "branding": "Branding and appearance",
+        "general": "General settings",
+        "appearance": "Appearance",
         "modules": "Modules",
         "home": "Home page",
         "legal": "Legal pages",
@@ -99,7 +100,7 @@
       "showSupport": "Show support section",
       "review": {
         "portal": "Portal",
-        "theme": "Theme",
+        "style": "Style",
         "colorMode": "Color mode",
         "activeModules": "Active modules",
         "description": "Completing setup opens the configured public pages and the rest of the portal."
@@ -128,10 +129,17 @@
         "help": "Choose at least one language for the portal interface. If the current language is disabled, the portal switches to the first supported language."
       },
       "appearance": {
-        "presets": "Appearance presets",
-        "presetHint": "Soft editorial pairs elegant headings with lavender surfaces and sea-blue accents. Applying a preset replaces the styling below; save to publish your changes.",
-        "softEditorial": "Apply Soft editorial",
-        "reset": "Use theme defaults",
+        "presets": "Starting style",
+        "presetHint": "Choose a deliberate starting point, then customize any detail below.",
+        "business": "Default (Business)",
+        "businessDescription": "Clear system typography, focused orange actions, and neutral surfaces.",
+        "softEditorial": "Soft Editorial",
+        "softEditorialDescription": "Elegant headings, lavender surfaces, and sea-blue accents.",
+        "custom": "Custom",
+        "common": "Color and display",
+        "commonHint": "Set who controls the color mode and choose the primary action colors.",
+        "advanced": "Advanced customization",
+        "advancedHint": "Fine-tune typography, shape, header branding, accents, and surfaces.",
         "themeDefault": "Theme default",
         "headingFont": "Heading font",
         "bodyFont": "Body font",

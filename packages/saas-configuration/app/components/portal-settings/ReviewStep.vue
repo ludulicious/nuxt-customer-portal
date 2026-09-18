@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import type { PortalSettings } from '../../../shared/settings'
+import { activeAppearancePreset } from '../../../shared/appearance'
 
-defineProps<{ state: PortalSettings }>()
+const props = defineProps<{ state: PortalSettings }>()
 const { t } = useI18n()
+const preset = computed(() => activeAppearancePreset(props.state.appearance))
+const colorModeLabel = computed(() => {
+  const key = {
+    'user-choice': 'userChoice',
+    'light-only': 'lightOnly',
+    'dark-only': 'darkOnly'
+  }[props.state.appearance.colorMode]
+  return t(`saasSettings.editor.colorModes.${key}`)
+})
 </script>
 
 <template>
@@ -12,12 +22,16 @@ const { t } = useI18n()
       ><strong>{{ state.branding.portalName }}</strong>
     </div>
     <div>
-      <span>{{ t('saasSettings.editor.review.theme') }}</span
-      ><strong>{{ state.appearance.theme }}</strong>
+      <span>{{ t('saasSettings.editor.review.style') }}</span
+      ><strong>{{
+        preset
+          ? t(`saasSettings.editor.appearance.${preset === 'business' ? 'business' : 'softEditorial'}`)
+          : t('saasSettings.editor.appearance.custom')
+      }}</strong>
     </div>
     <div>
       <span>{{ t('saasSettings.editor.review.colorMode') }}</span
-      ><strong>{{ state.appearance.colorMode }}</strong>
+      ><strong>{{ colorModeLabel }}</strong>
     </div>
     <div>
       <span>{{ t('saasSettings.editor.review.activeModules') }}</span

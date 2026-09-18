@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  activeAppearancePreset,
   appearanceVariables,
   appearanceStylesheet,
   applyAppearancePreset,
@@ -25,11 +26,20 @@ test('editorial preset is complete, preserves mode policy and resets overrides p
   assert.equal(preset.headingFont, 'playfair')
   assert.equal(preset.bodyFont, 'lato')
   assert.equal(preset.headerBranding, 'full-logo')
+  assert.equal(activeAppearancePreset(preset), 'soft-editorial')
   assert.equal(portalAppearanceSchema.safeParse(preset).success, true)
-  const reset = applyAppearancePreset(preset, 'theme')
+  const reset = applyAppearancePreset(preset, 'business')
   assert.equal(reset.backgroundLight, '')
   assert.equal(reset.headingFont, 'theme')
-  assert.equal(reset.primaryLight, preset.primaryLight)
+  assert.equal(reset.primaryLight, '#ea580c')
+  assert.equal(activeAppearancePreset(reset), 'business')
+})
+
+test('preset identity clears after customization and applying presets preserves the stored theme', () => {
+  const legacyTheme = { ...defaultPortalSettings().appearance, theme: 'brutal' as const }
+  const preset = applyAppearancePreset(legacyTheme, 'soft-editorial')
+  assert.equal(preset.theme, 'brutal')
+  assert.equal(activeAppearancePreset({ ...preset, surfaceLight: '#fefefe' }), null)
 })
 
 test('mode-specific brand colors cover navigation, surfaces and button foregrounds', () => {
