@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  await requirePortalSettingsAdmin(event)
+  const session = await requirePortalSettingsAdmin(event)
   const body = await readBody(event)
-  return writePortalSettings(body?.settings, body?.step)
+  return writePortalSettings(body?.settings, body?.step, session.user.id)
 })

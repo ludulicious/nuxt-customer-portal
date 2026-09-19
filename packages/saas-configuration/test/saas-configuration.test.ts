@@ -8,6 +8,7 @@ import {
   portalSettingsSchema,
   resolveBrandAsset
 } from '../shared/settings'
+import { initializeEnabledModules } from '../server/utils/module-initialization'
 
 test('default SaaS portal settings are complete and bilingual', () => {
   const settings = defaultPortalSettings('Acme Portal')
@@ -21,6 +22,36 @@ test('invoice-timesheets requires both source modules', () => {
   const settings = defaultPortalSettings()
   settings.enabledModules = ['invoice-timesheets']
   assert.equal(portalSettingsSchema.safeParse(settings).success, false)
+})
+
+test('enabled Products initializes a missing sandbox store without overwriting an existing store', async () => {
+  const queries: Array<{ text: string; values?: unknown[] }> = []
+  const client = {
+    query: async (text: string, values?: unknown[]) => {
+      queries.push({ text, values })
+      return { rows: [] }
+    }
+  }
+  const settings = defaultPortalSettings()
+  settings.enabledModules = ['invoices', 'products', 'invoice-products', 'planning']
+
+  await initializeEnabledModules(client, portalSettingsSchema.parse(settings), 'admin-user')
+
+  assert.equal(queries.length, 1)
+  assert.match(queries[0]!.text, /INSERT INTO products\.store/)
+  assert.match(queries[0]!.text, /organization_type='PROVIDER'/)
+  assert.match(queries[0]!.text, /ON CONFLICT\(id\) DO NOTHING/)
+  assert.deepEqual(queries[0]!.values, ['admin-user'])
+})
+
+test('module initialization leaves Products untouched when the module is disabled', async () => {
+  let queried = false
+  const client = { query: async () => ((queried = true), { rows: [] }) }
+  const settings = defaultPortalSettings()
+
+  await initializeEnabledModules(client, settings, 'admin-user')
+
+  assert.equal(queried, false)
 })
 
 test('branding assets fall back across color modes', () => {
