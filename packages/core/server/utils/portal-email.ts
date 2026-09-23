@@ -166,8 +166,10 @@ export const decryptPortalEmailSecret = (value: string) => {
       ? decryptPortalSecret(value, emailEncryption)
       : decryptLegacyDotSecret(value, emailEncryption.overrides)
   } catch (error) {
-    if (error instanceof Error && (/^Configure /.test(error.message) || /^Retain /.test(error.message))) throw error
-    throw new Error('Stored email credential could not be decrypted')
+    if (error instanceof Error && (/^Configure /.test(error.message) || /^Retain /.test(error.message))) {
+      throw error
+    }
+    throw new Error('Stored email credential could not be decrypted', { cause: error })
   }
 }
 

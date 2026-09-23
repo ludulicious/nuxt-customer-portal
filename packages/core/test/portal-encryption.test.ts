@@ -35,8 +35,11 @@ test('portal secrets use a purpose-bound key derived from the shared root', () =
     assert.throws(() => decryptPortalSecret(tamperAuthenticationTag(encrypted), options), /could not be decrypted/)
   } finally {
     delete process.env.TEST_LATER_OVERRIDE
-    if (original === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = original
+    if (original === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = original
+    }
   }
 })
 
@@ -56,10 +59,16 @@ test('module-specific keys override the portal key', () => {
     process.env.TEST_ENCRYPTION_KEY = 'second-override'
     assert.throws(() => decryptPortalSecret(encrypted, overrideOptions), /could not be decrypted/)
   } finally {
-    if (originalRoot === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = originalRoot
-    if (originalOverride === undefined) delete process.env.TEST_ENCRYPTION_KEY
-    else process.env.TEST_ENCRYPTION_KEY = originalOverride
+    if (originalRoot === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = originalRoot
+    }
+    if (originalOverride === undefined) {
+      delete process.env.TEST_ENCRYPTION_KEY
+    } else {
+      process.env.TEST_ENCRYPTION_KEY = originalOverride
+    }
   }
 })
 
@@ -71,8 +80,11 @@ test('portal key validation and missing-key errors are actionable', () => {
     process.env.PORTAL_ENCRYPTION_KEY = 'not-a-32-byte-key'
     assert.throws(() => encryptPortalSecret('secret', options), /base64-encoded 32-byte key/)
   } finally {
-    if (original === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = original
+    if (original === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = original
+    }
   }
 })
 
@@ -106,9 +118,15 @@ test('legacy dot and binary ciphertext remain decryptable with retained keys', (
       'legacy-binary'
     )
   } finally {
-    if (originalHashed === undefined) delete process.env.TEST_HASHED_KEY
-    else process.env.TEST_HASHED_KEY = originalHashed
-    if (originalBase64 === undefined) delete process.env.TEST_BASE64_KEY
-    else process.env.TEST_BASE64_KEY = originalBase64
+    if (originalHashed === undefined) {
+      delete process.env.TEST_HASHED_KEY
+    } else {
+      process.env.TEST_HASHED_KEY = originalHashed
+    }
+    if (originalBase64 === undefined) {
+      delete process.env.TEST_BASE64_KEY
+    } else {
+      process.env.TEST_BASE64_KEY = originalBase64
+    }
   }
 })

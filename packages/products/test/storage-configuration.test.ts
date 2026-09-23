@@ -23,10 +23,16 @@ test('stored S3 secrets use the portal encryption key by default', () => {
     assert.equal(decryptStorageSecret(encrypted), 'super-secret-access-key')
     assert.throws(() => decryptStorageSecret(tamperAuthenticationTag(encrypted)), /could not be decrypted/)
   } finally {
-    if (originalRoot === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = originalRoot
-    if (originalStorage === undefined) delete process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
-    else process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = originalStorage
+    if (originalRoot === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = originalRoot
+    }
+    if (originalStorage === undefined) {
+      delete process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
+    } else {
+      process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = originalStorage
+    }
   }
 })
 

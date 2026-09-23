@@ -31,8 +31,10 @@ export const decryptStripeSecret = (value: string) => {
       ? decryptPortalSecret(value, stripeEncryption)
       : decryptLegacyDotSecret(value, stripeEncryption.overrides)
   } catch (error) {
-    if (error instanceof Error && (/^Configure /.test(error.message) || /^Retain /.test(error.message))) throw error
-    throw new Error('Stored Stripe credential could not be decrypted')
+    if (error instanceof Error && (/^Configure /.test(error.message) || /^Retain /.test(error.message))) {
+      throw error
+    }
+    throw new Error('Stored Stripe credential could not be decrypted', { cause: error })
   }
 }
 

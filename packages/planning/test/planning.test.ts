@@ -225,10 +225,16 @@ test('credentials are authenticated encrypted data and use the portal key by def
     parts[4] = `${parts[4]!.startsWith('A') ? 'B' : 'A'}${parts[4]!.slice(1)}`
     assert.throws(() => decrypt(parts.join('.')))
   } finally {
-    if (oldRoot === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = oldRoot
-    if (oldPlanning === undefined) delete process.env.PLANNING_ENCRYPTION_KEY
-    else process.env.PLANNING_ENCRYPTION_KEY = oldPlanning
+    if (oldRoot === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = oldRoot
+    }
+    if (oldPlanning === undefined) {
+      delete process.env.PLANNING_ENCRYPTION_KEY
+    } else {
+      process.env.PLANNING_ENCRYPTION_KEY = oldPlanning
+    }
   }
 })
 test('invitations preserve UID, sequence, UTF-8 folding and cancellation method', () => {

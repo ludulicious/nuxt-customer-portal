@@ -27,7 +27,9 @@ const decodeBase64Key = (value: string, name: string) => {
 
 const overrideKey = (override: PortalEncryptionOverride) => {
   const value = process.env[override.env]
-  if (!value) return null
+  if (!value) {
+    return null
+  }
   return override.format === 'sha256'
     ? createHash('sha256').update(value).digest()
     : decodeBase64Key(value, override.env)
@@ -36,7 +38,9 @@ const overrideKey = (override: PortalEncryptionOverride) => {
 const configuredOverride = (overrides: PortalEncryptionOverride[] = []) => {
   for (const override of overrides) {
     const key = overrideKey(override)
-    if (key) return { key, source: override.env }
+    if (key) {
+      return { key, source: override.env }
+    }
   }
   return null
 }
@@ -48,10 +52,14 @@ const missingKeyMessage = (overrides: PortalEncryptionOverride[] = []) => {
 
 const resolvePortalEncryptionMaterial = ({ purpose, overrides = [] }: PortalEncryptionOptions) => {
   const override = configuredOverride(overrides)
-  if (override) return override
+  if (override) {
+    return override
+  }
 
   const rootValue = process.env.PORTAL_ENCRYPTION_KEY
-  if (!rootValue) throw new Error(missingKeyMessage(overrides))
+  if (!rootValue) {
+    throw new Error(missingKeyMessage(overrides))
+  }
   const rootKey = decodeBase64Key(rootValue, ROOT_KEY_ENV)
   return {
     key: Buffer.from(hkdfSync('sha256', rootKey, Buffer.alloc(0), `nuxt-customer-portal:${purpose}`, 32)),
@@ -65,14 +73,20 @@ export const resolvePortalEncryptionKey = (options: PortalEncryptionOptions) =>
 const materialForSource = (source: string, options: PortalEncryptionOptions) => {
   if (source === ROOT_KEY_ENV) {
     const rootValue = process.env.PORTAL_ENCRYPTION_KEY
-    if (!rootValue) throw new Error(`Configure ${ROOT_KEY_ENV} to decrypt this credential`)
+    if (!rootValue) {
+      throw new Error(`Configure ${ROOT_KEY_ENV} to decrypt this credential`)
+    }
     const rootKey = decodeBase64Key(rootValue, ROOT_KEY_ENV)
     return Buffer.from(hkdfSync('sha256', rootKey, Buffer.alloc(0), `nuxt-customer-portal:${options.purpose}`, 32))
   }
   const override = options.overrides?.find(({ env }) => env === source)
-  if (!override) throw new Error('Stored credential uses an unsupported encryption key source')
+  if (!override) {
+    throw new Error('Stored credential uses an unsupported encryption key source')
+  }
   const key = overrideKey(override)
-  if (!key) throw new Error(`Configure ${source} to decrypt this credential`)
+  if (!key) {
+    throw new Error(`Configure ${source} to decrypt this credential`)
+  }
   return key
 }
 
@@ -120,7 +134,9 @@ export const decryptPortalSecret = (value: string, options: PortalEncryptionOpti
 
 const requireLegacyOverrideKey = (overrides: PortalEncryptionOverride[]) => {
   const material = configuredOverride(overrides)
-  if (material) return material.key
+  if (material) {
+    return material.key
+  }
   throw new Error(`Retain ${overrides.map(({ env }) => env).join(' or ')} to decrypt legacy credentials`)
 }
 
@@ -141,7 +157,9 @@ export const decryptLegacyDotSecret = (value: string, overrides: PortalEncryptio
 
 export const decryptLegacyBinarySecret = (value: string, overrides: PortalEncryptionOverride[]) => {
   const bytes = Buffer.from(value, 'base64')
-  if (bytes.length < 29) throw new Error('Stored credential has an invalid encryption format')
+  if (bytes.length < 29) {
+    throw new Error('Stored credential has an invalid encryption format')
+  }
   const key = requireLegacyOverrideKey(overrides)
   try {
     const decipher = createDecipheriv('aes-256-gcm', key, bytes.subarray(0, 12))

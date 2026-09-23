@@ -27,10 +27,16 @@ test('portal email credentials are encrypted, authenticated, and key-bound', () 
     process.env.PORTAL_ENCRYPTION_KEY = Buffer.alloc(32, 2).toString('base64')
     assert.throws(() => decryptPortalEmailSecret(encrypted), /could not be decrypted/)
   } finally {
-    if (originalRoot === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
-    else process.env.PORTAL_ENCRYPTION_KEY = originalRoot
-    if (originalEmail === undefined) delete process.env.PORTAL_EMAIL_ENCRYPTION_KEY
-    else process.env.PORTAL_EMAIL_ENCRYPTION_KEY = originalEmail
+    if (originalRoot === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_ENCRYPTION_KEY = originalRoot
+    }
+    if (originalEmail === undefined) {
+      delete process.env.PORTAL_EMAIL_ENCRYPTION_KEY
+    } else {
+      process.env.PORTAL_EMAIL_ENCRYPTION_KEY = originalEmail
+    }
   }
 })
 
