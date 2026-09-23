@@ -1,5 +1,19 @@
 # Nuxt Customer Portal
 
+## 0.4.3
+
+Add a single portal-wide encryption key that derives isolated credentials for
+Portal Core, Products, and Planning, while preserving module-specific key
+overrides and legacy ciphertext compatibility.
+
+Initialize a disabled sandbox Products store during fresh portal setup so
+Planning works immediately when Products is enabled.
+
+Keep shared validation schemas compatible with the Zod runtime resolved by
+Nuxt production bundles.
+
+All 16 public packages use `0.4.3`.
+
 ## 0.4.2
 
 Split portal configuration into focused General settings and Appearance

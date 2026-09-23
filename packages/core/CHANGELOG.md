@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.4.3
+
+### Patch Changes
+
+- eb2a85c: Add a single base64-encoded `PORTAL_ENCRYPTION_KEY` that derives isolated keys for credentials saved by Portal Core, Products, and Planning. Existing module-specific keys remain supported as overrides and can decrypt their legacy ciphertext formats.
+
 ## 0.4.2
 
 ## 0.4.1

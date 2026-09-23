@@ -18,22 +18,22 @@ export const invoiceLineSchema = z.object({
   unitPriceMinor: moneyMinor,
   vatRateBasisPoints: z.number().int().min(0).max(10_000).default(2100)
 })
-export const invoiceCreateSchema = z
-  .object({
-    clientOrganizationId: id,
-    contactId: id.nullable().optional(),
-    number: invoiceNumber,
-    currency: z.string().length(3),
-    issueDate: isoDate,
-    dueDate: isoDate,
-    subject: z.string().trim().max(500).nullable().optional(),
-    notes: z.string().trim().max(5000).nullable().optional(),
-    lines: z.array(invoiceLineSchema).min(1).max(500)
-  })
-  .refine((value) => value.dueDate >= value.issueDate, {
-    path: ['dueDate'],
-    message: 'Due date must not precede invoice date'
-  })
+export const invoiceCreateShape = {
+  clientOrganizationId: id,
+  contactId: id.nullable().optional(),
+  number: invoiceNumber,
+  currency: z.string().length(3),
+  issueDate: isoDate,
+  dueDate: isoDate,
+  subject: z.string().trim().max(500).nullable().optional(),
+  notes: z.string().trim().max(5000).nullable().optional(),
+  lines: z.array(invoiceLineSchema).min(1).max(500)
+}
+export const validateInvoiceDates = (value: { issueDate: string; dueDate: string }) => value.dueDate >= value.issueDate
+export const invoiceCreateSchema = z.object(invoiceCreateShape).refine(validateInvoiceDates, {
+  path: ['dueDate'],
+  message: 'Due date must not precede invoice date'
+})
 export type InvoiceCreateInput = z.infer<typeof invoiceCreateSchema>
 export const invoiceUpdateSchema = z
   .object({

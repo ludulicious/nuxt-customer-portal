@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const privateClientInvitationSchema = z
   .object({
-    requestId: z.uuid(),
+    requestId: z.string().uuid(),
     clientId: z.string().min(1).optional(),
     name: z.string().trim().min(2).max(160).optional(),
     email: z.string().trim().toLowerCase().email(),

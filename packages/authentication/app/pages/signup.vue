@@ -95,7 +95,7 @@ const providers = computed(() =>
 
 const schema = computed(() => {
   const base = z.object({
-    email: z.email(t('signup.validation.invalidEmail')),
+    email: z.string().email(t('signup.validation.invalidEmail')),
     password: z.string().min(8, t('signup.validation.passwordMinLength'))
   })
   return invitationId

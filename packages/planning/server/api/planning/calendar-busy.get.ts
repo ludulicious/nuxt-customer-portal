@@ -6,7 +6,7 @@ import { providerAccess } from '@nuxt-customer-portal/planning/server/utils/acce
 import { externalBusyDetails } from '@nuxt-customer-portal/planning/server/utils/adapters'
 
 const querySchema = z
-  .object({ from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }) })
+  .object({ from: z.string().datetime({ offset: true }), to: z.string().datetime({ offset: true }) })
   .refine(
     ({ from, to }) => Date.parse(to) > Date.parse(from) && Date.parse(to) - Date.parse(from) <= 14 * 86400000,
     'Choose a range of at most 14 days'

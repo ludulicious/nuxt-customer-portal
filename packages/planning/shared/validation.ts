@@ -8,27 +8,30 @@ const date = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((v) => Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v, 'Invalid date')
 const time = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)
-export const availabilitySchema = z
-  .object({
-    date,
-    endDate: date.nullable().default(null),
-    startTime: time,
-    endTime: z
-      .string()
-      .transform((value) => (value === '00:00' ? '24:00' : value))
-      .pipe(z.union([time, z.literal('24:00')])),
-    recurring: z.boolean().default(false),
-    productIds: z.array(z.string().min(1).max(100)).min(1).max(100).nullable().default(null),
-    exceptions: z.array(date).max(365).default([])
-  })
-  .superRefine((v, c) => {
-    if (v.endTime <= v.startTime) {
-      c.addIssue({ code: 'custom', path: ['endTime'], message: 'End must follow start on the same day' })
-    }
-    if (v.endDate && v.endDate < v.date) {
-      c.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must follow start date' })
-    }
-  })
+export const availabilityShape = {
+  date,
+  endDate: date.nullable().default(null),
+  startTime: time,
+  endTime: z
+    .string()
+    .transform((value) => (value === '00:00' ? '24:00' : value))
+    .pipe(z.union([time, z.literal('24:00')])),
+  recurring: z.boolean().default(false),
+  productIds: z.array(z.string().min(1).max(100)).min(1).max(100).nullable().default(null),
+  exceptions: z.array(date).max(365).default([])
+}
+export const validateAvailability = (
+  v: z.infer<ReturnType<typeof z.object<typeof availabilityShape>>>,
+  c: z.RefinementCtx
+) => {
+  if (v.endTime <= v.startTime) {
+    c.addIssue({ code: 'custom', path: ['endTime'], message: 'End must follow start on the same day' })
+  }
+  if (v.endDate && v.endDate < v.date) {
+    c.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must follow start date' })
+  }
+}
+export const availabilitySchema = z.object(availabilityShape).superRefine(validateAvailability)
 export const providerSettingsSchema = z.object({
   timezone: timezoneSchema,
   graceMinutes: z.number().int().min(0).max(1440),
@@ -38,8 +41,8 @@ export const providerSettingsSchema = z.object({
 })
 export const availabilityQuerySchema = z
   .object({
-    from: z.iso.datetime({ offset: true }),
-    to: z.iso.datetime({ offset: true }),
+    from: z.string().datetime({ offset: true }),
+    to: z.string().datetime({ offset: true }),
     providerUserId: z.string().max(100).optional()
   })
   .refine(
@@ -49,16 +52,18 @@ export const availabilityQuerySchema = z
 export const holdSchema = z.object({
   productId: z.string().min(1).max(100),
   providerUserId: z.string().min(1).max(100),
-  start: z.iso.datetime({ offset: true }),
+  start: z.string().datetime({ offset: true }),
   customerTimezone: timezoneSchema,
   currency: z.string().regex(/^[A-Z]{3}$/),
   locale: z.enum(['en', 'nl']).default('en'),
-  replacesId: z.uuid().optional(),
+  replacesId: z.string().uuid().optional(),
   previousHoldToken: z.string().min(32).max(200).optional()
 })
 export const holdCredentialSchema = z.object({ holdToken: z.string().min(32).max(200) })
 
-export const availabilityEditSchema = availabilitySchema.safeExtend({ occurrenceDate: date.optional() })
+export const availabilityEditSchema = z
+  .object({ ...availabilityShape, occurrenceDate: date.optional() })
+  .superRefine(validateAvailability)
 
 export const appointmentListSchema = z.object({
   search: z.string().trim().max(200).default(''),
@@ -71,7 +76,7 @@ export const appointmentListSchema = z.object({
 })
 export const staffRescheduleSchema = z.object({
   providerUserId: z.string().min(1).max(100),
-  start: z.iso.datetime({ offset: true }),
+  start: z.string().datetime({ offset: true }),
   customerTimezone: timezoneSchema,
   revision: z.number().int().min(0)
 })

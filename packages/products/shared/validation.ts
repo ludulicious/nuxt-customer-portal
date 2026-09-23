@@ -39,79 +39,79 @@ export const priceSchema = z.object({
   amount: z.number().int().positive().max(100000000),
   taxBehavior: z.enum(['inclusive', 'exclusive'])
 })
-export const productSchema = z
-  .object({
-    planning: productPlanningSchema.default(defaultPlanning()),
-    isFree: z.boolean().default(false),
-    slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    type: z.enum(['digital', 'service']),
-    categoryId: text(100).min(1).nullable().default(null),
-    status: z.enum(['draft', 'published', 'archived']),
-    content: z.object({ en: copy, nl: copy }),
-    taxCode: z.string().regex(/^txcd_\d{8}$/),
-    nextSteps: z.object({ en: text(5000), nl: text(5000) }),
-    imageIds: z.array(text(100).min(1)).max(20),
-    thumbnailImageId: text(100).min(1).nullable().default(null),
-    galleryImageIds: z.array(text(100).min(1)).max(20).default([]),
-    detailImageIds: z.array(text(100).min(1)).max(20).default([]),
-    fileIds: z.array(text(100).min(1)).max(100),
-    fileNames: z.record(z.string(), z.object({ en: text(200), nl: text(200) })).default({}),
-    videoUrl: z
-      .string()
-      .max(2000)
-      .refine((v) => !v || (/^https:\/\//.test(v) && z.url().safeParse(v).success)),
-    prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
-  })
-  .superRefine((v, ctx) => {
-    if (v.planning.enabled && v.type !== 'service') {
-      ctx.addIssue({ code: 'custom', path: ['planning.enabled'], message: 'Only service products can be plannable' })
+const productShape = {
+  planning: productPlanningSchema.default(defaultPlanning()),
+  isFree: z.boolean().default(false),
+  slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  type: z.enum(['digital', 'service']),
+  categoryId: text(100).min(1).nullable().default(null),
+  status: z.enum(['draft', 'published', 'archived']),
+  content: z.object({ en: copy, nl: copy }),
+  taxCode: z.string().regex(/^txcd_\d{8}$/),
+  nextSteps: z.object({ en: text(5000), nl: text(5000) }),
+  imageIds: z.array(text(100).min(1)).max(20),
+  thumbnailImageId: text(100).min(1).nullable().default(null),
+  galleryImageIds: z.array(text(100).min(1)).max(20).default([]),
+  detailImageIds: z.array(text(100).min(1)).max(20).default([]),
+  fileIds: z.array(text(100).min(1)).max(100),
+  fileNames: z.record(z.string(), z.object({ en: text(200), nl: text(200) })).default({}),
+  videoUrl: z
+    .string()
+    .max(2000)
+    .refine((v) => !v || (/^https:\/\//.test(v) && z.string().url().safeParse(v).success)),
+  prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
+}
+const validateProduct = (v: z.infer<ReturnType<typeof z.object<typeof productShape>>>, ctx: z.RefinementCtx) => {
+  if (v.planning.enabled && v.type !== 'service') {
+    ctx.addIssue({ code: 'custom', path: ['planning.enabled'], message: 'Only service products can be plannable' })
+  }
+  const imageIds = new Set(v.imageIds)
+  for (const [field, ids] of [
+    ['galleryImageIds', v.galleryImageIds],
+    ['detailImageIds', v.detailImageIds]
+  ] as const) {
+    if (new Set(ids).size !== ids.length || ids.some((id) => !imageIds.has(id))) {
+      ctx.addIssue({ code: 'custom', path: [field], message: 'Select images from this product library' })
     }
-    const imageIds = new Set(v.imageIds)
-    for (const [field, ids] of [
-      ['galleryImageIds', v.galleryImageIds],
-      ['detailImageIds', v.detailImageIds]
-    ] as const) {
-      if (new Set(ids).size !== ids.length || ids.some((id) => !imageIds.has(id))) {
-        ctx.addIssue({ code: 'custom', path: [field], message: 'Select images from this product library' })
+  }
+  if (v.thumbnailImageId && !imageIds.has(v.thumbnailImageId)) {
+    ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Select an image from this product library' })
+  }
+  if (!v.content.en.title && !v.content.nl.title) {
+    ctx.addIssue({ code: 'custom', path: ['content.en.title'], message: 'A title is required' })
+  }
+  if (new Set(v.prices.map((p) => p.currency)).size !== v.prices.length) {
+    ctx.addIssue({ code: 'custom', path: ['prices'], message: 'Only one price per currency' })
+  }
+  if (v.status === 'published' && !v.isFree) {
+    v.prices.forEach((price, index) => {
+      if (price.amount <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['prices', index, 'amount'],
+          message: 'Paid products need a positive price'
+        })
       }
-    }
-    if (v.thumbnailImageId && !imageIds.has(v.thumbnailImageId)) {
-      ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Select an image from this product library' })
-    }
-    if (!v.content.en.title && !v.content.nl.title) {
-      ctx.addIssue({ code: 'custom', path: ['content.en.title'], message: 'A title is required' })
-    }
-    if (new Set(v.prices.map((p) => p.currency)).size !== v.prices.length) {
-      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'Only one price per currency' })
-    }
-    if (v.status === 'published' && !v.isFree) {
-      v.prices.forEach((price, index) => {
-        if (price.amount <= 0) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['prices', index, 'amount'],
-            message: 'Paid products need a positive price'
-          })
-        }
-      })
-    }
-    if (v.status === 'published' && !v.isFree && !v.prices.length) {
-      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
-    }
-    if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
-      ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
-    }
-    if (v.status === 'published' && !v.thumbnailImageId) {
-      ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Choose a thumbnail image' })
-    }
-    if (v.status === 'published' && !v.galleryImageIds.length) {
-      ctx.addIssue({ code: 'custom', path: ['galleryImageIds'], message: 'Choose at least one gallery image' })
-    }
-    if (v.status === 'published' && !v.detailImageIds.length) {
-      ctx.addIssue({ code: 'custom', path: ['detailImageIds'], message: 'Choose at least one product details image' })
-    }
-  })
-export const productPricingSchema = z.object({ isFree: productSchema.shape.isFree, prices: productSchema.shape.prices })
+    })
+  }
+  if (v.status === 'published' && !v.isFree && !v.prices.length) {
+    ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
+  }
+  if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
+    ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
+  }
+  if (v.status === 'published' && !v.thumbnailImageId) {
+    ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Choose a thumbnail image' })
+  }
+  if (v.status === 'published' && !v.galleryImageIds.length) {
+    ctx.addIssue({ code: 'custom', path: ['galleryImageIds'], message: 'Choose at least one gallery image' })
+  }
+  if (v.status === 'published' && !v.detailImageIds.length) {
+    ctx.addIssue({ code: 'custom', path: ['detailImageIds'], message: 'Choose at least one product details image' })
+  }
+}
+export const productSchema = z.object(productShape).superRefine(validateProduct)
+export const productPricingSchema = z.object({ isFree: productShape.isFree, prices: productShape.prices })
 
 export const productContentSchema = z
   .object({
@@ -124,7 +124,9 @@ export const productContentSchema = z
     }
   })
 
-export const productCreateSchema = productSchema.safeExtend({ categoryId: text(100).min(1) })
+export const productCreateSchema = z
+  .object({ ...productShape, categoryId: text(100).min(1) })
+  .superRefine(validateProduct)
 
 export const billingSchema = z
   .object({
@@ -132,7 +134,10 @@ export const billingSchema = z
     firstName: text(100),
     lastName: text(100),
     name: text(200).min(1),
-    email: z.email().transform((v) => v.toLowerCase()),
+    email: z
+      .string()
+      .email()
+      .transform((v) => v.toLowerCase()),
     company: text(200),
     address: text(2000).min(5),
     country: z.string().regex(/^[A-Z]{2}$/),
@@ -158,7 +163,7 @@ export const checkoutSchema = z.object({
   locale: localeSchema,
   returnUrl: z.string().trim().max(2000).optional(),
   billing: billingSchema,
-  requestId: z.uuid()
+  requestId: z.string().uuid()
 })
 export const listSchema = z.object({
   page: z.coerce.number().int().min(1).max(100000).default(1),
@@ -175,39 +180,43 @@ export const listSchema = z.object({
     .regex(/^[A-Z]{3}$/)
     .optional()
 })
-export const settingsSchema = z
-  .object({
-    checkoutAppearance: checkoutAppearanceSchema.default(defaultCheckoutAppearance()),
-    markdownStyle: markdownStyleSchema.optional(),
-    currencyTaxBehavior: z.partialRecord(z.enum(productCurrencies), z.enum(['inclusive', 'exclusive'])).default({}),
-    enabled: z.boolean(),
-    mode: z.enum(['sandbox', 'live']).default('sandbox'),
-    defaultLocale: z.enum(portalLanguageCodes),
-    languages: z
-      .array(z.enum(portalLanguageCodes))
-      .min(1)
-      .refine((values) => new Set(values).size === values.length)
-      .default([...portalLanguageCodes]),
-    currencies: z
-      .array(z.enum(productCurrencies))
-      .min(1)
-      .refine((v) => new Set(v).size === v.length),
-    imagePolicy: z
-      .object({
-        thumbnail: imageSizeSchema({ width: 400, height: 400 }),
-        gallery: imageSizeSchema({ width: 800, height: 1000 }),
-        detail: imageSizeSchema({ width: 1200, height: 900 })
-      })
-      .default({
-        thumbnail: { width: 400, height: 400 },
-        gallery: { width: 800, height: 1000 },
-        detail: { width: 1200, height: 900 }
-      })
-  })
-  .refine((settings) => settings.languages.includes(settings.defaultLocale), {
-    path: ['defaultLocale'],
-    message: 'Choose a supported store language'
-  })
+export const settingsShape = {
+  checkoutAppearance: checkoutAppearanceSchema.default(defaultCheckoutAppearance()),
+  markdownStyle: markdownStyleSchema.optional(),
+  currencyTaxBehavior: z
+    .record(z.string(), z.enum(['inclusive', 'exclusive']))
+    .refine((value) => Object.keys(value).every((currency) => productCurrencies.includes(currency as never)))
+    .default({}),
+  enabled: z.boolean(),
+  mode: z.enum(['sandbox', 'live']).default('sandbox'),
+  defaultLocale: z.enum(portalLanguageCodes),
+  languages: z
+    .array(z.enum(portalLanguageCodes))
+    .min(1)
+    .refine((values) => new Set(values).size === values.length)
+    .default([...portalLanguageCodes]),
+  currencies: z
+    .array(z.enum(productCurrencies))
+    .min(1)
+    .refine((v) => new Set(v).size === v.length),
+  imagePolicy: z
+    .object({
+      thumbnail: imageSizeSchema({ width: 400, height: 400 }),
+      gallery: imageSizeSchema({ width: 800, height: 1000 }),
+      detail: imageSizeSchema({ width: 1200, height: 900 })
+    })
+    .default({
+      thumbnail: { width: 400, height: 400 },
+      gallery: { width: 800, height: 1000 },
+      detail: { width: 1200, height: 900 }
+    })
+}
+export const validateSettings = (settings: z.infer<ReturnType<typeof z.object<typeof settingsShape>>>) =>
+  settings.languages.includes(settings.defaultLocale)
+export const settingsSchema = z.object(settingsShape).refine(validateSettings, {
+  path: ['defaultLocale'],
+  message: 'Choose a supported store language'
+})
 function imageSizeSchema(defaultValue: { width: number; height: number }) {
   return z
     .object({

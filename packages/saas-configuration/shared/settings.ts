@@ -47,12 +47,15 @@ const link = z
   .string()
   .trim()
   .max(500)
-  .refine((value) => !value || value.startsWith('/') || z.url().safeParse(value).success, 'Use a valid URL or path')
+  .refine(
+    (value) => !value || value.startsWith('/') || z.string().url().safeParse(value).success,
+    'Use a valid URL or path'
+  )
 
 export const portalBrandingSchema = z.object({
   portalName: text(100).min(2),
   tagline: text(160),
-  supportEmail: z.email().or(z.literal('')),
+  supportEmail: z.string().email().or(z.literal('')),
   supportUrl: link,
   markLight: image,
   markDark: image,

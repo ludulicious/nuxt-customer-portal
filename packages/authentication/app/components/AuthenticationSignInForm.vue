@@ -21,7 +21,7 @@ const fields = computed(() => [
 ])
 const schema = computed(() =>
   z.object({
-    email: z.email(t('login.validation.invalidEmail')),
+    email: z.string().email(t('login.validation.invalidEmail')),
     password: z.string().min(8, t('login.validation.passwordMinLength'))
   })
 )

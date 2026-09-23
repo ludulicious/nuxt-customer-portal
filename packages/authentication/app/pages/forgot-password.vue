@@ -70,7 +70,7 @@ const handleOtpInput = (event: Event) => {
 // Email validation schema
 const emailSchema = computed(() =>
   z.object({
-    email: z.email(t('forgotPassword.validation.invalidEmail'))
+    email: z.string().email(t('forgotPassword.validation.invalidEmail'))
   })
 )
 

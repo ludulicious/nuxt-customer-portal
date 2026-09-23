@@ -17,7 +17,7 @@ import {
 
 const bodySchema = z.object({
   invitationId: z.string().min(1),
-  email: z.email(),
+  email: z.string().email(),
   password: z.string().min(8)
 })
 

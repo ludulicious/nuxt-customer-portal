@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.4.3
+
+### Patch Changes
+
+- 959056e: Initialize a disabled sandbox Products store when Products is enabled during portal setup so Planning works on fresh deployments without a separate Store settings save.
+- Updated dependencies [eb2a85c]
+  - @nuxt-customer-portal/core@0.4.3
+  - @nuxt-customer-portal/ui@0.4.3
+
 ## 0.4.2
 
 ### Patch Changes

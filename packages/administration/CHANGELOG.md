@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/administration
 
+## 0.4.3
+
+### Patch Changes
+
+- Keep API-key expiry validation compatible with the Zod runtime resolved by Nuxt production bundles.
+- Updated dependencies [eb2a85c]
+  - @nuxt-customer-portal/core@0.4.3
+  - @nuxt-customer-portal/ui@0.4.3
+
 ## 0.4.2
 
 ### Patch Changes

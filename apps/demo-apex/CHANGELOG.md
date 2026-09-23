@@ -1,5 +1,20 @@
 # @nuxt-customer-portal/demo-apex
 
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [eb2a85c]
+  - @nuxt-customer-portal/products@0.4.3
+  - @nuxt-customer-portal/planning@0.4.3
+  - @nuxt-customer-portal/kit@0.4.3
+  - @nuxt-customer-portal/invoice-products@0.4.3
+  - @nuxt-customer-portal/invoice-timesheets@0.4.3
+  - @nuxt-customer-portal/invoices@0.4.3
+  - @nuxt-customer-portal/preset@0.4.3
+  - @nuxt-customer-portal/service-requests@0.4.3
+  - @nuxt-customer-portal/timesheets@0.4.3
+
 ## 0.3.6
 
 ### Patch Changes
