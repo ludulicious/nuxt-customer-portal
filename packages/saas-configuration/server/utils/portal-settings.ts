@@ -11,6 +11,7 @@ import {
   type PortalOnboardingStep,
   type PortalSettings
 } from '../../shared/settings'
+import { initializeEnabledModules } from './module-initialization'
 
 type PoolClient = Pick<typeof pool, 'query'>
 
@@ -128,7 +129,7 @@ async function validateClientSettings(client: PoolClient, settings: PortalSettin
   }
 }
 
-export async function writePortalSettings(input: unknown, requestedStep?: unknown) {
+export async function writePortalSettings(input: unknown, requestedStep: unknown, actorId: string) {
   const settings = portalSettingsSchema.parse(input)
   await validatePortalBrandImages(settings)
   const step = portalOnboardingSteps.includes(requestedStep as PortalOnboardingStep)
@@ -138,6 +139,7 @@ export async function writePortalSettings(input: unknown, requestedStep?: unknow
   try {
     await client.query('BEGIN')
     await validateClientSettings(client, settings)
+    await initializeEnabledModules(client, settings, actorId)
     await client.query(
       `UPDATE saas_configuration.portal_settings SET settings=$1::jsonb, onboarding_step=COALESCE($2,onboarding_step), updated_at=now() WHERE id=true`,
       [JSON.stringify(settings), step || null]
@@ -152,13 +154,14 @@ export async function writePortalSettings(input: unknown, requestedStep?: unknow
   return { settings, step: step || (await readPortalSettings()).step }
 }
 
-export async function completePortalOnboarding(input: unknown) {
+export async function completePortalOnboarding(input: unknown, actorId: string) {
   const settings = portalSettingsSchema.parse(input)
   await validatePortalBrandImages(settings)
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
     await validateClientSettings(client, settings)
+    await initializeEnabledModules(client, settings, actorId)
     await client.query(
       `UPDATE saas_configuration.portal_settings SET settings=$1::jsonb, onboarding_step='review', completed_at=now(), updated_at=now() WHERE id=true`,
       [JSON.stringify(settings)]
