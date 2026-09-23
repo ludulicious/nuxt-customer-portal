@@ -6,16 +6,28 @@ import {
   testStorageConfiguration
 } from '../server/utils/storage-configuration'
 
-test.skip('stored S3 secrets are authenticated, encrypted, and bound to the configured key', () => {
-  process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = 'first-products-storage-encryption-key'
-  const encrypted = encryptStorageSecret('super-secret-access-key')
-  assert.notEqual(encrypted, 'super-secret-access-key')
-  assert.equal(decryptStorageSecret(encrypted), 'super-secret-access-key')
-  const replacement = encrypted.endsWith('x') ? 'y' : 'x'
-  assert.throws(() => decryptStorageSecret(`${encrypted.slice(0, -1)}${replacement}`), /could not be decrypted/)
-  process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = 'second-products-storage-encryption-key'
-  assert.throws(() => decryptStorageSecret(encrypted), /could not be decrypted/)
+const tamperAuthenticationTag = (value: string) => {
+  const parts = value.split('.')
+  parts[4] = `${parts[4]!.startsWith('A') ? 'B' : 'A'}${parts[4]!.slice(1)}`
+  return parts.join('.')
+}
+
+test('stored S3 secrets use the portal encryption key by default', () => {
+  const originalRoot = process.env.PORTAL_ENCRYPTION_KEY
+  const originalStorage = process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
   delete process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
+  process.env.PORTAL_ENCRYPTION_KEY = Buffer.alloc(32, 3).toString('base64')
+  try {
+    const encrypted = encryptStorageSecret('super-secret-access-key')
+    assert.notEqual(encrypted, 'super-secret-access-key')
+    assert.equal(decryptStorageSecret(encrypted), 'super-secret-access-key')
+    assert.throws(() => decryptStorageSecret(tamperAuthenticationTag(encrypted)), /could not be decrypted/)
+  } finally {
+    if (originalRoot === undefined) delete process.env.PORTAL_ENCRYPTION_KEY
+    else process.env.PORTAL_ENCRYPTION_KEY = originalRoot
+    if (originalStorage === undefined) delete process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
+    else process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY = originalStorage
+  }
 })
 
 test('Bunny proprietary API health check uploads, reads, and removes a probe', async () => {

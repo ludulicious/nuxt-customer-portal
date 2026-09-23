@@ -72,7 +72,7 @@ test('starter generates a portable host with unique private secrets and no works
     assert.match(manifest.scripts.setup, /--env-file=\.env/)
     assert.match(manifest.scripts.dev, /--host localhost --port 3098/)
     assert.notEqual(env, secondEnv)
-    assert.match(env, /PORTAL_EMAIL_ENCRYPTION_KEY=[a-f0-9]{64}/)
+    assert.match(env, /PORTAL_ENCRYPTION_KEY=[A-Za-z0-9+/]{43}=/)
     assert.match(env, /PORTAL_REGISTRATION_MODE=invitation-only/)
     assert.match(env, /DATABASE_URL='postgresql:\/\/portal:[a-f0-9]+@localhost:5498\/portal'/)
     assert.equal((await stat(join(first.directory, '.env'))).mode & 0o777, 0o600)
