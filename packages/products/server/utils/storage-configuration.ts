@@ -1,6 +1,12 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { createError } from 'h3'
+import {
+  decryptLegacyDotSecret,
+  decryptPortalSecret,
+  encryptPortalSecret,
+  isPortalSecretCiphertext
+} from '@nuxt-customer-portal/core/server/utils/portal-encryption'
 import { rows } from './database'
 import type { StorageSettings } from '../../shared/types'
 
@@ -26,35 +32,21 @@ interface StorageRow {
 }
 const environmentProvider = () => (process.env.PRODUCTS_STORAGE_PROVIDER === 'bunny' ? 'bunny' : 's3')
 export const defaultBunnyStorageEndpoint = 'https://storage.bunnycdn.com'
-const encryptionKey = () => {
-  const value = process.env.PRODUCTS_STORAGE_ENCRYPTION_KEY
-  if (!value) {
-    throw createError({ statusCode: 503, message: 'Configure PRODUCTS_STORAGE_ENCRYPTION_KEY' })
-  }
-  return createHash('sha256').update(value).digest()
+const storageEncryption = {
+  purpose: 'products/storage',
+  overrides: [{ env: 'PRODUCTS_STORAGE_ENCRYPTION_KEY', format: 'sha256' as const }]
 }
-export const encryptStorageSecret = (value: string) => {
-  const iv = randomBytes(12)
-  const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv)
-  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()])
-  return [
-    'v1',
-    iv.toString('base64url'),
-    cipher.getAuthTag().toString('base64url'),
-    encrypted.toString('base64url')
-  ].join('.')
-}
+export const encryptStorageSecret = (value: string) => encryptPortalSecret(value, storageEncryption)
 export const decryptStorageSecret = (value: string) => {
-  const [version, iv, tag, encrypted] = value.split('.')
-  if (version !== 'v1' || !iv || !tag || !encrypted) {
-    throw new Error('Stored storage credential has an invalid format')
-  }
   try {
-    const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(iv, 'base64url'))
-    decipher.setAuthTag(Buffer.from(tag, 'base64url'))
-    return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8')
-  } catch {
-    throw new Error('Stored storage credential could not be decrypted')
+    return isPortalSecretCiphertext(value)
+      ? decryptPortalSecret(value, storageEncryption)
+      : decryptLegacyDotSecret(value, storageEncryption.overrides)
+  } catch (error) {
+    if (error instanceof Error && (/^Configure /.test(error.message) || /^Retain /.test(error.message))) {
+      throw error
+    }
+    throw new Error('Stored storage credential could not be decrypted', { cause: error })
   }
 }
 export const environmentStorageConfigured = () =>

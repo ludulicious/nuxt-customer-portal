@@ -24,7 +24,7 @@ Configure these server-only environment variables; never put them in public runt
 | `IS_DEVELOPMENT`                             | Explicitly enable non-Stripe sandbox side effects outside production            |
 | `PRODUCTS_STRIPE_SECRET_KEY`                 | Stripe account secret; use a test-mode key during testing                       |
 | `PRODUCTS_STRIPE_WEBHOOK_SECRET`             | Signing secret for this endpoint and Stripe mode                                |
-| `PRODUCTS_STRIPE_ENCRYPTION_KEY`             | Encrypts saved Stripe credentials; falls back to the storage encryption key     |
+| `PRODUCTS_STRIPE_ENCRYPTION_KEY`             | Optional legacy/advanced override for saved Stripe credentials                  |
 | `PRODUCTS_S3_BUCKET`                         | Private S3-compatible bucket                                                    |
 | `PRODUCTS_S3_REGION`                         | Bucket region, default `us-east-1`                                              |
 | `PRODUCTS_S3_ENDPOINT`                       | Optional endpoint for compatible storage                                        |
@@ -34,7 +34,7 @@ Configure these server-only environment variables; never put them in public runt
 | `PRODUCTS_BUNNY_STORAGE_PASSWORD`            | Bunny Storage Zone password                                                     |
 | `PRODUCTS_BUNNY_STORAGE_ENDPOINT`            | Regional Storage API endpoint, default `https://storage.bunnycdn.com`           |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Standard AWS credentials, or use the SDK's role-based credential chain          |
-| `PRODUCTS_STORAGE_ENCRYPTION_KEY`            | Encrypts S3 credentials saved through Store settings                            |
+| `PRODUCTS_STORAGE_ENCRYPTION_KEY`            | Optional legacy/advanced override for saved storage credentials                 |
 | `PRODUCTS_IMAGEKIT_URL_ENDPOINT`             | ImageKit URL endpoint for optimized public product-image delivery               |
 
 Configure Stripe Tax and the seller's registrations in Stripe. Assign the appropriate Stripe tax code to each product. The initial catalog supports EUR, USD, GBP, CAD, AUD, NZD, CHF, DKK, NOK, SEK, PLN, CZK, HUF, RON, JPY, HKD, SGD, and AED. Availability still depends on the Stripe account and payment method. Other currencies require an adapter/validation extension; currencies with special Stripe amount representations are deliberately excluded. See [Stripe currency rules](https://docs.stripe.com/currencies). Prices are explicitly entered per currency; no exchange-rate conversion occurs. Store settings defines whether tax is included or added for each supported currency. Product saves use that setting. Changing it creates new active price versions and preserves historical prices and orders. The migration seeds settings from the most recently updated product with an active price in each currency, defaulting to tax included when none exists. Checkout confirms the final tax and total. Portal invoices preserve that exact tax amount rather than reconstructing it from a rounded percentage.
@@ -45,9 +45,11 @@ Complete the invoice sender profile and the portal email provider configuration 
 
 ### Storage
 
-Storage can be supplied by deployment environment variables or configured in **Store settings → Storage**. Environment configuration takes precedence and locks the form. Saved access credentials are encrypted with `PRODUCTS_STORAGE_ENCRYPTION_KEY`, are never returned to the browser, and must pass a write/head/delete connection probe before they replace a working configuration.
+Storage can be supplied by deployment environment variables or configured in **Store settings → Storage**. Environment configuration takes precedence and locks the form. Saved access credentials are encrypted with the portal-wide `PORTAL_ENCRYPTION_KEY`, are never returned to the browser, and must pass a write/head/delete connection probe before they replace a working configuration.
 
-Stripe can likewise be configured under **Store settings → Stripe** when neither Stripe environment variable is present. Environment configuration takes precedence and hides this tab. Store-managed credentials are encrypted with `PRODUCTS_STRIPE_ENCRYPTION_KEY`; the secret key is verified with Stripe before it replaces a working configuration.
+Stripe can likewise be configured under **Store settings → Stripe** when neither Stripe environment variable is present. Environment configuration takes precedence and hides this tab. Store-managed credentials are encrypted with a separate key derived from `PORTAL_ENCRYPTION_KEY`; the secret key is verified with Stripe before it replaces a working configuration.
+
+Existing deployments may retain `PRODUCTS_STORAGE_ENCRYPTION_KEY` and `PRODUCTS_STRIPE_ENCRYPTION_KEY` as module-specific overrides. Keep the old variables configured while legacy credentials encrypted with them remain in the database. Saving those credentials again writes the versioned format; removing an override still requires re-saving under the portal-wide key first.
 
 The Storage tab supports Amazon S3, generic S3-compatible services, and Bunny's proprietary HTTP Storage API. Bunny configuration needs the regional API endpoint, Storage Zone name, and Storage Zone password. Browser uploads stream through an authenticated portal endpoint, keeping that password server-side; downloads of purchased files are streamed through the existing purchaser-authorized route. Set `PRODUCTS_STORAGE_PROVIDER=bunny` together with the `PRODUCTS_BUNNY_STORAGE_*` variables when Bunny is deployment-managed.
 

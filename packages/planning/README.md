@@ -24,14 +24,16 @@ Run Nitro's scheduled tasks every minute in production. HTTP deployments need a 
 Use dedicated Google and Zoom OAuth applications, separate from portal sign-in applications:
 
 ```dotenv
-PLANNING_ENCRYPTION_KEY=<base64-encoded 32-byte random key>
+PORTAL_ENCRYPTION_KEY=<base64-encoded 32-byte random key>
 PLANNING_GOOGLE_CLIENT_ID=
 PLANNING_GOOGLE_CLIENT_SECRET=
 PLANNING_ZOOM_CLIENT_ID=
 PLANNING_ZOOM_CLIENT_SECRET=
 ```
 
-Generate the encryption key with `openssl rand -base64 32`. Keep this key stable and backed up with the encrypted database. OAuth tokens are encrypted with AES-256-GCM and never returned through setup APIs.
+Generate the encryption key with `openssl rand -base64 32`. Keep this key stable, identical across application instances, and backed up with the encrypted database. Planning derives its own purpose-specific AES-256-GCM key from it. OAuth tokens are never returned through setup APIs.
+
+Existing deployments may retain `PLANNING_ENCRYPTION_KEY` as a module-specific override. Keep it configured while legacy OAuth credentials encrypted with it remain in the database. Reconnecting providers writes the versioned format; removing the override still requires reconnecting under the portal-wide key first.
 
 Register redirect URLs using the portal's configured public origin:
 

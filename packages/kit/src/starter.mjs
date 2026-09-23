@@ -162,7 +162,7 @@ export async function createStarter(input, options = {}) {
     [
       `DATABASE_URL='${databaseUrl}'`,
       `BETTER_AUTH_SECRET=${randomBytes(48).toString('hex')}`,
-      `PORTAL_EMAIL_ENCRYPTION_KEY=${randomBytes(32).toString('hex')}`,
+      `PORTAL_ENCRYPTION_KEY=${randomBytes(32).toString('base64')}`,
       `PUBLIC_URL=http://localhost:${input.port}`,
       `BETTER_AUTH_URL=http://localhost:${input.port}`,
       `ADMIN_EMAILS=${metadata.userEmail}`,
@@ -179,7 +179,7 @@ export async function createStarter(input, options = {}) {
     [
       'DATABASE_URL=',
       'BETTER_AUTH_SECRET=',
-      'PORTAL_EMAIL_ENCRYPTION_KEY=',
+      'PORTAL_ENCRYPTION_KEY=',
       `PUBLIC_URL=http://localhost:${input.port}`,
       `BETTER_AUTH_URL=http://localhost:${input.port}`,
       'ADMIN_EMAILS=',
