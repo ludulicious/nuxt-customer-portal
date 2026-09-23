@@ -212,21 +212,28 @@ test('cutoffs, change fees and refunds enforce policy boundaries', () => {
   assert.equal(refundAmount(10000, 8000, 50), 2000)
   assert.equal(refundAmount(10000, 10000, 100), 0)
 })
-test('credentials are authenticated encrypted data and require a dedicated key', () => {
-  const old = process.env.PLANNING_ENCRYPTION_KEY
-  process.env.PLANNING_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64')
+test('credentials are authenticated encrypted data and use the portal key by default', () => {
+  const oldRoot = process.env.PORTAL_ENCRYPTION_KEY
+  const oldPlanning = process.env.PLANNING_ENCRYPTION_KEY
+  delete process.env.PLANNING_ENCRYPTION_KEY
+  process.env.PORTAL_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64')
   try {
     const encrypted = encrypt({ access_token: 'secret' })
     assert.ok(!encrypted.includes('secret'))
     assert.deepEqual(decrypt(encrypted), { access_token: 'secret' })
-    const bytes = Buffer.from(encrypted, 'base64')
-    bytes[30] ^= 1
-    assert.throws(() => decrypt(bytes.toString('base64')))
+    const parts = encrypted.split('.')
+    parts[4] = `${parts[4]!.startsWith('A') ? 'B' : 'A'}${parts[4]!.slice(1)}`
+    assert.throws(() => decrypt(parts.join('.')))
   } finally {
-    if (old) {
-      process.env.PLANNING_ENCRYPTION_KEY = old
+    if (oldRoot === undefined) {
+      delete process.env.PORTAL_ENCRYPTION_KEY
     } else {
+      process.env.PORTAL_ENCRYPTION_KEY = oldRoot
+    }
+    if (oldPlanning === undefined) {
       delete process.env.PLANNING_ENCRYPTION_KEY
+    } else {
+      process.env.PLANNING_ENCRYPTION_KEY = oldPlanning
     }
   }
 })
