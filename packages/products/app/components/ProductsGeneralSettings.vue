@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
-import { settingsSchema, productCurrencies } from '../../shared/validation'
+import type { settingsSchema } from '../../shared/validation'
+import { settingsShape, validateSettings, productCurrencies } from '../../shared/validation'
 
 const settings = defineModel<z.output<typeof settingsSchema>>({ required: true })
 const props = defineProps<{
@@ -15,7 +16,12 @@ const modeOptions = computed(() => [
   { value: 'sandbox', label: t('products.sandboxMode') },
   { value: 'live', label: t('products.liveMode') }
 ])
-const schema = useProductFormSchema(settingsSchema.safeExtend({ markdownStyle: z.any().optional() }))
+const schema = useProductFormSchema(
+  z.object({ ...settingsShape, markdownStyle: z.any().optional() }).refine(validateSettings, {
+    path: ['defaultLocale'],
+    message: 'Choose a supported store language'
+  })
+)
 const health = computed(() => props.health)
 const taxOptions = computed(() => ['inclusive', 'exclusive'].map((value) => ({ value, label: t(`products.${value}`) })))
 watch(

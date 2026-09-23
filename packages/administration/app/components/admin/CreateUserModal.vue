@@ -18,7 +18,10 @@ watch(open, () => {
 const schema = computed(() =>
   z.object({
     name: z.string().trim().min(1, t('admin.user.create.nameRequired')).max(255, t('admin.user.create.nameMaxLength')),
-    email: z.email(t('admin.user.create.emailInvalid')).transform((value) => value.trim().toLowerCase()),
+    email: z
+      .string()
+      .email(t('admin.user.create.emailInvalid'))
+      .transform((value) => value.trim().toLowerCase()),
     password: z.string().min(8, t('admin.user.create.passwordMinLength')),
     role: z.enum(['user', 'admin'])
   })

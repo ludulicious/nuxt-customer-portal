@@ -72,7 +72,7 @@ export type ClientCreateInput = z.infer<typeof genericClientCreateSchema>
 export type ClientUpdateInput = z.infer<typeof clientUpdateSchema>
 
 export const genericClientInvitationSchema = z.object({
-  email: z.email(),
+  email: z.string().email(),
   role: z.enum(['owner', 'admin', 'member']).default('member')
 })
 

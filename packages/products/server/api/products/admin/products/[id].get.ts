@@ -5,6 +5,6 @@ import { parseInput } from '@nuxt-customer-portal/products/server/utils/validati
 
 export default defineEventHandler(async (event) => {
   const { organizationId } = await admin(event)
-  const id = parseInput(z.uuid(), getRouterParam(event, 'id'))
+  const id = parseInput(z.string().uuid(), getRouterParam(event, 'id'))
   return getProduct(organizationId, id)
 })

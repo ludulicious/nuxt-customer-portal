@@ -6,7 +6,7 @@ const optionalUrl = z
   .string()
   .trim()
   .max(2000)
-  .refine((value) => !value || (/^https?:\/\//.test(value) && z.url().safeParse(value).success))
+  .refine((value) => !value || (/^https?:\/\//.test(value) && z.string().url().safeParse(value).success))
 
 export const checkoutAppearanceSchema = z.object({
   hostName: text(120).default(''),

@@ -1,5 +1,16 @@
 # Products
 
+## 0.4.3
+
+### Patch Changes
+
+- eb2a85c: Add a single base64-encoded `PORTAL_ENCRYPTION_KEY` that derives isolated keys for credentials saved by Portal Core, Products, and Planning. Existing module-specific keys remain supported as overrides and can decrypt their legacy ciphertext formats.
+- Keep product request and route validation compatible with the Zod runtime resolved by Nuxt production bundles.
+- Updated dependencies [eb2a85c]
+  - @nuxt-customer-portal/core@0.4.3
+  - @nuxt-customer-portal/clients@0.4.3
+  - @nuxt-customer-portal/ui@0.4.3
+
 ## 0.4.2
 
 ### Patch Changes

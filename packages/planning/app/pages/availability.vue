@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { localParts, wallInstant } from '../../shared/availability'
-import { availabilitySchema } from '../../shared/validation'
+import type { availabilitySchema } from '../../shared/validation'
+import { availabilityShape, validateAvailability } from '../../shared/validation'
 import type { AvailabilityWindow } from '../../shared/types'
 import type { ProviderConfiguration, AppointmentListItem, CalendarBusyPeriod } from '../composables/usePlanning'
 
@@ -65,15 +66,18 @@ const windowState = reactive<z.infer<typeof availabilitySchema>>({
   exceptions: []
 })
 const windowFormSchema = computed(() =>
-  availabilitySchema.safeExtend({
-    productIds: z
-      .array(z.string().min(1).max(100))
-      .min(1, t('planning.selectAtLeastOneProduct'))
-      .max(100)
-      .nullable()
-      .default(null),
-    endDate: z.union([availabilitySchema.shape.endDate, z.literal('')]).transform((v) => v || null)
-  })
+  z
+    .object({
+      ...availabilityShape,
+      productIds: z
+        .array(z.string().min(1).max(100))
+        .min(1, t('planning.selectAtLeastOneProduct'))
+        .max(100)
+        .nullable()
+        .default(null),
+      endDate: z.union([availabilityShape.endDate, z.literal('')]).transform((v) => v || null)
+    })
+    .superRefine(validateAvailability)
 )
 const allProducts = computed({
   get: () => windowState.productIds === null,
