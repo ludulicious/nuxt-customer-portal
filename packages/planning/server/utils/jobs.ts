@@ -11,7 +11,6 @@ import {
 } from '@nuxt-customer-portal/products/server/utils/orders'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
 import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
-import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
 import { calendarInvitation } from '../../shared/invitation'
 import { calendarWallDateTime, wallInstant } from '../../shared/availability'
@@ -274,20 +273,19 @@ async function availabilityEffects(id: string) {
   if (!window) {
     return
   }
-  const [store] = await rows<{ mode: string }>('SELECT mode FROM products.store WHERE organization_id=$1', [
-    window.store_id
-  ])
-  if (store?.mode === 'sandbox' && !developmentSandboxEffectsEnabled()) {
-    return
-  }
   const eventId = window.calendar_event_id || `a${id.replace(/-/g, '')}`
-  const [provider] = await rows<{ write_calendar_id: string; availability_calendar_title: string }>(
-    'SELECT write_calendar_id,availability_calendar_title FROM planning.provider WHERE store_id=$1 AND user_id=$2',
+  const [provider] = await rows<{
+    write_calendar_id: string
+    availability_calendar_title: string
+    availability_sync_enabled: boolean
+  }>(
+    'SELECT write_calendar_id,availability_calendar_title,availability_sync_enabled FROM planning.provider WHERE store_id=$1 AND user_id=$2',
     [window.store_id, window.user_id]
   )
-  if (window.deleted) {
+  if (window.deleted || !provider?.availability_sync_enabled) {
     if (window.calendar_id) {
       await calendarAdapter().remove(window.store_id, window.user_id, window.calendar_id, eventId)
+      await rows('UPDATE planning.availability SET calendar_event_id=NULL,calendar_id=NULL WHERE id=$1', [id])
     }
     return
   }

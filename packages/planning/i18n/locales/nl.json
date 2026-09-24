@@ -95,6 +95,8 @@
     "setMainCalendar": "Hoofdagenda instellen",
     "calendarSettings": "Agenda-instellingen",
     "graceMinutes": "Rusttijd na portaalafspraken (minuten)",
+    "availabilitySyncEnabled": "Beschikbaarheid synchroniseren met Google Agenda",
+    "availabilitySyncEnabledDescription": "Maak en onderhoud agendagebeurtenissen voor je beschikbaarheid in het portaal. Als je dit uitschakelt, worden bestaande beschikbaarheidsgebeurtenissen verwijderd; afspraken blijven gesynchroniseerd.",
     "availabilityCalendarTitle": "Titel van beschikbaarheid in agenda",
     "availabilityCalendarTitleDescription": "Wordt als titel getoond bij beschikbaarheid in je hoofdagenda.",
     "busyCalendars": "Agenda’s die beschikbaarheid blokkeren",

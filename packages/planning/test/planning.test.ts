@@ -27,6 +27,7 @@ test('provider settings allow no additional calendars', () => {
   })
 
   assert.equal(result.success, true)
+  assert.equal(result.data?.availabilitySyncEnabled, true)
 })
 
 test('appointment calendar descriptions include the tooltip client and timezone details', () => {

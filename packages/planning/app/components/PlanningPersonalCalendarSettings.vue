@@ -11,6 +11,7 @@ const calendars = ref<Array<{ id: string; summary: string; accessRole: string }>
 const providerState = reactive({
   timezone: 'Europe/Amsterdam',
   graceMinutes: 0,
+  availabilitySyncEnabled: true,
   availabilityCalendarTitle: 'Portal availability',
   busyCalendarIds: [] as string[],
   writeCalendarId: ''
@@ -42,6 +43,7 @@ async function load() {
     Object.assign(providerState, {
       timezone: settings.timezone,
       graceMinutes: settings.graceMinutes,
+      availabilitySyncEnabled: settings.availabilitySyncEnabled,
       availabilityCalendarTitle: settings.availabilityCalendarTitle,
       busyCalendarIds: settings.busyCalendarIds,
       writeCalendarId: settings.writeCalendarId || ''
@@ -198,6 +200,14 @@ async function saveSettings() {
           ><h2 class="font-semibold">{{ t('planning.schedulingPreferences') }}</h2></template
         >
         <div class="grid gap-4 sm:grid-cols-2">
+          <UFormField
+            name="availabilitySyncEnabled"
+            :label="t('planning.availabilitySyncEnabled')"
+            :description="t('planning.availabilitySyncEnabledDescription')"
+            class="sm:col-span-2"
+          >
+            <USwitch v-model="providerState.availabilitySyncEnabled" />
+          </UFormField>
           <UFormField
             name="availabilityCalendarTitle"
             :label="t('planning.availabilityCalendarTitle')"

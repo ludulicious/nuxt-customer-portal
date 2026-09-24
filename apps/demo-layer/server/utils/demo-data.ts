@@ -496,6 +496,7 @@ export async function seedDemoData(client: PoolClient, day: string) {
       timezone: 'Europe/Amsterdam',
       grace_minutes: graceMinutes,
       availability_calendar_title: 'Northstar demo availability',
+      availability_sync_enabled: true,
       busy_calendar_ids: []
     })
     await insert('planning.availability', {

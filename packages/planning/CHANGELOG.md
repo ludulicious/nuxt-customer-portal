@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.8
+
+### Patch Changes
+
+- Control Google Calendar availability synchronization with a provider appointment preference instead of the store environment.
+  - @nuxt-customer-portal/core@0.4.8
+  - @nuxt-customer-portal/products@0.4.8
+  - @nuxt-customer-portal/ui@0.4.8
+
 ## 0.4.7
 
 ### Patch Changes

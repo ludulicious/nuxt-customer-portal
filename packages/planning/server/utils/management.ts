@@ -7,7 +7,7 @@ import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/paym
 import { reconcileCheckout, getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { getProduct } from '@nuxt-customer-portal/products/server/utils/catalog'
 import { productPlanningSchema, planningPolicySchema } from '@nuxt-customer-portal/products/shared/planning'
-import { canChange, changeFee, refundAmount } from '../../shared/availability'
+import { canChange, changeFee, refundAmount, localParts } from '../../shared/availability'
 import { availabilityEditSchema, providerSettingsSchema } from '../../shared/validation'
 import type { Appointment, ProviderSettings, AvailabilityWindow } from '../../shared/types'
 import { planningAdmin, providerAccess, appointmentAccess } from './access'
@@ -18,7 +18,7 @@ import { auditLock } from './jobs'
 export async function listProviders(event: H3Event): Promise<ProviderSettings[]> {
   const context = await planningAdmin(event)
   return rows<ProviderSettings>(
-    `SELECT u.id AS "userId",u.name,u.image,COALESCE(p.enabled,false) AS enabled,COALESCE(p.timezone,u.timezone,os.timezone,'Europe/Amsterdam') AS timezone,COALESCE(p.grace_minutes,0) AS "graceMinutes",COALESCE(p.busy_calendar_ids,'{}') AS "busyCalendarIds",p.write_calendar_id AS "writeCalendarId",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='google' AND c.healthy) AS "googleConnected",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='zoom' AND c.healthy) AS "zoomConnected" FROM public.member m JOIN public."user" u ON u.id=m.user_id LEFT JOIN planning.provider p ON p.store_id=m.organization_id AND p.user_id=u.id LEFT JOIN public.organization_settings os ON os.organization_id=m.organization_id WHERE m.organization_id=$1 ORDER BY u.name`,
+    `SELECT u.id AS "userId",u.name,u.image,COALESCE(p.enabled,false) AS enabled,COALESCE(p.timezone,u.timezone,os.timezone,'Europe/Amsterdam') AS timezone,COALESCE(p.grace_minutes,0) AS "graceMinutes",COALESCE(p.availability_sync_enabled,true) AS "availabilitySyncEnabled",COALESCE(p.busy_calendar_ids,'{}') AS "busyCalendarIds",p.write_calendar_id AS "writeCalendarId",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='google' AND c.healthy) AS "googleConnected",EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=m.organization_id AND c.user_id=u.id AND c.provider='zoom' AND c.healthy) AS "zoomConnected" FROM public.member m JOIN public."user" u ON u.id=m.user_id LEFT JOIN planning.provider p ON p.store_id=m.organization_id AND p.user_id=u.id LEFT JOIN public.organization_settings os ON os.organization_id=m.organization_id WHERE m.organization_id=$1 ORDER BY u.name`,
     [context.organizationId]
   )
 }
@@ -48,6 +48,7 @@ export async function ownSettings(event: H3Event) {
     enabled: boolean
     timezone: string
     grace_minutes: number
+    availability_sync_enabled: boolean
     availability_calendar_title: string
     busy_calendar_ids: string[]
     write_calendar_id: string | null
@@ -69,6 +70,7 @@ export async function ownSettings(event: H3Event) {
     enabled: p!.enabled,
     timezone: p!.timezone,
     graceMinutes: p!.grace_minutes,
+    availabilitySyncEnabled: p!.availability_sync_enabled,
     availabilityCalendarTitle: p!.availability_calendar_title,
     busyCalendarIds: p!.busy_calendar_ids,
     writeCalendarId: p!.write_calendar_id,
@@ -89,7 +91,7 @@ export async function saveOwnSettings(event: H3Event, body: unknown) {
   await transaction(async (tx) => {
     await lockProvider(tx, userId)
     await tx.query(
-      'UPDATE planning.provider SET timezone=$3,grace_minutes=$4,busy_calendar_ids=$5,write_calendar_id=$6,availability_calendar_title=$7 WHERE store_id=$1 AND user_id=$2',
+      'UPDATE planning.provider SET timezone=$3,grace_minutes=$4,busy_calendar_ids=$5,write_calendar_id=$6,availability_calendar_title=$7,availability_sync_enabled=$8 WHERE store_id=$1 AND user_id=$2',
       [
         storeId,
         userId,
@@ -97,12 +99,21 @@ export async function saveOwnSettings(event: H3Event, body: unknown) {
         input.graceMinutes,
         [...new Set([...input.busyCalendarIds, input.writeCalendarId])],
         input.writeCalendarId,
-        input.availabilityCalendarTitle
+        input.availabilityCalendarTitle,
+        input.availabilitySyncEnabled
       ]
     )
+    const today = localParts(new Date(), input.timezone).date
     const windows = await rows<{ id: string; revision: number }>(
-      "UPDATE planning.availability SET data=jsonb_set(data,'{timezone}',to_jsonb($3::text)),revision=revision+1 WHERE store_id=$1 AND user_id=$2 RETURNING id,revision",
-      [storeId, userId, input.timezone],
+      `UPDATE planning.availability
+       SET data=jsonb_set(data,'{timezone}',to_jsonb($3::text)),revision=revision+1
+       WHERE store_id=$1 AND user_id=$2
+         AND ($4::boolean IS FALSE OR (NOT deleted AND (
+           data->>'date'>=$5 OR
+           (data->>'recurring'='true' AND (data->>'endDate' IS NULL OR data->>'endDate'>=$5))
+         )))
+       RETURNING id,revision`,
+      [storeId, userId, input.timezone, input.availabilitySyncEnabled, today],
       tx
     )
     for (const w of windows) {
