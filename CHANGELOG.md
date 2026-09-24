@@ -1,5 +1,12 @@
 # Nuxt Customer Portal
 
+## 0.4.7
+
+Keep Google Calendar settings recoverable when stored authorization expires and
+offer reconnection after Google rejects a refresh token.
+
+All public packages and portal apps use `0.4.7`.
+
 ## 0.4.6
 
 Restore Google Calendar push notifications, retain provider-returned availability

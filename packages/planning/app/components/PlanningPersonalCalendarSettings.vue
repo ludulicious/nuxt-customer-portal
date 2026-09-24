@@ -46,7 +46,23 @@ async function load() {
       busyCalendarIds: settings.busyCalendarIds,
       writeCalendarId: settings.writeCalendarId || ''
     })
-    calendars.value = googleConnected.value ? await api.calendars() : []
+    if (googleConnected.value) {
+      try {
+        calendars.value = await api.calendars()
+      } catch (calendarError) {
+        const refreshedSettings = await api.provider().catch(() => null)
+        const connectionStillHealthy = refreshedSettings?.connections.some(
+          (connection) => connection.provider === 'google' && connection.healthy
+        )
+        if (connectionStillHealthy !== false) {
+          throw calendarError
+        }
+        googleConnected.value = false
+        calendars.value = []
+      }
+    } else {
+      calendars.value = []
+    }
     ready.value = true
   } catch {
     error.value = t('planning.loadError')

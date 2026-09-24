@@ -54,6 +54,14 @@ export interface MeetingAdapter {
   ): Promise<{ id: string; url: string }>
   remove(storeId: string, userId: string, id: string): Promise<void>
 }
+class AuthorizationExchangeError extends Error {
+  constructor(
+    public readonly status: number,
+    message = `Calendar/meeting authorization failed (${status})`
+  ) {
+    super(message)
+  }
+}
 export function oauthConfig(provider: 'google' | 'zoom') {
   const prefix = `PLANNING_${provider.toUpperCase()}`
   const clientId = process.env[`${prefix}_CLIENT_ID`],
@@ -84,7 +92,7 @@ export async function exchange(provider: 'google' | 'zoom', params: Record<strin
     }
   )
   if (!response.ok) {
-    throw new Error(`Calendar/meeting authorization failed (${response.status})`)
+    throw new AuthorizationExchangeError(response.status)
   }
   const value = (await response.json()) as { access_token: string; refresh_token?: string; expires_in: number }
   if (!value.access_token || !value.expires_in) {
@@ -111,7 +119,21 @@ async function accessToken(storeId: string, userId: string, provider: 'google' |
     }
     let credentials = decrypt<Credentials>(connection.credentials)
     if (credentials.expiresAt < Date.now() + 60000) {
-      credentials = await exchange(provider, { grant_type: 'refresh_token', refresh_token: credentials.refresh_token })
+      try {
+        credentials = await exchange(provider, {
+          grant_type: 'refresh_token',
+          refresh_token: credentials.refresh_token
+        })
+      } catch (error) {
+        if (error instanceof AuthorizationExchangeError && [400, 401].includes(error.status)) {
+          await rows(
+            'UPDATE planning.connection SET healthy=false,error=$4 WHERE store_id=$1 AND user_id=$2 AND provider=$3',
+            [storeId, userId, provider, 'Authorization expired; reconnect'],
+            client
+          )
+        }
+        throw error
+      }
       await rows(
         'UPDATE planning.connection SET credentials=$4,error=NULL WHERE store_id=$1 AND user_id=$2 AND provider=$3',
         [storeId, userId, provider, encrypt(credentials)],
