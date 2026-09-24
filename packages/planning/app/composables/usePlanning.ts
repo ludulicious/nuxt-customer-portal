@@ -99,6 +99,7 @@ export interface PlanningJobListItem {
         providerName: string
         providerEmail: string
         calendarId: string | null
+        calendarEventId: string | null
         date: string
         endDate: string | null
         startTime: string

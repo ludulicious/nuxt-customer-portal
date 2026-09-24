@@ -375,6 +375,11 @@ useAutoPagination({
               <UIcon name="i-lucide-calendar" class="size-4 shrink-0" />
               <span class="truncate">{{ job.entity.calendarId || t('planning.noDestinationCalendar') }}</span>
             </p>
+            <p v-if="job.entity.calendarEventId" class="flex min-w-0 items-center gap-2 sm:col-span-2">
+              <UIcon name="i-lucide-fingerprint" class="size-4 shrink-0" />
+              <span class="shrink-0">{{ t('planning.calendarEventId') }}:</span>
+              <code class="truncate text-xs" :title="job.entity.calendarEventId">{{ job.entity.calendarEventId }}</code>
+            </p>
           </div>
           <div
             v-else-if="job.entity?.type === 'appointment'"

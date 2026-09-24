@@ -157,6 +157,7 @@ test(
       const external: Array<{ start: string; end: string }> = []
       let calendarFailure = false,
         effectFailure = false,
+        replaceAvailabilityEventId = false,
         meetingEnsures = 0
       const mirrors = new Map<string, unknown>(),
         meetings = new Map<string, { id: string; url: string }>()
@@ -173,8 +174,10 @@ test(
             if (effectFailure) {
               throw new Error('Fixture calendar failure')
             }
-            mirrors.set(event.id, event)
-            return undefined
+            const returnedId =
+              replaceAvailabilityEventId && event.id.startsWith('a') ? `${event.id}r12345678` : event.id
+            mirrors.set(returnedId, { ...event, id: returnedId })
+            return returnedId === event.id ? undefined : { id: returnedId, wasMissing: true }
           },
           remove: async (_s, _u, _c, id) => {
             mirrors.delete(id)
@@ -425,6 +428,25 @@ test(
         await db.query("UPDATE planning.reservation SET status='expired' WHERE status='reserved'")
       })
       await db.query("UPDATE products.store SET mode='live'")
+      await t.test('availability synchronization stores the calendar event id returned by the provider', async () => {
+        replaceAvailabilityEventId = true
+        const saved = await management.saveWindow(event(providerCookie), {
+          date: day,
+          endDate: null,
+          startTime: '08:00',
+          endTime: '09:00',
+          recurring: false,
+          productIds: null,
+          exceptions: []
+        })
+        await jobs.runJobs()
+        const synchronized = await db.query<{ calendar_event_id: string }>(
+          'SELECT calendar_event_id FROM planning.availability WHERE id=$1',
+          [saved.id]
+        )
+        assert.match(synchronized.rows[0]!.calendar_event_id, /r12345678$/)
+        replaceAvailabilityEventId = false
+      })
       const value = await hold(9),
         initial = await checkout(value.holdToken)
       await t.test('paid confirmation and duplicate payment reconciliation are idempotent', async () => {

@@ -146,6 +146,7 @@
     "jobAllProducts": "All products",
     "noProducts": "No products",
     "noDestinationCalendar": "No destination calendar selected",
+    "calendarEventId": "Google event ID",
     "synchronizationPages": "Synchronization task pages",
     "jobKinds": {
       "appointment": "Appointment synchronization",

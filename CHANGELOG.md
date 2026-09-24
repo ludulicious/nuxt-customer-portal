@@ -1,5 +1,12 @@
 # Nuxt Customer Portal
 
+## 0.4.6
+
+Restore Google Calendar push notifications, retain provider-returned availability
+event IDs, and expose those identifiers in planning synchronization diagnostics.
+
+All public packages and portal apps use `0.4.6`.
+
 ## 0.4.5
 
 Allow providers to save a primary calendar without selecting any additional

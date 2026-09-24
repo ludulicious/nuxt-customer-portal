@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.4.6
+
+### Patch Changes
+
+- Allow authenticated Google Calendar channel notifications through the public webhook boundary, retain provider-returned availability event IDs, and expose those IDs in synchronization diagnostics.
+
 ## 0.4.5
 
 ## 0.4.4

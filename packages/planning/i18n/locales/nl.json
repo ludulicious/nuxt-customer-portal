@@ -146,6 +146,7 @@
     "jobAllProducts": "Alle producten",
     "noProducts": "Geen producten",
     "noDestinationCalendar": "Geen doelagenda geselecteerd",
+    "calendarEventId": "Google-afspraak-ID",
     "synchronizationPages": "Pagina's met synchronisatietaken",
     "jobKinds": {
       "appointment": "Afspraaksynchronisatie",
