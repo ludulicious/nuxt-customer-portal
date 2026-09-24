@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.4.4
+
+### Patch Changes
+
+- 67b5b80: Assemble authenticated OpenAPI documents through Nitro's local request context so HTTPS frontends do not break the raw schema request.
+
 ## 0.4.3
 
 ### Patch Changes

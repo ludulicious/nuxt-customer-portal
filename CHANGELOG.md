@@ -1,5 +1,19 @@
 # Nuxt Customer Portal
 
+## 0.4.4
+
+Improve product administration with a dedicated detail route, safer lifecycle
+and deletion actions, unsaved-change protection, and streamlined image
+management.
+
+Show every configured store currency in the product price editor, including
+currencies without an active product price.
+
+Keep authenticated OpenAPI schema loading reliable when the portal frontend is
+served over HTTPS.
+
+All 16 public packages use `0.4.4`.
+
 ## 0.4.3
 
 Add a single portal-wide encryption key that derives isolated credentials for

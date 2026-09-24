@@ -1,5 +1,16 @@
 # Products
 
+## 0.4.4
+
+### Patch Changes
+
+- a85ce7a: Improve product detail actions, lifecycle safeguards, destructive deletion confirmation, and image management with a dedicated route and unsaved-change protection.
+- 2a4b4d3: Show every configured store currency in the product price editor, including currencies that do not have an active product price yet.
+- Updated dependencies [67b5b80]
+  - @nuxt-customer-portal/core@0.4.4
+  - @nuxt-customer-portal/clients@0.4.4
+  - @nuxt-customer-portal/ui@0.4.4
+
 ## 0.4.3
 
 ### Patch Changes
