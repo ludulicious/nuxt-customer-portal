@@ -130,6 +130,7 @@ export default defineEventHandler(async (event) => {
       providerName: string
       providerEmail: string
       calendarId: string | null
+      calendarEventId: string | null
       data: {
         date: string
         endDate: string | null
@@ -142,7 +143,7 @@ export default defineEventHandler(async (event) => {
       productTitles: string[]
     }>(
       `SELECT a.id::text AS id,u.name AS "providerName",u.email AS "providerEmail",
-        p.write_calendar_id AS "calendarId",a.data,
+        COALESCE(a.calendar_id,p.write_calendar_id) AS "calendarId",a.calendar_event_id AS "calendarEventId",a.data,
         COALESCE((
           SELECT array_agg(COALESCE(NULLIF(product.data->'content'->'en'->>'title',''),product.data->'content'->'nl'->>'title',product.id) ORDER BY product.id)
           FROM products.product product
@@ -175,6 +176,7 @@ export default defineEventHandler(async (event) => {
         providerName: entity.providerName,
         providerEmail: entity.providerEmail,
         calendarId: entity.calendarId,
+        calendarEventId: entity.calendarEventId,
         date: entity.data.date,
         endDate: entity.data.endDate,
         startTime: entity.data.startTime,

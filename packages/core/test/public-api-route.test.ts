@@ -27,3 +27,9 @@ test('sandbox checkout only accepts a single order id segment', () => {
   assert.equal(isPublicStoreRoute('GET', '/api/store/sandbox-checkout/order/extra'), false)
   assert.equal(isPublicStoreRoute('DELETE', '/api/store/sandbox-checkout/order'), false)
 })
+
+test('Google Calendar notifications reach their channel-token authenticated handler', () => {
+  assert.equal(isPublicStoreRoute('POST', '/api/planning/google/notifications'), true)
+  assert.equal(isPublicStoreRoute('GET', '/api/planning/google/notifications'), false)
+  assert.equal(isPublicStoreRoute('POST', '/api/planning/google/notifications/extra'), false)
+})

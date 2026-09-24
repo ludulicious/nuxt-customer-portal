@@ -10,17 +10,16 @@ const props = withDefaults(defineProps<{ prefix?: string; currencies?: string[];
   compact: false
 })
 const { t } = useI18n()
-const numeric = [
-  'reservationMinutes',
-  'slotIntervalMinutes',
-  'displayIntervalMinutes',
-  'bookingHorizonDays',
-  'minimumNoticeMinutes',
-  'freeChanges',
-  'rescheduleCutoffMinutes',
-  'cancellationCutoffMinutes',
-  'refundPercentage'
-] as const
+type NumericPolicyKey =
+  | 'reservationMinutes'
+  | 'slotIntervalMinutes'
+  | 'displayIntervalMinutes'
+  | 'bookingHorizonDays'
+  | 'minimumNoticeMinutes'
+  | 'freeChanges'
+  | 'rescheduleCutoffMinutes'
+  | 'cancellationCutoffMinutes'
+  | 'refundPercentage'
 const groups = [
   {
     key: 'schedule',
@@ -70,7 +69,7 @@ if (overrides.value !== undefined) {
   }
   overrides.value = next
 }
-function setNumber(key: (typeof numeric)[number], value: number | null | undefined) {
+function setNumber(key: NumericPolicyKey, value: number | null | undefined) {
   state.value = { ...state.value, [key]: value ?? 0 }
 }
 function setFee(currency: string, value: number | null | undefined) {

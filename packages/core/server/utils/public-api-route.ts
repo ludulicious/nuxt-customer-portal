@@ -7,7 +7,12 @@ export function isPublicStoreRoute(method: string, pathname: string) {
         pathname === '/api/store/planning/hold' ||
         /^\/api\/store\/sandbox-checkout\/[^/]+$/.test(pathname))) ||
     (method === 'POST' &&
-      (['/api/store/checkout', '/api/store/webhooks/stripe', '/api/store/planning/holds'].includes(pathname) ||
+      ([
+        '/api/store/checkout',
+        '/api/store/webhooks/stripe',
+        '/api/store/planning/holds',
+        '/api/planning/google/notifications'
+      ].includes(pathname) ||
         /^\/api\/store\/sandbox-checkout\/[^/]+$/.test(pathname))) ||
     (method === 'DELETE' && pathname === '/api/store/planning/hold')
   )

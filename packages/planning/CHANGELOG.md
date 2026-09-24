@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.6
+
+### Patch Changes
+
+- Allow authenticated Google Calendar channel notifications through the public webhook boundary, retain provider-returned availability event IDs, expose those IDs in synchronization diagnostics, and remove the planning policy lint warning.
+- Updated dependencies
+  - @nuxt-customer-portal/core@0.4.6
+  - @nuxt-customer-portal/products@0.4.6
+  - @nuxt-customer-portal/ui@0.4.6
+
 ## 0.4.5
 
 ### Patch Changes

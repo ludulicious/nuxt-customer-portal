@@ -353,9 +353,18 @@ async function availabilityEffects(id: string) {
   }
   await rows('UPDATE planning.availability SET calendar_event_id=$2,calendar_id=$3 WHERE id=$1', [
     id,
-    eventId,
+    written?.id || eventId,
     provider.write_calendar_id
   ])
+  if (written?.wasMissing || written?.externalChangeKey) {
+    console.info('Planning availability synchronized', {
+      availabilityId: id,
+      calendarId: provider.write_calendar_id,
+      calendarEventId: written.id,
+      revision: window.revision,
+      result: written.externalChangeKey ? 'external-change-repaired' : 'event-created'
+    })
+  }
 }
 async function refund(orderId: string, amount: number, key: string) {
   const order = await getOrder(orderId)
