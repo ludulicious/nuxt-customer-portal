@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/invoice-timesheets
 
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [67b5b80]
+  - @nuxt-customer-portal/core@0.4.4
+  - @nuxt-customer-portal/invoices@0.4.4
+  - @nuxt-customer-portal/timesheets@0.4.4
+
 ## 0.4.3
 
 ### Patch Changes
