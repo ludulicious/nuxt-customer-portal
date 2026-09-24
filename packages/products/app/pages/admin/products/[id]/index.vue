@@ -58,7 +58,7 @@ const languageOptions = computed(() => {
       label: value === 'en' ? '🇺🇸 English' : '🇳🇱 Nederlands'
     }))
 })
-const currencyOptions = computed(() => [...new Set(product.value?.prices.map((price) => price.currency) || [])])
+const currencyOptions = computed(() => preview.value?.currencies || [])
 const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
 function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'planning' | 'files') {

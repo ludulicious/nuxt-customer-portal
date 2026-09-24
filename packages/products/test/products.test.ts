@@ -94,6 +94,13 @@ test('image editing uses a dirty-aware back-to-product flow', () => {
   assert.match(page, /await navigateTo\(productTarget\.value\)/)
 })
 
+test('product pricing selector includes store currencies without an active price', () => {
+  const page = readFileSync(new URL('../app/pages/admin/products/[id]/index.vue', import.meta.url), 'utf8')
+
+  assert.match(page, /const currencyOptions = computed\(\(\) => preview\.value\?\.currencies \|\| \[\]\)/)
+  assert.doesNotMatch(page, /product\.value\?\.prices\.map\(\(price\) => price\.currency\)/)
+})
+
 test('checkout appearance has safe reusable defaults and validates URLs', () => {
   const appearance = checkoutAppearanceSchema.parse({})
   assert.equal(appearance.actionColor, '#563273')

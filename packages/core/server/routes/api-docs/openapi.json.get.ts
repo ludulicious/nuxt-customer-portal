@@ -1,4 +1,3 @@
-import { fetchWithEvent, getRequestURL } from 'h3'
 import { auth } from '../../utils/auth'
 import { mergeBetterAuthOpenApi } from '../../utils/openapi-auth'
 import { enrichOpenApiContracts } from '../../utils/openapi-contracts'
@@ -15,8 +14,7 @@ defineRouteMeta({
 })
 
 export default defineEventHandler(async (event) => {
-  const response = await fetchWithEvent(event, new URL('/api-docs/openapi.raw.json', getRequestURL(event)))
-  const document = (await response.json()) as OpenApiDocument
+  const document = await event.$fetch<OpenApiDocument>('/api-docs/openapi.raw.json')
   const authDocument = (await auth.api.generateOpenAPISchema()) as unknown as OpenApiDocument
   return orderOpenApiDocument(enrichOpenApiContracts(mergeBetterAuthOpenApi(document, authDocument)))
 })
