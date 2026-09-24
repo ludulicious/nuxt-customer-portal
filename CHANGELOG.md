@@ -1,5 +1,12 @@
 # Nuxt Customer Portal
 
+## 0.4.5
+
+Allow providers to save a primary calendar without selecting any additional
+conflict calendars.
+
+All public packages and portal apps use `0.4.5`.
+
 ## 0.4.4
 
 Improve product administration with a dedicated detail route, safer lifecycle

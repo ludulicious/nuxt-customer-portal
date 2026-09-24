@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/invoices
 
+## 0.4.5
+
+### Patch Changes
+
+- @nuxt-customer-portal/clients@0.4.5
+- @nuxt-customer-portal/core@0.4.5
+- @nuxt-customer-portal/organizations@0.4.5
+- @nuxt-customer-portal/ui@0.4.5
+
 ## 0.4.4
 
 ### Patch Changes

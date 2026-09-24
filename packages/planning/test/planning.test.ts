@@ -11,11 +11,23 @@ import {
   refundAmount,
   calendarWallDateTime
 } from '../shared/availability'
-import { availabilitySchema, holdSchema, holdCredentialSchema } from '../shared/validation'
+import { availabilitySchema, holdSchema, holdCredentialSchema, providerSettingsSchema } from '../shared/validation'
 import { calendarInvitation } from '../shared/invitation'
 import { appointmentCalendarDescription, appointmentCalendarTitle } from '../shared/appointment-calendar'
 import { encrypt, decrypt } from '../server/utils/crypto'
 import type { AvailabilityWindow } from '../shared/types'
+
+test('provider settings allow no additional calendars', () => {
+  const result = providerSettingsSchema.safeParse({
+    timezone: 'Europe/Amsterdam',
+    graceMinutes: 0,
+    availabilityCalendarTitle: 'Portal availability',
+    busyCalendarIds: [],
+    writeCalendarId: 'primary-calendar'
+  })
+
+  assert.equal(result.success, true)
+})
 
 test('appointment calendar descriptions include the tooltip client and timezone details', () => {
   const billing = {
