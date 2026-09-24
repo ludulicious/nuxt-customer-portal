@@ -427,8 +427,9 @@ test(
         )
         await db.query("UPDATE planning.reservation SET status='expired' WHERE status='reserved'")
       })
-      await db.query("UPDATE products.store SET mode='live'")
-      await t.test('availability synchronization stores the calendar event id returned by the provider', async () => {
+      await t.test('sandbox availability synchronizes and stores the provider calendar event id', async () => {
+        const store = await db.query<{ mode: string }>("SELECT mode FROM products.store WHERE organization_id='store'")
+        assert.equal(store.rows[0]!.mode, 'sandbox')
         replaceAvailabilityEventId = true
         const saved = await management.saveWindow(event(providerCookie), {
           date: day,
@@ -447,6 +448,7 @@ test(
         assert.match(synchronized.rows[0]!.calendar_event_id, /r12345678$/)
         replaceAvailabilityEventId = false
       })
+      await db.query("UPDATE products.store SET mode='live'")
       const value = await hold(9),
         initial = await checkout(value.holdToken)
       await t.test('paid confirmation and duplicate payment reconciliation are idempotent', async () => {
