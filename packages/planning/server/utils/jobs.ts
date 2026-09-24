@@ -274,12 +274,6 @@ async function availabilityEffects(id: string) {
   if (!window) {
     return
   }
-  const [store] = await rows<{ mode: string }>('SELECT mode FROM products.store WHERE organization_id=$1', [
-    window.store_id
-  ])
-  if (store?.mode === 'sandbox' && !developmentSandboxEffectsEnabled()) {
-    return
-  }
   const eventId = window.calendar_event_id || `a${id.replace(/-/g, '')}`
   const [provider] = await rows<{ write_calendar_id: string; availability_calendar_title: string }>(
     'SELECT write_calendar_id,availability_calendar_title FROM planning.provider WHERE store_id=$1 AND user_id=$2',
