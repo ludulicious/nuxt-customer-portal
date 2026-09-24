@@ -196,7 +196,7 @@ watch(() => props.product.updatedAt, loadAssets)
             <UButton
               icon="i-lucide-pencil"
               color="neutral"
-              variant="ghost"
+              variant="soft"
               size="xs"
               :aria-label="t('products.editPurchasedFile')"
               @click="startEditing(row.original)"

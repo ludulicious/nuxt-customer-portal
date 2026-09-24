@@ -41,7 +41,7 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
     <div class="space-y-6">
       <div v-if="previewImageId" class="space-y-3">
         <div class="flex justify-end">
-          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-pencil" @click="emit('editMedia')">{{
+          <UButton size="sm" color="neutral" variant="soft" icon="i-lucide-pencil" @click="emit('editMedia')">{{
             t('products.editImages')
           }}</UButton>
         </div>
@@ -79,7 +79,7 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
           <UButton
             icon="i-lucide-pencil"
             color="neutral"
-            variant="ghost"
+            variant="soft"
             class="shrink-0"
             :aria-label="t('products.editInformation')"
             :aria-expanded="editing"
