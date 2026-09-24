@@ -1,6 +1,6 @@
 export default {
   id: 'authentication',
-  version: '0.4.7',
+  version: '0.4.8',
   source: '@nuxt-customer-portal/authentication',
   dependsOn: ['core', 'ui']
 }

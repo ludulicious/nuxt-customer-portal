@@ -95,6 +95,8 @@
     "setMainCalendar": "Set main calendar",
     "calendarSettings": "Calendar settings",
     "graceMinutes": "Grace time after portal appointments (minutes)",
+    "availabilitySyncEnabled": "Sync availability to Google Calendar",
+    "availabilitySyncEnabledDescription": "Create and maintain calendar events for your portal availability. Turning this off removes existing availability events; appointments remain synchronized.",
     "availabilityCalendarTitle": "Availability calendar event title",
     "availabilityCalendarTitleDescription": "Shown as the title of availability events in your main calendar.",
     "busyCalendars": "Calendars that block availability",

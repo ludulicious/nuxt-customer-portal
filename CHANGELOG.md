@@ -1,5 +1,13 @@
 # Nuxt Customer Portal
 
+## 0.4.8
+
+Control Google Calendar availability synchronization with a provider preference,
+independently of the store environment, and synchronize current and future
+availability when providers enable it.
+
+All public packages and portal apps use `0.4.8`.
+
 ## 0.4.7
 
 Keep Google Calendar settings recoverable when stored authorization expires and

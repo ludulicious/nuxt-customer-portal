@@ -38,6 +38,7 @@ export const provider = schema.table(
     enabled: boolean('enabled').notNull().default(false),
     timezone: text('timezone').notNull().default('Europe/Amsterdam'),
     graceMinutes: integer('grace_minutes').notNull().default(0),
+    availabilitySyncEnabled: boolean('availability_sync_enabled').notNull().default(true),
     availabilityCalendarTitle: text('availability_calendar_title').notNull().default('Portal availability'),
     busyCalendarIds: text('busy_calendar_ids')
       .array()

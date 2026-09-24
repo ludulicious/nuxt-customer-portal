@@ -427,8 +427,7 @@ test(
         )
         await db.query("UPDATE planning.reservation SET status='expired' WHERE status='reserved'")
       })
-      await db.query("UPDATE products.store SET mode='live'")
-      await t.test('availability synchronization stores the calendar event id returned by the provider', async () => {
+      await t.test('availability synchronization is independent of the store environment', async () => {
         replaceAvailabilityEventId = true
         const saved = await management.saveWindow(event(providerCookie), {
           date: day,
@@ -447,6 +446,46 @@ test(
         assert.match(synchronized.rows[0]!.calendar_event_id, /r12345678$/)
         replaceAvailabilityEventId = false
       })
+      await t.test('availability synchronization follows the provider preference', async () => {
+        const synchronized = await db.query<{ id: string; calendar_event_id: string }>(
+          'SELECT id,calendar_event_id FROM planning.availability WHERE calendar_event_id IS NOT NULL LIMIT 1'
+        )
+        const window = synchronized.rows[0]!
+        assert.equal(mirrors.has(window.calendar_event_id), true)
+        await db.query(
+          'UPDATE planning.provider SET availability_sync_enabled=false WHERE store_id=$1 AND user_id=$2',
+          ['store', 'provider']
+        )
+        await db.query(`INSERT INTO planning.job(id,kind,payload) VALUES($1,'availability',$2)`, [
+          `availability-preference:${window.id}`,
+          { id: window.id }
+        ])
+        await jobs.runJobs()
+        const disabled = await db.query<{ calendar_event_id: string | null; calendar_id: string | null }>(
+          'SELECT calendar_event_id,calendar_id FROM planning.availability WHERE id=$1',
+          [window.id]
+        )
+        assert.equal(disabled.rows[0]!.calendar_event_id, null)
+        assert.equal(disabled.rows[0]!.calendar_id, null)
+        assert.equal(mirrors.has(window.calendar_event_id), false)
+        await management.saveOwnSettings(event(providerCookie), {
+          timezone: 'UTC',
+          graceMinutes: 15,
+          availabilitySyncEnabled: true,
+          availabilityCalendarTitle: 'Portal availability',
+          busyCalendarIds: [],
+          writeCalendarId: 'calendar'
+        })
+        await jobs.runJobs()
+        const enabled = await db.query<{ calendar_event_id: string | null; calendar_id: string | null }>(
+          'SELECT calendar_event_id,calendar_id FROM planning.availability WHERE id=$1',
+          [window.id]
+        )
+        assert.ok(enabled.rows[0]!.calendar_event_id)
+        assert.equal(enabled.rows[0]!.calendar_id, 'calendar')
+        assert.equal(mirrors.has(enabled.rows[0]!.calendar_event_id!), true)
+      })
+      await db.query("UPDATE products.store SET mode='live'")
       const value = await hold(9),
         initial = await checkout(value.holdToken)
       await t.test('paid confirmation and duplicate payment reconciliation are idempotent', async () => {
