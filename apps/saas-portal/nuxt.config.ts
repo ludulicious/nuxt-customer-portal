@@ -22,7 +22,20 @@ export default defineNuxtConfig({
     openAPI: {
       production: 'runtime',
       meta: { title: 'SaaS Portal API', version: '1.0.0' },
-      route: '/api-docs/openapi.raw.json'
+      route: '/api-docs/openapi.raw.json',
+      ui: {
+        scalar: {
+          route: '/api-docs',
+          theme: 'default',
+          hideClientButton: true,
+          spec: {
+            url: '/api-docs/openapi.json'
+          }
+        },
+        swagger: {
+          route: '/api-docs/swagger'
+        }
+      }
     }
   },
   vite: { server: { allowedHosts } },
