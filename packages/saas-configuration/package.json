@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-customer-portal/saas-configuration",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "type": "module",
   "main": "./nuxt.config.ts",
   "exports": {

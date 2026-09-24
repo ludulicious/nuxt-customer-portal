@@ -36,7 +36,7 @@ export const providerSettingsSchema = z.object({
   timezone: timezoneSchema,
   graceMinutes: z.number().int().min(0).max(1440),
   availabilityCalendarTitle: z.string().trim().min(1).max(100),
-  busyCalendarIds: z.array(z.string().min(1).max(500)).min(1).max(20),
+  busyCalendarIds: z.array(z.string().min(1).max(500)).max(20),
   writeCalendarId: z.string().min(1).max(500)
 })
 export const availabilityQuerySchema = z

@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/preset
 
+## 0.4.5
+
+### Patch Changes
+
+- @nuxt-customer-portal/administration@0.4.5
+- @nuxt-customer-portal/authentication@0.4.5
+- @nuxt-customer-portal/clients@0.4.5
+- @nuxt-customer-portal/core@0.4.5
+- @nuxt-customer-portal/organizations@0.4.5
+- @nuxt-customer-portal/ui@0.4.5
+
 ## 0.4.4
 
 ### Patch Changes
