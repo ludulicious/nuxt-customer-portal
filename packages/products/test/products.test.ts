@@ -18,6 +18,82 @@ import { hasPurchaseAccess } from '../shared/access'
 import { checkoutAppearanceSchema } from '../shared/checkout-appearance'
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../shared/checkout-query'
 
+test('product detail keeps edit, lifecycle and deletion actions in distinct page regions', () => {
+  const page = readFileSync(new URL('../app/pages/admin/products/[id]/index.vue', import.meta.url), 'utf8')
+  const details = readFileSync(new URL('../app/components/ProductsDetailsCard.vue', import.meta.url), 'utf8')
+  const status = readFileSync(new URL('../app/components/ProductsStatusCard.vue', import.meta.url), 'utf8')
+  const danger = readFileSync(new URL('../app/components/ProductsDangerCard.vue', import.meta.url), 'utf8')
+
+  assert.doesNotMatch(page, /#actions/)
+  assert.match(page, /<ProductsDetailsCard[\s\S]*@edit="toggleEdit\('details'\)"/)
+  assert.match(page, /<template #status>[\s\S]*<ProductsStatusCard/)
+  assert.match(page, /<ProductsDangerCard/)
+  assert.match(details, /#header>[\s\S]*\$emit\('edit'\)/)
+  assert.doesNotMatch(details, /changeStatus|ProductsDelete/)
+  assert.match(status, /ProductsPublishDialog/)
+  assert.doesNotMatch(status, /<UCard/)
+  assert.match(details, /<slot name="status"/)
+  assert.match(status, /v-if="statusConfirmOpen"/)
+  assert.match(status, /v-model:open="statusConfirmOpen"/)
+  assert.match(status, /@confirm="confirmStatusChange"/)
+  assert.match(danger, /<ProductsDelete/)
+})
+
+test('product deletion uses a full-width destructive action and exact-name confirmation', () => {
+  const source = readFileSync(new URL('../app/components/ProductsDelete.vue', import.meta.url), 'utf8')
+
+  assert.match(source, /<UButton block color="error" variant="outline"/)
+  assert.match(source, /value === productName\.value/)
+  assert.match(source, /:disabled="busy \|\| !nameMatches"/)
+  assert.match(source, /:placeholder="productName"/)
+})
+
+test('product edit buttons use Nuxt UI soft styling for interaction feedback', () => {
+  for (const component of [
+    'ProductsDetailsCard.vue',
+    'ProductsPriceCard.vue',
+    'ProductsPlanningCard.vue',
+    'ProductsPreviewCard.vue',
+    'ProductsFilesSection.vue'
+  ]) {
+    const source = readFileSync(new URL(`../app/components/${component}`, import.meta.url), 'utf8')
+    assert.match(source, /i-lucide-pencil[\s\S]{0,200}color="neutral"[\s\S]{0,100}variant="soft"/)
+    assert.doesNotMatch(source, /hover:bg-elevated|active:bg-accented/)
+  }
+})
+
+test('product image tabs are visually and accessibly joined to their panel', () => {
+  const source = readFileSync(new URL('../app/components/ProductsImageLibrary.vue', import.meta.url), 'utf8')
+
+  assert.match(source, /overflow-hidden rounded-t-lg border border-b-0/)
+  assert.match(source, /role="tabpanel"/)
+  assert.match(source, /rounded-b-lg border border-t-0 border-default/)
+  assert.doesNotMatch(source, /grid gap-1 rounded-t-lg|rounded-md px-3 py-2\.5 text-left/)
+  assert.match(source, /:aria-controls="`product-image-panel-\$\{purpose\}`"/)
+  assert.match(source, /:aria-labelledby="`product-image-tab-\$\{activePurpose\}`"/)
+  assert.match(source, /const activePurpose = ref<ImagePurpose>\('thumbnail'\)/)
+  assert.match(source, /thumbnailImageId\.value \|\| imageIds\.value\.find/)
+})
+
+test('image editing uses a dirty-aware back-to-product flow', () => {
+  const detail = readFileSync(new URL('../app/pages/admin/products/[id]/index.vue', import.meta.url), 'utf8')
+  const page = readFileSync(new URL('../app/pages/admin/products/[id]/images.vue', import.meta.url), 'utf8')
+  const form = readFileSync(new URL('../app/components/ProductsForm.vue', import.meta.url), 'utf8')
+
+  assert.match(detail, /\/admin\/products\/\$\{route\.params\.id\}\/images/)
+  assert.doesNotMatch(detail, /editing === 'images'|unsavedImagesOpen/)
+  assert.match(page, /products\.backToProduct/)
+  assert.match(page, /v-if="unsavedOpen"/)
+  assert.match(page, /@click="saveAndClose"/)
+  assert.match(page, /@click="discard"/)
+  assert.match(form, /dirty: \[dirty: boolean\]/)
+  assert.match(page, /saveRequest\.value \+= 1/)
+  assert.match(page, /:save-request="saveRequest"/)
+  assert.match(form, /\(\) => props\.saveRequest/)
+  assert.match(form, /void save\(\)/)
+  assert.match(page, /await navigateTo\(productTarget\.value\)/)
+})
+
 test('product pricing selector includes store currencies without an active price', () => {
   const page = readFileSync(new URL('../app/pages/admin/products/[id]/index.vue', import.meta.url), 'utf8')
 

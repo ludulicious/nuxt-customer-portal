@@ -22,12 +22,13 @@ const props = withDefaults(
       fileId?: string
       currency?: string
       language?: 'en' | 'nl'
+      saveRequest?: number
     }>(),
     {
       section: 'all'
     }
   ),
-  emit = defineEmits<{ saved: [product: Product]; cancel: [] }>()
+  emit = defineEmits<{ saved: [product: Product]; cancel: []; dirty: [dirty: boolean] }>()
 const { t } = useI18n(),
   api = useProducts(),
   schema = useProductFormSchema(productSchema),
@@ -378,6 +379,12 @@ async function loadInitialData() {
   }
 }
 await loadInitialData()
+const initialStateSnapshot = JSON.stringify(toRaw(state))
+watch(
+  () => JSON.stringify(state),
+  (value) => emit('dirty', value !== initialStateSnapshot),
+  { flush: 'sync' }
+)
 onMounted(() => root.value?.querySelector('input')?.focus({ preventScroll: true }))
 async function save() {
   if (props.section === 'planning' && appointmentSetupRequired.value) {
@@ -457,6 +464,14 @@ async function save() {
     saving.value = false
   }
 }
+watch(
+  () => props.saveRequest,
+  (value, previous) => {
+    if (value && value !== previous) {
+      void save()
+    }
+  }
+)
 async function upload(event: Event, visibility: 'public' | 'private', purpose?: ImagePurpose) {
   const input = event.target as HTMLInputElement
   const files = [...(input.files || [])]

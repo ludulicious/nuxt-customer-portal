@@ -27,7 +27,7 @@ try {
         <UButton
           icon="i-lucide-pencil"
           color="neutral"
-          variant="ghost"
+          variant="soft"
           :aria-label="t('products.editPlanning')"
           :aria-expanded="editing"
           @click="emit('edit')"

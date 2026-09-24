@@ -6,13 +6,21 @@ const props = defineProps<{ product: Product }>()
 const emit = defineEmits<{ deleted: [] }>()
 const { t } = useI18n()
 const api = useProducts()
+const productName = computed(
+  () => props.product.content.en.title || props.product.content.nl.title || props.product.slug
+)
 const open = ref(false),
   pending = ref(false),
   eligible = ref(false),
   busy = ref(false),
   error = ref('')
 const state = reactive({ name: '' })
-const schema = useProductFormSchema(z.object({ name: z.string().min(1) }))
+const schema = useProductFormSchema(
+  z.object({
+    name: z.string().refine((value) => value === productName.value, { message: t('products.productNameMismatch') })
+  })
+)
+const nameMatches = computed(() => state.name === productName.value)
 watch(open, async (value) => {
   if (!value) {
     return
@@ -45,7 +53,7 @@ async function remove() {
 </script>
 
 <template>
-  <UButton color="neutral" variant="ghost" icon="i-lucide-trash-2" @click="open = true">{{
+  <UButton block color="error" variant="outline" icon="i-lucide-trash-2" @click="open = true">{{
     t('products.delete')
   }}</UButton>
   <UModal v-if="open" v-model:open="open" :title="t('products.delete')" :ui="{ content: 'pointer-events-auto' }">
@@ -56,20 +64,26 @@ async function remove() {
         <p>
           {{
             t(eligible ? 'products.deleteConfirm' : 'products.archiveInstead', {
-              name: product.content.en.title || product.content.nl.title
+              name: productName
             })
           }}
         </p>
         <UFormField v-if="eligible" name="name" :label="t('products.typeName')"
-          ><UInput v-model="state.name" class="w-full"
+          ><UInput v-model="state.name" :placeholder="productName" autocomplete="off" class="w-full"
         /></UFormField>
         <div class="flex justify-end gap-3">
           <UButton color="neutral" variant="outline" :disabled="busy" @click="open = false">{{
             t('products.cancel')
           }}</UButton>
-          <UButton v-if="eligible" type="submit" color="error" icon="i-lucide-trash-2" :loading="busy">{{
-            t('products.delete')
-          }}</UButton>
+          <UButton
+            v-if="eligible"
+            type="submit"
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="busy"
+            :disabled="busy || !nameMatches"
+            >{{ t('products.delete') }}</UButton
+          >
         </div>
       </UForm>
     </template>

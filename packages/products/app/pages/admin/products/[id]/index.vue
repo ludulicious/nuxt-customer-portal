@@ -7,7 +7,7 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'details' | 'pricing' | 'planning' | 'images' | 'files' | null>(
+const editing = ref<'basic' | 'details' | 'pricing' | 'planning' | 'files' | null>(
   route.query.edit === 'true' ? 'basic' : null
 )
 const toast = useToast()
@@ -65,7 +65,7 @@ function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'planning' | 'fil
   editing.value = editing.value === section ? null : section
 }
 function openMediaEditor() {
-  editing.value = 'images'
+  return navigateTo({ path: `/admin/products/${route.params.id}/images`, query: route.query })
 }
 async function saved() {
   editing.value = null
@@ -109,13 +109,10 @@ onMounted(() => {
 
 <template>
   <ProductsShell :title="productName" :subtitle="t('products.previewIntro')">
-    <template #back
-      ><UButton :to="backTarget" variant="link" color="neutral" icon="i-lucide-arrow-left" class="w-fit px-0">{{
-        t('products.backToProducts')
-      }}</UButton></template
-    >
-    <template v-if="product" #actions>
-      <ProductsDelete :product="product" @deleted="navigateTo(backTarget)" />
+    <template #back>
+      <UButton :to="backTarget" variant="link" color="neutral" icon="i-lucide-arrow-left" class="w-fit px-0">
+        {{ t('products.backToProducts') }}
+      </UButton>
     </template>
     <p v-if="pending" role="status">{{ t('products.loading') }}</p>
     <UAlert v-else-if="error" color="error" :title="error" />
@@ -127,117 +124,96 @@ onMounted(() => {
         icon="i-lucide-circle-alert"
         :title="t('products.requiredPrices')"
       />
-      <UCard v-if="editing === 'images'" @keydown.esc="editing = null">
-        <template #header>
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="font-semibold">{{ t('products.productImageLibrary') }}</h2>
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :aria-label="t('products.close')"
-              @click="editing = null"
-            />
-          </div>
-        </template>
-        <ProductsForm
-          :key="`images-${product.updatedAt}`"
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <ProductsPreviewCard
+          v-model:language="language"
+          class="lg:self-stretch"
+          :languages="languageOptions"
           :product="product"
-          section="images"
-          @saved="saved"
-          @cancel="editing = null"
-        />
-      </UCard>
-      <template v-else>
-        <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <ProductsPreviewCard
-            v-model:language="language"
-            class="lg:self-stretch"
-            :languages="languageOptions"
+          :copy="copy"
+          :markdown-style="preview?.markdownStyle"
+          :editing="editing === 'basic'"
+          @edit="toggleEdit('basic')"
+          @edit-media="openMediaEditor"
+        >
+          <template #editor>
+            <ProductsForm
+              :key="`basic-${product.updatedAt}-${language}`"
+              :product="product"
+              :language="language"
+              section="basic"
+              @saved="saved"
+              @cancel="editing = null"
+            />
+          </template>
+        </ProductsPreviewCard>
+        <div class="space-y-6">
+          <ProductsDetailsCard
             :product="product"
-            :copy="copy"
-            :markdown-style="preview?.markdownStyle"
-            :editing="editing === 'basic'"
-            @edit="toggleEdit('basic')"
-            @edit-media="openMediaEditor"
+            :language="language"
+            :editing="editing === 'details'"
+            @edit="toggleEdit('details')"
           >
             <template #editor>
               <ProductsForm
-                :key="`basic-${product.updatedAt}-${language}`"
+                :key="`details-${product.updatedAt}`"
                 :product="product"
-                :language="language"
-                section="basic"
+                section="details"
                 @saved="saved"
                 @cancel="editing = null"
               />
             </template>
-          </ProductsPreviewCard>
-          <div class="space-y-6">
-            <ProductsDetailsCard
-              :product="product"
-              :language="language"
-              :editing="editing === 'details'"
-              @edit="toggleEdit('details')"
-              @saved="saved"
-            >
-              <template #editor>
-                <ProductsForm
-                  :key="`details-${product.updatedAt}`"
-                  :product="product"
-                  section="details"
-                  @saved="saved"
-                  @cancel="editing = null"
-                />
-              </template>
-            </ProductsDetailsCard>
-            <ProductsPriceCard
-              v-model:currency="currency"
-              :is-free="!!product.isFree"
-              :currencies="currencyOptions"
-              :price="selectedPrice"
-              :language="language"
-              :editing="editing === 'pricing'"
-              @edit="toggleEdit('pricing')"
-            >
-              <template #editor>
-                <ProductsForm
-                  :key="`pricing-${product.updatedAt}-${currency}`"
-                  :product="product"
-                  :currency="currency"
-                  section="pricing"
-                  @saved="saved"
-                  @cancel="editing = null"
-                />
-              </template>
-            </ProductsPriceCard>
-            <ProductsPlanningCard
-              v-if="product.type === 'service'"
-              :product="product"
-              :editing="editing === 'planning'"
-              @edit="toggleEdit('planning')"
-            >
-              <template #editor>
-                <ProductsForm
-                  :key="`planning-${product.updatedAt}`"
-                  :product="product"
-                  section="planning"
-                  @saved="saved"
-                  @cancel="editing = null"
-                />
-              </template>
-            </ProductsPlanningCard>
-          </div>
+            <template #status>
+              <ProductsStatusCard :product="product" :disabled="editing !== null" @saved="saved" />
+            </template>
+          </ProductsDetailsCard>
+          <ProductsPriceCard
+            v-model:currency="currency"
+            :is-free="!!product.isFree"
+            :currencies="currencyOptions"
+            :price="selectedPrice"
+            :language="language"
+            :editing="editing === 'pricing'"
+            @edit="toggleEdit('pricing')"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`pricing-${product.updatedAt}-${currency}`"
+                :product="product"
+                :currency="currency"
+                section="pricing"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsPriceCard>
+          <ProductsPlanningCard
+            v-if="product.type === 'service'"
+            :product="product"
+            :editing="editing === 'planning'"
+            @edit="toggleEdit('planning')"
+          >
+            <template #editor>
+              <ProductsForm
+                :key="`planning-${product.updatedAt}`"
+                :product="product"
+                section="planning"
+                @saved="saved"
+                @cancel="editing = null"
+              />
+            </template>
+          </ProductsPlanningCard>
+          <ProductsDangerCard :product="product" @deleted="navigateTo(backTarget)" />
         </div>
-        <ProductsFilesSection
-          class="mt-6"
-          :product="product"
-          :editing="editing === 'files'"
-          @edit="toggleEdit('files')"
-          @saved="saved"
-          @cancel="editing = null"
-        />
-      </template>
+      </div>
+      <ProductsFilesSection
+        class="mt-6"
+        :product="product"
+        :editing="editing === 'files'"
+        @edit="toggleEdit('files')"
+        @saved="saved"
+        @cancel="editing = null"
+      />
     </template>
   </ProductsShell>
 </template>
