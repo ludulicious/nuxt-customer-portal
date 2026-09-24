@@ -110,10 +110,10 @@ function removeSelected() {
         >
           <button
             v-for="purpose in purposes"
+            :id="`product-image-tab-${purpose}`"
             :key="purpose"
             type="button"
             role="tab"
-            :id="`product-image-tab-${purpose}`"
             class="flex items-center gap-3 px-3 py-2.5 text-left transition focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary"
             :class="
               activePurpose === purpose

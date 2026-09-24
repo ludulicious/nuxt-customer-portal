@@ -26,7 +26,9 @@ async function changeStatus() {
   statusConfirmOpen.value = true
 }
 async function confirmStatusChange() {
-  if (busy.value) return
+  if (busy.value) {
+    return
+  }
   const parsed = productSchema.safeParse({ ...props.product, status: action.value.next })
   if (!parsed.success) {
     toast.add({ title: t('products.statusRequirements'), color: 'error' })
