@@ -1,6 +1,6 @@
 export default {
   id: 'administration',
-  version: '0.4.6',
+  version: '0.4.7',
   source: '@nuxt-customer-portal/administration',
   dependsOn: ['core', 'ui', 'organizations']
 }

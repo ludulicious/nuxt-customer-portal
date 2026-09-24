@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.7
+
+### Patch Changes
+
+- Keep Google Calendar settings recoverable when stored authorization expires, and offer reconnection after a rejected token refresh.
+  - @nuxt-customer-portal/core@0.4.7
+  - @nuxt-customer-portal/products@0.4.7
+  - @nuxt-customer-portal/ui@0.4.7
+
 ## 0.4.6
 
 ### Patch Changes
