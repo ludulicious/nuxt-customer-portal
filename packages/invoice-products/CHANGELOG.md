@@ -1,5 +1,13 @@
 # Product invoices
 
+## 0.4.9
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.4.9
+- @nuxt-customer-portal/invoices@0.4.9
+- @nuxt-customer-portal/products@0.4.9
+
 ## 0.4.8
 
 ### Patch Changes

@@ -4,6 +4,8 @@ Do not edit, commit, or push directly on `master`. Before making changes, inspec
 
 Track changes with GitHub issues and integrate them through pull requests targeting `master`. Use a purpose-based branch prefix such as `feat/`, `fix/`, `bug/`, `chore/`, `docs/`, `refactor/`, or `test/`; never use the `codex/` prefix. Include the issue number when known, for example `fix/<issue-number>-<short-description>`. Link the issue in the pull request, describe the resulting behavior, and report the checks actually run. Include documentation and a changeset when the change needs them.
 
+Use the GitHub plugin for GitHub operations such as issues, pull requests, reviews, CI workflows, merges, and releases. Do not use the GitHub CLI or browser UI for these operations.
+
 Before pushing changes to a pull request, run `pnpm format` and `pnpm format:check`. Fix every failure before pushing, and report any additional checks actually run in the pull request.
 
 # Local development

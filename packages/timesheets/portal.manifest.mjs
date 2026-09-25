@@ -1,6 +1,6 @@
 export default {
   id: 'timesheets',
-  version: '0.4.8',
+  version: '0.4.9',
   source: '@nuxt-customer-portal/timesheets',
   clientModuleId: 'timesheets',
   dependsOn: ['core', 'ui', 'organizations', 'clients'],

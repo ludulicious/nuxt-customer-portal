@@ -1,5 +1,7 @@
 # @nuxt-customer-portal/core
 
+## 0.4.9
+
 ## 0.4.8
 
 ## 0.4.7

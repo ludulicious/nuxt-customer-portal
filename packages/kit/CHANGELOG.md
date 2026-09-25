@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/kit
 
+## 0.4.9
+
+### Patch Changes
+
+- 340a67a: Let developers select business modules during `init`, automatically include required modules and integration layers, and generate only the selected portal dependencies and configuration.
+
 ## 0.4.8
 
 ## 0.4.7
