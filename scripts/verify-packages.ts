@@ -202,7 +202,8 @@ try {
           database: 'existing',
           databaseUrl: 'postgresql://postgres:postgres@localhost:5432/portal_fixture',
           port: 3000,
-          databasePort: 5433
+          databasePort: 5433,
+          modules: ['timesheets', 'invoices']
         },
         { templateRoot: join(temporaryRoot, 'extracted', 'kit', 'package', 'templates', 'saas-portal') }
       )

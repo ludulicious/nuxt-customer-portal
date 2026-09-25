@@ -15,7 +15,12 @@ The interactive wizard creates a standalone copy of the configurable SaaS portal
 generates secrets, installs dependencies, starts local PostgreSQL with Docker (or
 uses an empty database), and creates a verified administrator. Choose the password
 in the masked prompt; it is never stored in generated files or passed as a shell
-argument. Finish branding, modules, homepage, and legal settings in the browser.
+argument. The wizard also lets you choose which business modules to install. It
+automatically adds required modules and integration layers: Planning adds Products,
+Products adds Invoices and its invoice bridge, and selecting Timesheets with
+Invoices adds their bridge. The generated dependency list, portal layers, client
+defaults, and initial onboarding settings contain only the resolved selection.
+Finish branding, module settings, homepage, and legal settings in the browser.
 
 For your own PostgreSQL database, use a connection URL in the form
 `postgresql://username:password@host:5432/database`. Replace each part with your

@@ -7,7 +7,13 @@ import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import pg from 'pg'
 import { prepareTemplate } from '../scripts/prepare-template.mjs'
-import { createStarter, claimDatabase, initializeStarter, validateDatabaseUrl } from '../src/starter.mjs'
+import {
+  createStarter,
+  claimDatabase,
+  initializeStarter,
+  resolveStarterModules,
+  validateDatabaseUrl
+} from '../src/starter.mjs'
 import { copyPortalPages } from '../src/pages.mjs'
 import { definePortalConfig, resolvePortalManifests } from '../src/runtime.mjs'
 import { defaultPortalSettings } from '../../saas-configuration/shared/settings'
@@ -20,8 +26,15 @@ const input = {
   packageManager: 'pnpm',
   database: 'docker',
   port: 3098,
-  databasePort: 5498
+  databasePort: 5498,
+  modules: ['timesheets', 'invoices']
 }
+
+test('starter module selection includes required modules and integrations', () => {
+  assert.deepEqual(resolveStarterModules(['planning']), ['invoices', 'products', 'planning', 'invoice-products'])
+  assert.deepEqual(resolveStarterModules(['timesheets', 'invoices']), ['timesheets', 'invoices', 'invoice-timesheets'])
+  assert.throws(() => resolveStarterModules(['unknown']), /supported portal modules/)
+})
 
 test('starter generates a portable host with unique private secrets and no workspace imports', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'portal-starter-unit-'))
@@ -68,6 +81,15 @@ test('starter generates a portable host with unique private secrets and no works
     }
     const configurationPackage = JSON.parse(await readFile(resolve(root, 'saas-configuration/package.json'), 'utf8'))
     assert.equal(manifest.dependencies['@nuxt-customer-portal/saas-configuration'], configurationPackage.version)
+    assert.ok(manifest.dependencies['@nuxt-customer-portal/timesheets'])
+    assert.ok(manifest.dependencies['@nuxt-customer-portal/invoices'])
+    assert.ok(manifest.dependencies['@nuxt-customer-portal/invoice-timesheets'])
+    assert.equal(manifest.dependencies['@nuxt-customer-portal/service-requests'], undefined)
+    assert.equal(manifest.dependencies['@nuxt-customer-portal/products'], undefined)
+    assert.deepEqual(first.metadata.modules, ['timesheets', 'invoices', 'invoice-timesheets'])
+    const portalConfig = await readFile(join(first.directory, 'portal.config.ts'), 'utf8')
+    assert.match(portalConfig, /@nuxt-customer-portal\/invoice-timesheets/)
+    assert.doesNotMatch(portalConfig, /@nuxt-customer-portal\/service-requests/)
     assert.doesNotMatch(JSON.stringify(manifest), /workspace:/)
     assert.match(manifest.scripts.setup, /--env-file=\.env/)
     assert.match(manifest.scripts.dev, /--host localhost --port 3098/)

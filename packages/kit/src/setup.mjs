@@ -12,6 +12,8 @@ import {
   hasControlCharacters,
   initializeStarter,
   packageManagers,
+  resolveStarterModules,
+  starterModules,
   validateDatabaseUrl,
   validateEmail,
   validateName
@@ -75,6 +77,19 @@ Use --no-install to generate files and run the printed setup commands later.`)
   )
   const userName = await answer(prompts.text({ message: 'What is the administrator’s name?', validate: validateName }))
   const userEmail = await answer(prompts.text({ message: 'Administrator email address', validate: validateEmail }))
+  const selectedModules = await answer(
+    prompts.multiselect({
+      message: 'Which modules should this portal include?',
+      options: starterModules.map(({ id, label, description }) => ({ value: id, label, hint: description })),
+      initialValues: ['timesheets', 'invoices'],
+      required: true
+    })
+  )
+  const modules = resolveStarterModules(selectedModules)
+  const addedModules = modules.filter((id) => !selectedModules.includes(id))
+  if (addedModules.length) {
+    prompts.log.info(`Also selected required modules: ${addedModules.join(', ')}`)
+  }
   const detectedManager = process.env.npm_config_user_agent?.split('/')[0]
   const packageManager = await answer(
     prompts.select({
@@ -133,7 +148,8 @@ Use --no-install to generate files and run the printed setup commands later.`)
     databaseUrl,
     port,
     databasePort,
-    customizeWebsite
+    customizeWebsite,
+    modules
   })
   prompts.log.success(`Created ${generated.directory}`)
   if (values['no-install']) {
@@ -180,7 +196,8 @@ export async function runSetup(args) {
     validateEmail(metadata.userEmail) ||
     !/^[a-z0-9-]+$/.test(metadata.organizationSlug || '') ||
     !/^[0-9a-f-]{36}$/i.test(metadata.id || '') ||
-    !['docker', 'existing'].includes(metadata.database)
+    !['docker', 'existing'].includes(metadata.database) ||
+    JSON.stringify(resolveStarterModules(metadata.modules)) !== JSON.stringify(metadata.modules)
   ) {
     throw new Error('Invalid portal.setup.json. Restore the generated setup metadata before retrying.')
   }
