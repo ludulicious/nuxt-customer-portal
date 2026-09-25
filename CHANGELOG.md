@@ -1,5 +1,15 @@
 # Nuxt Customer Portal
 
+## 0.4.9
+
+Let developers select business modules during `init`, automatically include
+required modules and integration layers, and generate only the selected portal
+dependencies and configuration.
+
+Hide email text settings for inactive modules.
+
+All public packages and portal apps use `0.4.9`.
+
 ## 0.4.8
 
 Control Google Calendar availability synchronization with a provider preference,

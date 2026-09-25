@@ -1,6 +1,6 @@
 export default {
   id: 'clients',
-  version: '0.4.8',
+  version: '0.4.9',
   source: '@nuxt-customer-portal/clients',
   dependsOn: ['core', 'ui'],
   schema: './server/db/schema/clients.ts',
