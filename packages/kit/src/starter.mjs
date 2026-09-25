@@ -9,6 +9,63 @@ import { copyPortalPages } from './pages.mjs'
 
 const templateRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../templates/saas-portal')
 export const packageManagers = ['npm', 'pnpm', 'yarn', 'bun']
+export const starterModules = [
+  {
+    id: 'service-requests',
+    label: 'Service Requests',
+    description: 'Client request intake and tracking'
+  },
+  { id: 'timesheets', label: 'Timesheets', description: 'Time tracking and client approvals' },
+  { id: 'invoices', label: 'Invoices', description: 'Invoice creation and delivery' },
+  { id: 'products', label: 'Products', description: 'Product catalog and checkout' },
+  { id: 'planning', label: 'Planning', description: 'Product planning and scheduling' }
+]
+const starterModuleIds = new Set(starterModules.map(({ id }) => id))
+const layerOrder = [
+  'service-requests',
+  'timesheets',
+  'invoices',
+  'invoice-timesheets',
+  'products',
+  'planning',
+  'invoice-products'
+]
+
+export function resolveStarterModules(selectedModules) {
+  if (!Array.isArray(selectedModules) || selectedModules.some((id) => !starterModuleIds.has(id))) {
+    throw new Error('Choose supported portal modules.')
+  }
+  const resolved = new Set(selectedModules)
+  if (resolved.has('planning')) {
+    resolved.add('products')
+  }
+  if (resolved.has('products')) {
+    resolved.add('invoices')
+    resolved.add('invoice-products')
+  }
+  if (resolved.has('timesheets') && resolved.has('invoices')) {
+    resolved.add('invoice-timesheets')
+  }
+  return layerOrder.filter((id) => resolved.has(id))
+}
+
+const renderPortalConfig = (moduleIds) => `import { definePortalConfig } from '@nuxt-customer-portal/kit'
+
+export default definePortalConfig({
+  clients: {
+    allowedTypes: ['organization', 'person'],
+    personalSelfRegistration: false,
+    defaultModules: [${moduleIds
+      .filter((id) => ['service-requests', 'timesheets', 'invoices'].includes(id))
+      .map((id) => `'${id}'`)
+      .join(', ')}]
+  },
+  layers: [
+    '@nuxt-customer-portal/preset',${moduleIds.map((id) => `\n    '@nuxt-customer-portal/${id}',`).join('')}
+    '@nuxt-customer-portal/saas-configuration'
+  ]
+})
+`
 export const hasControlCharacters = (value) =>
   [...value].some((character) => {
     const code = character.codePointAt(0)
@@ -83,6 +140,7 @@ export async function availablePort(start) {
 
 export async function createStarter(input, options = {}) {
   const directory = resolve(input.directory)
+  const modules = resolveStarterModules(input.modules)
   for (const [key, validator] of [
     ['organizationName', validateName],
     ['userName', validateName],
@@ -131,10 +189,16 @@ export async function createStarter(input, options = {}) {
     userName: input.userName.trim(),
     userEmail: input.userEmail.trim().toLowerCase(),
     database: input.database,
-    port: input.port
+    port: input.port,
+    modules
   }
   source.name = projectName
   delete source.version
+  for (const id of layerOrder) {
+    if (!modules.includes(id)) {
+      delete source.dependencies[`@nuxt-customer-portal/${id}`]
+    }
+  }
   source.scripts = {
     ...source.scripts,
     dev: `nuxt dev --host localhost --port ${input.port}`,
@@ -172,7 +236,12 @@ export async function createStarter(input, options = {}) {
       ...(input.database === 'docker' ? [`POSTGRES_PASSWORD=${password}`] : [])
     ].join('\n') + '\n'
   await writeFile(join(directory, 'package.json'), JSON.stringify(source, null, 2) + '\n')
-  await writeFile(join(directory, 'portal.setup.json'), JSON.stringify(metadata, null, 2) + '\n')
+  await writeFile(join(directory, 'portal.config.ts'), renderPortalConfig(modules))
+  const setupJson = JSON.stringify(metadata, null, 2).replace(
+    / {2}"modules": \[\n(?: {4}"[a-z-]+",?\n)+ {2}\]/,
+    `  "modules": [${modules.map((id) => JSON.stringify(id)).join(', ')}]`
+  )
+  await writeFile(join(directory, 'portal.setup.json'), setupJson + '\n')
   await writeFile(join(directory, '.env'), environment, { mode: 0o600, flag: 'wx' })
   await writeFile(
     join(directory, '.env.example'),
@@ -233,8 +302,7 @@ ${input.packageManager} run dev
 
 Sign in at http://localhost:${input.port}/login with the administrator account
 created during setup. Complete branding, modules, homepage, and legal content in
-the browser onboarding. Timesheets, Invoices, and their bridge start selected;
-Service Requests is an optional example.
+the browser onboarding. The modules selected during generation start enabled.
 
 Setup generates unique secrets in the ignored .env file. It only initializes an
 empty database or resumes this starter's own setup. It never resets a password.
@@ -325,7 +393,12 @@ export async function initializeStarter({ cwd, config, metadata, databaseUrl, ge
     await client.query(
       `INSERT INTO saas_configuration.portal_settings (id, settings)
       VALUES (true, $1::jsonb) ON CONFLICT (id) DO NOTHING`,
-      [JSON.stringify(defaultSettings(metadata.organizationName))]
+      [
+        JSON.stringify({
+          ...defaultSettings(metadata.organizationName),
+          enabledModules: metadata.modules
+        })
+      ]
     )
     await client.query('UPDATE public.portal_starter_setup SET completed=true WHERE id=true AND setup_id=$1', [
       metadata.id
