@@ -164,6 +164,7 @@ describe('documentation content', () => {
     }
     const community = readFileSync(join(contentRoot, '7.contributing/7.community.md'), 'utf8')
     const installation = readFileSync(join(contentRoot, '1.getting-started/2.installation.md'), 'utf8')
+    const manualInstallation = readFileSync(join(contentRoot, '1.getting-started/8.manual-installation.md'), 'utf8')
 
     expect(routes.has(collaboration.documentationPath)).toBe(true)
     expect(collaboration.repositories.product.url).toBe(documentationDefaults.productRepositoryUrl)
@@ -191,11 +192,13 @@ describe('documentation content', () => {
     expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('@nuxt-customer-portal/kit@0.4.5 init my-portal')
+    expect(installation).toContain('@nuxt-customer-portal/kit@latest init my-portal')
     expect(installation).toContain('pnpm dlx')
     expect(installation).toContain('npm install')
     expect(installation).toContain('yarn dlx')
     expect(installation).toContain('bunx')
+    expect(manualInstallation).toContain('@nuxt-customer-portal/preset@latest')
+    expect(manualInstallation).toContain('@nuxt-customer-portal/kit@latest')
   })
 
   it('maps documented product internals to source-backed monorepo links', () => {
