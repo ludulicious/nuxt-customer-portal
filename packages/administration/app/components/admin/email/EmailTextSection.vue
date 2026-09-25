@@ -10,9 +10,9 @@ import type { PortalEmailSettings } from '../../../types/admin-email'
 const props = defineProps<{ settings: PortalEmailSettings }>()
 const { t } = useI18n()
 const toast = useToast()
-const { features } = usePortalFeatures()
+const { enabledFeatures } = usePortalFeatures()
 const catalog = computed<Array<{ moduleId: string; definition: PortalEmailDefinition }>>(() =>
-  features.value.flatMap((feature) =>
+  enabledFeatures.value.flatMap((feature) =>
     (feature.emails ?? []).map((definition) => ({ moduleId: feature.id, definition }))
   )
 )

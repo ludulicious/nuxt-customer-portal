@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
   canViewOrganizationDirectory,
+  isPortalFeatureEnabled,
   isPortalActionAllowed,
   mergePortalModuleMenuContributions,
   sortPortalDashboardWidgets,
@@ -25,6 +26,16 @@ test('feature registration is idempotent and replaces definitions by id', () => 
   assert.deepEqual(upsertPortalFeature([], feature), [feature])
   const replacement = { ...feature, navigation: [] }
   assert.deepEqual(upsertPortalFeature([feature], replacement), [replacement])
+})
+
+test('configurable features are enabled only when their modules are active', () => {
+  const timesheets = { ...feature, id: 'timesheets' }
+  const core = { ...feature, id: 'portal-core' }
+
+  assert.equal(isPortalFeatureEnabled(timesheets, null), true)
+  assert.equal(isPortalFeatureEnabled(timesheets, ['timesheets']), true)
+  assert.equal(isPortalFeatureEnabled(timesheets, []), false)
+  assert.equal(isPortalFeatureEnabled(core, []), true)
 })
 
 test('core email definitions have unique ids, localized defaults, and declared placeholders', () => {
