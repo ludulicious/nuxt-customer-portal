@@ -8,6 +8,13 @@ import type {
   PortalRolePolicy
 } from './types/feature'
 
+const configurablePortalFeatureIds = new Set(['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'])
+
+export const isPortalFeatureEnabled = (
+  feature: PortalFeatureDefinition,
+  enabledModules: readonly string[] | null
+): boolean => !enabledModules || !configurablePortalFeatureIds.has(feature.id) || enabledModules.includes(feature.id)
+
 export const mergePortalModuleMenuContributions = (
   modules: readonly PortalModuleContribution[],
   contributions: readonly PortalModuleMenuContribution[]
