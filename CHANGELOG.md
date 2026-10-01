@@ -1,5 +1,16 @@
 # Nuxt Customer Portal
 
+## 0.5.0
+
+Add visual Markdown editing with a raw Markdown mode for product summaries and
+descriptions and email bodies and footers. Preserve existing HTML and special
+Markdown as protected source blocks.
+
+Let email authors insert available placeholders at the cursor in either mode.
+Keep placeholder names intact through visual edits, including underscores.
+
+All public packages and portal apps use `0.5.0`.
+
 ## 0.4.9
 
 Let developers select business modules during `init`, automatically include

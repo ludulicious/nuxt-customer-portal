@@ -1,5 +1,7 @@
 # @nuxt-customer-portal/kit
 
+## 0.5.0
+
 ## 0.4.9
 
 ### Patch Changes
