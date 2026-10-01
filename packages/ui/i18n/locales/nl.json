@@ -1,0 +1,26 @@
+{
+  "portalMarkdown": {
+    "visual": "Visuele editor",
+    "source": "Markdown",
+    "insertPlaceholder": "Placeholder invoegen",
+    "undo": "Ongedaan maken",
+    "redo": "Opnieuw",
+    "bold": "Vet",
+    "italic": "Cursief",
+    "code": "Inline code",
+    "heading": "Tekststijl",
+    "paragraph": "Alinea",
+    "headingLevel": "Kop {level}",
+    "bulletList": "Opsomming",
+    "orderedList": "Genummerde lijst",
+    "blockquote": "Citaat",
+    "codeBlock": "Codeblok",
+    "horizontalRule": "Scheidingslijn",
+    "protected": "Speciale inhoud blijft behouden. Gebruik de Markdown-modus om deze blokken te wijzigen of verwijderen.",
+    "link": "Link toevoegen of bewerken",
+    "linkAddress": "Linkadres",
+    "invalidLink": "Gebruik een websiteadres, e-maillink of paginapad.",
+    "applyLink": "Link toepassen",
+    "removeLink": "Link verwijderen"
+  }
+}

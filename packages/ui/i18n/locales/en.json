@@ -1,0 +1,26 @@
+{
+  "portalMarkdown": {
+    "visual": "Visual editor",
+    "source": "Markdown",
+    "insertPlaceholder": "Insert placeholder",
+    "undo": "Undo",
+    "redo": "Redo",
+    "bold": "Bold",
+    "italic": "Italic",
+    "code": "Inline code",
+    "heading": "Text style",
+    "paragraph": "Paragraph",
+    "headingLevel": "Heading {level}",
+    "bulletList": "Bullet list",
+    "orderedList": "Numbered list",
+    "blockquote": "Quote",
+    "codeBlock": "Code block",
+    "horizontalRule": "Divider",
+    "protected": "Special content is preserved. Use Markdown mode to edit or remove those blocks.",
+    "link": "Add or edit link",
+    "linkAddress": "Link address",
+    "invalidLink": "Use a website address, email link or page path.",
+    "applyLink": "Apply link",
+    "removeLink": "Remove link"
+  }
+}

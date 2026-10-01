@@ -69,6 +69,12 @@ const schema = z.object({
   footer: z.string().max(10_000).optional()
 })
 const placeholderToken = (key: string) => `{{${key}}}`
+const editorPlaceholders = computed(() =>
+  (selectedItem.value?.definition.placeholders || []).map((placeholder) => ({
+    label: `${t(placeholder.labelKey)} (${placeholderToken(placeholder.key)})`,
+    value: placeholderToken(placeholder.key)
+  }))
+)
 const payload = () => ({
   moduleId: selectedItem.value!.moduleId,
   definition: selectedItem.value!.definition,
@@ -198,16 +204,20 @@ const sendTest = async () => {
               @update:model-value="selectedText = { ...selectedText, subject: String($event) }"
           /></UFormField>
           <UFormField name="body" :label="t('admin.email.body')"
-            ><UTextarea
+            ><PortalMarkdownEditor
+              :key="`${overrideKey}.body`"
               :model-value="selectedText.body"
+              :placeholders="editorPlaceholders"
               :rows="8"
-              class="w-full font-mono text-xs"
+              class="w-full"
               @update:model-value="selectedText = { ...selectedText, body: String($event) }"
           /></UFormField>
           <p class="-mt-2 text-xs text-muted">{{ t('admin.email.markdownHelp') }}</p>
           <UFormField name="footer" :label="t('admin.email.footer')"
-            ><UTextarea
-              :model-value="selectedText.footer"
+            ><PortalMarkdownEditor
+              :key="`${overrideKey}.footer`"
+              :model-value="selectedText.footer || ''"
+              :placeholders="editorPlaceholders"
               :rows="3"
               class="w-full"
               @update:model-value="selectedText = { ...selectedText, footer: String($event) }"

@@ -762,19 +762,17 @@ function removeFile(id: string, index: number) {
                   :placeholder="t('products.buyButtonLabelPlaceholder')"
                   class="w-full" /></UFormField
               ><UFormField :name="`content.${item.value}.summary`" :label="t('products.summary')"
-                ><UTextarea
+                ><PortalMarkdownEditor
                   v-model="state.content[item.value].summary"
                   :rows="4"
-                  autoresize
                   class="w-full" /></UFormField
               ><UFormField
                 :name="`content.${item.value}.description`"
                 :label="t('products.description')"
                 :help="t('products.markdownHelp')"
-                ><UTextarea
+                ><PortalMarkdownEditor
                   v-model="state.content[item.value].description"
                   :rows="15"
-                  autoresize
                   class="w-full" /></UFormField
               ><UFormField :name="`nextSteps.${item.value}`" :label="t('products.nextSteps')"
                 ><UTextarea v-model="state.nextSteps[item.value]" class="w-full"

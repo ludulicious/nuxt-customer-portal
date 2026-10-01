@@ -1,6 +1,6 @@
 export default {
   id: 'invoices',
-  version: '0.4.9',
+  version: '0.5.0',
   source: '@nuxt-customer-portal/invoices',
   clientModuleId: 'invoices',
   dependsOn: ['core', 'ui', 'organizations', 'clients'],

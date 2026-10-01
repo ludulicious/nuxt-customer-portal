@@ -50,7 +50,7 @@ Service Requests is an optional example extension for developers. It demonstrate
 | Configure the included application | [`apps/saas-portal`](apps/saas-portal) and [customization](https://nuxt-customer-portal.com/getting-started/customization) |
 | Work on the project itself         | [Contributing](CONTRIBUTING.md)                                                                                            |
 
-The current release series is `0.4.x`. Read the [compatibility and release guidance](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before adopting or upgrading.
+The current release series is `0.5.x`. Read the [compatibility and release guidance](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before adopting or upgrading.
 
 ## Packages
 

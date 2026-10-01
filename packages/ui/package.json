@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-customer-portal/ui",
-  "version": "0.4.9",
+  "version": "0.5.0",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -14,6 +14,7 @@
     "CHANGELOG.md",
     "app",
     "nuxt.config.ts",
+    "i18n",
     "portal.manifest.mjs",
     "README.md"
   ],
@@ -29,13 +30,23 @@
     "@nuxt/ui": "^4.10.0",
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/nuxt": "^1.0.1",
-    "pinia": "^4.0.2"
+    "@tiptap/core": "^3.29.2",
+    "@tiptap/markdown": "^3.29.2",
+    "@tiptap/pm": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
+    "@tiptap/vue-3": "^3.29.2",
+    "pinia": "^4.0.2",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "zod": "^4.4.3"
   },
   "peerDependencies": {
     "nuxt": "^4.5.1",
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "happy-dom": "20.11.2",
     "nuxt": "^4.5.1",
     "vue": "^3.5.0"
   }

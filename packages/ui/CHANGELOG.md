@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/ui
 
+## 0.5.0
+
+### Minor Changes
+
+- 5beff82: Add a shared visual Markdown editor with a raw Markdown mode, protected special content, and English/Dutch formatting controls. Use it for product summaries/descriptions and email bodies/footers, including a picker for the selected email's available placeholders.
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.5.0
+
 ## 0.4.9
 
 ### Patch Changes
