@@ -108,6 +108,9 @@ export const listProviderClientApprovalsPage = async (
         return {
           ...item,
           clientReviews: [review],
+          approvalEmails: item.approvalEmails?.filter(
+            (email) => email.kind === 'client-requested' && email.clientOrganizationId === review.clientOrganizationId
+          ),
           messages: [],
           history: [
             {

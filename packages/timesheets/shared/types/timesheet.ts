@@ -341,6 +341,7 @@ export interface TimesheetsDashboardDto {
 }
 
 export interface ApprovalQueueItemDto {
+  approvalEmails?: ApprovalEmailDto[]
   history?: SubmissionHistoryEventDto[]
   messages?: SubmissionMessageDto[]
   id: string
@@ -421,4 +422,24 @@ export interface SubmissionHistoryEventDto {
   actorName: string | null
   clientName: string | null
   createdAt: string
+}
+
+export interface ApprovalEmailDto {
+  id: string
+  clientOrganizationId: string | null
+  kind: string
+  recipientUserId: string
+  recipientName: string
+  recipientEmail: string
+  message: string
+  status: 'SENDING' | 'SENT' | 'FAILED'
+  createdAt: string
+  sentAt: string | null
+}
+
+export interface ApprovalEmailContextDto {
+  recipients: Array<{ id: string; name: string; email: string }>
+  version: number
+  message: string
+  canResend: boolean
 }

@@ -381,3 +381,26 @@ export type ActivityTypeRecord = typeof activityType.$inferSelect
 export type TimeEntryRecord = typeof timeEntry.$inferSelect
 export type WeeklyTimesheetRecord = typeof weeklyTimesheet.$inferSelect
 export type TimesheetSubmissionRecord = typeof timesheetSubmission.$inferSelect
+
+// Recipient snapshots intentionally survive approver reassignment and user deletion.
+export const timesheetApprovalEmail = timesheetsSchema.table(
+  'approval_email',
+  {
+    id: text('id').primaryKey(),
+    submissionId: text('submission_id')
+      .notNull()
+      .references(() => timesheetSubmission.id, { onDelete: 'cascade' }),
+    clientOrganizationId: text('client_organization_id').references(() => organization.id, { onDelete: 'set null' }),
+    kind: text('kind').notNull(),
+    recipientUserId: text('recipient_user_id').notNull(),
+    recipientName: text('recipient_name').notNull(),
+    recipientEmail: text('recipient_email').notNull(),
+    message: text('message').notNull().default(''),
+    status: text('status').$type<'SENDING' | 'SENT' | 'FAILED'>().notNull(),
+    providerMessageId: text('provider_message_id'),
+    idempotencyKey: text('idempotency_key').notNull().unique(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+    sentAt: timestamp('sent_at', { mode: 'date' })
+  },
+  (table) => [index('approval_email_submission_idx').on(table.submissionId, table.createdAt)]
+)

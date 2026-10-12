@@ -1,19 +1,14 @@
+import { internalEmailRecipients, clientEmailRecipients } from './timesheet-email-recipients'
+import { sendTrackedApprovalEmail } from './timesheet-approval-email'
 import { formatTimesheetPeriod } from '../../shared/timesheet-dates'
 import { getClientEmailLocale } from '@nuxt-customer-portal/clients/server/utils/client-email-locale'
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
-import { member, organization, user } from '@nuxt-customer-portal/core/schema'
+import { organization, user } from '@nuxt-customer-portal/core/schema'
 import { getPortalEmailSettings, sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
 import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import { timesheetEmails } from '../../shared/emails'
-import {
-  internalApproverAssignment,
-  timesheetSubmission,
-  timesheetClientReview,
-  workspaceClient,
-  workspaceClientReviewer,
-  type TimesheetSubmissionRecord
-} from '../db/schema/timesheets'
+import { timesheetSubmission, type TimesheetSubmissionRecord } from '../db/schema/timesheets'
 
 const escapeHtml = (value: string) =>
   value.replace(
@@ -30,7 +25,8 @@ export const notifyTimesheetEvent = async (
   event: NotificationEvent,
   client?: { id: string; version: number; status: string; comment: string | null },
   reply?: string,
-  replyClientId?: string
+  replyClientId?: string,
+  resend?: { requestId: string; recipients: Array<{ id: string; email: string }> }
 ) => {
   if (!submission) {
     return
@@ -54,10 +50,15 @@ export const notifyTimesheetEvent = async (
       clientName = '',
       comment = '',
       scope = '',
-      emailLocale = locale
+      emailLocale = locale,
+      clientOrganizationId: string | null = null
     ) => {
+      // A reassignment during sending must never add an unconfirmed recipient.
+      if (resend && !resend.recipients.some((item) => item.id === recipient.id && item.email === recipient.email)) {
+        return
+      }
       try {
-        await sendPortalEmail({
+        const input = {
           moduleId: 'timesheets',
           locale: emailLocale,
           definition: timesheetEmails.find((definition) => definition.id === id)!,
@@ -80,7 +81,19 @@ export const notifyTimesheetEvent = async (
             comment: escapeHtml(comment),
             action_url: escapeHtml(new URL(path, baseUrl).href)
           }
-        })
+        }
+        if (id === 'internal-requested' || id === 'client-requested') {
+          await sendTrackedApprovalEmail(input, {
+            submissionId: submission.id,
+            clientOrganizationId,
+            kind: id,
+            recipient,
+            message: comment,
+            requestId: resend?.requestId
+          })
+        } else {
+          await sendPortalEmail(input)
+        }
       } catch (error) {
         console.error(
           'Timesheet email delivery failed',
@@ -102,17 +115,7 @@ export const notifyTimesheetEvent = async (
       return
     }
     if (event === 'submitted' && submission.status === 'SUBMITTED') {
-      const reviewers = await db
-        .selectDistinct({ id: user.id, email: user.email, name: user.name })
-        .from(internalApproverAssignment)
-        .innerJoin(user, eq(user.id, internalApproverAssignment.approverUserId))
-        .innerJoin(member, and(eq(member.userId, user.id), eq(member.organizationId, submission.organizationId)))
-        .where(
-          and(
-            eq(internalApproverAssignment.organizationId, submission.organizationId),
-            eq(internalApproverAssignment.submitterUserId, submission.userId)
-          )
-        )
+      const reviewers = await internalEmailRecipients(submission.organizationId, submission.userId)
       await Promise.all(
         reviewers.map((reviewer) =>
           send(
@@ -127,59 +130,13 @@ export const notifyTimesheetEvent = async (
       return
     }
     const outcome = event === 'submitted' ? 'approved' : event
-    if (!replyClientId) {
+    if (!replyClientId && !resend) {
       await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission.rejectionComment ?? '')
     }
     if (submission.status !== 'APPROVED') {
       return
     }
-    const links = await db
-      .select({ id: workspaceClient.id, clientId: workspaceClient.clientOrganizationId })
-      .from(workspaceClient)
-      .where(
-        and(
-          eq(workspaceClient.workspaceOrganizationId, submission.organizationId),
-          eq(workspaceClient.accessMode, 'REVIEW')
-        )
-      )
-    const { ensureClientReviewers } = await import('./timesheet-repository')
-    await Promise.all(links.map((link) => ensureClientReviewers(link.id, link.clientId)))
-    const reviewers = await db
-      .selectDistinct({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        clientId: organization.id,
-        clientName: organization.name,
-        reviewId: timesheetClientReview.id,
-        version: timesheetClientReview.version
-      })
-      .from(timesheetClientReview)
-      .innerJoin(
-        workspaceClient,
-        and(
-          eq(workspaceClient.clientOrganizationId, timesheetClientReview.clientOrganizationId),
-          eq(workspaceClient.workspaceOrganizationId, submission.organizationId),
-          eq(workspaceClient.accessMode, 'REVIEW')
-        )
-      )
-      .innerJoin(member, eq(member.organizationId, workspaceClient.clientOrganizationId))
-      .innerJoin(user, eq(user.id, member.userId))
-      .leftJoin(
-        workspaceClientReviewer,
-        and(
-          eq(workspaceClientReviewer.workspaceClientId, workspaceClient.id),
-          eq(workspaceClientReviewer.userId, member.userId)
-        )
-      )
-      .innerJoin(organization, eq(organization.id, workspaceClient.clientOrganizationId))
-      .where(
-        and(
-          eq(timesheetClientReview.submissionId, submission.id),
-          eq(timesheetClientReview.status, 'PENDING'),
-          isNotNull(workspaceClientReviewer.userId)
-        )
-      )
+    const reviewers = await clientEmailRecipients(submission.organizationId, submission.id)
     await Promise.all(
       reviewers
         .filter((reviewer) => !replyClientId || reviewer.clientId === replyClientId)
@@ -191,11 +148,15 @@ export const notifyTimesheetEvent = async (
             reviewer.clientName,
             replyClientId ? (reply ?? '') : '',
             `${reviewer.reviewId}/${reviewer.version}`,
-            await getClientEmailLocale(reviewer.clientId)
+            await getClientEmailLocale(reviewer.clientId),
+            reviewer.clientId
           )
         )
     )
   } catch (error) {
+    if (resend) {
+      throw error
+    }
     console.error('Timesheet email notification failed', { submissionId: submission.id, event }, error)
   }
 }

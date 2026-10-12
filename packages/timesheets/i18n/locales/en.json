@@ -449,6 +449,29 @@
         "exists": "This timesheet has already been sent to the client. Refresh the page to see the latest status.",
         "unauthorized": "Only a workspace owner or administrator can submit timesheets for client approval.",
         "generic": "We could not submit this timesheet. Please try again. If the problem continues, contact your administrator."
+      },
+      "approvalEmails": {
+        "title": "Approval emails",
+        "resend": "Resend approval email",
+        "send": "Send to current approvers",
+        "currentApprovers": "Current approvers",
+        "currentHelp": "This email will be sent to the approvers currently assigned to this request. These may differ from the recipients in the history.",
+        "message": "Message",
+        "messageHelp": "Edit the message included in this approval request. Earlier emails keep their original message.",
+        "empty": "No recorded approval emails. Emails sent before tracking was enabled are not available.",
+        "sentHelp": "Sent means the email provider accepted the email. It does not confirm delivery or that the approver has read it.",
+        "unavailable": "There are no current approvers, or this request is no longer awaiting approval.",
+        "loadError": "Could not load the current approvers. Please try again.",
+        "sendError": "Could not resend the approval email. Reopen the dialog to check the latest approvers and approval status.",
+        "sent": "Approval email sent",
+        "sending": "Approval email is being sent",
+        "partialFailure": "Some approval emails could not be sent",
+        "result": "{sent} sent · {failed} failed",
+        "status": {
+          "SENT": "Sent",
+          "FAILED": "Failed",
+          "SENDING": "Sending"
+        }
       }
     }
   }
