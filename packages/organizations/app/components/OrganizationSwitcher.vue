@@ -31,7 +31,7 @@ watch(
   () => organizations.value.data?.map((org) => org.id).join(','),
   async () => {
     if (runtimeConfig.public.clients && organizations.value.data?.length) {
-      clientAccounts.value = await $fetch('/api/client-account')
+      clientAccounts.value = await $fetch<{ organizationId: string; clientType: string }[]>('/api/client-account')
     } else {
       clientAccounts.value = []
     }
