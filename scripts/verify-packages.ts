@@ -224,6 +224,12 @@ try {
     }
     const pnpmOverrides = {
       ...dependencies,
+      nuxt: '4.5.1',
+      '@nuxt/kit': '4.5.1',
+      '@nuxt/schema': '4.5.1',
+      '@nuxt/nitro-server': '4.5.1',
+      '@nuxt/vite-builder': '4.5.1',
+      nitropack: '2.13.4',
       '@unhead/vue': '3.2.3',
       '@nuxt/devtools': '3.4.0',
       vue: '3.5.40',
