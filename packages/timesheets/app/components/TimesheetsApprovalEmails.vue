@@ -19,7 +19,7 @@ const loading = ref(false)
 const loadError = ref(false)
 const context = ref<ApprovalEmailContextDto | null>(null)
 const state = reactive({ message: '' })
-const schema = z.object({ message: z.string().trim().max(5000) })
+const schema = z.object({ message: z.string().trim().min(1).max(50000) })
 const requestId = ref('')
 const history = computed(() =>
   props.emails.filter((email) =>
@@ -149,12 +149,16 @@ const resend = async () => {
             color="warning"
             :title="t('features.timesheets.approvalEmails.unavailable')"
           />
-          <UFormField
-            name="message"
-            :label="t('features.timesheets.approvalEmails.message')"
-            :description="t('features.timesheets.approvalEmails.messageHelp')"
-          >
-            <UTextarea v-model="state.message" :rows="5" class="w-full" :disabled="busy" />
+          <UFormField name="message" :label="t('features.timesheets.approvalEmails.message')">
+            <PortalMarkdownEditor
+              v-model="state.message"
+              :rows="10"
+              class="w-full"
+              :disabled="busy"
+              :placeholders="[
+                { label: t('features.timesheets.email.placeholders.recipient_name'), value: '{{recipient_name}}' }
+              ]"
+            />
           </UFormField>
           <div class="flex justify-end gap-2">
             <UButton color="neutral" variant="outline" :disabled="busy" @click="isOpen = false">{{

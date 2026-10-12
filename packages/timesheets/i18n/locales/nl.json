@@ -457,7 +457,6 @@
         "currentApprovers": "Huidige goedkeurders",
         "currentHelp": "Deze e-mail wordt verstuurd naar de goedkeurders die momenteel aan dit verzoek zijn toegewezen. Dit kunnen andere ontvangers zijn dan in de geschiedenis.",
         "message": "Bericht",
-        "messageHelp": "Pas het bericht in dit goedkeuringsverzoek aan. Eerdere e-mails behouden hun oorspronkelijke bericht.",
         "empty": "Geen goedkeuringsmails vastgelegd. E-mails van vóór het inschakelen van de registratie zijn niet beschikbaar.",
         "sentHelp": "Verstuurd betekent dat de e-mailprovider de e-mail heeft geaccepteerd. Dit bevestigt niet dat de e-mail is bezorgd of gelezen.",
         "unavailable": "Er zijn geen huidige goedkeurders, of dit verzoek wacht niet meer op goedkeuring.",

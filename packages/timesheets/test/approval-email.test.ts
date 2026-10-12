@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { approvalEmailRecipientsMatch, approvalEmailResendSchema } from '../shared/approval-email'
+import {
+  approvalEmailRecipientsMatch,
+  approvalEmailResendSchema,
+  fillApprovalEmailDraft
+} from '../shared/approval-email'
 
 const recipients = [
   { id: 'approver-a', email: 'a@example.com' },
@@ -29,14 +33,28 @@ test('resend validates request identity, version, recipients and editable messag
     message: '  Please review the updated hours.  '
   }
   assert.equal(approvalEmailResendSchema.parse(valid).message, 'Please review the updated hours.')
-  assert.equal(approvalEmailResendSchema.safeParse({ ...valid, message: '' }).success, true)
+  assert.equal(approvalEmailResendSchema.safeParse({ ...valid, message: '' }).success, false)
   for (const invalid of [
     { version: 0 },
     { recipients: [] },
     { requestId: 'wildcard%' },
-    { message: 'x'.repeat(5001) },
+    { message: 'x'.repeat(50001) },
     { recipients: [{ id: 'a', email: 'invalid' }] }
   ]) {
     assert.equal(approvalEmailResendSchema.safeParse({ ...valid, ...invalid }).success, false)
   }
+})
+
+test('template drafts fill timesheet values and retain per-recipient personalization', () => {
+  assert.equal(
+    fillApprovalEmailDraft(
+      'Dear {{recipient_name}}, {{person_name}}: {{period}}. {{comment}} [Review]({{action_url}})',
+      { person_name: 'Alex & Co', period: 'October', comment: '', action_url: 'https://portal.example/review?a=1&b=2' }
+    ),
+    'Dear {{recipient_name}}, Alex &amp; Co: October.  [Review](https://portal.example/review?a=1&amp;b=2)'
+  )
+  assert.equal(
+    fillApprovalEmailDraft('Dear {{recipient_name}}', { recipient_name: 'Current Approver' }),
+    'Dear Current Approver'
+  )
 })

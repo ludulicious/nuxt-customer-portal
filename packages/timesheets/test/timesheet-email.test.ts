@@ -109,7 +109,7 @@ const harness = (rows: unknown[][], failRecipient?: string) => {
         }
         if (id.endsWith('/utils/portal-email')) {
           return {
-            getPortalEmailSettings: async () => ({ defaultLocale: 'nl' }),
+            getPortalEmailSettings: async () => ({ defaultLocale: 'nl', textOverrides: {} }),
             sendPortalEmail: async (input: EmailInput) => {
               sent.push(input)
               if (input.to === failRecipient) {
@@ -303,7 +303,8 @@ test('resend only notifies confirmed current internal approvers and preserves th
   })
   assert.equal(h.sent.length, 1)
   assert.equal(h.sent[0]!.to, reviewer.email)
-  assert.equal(h.sent[0]!.values.comment, 'Please check &lt;hours&gt;')
+  assert.equal(h.sent[0]!.text?.body, 'Please check <hours>')
+  assert.equal(h.sent[0]!.values.comment, '')
   assert.equal(h.attempts[0]!.message, 'Please check <hours>')
   assert.ok(String(h.sent[0]!.idempotencyKey).endsWith('/resend/reminder-1'))
 })

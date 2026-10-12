@@ -41,7 +41,8 @@ export const notifyTimesheetEvent = async (
     if (!person || !workspace) {
       return
     }
-    const { defaultLocale: locale } = await getPortalEmailSettings()
+    const emailSettings = await getPortalEmailSettings()
+    const locale = emailSettings.defaultLocale
     const baseUrl = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051'
     const send = async (
       id: string,
@@ -58,10 +59,20 @@ export const notifyTimesheetEvent = async (
         return
       }
       try {
+        const definition = timesheetEmails.find((definition) => definition.id === id)!
         const input = {
           moduleId: 'timesheets',
           locale: emailLocale,
-          definition: timesheetEmails.find((definition) => definition.id === id)!,
+          definition,
+          ...(resend
+            ? {
+                text: {
+                  ...definition.defaults[emailLocale],
+                  ...emailSettings.textOverrides[`timesheets.${id}.${emailLocale}`],
+                  body: reply ?? ''
+                }
+              }
+            : {}),
           to: recipient.email,
           idempotencyKey: `timesheet/${submission.id}/${submission.version}/${id}/${scope}/${recipient.id}`,
           values: {
@@ -78,7 +89,7 @@ export const notifyTimesheetEvent = async (
             period_start: submission.periodStartsOn,
             period_end: submission.periodEndsOn,
             client_name: escapeHtml(clientName),
-            comment: escapeHtml(comment),
+            comment: resend ? '' : escapeHtml(comment),
             action_url: escapeHtml(new URL(path, baseUrl).href)
           }
         }

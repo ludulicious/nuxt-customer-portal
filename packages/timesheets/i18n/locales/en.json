@@ -457,7 +457,6 @@
         "currentApprovers": "Current approvers",
         "currentHelp": "This email will be sent to the approvers currently assigned to this request. These may differ from the recipients in the history.",
         "message": "Message",
-        "messageHelp": "Edit the message included in this approval request. Earlier emails keep their original message.",
         "empty": "No recorded approval emails. Emails sent before tracking was enabled are not available.",
         "sentHelp": "Sent means the email provider accepted the email. It does not confirm delivery or that the approver has read it.",
         "unavailable": "There are no current approvers, or this request is no longer awaiting approval.",
