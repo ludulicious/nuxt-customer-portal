@@ -39,6 +39,7 @@ const workspace = { name: 'Supplier & Co' }
 const harness = (rows: unknown[][], failRecipient?: string) => {
   const sent: EmailInput[] = []
   const errors: unknown[] = []
+  const attempts: Array<Record<string, unknown>> = []
   const query = () => {
     const result = rows.shift()
     assert.ok(result, 'Unexpected database query')
@@ -49,47 +50,95 @@ const harness = (rows: unknown[][], failRecipient?: string) => {
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve)
     return builder
   }
+  const db = {
+    select: query,
+    selectDistinct: query,
+    insert: () => ({
+      values: (value: Record<string, unknown>) => ({
+        onConflictDoNothing: () => ({
+          returning: async () => {
+            if (attempts.some((item) => item.idempotencyKey === value.idempotencyKey)) {
+              return []
+            }
+            attempts.push(value)
+            return [value]
+          }
+        })
+      })
+    }),
+    update: () => ({
+      set: (value: Record<string, unknown>) => ({
+        where: async (condition: { right: string }) => {
+          Object.assign(
+            attempts.find((attempt) => attempt.id === condition.right)!,
+            value
+          )
+        }
+      })
+    })
+  }
   const exports = {} as DeliveryModule
-  runInNewContext(source, {
-    exports,
-    URL,
-    URLSearchParams,
-    process: { env: { PUBLIC_URL: 'https://portal.example.com' } },
-    console: { error: (...args: unknown[]) => errors.push(args) },
-    require: (id: string) => {
-      if (id === './timesheet-repository') {
-        return { ensureClientReviewers: async () => {} }
-      }
-      if (id.endsWith('/client-email-locale')) {
-        return { getClientEmailLocale: async () => 'en' }
-      }
-      if (id.endsWith('/server/portal')) {
-        return { db: { select: query, selectDistinct: query } }
-      }
-      if (id.endsWith('/utils/portal-email')) {
-        return {
-          getPortalEmailSettings: async () => ({ defaultLocale: 'nl' }),
-          sendPortalEmail: async (input: EmailInput) => {
-            sent.push(input)
-            if (input.to === failRecipient) {
-              throw new Error('Provider unavailable')
+  const runModule = (code: string, target: object) =>
+    runInNewContext(code, {
+      exports: target,
+      URL,
+      URLSearchParams,
+      process: { env: { PUBLIC_URL: 'https://portal.example.com' } },
+      console: { error: (...args: unknown[]) => errors.push(args) },
+      require: (id: string) => {
+        if (id === 'drizzle-orm') {
+          return { ...require(id), eq: (left: unknown, right: unknown) => ({ left, right }) }
+        }
+        if (['./timesheet-email-recipients', './timesheet-approval-email'].includes(id)) {
+          const target = {}
+          const moduleSource = ts.transpileModule(
+            readFileSync(new URL(`../server/utils/${id.slice(2)}.ts`, import.meta.url), 'utf8'),
+            { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
+          ).outputText
+          runModule(moduleSource, target)
+          return target
+        }
+        if (id === './timesheet-repository') {
+          return { ensureClientReviewers: async () => {} }
+        }
+        if (id.endsWith('/client-email-locale')) {
+          return { getClientEmailLocale: async () => 'en' }
+        }
+        if (id.endsWith('/server/portal')) {
+          return { db }
+        }
+        if (id.endsWith('/utils/portal-email')) {
+          return {
+            getPortalEmailSettings: async () => ({ defaultLocale: 'nl', textOverrides: {} }),
+            sendPortalEmail: async (input: EmailInput) => {
+              sent.push(input)
+              if (input.to === failRecipient) {
+                throw new Error('Provider unavailable')
+              }
+              return { id: 'provider-message' }
             }
           }
         }
+        if (id === '../../shared/timesheet-dates') {
+          return { formatTimesheetPeriod }
+        }
+        if (id === '../../shared/emails') {
+          return { timesheetEmails }
+        }
+        if (id === '../db/schema/timesheets') {
+          return require('../server/db/schema/timesheets')
+        }
+        return require(id)
       }
-      if (id === '../../shared/timesheet-dates') {
-        return { formatTimesheetPeriod }
-      }
-      if (id === '../../shared/emails') {
-        return { timesheetEmails }
-      }
-      if (id === '../db/schema/timesheets') {
-        return require('../server/db/schema/timesheets')
-      }
-      return require(id)
-    }
-  })
-  return { sent, errors, notify: exports.notifyTimesheetEvent, notifyClient: exports.notifyClientTimesheetEvent }
+    })
+  runModule(source, exports)
+  return {
+    sent,
+    errors,
+    attempts,
+    notify: exports.notifyTimesheetEvent,
+    notifyClient: exports.notifyClientTimesheetEvent
+  }
 }
 
 test('all approval email definitions are registered, translated and declare their placeholders', () => {
@@ -133,6 +182,12 @@ test('submission notifies reviewers individually and continues after provider fa
   )
   assert.equal(h.sent[0].values.person_name, '&lt;script&gt;Alex&lt;/script&gt;')
   assert.equal(h.errors.length, 1)
+  assert.deepEqual(
+    h.attempts.map((attempt) => attempt.status),
+    ['FAILED', 'SENT']
+  )
+  assert.equal(h.attempts[1]!.recipientEmail, 'two@example.com')
+  assert.ok(h.attempts[1]!.sentAt)
 })
 
 test('automatic approval notifies the submitter and client reviewers without leaking review comments', async () => {
@@ -237,4 +292,53 @@ test('email periods use the same locale and formatter as the UI', async () => {
       assert.ok(definition.defaults[locale].body.includes('{{period}}'))
     }
   }
+})
+
+test('resend only notifies confirmed current internal approvers and preserves the edited message', async () => {
+  const reviewer = { id: 'r1', name: 'Reviewer', email: 'current@example.com' }
+  const h = harness([[person], [workspace], [reviewer, { id: 'new', name: 'New', email: 'unconfirmed@example.com' }]])
+  await h.notify(submission, 'submitted', undefined, 'Please check <hours>', undefined, {
+    requestId: 'reminder-1',
+    recipients: [reviewer]
+  })
+  assert.equal(h.sent.length, 1)
+  assert.equal(h.sent[0]!.to, reviewer.email)
+  assert.equal(h.sent[0]!.text?.body, 'Please check <hours>')
+  assert.equal(h.sent[0]!.values.comment, '')
+  assert.equal(h.attempts[0]!.message, 'Please check <hours>')
+  assert.ok(String(h.sent[0]!.idempotencyKey).endsWith('/resend/reminder-1'))
+})
+
+test('client resend targets only the selected client and never sends an internal outcome', async () => {
+  const reviewer = {
+    id: 'r1',
+    name: 'Client Reviewer',
+    email: 'current@example.com',
+    clientId: 'client-a',
+    clientName: 'Client A',
+    reviewId: 'review-a',
+    version: 1
+  }
+  const h = harness([[person], [workspace], [], [reviewer, { ...reviewer, id: 'r2', clientId: 'client-b' }]])
+  await h.notify({ ...submission, status: 'APPROVED' }, 'approved', undefined, 'Updated message', 'client-a', {
+    requestId: 'reminder-2',
+    recipients: [reviewer]
+  })
+  assert.equal(h.sent.length, 1)
+  assert.equal(h.sent[0]!.definition.id, 'client-requested')
+  assert.equal(h.attempts[0]!.clientOrganizationId, 'client-a')
+  assert.equal(h.attempts[0]!.message, 'Updated message')
+})
+
+test('repeated reminder requests send once per recipient', async () => {
+  const reviewer = { id: 'r1', name: 'Reviewer', email: 'current@example.com' }
+  const h = harness([[person], [workspace], [reviewer], [person], [workspace], [reviewer]])
+  for (let i = 0; i < 2; i++) {
+    await h.notify(submission, 'submitted', undefined, 'Message', undefined, {
+      requestId: 'same-reminder',
+      recipients: [reviewer]
+    })
+  }
+  assert.equal(h.sent.length, 1)
+  assert.equal(h.attempts.length, 1)
 })

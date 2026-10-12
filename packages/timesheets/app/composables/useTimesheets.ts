@@ -43,6 +43,21 @@ export interface OrganizationTimesheetCapabilities {
 }
 
 export const useTimesheets = () => {
+  const approvalEmailContext = (submissionId: string, clientOrganizationId?: string) =>
+    $fetch<import('@nuxt-customer-portal/timesheets/shared/types/timesheet').ApprovalEmailContextDto>(
+      `/api/timesheets/submissions/${submissionId}/approval-email`,
+      { query: { clientOrganizationId } }
+    )
+  const resendApprovalEmail = (
+    submissionId: string,
+    input: import('zod').infer<
+      typeof import('@nuxt-customer-portal/timesheets/shared/approval-email').approvalEmailResendSchema
+    >
+  ) =>
+    $fetch<{ sent: number; failed: number; sending: number }>(
+      `/api/timesheets/submissions/${submissionId}/approval-email`,
+      { method: 'POST', body: input }
+    )
   const refreshApprovalState = async () => {
     if (import.meta.client) {
       window.dispatchEvent(new Event('timesheets:capabilities-refresh'))
@@ -199,6 +214,8 @@ export const useTimesheets = () => {
     $fetch<TimesheetReportDto>('/api/timesheets/admin/report', { query })
 
   return {
+    approvalEmailContext,
+    resendApprovalEmail,
     bootstrap,
     dashboard,
     internalApprovalQueue,

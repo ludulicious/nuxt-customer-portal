@@ -209,6 +209,8 @@ try {
       )
       fixtureManifest = JSON.parse(readFileSync(join(fixture, 'package.json'), 'utf8'))
       const declared = fixtureManifest.dependencies as Record<string, string>
+      // Match the tested Nuxt version to the fixture's pinned framework dependencies.
+      declared.nuxt = '4.5.1'
       for (const name of Object.keys(declared)) {
         if (dependencies[name]) {
           declared[name] = dependencies[name]
@@ -222,6 +224,12 @@ try {
     }
     const pnpmOverrides = {
       ...dependencies,
+      nuxt: '4.5.1',
+      '@nuxt/kit': '4.5.1',
+      '@nuxt/schema': '4.5.1',
+      '@nuxt/nitro-server': '4.5.1',
+      '@nuxt/vite-builder': '4.5.1',
+      nitropack: '2.13.4',
       '@unhead/vue': '3.2.3',
       '@nuxt/devtools': '3.4.0',
       vue: '3.5.40',

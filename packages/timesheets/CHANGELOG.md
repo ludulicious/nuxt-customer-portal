@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/timesheets
 
+## 0.5.1
+
+### Patch Changes
+
+- 1528005: Track approval request email recipients, timestamps, messages and send status. Allow pending internal and client approval emails to be resent to current approvers with an editable message.
+  - @nuxt-customer-portal/clients@0.5.1
+  - @nuxt-customer-portal/core@0.5.1
+  - @nuxt-customer-portal/organizations@0.5.1
+  - @nuxt-customer-portal/ui@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

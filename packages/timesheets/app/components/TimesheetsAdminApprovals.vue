@@ -313,6 +313,13 @@ const reject = () =>
           </article>
         </div>
         <TimesheetsSubmissionTimeline :events="item.history ?? []" />
+        <TimesheetsApprovalEmails
+          :submission-id="item.id"
+          :client-organization-id="clientMode ? item.clientReviews[0]?.clientOrganizationId : undefined"
+          :emails="item.approvalEmails ?? []"
+          :pending="clientMode ? item.clientReviews[0]?.status === 'PENDING' : item.status === 'SUBMITTED'"
+          :refresh="refresh"
+        />
         <section
           v-if="
             item.clientReviews.length &&

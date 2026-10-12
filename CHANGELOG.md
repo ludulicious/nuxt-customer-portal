@@ -1,5 +1,16 @@
 # Nuxt Customer Portal
 
+## 0.5.1
+
+Track timesheet approval email recipients, send times, messages and delivery status.
+Resend pending client and internal approval requests to current approvers with an
+editable message generated from the configured email template.
+
+Apply the new timesheet approval email migration before deployment. Earlier emails
+are not reconstructed in the history.
+
+All public packages and portal apps use `0.5.1`.
+
 ## 0.5.0
 
 Add visual Markdown editing with a raw Markdown mode for product summaries and

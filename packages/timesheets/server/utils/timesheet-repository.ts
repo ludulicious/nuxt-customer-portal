@@ -26,6 +26,7 @@ import {
   timesheetClientReview,
   timesheetClientReviewHistory,
   timesheetApprovalHistory,
+  timesheetApprovalEmail,
   timesheetSubmission,
   weeklyTimesheet,
   workspaceClient,
@@ -2364,6 +2365,16 @@ export const listApprovalQueue = async (
         submissions.map((item) => item.submission.id)
       )
     )
+  const approvalEmails = await db
+    .select()
+    .from(timesheetApprovalEmail)
+    .where(
+      inArray(
+        timesheetApprovalEmail.submissionId,
+        submissions.map((item) => item.submission.id)
+      )
+    )
+    .orderBy(desc(timesheetApprovalEmail.createdAt))
   const history = await submissionHistory(submissions.map((item) => item.submission.id))
   const messages = await submissionMessages(submissions.map((item) => item.submission.id))
   const names = new Map(members.map((member) => [member.id, member.name]))
@@ -2372,6 +2383,20 @@ export const listApprovalQueue = async (
     return {
       id: submission.id,
       userId: submission.userId,
+      approvalEmails: approvalEmails
+        .filter((email) => email.submissionId === submission.id && (isAdmin || email.kind === 'internal-requested'))
+        .map((email) => ({
+          id: email.id,
+          clientOrganizationId: email.clientOrganizationId,
+          kind: email.kind,
+          recipientUserId: email.recipientUserId,
+          recipientName: email.recipientName,
+          recipientEmail: email.recipientEmail,
+          message: email.message,
+          status: email.status,
+          createdAt: email.createdAt.toISOString(),
+          sentAt: email.sentAt?.toISOString() ?? null
+        })),
       history: history.filter(
         (event) => event.submissionId === submission.id && (isAdmin || !event.clientOrganizationId)
       ),

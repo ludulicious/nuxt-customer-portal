@@ -449,6 +449,28 @@
         "exists": "Deze urenstaat is al naar de klant verstuurd. Vernieuw de pagina voor de actuele status.",
         "unauthorized": "Alleen een eigenaar of beheerder van de werkruimte kan urenstaten ter goedkeuring aan de klant voorleggen.",
         "generic": "De urenstaat kon niet worden ingediend. Probeer het opnieuw. Neem contact op met je beheerder als het probleem blijft bestaan."
+      },
+      "approvalEmails": {
+        "title": "Goedkeuringsmails",
+        "resend": "Goedkeuringsmail opnieuw versturen",
+        "send": "Versturen naar huidige goedkeurders",
+        "currentApprovers": "Huidige goedkeurders",
+        "currentHelp": "Deze e-mail wordt verstuurd naar de goedkeurders die momenteel aan dit verzoek zijn toegewezen. Dit kunnen andere ontvangers zijn dan in de geschiedenis.",
+        "message": "Bericht",
+        "empty": "Geen goedkeuringsmails vastgelegd. E-mails van vóór het inschakelen van de registratie zijn niet beschikbaar.",
+        "sentHelp": "Verstuurd betekent dat de e-mailprovider de e-mail heeft geaccepteerd. Dit bevestigt niet dat de e-mail is bezorgd of gelezen.",
+        "unavailable": "Er zijn geen huidige goedkeurders, of dit verzoek wacht niet meer op goedkeuring.",
+        "loadError": "De huidige goedkeurders konden niet worden geladen. Probeer het opnieuw.",
+        "sendError": "De goedkeuringsmail kon niet opnieuw worden verstuurd. Open het venster opnieuw om de huidige goedkeurders en goedkeuringsstatus te controleren.",
+        "sent": "Goedkeuringsmail verstuurd",
+        "sending": "Goedkeuringsmail wordt verstuurd",
+        "partialFailure": "Sommige goedkeuringsmails konden niet worden verstuurd",
+        "result": "{sent} verstuurd · {failed} mislukt",
+        "status": {
+          "SENT": "Verstuurd",
+          "FAILED": "Mislukt",
+          "SENDING": "Wordt verstuurd"
+        }
       }
     }
   }
