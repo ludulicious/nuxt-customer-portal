@@ -101,7 +101,7 @@ export default defineNuxtPlugin(() => {
   register(empty)
   const refreshCapabilities = async () => {
     try {
-      register(await $fetch('/api/timesheets/capabilities'))
+      register(await $fetch<TimesheetCapabilitiesDto>('/api/timesheets/capabilities'))
     } catch {
       register(empty)
     }
