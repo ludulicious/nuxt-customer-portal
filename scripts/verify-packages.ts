@@ -209,6 +209,8 @@ try {
       )
       fixtureManifest = JSON.parse(readFileSync(join(fixture, 'package.json'), 'utf8'))
       const declared = fixtureManifest.dependencies as Record<string, string>
+      // Match the tested Nuxt version to the fixture's pinned framework dependencies.
+      declared.nuxt = '4.5.1'
       for (const name of Object.keys(declared)) {
         if (dependencies[name]) {
           declared[name] = dependencies[name]
