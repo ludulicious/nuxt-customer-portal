@@ -428,3 +428,30 @@ export const timesheetEmails: PortalEmailDefinition[] = [
     ]
   }
 ]
+
+for (const [action, en, nl] of [
+  ['requested', 'Client period review requested', 'Klantbeoordeling gevraagd'],
+  ['approved', 'Client period approved', 'Klantperiode goedgekeurd'],
+  ['disputed', 'Client period disputed', 'Klantperiode betwist'],
+  ['withdrawn', 'Client period withdrawn', 'Klantperiode ingetrokken']
+]) {
+  timesheetEmails.push({
+    id: `period-${action}`,
+    labelKey: `features.timesheets.email.messages.period-${action}`,
+    defaults: {
+      en: {
+        subject: `${en} — {{client_name}} ({{period}})`,
+        body: 'Dear {{recipient_name}},\n\n{{organization_name}} — {{client_name}}\n\nPeriod: {{period}}\n\n{{comment}}\n\n[View the review request]({{action_url}})',
+        footer: ''
+      },
+      nl: {
+        subject: `${nl} — {{client_name}} ({{period}})`,
+        body: 'Beste {{recipient_name}},\n\n{{organization_name}} — {{client_name}}\n\nPeriode: {{period}}\n\n{{comment}}\n\n[Beoordelingsverzoek bekijken]({{action_url}})',
+        footer: ''
+      }
+    },
+    placeholders: ['recipient_name', 'organization_name', 'client_name', 'period', 'comment', 'action_url'].map(
+      (key) => ({ key, labelKey: `features.timesheets.email.placeholders.${key}`, example: '' })
+    )
+  })
+}

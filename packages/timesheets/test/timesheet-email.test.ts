@@ -143,7 +143,7 @@ const harness = (rows: unknown[][], failRecipient?: string) => {
 
 test('all approval email definitions are registered, translated and declare their placeholders', () => {
   assert.equal(timesheetsFeature.emails, timesheetEmails)
-  assert.equal(timesheetEmails.length, 7)
+  assert.equal(timesheetEmails.length, 11)
   for (const definition of timesheetEmails) {
     for (const locale of ['en', 'nl'] as const) {
       const messages = (locale === 'en' ? en : nl).features.timesheets.email.messages

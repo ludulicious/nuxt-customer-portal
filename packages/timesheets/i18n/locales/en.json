@@ -426,7 +426,11 @@
           "internal-reopened": "Timesheet reopened",
           "client-requested": "Client approval requested",
           "client-approved": "Timesheet approved by client",
-          "client-disputed": "Timesheet disputed by client"
+          "client-disputed": "Timesheet disputed by client",
+          "period-requested": "Period review requested",
+          "period-approved": "Period approved",
+          "period-disputed": "Period disputed",
+          "period-withdrawn": "Period withdrawn"
         },
         "placeholders": {
           "person_name": "Submitter",
@@ -471,6 +475,61 @@
           "FAILED": "Failed",
           "SENDING": "Sending"
         }
+      },
+      "reviewPeriods": {
+        "title": "Client review periods",
+        "clientTitle": "Period review requests",
+        "interval": "Review interval",
+        "nextMonth": "Changes take effect from the first day of next month.",
+        "scheduled": "{interval} starts on {date}.",
+        "intervals": {
+          "WEEKLY": "Weekly",
+          "TWO_WEEKLY": "Every two calendar weeks",
+          "MONTHLY": "Monthly"
+        },
+        "month": "Month",
+        "send": "Send for approval",
+        "withdraw": "Withdraw request",
+        "approve": "Approve request",
+        "dispute": "Dispute request",
+        "comment": "Comment",
+        "message": "Message to reviewers",
+        "supplementary": "Supplementary",
+        "replacement": "Replacement",
+        "revision": "Revision {number}",
+        "hours": "{hours} hours",
+        "outstanding": "{count} entries need submission or internal approval.",
+        "noReviewers": "Assign a client reviewer before sending.",
+        "notReady": "Available after the period ends and all outstanding time is resolved.",
+        "empty": "No review requests yet.",
+        "noTime": "No unrequested time.",
+        "legacy": "Earlier submission reviews",
+        "history": "History",
+        "entries": "Time details",
+        "person": "Person",
+        "project": "Project",
+        "activity": "Activity",
+        "date": "Date",
+        "note": "Note",
+        "period": "Period",
+        "status": "Status",
+        "filter": "Search client or supplier",
+        "error": "Unable to update review request",
+        "saved": "Review request updated",
+        "withdrawHelp": "Withdraw every affected request before reopening a submission. Invoiced time cannot be withdrawn.",
+        "confirmWithdraw": "Withdraw this request? Its entries will require client approval again before invoicing.",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "details": "View details",
+        "cutover": "New review periods start on {date}.",
+        "statuses": {
+          "PENDING": "Awaiting client",
+          "APPROVED": "Approved",
+          "DISPUTED": "Disputed",
+          "WITHDRAWN": "Withdrawn"
+        },
+        "reopen": "Reopen submission — {person}",
+        "reopened": "Submission reopened for correction"
       }
     }
   }

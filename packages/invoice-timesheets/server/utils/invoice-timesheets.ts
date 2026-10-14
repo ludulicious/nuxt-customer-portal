@@ -1,3 +1,4 @@
+import { reviewCutover } from '@nuxt-customer-portal/timesheets/server/utils/client-review-requests'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db } from '@nuxt-customer-portal/core/server/portal'
@@ -12,6 +13,14 @@ import {
   requireTimesheetWorkspace
 } from '@nuxt-customer-portal/timesheets/server/utils/timesheet-repository'
 import { invoiceTimeEntry } from '@nuxt-customer-portal/invoice-timesheets/server/db/schema/invoice-timesheets'
+
+const clientPeriodApproved = sql`(
+  ${timeEntry.entryDate} < (select starts_on from timesheets.client_review_rollout)
+  or not exists (select 1 from timesheets.workspace_client wc where wc.workspace_organization_id = ${timeEntry.organizationId} and wc.client_organization_id = ${timeEntry.clientOrganizationId} and wc.access_mode = 'REVIEW')
+  or exists (select 1 from timesheets.client_review_request_entry re
+    join timesheets.client_review_request r on r.id = re.request_id
+    where re.entry_id = ${timeEntry.id} and r.status = 'APPROVED')
+)`
 
 export const listTimesheetInvoiceSources = async (organizationId: string, from?: string, to?: string) => {
   try {
@@ -33,7 +42,7 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
         projectId: timeEntry.projectId
       })
       .from(timeEntry)
-      .where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, ids))),
+      .where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, ids), clientPeriodApproved)),
     db
       .select({ timeEntryId: invoiceTimeEntry.timeEntryId })
       .from(invoiceTimeEntry)
@@ -50,6 +59,7 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
   ])
   const context = new Map(contexts.map((item) => [item.entryId, item]))
   const used = new Set(linked.map((item) => item.timeEntryId))
+  const cutover = await reviewCutover()
   const disputes = new Set(disputed.map((item) => `${item.submissionId}:${item.clientOrganizationId}`))
   return {
     enabled: true,
@@ -58,7 +68,7 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
       return !item ||
         item.clientOrganizationId === organizationId ||
         used.has(row.entryId) ||
-        disputes.has(`${item.submissionId}:${item.clientOrganizationId}`)
+        (row.date < cutover && disputes.has(`${item.submissionId}:${item.clientOrganizationId}`))
         ? []
         : [
             {
@@ -109,6 +119,9 @@ export const createInvoiceFromTimesheets = async (
     throw createError({ statusCode: 400, message: 'Internal time entries cannot be invoiced' })
   }
   return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${'client-review:' + organizationId + ':' + input.clientOrganizationId}))`
+    )
     const sourceIds = input.lines.flatMap((line) => line.timeEntryIds)
     if (new Set(sourceIds).size !== sourceIds.length) {
       throw createError({ statusCode: 400, message: 'A time entry can only occur once on an invoice' })
@@ -125,7 +138,8 @@ export const createInvoiceFromTimesheets = async (
           and(
             eq(timeEntry.organizationId, organizationId),
             eq(timeEntry.clientOrganizationId, input.clientOrganizationId),
-            inArray(timeEntry.id, sourceIds)
+            inArray(timeEntry.id, sourceIds),
+            clientPeriodApproved
           )
         ),
       tx
@@ -147,6 +161,7 @@ export const createInvoiceFromTimesheets = async (
           )
         )
     ])
+    const cutover = await reviewCutover(tx)
     const disputedSubmissions = new Set(disputed.map((item) => item.submissionId))
     if (
       entries.length !== sourceIds.length ||
@@ -154,7 +169,7 @@ export const createInvoiceFromTimesheets = async (
       entries.some(
         (row) =>
           row.status !== 'APPROVED' ||
-          disputedSubmissions.has(row.entry.submissionId) ||
+          (row.entry.entryDate < cutover && disputedSubmissions.has(row.entry.submissionId)) ||
           !row.entry.billableSnapshot ||
           row.entry.currencySnapshot !== input.currency
       )

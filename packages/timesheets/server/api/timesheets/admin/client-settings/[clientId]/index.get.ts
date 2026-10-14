@@ -1,3 +1,4 @@
+import { getClientReviewSettings } from '@nuxt-customer-portal/timesheets/server/utils/client-review-requests'
 import { and, eq } from 'drizzle-orm'
 import { requireFeatureAccess, db } from '@nuxt-customer-portal/core/server/portal'
 import { requireClientModuleEnabled } from '@nuxt-customer-portal/clients/server/utils/client-repository'
@@ -21,5 +22,8 @@ export default defineEventHandler(async (event) => {
       )
     )
     .limit(1)
-  return settings ?? { clientOrganizationId, accessMode: 'DISABLED' }
+  return {
+    ...(settings ?? { clientOrganizationId, accessMode: 'DISABLED' }),
+    ...(await getClientReviewSettings(organizationId, clientOrganizationId))
+  }
 })

@@ -1,3 +1,4 @@
+import { reviewCutover } from './client-review-requests'
 import type {
   ActivityTypeDto,
   ClientApprovalItemDto,
@@ -68,6 +69,7 @@ export const listProviderClientApprovalsPage = async (
     clientOrganizationId?: string
   }
 ) => {
+  const cutover = await reviewCutover()
   const search = query.search?.toLocaleLowerCase() ?? ''
   const [projects, clients] = await Promise.all([listProjects(organizationId), listClients(organizationId)])
   const rows = (await listApprovalQueue(organizationId, actorUserId, 'provider'))
@@ -100,13 +102,22 @@ export const listProviderClientApprovalsPage = async (
               }))
           : [])
       ].map((review) => {
-        const entries = item.entries.filter((entry) =>
-          projects.some(
-            (project) => project.id === entry.projectId && project.clientOrganizationId === review.clientOrganizationId
-          )
+        const entries = item.entries.filter(
+          (entry) =>
+            entry.entryDate < cutover &&
+            projects.some(
+              (project) =>
+                project.id === entry.projectId && project.clientOrganizationId === review.clientOrganizationId
+            )
         )
         return {
           ...item,
+          periodStartsOn: entries.map((e) => e.entryDate).sort()[0] ?? item.periodStartsOn,
+          periodEndsOn:
+            entries
+              .map((e) => e.entryDate)
+              .sort()
+              .at(-1) ?? item.periodEndsOn,
           clientReviews: [review],
           approvalEmails: item.approvalEmails?.filter(
             (email) => email.kind === 'client-requested' && email.clientOrganizationId === review.clientOrganizationId
