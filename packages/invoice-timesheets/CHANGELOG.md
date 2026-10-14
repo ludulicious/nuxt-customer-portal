@@ -1,5 +1,20 @@
 # @nuxt-customer-portal/invoice-timesheets
 
+## 0.6.0
+
+### Minor Changes
+
+- cff4891: Add weekly, two-weekly, and monthly client review periods with provider-controlled combined requests, entry snapshots, withdrawal and correction history, supplementary requests, and English/Dutch notifications. Keep weekly internal approvals and historical reviews intact; interval changes start next month.
+
+  Require client approval before invoicing review-enabled client time from the persisted next-month rollout date. Run package migrations before deploying the new application code.
+
+### Patch Changes
+
+- Updated dependencies [cff4891]
+  - @nuxt-customer-portal/timesheets@0.6.0
+  - @nuxt-customer-portal/core@0.6.0
+  - @nuxt-customer-portal/invoices@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

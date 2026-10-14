@@ -16,6 +16,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const timesheets = useTimesheets()
 const busy = ref(false)
+const affectedRequests = ref<Array<{ id: string; clientName: string; startsOn: string; endsOn: string }>>([])
 const rejectionOpen = ref(false)
 const rejectionSubmissionId = ref('')
 const rejectionComment = ref('')
@@ -104,6 +105,8 @@ const run = async (operation: () => Promise<unknown>) => {
     await operation()
     await props.refresh()
   } catch (error) {
+    const failure = error as { data?: { data?: { requests?: typeof affectedRequests.value } } }
+    affectedRequests.value = failure.data?.data?.requests ?? []
     toast.add({
       title: t('features.timesheets.messages.saveError'),
       description: String(error),
@@ -177,6 +180,22 @@ const reject = () =>
 </script>
 
 <template>
+  <UAlert
+    v-if="affectedRequests.length"
+    color="warning"
+    :title="t('features.timesheets.reviewPeriods.withdrawHelp')"
+    class="mb-4"
+  >
+    <template #description
+      ><ul>
+        <li v-for="request in affectedRequests" :key="request.id">
+          <NuxtLink :to="`/timesheets/client-approvals?request=${request.id}`" class="underline"
+            >{{ request.clientName }} · {{ request.startsOn }} – {{ request.endsOn }}</NuxtLink
+          >
+        </li>
+      </ul></template
+    >
+  </UAlert>
   <section class="space-y-3">
     <UCard v-if="!data.approvals.length">
       <div class="py-8 text-center">

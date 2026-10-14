@@ -33,9 +33,10 @@ export async function resetDemoIfDue() {
           throw new Error('Initial demo setup requires an empty, migrated database')
         }
       }
-      const { rows: tables } = await client.query(`SELECT schemaname, tablename FROM pg_tables WHERE
+      const { rows: tables } = await client.query(`SELECT schemaname, tablename FROM pg_tables WHERE (
         schemaname IN ('clients', 'timesheets', 'invoices', 'invoice_timesheets', 'service_requests', 'saas_configuration', 'products', 'planning', 'invoice_products')
-        OR (schemaname = 'public' AND tablename IN ('user', 'session', 'account', 'verification', 'organization', 'member', 'invitation', 'portal_email_settings', 'organization_email_credential'))`)
+        OR (schemaname = 'public' AND tablename IN ('user', 'session', 'account', 'verification', 'organization', 'member', 'invitation', 'portal_email_settings', 'organization_email_credential')))
+        AND NOT (schemaname = 'timesheets' AND tablename = 'client_review_rollout')`)
       const quote = (name: string) => '"' + name.replaceAll('"', '""') + '"'
       await client.query(
         `TRUNCATE ${tables.map((table) => `${quote(table.schemaname)}.${quote(table.tablename)}`).join(', ')} RESTART IDENTITY CASCADE`

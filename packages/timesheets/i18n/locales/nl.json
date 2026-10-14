@@ -426,7 +426,11 @@
           "internal-reopened": "Urenstaat heropend",
           "client-requested": "Klantgoedkeuring gevraagd",
           "client-approved": "Urenstaat goedgekeurd door klant",
-          "client-disputed": "Urenstaat betwist door klant"
+          "client-disputed": "Urenstaat betwist door klant",
+          "period-requested": "Periodebeoordeling gevraagd",
+          "period-approved": "Periode goedgekeurd",
+          "period-disputed": "Periode betwist",
+          "period-withdrawn": "Periode ingetrokken"
         },
         "placeholders": {
           "person_name": "Indiener",
@@ -471,6 +475,61 @@
           "FAILED": "Mislukt",
           "SENDING": "Wordt verstuurd"
         }
+      },
+      "reviewPeriods": {
+        "title": "Klantbeoordelingsperioden",
+        "clientTitle": "Beoordelingsverzoeken per periode",
+        "interval": "Beoordelingsinterval",
+        "nextMonth": "Wijzigingen gelden vanaf de eerste dag van de volgende maand.",
+        "scheduled": "{interval} gaat in op {date}.",
+        "intervals": {
+          "WEEKLY": "Wekelijks",
+          "TWO_WEEKLY": "Elke twee kalenderweken",
+          "MONTHLY": "Maandelijks"
+        },
+        "month": "Maand",
+        "send": "Ter goedkeuring versturen",
+        "withdraw": "Verzoek intrekken",
+        "approve": "Verzoek goedkeuren",
+        "dispute": "Verzoek betwisten",
+        "comment": "Opmerking",
+        "message": "Bericht aan beoordelaars",
+        "supplementary": "Aanvullend",
+        "replacement": "Vervanging",
+        "revision": "Versie {number}",
+        "hours": "{hours} uur",
+        "outstanding": "{count} registraties moeten nog worden ingediend of intern goedgekeurd.",
+        "noReviewers": "Wijs een klantbeoordelaar toe voordat u verstuurt.",
+        "notReady": "Beschikbaar na afloop van de periode en wanneer alle openstaande uren zijn afgehandeld.",
+        "empty": "Nog geen beoordelingsverzoeken.",
+        "noTime": "Geen uren zonder verzoek.",
+        "legacy": "Eerdere beoordelingen per indiening",
+        "history": "Geschiedenis",
+        "entries": "Urendetails",
+        "person": "Persoon",
+        "project": "Project",
+        "activity": "Activiteit",
+        "date": "Datum",
+        "note": "Notitie",
+        "period": "Periode",
+        "status": "Status",
+        "filter": "Zoek klant of leverancier",
+        "error": "Beoordelingsverzoek kon niet worden bijgewerkt",
+        "saved": "Beoordelingsverzoek bijgewerkt",
+        "withdrawHelp": "Trek alle betrokken verzoeken in voordat u een indiening heropent. Gefactureerde uren kunnen niet worden ingetrokken.",
+        "confirmWithdraw": "Dit verzoek intrekken? De uren vereisen opnieuw klantgoedkeuring voordat u kunt factureren.",
+        "cancel": "Annuleren",
+        "confirm": "Bevestigen",
+        "details": "Details bekijken",
+        "cutover": "Nieuwe beoordelingsperioden starten op {date}.",
+        "statuses": {
+          "PENDING": "Wacht op klant",
+          "APPROVED": "Goedgekeurd",
+          "DISPUTED": "Betwist",
+          "WITHDRAWN": "Ingetrokken"
+        },
+        "reopen": "Indiening heropenen — {person}",
+        "reopened": "Indiening heropend voor correctie"
       }
     }
   }

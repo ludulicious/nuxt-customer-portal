@@ -1,3 +1,4 @@
+import { assertNoActiveReviewRequests, isLegacyReviewEntry, reviewRows } from './client-review-requests'
 import { roundTimerMinutes } from '../../shared/timer-rounding'
 import { notifyTimesheetEvent, notifyClientTimesheetEvent } from './timesheet-email'
 import { nanoid } from 'nanoid'
@@ -613,6 +614,10 @@ export const listClientReviewerSuppliers = async (
         )
       )
   ])
+  const periodPending = await reviewRows<{ linkId: string; count: number }>(
+    db,
+    sql`select r.workspace_client_id as "linkId", count(*)::integer as count from timesheets.client_review_request r join timesheets.workspace_client wc on wc.id = r.workspace_client_id where wc.client_organization_id = ${clientOrganizationId} and r.status = 'PENDING' group by r.workspace_client_id`
+  )
   return workspaces.map((workspace) => {
     const reviewerIds = new Set(
       reviewers.filter((item) => item.workspaceClientId === workspace.id).map((item) => item.userId)
@@ -620,7 +625,9 @@ export const listClientReviewerSuppliers = async (
     return {
       ...workspace,
       reviewerCount: reviewerIds.size,
-      pendingCount: pending.filter((item) => item.supplierOrganizationId === workspace.workspaceOrganizationId).length
+      pendingCount:
+        pending.filter((item) => item.supplierOrganizationId === workspace.workspaceOrganizationId).length +
+        (periodPending.find((item) => item.linkId === workspace.id)?.count ?? 0)
     }
   })
 }
@@ -727,7 +734,11 @@ export const listClientApprovals = async (
       .innerJoin(activityType, eq(activityType.id, timeEntry.activityTypeId))
       .innerJoin(user, eq(user.id, timeEntry.userId))
       .where(
-        and(inArray(timeEntry.submissionId, submissionIds), eq(timeEntry.clientOrganizationId, clientOrganizationId))
+        and(
+          inArray(timeEntry.submissionId, submissionIds),
+          eq(timeEntry.clientOrganizationId, clientOrganizationId),
+          isLegacyReviewEntry
+        )
       )
       .orderBy(asc(timeEntry.entryDate), asc(timeEntry.createdAt)),
     db
@@ -787,8 +798,8 @@ export const listClientApprovals = async (
           weeklyTimesheetId: submission.id,
           submissionId: submission.id,
           weekStartsOn: week.weekStartsOn,
-          periodStartsOn: submission.periodStartsOn,
-          periodEndsOn: submission.periodEndsOn,
+          periodStartsOn: rows[0]!.entry.entryDate,
+          periodEndsOn: rows.at(-1)!.entry.entryDate,
           person: rows[0]!.personName,
           userId: submission.userId,
           totalMinutes: rows.reduce((total, item) => total + item.entry.durationMinutes, 0),
@@ -1131,7 +1142,8 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
         and(
           eq(workspaceClient.workspaceOrganizationId, organizationId),
           eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-          eq(workspaceClient.accessMode, 'REVIEW')
+          eq(workspaceClient.accessMode, 'REVIEW'),
+          isLegacyReviewEntry
         )
       )
       .where(eq(timeEntry.submissionId, submission.id))
@@ -2131,7 +2143,8 @@ export const submitWeek = async (
           and(
             eq(workspaceClient.workspaceOrganizationId, organizationId),
             eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW')
+            eq(workspaceClient.accessMode, 'REVIEW'),
+            isLegacyReviewEntry
           )
         )
         .where(eq(timeEntry.submissionId, submissionId))
@@ -2256,7 +2269,8 @@ export const resubmitSubmission = async (
           and(
             eq(workspaceClient.workspaceOrganizationId, organizationId),
             eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW')
+            eq(workspaceClient.accessMode, 'REVIEW'),
+            isLegacyReviewEntry
           )
         )
         .where(eq(timeEntry.submissionId, submission.id))
@@ -2436,7 +2450,8 @@ export const reviewSubmission = async (
   actorUserId: string,
   submissionId: string,
   action: 'APPROVE' | 'REJECT' | 'REOPEN',
-  comment?: string | null
+  comment?: string | null,
+  providerCorrection = false
 ) => {
   const result = await db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -2444,7 +2459,7 @@ export const reviewSubmission = async (
       .from(workspaceSettings)
       .where(eq(workspaceSettings.organizationId, organizationId))
       .limit(1)
-    if (!workspace?.enabled) {
+    if (!workspace?.enabled && !(providerCorrection && action === 'REOPEN')) {
       throw createError({
         statusCode: 403,
         message: 'Internal approvals are disabled',
@@ -2470,7 +2485,7 @@ export const reviewSubmission = async (
         )
       )
       .limit(1)
-    if (!assignment) {
+    if (!assignment && !(providerCorrection && action === 'REOPEN')) {
       throw createError({
         statusCode: 403,
         message: 'You are not assigned to approve this member',
@@ -2492,10 +2507,23 @@ export const reviewSubmission = async (
       })
     }
     if (action === 'REOPEN') {
+      const clients = await reviewRows<{ id: string }>(
+        tx,
+        sql`select distinct client_organization_id as id from timesheets.time_entry where submission_id = ${submission.id} order by client_organization_id`
+      )
+      for (const client of clients) {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${'client-review:' + organizationId + ':' + client.id}))`
+        )
+      }
       const entries = await tx
         .select({ id: timeEntry.id })
         .from(timeEntry)
         .where(eq(timeEntry.submissionId, submission.id))
+      await assertNoActiveReviewRequests(
+        tx,
+        entries.map((entry) => entry.id)
+      )
       await assertTimeEntriesReopenable(
         organizationId,
         entries.map((entry) => entry.id)
@@ -2539,7 +2567,8 @@ export const reviewSubmission = async (
           and(
             eq(workspaceClient.workspaceOrganizationId, organizationId),
             eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW')
+            eq(workspaceClient.accessMode, 'REVIEW'),
+            isLegacyReviewEntry
           )
         )
         .where(eq(timeEntry.submissionId, submission.id))
@@ -2882,7 +2911,8 @@ export const reviewClientTimesheet = async (
           eq(timeEntry.submissionId, submissionId),
           eq(timeEntry.organizationId, link.workspaceOrganizationId),
           eq(timeEntry.clientOrganizationId, clientOrganizationId),
-          eq(timesheetSubmission.status, 'APPROVED')
+          eq(timesheetSubmission.status, 'APPROVED'),
+          isLegacyReviewEntry
         )
       )
       .limit(1)
@@ -3074,7 +3104,13 @@ export const requestClientApproval = async (
     const entries = await tx
       .select()
       .from(timeEntry)
-      .where(and(eq(timeEntry.submissionId, submissionId), eq(timeEntry.clientOrganizationId, clientOrganizationId)))
+      .where(
+        and(
+          eq(timeEntry.submissionId, submissionId),
+          eq(timeEntry.clientOrganizationId, clientOrganizationId),
+          isLegacyReviewEntry
+        )
+      )
     if (!entries.length) {
       throw createError({
         statusCode: 422,

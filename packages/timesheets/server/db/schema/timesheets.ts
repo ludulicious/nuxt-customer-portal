@@ -1,4 +1,16 @@
-import { boolean, date, index, integer, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  date,
+  index,
+  integer,
+  jsonb,
+  pgSchema,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  type AnyPgColumn
+} from 'drizzle-orm/pg-core'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 
 export const timesheetsSchema = pgSchema('timesheets')
@@ -403,4 +415,95 @@ export const timesheetApprovalEmail = timesheetsSchema.table(
     sentAt: timestamp('sent_at', { mode: 'date' })
   },
   (table) => [index('approval_email_submission_idx').on(table.submissionId, table.createdAt)]
+)
+
+// Client review periods are independent of weekly internal submissions.
+export const clientReviewRollout = timesheetsSchema.table('client_review_rollout', {
+  id: boolean('id').primaryKey().default(true),
+  startsOn: date('starts_on', { mode: 'string' }).notNull()
+})
+export const clientReviewSchedule = timesheetsSchema.table(
+  'client_review_schedule',
+  {
+    workspaceClientId: text('workspace_client_id')
+      .notNull()
+      .references(() => workspaceClient.id, { onDelete: 'cascade' }),
+    effectiveOn: date('effective_on', { mode: 'string' }).notNull(),
+    interval: text('interval').$type<'WEEKLY' | 'TWO_WEEKLY' | 'MONTHLY'>().notNull()
+  },
+  (table) => [primaryKey({ columns: [table.workspaceClientId, table.effectiveOn] })]
+)
+export const clientReviewRequest = timesheetsSchema.table(
+  'client_review_request',
+  {
+    id: text('id').primaryKey(),
+    workspaceClientId: text('workspace_client_id')
+      .notNull()
+      .references(() => workspaceClient.id, { onDelete: 'restrict' }),
+    startsOn: date('starts_on', { mode: 'string' }).notNull(),
+    endsOn: date('ends_on', { mode: 'string' }).notNull(),
+    revision: integer('revision').notNull(),
+    status: text('status').$type<'PENDING' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN'>().default('PENDING').notNull(),
+    version: integer('version').default(1).notNull(),
+    supplementary: boolean('supplementary').default(false).notNull(),
+    replacesId: text('replaces_id').references((): AnyPgColumn => clientReviewRequest.id, { onDelete: 'restrict' }),
+    sentById: text('sent_by_id')
+      .notNull()
+      .references(() => user.id),
+    message: text('message'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('client_review_request_period_revision_uidx').on(
+      table.workspaceClientId,
+      table.startsOn,
+      table.endsOn,
+      table.revision
+    )
+  ]
+)
+export const clientReviewRequestEntry = timesheetsSchema.table(
+  'client_review_request_entry',
+  {
+    requestId: text('request_id')
+      .notNull()
+      .references(() => clientReviewRequest.id, { onDelete: 'restrict' }),
+    // Keep the historical entry ID even when withdrawn time is subsequently deleted.
+    entryId: text('entry_id').notNull(),
+    snapshot: jsonb('snapshot')
+      .$type<import('../../../shared/types/client-review-request').ReviewEntrySnapshot>()
+      .notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.requestId, table.entryId] }),
+    index('client_review_request_entry_entry_idx').on(table.entryId)
+  ]
+)
+export const clientReviewRequestEvent = timesheetsSchema.table('client_review_request_event', {
+  id: text('id').primaryKey(),
+  requestId: text('request_id')
+    .notNull()
+    .references(() => clientReviewRequest.id, { onDelete: 'restrict' }),
+  action: text('action').$type<'SENT' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN'>().notNull(),
+  actorId: text('actor_id')
+    .notNull()
+    .references(() => user.id),
+  comment: text('comment'),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull()
+})
+
+export const clientReviewRequestReplacement = timesheetsSchema.table(
+  'client_review_request_replacement',
+  {
+    requestId: text('request_id')
+      .notNull()
+      .references(() => clientReviewRequest.id, { onDelete: 'restrict' }),
+    replacesId: text('replaces_id')
+      .notNull()
+      .references(() => clientReviewRequest.id, { onDelete: 'restrict' })
+  },
+  (table) => [
+    primaryKey({ columns: [table.requestId, table.replacesId] }),
+    uniqueIndex('client_review_request_replacement_replaces_uidx').on(table.replacesId)
+  ]
 )

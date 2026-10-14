@@ -1,5 +1,25 @@
 # Nuxt Customer Portal
 
+## 0.6.0
+
+Add weekly, two-weekly, and monthly client timesheet review periods while keeping
+internal submissions and approvals weekly. Providers send combined requests once
+all recorded time is ready; clients approve or dispute the whole period.
+
+Preserve request snapshots and history through withdrawal, corrections, replacement
+requests, and supplementary requests for late time. Require client approval before
+invoicing review-enabled client time from the rollout date.
+
+Apply `timesheets/0007_client_review_requests.sql` before deploying the new code.
+The migration stores the first day of the following calendar month as the work-date
+cutover. Earlier time retains its existing reviews and invoice eligibility.
+Interval changes also take effect next month.
+
+Include English and Dutch settings, request screens, dashboard counts, notifications,
+and approval documentation.
+
+All public packages and portal apps use `0.6.0`.
+
 ## 0.5.1
 
 Track timesheet approval email recipients, send times, messages and delivery status.

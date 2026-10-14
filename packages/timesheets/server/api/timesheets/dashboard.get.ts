@@ -1,3 +1,4 @@
+import { listReviewRequests } from '@nuxt-customer-portal/timesheets/server/utils/client-review-requests'
 import { selectClientDashboardApprovals } from '@nuxt-customer-portal/timesheets/shared/client-approval-dashboard'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
@@ -57,7 +58,31 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
   ])
 
   const pendingInternal = approvalQueue.filter((item) => item.status === 'SUBMITTED')
-  const clientDashboard = selectClientDashboardApprovals(clientApprovals?.items ?? [], session.user.id)
+  const periodRequests = reviewWorkspaces.length
+    ? await listReviewRequests(organizationId, session.user.id, true, isAdmin)
+    : []
+  const periodItems = periodRequests
+    .filter((r) => r.status === 'PENDING' || r.status === 'APPROVED')
+    .map((request) => {
+      const decision = request.history.findLast((e) => e.action === 'APPROVED')
+      return {
+        id: request.id,
+        supplierName: request.supplierName,
+        person: [...new Set(request.entries.map((e) => e.person))].join(', '),
+        weekStartsOn: request.startsOn,
+        periodStartsOn: request.startsOn,
+        periodEndsOn: request.endsOn,
+        totalMinutes: request.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+        status: request.status as 'PENDING' | 'APPROVED',
+        canAct: request.status === 'PENDING',
+        reviewerUserId: decision?.actorId ?? null,
+        reviewedAt: decision?.createdAt ?? null
+      }
+    })
+  const clientDashboard = selectClientDashboardApprovals(
+    [...(clientApprovals?.items ?? []), ...periodItems],
+    session.user.id
+  )
   const unsubmittedEntries = bootstrap?.week.entries.filter((entry) => !entry.submissionId) ?? []
   const unsubmittedDates = unsubmittedEntries.map((entry) => entry.entryDate).sort()
 
