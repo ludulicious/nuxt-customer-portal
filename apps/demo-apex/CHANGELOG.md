@@ -1,5 +1,20 @@
 # @nuxt-customer-portal/demo-apex
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [cff4891]
+  - @nuxt-customer-portal/timesheets@0.6.0
+  - @nuxt-customer-portal/invoice-timesheets@0.6.0
+  - @nuxt-customer-portal/invoice-products@0.6.0
+  - @nuxt-customer-portal/invoices@0.6.0
+  - @nuxt-customer-portal/kit@0.6.0
+  - @nuxt-customer-portal/planning@0.6.0
+  - @nuxt-customer-portal/preset@0.6.0
+  - @nuxt-customer-portal/products@0.6.0
+  - @nuxt-customer-portal/service-requests@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

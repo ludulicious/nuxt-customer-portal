@@ -1,6 +1,6 @@
 export default {
   id: 'core',
-  version: '0.5.1',
+  version: '0.6.0',
   source: '@nuxt-customer-portal/core',
   dependsOn: [],
   schema: './server/db/schema/index.ts',
