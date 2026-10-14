@@ -48,3 +48,11 @@ export interface ClientReviewPeriodDto {
   hasReviewers: boolean
   canSend: boolean
 }
+
+export interface ClientTimesheetSettingsDto {
+  accessMode: 'DISABLED' | 'VIEW' | 'REVIEW'
+  reviewInterval: ClientReviewInterval
+  scheduledReviewInterval: ClientReviewInterval | null
+  reviewIntervalEffectiveOn: string | null
+  reviewStartsOn: string
+}

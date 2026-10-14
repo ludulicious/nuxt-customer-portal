@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import type { ClientTimesheetSettingsDto } from '../../shared/types/client-review-request'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/types'
 
 const props = defineProps<{ client: GenericClientDto }>()
@@ -14,17 +15,22 @@ const schema = z.object({
   accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
   reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY'])
 })
-const { data } = await useFetch(`/api/timesheets/admin/client-settings/${props.client.organizationId}`)
+const { data } = await useFetch<ClientTimesheetSettingsDto>(
+  `/api/timesheets/admin/client-settings/${props.client.organizationId}`
+)
 if (data.value) {
   Object.assign(state, data.value, { reviewInterval: data.value.scheduledReviewInterval ?? data.value.reviewInterval })
 }
 const save = async () => {
   busy.value = true
   try {
-    data.value = await $fetch(`/api/timesheets/admin/client-settings/${props.client.organizationId}`, {
-      method: 'PUT',
-      body: state
-    })
+    data.value = await $fetch<ClientTimesheetSettingsDto>(
+      `/api/timesheets/admin/client-settings/${props.client.organizationId}`,
+      {
+        method: 'PUT',
+        body: state
+      }
+    )
     toast.add({ title: t('features.timesheets.messages.saved'), color: 'success' })
   } finally {
     busy.value = false
