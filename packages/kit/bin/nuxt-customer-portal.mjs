@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { createJiti } from 'jiti'
@@ -18,6 +18,82 @@ import { copyPortalPages, portalPages } from '../src/pages.mjs'
 const cwd = process.cwd()
 const args = process.argv.slice(2)
 
+if (args[0] === 'harvest') {
+  const { exportHarvest, importHarvest } = await import('../src/harvest.mjs')
+  const value = (flag) => {
+    const index = args.indexOf(flag)
+    if (index < 0 || !args[index + 1] || args[index + 1].startsWith('--')) {
+      throw new Error(`${flag} requires a value`)
+    }
+    return args[index + 1]
+  }
+  try {
+    const allowed =
+      args[1] === 'export'
+        ? ['--output']
+        : ['--input', '--mapping', '--provider', '--actor', '--apply', '--backup-confirmed']
+    if (!['export', 'import'].includes(args[1])) {
+      throw new Error(
+        'Use harvest export --output <file> or harvest import --input <file> --mapping <file> --provider <slug> --actor <email> [--apply --backup-confirmed]'
+      )
+    }
+    const seen = new Set()
+    for (let index = 2; index < args.length; index++) {
+      const flag = args[index]
+      if (!allowed.includes(flag) || seen.has(flag)) {
+        throw new Error(`Unknown or repeated Harvest option: ${flag}`)
+      }
+      seen.add(flag)
+      if (!['--apply', '--backup-confirmed'].includes(flag)) {
+        value(flag)
+        index++
+      }
+    }
+    if (args[1] === 'export') {
+      const output = resolve(cwd, value('--output'))
+      if (existsSync(output)) {
+        throw new Error('Export output already exists; choose a new filename')
+      }
+      const snapshot = await exportHarvest({
+        token: process.env.HARVEST_ACCESS_TOKEN,
+        accountId: process.env.HARVEST_ACCOUNT_ID
+      })
+      writeFileSync(output, JSON.stringify(snapshot, null, 2), { flag: 'wx', mode: 0o600 })
+      console.log(
+        JSON.stringify(
+          {
+            exported: true,
+            output,
+            counts: Object.fromEntries(
+              Object.entries(snapshot)
+                .filter(([, value]) => Array.isArray(value))
+                .map(([key, value]) => [key, value.length])
+            )
+          },
+          null,
+          2
+        )
+      )
+    } else {
+      const result = await importHarvest(JSON.parse(readFileSync(resolve(cwd, value('--input')), 'utf8')), {
+        mapping: JSON.parse(readFileSync(resolve(cwd, value('--mapping')), 'utf8')),
+        provider: value('--provider'),
+        actorEmail: value('--actor'),
+        apply: args.includes('--apply'),
+        backupConfirmed: args.includes('--backup-confirmed')
+      })
+      console.log(JSON.stringify(result, null, 2))
+      if (result.errors.length) {
+        process.exitCode = 1
+      }
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : 'Harvest migration failed')
+    process.exitCode = 1
+  }
+  process.exit(process.exitCode || 0)
+}
+
 if (['init', 'setup'].includes(args[0])) {
   const { runStarterCommand } = await import('../src/setup.mjs')
   await runStarterCommand(args[0], args.slice(1))
@@ -29,6 +105,7 @@ if (!args.length || ['--help', '-h'].includes(args[0])) {
   init [directory] [--no-install]  Create a configurable portal interactively
   setup                          Prepare a generated portal's database and owner
   page copy <page>               Copy a package page into the host application
+  harvest export|import          Migrate a Harvest account (see migration guide)
   doctor                         Check the installed portal providers
   db status|migrate               Inspect or apply package migrations
   provider seed|bootstrap         Prepare a provider organization
