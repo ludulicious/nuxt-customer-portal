@@ -1,5 +1,25 @@
 # Nuxt Customer Portal
 
+## 0.6.1
+
+Add reusable Harvest export and one-time import commands with read-only previews,
+explicit member/client mappings, atomic imports, duplicate protection, and a
+retained source journal.
+
+Preserve historical people, credit notes, signed payments, written-off invoices,
+invoice lifecycle events, and original source attribution. Protect externally
+billed time against edits and rebilling, even without an invoice link.
+
+Apply `timesheets/0008_imported_history.sql` and
+`invoices/0003_imported_history.sql` before importing, and deploy the matching
+Invoice Timesheets bridge. Includes English and Dutch import history labels and
+migration documentation. Preview reports rounding and approximate invoice-line
+associations; PDFs, attachments, and original emails are outside migration scope.
+
+Pin Sharp to `0.35.3` across the workspace.
+
+All public packages and portal apps use `0.6.1`.
+
 ## 0.6.0
 
 Add weekly, two-weekly, and monthly client timesheet review periods while keeping

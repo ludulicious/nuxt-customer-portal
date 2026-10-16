@@ -21,6 +21,10 @@ pnpm dev:apex
 
 Use a local PostgreSQL database and synthetic records. Run `pnpm --filter @nuxt-customer-portal/demo-apex portal doctor` to inspect the selected providers before applying migrations.
 
+## Native image dependencies
+
+The workspace pins Sharp to `0.35.3` with a root pnpm override. Keep application hosts such as marpos.nl aligned to that version: mixing Sharp versions can make Nitro's versioned native-package layout break libvips lookup in Alpine containers. Root overrides are not inherited by consumers of published packages; those hosts must configure their own override. When updating this pin, verify Nuxt image resizing, social images, and product image processing in the generated Linux container without a custom library search path.
+
 ## Architecture rules
 
 - Put reusable platform and business capabilities in `packages/<id>` and keep host branding in `apps/*`.

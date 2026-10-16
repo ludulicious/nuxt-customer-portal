@@ -1,5 +1,18 @@
 # @nuxt-customer-portal/invoice-timesheets
 
+## 0.6.1
+
+### Patch Changes
+
+- 41e297d: Add reusable Harvest export and one-time migration commands with read-only previews, explicit member/client mappings, invoice and payment reconciliation, atomic imports, and duplicate protection.
+
+  Preserve distinct disabled historical users, credit and written-off invoices, original invoice lifecycle events and source metadata. Track externally billed time independently of invoice links to prevent edits and rebilling. Disambiguate duplicate project names and consolidate duplicate contact email records with explicit provenance. Apply the Timesheets and Invoices history migrations before importing.
+
+- Updated dependencies [41e297d]
+  - @nuxt-customer-portal/timesheets@0.6.1
+  - @nuxt-customer-portal/invoices@0.6.1
+  - @nuxt-customer-portal/core@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
