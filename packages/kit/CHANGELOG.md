@@ -1,5 +1,13 @@
 # @nuxt-customer-portal/kit
 
+## 0.6.1
+
+### Patch Changes
+
+- 41e297d: Add reusable Harvest export and one-time migration commands with read-only previews, explicit member/client mappings, invoice and payment reconciliation, atomic imports, and duplicate protection.
+
+  Preserve distinct disabled historical users, credit and written-off invoices, original invoice lifecycle events and source metadata. Track externally billed time independently of invoice links to prevent edits and rebilling. Disambiguate duplicate project names and consolidate duplicate contact email records with explicit provenance. Apply the Timesheets and Invoices history migrations before importing.
+
 ## 0.6.0
 
 ## 0.5.1

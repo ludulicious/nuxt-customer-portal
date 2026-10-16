@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.6.1
+- @nuxt-customer-portal/products@0.6.1
+- @nuxt-customer-portal/ui@0.6.1
+
 ## 0.6.0
 
 ### Patch Changes

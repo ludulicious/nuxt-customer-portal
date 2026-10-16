@@ -42,7 +42,14 @@ export const listTimesheetInvoiceSources = async (organizationId: string, from?:
         projectId: timeEntry.projectId
       })
       .from(timeEntry)
-      .where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, ids), clientPeriodApproved)),
+      .where(
+        and(
+          eq(timeEntry.organizationId, organizationId),
+          inArray(timeEntry.id, ids),
+          eq(timeEntry.externallyBilled, false),
+          clientPeriodApproved
+        )
+      ),
     db
       .select({ timeEntryId: invoiceTimeEntry.timeEntryId })
       .from(invoiceTimeEntry)
@@ -139,6 +146,7 @@ export const createInvoiceFromTimesheets = async (
             eq(timeEntry.organizationId, organizationId),
             eq(timeEntry.clientOrganizationId, input.clientOrganizationId),
             inArray(timeEntry.id, sourceIds),
+            eq(timeEntry.externallyBilled, false),
             clientPeriodApproved
           )
         ),
@@ -213,6 +221,20 @@ export const createInvoiceFromTimesheets = async (
 export const hasActiveInvoiceSource = async (organizationId: string, entryIds: string[]) => {
   if (!entryIds.length) {
     return false
+  }
+  const [historical] = await db
+    .select({ id: timeEntry.id })
+    .from(timeEntry)
+    .where(
+      and(
+        eq(timeEntry.organizationId, organizationId),
+        inArray(timeEntry.id, entryIds),
+        eq(timeEntry.externallyBilled, true)
+      )
+    )
+    .limit(1)
+  if (historical) {
+    return true
   }
   const [selected] = await db
     .select({ id: invoiceTimeEntry.id })
