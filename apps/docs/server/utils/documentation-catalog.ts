@@ -238,6 +238,11 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
       'Turn approved time into invoices, deliver PDFs and attachments, send reminders, and register payments.'
   },
   {
+    path: '/guides/harvest-migration',
+    title: 'Migrate from Harvest',
+    description: 'Preview and import a Harvest account into your portal without duplicate records or invoice emails.'
+  },
+  {
     path: '/contributing',
     title: 'Contributing',
     description:
