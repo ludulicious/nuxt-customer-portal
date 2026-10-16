@@ -100,13 +100,16 @@ test('source IDs are scoped to account and provider, and mapping reuses explicit
   )
 })
 
-test('import blocks missing users, running timers, missing billed links and inconsistent payments', () => {
+test('import blocks missing users, running timers and inconsistent payments while retaining unlinked billed time', () => {
   assert.match(planHarvest(fixture(), { ...options, users: {} }).errors.join(), /Map Harvest user 3/)
   const snapshot = fixture()
   Object.assign(snapshot.time_entries[0], { is_running: true })
   assert.match(planHarvest(snapshot, options).errors.join(), /running Harvest timer/)
   Object.assign(snapshot.time_entries[0], { is_running: false, invoice: null })
-  assert.match(planHarvest(snapshot, options).errors.join(), /Billed entry has no invoice/)
+  const historical = planHarvest(snapshot, options)
+  assert.deepEqual(historical.errors, [])
+  assert.equal(historical.rows.find((row) => row.table === 'timesheets.time_entry')!.data.externally_billed, true)
+  assert.ok(!historical.rows.some((row) => row.table === 'invoice_timesheets.invoice_time_entry'))
   const mismatch = fixture()
   mismatch.payments[0].amount = 100
   assert.match(planHarvest(mismatch, options).errors.join(), /Payments do not reconcile/)
@@ -114,7 +117,7 @@ test('import blocks missing users, running timers, missing billed links and inco
 
 test('unsupported invoice states, precision loss and totals block the entire plan', () => {
   for (const [patch, expected] of [
-    [{ state: 'closed' }, /Unsupported invoice state/],
+    [{ state: 'unknown' }, /Unsupported invoice state/],
     [{ amount: 109 }, /Invoice total does not reconcile/],
     [{ currency: 'JPY' }, /two decimal/]
   ] as const) {
@@ -292,3 +295,95 @@ test(
     }
   }
 )
+
+test('historical users remain distinct, disabled and attributed without credentials or invitations', () => {
+  const snapshot = fixture()
+  snapshot.users.push({
+    id: 11,
+    email: 'former@example.test',
+    first_name: 'Former',
+    last_name: 'Member',
+    is_active: false
+  })
+  snapshot.users.push({
+    id: 12,
+    email: 'older@example.test',
+    first_name: 'Former',
+    last_name: 'Member',
+    is_active: false
+  })
+  snapshot.time_entries.push({ ...snapshot.time_entries[0], id: 13, user: { id: 11 } })
+  snapshot.invoices[0].creator = { id: 12 }
+  const plan = planHarvest(snapshot, { ...options, createHistoricalUsers: true })
+  assert.deepEqual(plan.errors, [])
+  const people = plan.rows.filter((row) => row.table === 'public.user').map((row) => row.data)
+  assert.equal(people.length, 2)
+  assert.notEqual(people[0].id, people[1].id)
+  assert.ok(people.every((person) => person.banned && !person.email_verified))
+  assert.ok(
+    plan.rows.filter((row) => row.table === 'timesheets.team_member_settings').every((row) => !row.data.can_enter_time)
+  )
+  assert.equal(plan.rows.find((row) => row.table === 'invoices.invoice')!.data.created_by_id, people[1].id)
+  assert.equal(plan.rows.filter((row) => row.table === 'timesheets.time_entry')[1].data.user_id, people[0].id)
+  assert.ok(!plan.rows.some((row) => ['public.account', 'public.invitation'].includes(row.table)))
+})
+
+test('duplicate projects keep distinct IDs and contact consolidation retains every source record', () => {
+  const snapshot = fixture()
+  snapshot.projects.push({ ...snapshot.projects[0], id: 11 })
+  snapshot.contacts.push({ ...snapshot.contacts[0], id: 12, first_name: 'Another', email: 'CONTACT@example.test' })
+  const plan = planHarvest(snapshot, options)
+  assert.deepEqual(plan.errors, [])
+  const projects = plan.rows.filter((row) => row.table === 'timesheets.project')
+  assert.notEqual(projects[0].data.name, projects[1].data.name)
+  assert.notEqual(projects[0].data.id, projects[1].data.id)
+  assert.equal(plan.transformations.renamedProjects.length, 2)
+  assert.equal(plan.rows.filter((row) => row.table === 'invoices.billing_contact').length, 1)
+  assert.deepEqual(plan.transformations.mergedContacts[0].sourceIds, [2, 12])
+  assert.match(plan.rows.find((row) => row.table === 'invoices.billing_contact')!.data.name, /Another/)
+})
+
+test('credits and written-off history retain signed values, payment actors and original timestamps', () => {
+  const snapshot = fixture()
+  const invoice = snapshot.invoices[0]
+  invoice.amount = -108.9
+  invoice.discount_amount = -10
+  invoice.tax_amount = -18.9
+  invoice.line_items[0].unit_price = -50
+  invoice.line_items[0].amount = -100
+  Object.assign(invoice, { creator: { id: 3 }, created_at: '2020-01-01T10:00:00Z', sent_at: '2020-01-02T10:00:00Z' })
+  snapshot.payments[0].amount = -108.9
+  Object.assign(snapshot.payments[0], { recorded_by_email: 'owner@example.test', paid_at: '2020-01-03T10:00:00Z' })
+  const credit = planHarvest(snapshot, options)
+  assert.deepEqual(credit.errors, [])
+  const document = credit.rows.find((row) => row.table === 'invoices.invoice')!.data
+  assert.equal(document.document_type, 'credit')
+  assert.equal(document.import_metadata.invoice.amount, -108.9)
+  assert.equal(credit.rows.find((row) => row.table === 'invoices.invoice_payment')!.data.amount_minor, -10890)
+  assert.equal(
+    credit.rows.find((row) => row.table === 'invoices.invoice_history' && row.data.action === 'ISSUED')!.data
+      .created_at,
+    invoice.sent_at
+  )
+  assert.equal(
+    credit.rows.find((row) => row.table === 'invoices.invoice_history' && row.data.action === 'PAYMENT_REGISTERED')!
+      .data.actor_user_id,
+    'owner'
+  )
+  invoice.state = 'closed'
+  invoice.due_amount = -108.9
+  Object.assign(invoice, { closed_at: '2020-01-04T10:00:00Z' })
+  snapshot.payments = []
+  const closed = planHarvest(snapshot, options)
+  assert.deepEqual(closed.errors, [])
+  assert.equal(closed.rows.find((row) => row.table === 'invoices.invoice')!.data.status, 'VOID')
+  assert.equal(
+    closed.rows.find((row) => row.table === 'invoices.invoice_history' && row.data.action === 'VOIDED')!.data
+      .amount_minor,
+    -10890
+  )
+  assert.equal(
+    closed.rows.find((row) => row.table === 'invoices.invoice')!.data.import_metadata.invoice.state,
+    'closed'
+  )
+})

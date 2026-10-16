@@ -69,6 +69,7 @@ const toEntryDto = (row: TimeEntryRecord, submissionStatus: TimeEntryDto['submis
   entryDate: row.entryDate,
   durationMinutes: row.durationMinutes,
   note: row.note,
+  externallyBilled: row.externallyBilled,
   billable: row.billableSnapshot,
   hourlyRateMinor: row.hourlyRateMinorSnapshot,
   currency: row.currencySnapshot,
@@ -1708,6 +1709,9 @@ const withEditableDates = async <T>(
   })
 
 const requireEditableEntry = async (entry: TimeEntryRecord) => {
+  if (entry.externallyBilled) {
+    throw createError({ statusCode: 409, message: 'Historically billed time cannot be changed' })
+  }
   if (!entry.submissionId) {
     return
   }

@@ -145,7 +145,10 @@ export async function exportHarvest({
   return snapshot
 }
 
-export function planHarvest(snapshot, { provider, actorId, users = {}, clients = {}, weekStartsOn = 1, sender = {} }) {
+export function planHarvest(
+  snapshot,
+  { provider, actorId, users = {}, clients = {}, createHistoricalUsers = false, weekStartsOn = 1, sender = {} }
+) {
   if (snapshot.format !== 'nuxt-customer-portal/harvest-v1' || !/^\d+$/.test(snapshot.accountId)) {
     throw new Error('Invalid Harvest snapshot')
   }
@@ -201,6 +204,67 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
       errors.push(`${label}: ${error.message}`)
     }
   }
+  const resolvedUsers = { ...users }
+  const transformations = {
+    historicalUsers: [],
+    renamedProjects: [],
+    mergedContacts: [],
+    externallyBilledEntries: 0,
+    creditInvoices: 0,
+    closedInvoices: 0
+  }
+  for (const person of snapshot.users) {
+    if (resolvedUsers[person.id] || !createHistoricalUsers) {
+      continue
+    }
+    attempt(`User ${person.id}`, () => {
+      const userId = id('user', person.id)
+      const name = [person.first_name, person.last_name].filter(Boolean).join(' ') || person.name || person.email
+      const email = required(person.email, 'Historical user email').trim().toLowerCase()
+      add('public.user', {
+        id: userId,
+        name: required(name, 'Historical user name'),
+        first_name: person.first_name || null,
+        last_name: person.last_name || null,
+        email,
+        email_verified: false,
+        role: 'user',
+        banned: true,
+        ban_reason: 'Historical Harvest identity; login disabled',
+        created_at: person.created_at || snapshot.exportedAt,
+        updated_at: person.updated_at || snapshot.exportedAt
+      })
+      add('public.member', {
+        id: id('member', person.id),
+        organization_id: provider,
+        user_id: userId,
+        role: 'member',
+        created_at: person.created_at || snapshot.exportedAt
+      })
+      add('timesheets.team_member_settings', {
+        id: id('team-settings', person.id),
+        organization_id: provider,
+        user_id: userId,
+        can_enter_time: false,
+        internal_approval_required: false
+      })
+      resolvedUsers[person.id] = userId
+      transformations.historicalUsers.push({
+        sourceId: person.id,
+        targetId: userId,
+        name,
+        email,
+        sourceActive: person.is_active !== false,
+        loginEnabled: false
+      })
+    })
+  }
+  const paymentActor = (payment) => {
+    const person = snapshot.users.find(
+      (person) => person.email?.toLowerCase() === payment.recorded_by_email?.toLowerCase()
+    )
+    return (person && resolvedUsers[person.id]) || actorId
+  }
   for (const client of snapshot.clients) {
     attempt(`Client ${client.id}`, () => {
       const target = clientId(client.id)
@@ -235,16 +299,42 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
       })
     })
   }
-  for (const contact of snapshot.contacts) {
+  const contactGroups = new Map()
+  for (const contact of [...snapshot.contacts].sort((a, b) => a.id - b.id)) {
     attempt(`Contact ${contact.id}`, () => {
-      add('invoices.billing_contact', {
-        id: id('contact', contact.id),
-        organization_id: clientId(contact.client.id),
-        name: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email,
-        email: required(contact.email, 'Contact email'),
-        phone: contact.phone_office || contact.phone_mobile || null
-      })
+      const organizationId = clientId(contact.client.id)
+      const email = required(contact.email, 'Contact email').trim().toLowerCase()
+      const key = `${organizationId}:${email}`
+      const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || email
+      const previous = contactGroups.get(key)
+      if (previous) {
+        if (!previous.names.includes(name)) {
+          previous.names.push(name)
+        }
+        previous.data.name = previous.names.join(' / ')
+        previous.sources.push(contact.id)
+      } else {
+        const data = {
+          id: id('contact', contact.id),
+          organization_id: organizationId,
+          name,
+          email,
+          phone: contact.phone_office || contact.phone_mobile || null
+        }
+        add('invoices.billing_contact', data)
+        contactGroups.set(key, { data, names: [name], sources: [contact.id] })
+      }
     })
+  }
+  for (const group of contactGroups.values()) {
+    if (group.sources.length > 1) {
+      transformations.mergedContacts.push({
+        sourceIds: group.sources,
+        targetId: group.data.id,
+        email: group.data.email,
+        names: group.names
+      })
+    }
   }
   for (const task of snapshot.tasks) {
     attempt(`Task ${task.id}`, () => {
@@ -257,13 +347,35 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
       })
     })
   }
+  const projectNameCounts = new Map()
+  for (const project of snapshot.projects) {
+    projectNameCounts.set(project.name, (projectNameCounts.get(project.name) || 0) + 1)
+  }
+  const reservedNames = new Set(
+    snapshot.projects.filter((project) => projectNameCounts.get(project.name) === 1).map((project) => project.name)
+  )
+  const projectNames = new Map()
+  for (const project of [...snapshot.projects].sort((a, b) => a.id - b.id)) {
+    if (projectNameCounts.get(project.name) === 1) {
+      projectNames.set(project.id, project.name)
+      continue
+    }
+    let name = `${project.name} [Harvest ${project.id}]`
+    let suffix = 1
+    while (reservedNames.has(name)) {
+      name = `${project.name} [Harvest ${project.id}:${suffix++}]`
+    }
+    reservedNames.add(name)
+    projectNames.set(project.id, name)
+    transformations.renamedProjects.push({ sourceId: project.id, originalName: project.name, importedName: name })
+  }
   for (const project of snapshot.projects) {
     attempt(`Project ${project.id}`, () => {
       add('timesheets.project', {
         id: id('project', project.id),
         organization_id: provider,
         client_organization_id: clientId(project.client.id),
-        name: required(project.name, 'Project name'),
+        name: required(projectNames.get(project.id), 'Project name'),
         code: project.code || null,
         status: project.is_active === false ? 'ARCHIVED' : 'ACTIVE',
         starts_on: project.starts_on ? date(project.starts_on) : null,
@@ -297,7 +409,7 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
   for (const entry of snapshot.time_entries) {
     attempt(`Time entry ${entry.id}`, () => {
       find('users', entry.user.id)
-      const user = users[entry.user.id]
+      const user = resolvedUsers[entry.user.id]
       if (!user) {
         throw new Error(`Map Harvest user ${entry.user.id} to a provider member email in --mapping`)
       }
@@ -308,8 +420,8 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
       if (entry.is_running || entry.timer_started_at) {
         throw new Error('Stop the running Harvest timer before exporting')
       }
-      if (entry.is_billed && !entry.invoice) {
-        throw new Error('Billed entry has no invoice; resolve it in Harvest before exporting')
+      if (entry.is_billed) {
+        transformations.externallyBilledEntries++
       }
       if (entry.invoice) {
         find('invoices', entry.invoice.id)
@@ -361,6 +473,8 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
         entry_date: date(entry.spent_date),
         duration_minutes: minutes,
         note: entry.notes || null,
+        externally_billed: Boolean(entry.is_billed),
+        import_metadata: { source: 'harvest', accountId: snapshot.accountId, entry },
         billable_snapshot: Boolean(entry.billable),
         hourly_rate_minor_snapshot: integer(entry.billable_rate ?? 0, 100, 'hourly rate'),
         currency_snapshot: find('clients', entry.client.id).currency || sender.currency || 'EUR'
@@ -369,7 +483,7 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
   }
   for (const invoice of snapshot.invoices) {
     attempt(`Invoice ${invoice.id}`, () => {
-      const status = { draft: 'DRAFT', open: 'ISSUED', paid: 'PAID' }[invoice.state]
+      const status = { draft: 'DRAFT', open: 'ISSUED', paid: 'PAID', closed: 'VOID' }[invoice.state]
       if (!status) {
         throw new Error(
           `Unsupported invoice state ${invoice.state}; closed/write-off invoices need manual reconciliation`
@@ -384,19 +498,33 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
       ) {
         throw new Error('Only currencies with two decimal minor units are supported')
       }
-      if (Number(invoice.amount) < 0) {
-        throw new Error('Credit invoices require manual reconciliation')
+      const isCredit = Number(invoice.amount) < 0
+      if (isCredit) {
+        transformations.creditInvoices++
+      }
+      if (invoice.state === 'closed') {
+        transformations.closedInvoices++
       }
       if (invoice.retainer) {
         throw new Error('Retainer invoices require manual reconciliation')
       }
       const client = find('clients', invoice.client.id)
       const invoiceId = id('invoice', invoice.id)
+      const creatorId = resolvedUsers[invoice.creator?.id] || actorId
       add('invoices.invoice', {
         id: invoiceId,
         organization_id: provider,
         client_organization_id: clientId(client.id),
         number: required(invoice.number, 'Invoice number'),
+        document_type: isCredit ? 'credit' : 'invoice',
+        import_metadata: {
+          source: 'harvest',
+          accountId: snapshot.accountId,
+          invoice,
+          payments: snapshot.payments.filter((payment) => payment.invoice_id === invoice.id)
+        },
+        created_at: invoice.created_at || `${invoice.issue_date}T00:00:00Z`,
+        updated_at: invoice.updated_at || invoice.created_at || `${invoice.issue_date}T00:00:00Z`,
         external_reference: `harvest:${snapshot.accountId}:${invoice.id}`,
         status,
         currency: invoice.currency,
@@ -413,7 +541,7 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
         recipient_name: client.name,
         recipient_address: client.address || '',
         recipient_locale: sender.preferred_locale || 'en',
-        created_by_id: actorId,
+        created_by_id: creatorId,
         issued_at: status === 'DRAFT' ? null : invoice.sent_at || `${invoice.issue_date}T00:00:00Z`
       })
       if (!Array.isArray(invoice.line_items) || !invoice.line_items.length) {
@@ -500,7 +628,8 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
           amount_minor: integer(payment.amount, 100, 'payment'),
           reference: payment.transaction_id || null,
           note: payment.notes || null,
-          created_by_id: actorId
+          created_by_id: paymentActor(payment),
+          created_at: payment.created_at || payment.paid_at || `${payment.paid_date}T00:00:00Z`
         })
       }
       for (const entry of snapshot.time_entries.filter((entry) => entry.invoice?.id === invoice.id)) {
@@ -521,6 +650,31 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
           time_entry_id: id('entry', entry.id)
         })
       }
+      const history = (kind, timestamp, actor, amount = null, source = invoice.id) => {
+        if (!timestamp) {
+          return
+        }
+        add('invoices.invoice_history', {
+          id: id(`history-${kind}`, source),
+          invoice_id: invoiceId,
+          action: kind,
+          actor_user_id: actor,
+          amount_minor: amount,
+          created_at: timestamp
+        })
+      }
+      history('CREATED', invoice.created_at, creatorId)
+      history('ISSUED', invoice.sent_at, creatorId)
+      for (const payment of payments) {
+        history(
+          'PAYMENT_REGISTERED',
+          payment.paid_at || `${payment.paid_date}T00:00:00Z`,
+          paymentActor(payment),
+          integer(payment.amount, 100, 'payment'),
+          `${invoice.id}:${payment.id}`
+        )
+      }
+      history('VOIDED', invoice.closed_at, creatorId, integer(invoice.due_amount, 100, 'written-off balance'))
       add('invoices.invoice_history', {
         id: id('invoice-history', invoice.id),
         invoice_id: invoiceId,
@@ -538,7 +692,8 @@ export function planHarvest(snapshot, { provider, actorId, users = {}, clients =
     errors,
     warnings,
     counts,
-    fingerprint: hash({ snapshot, provider, actorId, users, clients, weekStartsOn, sender })
+    transformations,
+    fingerprint: hash({ snapshot, provider, actorId, users, clients, createHistoricalUsers, weekStartsOn, sender })
   }
 }
 
@@ -616,6 +771,7 @@ export async function importHarvest(snapshot, options) {
       provider: provider.id,
       actorId: actor[0].id,
       users,
+      createHistoricalUsers: options.mapping?.createHistoricalUsers === true,
       clients,
       weekStartsOn: settings.week_starts_on,
       sender: provider
@@ -639,9 +795,21 @@ export async function importHarvest(snapshot, options) {
       await db.query('ROLLBACK')
       return { dryRun: !options.apply, alreadyImported: true, counts: plan.counts, warnings: plan.warnings, errors: [] }
     }
+    const columns = (
+      await db.query(
+        "SELECT table_schema,table_name,column_name FROM information_schema.columns WHERE (table_schema='timesheets' AND table_name='time_entry' AND column_name IN ('externally_billed','import_metadata')) OR (table_schema='invoices' AND table_name='invoice' AND column_name='import_metadata')"
+      )
+    ).rows
+    const requiredMigrations =
+      columns.length === 3 ? [] : ['timesheets/0008_imported_history.sql', 'invoices/0003_imported_history.sql']
+    if (requiredMigrations.length && options.apply) {
+      throw new Error(`Apply package migrations before import: ${requiredMigrations.join(', ')}`)
+    }
     // Check all primary and natural keys without changing the database.
     const naturalKeys = {
       'public.organization': ['slug'],
+      'public.user': ['email'],
+      'public.member': ['organization_id', 'user_id'],
       'timesheets.project': ['organization_id', 'name'],
       'timesheets.activity_type': ['organization_id', 'name'],
       'timesheets.weekly_timesheet': ['organization_id', 'user_id', 'week_starts_on'],
@@ -686,9 +854,11 @@ export async function importHarvest(snapshot, options) {
     }
     const summary = {
       dryRun: !options.apply,
+      requiredMigrations,
       alreadyImported: false,
       fingerprint: plan.fingerprint,
       counts: plan.counts,
+      transformations: plan.transformations,
       warnings: plan.warnings,
       errors: plan.errors
     }

@@ -304,6 +304,8 @@ export const timeEntry = timesheetsSchema.table(
     entryDate: date('entry_date', { mode: 'string' }).notNull(),
     durationMinutes: integer('duration_minutes').default(0).notNull(),
     note: text('note'),
+    externallyBilled: boolean('externally_billed').default(false).notNull(),
+    importMetadata: jsonb('import_metadata').$type<Record<string, unknown>>(),
     billableSnapshot: boolean('billable_snapshot').notNull(),
     hourlyRateMinorSnapshot: integer('hourly_rate_minor_snapshot').notNull(),
     currencySnapshot: text('currency_snapshot').notNull(),

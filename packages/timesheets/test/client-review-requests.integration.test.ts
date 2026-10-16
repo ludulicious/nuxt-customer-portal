@@ -33,7 +33,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       CREATE TABLE timesheets.submission (id text PRIMARY KEY, status text NOT NULL);
       CREATE TABLE timesheets.project (id text PRIMARY KEY, name text NOT NULL);
       CREATE TABLE timesheets.activity_type (id text PRIMARY KEY, name text NOT NULL);
-      CREATE TABLE timesheets.time_entry (id text PRIMARY KEY, organization_id text NOT NULL, client_organization_id text NOT NULL, submission_id text, user_id text, project_id text, activity_type_id text, entry_date date, duration_minutes integer, note text, billable_snapshot boolean, hourly_rate_minor_snapshot integer, currency_snapshot text, timer_started_at timestamp);
+      CREATE TABLE timesheets.time_entry (id text PRIMARY KEY, organization_id text NOT NULL, client_organization_id text NOT NULL, submission_id text, user_id text, project_id text, activity_type_id text, entry_date date, duration_minutes integer, note text, billable_snapshot boolean, hourly_rate_minor_snapshot integer, currency_snapshot text, timer_started_at timestamp, externally_billed boolean NOT NULL DEFAULT false, import_metadata jsonb);
       CREATE TABLE timesheets.client_review (id text PRIMARY KEY, submission_id text, client_organization_id text);
     `)
     await pool.query(readFileSync(new URL('../migrations/0007_client_review_requests.sql', import.meta.url), 'utf8'))
@@ -260,6 +260,24 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.ok((await invoiceSources()).has('entry'))
       assert.equal(requests.find((r) => r.id === replacement.id)!.supplementary, false)
     })
+    await t.test(
+      'historically billed time cannot be selected, directly invoiced or reopened without an invoice link',
+      async () => {
+        await pool.query(
+          "INSERT INTO timesheets.time_entry (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, externally_billed, hourly_rate_minor_snapshot, currency_snapshot) VALUES ('historical','provider','client','submission','person','project','activity','2019-12-31',60,true,true,10000,'EUR')"
+        )
+        assert.ok(!(await invoiceSources()).has('historical'))
+        await assert.rejects(
+          bridge.createInvoiceFromTimesheets('provider', 'sender', {
+            ...invoiceInput,
+            lines: [{ ...invoiceInput.lines[0]!, timeEntryIds: ['historical'] }]
+          }),
+          /unavailable for invoicing/
+        )
+        assert.equal(await bridge.hasActiveInvoiceSource('provider', ['historical']), true)
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id = 'historical'")
+      }
+    )
     await t.test('late time creates a supplement and does not alter previous approval', async () => {
       await pool.query(
         "INSERT INTO timesheets.time_entry (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, note, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot, timer_started_at) VALUES ('late','provider','client','second','person2','project','activity','2020-01-02',45,null,true,10000,'EUR',null)"

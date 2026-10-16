@@ -82,7 +82,11 @@ and `HARVEST_ACCOUNT_ID` in the environment to save a complete administrator exp
 Preview with `harvest import --input <file> --mapping <file> --provider <slug> --actor <email>`;
 apply the reviewed input with `--apply --backup-confirmed`. The mapping JSON contains
 `users` (Harvest user ID to existing provider member email) and optional `clients`
-(Harvest client ID to existing client organization ID).
+(Harvest client ID to existing client organization ID). Set `createHistoricalUsers: true`
+to preserve unmapped people as distinct disabled historical members without invitations.
+Credits, written-off invoices and original lifecycle events are retained; externally billed
+time stays excluded from new invoicing even without a source invoice link. Apply the
+Timesheets and Invoices history migrations before importing.
 
 See the [Harvest migration guide](https://nuxt-customer-portal.com/guides/harvest-migration)
 for prerequisites, reconciliation, supported history, and limitations.
