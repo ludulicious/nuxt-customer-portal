@@ -220,6 +220,7 @@
         "invoiceHistoryTitle": "Factuurgeschiedenis",
         "invoiceNotFound": "Deze factuur kon niet worden gevonden",
         "invoiceHistory": {
+          "harvest_imported": "Geïmporteerd uit Harvest",
           "created": "Factuur aangemaakt",
           "edited": "Factuur bijgewerkt",
           "issued": "Factuur uitgegeven",

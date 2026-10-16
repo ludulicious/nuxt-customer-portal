@@ -113,6 +113,7 @@ export const invoice = invoicesSchema.table(
     documentType: text('document_type').default('invoice').notNull(),
     originalInvoiceId: text('original_invoice_id'),
     externalReference: text('external_reference'),
+    importMetadata: jsonb('import_metadata').$type<Record<string, unknown>>(),
     automated: boolean('automated').default(false).notNull(),
     status: invoiceStatus('status').default('DRAFT').notNull(),
     currency: text('currency').notNull(),

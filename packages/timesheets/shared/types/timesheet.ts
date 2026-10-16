@@ -195,6 +195,7 @@ export interface ProjectDto {
 }
 
 export interface TimeEntryDto {
+  externallyBilled?: boolean
   id: string
   projectId: string
   activityTypeId: string

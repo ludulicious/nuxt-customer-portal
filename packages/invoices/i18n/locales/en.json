@@ -220,6 +220,7 @@
         "invoiceHistoryTitle": "Invoice history",
         "invoiceNotFound": "This invoice could not be found",
         "invoiceHistory": {
+          "harvest_imported": "Imported from Harvest",
           "created": "Invoice created",
           "edited": "Invoice updated",
           "issued": "Invoice issued",

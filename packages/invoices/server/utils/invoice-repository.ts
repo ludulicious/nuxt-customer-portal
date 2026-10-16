@@ -525,12 +525,13 @@ export const listInvoices = async (organizationId: string, invoiceId?: string): 
       .orderBy(desc(invoiceEmailDelivery.sentAt))
   ])
   return rows.map((row) => {
+    const { importMetadata: _importMetadata, ...visibleRow } = row
     const selectedLines = lines.filter((item) => item.invoiceId === row.id)
     const selectedPayments = payments.filter((item) => item.invoiceId === row.id)
     const amounts = totals(selectedLines, selectedPayments)
     const sent = reminders.filter((item) => item.invoiceId === row.id)
     return {
-      ...row,
+      ...visibleRow,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       issuedAt: row.issuedAt?.toISOString() ?? null,
