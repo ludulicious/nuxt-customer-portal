@@ -31,7 +31,12 @@ const purchaseToken =
     ? route.query.purchase
     : ''
 useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
-const { data: delivery, refresh: refreshDelivery } = await useFetch<{ status: string; files: PurchaseDownload[] }>(
+const {
+  data: delivery,
+  error: deliveryError,
+  status: deliveryStatus,
+  refresh: refreshDelivery
+} = await useFetch<{ status: string; files: PurchaseDownload[] }>(
   () => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`,
   { immediate: !!purchaseToken, watch: false }
 )
@@ -101,11 +106,10 @@ const themeStyle = computed(() => ({
         <span class="secure-label">{{ t('products.secureCheckout') }}</span>
       </header>
 
-      <UAlert v-if="delivery?.status === 'accepted'" :title="t('products.invoicePaymentHelp')" class="mb-4" />
       <section class="return-grid" aria-labelledby="payment-return-title">
         <div class="product-half">
           <p class="selection-label">{{ t('products.yourSelection') }}</p>
-          <div class="product-row">
+          <div class="product-row" :class="{ 'product-row--without-image': !product.thumbnailImage }">
             <NuxtImg
               v-if="product.thumbnailImage"
               :provider="imageProvider(product.thumbnailImage)"
@@ -134,9 +138,7 @@ const themeStyle = computed(() => ({
         <div :class="['outcome-half', `outcome--${outcome}`]" role="status" aria-live="polite">
           <div class="outcome-mark">
             <UIcon :name="outcomeIcon" class="outcome-icon" aria-hidden="true" />
-            <span>{{
-              t(delivery?.status === 'accepted' ? 'products.accepted' : `products.paymentStatus${outcomeKey}`)
-            }}</span>
+            <span>{{ t(`products.paymentStatus${outcomeKey}`) }}</span>
           </div>
           <h1 id="payment-return-title">{{ t(`products.paymentReturnTitle${outcomeKey}`) }}</h1>
           <p>
@@ -147,15 +149,37 @@ const themeStyle = computed(() => ({
           <p class="quiet-help">
             {{ t(outcome === 'success' ? 'products.paymentReturnSuccessHelp' : 'products.paymentReturnHelp') }}
           </p>
-          <div v-if="delivery?.files.length" class="mt-6 space-y-2">
-            <h2>{{ t('products.purchasedFiles') }}</h2>
-            <a v-for="file in delivery.files" :key="file.id" :href="file.url" class="block underline" rel="noreferrer">
-              {{ t('products.download') }}: {{ file.name }}
-            </a>
-          </div>
-          <UButton v-else-if="purchaseToken" variant="link" @click="refreshDelivery()">{{
-            t('products.refreshDownloads')
-          }}</UButton>
+          <section
+            v-if="
+              delivery?.files.length || deliveryError || (purchaseToken && (!delivery || delivery.status === 'pending'))
+            "
+            class="return-downloads"
+            aria-labelledby="return-downloads-title"
+          >
+            <h2 id="return-downloads-title">{{ t('products.orderDownloads') }}</h2>
+            <ul v-if="delivery?.files.length" class="download-list">
+              <li v-for="file in delivery.files" :key="file.id">
+                <a :href="file.url" class="download-file" rel="noreferrer" referrerpolicy="no-referrer">
+                  <UIcon name="i-lucide-file-down" class="download-icon" aria-hidden="true" />
+                  <span class="download-name">{{ file.name }}</span>
+                  <UIcon name="i-lucide-arrow-down-to-line" class="download-icon" aria-hidden="true" />
+                </a>
+              </li>
+            </ul>
+            <template v-else>
+              <p :role="deliveryError ? 'alert' : undefined">
+                {{ t(deliveryError ? 'products.orderDownloadsError' : 'products.orderDownloadsPending') }}
+              </p>
+              <button
+                class="downloads-refresh"
+                type="button"
+                :disabled="deliveryStatus === 'pending'"
+                @click="refreshDelivery()"
+              >
+                {{ t('products.refreshDownloads') }}
+              </button>
+            </template>
+          </section>
           <div class="return-actions">
             <NuxtLink :to="outcome === 'success' ? '/purchases' : checkoutUrl" class="retry-action">
               {{ t(outcome === 'success' ? 'products.purchases' : 'products.tryAgain') }}
@@ -172,8 +196,12 @@ const themeStyle = computed(() => ({
 
 <style scoped>
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
- * genre: editorial · macrostructure: Split Studio · theme: host checkout · enrichment: product thumbnail
+ * genre: editorial · macrostructure: Order receipt · theme: host checkout · enrichment: product thumbnail
  */
+:global(html),
+:global(body) {
+  overflow-x: clip;
+}
 .payment-return-page {
   min-height: 100dvh;
   overflow-x: clip;
@@ -220,9 +248,13 @@ const themeStyle = computed(() => ({
 .return-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(32px, 7vw, 88px);
-  align-items: center;
-  padding-block: clamp(52px, 9vw, 112px);
+  gap: 0;
+  align-items: stretch;
+  margin-block: clamp(28px, 5vw, 56px);
+  border: 1px solid var(--checkout-border);
+  border-radius: var(--checkout-radius);
+  background: var(--checkout-surface);
+  overflow: clip;
 }
 .product-half {
   order: 2;
@@ -230,16 +262,12 @@ const themeStyle = computed(() => ({
 .outcome-half {
   order: 1;
   padding: clamp(24px, 4vw, 48px);
-  border: 1px solid var(--checkout-border);
-  border-radius: var(--checkout-radius);
-  background: var(--checkout-surface);
 }
 .product-half {
   min-width: 0;
   padding: clamp(20px, 3vw, 32px);
-  border: 1px solid var(--checkout-border);
-  border-radius: var(--checkout-radius);
-  background: var(--checkout-surface);
+  border-top: 1px solid var(--checkout-border);
+  background: var(--checkout-paper);
 }
 .selection-label {
   margin: 0 0 20px;
@@ -251,13 +279,16 @@ const themeStyle = computed(() => ({
 }
 .product-row {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 18px;
   align-items: center;
 }
+.product-row--without-image {
+  grid-template-columns: minmax(0, 1fr);
+}
 .return-thumbnail {
-  width: 88px;
-  height: 88px;
+  width: 64px;
+  height: 64px;
   border-radius: calc(var(--checkout-radius) * 0.55);
   object-fit: cover;
 }
@@ -271,14 +302,14 @@ h2 {
 }
 h1 {
   max-width: 22ch;
-  font-family: var(--checkout-body-font);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-family: var(--checkout-display-font);
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.12;
 }
 h2 {
-  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.5rem);
   line-height: 1.08;
 }
 .product-row p,
@@ -308,7 +339,7 @@ h2 {
   min-height: 44px;
   align-items: center;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   color: var(--checkout-accent);
   font-size: 0.82rem;
   font-weight: 700;
@@ -339,6 +370,59 @@ h2 {
 .outcome-half .quiet-help {
   margin-top: 8px;
   font-size: 0.88rem;
+}
+.return-downloads {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--checkout-border);
+}
+.return-downloads h2 {
+  font-family: var(--checkout-body-font);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.download-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.download-file {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px;
+  border: 1px solid var(--checkout-border);
+  border-radius: calc(var(--checkout-radius) * 0.45);
+  color: var(--checkout-action);
+  text-decoration: none;
+}
+.download-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.download-icon {
+  width: 100%;
+  height: 20px;
+}
+.downloads-refresh {
+  min-height: 44px;
+  margin-top: 8px;
+  color: var(--checkout-action);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.downloads-refresh:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .return-actions {
   display: flex;
@@ -373,6 +457,10 @@ h2 {
   text-underline-offset: 4px;
 }
 @media (hover: hover) and (pointer: fine) {
+  .download-file:hover {
+    background: var(--checkout-paper);
+    border-color: var(--checkout-action);
+  }
   .retry-action:hover {
     transform: translateY(-1px);
   }
@@ -385,6 +473,8 @@ h2 {
   transform: translateY(0);
   opacity: 0.88;
 }
+.download-file:focus-visible,
+.downloads-refresh:focus-visible,
 .retry-action:focus-visible,
 .offering-action:focus-visible,
 .host-return:focus-visible {
@@ -419,10 +509,12 @@ h2 {
     justify-self: end;
   }
   .return-grid {
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   }
   .product-half {
     order: 1;
+    border-top: 0;
+    border-right: 1px solid var(--checkout-border);
   }
   .outcome-half {
     order: 2;

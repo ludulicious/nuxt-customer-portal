@@ -126,16 +126,16 @@
     "paymentReturnCancelled": "Payment was cancelled. Review your details and try again when you’re ready.",
     "paymentReturnFailed": "Payment was not completed. Review your details and try again.",
     "paymentReturnExpired": "The payment session expired. Review your details and start checkout again.",
-    "paymentReturnSuccess": "Your payment was received and your purchase is being prepared.",
+    "paymentReturnSuccess": "Your order has been received. Here is what happens next.",
     "paymentReturnTitleCancelled": "Your payment was cancelled",
     "paymentReturnTitleFailed": "Your payment didn’t go through",
     "paymentReturnTitleExpired": "Your payment session expired",
-    "paymentReturnTitleSuccess": "Your purchase is confirmed",
+    "paymentReturnTitleSuccess": "Thank you for your order",
     "backToCheckout": "Back to checkout",
     "tryAgain": "Try again",
     "paymentReturnHelp": "No purchase was completed and you have not been charged.",
     "paymentReturnSuccessHelp": "You can review your purchase and next steps in the portal.",
-    "paymentStatusSuccess": "Payment received",
+    "paymentStatusSuccess": "Order received",
     "paymentStatusCancelled": "Payment cancelled",
     "paymentStatusFailed": "Payment failed",
     "paymentStatusExpired": "Session expired",
@@ -620,6 +620,9 @@
     "accepted": "Accepted · awaiting payment",
     "paymentunpaid": "Awaiting payment",
     "paymentpartial": "Partially paid",
-    "paymentpaid": "Paid"
+    "paymentpaid": "Paid",
+    "orderDownloads": "Your downloads",
+    "orderDownloadsPending": "Your files will appear here once your order is confirmed.",
+    "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email."
   }
 }

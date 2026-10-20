@@ -126,16 +126,16 @@
     "paymentReturnCancelled": "De betaling is geannuleerd. Controleer je gegevens en probeer het opnieuw wanneer je er klaar voor bent.",
     "paymentReturnFailed": "De betaling is niet voltooid. Controleer je gegevens en probeer het opnieuw.",
     "paymentReturnExpired": "De betaalsessie is verlopen. Controleer je gegevens en start de betaling opnieuw.",
-    "paymentReturnSuccess": "Je betaling is ontvangen en je aankoop wordt klaargemaakt.",
+    "paymentReturnSuccess": "Je bestelling is ontvangen. Hieronder lees je wat er nu gebeurt.",
     "paymentReturnTitleCancelled": "Je betaling is geannuleerd",
     "paymentReturnTitleFailed": "Je betaling is niet gelukt",
     "paymentReturnTitleExpired": "Je betaalsessie is verlopen",
-    "paymentReturnTitleSuccess": "Je aankoop is bevestigd",
+    "paymentReturnTitleSuccess": "Bedankt voor je bestelling",
     "backToCheckout": "Terug naar afrekenen",
     "tryAgain": "Probeer opnieuw",
     "paymentReturnHelp": "Er is geen aankoop voltooid en er is niets afgeschreven.",
     "paymentReturnSuccessHelp": "Je kunt je aankoop en de vervolgstappen in het portaal bekijken.",
-    "paymentStatusSuccess": "Betaling ontvangen",
+    "paymentStatusSuccess": "Bestelling ontvangen",
     "paymentStatusCancelled": "Betaling geannuleerd",
     "paymentStatusFailed": "Betaling mislukt",
     "paymentStatusExpired": "Sessie verlopen",
@@ -620,6 +620,9 @@
     "accepted": "Bevestigd · wacht op betaling",
     "paymentunpaid": "Wacht op betaling",
     "paymentpartial": "Gedeeltelijk betaald",
-    "paymentpaid": "Betaald"
+    "paymentpaid": "Betaald",
+    "orderDownloads": "Je downloads",
+    "orderDownloadsPending": "Je bestanden verschijnen hier zodra je bestelling is bevestigd.",
+    "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail."
   }
 }
