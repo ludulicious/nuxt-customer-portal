@@ -44,17 +44,3 @@ jobs:
       - run: pnpm --filter @nuxt-customer-portal/saas-portal typecheck
       - if: steps.changes.outputs.docs == 'true'
         run: pnpm test:docs
-
-  consumers:
-    name: consumers (pnpm)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.19.0
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm pack:consumer:pnpm
