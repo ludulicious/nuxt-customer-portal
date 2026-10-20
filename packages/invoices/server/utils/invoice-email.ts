@@ -136,6 +136,16 @@ export const deliverInvoiceEmail = async (
       message: issue ? 'Only draft invoices can be issued' : 'Only issued invoices can be resent'
     })
   }
+  if (
+    issue &&
+    (selected.taxReviewRequired ||
+      (selected.agreedTotalMinor != null && selected.totalMinor !== selected.agreedTotalMinor))
+  ) {
+    throw createError({
+      statusCode: 409,
+      message: 'Review taxes and preserve the agreed purchase total before issuing this invoice'
+    })
+  }
   const preview = await getInvoiceEmailPreview(organizationId, id, input.locale, purpose)
   input = { ...input, locale: preview.locale === 'en' ? 'en' : 'nl' }
   if (!preview.emailProviderConfigured) {

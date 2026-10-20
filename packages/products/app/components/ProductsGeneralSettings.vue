@@ -56,6 +56,12 @@ function save() {
       ><UFormField name="enabled" :label="t('products.storeEnabled')"
         ><USwitch v-model="settings.enabled"
       /></UFormField>
+      <UFormField name="onlinePayment" :label="t('products.onlinePayment')"
+        ><USwitch v-model="settings.onlinePayment"
+      /></UFormField>
+      <UFormField name="invoicePayment" :label="t('products.invoicePayment')" :help="t('products.invoicePaymentHelp')"
+        ><USwitch v-model="settings.invoicePayment"
+      /></UFormField>
       <UFormField name="mode" :label="t('products.storeMode')" :help="t('products.storeModeHelp')">
         <USelect v-model="settings.mode" :items="modeOptions" class="w-full sm:w-80" />
       </UFormField>
@@ -101,10 +107,10 @@ function save() {
         </div>
       </fieldset>
       <ul class="space-y-1 text-sm">
-        <li v-if="settings.mode === 'live'">
+        <li v-if="settings.mode === 'live' && settings.onlinePayment">
           Stripe: {{ t(health?.stripeConfigured ? 'products.configured' : 'products.missing') }}
         </li>
-        <li v-if="settings.mode === 'live'">
+        <li v-if="settings.mode === 'live' && settings.onlinePayment">
           {{ t('products.webhook') }}: {{ t(health?.webhookConfigured ? 'products.configured' : 'products.missing') }}
         </li>
         <li>

@@ -38,6 +38,33 @@ const senderLogo = computed(() => {
     ? branding?.markDark || branding?.markLight || ''
     : branding?.markLight || branding?.markDark || ''
 })
+const deferredInvoice = computed(() => 'agreedTotalMinor' in props.invoice && props.invoice.agreedTotalMinor !== null)
+const taxReview = reactive({
+  rates: props.invoice.lines.map((line) => ({ lineId: line.id, rate: line.vatRateBasisPoints / 100 }))
+})
+const taxReviewSchema = z.object({
+  rates: z.array(z.object({ lineId: z.string(), rate: z.number().min(0).max(100).multipleOf(0.01) })).min(1)
+})
+async function reviewTaxes() {
+  busy.value = true
+  try {
+    await $fetch(`/api/invoices/admin/invoices/${encodeURIComponent(props.invoice.id)}/tax-review`, {
+      method: 'POST',
+      body: {
+        rates: taxReview.rates.map((line) => ({ lineId: line.lineId, vatRateBasisPoints: Math.round(line.rate * 100) }))
+      }
+    })
+    await props.refresh()
+  } catch (error) {
+    toast.add({
+      title: t('features.invoices.messages.saveError'),
+      description: (error as { data?: { message?: string } }).data?.message,
+      color: 'error'
+    })
+  } finally {
+    busy.value = false
+  }
+}
 const api = useInvoices()
 const toast = useToast()
 const busy = ref(false)
@@ -154,6 +181,9 @@ const providerStatusColor = (status: string) => {
 const providerStatusLabel = (status: string) =>
   isKnownEmailProviderEvent(status) ? t(`features.invoices.admin.emailProviderStatus.${status}`) : status
 const historyText = (entry: InvoiceHistoryDto) => {
+  if (entry.action === 'TAX_REVIEWED') {
+    return t('features.invoices.reviewTaxes')
+  }
   if (entry.action === 'PAYMENT_REGISTERED') {
     return t('features.invoices.admin.invoiceHistory.payment', { amount: money(entry.amountMinor ?? 0) })
   }
@@ -381,6 +411,20 @@ if (!isClient.value) {
 
 <template>
   <div class="invoice-detail space-y-6">
+    <UCard v-if="!isClient && deferredInvoice && invoice.status === 'DRAFT'" class="mb-4">
+      <UForm :state="taxReview" :schema="taxReviewSchema" novalidate class="space-y-4" @submit="reviewTaxes">
+        <p>{{ t('features.invoices.taxReviewHelp') }}</p>
+        <UFormField
+          v-for="(line, index) in taxReview.rates"
+          :key="line.lineId"
+          :name="`rates.${index}.rate`"
+          :label="invoice.lines[index]?.description"
+        >
+          <UInputNumber v-model="line.rate" :min="0" :max="100" :step="0.01" />
+        </UFormField>
+        <UButton type="submit" :loading="busy">{{ t('features.invoices.reviewTaxes') }}</UButton>
+      </UForm>
+    </UCard>
     <header class="invoice-detail-header">
       <div class="min-w-0">
         <UButton

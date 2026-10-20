@@ -40,9 +40,12 @@ export const priceSchema = z.object({
   taxBehavior: z.enum(['inclusive', 'exclusive'])
 })
 const productShape = {
+  visibility: z.enum(['listed', 'unlisted']).default('listed'),
   planning: productPlanningSchema.default(defaultPlanning()),
   isFree: z.boolean().default(false),
-  slug: text(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: text(120)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .or(z.literal('')),
   type: z.enum(['digital', 'service']),
   categoryId: text(100).min(1).nullable().default(null),
   status: z.enum(['draft', 'published', 'archived']),
@@ -62,6 +65,9 @@ const productShape = {
   prices: z.array(priceSchema.extend({ amount: z.number().int().nonnegative().max(100000000) })).max(30)
 }
 const validateProduct = (v: z.infer<ReturnType<typeof z.object<typeof productShape>>>, ctx: z.RefinementCtx) => {
+  if (v.visibility === 'listed' && !v.slug) {
+    ctx.addIssue({ code: 'custom', path: ['slug'], message: 'A slug is required' })
+  }
   if (v.planning.enabled && v.type !== 'service') {
     ctx.addIssue({ code: 'custom', path: ['planning.enabled'], message: 'Only service products can be plannable' })
   }
@@ -157,6 +163,7 @@ export const billingSchema = z
     }
   })
 export const checkoutSchema = z.object({
+  paymentMethod: z.enum(['online', 'invoice']).optional(),
   holdToken: z.string().min(32).max(200).optional(),
   productId: text(100).min(1),
   priceId: text(100).min(1),
@@ -181,6 +188,8 @@ export const listSchema = z.object({
     .optional()
 })
 export const settingsShape = {
+  onlinePayment: z.boolean().default(true),
+  invoicePayment: z.boolean().default(false),
   checkoutAppearance: checkoutAppearanceSchema.default(defaultCheckoutAppearance()),
   markdownStyle: markdownStyleSchema.optional(),
   currencyTaxBehavior: z
@@ -262,6 +271,7 @@ export const hasRequiredPrices = (
 export const emptyProduct = () => ({
   planning: defaultPlanning(),
   isFree: false,
+  visibility: 'listed' as 'listed' | 'unlisted',
   slug: '',
   type: 'digital' as const,
   categoryId: null as string | null,

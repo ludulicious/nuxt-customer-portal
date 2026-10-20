@@ -607,6 +607,19 @@
       "saveFailed": "Could not save the offer.",
       "priceChanged": "The price has changed. Review the current price before continuing.",
       "reviewPrice": "Review current price"
-    }
+    },
+    "visibility": "Visibility",
+    "visibilityHelp": "Unlisted products use a random URL and do not appear in the catalog. Anyone with the URL can purchase.",
+    "listed": "Listed",
+    "unlisted": "Unlisted",
+    "onlinePayment": "Online payment",
+    "invoicePayment": "Pay later by invoice",
+    "invoicePaymentHelp": "Your order is confirmed immediately. An invoice will follow separately.",
+    "paymentMethod": "Payment method",
+    "confirmOrder": "Confirm order",
+    "accepted": "Accepted · awaiting payment",
+    "paymentunpaid": "Awaiting payment",
+    "paymentpartial": "Partially paid",
+    "paymentpaid": "Paid"
   }
 }

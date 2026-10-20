@@ -485,8 +485,8 @@ export async function prepareOrder(order: Order) {
   let failure: string | undefined
   if (
     hold.status !== 'reserved' ||
-    !order.snapshot.paymentCompletedAt ||
-    Date.parse(order.snapshot.paymentCompletedAt) > hold.expires_at.getTime()
+    !(order.snapshot.acceptedAt || order.snapshot.paymentCompletedAt) ||
+    Date.parse((order.snapshot.acceptedAt || order.snapshot.paymentCompletedAt)!) > hold.expires_at.getTime()
   ) {
     failure = 'Reservation expired before payment completed'
   } else {
@@ -544,8 +544,8 @@ export async function confirm(tx: PoolClient, order: Order) {
   if (
     order.snapshot.planningFailure ||
     hold.status !== 'reserved' ||
-    !order.snapshot.paymentCompletedAt ||
-    Date.parse(order.snapshot.paymentCompletedAt) > hold.expires_at.getTime()
+    !(order.snapshot.acceptedAt || order.snapshot.paymentCompletedAt) ||
+    Date.parse((order.snapshot.acceptedAt || order.snapshot.paymentCompletedAt)!) > hold.expires_at.getTime()
   ) {
     await tx.query(
       "UPDATE products.orders SET snapshot=jsonb_set(snapshot,'{planningFailure}',to_jsonb($2::text)) WHERE id=$1",

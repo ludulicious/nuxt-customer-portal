@@ -20,6 +20,6 @@ export default defineEventHandler(async (event) => {
   const visibility = q.status === 'draft' ? 'draft' : 'published'
   const store = await catalogAccess(event, visibility)
   setHeader(event, 'Cache-Control', 'private, no-store')
-  const page = await listProducts(store.organization_id, { ...q, status: visibility }, false)
+  const page = await listProducts(store.organization_id, { ...q, status: visibility }, false, true)
   return { ...page, items: await Promise.all(page.items.map((p) => publicProduct(p, q.locale, q.currency, at))) }
 })

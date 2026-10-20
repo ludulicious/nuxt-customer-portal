@@ -607,6 +607,19 @@
       "saveFailed": "De aanbieding kon niet worden opgeslagen.",
       "priceChanged": "De prijs is gewijzigd. Bekijk de huidige prijs voordat je verdergaat.",
       "reviewPrice": "Huidige prijs bekijken"
-    }
+    },
+    "visibility": "Zichtbaarheid",
+    "visibilityHelp": "Niet-vermelde producten krijgen een willekeurige URL en verschijnen niet in de catalogus. Iedereen met de URL kan bestellen.",
+    "listed": "Vermeld",
+    "unlisted": "Niet vermeld",
+    "onlinePayment": "Online betalen",
+    "invoicePayment": "Later betalen per factuur",
+    "invoicePaymentHelp": "Je bestelling wordt direct bevestigd. Je ontvangt de factuur later apart.",
+    "paymentMethod": "Betaalmethode",
+    "confirmOrder": "Bestelling bevestigen",
+    "accepted": "Bevestigd · wacht op betaling",
+    "paymentunpaid": "Wacht op betaling",
+    "paymentpartial": "Gedeeltelijk betaald",
+    "paymentpaid": "Betaald"
   }
 }

@@ -6,6 +6,7 @@ import { firstInvoiceNumber, incrementInvoiceNumber } from '../../shared/invoice
 import { getOrganizationInvoiceProfile, requireInvoicesEnabled } from './invoice-repository'
 
 export interface CommerceDocument {
+  deferred?: boolean
   reference: string
   storeId: string
   clientId: string
@@ -77,7 +78,13 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
     taxExempt?: string
   } | null
   const notes = [
-    input.locale === 'nl' ? 'Automatisch verwerkt via Stripe.' : 'Automatically reconciled through Stripe.',
+    input.deferred
+      ? input.locale === 'nl'
+        ? 'Factuur volgt. Controleer de btw-verdeling voor verzending.'
+        : 'Invoice to follow. Review the tax breakdown before sending.'
+      : input.locale === 'nl'
+        ? 'Automatisch verwerkt via Stripe.'
+        : 'Automatically reconciled through Stripe.',
     input.paymentReference
   ]
   if (input.originalInvoiceId) {
@@ -111,7 +118,7 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
     today = new Date().toISOString().slice(0, 10)
   await tx.query(
     `INSERT INTO invoices.invoice(id,organization_id,client_organization_id,number,status,currency,issue_date,due_date,subject,notes,sender_name,sender_logo,sender_address,sender_country,sender_registration,sender_vat_number,sender_iban,sender_bic,recipient_name,recipient_address,recipient_email,recipient_locale,created_by_id,issued_at,document_type,original_invoice_id,external_reference,automated)
- VALUES($1,$2,$3,$4,'PAID',$5,$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,now(),$22,$23,$24,true)`,
+ VALUES($1,$2,$3,$4,$25::invoices.invoice_status,$5,$6,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,CASE WHEN $25::text='DRAFT' THEN NULL ELSE now() END,$22,$23,$24,true)`,
     [
       id,
       input.storeId,
@@ -136,7 +143,8 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
       input.actorId,
       input.originalInvoiceId ? 'credit' : 'invoice',
       input.originalInvoiceId || null,
-      input.reference
+      input.reference,
+      input.deferred ? 'DRAFT' : 'PAID'
     ]
   )
   for (const [position, line] of input.lines.entries()) {
@@ -156,19 +164,27 @@ export async function createCommerceDocument(tx: PoolClient, input: CommerceDocu
       ]
     )
   }
-  await tx.query(
-    'INSERT INTO invoices.invoice_payment(id,invoice_id,paid_on,amount_minor,reference,note,created_by_id) VALUES($1,$2,$3,$4,$5,$6,$7)',
-    [
-      randomUUID(),
+  if (!input.deferred) {
+    await tx.query(
+      'INSERT INTO invoices.invoice_payment(id,invoice_id,paid_on,amount_minor,reference,note,created_by_id) VALUES($1,$2,$3,$4,$5,$6,$7)',
+      [
+        randomUUID(),
+        id,
+        today,
+        input.total,
+        input.paymentReference,
+        'Automatically reconciled provider transaction',
+        input.actorId
+      ]
+    )
+  }
+  if (input.deferred) {
+    await tx.query('UPDATE invoices.invoice SET agreed_total_minor=$2,tax_review_required=true WHERE id=$1', [
       id,
-      today,
-      input.total,
-      input.paymentReference,
-      'Automatically reconciled provider transaction',
-      input.actorId
-    ]
-  )
-  for (const action of ['CREATED', 'ISSUED', 'PAYMENT_REGISTERED']) {
+      input.total
+    ])
+  }
+  for (const action of input.deferred ? ['CREATED'] : ['CREATED', 'ISSUED', 'PAYMENT_REGISTERED']) {
     await tx.query(
       'INSERT INTO invoices.invoice_history(id,invoice_id,action,actor_user_id,amount_minor) VALUES($1,$2,$3,$4,$5)',
       [randomUUID(), id, action, input.actorId, input.total]

@@ -113,6 +113,8 @@ export const useProducts = () => ({
       enabled: boolean
       mode: 'sandbox' | 'live'
       defaultLocale: 'en' | 'nl'
+      onlinePayment: boolean
+      invoicePayment: boolean
       stripeConfigured: boolean
       webhookConfigured: boolean
       storageConfigured: boolean
