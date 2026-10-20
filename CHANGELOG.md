@@ -1,5 +1,34 @@
 # Nuxt Customer Portal
 
+## 0.8.0
+
+Accept purchases with online payment, later invoicing, or both. Deferred orders
+release files and confirm appointments immediately while creating one unsent
+invoice draft. Review the tax breakdown without changing the agreed total, then
+use the existing invoice sending, payment recording, and reminder tools.
+
+Add unlisted products with server-generated unguessable slugs. They remain
+available through individual product pages and checkout while being excluded
+from catalogs and appointment discovery. Existing prices and scheduled offers
+also apply to unlisted products.
+
+Provide permanent purchase-file links in emails and checkout results, with
+tracked delivery requests and refund/dispute checks. Add validated conditional
+email sections and previews with or without downloads.
+
+Keep PR checks lightweight and move compatibility, packaging, browser, and
+Docker verification to the shared release gate. npm and Docker publication both
+wait for the full suite and use the same verified commit.
+
+Apply Products migrations `0019_purchase_downloads.sql` and
+`0020_deferred_payments.sql`, plus Invoices migration
+`0004_deferred_invoice_review.sql`, before deploying. Apply all earlier pending
+migrations as usual. Existing stores retain online payment and listed products.
+Deferred checkout requires inclusive prices and the invoice integration. Deploy
+the portal before the companion Shannon storefront update.
+
+All public packages and portal apps use `0.8.0`.
+
 ## 0.6.1
 
 Add reusable Harvest export and one-time import commands with read-only previews,
