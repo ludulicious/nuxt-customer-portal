@@ -2,7 +2,14 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { productValidationMessage } from '../shared/validation-messages'
-import { productSchema, emptyProduct, categorySchema, billingSchema, settingsSchema } from '../shared/validation'
+import {
+  productSchema,
+  productPricingSchema,
+  emptyProduct,
+  categorySchema,
+  billingSchema,
+  settingsSchema
+} from '../shared/validation'
 
 test('product errors explain required fields, slug format, text limits and prices', () => {
   const value = {
@@ -68,4 +75,23 @@ test('category, billing and store errors have actionable messages', () => {
   const en = JSON.parse(readFileSync(new URL('../i18n/locales/en.json', import.meta.url), 'utf8')).products.validation
   const nl = JSON.parse(readFileSync(new URL('../i18n/locales/nl.json', import.meta.url), 'utf8')).products.validation
   assert.deepEqual(Object.keys(en).sort(), Object.keys(nl).sort())
+})
+
+test('pricing requires positive amounts for every submitted currency even on draft products', () => {
+  const prices = [
+    { currency: 'EUR', amount: 5000, taxBehavior: 'inclusive' },
+    { currency: 'USD', amount: 0, taxBehavior: 'inclusive' }
+  ]
+  const result = productPricingSchema.safeParse({ isFree: false, prices })
+  assert.equal(result.success, false)
+  const issue = result.error!.issues[0]!
+  assert.deepEqual(issue.path, ['prices', 1, 'amount'])
+  assert.equal(productValidationMessage(issue, { prices }).key, 'products.validation.positivePrice')
+  assert.ok(
+    productPricingSchema.safeParse({ isFree: false, prices: prices.map((price) => ({ ...price, amount: 5000 })) })
+      .success
+  )
+  assert.ok(productPricingSchema.safeParse({ isFree: true, prices: [] }).success)
+  assert.equal(productPricingSchema.safeParse({ isFree: false, prices: [] }).success, false)
+  assert.equal(productPricingSchema.safeParse({ isFree: false, prices: [prices[0], prices[0]] }).success, false)
 })
