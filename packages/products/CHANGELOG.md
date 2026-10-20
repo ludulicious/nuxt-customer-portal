@@ -1,5 +1,14 @@
 # Products
 
+## 0.8.2
+
+### Patch Changes
+
+- ab7f1f0: Use neutral order confirmation wording for free, paid, and invoiced orders. Align the checkout result sections, improve download actions on mobile, and preserve localized download filenames and extensions across storage delivery paths.
+  - @nuxt-customer-portal/clients@0.8.2
+  - @nuxt-customer-portal/core@0.8.2
+  - @nuxt-customer-portal/ui@0.8.2
+
 ## 0.8.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # Product invoices
 
+## 0.8.2
+
+### Patch Changes
+
+- Updated dependencies [ab7f1f0]
+  - @nuxt-customer-portal/products@0.8.2
+  - @nuxt-customer-portal/core@0.8.2
+  - @nuxt-customer-portal/invoices@0.8.2
+
 ## 0.8.1
 
 ### Patch Changes
