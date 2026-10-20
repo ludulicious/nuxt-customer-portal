@@ -1,5 +1,14 @@
 # Nuxt Customer Portal
 
+## 0.8.1
+
+Show every required store currency when editing product prices. Validate positive
+amounts before saving, including on draft products, and display actionable
+validation messages instead of incorrectly reporting that a price is already in use.
+
+All public packages and portal apps use `0.8.1`. No new database migrations are
+required beyond those included in `0.8.0`.
+
 ## 0.8.0
 
 Accept purchases with online payment, later invoicing, or both. Deferred orders

@@ -1,5 +1,14 @@
 # Products
 
+## 0.8.1
+
+### Patch Changes
+
+- Show all required store currencies when editing product prices and validate positive prices with actionable messages instead of reporting a duplicate value.
+  - @nuxt-customer-portal/clients@0.8.1
+  - @nuxt-customer-portal/core@0.8.1
+  - @nuxt-customer-portal/ui@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
