@@ -6,6 +6,8 @@ Track changes with GitHub issues and integrate them through pull requests target
 
 Use the GitHub plugin for GitHub operations such as issues, pull requests, reviews, CI workflows, merges, and releases. Do not use the GitHub CLI or browser UI for these operations.
 
+Release-creation exception: when the user explicitly requests release publication and the connected GitHub plugin does not expose release creation, the GitHub CLI may be used to create that release. Use the plugin for the release preparation PR, merges, and workflow monitoring. This exception does not bypass required checks: npm and Docker publication must still wait for the full release verification workflow.
+
 Before pushing changes to a pull request, run `pnpm format` and `pnpm format:check`. Fix every failure before pushing, and report any additional checks actually run in the pull request.
 
 # Local development
