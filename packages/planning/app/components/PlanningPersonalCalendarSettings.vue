@@ -2,12 +2,15 @@
 import { providerSettingsSchema } from '../../shared/validation'
 
 const api = usePlanning(),
-  { t } = useI18n()
+  { t } = useI18n(),
+  route = useRoute()
 const calendars = ref<Array<{ id: string; summary: string; accessRole: string }>>([]),
   error = ref(''),
   busy = ref(false),
   ready = ref(false),
-  googleConnected = ref(false)
+  googleConnected = ref(false),
+  hasConnection = ref(false),
+  calendarsLoaded = ref(false)
 const providerState = reactive({
   timezone: 'Europe/Amsterdam',
   graceMinutes: 0,
@@ -35,8 +38,11 @@ const additionalCalendarIds = computed({
 
 async function load() {
   error.value = ''
+  ready.value = false
+  calendarsLoaded.value = false
   try {
     const settings = await api.provider()
+    hasConnection.value = settings.connections.some((connection) => connection.provider === 'google')
     googleConnected.value = settings.connections.some(
       (connection) => connection.provider === 'google' && connection.healthy
     )
@@ -51,19 +57,29 @@ async function load() {
     if (googleConnected.value) {
       try {
         calendars.value = await api.calendars()
-      } catch (calendarError) {
+        calendarsLoaded.value = true
+      } catch {
         const refreshedSettings = await api.provider().catch(() => null)
         const connectionStillHealthy = refreshedSettings?.connections.some(
           (connection) => connection.provider === 'google' && connection.healthy
         )
-        if (connectionStillHealthy !== false) {
-          throw calendarError
-        }
-        googleConnected.value = false
+        error.value = t(
+          connectionStillHealthy === false ? 'planning.googleReconnectRequired' : 'planning.googleCalendarUnavailable'
+        )
+        googleConnected.value = connectionStillHealthy !== false
         calendars.value = []
       }
     } else {
       calendars.value = []
+    }
+    if (!googleConnected.value && hasConnection.value) {
+      error.value = t('planning.googleReconnectRequired')
+    }
+    const connectionResult = route.query.connection
+    if (connectionResult === 'permissions') {
+      error.value = t('planning.googlePermissionsRequired')
+    } else if (connectionResult === 'error') {
+      error.value = t('planning.googleConnectionError')
     }
     ready.value = true
   } catch {
@@ -71,6 +87,19 @@ async function load() {
   }
 }
 await load()
+
+async function disconnectGoogle() {
+  busy.value = true
+  error.value = ''
+  try {
+    await api.disconnect('google')
+    await load()
+  } catch {
+    error.value = t('planning.actionError')
+  } finally {
+    busy.value = false
+  }
+}
 
 async function connectMainCalendar() {
   busy.value = true
@@ -103,6 +132,16 @@ async function saveSettings() {
   <div class="space-y-6">
     <UAlert v-if="error" :title="error" color="error" variant="outline" />
 
+    <div class="flex flex-wrap gap-2">
+      <UButton :loading="busy" variant="outline" @click="connectMainCalendar">{{ t('planning.connect') }}</UButton>
+      <UButton v-if="hasConnection" :disabled="busy" color="neutral" variant="outline" @click="disconnectGoogle">{{
+        t('planning.disconnect')
+      }}</UButton>
+      <UButton :disabled="busy" color="neutral" variant="ghost" @click="load">{{
+        t('planning.retryConnection')
+      }}</UButton>
+    </div>
+
     <UCard v-if="ready && !googleConnected">
       <template #header>
         <div class="flex items-center gap-3">
@@ -124,7 +163,7 @@ async function saveSettings() {
     </UCard>
 
     <UForm
-      v-else-if="ready"
+      v-else-if="ready && calendarsLoaded"
       :state="providerState"
       :schema="providerSettingsSchema"
       novalidate

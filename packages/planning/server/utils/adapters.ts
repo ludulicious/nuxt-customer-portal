@@ -9,6 +9,7 @@ export interface Credentials {
   access_token: string
   refresh_token: string
   expiresAt: number
+  scope?: string
 }
 export interface CalendarEvent {
   id: string
@@ -94,11 +95,17 @@ export async function exchange(provider: 'google' | 'zoom', params: Record<strin
   if (!response.ok) {
     throw new AuthorizationExchangeError(response.status)
   }
-  const value = (await response.json()) as { access_token: string; refresh_token?: string; expires_in: number }
+  const value = (await response.json()) as {
+    access_token: string
+    refresh_token?: string
+    expires_in: number
+    scope?: string
+  }
   if (!value.access_token || !value.expires_in) {
     throw new Error('Invalid authorization response')
   }
   return {
+    scope: value.scope,
     access_token: value.access_token,
     refresh_token: value.refresh_token || params.refresh_token || '',
     expiresAt: Date.now() + value.expires_in * 1000
@@ -174,7 +181,21 @@ async function api<T>(
     }
     let detail = ''
     try {
-      const payload = (await response.json()) as { error?: { message?: string }; message?: string }
+      const payload = (await response.json()) as {
+        error?: { message?: string; status?: string; errors?: Array<{ reason?: string }> }
+        message?: string
+      }
+      if (
+        provider === 'google' &&
+        response.status === 403 &&
+        ((payload.error?.status === 'PERMISSION_DENIED' && /insufficient.*scope/i.test(payload.error.message || '')) ||
+          payload.error?.errors?.some((item) => item.reason === 'insufficientPermissions'))
+      ) {
+        await rows(
+          'UPDATE planning.connection SET healthy=false,error=$4 WHERE store_id=$1 AND user_id=$2 AND provider=$3',
+          [storeId, userId, provider, 'Calendar permissions missing; reconnect']
+        )
+      }
       detail = String(payload.error?.message || payload.message || '')
         .replace(/\s+/g, ' ')
         .trim()

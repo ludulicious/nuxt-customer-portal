@@ -15,6 +15,7 @@ const api = usePlanning(),
   windows = ref<AvailabilityWindow[]>([]),
   appointments = ref<AppointmentListItem[]>([]),
   externalBusy = ref<CalendarBusyPeriod[]>([]),
+  calendarWarning = ref(''),
   error = ref(''),
   busy = ref(false),
   calendarNavigationDirection = ref<'previous' | 'next'>(),
@@ -227,8 +228,14 @@ async function fetchExternalBusy(targetDays: string[], timezone = calendarTimezo
     '00:00',
     timezone
   )
-  const periods = await api.calendarBusy({ from: from.toISOString(), to: to.toISOString() })
-  return Array.isArray(periods) ? periods : []
+  calendarWarning.value = ''
+  try {
+    const periods = await api.calendarBusy({ from: from.toISOString(), to: to.toISOString() })
+    return Array.isArray(periods) ? periods : []
+  } catch {
+    calendarWarning.value = t('planning.googleBusyUnavailable')
+    return []
+  }
 }
 // Suspend the page setup until the calendar and its external events are ready.
 // This ensures the all-day row has its final layout on the first rendered frame.
@@ -379,6 +386,13 @@ async function removeWindow() {
 <template>
   <div class="h-full min-h-0 overflow-hidden">
     <UContainer class="flex h-full min-h-0 flex-col gap-6 py-8">
+      <UAlert
+        v-if="calendarWarning"
+        :title="calendarWarning"
+        color="warning"
+        variant="outline"
+        :actions="[{ label: t('planning.myAppointmentSettings'), to: '/planning/settings' }]"
+      />
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-start gap-3">
           <UIcon name="i-lucide-calendar-days" class="mt-1 size-6 shrink-0 text-primary" />

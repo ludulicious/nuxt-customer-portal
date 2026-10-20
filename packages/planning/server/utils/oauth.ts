@@ -3,6 +3,7 @@ import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { providerAccess } from './access'
 import { oauthConfig, exchange } from './adapters'
 import { digest, secret, encrypt } from './crypto'
+import { googleCalendarScopes, hasGoogleCalendarPermissions } from '../../shared/google-permissions'
 
 export function oauthProvider(value: string | undefined): 'google' | 'zoom' {
   if (value !== 'google' && value !== 'zoom') {
@@ -35,8 +36,7 @@ export async function startOAuth(event: H3Event, provider: 'google' | 'zoom') {
       ? {
           access_type: 'offline',
           prompt: 'consent',
-          scope:
-            'openid email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.freebusy'
+          scope: ['openid', 'email', ...googleCalendarScopes].join(' ')
         }
       : {})
   })
@@ -59,6 +59,9 @@ export async function finishOAuth(event: H3Event, provider: 'google' | 'zoom', s
     throw createError({ statusCode: 403, message: 'Authorization expired or belongs to another user' })
   }
   const credentials = await exchange(provider, { grant_type: 'authorization_code', code })
+  if (provider === 'google' && !hasGoogleCalendarPermissions(credentials.scope)) {
+    throw createError({ statusCode: 400, message: 'Calendar permissions required', data: { reason: 'permissions' } })
+  }
   if (!credentials.refresh_token) {
     throw createError({ statusCode: 400, message: 'Offline authorization required; reconnect with consent' })
   }

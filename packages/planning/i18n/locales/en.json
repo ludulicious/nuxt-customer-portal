@@ -165,7 +165,6 @@
     "status": "Status",
     "overridePolicySection": "Override this section",
     "time": "Time",
-    "timezone": "Timezone",
     "meetingUrl": "Meeting link",
     "meetingDetails": "Meeting details",
     "instructions": "Instructions after purchase",
@@ -258,6 +257,11 @@
       "past": "Past date",
       "loading": "Loading slots"
     },
-    "slotTimesTimezone": "Times shown in {timezone}"
+    "slotTimesTimezone": "Times shown in {timezone}",
+    "googleReconnectRequired": "Google Calendar access has expired or was revoked. Reconnect and allow all requested Calendar permissions.",
+    "googleCalendarUnavailable": "Google calendars could not be loaded. Retry, reconnect with all Calendar permissions, or disconnect the account.",
+    "googlePermissionsRequired": "Calendar permissions were not granted. Reconnect and allow all requested Calendar permissions. Your previous connection has not been replaced.",
+    "retryConnection": "Retry",
+    "googleBusyUnavailable": "Google Calendar busy times are unavailable. Saved availability is shown, but external conflicts cannot be checked. Open appointment settings to reconnect."
   }
 }
