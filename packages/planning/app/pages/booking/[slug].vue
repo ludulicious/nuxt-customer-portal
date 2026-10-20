@@ -88,13 +88,20 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
           </p>
           <div class="order-price">
             <span>{{ t('products.total') }}</span
-            ><strong>{{
-              product.isFree
-                ? t('products.freeProduct')
-                : selectedPrice
-                  ? formatMoney(selectedPrice.amount, selectedPrice.currency, product.locale)
-                  : ''
-            }}</strong>
+            ><span
+              ><del
+                v-if="selectedPrice?.offer && selectedPrice.originalAmount > selectedPrice.amount"
+                class="mr-2 text-sm text-muted"
+                :aria-label="t('products.offers.originalPrice')"
+                >{{ formatMoney(selectedPrice.originalAmount, selectedPrice.currency, product.locale) }}</del
+              ><strong>{{
+                product.isFree
+                  ? t('products.freeProduct')
+                  : selectedPrice
+                    ? formatMoney(selectedPrice.amount, selectedPrice.currency, product.locale)
+                    : ''
+              }}</strong></span
+            >
           </div>
           <UFormField v-if="product.prices.length > 1" :label="t('products.price')" class="mt-5">
             <USelect

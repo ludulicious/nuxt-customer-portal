@@ -580,6 +580,32 @@
     "noAppointmentRequired": "Klanten gaan direct naar het afrekenen.",
     "noPaymentRequired": "Geen betaling nodig",
     "noEligibleAppointmentMembers": "Er zijn nog geen medewerkers met planning ingeschakeld. Schakel planning in voor minstens één medewerker bij Planningsinstellingen en selecteer die hier.",
-    "enableTeamScheduling": "Planning van medewerkers beheren"
+    "enableTeamScheduling": "Planning van medewerkers beheren",
+    "offers": {
+      "title": "Geplande aanbiedingen",
+      "add": "Aanbieding toevoegen",
+      "description": "Plan lagere prijzen of een gratis periode. Na afloop gelden automatisch weer de reguliere prijzen.",
+      "regularFree": "Stel reguliere betaalde prijzen in voordat je een aanbieding plant.",
+      "timezone": "Alle datums en tijden gebruiken {timezone}.",
+      "startsAt": "Begint op",
+      "endsAt": "Eindigt op",
+      "endHelp": "De aanbieding stopt op dit exacte tijdstip.",
+      "free": "Gratis tijdens deze aanbieding",
+      "regularPrice": "Reguliere prijs: {amount}",
+      "originalPrice": "Oorspronkelijke prijs",
+      "empty": "Geen aanbiedingen gepland.",
+      "scheduled": "Gepland",
+      "active": "Actief",
+      "ended": "Afgelopen",
+      "cancelled": "Geannuleerd",
+      "edit": "Aanbieding bewerken",
+      "cancelOffer": "Aanbieding annuleren",
+      "invalidTime": "Kies een geldige, eenduidige lokale datum en tijd.",
+      "invalidEnd": "Het einde moet in de toekomst en na het begin liggen.",
+      "invalidPrice": "Voer een geldig bedrag onder de reguliere prijs in.",
+      "saveFailed": "De aanbieding kon niet worden opgeslagen.",
+      "priceChanged": "De prijs is gewijzigd. Bekijk de huidige prijs voordat je verdergaat.",
+      "reviewPrice": "Huidige prijs bekijken"
+    }
   }
 }

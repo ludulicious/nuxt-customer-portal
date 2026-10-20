@@ -12,6 +12,7 @@ defineRouteMeta({
   }
 })
 export default defineEventHandler(async (event) => {
+  const at = new Date()
   const q = parseInput(listSchema, getQuery(event))
   if (q.status === 'archived') {
     throw createError({ statusCode: 400, message: 'Archived products are not available through the Store API' })
@@ -23,5 +24,5 @@ export default defineEventHandler(async (event) => {
   if (product.status !== visibility) {
     throw createError({ statusCode: 404 })
   }
-  return publicProduct(product, q.locale, q.currency)
+  return publicProduct(product, q.locale, q.currency, at)
 })

@@ -12,6 +12,7 @@ defineRouteMeta({
   }
 })
 export default defineEventHandler(async (event) => {
+  const at = new Date()
   const q = parseInput(listSchema, getQuery(event))
   if (q.status === 'archived') {
     throw createError({ statusCode: 400, message: 'Archived products are not available through the Store API' })
@@ -20,5 +21,5 @@ export default defineEventHandler(async (event) => {
   const store = await catalogAccess(event, visibility)
   setHeader(event, 'Cache-Control', 'private, no-store')
   const page = await listProducts(store.organization_id, { ...q, status: visibility }, false)
-  return { ...page, items: await Promise.all(page.items.map((p) => publicProduct(p, q.locale, q.currency))) }
+  return { ...page, items: await Promise.all(page.items.map((p) => publicProduct(p, q.locale, q.currency, at))) }
 })

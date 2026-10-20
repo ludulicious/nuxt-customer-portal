@@ -1,5 +1,6 @@
-import type { MarkdownStyle } from '../../shared/markdown-style'
+import type { OfferInput } from '../../shared/offers'
 import type {
+  ProductOffer,
   Product,
   Page,
   Asset,
@@ -14,6 +15,7 @@ import type {
   CheckoutAppearance,
   Purchase
 } from '../../shared/types'
+import type { MarkdownStyle } from '../../shared/markdown-style'
 import type { z } from 'zod'
 import type { productSchema, categorySchema } from '../../shared/validation'
 
@@ -42,6 +44,15 @@ export const useProducts = () => ({
     $fetch<Product>(id ? `/api/products/admin/products/${id}` : '/api/products/admin/products', {
       method: id ? 'PUT' : 'POST',
       body: input
+    }),
+  saveOffer: (productId: string, body: OfferInput, offerId?: string) =>
+    $fetch<ProductOffer>(
+      `/api/products/admin/products/${encodeURIComponent(productId)}/offers${offerId ? `/${encodeURIComponent(offerId)}` : ''}`,
+      { method: offerId ? 'PUT' : 'POST', body }
+    ),
+  cancelOffer: (productId: string, offerId: string) =>
+    $fetch(`/api/products/admin/products/${encodeURIComponent(productId)}/offers/${encodeURIComponent(offerId)}`, {
+      method: 'DELETE'
     }),
   savePricing: (id: string, input: Pick<ProductInput, 'isFree' | 'prices'>) =>
     $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}/pricing`, { method: 'PUT', body: input }),

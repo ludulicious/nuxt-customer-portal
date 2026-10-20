@@ -6,7 +6,7 @@ import type { z } from 'zod'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
 import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
 import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
-import { getProduct, selectCopy } from '@nuxt-customer-portal/products/server/utils/catalog'
+import { getEffectiveProduct, selectCopy } from '@nuxt-customer-portal/products/server/utils/catalog'
 import { defaultPlanningPolicy, effectivePolicy } from '@nuxt-customer-portal/products/shared/planning'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
 import type { checkoutSchema } from '@nuxt-customer-portal/products/shared/validation'
@@ -59,7 +59,7 @@ export async function bookingBusy(
   return calendarAdapter().busy(storeId, userId, calendarIds, from, to)
 }
 export async function providers(storeId: string, productId: string) {
-  const product = await getProduct(storeId, productId)
+  const product = await getEffectiveProduct(storeId, productId)
   if (!product.planning?.enabled || product.status !== 'published') {
     throw createError({ statusCode: 404, message: 'This product is not available for booking' })
   }

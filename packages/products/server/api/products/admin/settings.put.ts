@@ -1,6 +1,8 @@
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows, transaction } from '@nuxt-customer-portal/products/server/utils/database'
+import { validateOutstandingOffers } from '@nuxt-customer-portal/products/server/utils/offers'
+import type { Price, ProductData } from '@nuxt-customer-portal/products/shared/types'
 import { randomUUID } from 'node:crypto'
 import { settingsSchema } from '@nuxt-customer-portal/products/shared/validation'
 import { orderIntegration } from '@nuxt-customer-portal/products/server/utils/contracts'
@@ -29,6 +31,20 @@ export default defineEventHandler(async (event) => {
     }
   }
   await transaction(async (tx) => {
+    await tx.query('SELECT id FROM products.store WHERE organization_id=$1 FOR UPDATE', [context.organizationId])
+    const products = await rows<{ id: string; data: ProductData }>(
+      'SELECT id,data FROM products.product WHERE store_id=$1 ORDER BY id',
+      [context.organizationId],
+      tx
+    )
+    for (const product of products) {
+      const prices = await rows<Price>(
+        'SELECT currency,amount FROM products.price WHERE product_id=$1 AND active AND offer_id IS NULL',
+        [product.id],
+        tx
+      )
+      await validateOutstandingOffers(product.id, { ...product.data, prices }, input.currencies, tx)
+    }
     const currencyTaxBehavior = Object.fromEntries(
       input.currencies.map((currency) => [currency, input.currencyTaxBehavior[currency] || 'inclusive'])
     )
@@ -50,15 +66,15 @@ export default defineEventHandler(async (event) => {
       tx
     )
     for (const [currency, taxBehavior] of Object.entries(currencyTaxBehavior)) {
-      const changed = await rows<{ product_id: string; amount: number }>(
-        `UPDATE products.price pr SET active=false FROM products.product p WHERE p.id=pr.product_id AND p.store_id=$1 AND pr.active AND pr.currency=$2 AND pr.tax_behavior<>$3 RETURNING pr.product_id,pr.amount`,
+      const changed = await rows<{ product_id: string; amount: number; offer_id: string | null }>(
+        `UPDATE products.price pr SET active=false FROM products.product p WHERE p.id=pr.product_id AND p.store_id=$1 AND pr.active AND pr.currency=$2 AND pr.tax_behavior<>$3 RETURNING pr.product_id,pr.amount,pr.offer_id`,
         [context.organizationId, currency, taxBehavior],
         tx
       )
       for (const price of changed) {
         await tx.query(
-          'INSERT INTO products.price(id,product_id,currency,amount,tax_behavior) VALUES($1,$2,$3,$4,$5)',
-          [randomUUID(), price.product_id, currency, price.amount, taxBehavior]
+          'INSERT INTO products.price(id,product_id,currency,amount,tax_behavior,offer_id) VALUES($1,$2,$3,$4,$5,$6)',
+          [randomUUID(), price.product_id, currency, price.amount, taxBehavior, price.offer_id]
         )
       }
     }
