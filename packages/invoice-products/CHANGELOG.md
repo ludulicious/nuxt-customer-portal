@@ -1,5 +1,20 @@
 # Product invoices
 
+## 0.8.0
+
+### Minor Changes
+
+- e558791: Support store-wide online and deferred invoice payment choices with immediate purchase fulfillment, linked unsent invoice drafts, inclusive tax review, and manual payment progress. Add unlisted products with server-generated unguessable slugs, excluded from catalog discovery while remaining available through individual product pages.
+
+### Patch Changes
+
+- Updated dependencies [175854d]
+- Updated dependencies [e558791]
+- Updated dependencies [28bb7af]
+  - @nuxt-customer-portal/core@0.8.0
+  - @nuxt-customer-portal/products@0.8.0
+  - @nuxt-customer-portal/invoices@0.8.0
+
 ## 0.7.0
 
 ### Patch Changes

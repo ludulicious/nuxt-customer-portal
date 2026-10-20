@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/core
 
+## 0.8.0
+
+### Minor Changes
+
+- 175854d: Support validated conditional sections in email texts and HTML templates, preserve conditional tags in the visual editor, and let administrators preview purchase emails with or without downloads.
+
+### Patch Changes
+
+- 28bb7af: Add public purchase file permalinks, confirmation email download links, external thank-you page delivery integration, and database records for public and portal download requests.
+
 ## 0.7.0
 
 ## 0.6.1
