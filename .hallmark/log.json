@@ -1,5 +1,12 @@
 [
   {
+    "date": "2026-10-20",
+    "macrostructure": "Order receipt",
+    "theme": "existing host checkout appearance",
+    "enrichment": "product thumbnail",
+    "brief": "Align checkout confirmation and file downloads in a single receipt; use neutral order wording"
+  },
+  {
     "date": "2026-09-18",
     "macrostructure": "Focused configuration workbench",
     "theme": "existing portal system",

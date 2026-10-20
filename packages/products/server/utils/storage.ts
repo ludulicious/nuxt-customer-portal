@@ -21,6 +21,7 @@ import { createStorageClient, resolveStorageConfiguration } from './storage-conf
 import { cropSchema } from '../../shared/validation'
 import { storageExtension } from '../../shared/storage'
 import { withFileExtension } from '../../shared/file-name'
+import { assetContentDisposition } from '../../shared/content-disposition'
 import type { Asset, ImagePolicy, ImagePurpose } from '../../shared/types'
 
 const defaultImagePolicy: ImagePolicy = {
@@ -323,7 +324,7 @@ export async function assetUrl(id: string, download = false, fileName?: string) 
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
-  if (asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
+  if (!download && asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
     return `${process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '')}/${asset.object_key}`
   }
   const { config, bucket, client } = await storage()
@@ -336,7 +337,10 @@ export async function assetUrl(id: string, download = false, fileName?: string) 
       Bucket: bucket,
       Key: asset.object_key,
       ResponseContentType: asset.content_type,
-      ResponseContentDisposition: `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(fileName || asset.name)}`
+      ResponseContentDisposition: assetContentDisposition(
+        fileName ? withFileExtension(fileName, asset.name) : asset.name,
+        download
+      )
     }),
     { expiresIn: 300 }
   )
@@ -354,7 +358,7 @@ export async function sendAsset(
     throw createError({ statusCode: 404, message: 'File not found' })
   }
   const responseFileName = fileName ? withFileExtension(fileName, asset.name) : asset.name
-  if (asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
+  if (!download && asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
     await beforeSend?.()
     return sendRedirect(event, `${process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '')}/${asset.object_key}`)
   }
@@ -370,11 +374,7 @@ export async function sendAsset(
   }
   setResponseHeader(event, 'Content-Type', asset.content_type)
   setResponseHeader(event, 'Content-Length', Number(asset.size))
-  setResponseHeader(
-    event,
-    'Content-Disposition',
-    `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(responseFileName)}`
-  )
+  setResponseHeader(event, 'Content-Disposition', assetContentDisposition(responseFileName, download))
   await beforeSend?.()
   return sendStream(event, Readable.fromWeb(response.body as import('node:stream/web').ReadableStream))
 }
