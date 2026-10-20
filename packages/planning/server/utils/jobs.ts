@@ -1,3 +1,5 @@
+import { orderDownloadToken, purchaseDownloads } from '@nuxt-customer-portal/products/server/utils/downloads'
+import { downloadEmailMarkdown } from '@nuxt-customer-portal/products/shared/downloads'
 import { randomUUID } from 'node:crypto'
 import { pool } from '@nuxt-customer-portal/core/server/utils/db'
 import { sendPortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
@@ -181,7 +183,14 @@ async function appointmentEffects(
     timezone: a.snapshot.customerTimezone,
     meetingUrl: a.meeting_url || appointmentUrl,
     meetingDetails,
-    instructions: order.lines[0]!.snapshot.product.nextSteps[locale] || '',
+    instructions: [
+      order.lines[0]!.snapshot.product.nextSteps[locale] || '',
+      a.status === 'cancelled'
+        ? ''
+        : downloadEmailMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)), locale)
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
     url: appointmentUrl
   }
   const invitation = calendarInvitation({

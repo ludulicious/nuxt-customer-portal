@@ -1,0 +1,32 @@
+import type { Order } from './types'
+import { hasPurchaseAccess } from './access'
+
+export function downloadableLine(order: Order, assetId: string) {
+  if (!hasPurchaseAccess(order)) {
+    return undefined
+  }
+  return order.lines.find((line) => hasPurchaseAccess(order, line) && line.snapshot.product.fileIds.includes(assetId))
+}
+
+export function purchaseReturnUrl(returnUrl: string | undefined, token: string) {
+  if (!returnUrl) {
+    return undefined
+  }
+  const url = new URL(returnUrl)
+  url.searchParams.set('purchase', token)
+  return url.toString()
+}
+
+export interface PurchaseDownload {
+  id: string
+  name: string
+  url: string
+}
+
+export function downloadEmailMarkdown(files: PurchaseDownload[], locale: string) {
+  if (!files.length) {
+    return ''
+  }
+  const escape = (value: string) => value.replace(/[\\`*_[\]<>]/g, '\\$&').replace(/[\r\n]/g, ' ')
+  return `${locale === 'nl' ? 'Download je bestanden' : 'Download your files'}:\n\n${files.map((file) => `- [${escape(file.name)}](${file.url})`).join('\n')}`
+}

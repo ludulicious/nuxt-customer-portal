@@ -342,18 +342,27 @@ export async function assetUrl(id: string, download = false, fileName?: string) 
   )
 }
 
-export async function sendAsset(event: H3Event, id: string, download = false, fileName?: string) {
+export async function sendAsset(
+  event: H3Event,
+  id: string,
+  download = false,
+  fileName?: string,
+  beforeSend?: () => Promise<void>
+) {
   const [asset] = await rows<Asset & { object_key: string }>('SELECT * FROM products.asset WHERE id=$1 AND ready', [id])
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
   const responseFileName = fileName ? withFileExtension(fileName, asset.name) : asset.name
   if (asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
+    await beforeSend?.()
     return sendRedirect(event, `${process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '')}/${asset.object_key}`)
   }
   const { config } = await storage()
   if (config.provider === 's3') {
-    return sendRedirect(event, await assetUrl(id, download, responseFileName))
+    const url = await assetUrl(id, download, responseFileName)
+    await beforeSend?.()
+    return sendRedirect(event, url)
   }
   const response = await bunnyFetch(config, asset.object_key)
   if (!response.ok || !response.body) {
@@ -366,6 +375,7 @@ export async function sendAsset(event: H3Event, id: string, download = false, fi
     'Content-Disposition',
     `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(responseFileName)}`
   )
+  await beforeSend?.()
   return sendStream(event, Readable.fromWeb(response.body as import('node:stream/web').ReadableStream))
 }
 

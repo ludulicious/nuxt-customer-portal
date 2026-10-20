@@ -1,3 +1,5 @@
+import { downloadEmailMarkdown } from '../../shared/downloads'
+import { purchaseDownloads, orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomUUID } from 'node:crypto'
 import { createError, type H3Event } from 'h3'
@@ -162,7 +164,8 @@ export async function createCheckout(event: H3Event, body: unknown) {
             currency: primaryLine.snapshot.price.currency,
             outcome: 'success',
             returnUrl: order.snapshot.returnUrl,
-            bookingReference: order.booking_reference
+            bookingReference: order.booking_reference,
+            downloadToken: await orderDownloadToken(order.id)
           })}`
     }
   }
@@ -328,7 +331,11 @@ export async function notifyOrder(id: string) {
       product: order.lines.map((line) => line.snapshot.title).join(', '),
       bookingReference: order.booking_reference,
       url,
-      instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale]
+      instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale],
+      downloads: downloadEmailMarkdown(
+        await purchaseDownloads(order, await orderDownloadToken(order.id)),
+        order.snapshot.locale
+      )
     },
     idempotencyKey: `purchase:${id}`,
     subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined

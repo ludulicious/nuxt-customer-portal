@@ -151,6 +151,10 @@ export const orders = schema.table(
   'orders',
   {
     id: text('id').primaryKey(),
+    downloadToken: text('download_token')
+      .notNull()
+      .unique()
+      .default(sql`replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')`),
     bookingReference: text('booking_reference')
       .notNull()
       .default(sql`'BK-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12))`),
@@ -296,5 +300,25 @@ export const category = schema.table(
   (t) => [
     uniqueIndex('category_store_code').on(t.storeId, sql`lower(${t.code})`),
     uniqueIndex('category_store_id').on(t.storeId, t.id)
+  ]
+)
+
+export const download = schema.table(
+  'download',
+  {
+    id: text('id').primaryKey(),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    orderLineId: text('order_line_id')
+      .notNull()
+      .references(() => orderLine.id, { onDelete: 'cascade' }),
+    assetId: text('asset_id').notNull(),
+    source: text('source').$type<'public' | 'portal'>().notNull(),
+    createdAt: stamp('created_at')
+  },
+  (t) => [
+    index('download_order').on(t.orderId, t.createdAt),
+    check('download_source_valid', sql`${t.source} IN ('public', 'portal')`)
   ]
 )
