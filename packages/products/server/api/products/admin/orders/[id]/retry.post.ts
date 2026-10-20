@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 409, message: 'Development sandbox effects are disabled' })
     }
     const missingExpectedArtifacts = !order.client_id || (order.total !== 0 && !order.invoice_id)
-    if (order.status === 'paid' && missingExpectedArtifacts) {
+    if (['paid', 'accepted'].includes(order.status) && missingExpectedArtifacts) {
       // Older sandbox orders were deliberately marked complete/notified without
       // running post-payment effects. Make those orders eligible for processing.
       await rows("UPDATE products.orders SET processing='pending',notified=false,error=NULL WHERE id=$1", [order.id])

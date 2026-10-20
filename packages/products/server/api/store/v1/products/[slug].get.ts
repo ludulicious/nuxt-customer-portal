@@ -24,5 +24,9 @@ export default defineEventHandler(async (event) => {
   if (product.status !== visibility) {
     throw createError({ statusCode: 404 })
   }
+  if (product.visibility === 'unlisted') {
+    setHeader(event, 'X-Robots-Tag', 'noindex, nofollow')
+    setHeader(event, 'Cache-Control', 'private, no-store')
+  }
   return publicProduct(product, q.locale, q.currency, at)
 })

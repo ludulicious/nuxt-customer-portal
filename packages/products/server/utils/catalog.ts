@@ -5,7 +5,7 @@ import type { Store } from './access'
 import { markdownStyleSchema } from '../../shared/markdown-style'
 import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { createError } from 'h3'
 import { marked } from 'marked'
 import sanitizeHtml from 'sanitize-html'
@@ -36,6 +36,7 @@ export function normalizeProductImages(data: ProductData): ProductData {
   const ordered = (ids: string[] | undefined) => imageIds.filter((id) => ids?.includes(id))
   return {
     ...data,
+    visibility: data.visibility || 'listed',
     imageIds,
     thumbnailImageId: imageIds.includes(data.thumbnailImageId || '')
       ? data.thumbnailImageId
@@ -111,13 +112,21 @@ export async function getProduct(storeId: string, id: string, bySlug = false, tx
     updatedAt: row.updated_at
   }
 }
-export async function listProducts(storeId: string, input: unknown, published = false): Promise<Page<Product>> {
+export async function listProducts(
+  storeId: string,
+  input: unknown,
+  published = false,
+  listedOnly = published
+): Promise<Page<Product>> {
   const q = parseInput(listSchema, input),
     params: unknown[] = [storeId],
     conditions = ['store_id=$1']
   const add = (sql: string, value: unknown) => {
     params.push(value)
     conditions.push(sql.replace('?', `$${params.length}`))
+  }
+  if (listedOnly) {
+    conditions.push("COALESCE(data->>'visibility','listed')='listed'")
   }
   if (published) {
     add("data->>'status'=?", 'published')
@@ -349,6 +358,9 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
       ) {
         throw createError({ statusCode: 404, message: 'Product not found' })
       }
+      if (data.visibility === 'unlisted') {
+        data.slug = existing?.data.visibility === 'unlisted' ? existing.data.slug : randomBytes(24).toString('hex')
+      }
       if (existing?.data.isFree && !data.isFree) {
         for (const currency of currentStore!.currencies) {
           if (!prices.some((price) => price.currency === currency)) {
@@ -481,6 +493,11 @@ export async function publicProduct(
   const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
   return {
     storeMode: store.mode,
+    visibility: product.visibility || 'listed',
+    paymentMethods: [
+      ...(store.online_payment !== false ? ['online'] : []),
+      ...(store.invoice_payment ? ['invoice'] : [])
+    ],
     categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
     isFree: product.isFree || (!!currency && product.prices.find((p) => p.currency === currency)?.amount === 0),
     pricingComplete: !!hasRequiredPrices(regularProduct, store.currencies),

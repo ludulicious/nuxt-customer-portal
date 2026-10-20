@@ -383,7 +383,7 @@ export async function abandonChange(event: H3Event, id: string) {
           [hold.order_id],
           tx
         )
-        if (order?.status === 'paid') {
+        if (order && ['paid', 'accepted'].includes(order.status)) {
           return
         }
         await tx.query("UPDATE products.orders SET status='expired' WHERE id=$1 AND status='pending'", [hold.order_id])

@@ -1,3 +1,4 @@
+import { attachPaymentState } from '@nuxt-customer-portal/products/server/utils/orders'
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { z } from 'zod'
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
     z.object({
       page: z.coerce.number().int().min(1).default(1),
       search: z.string().max(200).default(''),
-      status: z.enum(['pending', 'paid', 'failed', 'expired', 'all']).default('all'),
+      status: z.enum(['pending', 'accepted', 'paid', 'failed', 'expired', 'all']).default('all'),
       sortBy: z.enum(['createdAt', 'total', 'email', 'bookingReference']).default('createdAt'),
       sortDir: z.enum(['asc', 'desc']).default('desc')
     }),
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
     [...args, (q.page - 1) * 20]
   )
   for (const order of items) {
+    await attachPaymentState(order)
     order.lines = await rows('SELECT * FROM products.order_line WHERE order_id=$1 ORDER BY position', [order.id])
   }
   return {

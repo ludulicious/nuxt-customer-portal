@@ -185,6 +185,11 @@ async function appointmentEffects(
     meetingDetails,
     instructions: [
       order.lines[0]!.snapshot.product.nextSteps[locale] || '',
+      order.snapshot.paymentMethod === 'invoice' && a.status !== 'cancelled'
+        ? locale === 'nl'
+          ? 'Je ontvangt de factuur later apart.'
+          : 'Your invoice will follow separately.'
+        : '',
       a.status === 'cancelled'
         ? ''
         : downloadEmailMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)), locale)
@@ -593,7 +598,7 @@ export async function expireReservations() {
         await reconcileCheckout(order.checkout_id)
       }
       const current = await getOrder(hold.order_id)
-      if (current?.status === 'paid') {
+      if (current && ['paid', 'accepted'].includes(current.status)) {
         await processOrder(current.id)
         continue
       }

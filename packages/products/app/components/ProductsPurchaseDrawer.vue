@@ -38,6 +38,7 @@ const source = (orderId: string, assetId: string) => `/api/products/purchases/${
               {{ t('products.viewInvoice') }}
             </UButton>
           </div>
+          <p v-if="purchase.paymentStatus" class="mt-3 text-sm">{{ t(`products.payment${purchase.paymentStatus}`) }}</p>
           <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt class="text-muted">{{ t('products.amount') }}</dt>

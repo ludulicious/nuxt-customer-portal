@@ -25,6 +25,8 @@ export const store = schema.table('store', {
   actorId: text('actor_id')
     .notNull()
     .references(() => user.id),
+  onlinePayment: boolean('online_payment').default(true).notNull(),
+  invoicePayment: boolean('invoice_payment').default(false).notNull(),
   enabled: boolean('enabled').default(false).notNull(),
   mode: text('mode').$type<'sandbox' | 'live'>().default('sandbox').notNull(),
   defaultLocale: text('default_locale').default('en').notNull(),

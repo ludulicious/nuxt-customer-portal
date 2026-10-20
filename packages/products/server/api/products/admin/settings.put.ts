@@ -15,10 +15,18 @@ import { stripeSummary } from '@nuxt-customer-portal/products/server/utils/strip
 export default defineEventHandler(async (event) => {
   const context = await admin(event),
     input = parseInput(settingsSchema, await readBody(event))
+  if (input.invoicePayment) {
+    await orderIntegration().assertReady(context.organizationId)
+  }
+  if (input.enabled && !input.onlinePayment && !input.invoicePayment) {
+    throw createError({ statusCode: 400, message: 'Enable at least one payment method' })
+  }
   if (input.enabled && input.mode === 'live') {
-    await stripeClient()
+    if (input.onlinePayment) {
+      await stripeClient()
+    }
     await storage()
-    if (!(await stripeSummary()).webhookConfigured) {
+    if (input.onlinePayment && !(await stripeSummary()).webhookConfigured) {
       throw createError({ statusCode: 409, message: 'Configure Stripe webhooks' })
     }
     await orderIntegration().assertReady(context.organizationId)
@@ -65,6 +73,11 @@ export default defineEventHandler(async (event) => {
       ],
       tx
     )
+    await tx.query('UPDATE products.store SET online_payment=$2,invoice_payment=$3 WHERE organization_id=$1', [
+      context.organizationId,
+      input.onlinePayment,
+      input.invoicePayment
+    ])
     for (const [currency, taxBehavior] of Object.entries(currencyTaxBehavior)) {
       const changed = await rows<{ product_id: string; amount: number; offer_id: string | null }>(
         `UPDATE products.price pr SET active=false FROM products.product p WHERE p.id=pr.product_id AND p.store_id=$1 AND pr.active AND pr.currency=$2 AND pr.tax_behavior<>$3 RETURNING pr.product_id,pr.amount,pr.offer_id`,

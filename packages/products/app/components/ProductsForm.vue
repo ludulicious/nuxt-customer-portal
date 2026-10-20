@@ -39,6 +39,7 @@ const { t } = useI18n(),
 const state = reactive<z.infer<typeof productSchema>>(
   props.product
     ? {
+        visibility: 'listed',
         isFree: false,
         planning: defaultPlanning(),
         ...structuredClone(toRaw(props.product)),
@@ -712,8 +713,22 @@ function removeFile(id: string, index: number) {
       </UFormField>
       <template v-if="section === 'create' || section === 'all' || section === 'details'">
         <div :class="section === 'details' ? 'grid gap-4' : 'grid gap-4 sm:grid-cols-2'">
+          <UFormField name="visibility" :label="t('products.visibility')" :help="t('products.visibilityHelp')">
+            <USelect
+              v-model="state.visibility"
+              :items="[
+                { value: 'listed', label: t('products.listed') },
+                { value: 'unlisted', label: t('products.unlisted') }
+              ]"
+              class="w-full"
+            />
+          </UFormField>
           <UFormField name="slug" :label="t('products.slug')" :required="section === 'create'"
-            ><UInput v-model="state.slug" class="w-full" @update:model-value="slugManuallyEdited = true" /></UFormField
+            ><UInput
+              v-model="state.slug"
+              :disabled="state.visibility === 'unlisted'"
+              class="w-full"
+              @update:model-value="slugManuallyEdited = true" /></UFormField
           ><UFormField name="categoryId" :label="t('products.category')" :required="section === 'create'"
             ><div class="flex gap-2">
               <USelectMenu

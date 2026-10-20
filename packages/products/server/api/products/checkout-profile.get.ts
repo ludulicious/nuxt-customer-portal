@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       `SELECT u.name,u.email,u.first_name AS "firstName",u.last_name AS "lastName",
         (SELECT o.snapshot->'billing'->>'country'
          FROM products.orders o
-         WHERE o.buyer_id=u.id AND o.status='paid' AND o.snapshot->'billing'->>'country' IS NOT NULL
+         WHERE o.buyer_id=u.id AND o.status IN ('paid','accepted') AND o.snapshot->'billing'->>'country' IS NOT NULL
          ORDER BY o.created_at DESC LIMIT 1) AS country
        FROM public."user" u WHERE u.id=$1 LIMIT 1`,
       [user.id]

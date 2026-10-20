@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile, readdir } from 'node:fs/promises'
+import { IncomingMessage, ServerResponse } from 'node:http'
+import { Socket } from 'node:net'
 import { Client } from 'pg'
 import { emptyProduct } from '../shared/validation'
 
@@ -69,13 +71,21 @@ test(
       assert.deepEqual(files, [
         { id: 'file', name: 'My audio.mp3', url: `http://localhost:3059/api/store/purchases/${token}/files/file` }
       ])
+      await db.query("UPDATE products.orders SET status='accepted' WHERE id='order'")
+      assert.deepEqual(await purchaseDownloads(await downloadOrder(token), token), files)
+      await db.query("UPDATE products.orders SET status='paid' WHERE id='order'")
       // Later catalog changes must not grant access to extra files.
       await db.query(
         "UPDATE products.product SET data=jsonb_set(data,'{fileIds}','[\"different\"]') WHERE id='product'"
       )
       assert.deepEqual(await purchaseDownloads(await downloadOrder(token), token), files)
-      const { H3Event } = await import('h3')
-      const event = () => new H3Event(new Request('http://localhost/download'))
+      const { createEvent } = await import('h3')
+      const event = () => {
+        const request = new IncomingMessage(new Socket())
+        request.url = '/download'
+        request.method = 'GET'
+        return createEvent(request, new ServerResponse(request))
+      }
       await sendPurchasedAsset(event(), await downloadOrder(token), 'file', 'public')
       let records = (await db.query('SELECT * FROM products.download')).rows
       assert.equal(records.length, 1)

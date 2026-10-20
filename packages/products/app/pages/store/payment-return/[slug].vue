@@ -101,6 +101,7 @@ const themeStyle = computed(() => ({
         <span class="secure-label">{{ t('products.secureCheckout') }}</span>
       </header>
 
+      <UAlert v-if="delivery?.status === 'accepted'" :title="t('products.invoicePaymentHelp')" class="mb-4" />
       <section class="return-grid" aria-labelledby="payment-return-title">
         <div class="product-half">
           <p class="selection-label">{{ t('products.yourSelection') }}</p>
@@ -133,10 +134,16 @@ const themeStyle = computed(() => ({
         <div :class="['outcome-half', `outcome--${outcome}`]" role="status" aria-live="polite">
           <div class="outcome-mark">
             <UIcon :name="outcomeIcon" class="outcome-icon" aria-hidden="true" />
-            <span>{{ t(`products.paymentStatus${outcomeKey}`) }}</span>
+            <span>{{
+              t(delivery?.status === 'accepted' ? 'products.accepted' : `products.paymentStatus${outcomeKey}`)
+            }}</span>
           </div>
           <h1 id="payment-return-title">{{ t(`products.paymentReturnTitle${outcomeKey}`) }}</h1>
-          <p>{{ t(`products.paymentReturn${outcomeKey}`) }}</p>
+          <p>
+            {{
+              t(delivery?.status === 'accepted' ? 'products.invoicePaymentHelp' : `products.paymentReturn${outcomeKey}`)
+            }}
+          </p>
           <p class="quiet-help">
             {{ t(outcome === 'success' ? 'products.paymentReturnSuccessHelp' : 'products.paymentReturnHelp') }}
           </p>

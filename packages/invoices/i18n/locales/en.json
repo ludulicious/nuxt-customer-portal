@@ -310,7 +310,9 @@
         "saveError": "The change could not be saved",
         "fetchError": "Invoices could not be loaded",
         "senderInvoiceDetailsSaved": "Sender invoice details saved"
-      }
+      },
+      "taxReviewHelp": "Review the tax rate for every line. The agreed purchase total remains unchanged.",
+      "reviewTaxes": "Confirm tax breakdown"
     }
   }
 }
