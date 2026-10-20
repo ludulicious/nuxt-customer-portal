@@ -165,7 +165,6 @@
     "status": "Status",
     "overridePolicySection": "Deze sectie overschrijven",
     "time": "Tijd",
-    "timezone": "Tijdzone",
     "meetingUrl": "Vergaderlink",
     "meetingDetails": "Vergadergegevens",
     "instructions": "Instructies na aankoop",
@@ -258,6 +257,11 @@
       "past": "Datum verstreken",
       "loading": "Tijden laden"
     },
-    "slotTimesTimezone": "Tijden weergegeven in {timezone}"
+    "slotTimesTimezone": "Tijden weergegeven in {timezone}",
+    "googleReconnectRequired": "De toegang tot Google Agenda is verlopen of ingetrokken. Verbind opnieuw en geef alle gevraagde agendarechten.",
+    "googleCalendarUnavailable": "Google-agenda’s konden niet worden geladen. Probeer opnieuw, verbind opnieuw met alle agendarechten of verbreek de verbinding.",
+    "googlePermissionsRequired": "De agendarechten zijn niet verleend. Verbind opnieuw en geef alle gevraagde agendarechten. Je vorige verbinding is niet vervangen.",
+    "retryConnection": "Opnieuw proberen",
+    "googleBusyUnavailable": "Bezette tijden uit Google Agenda zijn niet beschikbaar. Je opgeslagen beschikbaarheid wordt getoond, maar externe conflicten kunnen niet worden gecontroleerd. Open je afspraakinstellingen om opnieuw te verbinden."
   }
 }

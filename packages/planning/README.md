@@ -115,3 +115,9 @@ Planning settings use separate components for the Team members, Booking policy, 
 Personal connections and preferences are managed under My appointment settings (`/planning/settings`): Calendar settings contains Google connection, timezone, grace time, and calendar selection; Meeting settings contains the Zoom connection. Availability (`/availability`) contains only the availability editor and appointment blocks.
 
 Sandbox bookings use internal availability, holds, and appointments without requiring Google or Zoom connections or external calendar conflict checks. Live bookings still require healthy connections and configured calendars.
+
+### Google Calendar authorization recovery
+
+Google OAuth must use the **In production** publishing status for long-lived Calendar authorizations. External OAuth apps in **Testing** receive refresh tokens that expire after seven days when Calendar scopes are requested. After changing publishing status, reconnect and grant all requested Calendar permissions. Revocation or other Google account policies can still require reauthorization. Keep the portal encryption key stable across deployments.
+
+The portal validates Calendar permissions before replacing a connection. Calendar settings retain reconnect, disconnect and retry actions when Google is unavailable or authorization is incomplete. Availability continues showing saved windows and appointments with a warning when external busy times cannot be checked. This warning does not make external conflicts safe to ignore; booking checks still require working Calendar access.
