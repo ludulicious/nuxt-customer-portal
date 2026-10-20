@@ -9,6 +9,7 @@ import { getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
 
 const details = (order: Order, actorId: string) => ({
+  deferred: order.snapshot.paymentMethod === 'invoice',
   reference: `products:${order.id}`,
   storeId: order.store_id,
   clientId: order.client_id!,
@@ -34,7 +35,7 @@ const details = (order: Order, actorId: string) => ({
   }))
 })
 async function deliverOrderInvoice(order: Order, actorId: string) {
-  if (!order.invoice_id) {
+  if (!order.invoice_id || order.snapshot.paymentMethod === 'invoice') {
     return
   }
   const sent = await pool.query(
@@ -103,18 +104,36 @@ export async function processInvoiceEmailJobs(limit = 20) {
 export default defineNitroPlugin(() => {
   registerOrderIntegration({
     assertReady: assertCommerceInvoicesReady,
+    async paymentState(invoiceId, tx) {
+      const {
+        rows: [state]
+      } = await (tx || pool).query<{ paid: number; total: number; status: string }>(
+        `SELECT i.status,
+        (SELECT COALESCE(sum(amount_minor),0)::int FROM invoices.invoice_payment WHERE invoice_id=i.id) AS paid,
+        (SELECT COALESCE(sum(round(quantity_milli::numeric*unit_price_minor/1000)+COALESCE(exact_tax_minor,round(round(quantity_milli::numeric*unit_price_minor/1000)*vat_rate_basis_points/10000))),0)::int FROM invoices.invoice_line WHERE invoice_id=i.id) AS total
+        FROM invoices.invoice i WHERE i.id=$1`,
+        [invoiceId]
+      )
+      return {
+        status: state?.status,
+        paid: state?.paid || 0,
+        outstanding: Math.max(0, (state?.total || 0) - (state?.paid || 0))
+      }
+    },
     async invoice(tx, order, actorId) {
       const id = await createCommerceDocument(tx, details(order, actorId))
       await tx.query(
         'INSERT INTO invoice_products.order_invoice(order_id,invoice_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
         [order.id, id]
       )
-      await tx.query(
-        `INSERT INTO invoice_products.email_job(order_id,actor_id,available_at)
+      if (order.snapshot.paymentMethod !== 'invoice') {
+        await tx.query(
+          `INSERT INTO invoice_products.email_job(order_id,actor_id,available_at)
          VALUES($1,$2,now()+interval '5 minutes')
          ON CONFLICT(order_id) DO NOTHING`,
-        [order.id, actorId]
-      )
+          [order.id, actorId]
+        )
+      }
       return id
     },
     async refund(tx, order, actorId) {
@@ -155,7 +174,7 @@ export default defineNitroPlugin(() => {
       )
     },
     async notify(order, actorId) {
-      if (!order.invoice_id) {
+      if (!order.invoice_id || order.snapshot.paymentMethod === 'invoice') {
         return
       }
       try {

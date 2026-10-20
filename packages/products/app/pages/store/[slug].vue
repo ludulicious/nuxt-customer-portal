@@ -178,6 +178,7 @@ function toggleBuyerType() {
 }
 const clients = ref<Array<{ id: string; name: string }>>([])
 const state = reactive({
+  paymentMethod: 'online' as 'online' | 'invoice',
   priceId: '',
   billing: {
     type: initialBillingProfile?.buyerType || ('person' as 'person' | 'organization'),
@@ -202,7 +203,9 @@ const countryOptions = computed(() => {
     .map((value) => ({ value, label: `${names.of(value) || value} (${value})` }))
     .sort((a, b) => a.label.localeCompare(b.label, locale.value))
 })
-const schema = useProductFormSchema(z.object({ priceId: z.string().min(1), billing: billingSchema }))
+const schema = useProductFormSchema(
+  z.object({ paymentMethod: z.enum(['online', 'invoice']), priceId: z.string().min(1), billing: billingSchema })
+)
 let requestId = crypto.randomUUID()
 
 async function applySession() {
@@ -315,6 +318,23 @@ async function logout() {
   checkoutForm.value?.clear()
 }
 
+const paymentMethods = computed(() =>
+  (product.value?.paymentMethods || ['online']).filter(
+    (method) => method !== 'invoice' || selectedPrice.value?.taxBehavior === 'inclusive'
+  )
+)
+watch(
+  paymentMethods,
+  (methods) => {
+    if (!methods.includes(state.paymentMethod)) {
+      state.paymentMethod = methods[0] || 'online'
+    }
+  },
+  { immediate: true }
+)
+useHead(() => ({
+  meta: product.value?.visibility === 'unlisted' ? [{ name: 'robots', content: 'noindex, nofollow' }] : []
+}))
 async function buy() {
   busy.value = true
   error.value = ''
@@ -580,7 +600,26 @@ async function buy() {
                 /></UFormField>
               </template>
             </div>
-            <p v-if="product.storeMode !== 'sandbox'" class="checkout-note">
+            <UFormField
+              v-if="selectedPrice?.amount && paymentMethods.length > 1"
+              name="paymentMethod"
+              :label="t('products.paymentMethod')"
+            >
+              <USelect
+                v-model="state.paymentMethod"
+                :items="
+                  paymentMethods.map((value) => ({
+                    value,
+                    label: t(value === 'invoice' ? 'products.invoicePayment' : 'products.onlinePayment')
+                  }))
+                "
+                class="w-full"
+              />
+            </UFormField>
+            <p v-if="selectedPrice?.amount && state.paymentMethod === 'invoice'" class="checkout-note">
+              {{ t('products.invoicePaymentHelp') }}
+            </p>
+            <p v-if="state.paymentMethod === 'online' && product.storeMode !== 'sandbox'" class="checkout-note">
               {{ t('products.finalTax') }}
             </p>
             <UButton
@@ -588,7 +627,11 @@ async function buy() {
               block
               size="xl"
               :disabled="
-                !product.pricingComplete || !selectedPrice || holdExpired || (product.planningEnabled && !hold)
+                !product.pricingComplete ||
+                !selectedPrice ||
+                (selectedPrice.amount > 0 && !paymentMethods.length) ||
+                holdExpired ||
+                (product.planningEnabled && !hold)
               "
               :loading="busy"
               icon="i-lucide-lock-keyhole"
@@ -596,9 +639,11 @@ async function buy() {
                 t(
                   selectedPrice?.amount === 0
                     ? 'products.getFree'
-                    : product.storeMode === 'sandbox'
-                      ? 'products.testCheckout'
-                      : 'products.pay'
+                    : state.paymentMethod === 'invoice'
+                      ? 'products.confirmOrder'
+                      : product.storeMode === 'sandbox'
+                        ? 'products.testCheckout'
+                        : 'products.pay'
                 )
               }}</UButton
             >

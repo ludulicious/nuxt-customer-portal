@@ -114,6 +114,8 @@ export const invoice = invoicesSchema.table(
     originalInvoiceId: text('original_invoice_id'),
     externalReference: text('external_reference'),
     importMetadata: jsonb('import_metadata').$type<Record<string, unknown>>(),
+    agreedTotalMinor: integer('agreed_total_minor'),
+    taxReviewRequired: boolean('tax_review_required').default(false).notNull(),
     automated: boolean('automated').default(false).notNull(),
     status: invoiceStatus('status').default('DRAFT').notNull(),
     currency: text('currency').notNull(),

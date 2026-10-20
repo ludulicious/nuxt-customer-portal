@@ -15,6 +15,7 @@ export interface ProductCopy {
 }
 export interface ProductData {
   planning?: ProductPlanning
+  visibility?: 'listed' | 'unlisted'
   isFree?: boolean
   slug: string
   type: 'digital' | 'service'
@@ -113,6 +114,8 @@ export interface Billing {
   clientId?: string
 }
 export interface OrderSnapshot {
+  paymentMethod?: 'online' | 'invoice'
+  acceptedAt?: string
   planningReservationId?: string
   planningExpiresAt?: string
   planningChangeAppointmentId?: string
@@ -146,6 +149,10 @@ export interface OrderLine {
   created_at: string
 }
 export interface Order {
+  invoiceStatus?: string
+  paymentStatus?: 'unpaid' | 'partial' | 'paid'
+  paidAmount?: number
+  outstandingAmount?: number
   id: string
   booking_reference: string
   store_id: string
@@ -154,7 +161,7 @@ export interface Order {
   client_id: string | null
   email: string
   snapshot: OrderSnapshot
-  status: 'pending' | 'paid' | 'failed' | 'expired'
+  status: 'pending' | 'paid' | 'accepted' | 'failed' | 'expired'
   checkout_id: string | null
   payment_id: string | null
   total: number | null
@@ -195,6 +202,8 @@ export interface CartLine {
   updated_at: string
 }
 export interface CatalogProduct {
+  visibility?: 'listed' | 'unlisted'
+  paymentMethods?: Array<'online' | 'invoice'>
   planningEnabled: boolean
   durationMinutes: number | null
   storeMode: 'sandbox' | 'live'
@@ -231,6 +240,8 @@ export interface Page<T> {
 }
 
 export interface Purchase {
+  paymentStatus?: 'unpaid' | 'partial' | 'paid'
+  outstandingAmount?: number
   id: string
   orderId: string
   bookingReference: string

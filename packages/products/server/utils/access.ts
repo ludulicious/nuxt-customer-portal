@@ -12,6 +12,8 @@ export const hash = (value: string) => createHash('sha256').update(value).digest
 export interface Store {
   organization_id: string
   actor_id: string
+  online_payment: boolean
+  invoice_payment: boolean
   enabled: boolean
   mode: 'sandbox' | 'live'
   markdown_style: MarkdownStyle

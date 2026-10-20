@@ -11,7 +11,7 @@ export default defineTask({
   async run() {
     const paymentsConfigured = (await stripeSummary()).configured
     const orders = await rows<Order>(
-      `SELECT * FROM products.orders WHERE (status='paid' AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
+      `SELECT * FROM products.orders WHERE (status IN ('paid','accepted') AND (processing<>'complete' OR NOT notified)) OR (status='pending' AND checkout_id IS NOT NULL AND created_at<now()-interval '1 minute') ORDER BY updated_at LIMIT 20`
     )
     let processed = 0,
       failed = 0

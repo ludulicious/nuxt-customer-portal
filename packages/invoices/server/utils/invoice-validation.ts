@@ -47,6 +47,12 @@ export const invoiceUpdateSchema = z
     path: ['dueDate'],
     message: 'Due date must not precede invoice date'
   })
+export const invoiceTaxReviewSchema = z.object({
+  rates: z
+    .array(z.object({ lineId: id, vatRateBasisPoints: z.number().int().min(0).max(10000) }))
+    .min(1)
+    .max(500)
+})
 export const invoiceIssueSchema = z.object({ action: z.enum(['VOID', 'UNVOID']) })
 export const invoicePaymentSchema = z.object({
   paidOn: isoDate,

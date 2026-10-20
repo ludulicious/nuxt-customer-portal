@@ -3,6 +3,8 @@ import type { HoldResult } from '../../composables/usePlanning'
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '@nuxt-customer-portal/products/shared/checkout-query'
 import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 
+useHead({ meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
+
 definePageMeta({ path: '/store/:slug/book', public: true, layout: 'store', key: (route) => `booking:${route.path}` })
 const route = useRoute(),
   { t, locale, setLocale } = useI18n(),

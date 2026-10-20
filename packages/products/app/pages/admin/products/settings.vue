@@ -14,6 +14,8 @@ const { t } = useI18n(),
     languages: ['en', 'nl'] as ('en' | 'nl')[],
     currencies: ['EUR'],
     currencyTaxBehavior: {} as Record<string, 'inclusive' | 'exclusive'>,
+    onlinePayment: true,
+    invoicePayment: false,
     enabled: false,
     mode: 'sandbox' as const,
     defaultLocale: 'en' as 'en' | 'nl',
@@ -35,6 +37,8 @@ async function load() {
       languages: health.value.languages,
       currencies: health.value.currencies,
       currencyTaxBehavior: health.value.currencyTaxBehavior,
+      onlinePayment: health.value.onlinePayment,
+      invoicePayment: health.value.invoicePayment,
       enabled: health.value.enabled,
       mode: health.value.mode,
       defaultLocale: health.value.defaultLocale,
@@ -51,6 +55,8 @@ async function save(tab: 'general' | 'styles') {
   try {
     const latest = await api.settings()
     const general = {
+      onlinePayment: latest.onlinePayment,
+      invoicePayment: latest.invoicePayment,
       enabled: latest.enabled,
       mode: latest.mode,
       languages: latest.languages,

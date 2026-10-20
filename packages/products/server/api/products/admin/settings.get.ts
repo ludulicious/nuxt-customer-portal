@@ -8,13 +8,15 @@ import { stripeSummary } from '@nuxt-customer-portal/products/server/utils/strip
 export default defineEventHandler(async (event) => {
   await admin(event)
   const [store] = await rows(
-    'SELECT markdown_style,checkout_appearance AS "checkoutAppearance",image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
+    'SELECT online_payment,invoice_payment,markdown_style,checkout_appearance AS "checkoutAppearance",image_policy,currency_tax_behavior AS "currencyTaxBehavior",languages,currencies,enabled,mode,default_locale AS "defaultLocale" FROM products.store WHERE id=true'
   )
   const storage = await storageSummary()
   const stripe = await stripeSummary()
   return {
     checkoutAppearance: checkoutAppearanceSchema.parse(store?.checkoutAppearance || {}),
     markdownStyle: markdownStyleSchema.parse(store?.markdown_style || {}),
+    onlinePayment: store?.online_payment !== false,
+    invoicePayment: store?.invoice_payment || false,
     enabled: store?.enabled || false,
     mode: store?.mode || 'sandbox',
     languages: store?.languages || ['en', 'nl'],

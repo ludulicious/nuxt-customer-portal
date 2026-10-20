@@ -1,6 +1,6 @@
 export default {
   id: 'planning',
-  version: '0.7.0',
+  version: '0.8.0',
   source: '@nuxt-customer-portal/planning',
   dependsOn: ['core', 'ui', 'products'],
   schema: './server/db/schema/planning.ts',

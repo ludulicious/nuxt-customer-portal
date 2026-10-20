@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/ui
 
+## 0.8.0
+
+### Patch Changes
+
+- 175854d: Support validated conditional sections in email texts and HTML templates, preserve conditional tags in the visual editor, and let administrators preview purchase emails with or without downloads.
+- Updated dependencies [175854d]
+- Updated dependencies [28bb7af]
+  - @nuxt-customer-portal/core@0.8.0
+
 ## 0.7.0
 
 ### Patch Changes

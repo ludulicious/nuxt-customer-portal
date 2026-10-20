@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     getQuery(event)
   )
   const args = [userId, `%${query.search}%`, query.type, query.access]
-  const where = `o.buyer_id=$1 AND o.status='paid'
+  const where = `o.buyer_id=$1 AND o.status IN ('paid','accepted')
     AND l.snapshot->>'title' ILIKE $2
     AND ($3='all' OR l.snapshot->'product'->>'type'=$3)
     AND ($4='all' OR ($4='available')=(o.total IS NOT NULL AND NOT o.disputed AND (l.total IS NULL OR l.total=0 OR l.refunded<l.total)))`
@@ -66,7 +66,9 @@ export default defineEventHandler(async (event) => {
         refunded: line.refunded,
         disputed: order.disputed,
         fulfilled: line.fulfilled,
-        invoiceId: order.invoice_id,
+        paymentStatus: order.paymentStatus,
+        outstandingAmount: order.outstandingAmount,
+        invoiceId: order.invoiceStatus === 'DRAFT' ? null : order.invoice_id,
         nextSteps: line.snapshot.product.nextSteps[order.snapshot.locale],
         fileIds: hasAccess(order, line) ? line.snapshot.product.fileIds : [],
         createdAt: order.created_at

@@ -218,7 +218,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
               placeholder: t('products.status'),
               items: [
                 { value: 'all', label: t('products.allStatuses') },
-                ...['pending', 'paid', 'failed', 'expired'].map((value) => ({
+                ...['pending', 'accepted', 'paid', 'failed', 'expired'].map((value) => ({
                   value,
                   label: t(`products.${value}`)
                 }))
@@ -259,7 +259,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
                 <div class="flex flex-wrap items-center gap-2">
                   <h2 class="font-semibold">{{ productNames(order) }}</h2>
                   <UBadge :color="statusColor(order.status)" variant="subtle">{{
-                    t(`products.${order.status}`)
+                    order.paymentStatus ? t(`products.payment${order.paymentStatus}`) : t(`products.${order.status}`)
                   }}</UBadge>
                 </div>
                 <p class="mt-1 font-mono text-xs text-muted">{{ order.booking_reference }}</p>
@@ -288,7 +288,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
             <UButton
               v-if="
                 order.status === 'pending' ||
-                (order.status === 'paid' &&
+                (['paid', 'accepted'].includes(order.status) &&
                   (!order.notified ||
                     order.processing !== 'complete' ||
                     (order.snapshot.storeMode === 'sandbox' &&
@@ -302,7 +302,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
             >
             <UButton
               v-if="
-                order.status === 'paid' &&
+                ['paid', 'accepted'].includes(order.status) &&
                 order.lines.some((line) => line.snapshot.product.type === 'service' && !line.fulfilled) &&
                 !order.disputed &&
                 order.refunded < (order.total || 0)

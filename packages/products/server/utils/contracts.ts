@@ -2,6 +2,10 @@ import type { PoolClient } from 'pg'
 import type { Order } from '../../shared/types'
 
 export interface OrderIntegration {
+  paymentState?(
+    invoiceId: string,
+    tx?: Pick<PoolClient, 'query'>
+  ): Promise<{ paid: number; outstanding: number; status?: string }>
   assertReady(storeId: string): Promise<void>
   invoice(client: PoolClient, order: Order, actorId: string): Promise<string>
   refund(client: PoolClient, order: Order, actorId: string): Promise<void>
@@ -11,6 +15,7 @@ let integration: OrderIntegration | undefined
 export const registerOrderIntegration = (value: OrderIntegration) => {
   integration = value
 }
+export const optionalOrderIntegration = () => integration
 export const orderIntegration = () => {
   if (!integration) {
     throw new Error('Install and enable invoice-products before opening checkout')

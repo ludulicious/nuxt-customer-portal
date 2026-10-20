@@ -50,6 +50,8 @@ export interface InvoiceEmailDeliveryDto {
   sentAt: string | null
 }
 export interface InvoiceDto {
+  agreedTotalMinor: number | null
+  taxReviewRequired: boolean
   id: string
   organizationId: string
   clientOrganizationId: string | null
@@ -122,6 +124,7 @@ export type ClientInvoiceDto = Omit<
   emailDeliveries?: never
 }
 export type InvoiceHistoryAction =
+  | 'TAX_REVIEWED'
   | 'CREATED'
   | 'EDITED'
   | 'ISSUED'

@@ -17,10 +17,15 @@ import { resolveCheckoutReturnUrl } from '../../shared/checkout-query'
 import { purchaseConfirmationEmail } from '../../shared/emails'
 import { checkoutReturnPath } from './checkout-return'
 import { rows, transaction } from './database'
-import { getStore, hash, baseUrl } from './access'
+import { getStore, hash, baseUrl, type Store } from './access'
 import { getProduct, selectCopy } from './catalog'
 import { stripeProvider } from './payments'
-import { orderIntegration, runOrderFulfillmentHooks, planningOrderIntegration } from './contracts'
+import {
+  optionalOrderIntegration,
+  orderIntegration,
+  runOrderFulfillmentHooks,
+  planningOrderIntegration
+} from './contracts'
 import { developmentSandboxEffectsEnabled } from './development'
 
 export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
@@ -29,7 +34,17 @@ export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
     return undefined
   }
   order.lines = await rows('SELECT * FROM products.order_line WHERE order_id=$1 ORDER BY position', [id], tx)
+  await attachPaymentState(order, tx)
   return order
+}
+export async function attachPaymentState(order: Order, tx?: Parameters<typeof rows>[2]) {
+  if (order.snapshot.paymentMethod === 'invoice') {
+    const state = order.invoice_id ? await optionalOrderIntegration()?.paymentState?.(order.invoice_id, tx) : undefined
+    order.invoiceStatus = state?.status
+    order.paidAmount = state?.paid || 0
+    order.outstandingAmount = state?.outstanding ?? order.total ?? 0
+    order.paymentStatus = order.outstandingAmount === 0 ? 'paid' : order.paidAmount > 0 ? 'partial' : 'unpaid'
+  }
 }
 
 export async function createCheckout(event: H3Event, body: unknown) {
@@ -82,11 +97,7 @@ export async function createCheckout(event: H3Event, body: unknown) {
       )
       return existing
     }
-    const [currentStore] = await rows<{ currencies: string[] }>(
-      'SELECT currencies FROM products.store WHERE id=true FOR SHARE',
-      [],
-      tx
-    )
+    const [currentStore] = await rows<Store>('SELECT * FROM products.store WHERE id=true FOR SHARE', [], tx)
     await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${input.productId}`])
     const regularProduct = await getProduct(store.organization_id, input.productId, false, tx)
     const product = effectivePricing(regularProduct, new Date())
@@ -100,12 +111,27 @@ export async function createCheckout(event: H3Event, body: unknown) {
     if (!price || (!product.isFree && !currentStore!.currencies.includes(price.currency))) {
       throw createError({ statusCode: 409, message: 'Price has changed; refresh the product' })
     }
+    const method = input.paymentMethod || (currentStore!.online_payment !== false ? 'online' : 'invoice')
+    if (
+      price.amount > 0 &&
+      ((method === 'online' && currentStore!.online_payment === false) ||
+        (method === 'invoice' && !currentStore!.invoice_payment))
+    ) {
+      throw createError({ statusCode: 409, message: 'This payment method is not available' })
+    }
+    if (price.amount > 0 && method === 'invoice' && price.taxBehavior !== 'inclusive') {
+      throw createError({ statusCode: 409, message: 'Pay later requires a tax-inclusive price' })
+    }
     const id = randomUUID(),
       title = selectCopy(product, input.locale, store.default_locale).title
     const snapshot = {
       billing: input.billing,
       locale: input.locale,
       returnUrl: input.returnUrl,
+      paymentMethod:
+        price.amount === 0
+          ? undefined
+          : input.paymentMethod || (currentStore!.online_payment !== false ? 'online' : 'invoice'),
       storeMode: store.mode
     }
     const lineSnapshot = { product: { ...product, isFree: price.amount === 0 }, title, price }
@@ -129,19 +155,40 @@ export async function createCheckout(event: H3Event, body: unknown) {
     return created!
   })
   const primaryLine = order.lines[0]!
-  if (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0) {
+  const deferred = order.snapshot.paymentMethod === 'invoice'
+  if (deferred || (primaryLine.snapshot.product.isFree && primaryLine.snapshot.price.amount === 0)) {
     const processSandboxEffects = store.mode === 'sandbox' && developmentSandboxEffectsEnabled()
-    order.snapshot.paymentCompletedAt ||= new Date().toISOString()
-    await rows('UPDATE products.orders SET snapshot=$2 WHERE id=$1', [order.id, order.snapshot])
-    await rows(
-      `UPDATE products.orders SET status='paid',total=0,net=0,tax=0,processing=$2,notified=$3 WHERE id=$1 AND status='pending'`,
-      [
-        order.id,
-        store.mode === 'sandbox' && !processSandboxEffects ? 'complete' : 'pending',
-        store.mode === 'sandbox' && !processSandboxEffects
-      ]
-    )
-    await rows('UPDATE products.order_line SET total=0,net=0,tax=0 WHERE order_id=$1', [order.id])
+    await transaction(async (tx) => {
+      await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [order.id])
+      const current = await getOrder(order.id, tx)
+      if (current?.status !== 'pending') {
+        if (!current || !['paid', 'accepted'].includes(current.status)) {
+          throw createError({ statusCode: 409, message: 'Order is no longer available' })
+        }
+        return
+      }
+      if (deferred) {
+        current.snapshot.acceptedAt = new Date().toISOString()
+      } else {
+        current.snapshot.paymentCompletedAt = new Date().toISOString()
+      }
+      const total = deferred ? primaryLine.unit_amount * primaryLine.quantity : 0
+      await tx.query(
+        `UPDATE products.orders SET snapshot=$2,status=$3,total=$4,net=$4,tax=0,processing=$5,notified=$6 WHERE id=$1`,
+        [
+          order.id,
+          current.snapshot,
+          deferred ? 'accepted' : 'paid',
+          total,
+          store.mode === 'sandbox' && !processSandboxEffects ? 'complete' : 'pending',
+          store.mode === 'sandbox' && !processSandboxEffects
+        ]
+      )
+      await tx.query(
+        'UPDATE products.order_line SET total=unit_amount*quantity,net=unit_amount*quantity,tax=0 WHERE order_id=$1',
+        [order.id]
+      )
+    })
     if (store.mode === 'live' || processSandboxEffects) {
       try {
         await processOrder(order.id)
@@ -199,7 +246,7 @@ export async function claimPurchases(event: H3Event) {
   }
   await rows(
     `UPDATE products.orders o SET buyer_id=$1
-     WHERE o.buyer_id IS NULL AND o.status='paid' AND (
+     WHERE o.buyer_id IS NULL AND o.status IN ('paid','accepted') AND (
        lower(o.email)=lower($2)
        OR EXISTS (
          SELECT 1 FROM public.member m
@@ -214,7 +261,7 @@ export async function processOrder(id: string) {
   const store = await getStore()
   try {
     const current = await getOrder(id)
-    if (current?.status === 'paid' && current.snapshot.planningReservationId) {
+    if (current && ['paid', 'accepted'].includes(current.status) && current.snapshot.planningReservationId) {
       if (!planningOrderIntegration()) {
         throw new Error('Planning package required to process this appointment')
       }
@@ -222,12 +269,12 @@ export async function processOrder(id: string) {
     }
     await transaction(async (tx) => {
       const pending = await getOrder(id, tx)
-      if (pending?.status === 'paid' && pending.snapshot.planningReservationId) {
+      if (pending && ['paid', 'accepted'].includes(pending.status) && pending.snapshot.planningReservationId) {
         await planningOrderIntegration()!.confirm(tx, pending)
       }
       await tx.query('SELECT id FROM products.orders WHERE id=$1 FOR UPDATE', [id])
       const order = await getOrder(id, tx)
-      if (!order || order.status !== 'paid') {
+      if (!order || !['paid', 'accepted'].includes(order.status)) {
         return
       }
       if (!order.client_id) {
@@ -250,7 +297,9 @@ export async function processOrder(id: string) {
         order.invoice_id = await orderIntegration().invoice(tx, order, store.actor_id)
         await tx.query('UPDATE products.orders SET invoice_id=$2 WHERE id=$1', [id, order.invoice_id])
       }
-      await orderIntegration().refund(tx, order, store.actor_id)
+      if (order.snapshot.paymentMethod !== 'invoice') {
+        await orderIntegration().refund(tx, order, store.actor_id)
+      }
       if (order.processing !== 'complete') {
         await runOrderFulfillmentHooks(tx, order)
       }
@@ -267,7 +316,7 @@ export async function processOrder(id: string) {
 }
 export async function notifyOrder(id: string) {
   const order = await getOrder(id)
-  if (!order || order.status !== 'paid') {
+  if (!order || !['paid', 'accepted'].includes(order.status)) {
     return
   }
   const store = await getStore()
@@ -304,7 +353,9 @@ export async function notifyOrder(id: string) {
   // Invoice delivery persists its own claim, and the purchase email uses a
   // provider idempotency key. Do not hold an order transaction over PDF and
   // external email work.
-  await orderIntegration().notify(order, store.actor_id)
+  if (order.snapshot.paymentMethod !== 'invoice') {
+    await orderIntegration().notify(order, store.actor_id)
+  }
   if (order.notified) {
     return
   }
@@ -331,7 +382,16 @@ export async function notifyOrder(id: string) {
       product: order.lines.map((line) => line.snapshot.title).join(', '),
       bookingReference: order.booking_reference,
       url,
-      instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale],
+      instructions: [
+        primaryLine.snapshot.product.nextSteps[order.snapshot.locale],
+        order.snapshot.paymentMethod === 'invoice'
+          ? order.snapshot.locale === 'nl'
+            ? 'Je bestelling is bevestigd. Je ontvangt de factuur later apart.'
+            : 'Your order is confirmed. Your invoice will follow separately.'
+          : ''
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
       downloads: downloadLinksMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)))
     },
     idempotencyKey: `purchase:${id}`,

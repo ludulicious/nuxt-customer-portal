@@ -30,6 +30,9 @@ const { t } = useI18n()
         </p>
         <p class="mt-2 break-all font-mono text-sm font-medium">/{{ product.slug }}</p>
       </div>
+      <p class="text-sm text-muted">
+        {{ t(product.visibility === 'unlisted' ? 'products.unlisted' : 'products.listed') }}
+      </p>
       <dl class="space-y-4 border-t border-default pt-4 text-sm">
         <div class="flex items-start justify-between gap-4">
           <dt class="flex items-center gap-2 text-muted">
