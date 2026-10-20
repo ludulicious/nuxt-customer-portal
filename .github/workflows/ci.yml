@@ -1,44 +1,37 @@
 name: CI
 
 on:
-  push:
-    branches: [master]
   pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: nuxt-customer-portal-${{ github.ref }}
+  group: nuxt-customer-portal-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
-env:
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
-  PUBLIC_URL: http://localhost:3000
-  BETTER_AUTH_URL: http://localhost:3000
-  BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
-  PORTAL_REGISTRATION_MODE: open
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: customer_portal_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
+      PUBLIC_URL: http://localhost:3000
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
+      PORTAL_REGISTRATION_MODE: open
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - name: Detect documentation changes
+        id: changes
+        run: |
+          if git diff --quiet HEAD^ HEAD -- apps/docs docs README.md CONTRIBUTING.md package.json pnpm-lock.yaml pnpm-workspace.yaml 'packages/*/package.json' 'packages/*/portal.manifest.mjs' .github/workflows; then
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
@@ -46,82 +39,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:saas-boundary
-      - run: pnpm test
+      - run: pnpm test:packages
       - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm build
-      - run: pnpm pack:check
-      - name: Migrate demo test database
-        working-directory: apps/demo-apex
-        run: node ../../packages/kit/bin/nuxt-customer-portal.mjs db migrate
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e:demos
-      - run: pnpm test:e2e:docs
-
-  docs-image:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - name: Build standalone documentation image
-        run: docker build --tag customer-portal-docs:ci apps/docs
-
-  consumers:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        manager: [pnpm, npm, yarn, bun]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.19.0
-          cache: pnpm
-      - if: matrix.manager == 'bun'
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - if: matrix.manager == 'yarn'
-        run: corepack enable
-      - if: matrix.manager == 'npm'
-        run: npm install --global npm@11.6.1
-      - run: pnpm install --frozen-lockfile
-      - run: node --import tsx scripts/verify-packages.ts --consumers --manager=${{ matrix.manager }}
-
-  starter:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['22.19.0', '24']
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: portal_starter_test_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test:starter
-        env:
-          PORTAL_STARTER_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/portal_starter_test_ci
-      - run: pnpm pack:starter
+      - run: pnpm --filter @nuxt-customer-portal/saas-portal typecheck
+      - if: steps.changes.outputs.docs == 'true'
+        run: pnpm test:docs

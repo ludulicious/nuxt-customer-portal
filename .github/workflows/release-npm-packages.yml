@@ -1,4 +1,4 @@
-name: Release npm packages
+name: Release packages and portal image
 
 on:
   release:
@@ -6,37 +6,68 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing release version to publish (for example 1.2.3)
+        description: Existing stable release tag to verify and publish (for example v1.2.3)
         required: true
         type: string
 
 permissions: {}
 
 concurrency:
-  group: npm-packages-${{ github.event.release.tag_name }}
+  group: release-${{ github.event.release.tag_name || inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
-  verify:
+  resolve:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      commit_sha: ${{ steps.commit.outputs.sha }}
+      release_tag: ${{ steps.tag.outputs.tag }}
     steps:
+      - name: Validate release tag
+        id: tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "An existing stable release tag is required" >&2
+            exit 1
+          fi
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name || github.ref }}
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          package-manager-cache: false
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test:packages
-      - run: pnpm pack:check
+          ref: refs/tags/${{ steps.tag.outputs.tag }}
+      - name: Check release package versions
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, readdirSync } from 'node:fs'
+          const version = process.env.RELEASE_TAG.replace(/^v/, '')
+          for (const entry of readdirSync('packages', { withFileTypes: true })) {
+            if (!entry.isDirectory()) continue
+            const manifest = JSON.parse(readFileSync(`packages/${entry.name}/package.json`, 'utf8'))
+            if (!manifest.private && manifest.version !== version) {
+              throw new Error(`${manifest.name}: expected release version ${version}, found ${manifest.version}`)
+            }
+          }
+          NODE
+      - name: Resolve release commit
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: resolve
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-verification.yml
+    with:
+      ref: ${{ needs.resolve.outputs.commit_sha }}
 
   publish:
-    needs: verify
+    needs: [resolve, verify]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -45,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name || github.ref }}
+          ref: ${{ needs.verify.outputs.commit_sha }}
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
@@ -56,4 +87,14 @@ jobs:
       - name: Publish unpublished package versions
         run: pnpm release-packages
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+
+  portal-image:
+    needs: [resolve, verify]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/release-portal-image.yml
+    with:
+      commit_sha: ${{ needs.verify.outputs.commit_sha }}
+      release_tag: ${{ needs.resolve.outputs.release_tag }}

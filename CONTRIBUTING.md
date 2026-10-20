@@ -41,25 +41,25 @@ Read [Layers](docs/LAYERS.md), [Create a feature layer](https://nuxt-customer-po
 
 ## Verification
 
-```bash
-pnpm test
-pnpm lint
-pnpm typecheck
-pnpm build
-pnpm pack:check
-pnpm test:e2e:demos
-```
+Pull requests run a lightweight `CI / validate` job: package tests, formatting and lint checks, the SaaS boundary check, and the SaaS portal type check. Documentation content tests run when docs, shared dependency configuration, package manifests, or workflow files change. All package-manager consumer checks run only in full release verification. Superseded PR runs are cancelled. Merges to `master` do not repeat CI.
 
-The clean-consumer checks install only generated tarballs, with no workspace links:
+Run the same core checks locally:
 
 ```bash
-pnpm pack:consumer:pnpm
-pnpm pack:consumer:npm
-pnpm pack:consumer:yarn
-pnpm pack:consumer:bun
+pnpm verify:saas-boundary
+pnpm test:packages
+pnpm format:check
+pnpm --filter @nuxt-customer-portal/saas-portal typecheck
+pnpm test:docs
 ```
 
-Add focused tests for changed policies, routes, schemas, migration ordering, and failure behavior. Optional packages must still build when other optional features are absent.
+For larger changes, run **Full release verification** in Actions and supply a branch, tag, or commit. This runs the full suite without publishing: all type checks and application builds, docs content and browser tests, demo browser tests with a migrated PostgreSQL database, tarball checks, the standalone docs Docker build, four package-manager consumer checks, and starter checks on Node 22 and 24. Every job uses the same resolved commit. There is no separate lint pass because `format:check` already includes ESLint.
+
+A published GitHub release starts **Release packages and portal image** (`release-npm-packages.yml`). It resolves the existing stable release tag, checks package versions, and runs full verification once. npm publication and the portal Docker publisher both depend on that complete verification and check out its exact commit. A failed, cancelled, or skipped verification blocks both publishers. Rerun the release workflow with `release_tag` to retry an existing tag; the Docker workflow is reusable only and has no independent publication trigger. The npm entry-point filename is unchanged so existing trusted-publisher configuration remains valid.
+
+Keep `CI / validate` as the only required PR check. If repository rules previously required the consumer, starter, or docs-image jobs, remove all consumer, starter, and docs-image requirements when adopting this split; these checks now belong to release verification. This change does not alter repository rules automatically.
+
+Add focused tests for changed policies, routes, schemas, migration ordering, and failure behavior. Optional packages must still build when other optional features are absent. Full verification does not replace the manual release checks in the documentation release checklist.
 
 ## Documentation and pull requests
 
