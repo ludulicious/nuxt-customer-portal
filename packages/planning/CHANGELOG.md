@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+### Patch Changes
+
+- 9ccc48d: Keep Google Calendar connection recovery available after expired or incomplete authorization, validate Calendar permissions before saving a connection, and retain saved availability with a warning when external busy times cannot load.
+- 1d0419c: Add scheduled product discounts and free offers, original catalog prices, and checkout price revalidation.
+- Updated dependencies [1d0419c]
+  - @nuxt-customer-portal/products@0.7.0
+  - @nuxt-customer-portal/core@0.7.0
+  - @nuxt-customer-portal/ui@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
