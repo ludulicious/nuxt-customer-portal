@@ -1,5 +1,5 @@
 import { claimPurchases, hasAccess, getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
-import { sendAsset } from '@nuxt-customer-portal/products/server/utils/storage'
+import { sendPurchasedAsset } from '@nuxt-customer-portal/products/server/utils/downloads'
 
 export default defineEventHandler(async (event) => {
   const userId = await claimPurchases(event),
@@ -10,6 +10,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  const fileName = line.snapshot.product.fileNames?.[assetId]?.[order.snapshot.locale]
-  return sendAsset(event, assetId, getQuery(event).download === '1', fileName)
+  return sendPurchasedAsset(event, order, assetId, 'portal', getQuery(event).download === '1')
 })

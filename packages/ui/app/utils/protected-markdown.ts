@@ -61,7 +61,7 @@ export const MarkdownPlaceholder = Node.create({
   addInputRules() {
     return [
       nodeInputRule({
-        find: /({{\s*[a-z0-9_]+\s*}})$/i,
+        find: /({{\s*(?:#if\s+[a-z0-9_]+|else|\/if|[a-z0-9_]+)\s*}})$/i,
         type: this.type,
         getAttributes: (match) => ({ raw: match[1] })
       })

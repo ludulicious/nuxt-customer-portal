@@ -43,10 +43,10 @@ function unsupported(node: MarkdownNode): boolean {
 }
 export function placeholderText(text: string, marks: NonNullable<JSONContent['marks']> = []): JSONContent[] {
   return text
-    .split(/({{\s*[a-z0-9_]+\s*}})/gi)
+    .split(/({{\s*(?:#if\s+[a-z0-9_]+|else|\/if|[a-z0-9_]+)\s*}})/gi)
     .filter(Boolean)
     .map((part) =>
-      /^{{\s*[a-z0-9_]+\s*}}$/i.test(part)
+      /^{{\s*(?:#if\s+[a-z0-9_]+|else|\/if|[a-z0-9_]+)\s*}}$/i.test(part)
         ? { type: 'markdownPlaceholder', attrs: { raw: part }, marks }
         : { type: 'text', text: part, marks }
     )

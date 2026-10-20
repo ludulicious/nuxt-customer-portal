@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../../../../shared/checkout-query'
 import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
+import { purchaseReturnUrl, type PurchaseDownload } from '../../../../shared/downloads'
 import { formatMoney } from '../../../../shared/money'
 
 definePageMeta({ public: true, layout: 'store' })
@@ -25,6 +26,33 @@ if (!product.prices.length && currency) {
 
 const appearance = computed(() => product.checkoutAppearance || defaultCheckoutAppearance())
 const checkoutReturnUrl = computed(() => resolveCheckoutReturnUrl(route.query.returnUrl, appearance.value.returnUrl))
+const purchaseToken =
+  outcome === 'success' && typeof route.query.purchase === 'string' && /^[a-f0-9]{64}$/.test(route.query.purchase)
+    ? route.query.purchase
+    : ''
+useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
+const { data: delivery, refresh: refreshDelivery } = await useFetch<{ status: string; files: PurchaseDownload[] }>(
+  () => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`,
+  { immediate: !!purchaseToken, watch: false }
+)
+const thankYouUrl = computed(() =>
+  purchaseToken ? purchaseReturnUrl(checkoutReturnUrl.value, purchaseToken) : checkoutReturnUrl.value
+)
+let deliveryTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  let attempts = 0
+  if (!purchaseToken || delivery.value?.status !== 'pending') {
+    return
+  }
+  deliveryTimer = setInterval(async () => {
+    if (++attempts >= 20 || delivery.value?.status !== 'pending') {
+      clearInterval(deliveryTimer)
+      return
+    }
+    await refreshDelivery()
+  }, 3000)
+})
+onUnmounted(() => clearInterval(deliveryTimer))
 const selectedPrice = computed(() => product.prices[0])
 const outcomeKey = `${outcome[0]!.toUpperCase()}${outcome.slice(1)}`
 const outcomeIcon = {
@@ -65,7 +93,7 @@ const themeStyle = computed(() => ({
   <main class="payment-return-page" :style="themeStyle">
     <div class="payment-return-shell">
       <header class="payment-return-header">
-        <a v-if="checkoutReturnUrl" :href="checkoutReturnUrl" class="host-return"
+        <a v-if="thankYouUrl" :href="thankYouUrl" class="host-return" rel="noreferrer"
           >← {{ t('products.backToOffering') }}</a
         >
         <img v-if="appearance.logoUrl" :src="appearance.logoUrl" :alt="appearance.hostName" class="return-logo" />
@@ -112,11 +140,20 @@ const themeStyle = computed(() => ({
           <p class="quiet-help">
             {{ t(outcome === 'success' ? 'products.paymentReturnSuccessHelp' : 'products.paymentReturnHelp') }}
           </p>
+          <div v-if="delivery?.files.length" class="mt-6 space-y-2">
+            <h2>{{ t('products.purchasedFiles') }}</h2>
+            <a v-for="file in delivery.files" :key="file.id" :href="file.url" class="block underline" rel="noreferrer">
+              {{ t('products.download') }}: {{ file.name }}
+            </a>
+          </div>
+          <UButton v-else-if="purchaseToken" variant="link" @click="refreshDelivery()">{{
+            t('products.refreshDownloads')
+          }}</UButton>
           <div class="return-actions">
             <NuxtLink :to="outcome === 'success' ? '/purchases' : checkoutUrl" class="retry-action">
               {{ t(outcome === 'success' ? 'products.purchases' : 'products.tryAgain') }}
             </NuxtLink>
-            <a v-if="checkoutReturnUrl" :href="checkoutReturnUrl" class="offering-action">
+            <a v-if="thankYouUrl" :href="thankYouUrl" class="offering-action" rel="noreferrer">
               {{ t('products.backToOffering') }}
             </a>
           </div>

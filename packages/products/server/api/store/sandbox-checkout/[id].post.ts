@@ -1,3 +1,4 @@
+import { orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { baseUrl, getStore, publicLimit } from '@nuxt-customer-portal/products/server/utils/access'
 import { getOrder, processOrder } from '@nuxt-customer-portal/products/server/utils/orders'
@@ -80,7 +81,8 @@ export default defineEventHandler(async (event) => {
             currency: line.snapshot.price.currency,
             outcome: 'success',
             returnUrl: order!.snapshot.returnUrl,
-            bookingReference: order!.booking_reference
+            bookingReference: order!.booking_reference,
+            downloadToken: await orderDownloadToken(order!.id)
           })
     }
   }

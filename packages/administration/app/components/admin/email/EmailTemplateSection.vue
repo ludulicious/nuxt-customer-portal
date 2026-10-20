@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { validateEmailTemplateSyntax } from '@nuxt-customer-portal/core/shared/email-template'
 import type { PortalEmailSettings } from '../../../types/admin-email'
 
 const props = defineProps<{ settings: PortalEmailSettings }>()
@@ -31,11 +32,16 @@ const schema = z.object({
       (value) => [...value.matchAll(/{{\s*([a-z0-9_]+)\s*}}/gi)].some((match) => match[1] === 'body'),
       t('admin.email.validation.templatePlaceholders')
     )
-    .refine(
-      (value) =>
-        [...value.matchAll(/{{\s*([a-z0-9_]+)\s*}}/gi)].every((match) => templatePlaceholders.includes(match[1]!)),
-      t('admin.email.validation.unknownTemplatePlaceholder')
-    )
+    .superRefine((value, context) => {
+      try {
+        validateEmailTemplateSyntax(value, new Set(templatePlaceholders), 'template')
+      } catch (error) {
+        context.addIssue({
+          code: 'custom',
+          message: error instanceof Error ? error.message : t('admin.email.invalidConditional')
+        })
+      }
+    })
 })
 const save = async () => {
   busy.value = true

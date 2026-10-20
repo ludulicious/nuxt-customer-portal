@@ -9,6 +9,7 @@ export function checkoutReturnPath(input: {
   outcome: CheckoutReturnOutcome
   returnUrl?: string
   bookingReference?: string
+  downloadToken?: string
 }) {
   const query = new URLSearchParams({
     locale: input.locale,
@@ -20,6 +21,9 @@ export function checkoutReturnPath(input: {
   }
   if (input.bookingReference) {
     query.set('reference', input.bookingReference)
+  }
+  if (input.outcome === 'success' && input.downloadToken) {
+    query.set('purchase', input.downloadToken)
   }
   return `/store/payment-return/${encodeURIComponent(input.slug)}?${query.toString()}`
 }

@@ -1,3 +1,4 @@
+import { orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
 import Stripe from 'stripe'
 import { createHash } from 'node:crypto'
 import { createError } from 'h3'
@@ -98,7 +99,8 @@ export const stripeProvider: PaymentProvider = {
           currency: primaryLine.snapshot.price.currency,
           outcome: 'success',
           returnUrl: order.snapshot.returnUrl,
-          bookingReference: order.booking_reference
+          bookingReference: order.booking_reference,
+          downloadToken: await orderDownloadToken(order.id)
         })}`
     return (await stripeClient()).checkout.sessions.create(
       {

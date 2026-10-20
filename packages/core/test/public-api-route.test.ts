@@ -33,3 +33,14 @@ test('Google Calendar notifications reach their channel-token authenticated hand
   assert.equal(isPublicStoreRoute('GET', '/api/planning/google/notifications'), false)
   assert.equal(isPublicStoreRoute('POST', '/api/planning/google/notifications/extra'), false)
 })
+
+test('guest purchase routes allow only the file listing and download GET endpoints', () => {
+  for (const path of ['/api/store/purchases/token', '/api/store/purchases/token/files/file']) {
+    assert.equal(isPublicStoreRoute('GET', path), true)
+    assert.equal(isPublicStoreRoute('POST', path), false)
+    assert.equal(isPublicStoreRoute('DELETE', path), false)
+  }
+  assert.equal(isPublicStoreRoute('GET', '/api/store/purchases'), false)
+  assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/files'), false)
+  assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/files/file/extra'), false)
+})
