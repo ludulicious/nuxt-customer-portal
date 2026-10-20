@@ -41,7 +41,7 @@ Read [Layers](docs/LAYERS.md), [Create a feature layer](https://nuxt-customer-po
 
 ## Verification
 
-Pull requests run one lightweight `CI / validate` job: package tests, formatting and lint checks, the SaaS boundary check, and the SaaS portal type check. Documentation content tests run when docs, shared dependency configuration, package manifests, or workflow files change. Superseded PR runs are cancelled. Merges to `master` do not repeat CI.
+Pull requests run a lightweight `CI / validate` job: package tests, formatting and lint checks, the SaaS boundary check, and the SaaS portal type check. Documentation content tests run when docs, shared dependency configuration, package manifests, or workflow files change. A separate `consumers (pnpm)` job checks a clean pnpm consumer; npm, Yarn, and Bun consumers run only in full release verification. Superseded PR runs are cancelled. Merges to `master` do not repeat CI.
 
 Run the same core checks locally:
 
@@ -57,7 +57,7 @@ For larger changes, run **Full release verification** in Actions and supply a br
 
 A published GitHub release starts **Release packages and portal image** (`release-npm-packages.yml`). It resolves the existing stable release tag, checks package versions, and runs full verification once. npm publication and the portal Docker publisher both depend on that complete verification and check out its exact commit. A failed, cancelled, or skipped verification blocks both publishers. Rerun the release workflow with `release_tag` to retry an existing tag; the Docker workflow is reusable only and has no independent publication trigger. The npm entry-point filename is unchanged so existing trusted-publisher configuration remains valid.
 
-Keep `CI / validate` as the required PR check. If repository rules previously required the consumer, starter, or docs-image jobs, remove those requirements when adopting this split; these checks now belong to release verification. This change does not alter repository rules automatically.
+Keep `CI / validate` and `consumers (pnpm)` as the required PR checks. If repository rules previously required the consumer, starter, or docs-image jobs, remove the npm/Yarn/Bun consumer, starter, and docs-image requirements when adopting this split; these checks now belong to release verification. This change does not alter repository rules automatically.
 
 Add focused tests for changed policies, routes, schemas, migration ordering, and failure behavior. Optional packages must still build when other optional features are absent. Full verification does not replace the manual release checks in the documentation release checklist.
 
