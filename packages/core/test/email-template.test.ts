@@ -94,7 +94,8 @@ test('default purchase templates keep their localized heading only when files ex
     const values = Object.fromEntries(purchaseConfirmationEmail.placeholders.map((item) => [item.key, item.example]))
     const withFiles = renderEmailTemplate(template, values, keys)
     const withoutFiles = renderEmailTemplate(template, { ...values, downloads: '' }, keys)
-    const heading = locale === 'en' ? 'Download your files:' : 'Download je bestanden:'
+    const heading =
+      locale === 'en' ? 'You can download your purchased files here:' : 'Je kunt je gekochte bestanden hier downloaden:'
     assert.ok(withFiles.includes(heading))
     assert.ok(!withoutFiles.includes(heading))
     assert.ok(!withFiles.includes('{{'))
