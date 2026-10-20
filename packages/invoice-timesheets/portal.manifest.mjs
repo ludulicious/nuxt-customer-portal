@@ -1,6 +1,6 @@
 export default {
   id: 'invoice-timesheets',
-  version: '0.8.0',
+  version: '0.8.1',
   source: '@nuxt-customer-portal/invoice-timesheets',
   dependsOn: ['core', 'invoices', 'timesheets'],
   schema: './server/db/schema/invoice-timesheets.ts',
