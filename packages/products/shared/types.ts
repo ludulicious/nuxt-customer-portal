@@ -36,6 +36,18 @@ export interface Price {
   amount: number
   taxBehavior: 'inclusive' | 'exclusive'
 }
+export interface ProductOffer {
+  id: string
+  startsAt: string
+  endsAt: string
+  enabled: boolean
+  isFree: boolean
+  prices: Price[]
+}
+export interface CatalogPrice extends Price {
+  originalAmount: number
+  offer: Pick<ProductOffer, 'id' | 'startsAt' | 'endsAt'> | null
+}
 export interface Product extends ProductData {
   categoryId: string | null
   categoryName?: string
@@ -43,6 +55,7 @@ export interface Product extends ProductData {
   id: string
   prices: Price[]
   updatedAt: string
+  offers?: ProductOffer[]
 }
 export interface Asset {
   id: string
@@ -207,7 +220,7 @@ export interface CatalogProduct {
   thumbnailImage: string | null
   detailImages: string[]
   videoUrl: string
-  prices: Price[]
+  prices: CatalogPrice[]
   purchaseUrl: string
   locale: Locale
   checkoutAppearance: CheckoutAppearance

@@ -143,6 +143,7 @@ onUnmounted(() => {
 })
 useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
 const error = ref('')
+const priceChanged = ref(false)
 const busy = ref(false)
 const releasingHold = ref(false)
 async function backToTimeSelection() {
@@ -327,8 +328,10 @@ async function buy() {
       holdToken
     })
     await navigateTo(result.url, { external: true })
-  } catch {
-    error.value = t('products.checkoutFailed')
+  } catch (cause) {
+    const failure = cause as { data?: { message?: string } }
+    priceChanged.value = /Price has changed|Product changed; choose a slot again/.test(failure.data?.message || '')
+    error.value = t(priceChanged.value ? 'products.offers.priceChanged' : 'products.checkoutFailed')
   } finally {
     busy.value = false
   }
@@ -358,6 +361,14 @@ async function buy() {
         }}</span>
       </header>
       <UAlert v-if="error" color="error" :title="error" role="alert" />
+      <UButton
+        v-if="priceChanged"
+        color="neutral"
+        variant="outline"
+        class="mb-4"
+        @click="hold ? backToTimeSelection() : reloadNuxtApp({ force: true })"
+        >{{ t(hold ? 'products.chooseAnotherSlot' : 'products.offers.reviewPrice') }}</UButton
+      >
 
       <div v-if="product" class="checkout-grid">
         <aside class="order-card" aria-labelledby="order-title">
@@ -422,13 +433,20 @@ async function buy() {
           <p class="order-summary">{{ product.summary }}</p>
           <div class="order-price">
             <span>{{ t('products.total') }}</span
-            ><strong>{{
-              selectedPrice?.amount === 0
-                ? t('products.freeProduct')
-                : selectedPrice
-                  ? formatMoney(selectedPrice.amount, selectedPrice.currency, product.locale)
-                  : '—'
-            }}</strong>
+            ><span
+              ><del
+                v-if="selectedPrice?.offer && selectedPrice.originalAmount > selectedPrice.amount"
+                class="mr-2 text-sm text-muted"
+                :aria-label="t('products.offers.originalPrice')"
+                >{{ formatMoney(selectedPrice.originalAmount, selectedPrice.currency, product.locale) }}</del
+              ><strong>{{
+                selectedPrice?.amount === 0
+                  ? t('products.freeProduct')
+                  : selectedPrice
+                    ? formatMoney(selectedPrice.amount, selectedPrice.currency, product.locale)
+                    : '—'
+              }}</strong></span
+            >
           </div>
           <p v-if="selectedPrice" class="order-tax">{{ t(`products.${selectedPrice.taxBehavior}`) }}</p>
           <p v-if="appearance.reassurance" class="order-reassurance">{{ appearance.reassurance }}</p>

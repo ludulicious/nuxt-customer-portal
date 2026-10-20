@@ -372,6 +372,50 @@ test(
           { statusCode: 409 }
         )
       })
+      await t.test('service offers use current prices and reject changed reservation quotes', async () => {
+        const offers = await import('../../products/server/utils/offers')
+        const period = {
+          startsAt: new Date(Date.now() - 60000).toISOString(),
+          endsAt: new Date(Date.now() + 3600000).toISOString()
+        }
+        const offer = await offers.saveOffer('store', 'product', {
+          ...period,
+          isFree: false,
+          prices: [{ currency: 'EUR', amount: 500, taxBehavior: 'inclusive' }]
+        })
+        const reserved = await hold(9)
+        assert.equal(reserved.amount, 500)
+        const updated = await offers.saveOffer('store', 'product', { ...period, isFree: true, prices: [] }, offer.id)
+        await assert.rejects(checkout(reserved.holdToken), { statusCode: 409 })
+        // Submitting the current price also fails: the held quote still needs renewed consent.
+        await assert.rejects(
+          orders.createCheckout(event(cookie), {
+            productId: 'product',
+            priceId: updated.prices[0]!.id,
+            holdToken: reserved.holdToken,
+            locale: 'en',
+            requestId: randomUUID(),
+            billing: {
+              type: 'person',
+              firstName: 'Test',
+              lastName: 'Buyer',
+              name: 'Test Buyer',
+              email: 'buyer@example.test',
+              company: '',
+              address: 'Street 1',
+              country: 'NL',
+              registrationNumber: '',
+              vatNumber: ''
+            }
+          }),
+          { statusCode: 409 }
+        )
+        await booking.releaseHold(event(cookie), { holdToken: reserved.holdToken })
+        const free = await hold(9)
+        assert.equal(free.amount, 0)
+        await booking.releaseHold(event(cookie), { holdToken: free.holdToken })
+        await offers.cancelOffer('store', 'product', offer.id)
+      })
       await t.test('planning-only saves preserve unrelated product data and validate permissions', async () => {
         const before = await catalog.getProduct('store', 'product')
         const saved = await management.saveProductPlanning(event(ownerCookie), 'product', {

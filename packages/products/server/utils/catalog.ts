@@ -1,3 +1,7 @@
+import type { PoolClient } from 'pg'
+import { effectivePricing } from '../../shared/offers'
+import { productOffers, validateOutstandingOffers } from './offers'
+import type { Store } from './access'
 import { markdownStyleSchema } from '../../shared/markdown-style'
 import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
@@ -75,22 +79,25 @@ export const selectCopy = (data: ProductData, locale: Locale, fallback: Locale) 
     : data.content[fallback].title
       ? data.content[fallback]
       : data.content[locale === 'en' ? 'nl' : 'en']
-export async function getProduct(storeId: string, id: string, bySlug = false): Promise<Product> {
+export async function getProduct(storeId: string, id: string, bySlug = false, tx?: PoolClient): Promise<Product> {
   const [row] = await rows<ProductRow>(
     `SELECT * FROM products.product WHERE store_id=$1 AND ${bySlug ? 'slug' : 'id'}=$2`,
-    [storeId, id]
+    [storeId, id],
+    tx
   )
   if (!row) {
     throw createError({ statusCode: 404, message: 'Product not found' })
   }
   const prices = await rows<Price>(
-    'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active ORDER BY currency',
-    [row.id]
+    'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active AND offer_id IS NULL ORDER BY currency',
+    [row.id],
+    tx
   )
   const [category] = row.category_id
     ? await rows<{ name: string; content: Record<Locale, { name: string; description: string }> }>(
         'SELECT name,content FROM products.category WHERE store_id=$1 AND id=$2',
-        [storeId, row.category_id]
+        [storeId, row.category_id],
+        tx
       )
     : []
   return {
@@ -100,6 +107,7 @@ export async function getProduct(storeId: string, id: string, bySlug = false): P
     categoryContent: category?.content,
     id: row.id,
     prices,
+    offers: await productOffers(row.id, tx),
     updatedAt: row.updated_at
   }
 }
@@ -133,7 +141,7 @@ export async function listProducts(storeId: string, input: unknown, published = 
   }
   if (q.currency) {
     add(
-      'EXISTS(SELECT 1 FROM products.price pr WHERE pr.product_id=products.product.id AND pr.active AND pr.currency=?)',
+      'EXISTS(SELECT 1 FROM products.price pr WHERE pr.product_id=products.product.id AND pr.active AND pr.offer_id IS NULL AND pr.currency=?)',
       q.currency
     )
   }
@@ -157,27 +165,29 @@ export async function listProducts(storeId: string, input: unknown, published = 
 }
 export async function saveProductPricing(storeId: string, id: string, input: unknown): Promise<Product> {
   const data = parseInput(productPricingSchema, input)
-  const store = await getStore()
-  if (store.organization_id !== storeId) {
-    throw createError({ statusCode: 403, message: 'Store access denied' })
-  }
-  const prices = data.isFree
-    ? [{ currency: store.currencies[0]!, amount: 0, taxBehavior: 'inclusive' as const }]
-    : data.prices
-  if (
-    !data.isFree &&
-    (!hasRequiredPrices({ prices }, store.currencies) ||
-      prices.some((p) => p.amount <= 0) ||
-      new Set(prices.map((p) => p.currency)).size !== prices.length ||
-      prices.some((p) => !store.currencies.includes(p.currency)))
-  ) {
-    throw createError({
-      statusCode: 400,
-      message: 'Configure a positive price for each store currency',
-      data: { field: 'prices' }
-    })
-  }
   await transaction(async (tx) => {
+    const [store] = await rows<Store>('SELECT * FROM products.store WHERE organization_id=$1 FOR SHARE', [storeId], tx)
+    if (!store) {
+      throw createError({ statusCode: 403, message: 'Store access denied' })
+    }
+    await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${id}`])
+    const prices = data.isFree
+      ? [{ currency: store.currencies[0]!, amount: 0, taxBehavior: 'inclusive' as const }]
+      : data.prices
+    if (
+      !data.isFree &&
+      (!hasRequiredPrices({ prices }, store.currencies) ||
+        prices.some((p) => p.amount <= 0) ||
+        new Set(prices.map((p) => p.currency)).size !== prices.length ||
+        prices.some((p) => !store.currencies.includes(p.currency)))
+    ) {
+      throw createError({
+        statusCode: 400,
+        message: 'Configure a positive price for each store currency',
+        data: { field: 'prices' }
+      })
+    }
+
     const [product] = await rows<ProductRow>(
       'SELECT * FROM products.product WHERE id=$1 AND store_id=$2 FOR UPDATE',
       [id, storeId],
@@ -186,12 +196,13 @@ export async function saveProductPricing(storeId: string, id: string, input: unk
     if (!product) {
       throw createError({ statusCode: 404, message: 'Product not found' })
     }
+    await validateOutstandingOffers(id, { isFree: data.isFree, prices }, store.currencies, tx)
     await tx.query(
       "UPDATE products.product SET data=jsonb_set(data,'{isFree}',to_jsonb($3::boolean)),updated_at=now() WHERE id=$1 AND store_id=$2",
       [id, storeId, data.isFree]
     )
     const active = await rows<Price>(
-      'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active',
+      'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active AND offer_id IS NULL',
       [id],
       tx
     )
@@ -364,12 +375,13 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
       for (const price of prices) {
         price.taxBehavior = currentStore!.currency_tax_behavior[price.currency] || 'inclusive'
       }
+      await validateOutstandingOffers(id, { isFree: data.isFree, prices }, currentStore!.currencies, tx)
       await tx.query(
         'INSERT INTO products.product(id,store_id,slug,data,category_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET slug=$3,data=$4,category_id=$5,updated_at=now()',
         [id, storeId, data.slug, data, categoryId]
       )
       const active = await rows<Price>(
-        'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active',
+        'SELECT id,currency,amount,tax_behavior AS "taxBehavior" FROM products.price WHERE product_id=$1 AND active AND offer_id IS NULL',
         [id],
         tx
       )
@@ -425,7 +437,16 @@ export async function deleteProduct(storeId: string, id: string, name: string) {
     await tx.query('DELETE FROM products.product WHERE id=$1 AND store_id=$2', [id, storeId])
   })
 }
-export async function publicProduct(product: Product, locale: Locale, currency?: string): Promise<CatalogProduct> {
+export async function getEffectiveProduct(storeId: string, id: string, at = new Date(), tx?: PoolClient) {
+  return effectivePricing(await getProduct(storeId, id, false, tx), at)
+}
+export async function publicProduct(
+  regularProduct: Product,
+  locale: Locale,
+  currency?: string,
+  at = new Date()
+): Promise<CatalogProduct> {
+  const product = effectivePricing(regularProduct, at)
   const store = await getStore()
   locale = store.languages.includes(locale) ? locale : store.default_locale
   const copy = selectCopy(product, locale, store.default_locale)
@@ -461,8 +482,8 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
   return {
     storeMode: store.mode,
     categoryDetails: category && categoryCopy ? { code: category.code, ...categoryCopy } : undefined,
-    isFree: !!product.isFree,
-    pricingComplete: !!hasRequiredPrices(product, store.currencies),
+    isFree: product.isFree || (!!currency && product.prices.find((p) => p.currency === currency)?.amount === 0),
+    pricingComplete: !!hasRequiredPrices(regularProduct, store.currencies),
     id: product.id,
     slug: product.slug,
     type: product.type,
@@ -487,7 +508,9 @@ export async function publicProduct(product: Product, locale: Locale, currency?:
     detailImages: product.detailImageIds.map(imageUrl),
     videoUrl: product.videoUrl,
     prices: product.prices.filter(
-      (p) => product.isFree || (store.currencies.includes(p.currency) && (!currency || p.currency === currency))
+      (p) =>
+        (regularProduct.isFree && !p.offer) ||
+        (store.currencies.includes(p.currency) && (!currency || p.currency === currency))
     ),
     planningEnabled: !!product.planning?.enabled,
     durationMinutes: product.planning?.durationMinutes ?? null,

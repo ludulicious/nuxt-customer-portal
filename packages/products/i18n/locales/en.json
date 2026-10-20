@@ -580,6 +580,32 @@
     "noAppointmentRequired": "Customers go directly to checkout.",
     "noPaymentRequired": "No payment required",
     "noEligibleAppointmentMembers": "No team members have scheduling enabled yet. Enable scheduling for at least one team member in Planning settings, then select them here.",
-    "enableTeamScheduling": "Manage team scheduling"
+    "enableTeamScheduling": "Manage team scheduling",
+    "offers": {
+      "title": "Scheduled offers",
+      "add": "Add offer",
+      "description": "Schedule reduced prices or a free period. Regular prices resume automatically when the offer ends.",
+      "regularFree": "Set regular paid prices before scheduling an offer.",
+      "timezone": "All dates and times use {timezone}.",
+      "startsAt": "Starts at",
+      "endsAt": "Ends at",
+      "endHelp": "The offer stops at this exact time.",
+      "free": "Free during this offer",
+      "regularPrice": "Regular price: {amount}",
+      "originalPrice": "Original price",
+      "empty": "No offers scheduled.",
+      "scheduled": "Scheduled",
+      "active": "Active",
+      "ended": "Ended",
+      "cancelled": "Cancelled",
+      "edit": "Edit offer",
+      "cancelOffer": "Cancel offer",
+      "invalidTime": "Choose a valid, unambiguous local date and time.",
+      "invalidEnd": "End must be in the future and after start.",
+      "invalidPrice": "Enter a valid amount below the regular price.",
+      "saveFailed": "Could not save the offer.",
+      "priceChanged": "The price has changed. Review the current price before continuing.",
+      "reviewPrice": "Review current price"
+    }
   }
 }

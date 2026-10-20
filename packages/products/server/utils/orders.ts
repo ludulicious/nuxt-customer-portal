@@ -10,6 +10,7 @@ import { getPersonalAccountInvitationEmailContent } from '@nuxt-customer-portal/
 import { emailRecipientName } from '@nuxt-customer-portal/core/shared/email-recipient'
 import type { Order, OrderLine, Price } from '../../shared/types'
 import { checkoutSchema, hasRequiredPrices } from '../../shared/validation'
+import { effectivePricing } from '../../shared/offers'
 import { resolveCheckoutReturnUrl } from '../../shared/checkout-query'
 import { purchaseConfirmationEmail } from '../../shared/emails'
 import { checkoutReturnPath } from './checkout-return'
@@ -85,11 +86,12 @@ export async function createCheckout(event: H3Event, body: unknown) {
       tx
     )
     await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${input.productId}`])
-    const product = await getProduct(store.organization_id, input.productId)
+    const regularProduct = await getProduct(store.organization_id, input.productId, false, tx)
+    const product = effectivePricing(regularProduct, new Date())
     if (product.status !== 'published') {
       throw createError({ statusCode: 404, message: 'Product is not available' })
     }
-    if (!hasRequiredPrices(product, currentStore!.currencies)) {
+    if (!hasRequiredPrices(regularProduct, currentStore!.currencies)) {
       throw createError({ statusCode: 409, message: 'Product pricing is incomplete' })
     }
     const price: Price | undefined = product.prices.find((p) => p.id === input.priceId)
@@ -104,7 +106,7 @@ export async function createCheckout(event: H3Event, body: unknown) {
       returnUrl: input.returnUrl,
       storeMode: store.mode
     }
-    const lineSnapshot = { product, title, price }
+    const lineSnapshot = { product: { ...product, isFree: price.amount === 0 }, title, price }
     const [created] = await rows<Order>(
       `INSERT INTO products.orders(id,store_id,request_id,request_hash,buyer_id,email,snapshot) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [id, store.organization_id, input.requestId, fingerprint, buyerId, input.billing.email, snapshot],

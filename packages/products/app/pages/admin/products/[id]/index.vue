@@ -187,6 +187,12 @@ onMounted(() => {
               />
             </template>
           </ProductsPriceCard>
+          <ProductsOffersCard
+            :product="product"
+            :currencies="currencyOptions"
+            :disabled="editing !== null"
+            @saved="saved"
+          />
           <ProductsPlanningCard
             v-if="product.type === 'service'"
             :product="product"

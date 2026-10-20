@@ -4,6 +4,7 @@ import { getProduct, publicProduct } from '@nuxt-customer-portal/products/server
 import { listSchema } from '@nuxt-customer-portal/products/shared/validation'
 
 export default defineEventHandler(async (event) => {
+  const at = new Date()
   await publicLimit(event)
   const store = await getStore(true),
     q = parseInput(listSchema, getQuery(event))
@@ -12,5 +13,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  return publicProduct(product, q.locale, q.currency)
+  return publicProduct(product, q.locale, q.currency, at)
 })

@@ -1,3 +1,4 @@
+import { offerSchema } from '../../shared/offers'
 import { registerPortalOpenApiContracts } from '@nuxt-customer-portal/core/server/utils/openapi-contracts'
 import {
   productSchema,
@@ -24,6 +25,8 @@ export default defineNitroPlugin(() =>
       productsAdminProductsByIdPut: productSchema,
       productsAdminProductsByIdContentPut: productContentSchema,
       productsAdminProductsByIdPricingPut: productPricingSchema,
+      productsAdminProductsByIdOffersPost: offerSchema,
+      productsAdminProductsByIdOffersByOfferIdPut: offerSchema,
       storeCheckoutPost: checkoutSchema,
       productsAdminSettingsPut: settingsSchema
     }

@@ -92,6 +92,20 @@ export const product = schema.table(
     }).onDelete('restrict')
   ]
 )
+export const offer = schema.table(
+  'offer',
+  {
+    id: text('id').primaryKey(),
+    productId: text('product_id')
+      .notNull()
+      .references(() => product.id, { onDelete: 'cascade' }),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    isFree: boolean('is_free').default(false).notNull()
+  },
+  (t) => [index('offer_product').on(t.productId), check('offer_period_valid', sql`${t.startsAt} < ${t.endsAt}`)]
+)
 export const price = schema.table(
   'price',
   {
@@ -99,6 +113,7 @@ export const price = schema.table(
     productId: text('product_id')
       .notNull()
       .references(() => product.id),
+    offerId: text('offer_id').references(() => offer.id),
     currency: text('currency').notNull(),
     amount: integer('amount').notNull(),
     taxBehavior: text('tax_behavior').notNull(),
@@ -107,7 +122,10 @@ export const price = schema.table(
   (t) => [
     uniqueIndex('price_active_currency')
       .on(t.productId, t.currency)
-      .where(sql`${t.active}`)
+      .where(sql`${t.active} AND ${t.offerId} IS NULL`),
+    uniqueIndex('price_active_offer_currency')
+      .on(t.offerId, t.currency)
+      .where(sql`${t.active} AND ${t.offerId} IS NOT NULL`)
   ]
 )
 export const asset = schema.table('asset', {
