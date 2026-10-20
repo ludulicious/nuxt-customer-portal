@@ -1,5 +1,14 @@
 # Nuxt Customer Portal
 
+## 0.8.2
+
+Use neutral order confirmation wording for free, paid, and invoiced orders.
+Align checkout result sections and improve download actions on mobile. Preserve
+localized download filenames and extensions across storage delivery paths.
+
+All public packages and portal apps use `0.8.2`. No new database migrations are
+required beyond those included in `0.8.0`.
+
 ## 0.8.1
 
 Show every required store currency when editing product prices. Validate positive
