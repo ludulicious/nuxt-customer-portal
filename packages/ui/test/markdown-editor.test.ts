@@ -103,3 +103,16 @@ test('raw placeholder insertion replaces the selection and returns the cursor', 
   })
   assert.deepEqual(insertMarkdownPlaceholder('', '{{portal_url}}'), { value: '{{portal_url}}', cursor: 14 })
 })
+
+test('visual edits preserve conditional email tags and file placeholders', () => {
+  const source =
+    'Before\n\n{{#if downloads}}\n\nYour audio files:\n\n{{downloads}}\n\n{{else}}\n\nNo files.\n\n{{/if}}\n\nAfter'
+  const editor = createEditor(source)
+  editor.commands.insertContentAt(2, 'new ')
+  const result = editor.getMarkdown()
+  for (const tag of ['{{#if downloads}}', '{{downloads}}', '{{else}}', '{{/if}}']) {
+    assert.ok(result.includes(tag), `Lost conditional tag: ${tag}`)
+  }
+  assert.ok(result.includes('Your audio files:'))
+  editor.destroy()
+})

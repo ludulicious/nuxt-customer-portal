@@ -1,4 +1,4 @@
-import { downloadEmailMarkdown } from '../../shared/downloads'
+import { downloadLinksMarkdown } from '../../shared/downloads'
 import { purchaseDownloads, orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomUUID } from 'node:crypto'
@@ -332,10 +332,7 @@ export async function notifyOrder(id: string) {
       bookingReference: order.booking_reference,
       url,
       instructions: primaryLine.snapshot.product.nextSteps[order.snapshot.locale],
-      downloads: downloadEmailMarkdown(
-        await purchaseDownloads(order, await orderDownloadToken(order.id)),
-        order.snapshot.locale
-      )
+      downloads: downloadLinksMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)))
     },
     idempotencyKey: `purchase:${id}`,
     subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined

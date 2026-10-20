@@ -23,10 +23,14 @@ export interface PurchaseDownload {
   url: string
 }
 
+export function downloadLinksMarkdown(files: PurchaseDownload[]) {
+  const escape = (value: string) => value.replace(/[\\`*_[\]<>]/g, '\\$&').replace(/[\r\n]/g, ' ')
+  return files.map((file) => `- [${escape(file.name)}](${file.url})`).join('\n')
+}
+
 export function downloadEmailMarkdown(files: PurchaseDownload[], locale: string) {
   if (!files.length) {
     return ''
   }
-  const escape = (value: string) => value.replace(/[\\`*_[\]<>]/g, '\\$&').replace(/[\r\n]/g, ' ')
-  return `${locale === 'nl' ? 'Download je bestanden' : 'Download your files'}:\n\n${files.map((file) => `- [${escape(file.name)}](${file.url})`).join('\n')}`
+  return `${locale === 'nl' ? 'Download je bestanden' : 'Download your files'}:\n\n${downloadLinksMarkdown(files)}`
 }

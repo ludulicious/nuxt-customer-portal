@@ -1,3 +1,4 @@
+import { renderEmailTemplate, validateEmailTemplateSyntax } from '../../shared/email-template'
 import { isPortalDemo, rejectDemoAction } from './demo'
 import { createHash } from 'node:crypto'
 import { eq } from 'drizzle-orm'
@@ -173,34 +174,25 @@ export const decryptPortalEmailSecret = (value: string) => {
   }
 }
 
-const replacePlaceholders = (input: string, values: Record<string, string>, allowed: Set<string>) =>
-  input.replace(placeholderPattern, (_match, key: string) => {
-    if (!allowed.has(key)) {
-      throw new Error(`Unknown email placeholder: ${key}`)
-    }
-    if (!(key in values)) {
-      throw new Error(`Missing email placeholder value: ${key}`)
-    }
-    return values[key]!
-  })
-
 export const validatePortalEmailTemplate = (template: string) => {
   const found = [...template.matchAll(placeholderPattern)].map((match) => match[1]!)
   if (!found.includes('body')) {
     throw createError({ statusCode: 422, message: 'The email template must contain {{body}}' })
   }
-  const unknown = found.find((key) => !TEMPLATE_PLACEHOLDERS.has(key))
-  if (unknown) {
-    throw createError({ statusCode: 422, message: `Unknown template placeholder: ${unknown}` })
+  try {
+    validateEmailTemplateSyntax(template, TEMPLATE_PLACEHOLDERS, 'template')
+  } catch (error) {
+    throw createError({ statusCode: 422, message: error instanceof Error ? error.message : 'Invalid email template' })
   }
 }
 
 export const validatePortalEmailText = (definition: PortalEmailDefinition, text: PortalEmailText) => {
   const allowed = new Set([...definition.placeholders.map((item) => item.key), 'brand_name'])
   for (const value of [text.subject, text.body, text.footer ?? '']) {
-    const unknown = [...value.matchAll(placeholderPattern)].map((match) => match[1]!).find((key) => !allowed.has(key))
-    if (unknown) {
-      throw createError({ statusCode: 422, message: `Unknown ${definition.id} placeholder: ${unknown}` })
+    try {
+      validateEmailTemplateSyntax(value, allowed, definition.id)
+    } catch (error) {
+      throw createError({ statusCode: 422, message: error instanceof Error ? error.message : 'Invalid email text' })
     }
   }
 }
@@ -336,9 +328,9 @@ export const renderPortalEmail = async (input: {
   const brandName = branding.brandName
   const messageValues = { ...input.values, brand_name: brandName }
   const allowed = new Set([...input.definition.placeholders.map((item) => item.key), 'brand_name'])
-  const subject = replacePlaceholders(text.subject, messageValues, allowed)
-  const bodySource = replacePlaceholders(text.body, messageValues, allowed)
-  const footerSource = replacePlaceholders(text.footer ?? '', messageValues, allowed)
+  const subject = renderEmailTemplate(text.subject, messageValues, allowed)
+  const bodySource = renderEmailTemplate(text.body, messageValues, allowed)
+  const footerSource = renderEmailTemplate(text.footer ?? '', messageValues, allowed)
   const body = renderPortalEmailMarkdown(bodySource)
   const footer = renderPortalEmailMarkdown(footerSource)
   const htmlTemplate = input.htmlTemplate ?? settings.htmlTemplate
@@ -348,7 +340,7 @@ export const renderPortalEmail = async (input: {
     input.inlineBrandAssets && htmlTemplate.includes(`{{${key}}}`)
       ? inlineBrandAsset(value, brandName, `portal-${key.replaceAll('_', '-')}`, inlineAttachments)
       : renderBrandAsset(value, brandName)
-  const html = replacePlaceholders(
+  const html = renderEmailTemplate(
     htmlTemplate,
     {
       subject: escapeHtml(subject),

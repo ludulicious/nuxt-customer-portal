@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { validateEmailTemplateSyntax } from '@nuxt-customer-portal/core/shared/email-template'
 import type {
   PortalEmailDefinition,
   PortalEmailLocale,
@@ -22,6 +23,10 @@ const selectedLocale = ref<PortalEmailLocale>('en')
 const previewHtml = ref('')
 const testAddress = ref('')
 const busy = ref(false)
+const previewWithoutDownloads = ref(false)
+const hasDownloadsPlaceholder = computed(() =>
+  selectedItem.value?.definition.placeholders.some((item) => item.key === 'downloads')
+)
 const selectedItem = computed(() => catalog.value[selected.value] ?? catalog.value[0])
 const overrideKey = computed(() =>
   selectedItem.value ? `${selectedItem.value.moduleId}.${selectedItem.value.definition.id}.${selectedLocale.value}` : ''
@@ -63,11 +68,29 @@ const locales = [
   { label: 'English', value: 'en' as const },
   { label: 'Nederlands', value: 'nl' as const }
 ]
-const schema = z.object({
-  subject: z.string().trim().min(1, t('admin.email.validation.subject')).max(500),
-  body: z.string().trim().min(1, t('admin.email.validation.body')).max(50_000),
-  footer: z.string().max(10_000).optional()
-})
+const schema = z
+  .object({
+    subject: z.string().trim().min(1, t('admin.email.validation.subject')).max(500),
+    body: z.string().trim().min(1, t('admin.email.validation.body')).max(50_000),
+    footer: z.string().max(10_000).optional()
+  })
+  .superRefine((text, context) => {
+    const allowed = new Set([
+      ...(selectedItem.value?.definition.placeholders.map((item) => item.key) || []),
+      'brand_name'
+    ])
+    for (const field of ['subject', 'body', 'footer'] as const) {
+      try {
+        validateEmailTemplateSyntax(text[field] || '', allowed)
+      } catch (error) {
+        context.addIssue({
+          code: 'custom',
+          path: [field],
+          message: error instanceof Error ? error.message : t('admin.email.invalidConditional')
+        })
+      }
+    }
+  })
 const placeholderToken = (key: string) => `{{${key}}}`
 const editorPlaceholders = computed(() =>
   (selectedItem.value?.definition.placeholders || []).map((placeholder) => ({
@@ -75,9 +98,27 @@ const editorPlaceholders = computed(() =>
     value: placeholderToken(placeholder.key)
   }))
 )
+const conditionalHelp = computed(() =>
+  t('admin.email.conditionalHelp', {
+    opening:
+      '{{#if ' +
+      (hasDownloadsPlaceholder.value
+        ? 'downloads'
+        : selectedItem.value?.definition.placeholders[0]?.key || 'brand_name') +
+      '}}',
+    closing: '{{/if}}',
+    otherwise: '{{else}}'
+  })
+)
 const payload = () => ({
   moduleId: selectedItem.value!.moduleId,
-  definition: selectedItem.value!.definition,
+  definition: {
+    ...selectedItem.value!.definition,
+    placeholders: selectedItem.value!.definition.placeholders.map((item) => ({
+      ...item,
+      example: previewWithoutDownloads.value && item.key === 'downloads' ? '' : item.example
+    }))
+  },
   locale: selectedLocale.value,
   text: selectedText.value,
   htmlTemplate: props.settings.htmlTemplate
@@ -213,6 +254,7 @@ const sendTest = async () => {
               @update:model-value="selectedText = { ...selectedText, body: String($event) }"
           /></UFormField>
           <p class="-mt-2 text-xs text-muted">{{ t('admin.email.markdownHelp') }}</p>
+          <p class="text-xs text-muted">{{ conditionalHelp }}</p>
           <UFormField name="footer" :label="t('admin.email.footer')"
             ><PortalMarkdownEditor
               :key="`${overrideKey}.footer`"
@@ -228,6 +270,11 @@ const sendTest = async () => {
               placeholderToken(placeholder.key)
             }}</code>
           </p>
+          <USwitch
+            v-if="hasDownloadsPlaceholder"
+            v-model="previewWithoutDownloads"
+            :label="t('admin.email.previewWithoutDownloads')"
+          />
           <div class="flex flex-wrap gap-2">
             <UButton type="button" color="neutral" variant="outline" icon="i-lucide-eye" @click="preview">{{
               t('admin.email.preview')
