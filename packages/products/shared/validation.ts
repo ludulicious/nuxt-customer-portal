@@ -111,7 +111,28 @@ const validateProduct = (v: z.infer<ReturnType<typeof z.object<typeof productSha
   }
 }
 export const productSchema = z.object(productShape).superRefine(validateProduct)
-export const productPricingSchema = z.object({ isFree: productShape.isFree, prices: productShape.prices })
+export const productPricingSchema = z
+  .object({ isFree: productShape.isFree, prices: productShape.prices })
+  .superRefine((value, ctx) => {
+    if (value.isFree) {
+      return
+    }
+    if (!value.prices.length) {
+      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
+    }
+    if (new Set(value.prices.map((price) => price.currency)).size !== value.prices.length) {
+      ctx.addIssue({ code: 'custom', path: ['prices'], message: 'Only one price per currency' })
+    }
+    value.prices.forEach((price, index) => {
+      if (price.amount <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['prices', index, 'amount'],
+          message: 'Paid products need a positive price'
+        })
+      }
+    })
+  })
 
 export const productContentSchema = z
   .object({

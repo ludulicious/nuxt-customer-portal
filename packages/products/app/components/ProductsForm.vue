@@ -221,7 +221,7 @@ const cropLargeEnough = computed(
 const visiblePrices = computed(() =>
   state.prices
     .map((price, index) => ({ price, index }))
-    .filter(({ price }) => !props.currency || price.currency === props.currency)
+    .filter(({ price }) => props.section === 'pricing' || !props.currency || price.currency === props.currency)
 )
 const pricingErrors = () =>
   state.status === 'published' && !state.isFree && !hasRequiredPrices(state, currencies.value)
@@ -404,7 +404,9 @@ async function save() {
       error.value = t('products.saveFailed')
       const field = (e as { data?: { data?: { field?: string } } }).data?.data?.field
       if (field) {
-        form.value?.setErrors([{ name: field, message: t('products.conflict') }])
+        form.value?.setErrors([
+          { name: field, message: t(props.section === 'pricing' ? 'products.requiredPrices' : 'products.conflict') }
+        ])
       }
     } finally {
       saving.value = false
@@ -795,15 +797,18 @@ function removeFile(id: string, index: number) {
         <UFormField
           v-if="!state.isFree"
           name="prices"
-          :label="currency ? undefined : t('products.prices')"
-          :help="currency ? undefined : t('products.requiredPrices')"
+          :label="currency && section !== 'pricing' ? undefined : t('products.prices')"
+          :help="t('products.requiredPrices')"
           ><div class="space-y-3">
             <div
               v-for="{ price, index } in visiblePrices"
               :key="index"
               :class="currency ? 'grid gap-4' : 'flex flex-wrap items-end gap-3'"
             >
-              <UFormField v-if="!currency" :name="`prices.${index}.currency`" :label="t('products.currency')"
+              <UFormField
+                v-if="!currency || section === 'pricing'"
+                :name="`prices.${index}.currency`"
+                :label="t('products.currency')"
                 ><span class="block py-2 font-medium">{{ price.currency }}</span></UFormField
               ><UFormField :name="`prices.${index}.amount`" :label="t('products.amount')"
                 ><UInputNumber
