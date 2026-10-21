@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CatalogProduct } from '../../shared/types'
+import type { PurchaseLink } from '../../shared/links'
 import type { PurchaseDownload } from '../../shared/downloads'
 import type { ThankYouCopy, ThankYouVariant } from '../../shared/thank-you'
 import { defaultCheckoutAppearance } from '../../shared/checkout-appearance'
@@ -8,7 +9,7 @@ import { formatMoney } from '../../shared/money'
 const props = defineProps<{
   product: CatalogProduct
   outcome: string
-  delivery?: { status: string; files: PurchaseDownload[] } | null
+  delivery?: { status: string; files: PurchaseDownload[]; links?: PurchaseLink[] } | null
   deliveryError?: boolean
   deliveryLoading?: boolean
   purchaseToken?: string
@@ -133,13 +134,16 @@ const themeStyle = computed(() => ({
           <p v-if="delivery?.status === 'accepted'">{{ t('products.invoicePaymentHelp') }}</p>
           <section
             v-if="
-              delivery?.files.length || deliveryError || (purchaseToken && (!delivery || delivery.status === 'pending'))
+              delivery?.files.length ||
+              delivery?.links?.length ||
+              deliveryError ||
+              (purchaseToken && (!delivery || delivery.status === 'pending'))
             "
             class="return-downloads"
             aria-labelledby="return-downloads-title"
           >
             <h2 id="return-downloads-title">{{ copy?.downloadsHeading || t('products.orderDownloads') }}</h2>
-            <ul v-if="delivery?.files.length" class="download-list">
+            <ul v-if="delivery?.files.length || delivery?.links?.length" class="download-list">
               <li v-for="file in delivery.files" :key="file.id">
                 <a
                   :href="file.url"
@@ -152,6 +156,21 @@ const themeStyle = computed(() => ({
                   <UIcon name="i-lucide-file-down" class="download-icon" aria-hidden="true" />
                   <span class="download-name">{{ file.name }}</span>
                   <UIcon name="i-lucide-arrow-down-to-line" class="download-icon" aria-hidden="true" />
+                </a>
+              </li>
+              <li v-for="link in delivery?.links || []" :key="`link-${link.id}`">
+                <a
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  referrerpolicy="no-referrer"
+                  class="download-file"
+                  :aria-disabled="preview || undefined"
+                  @click="preview && $event.preventDefault()"
+                >
+                  <UIcon name="i-lucide-link" class="download-icon" aria-hidden="true" />
+                  <span class="download-name">{{ link.name }}</span>
+                  <UIcon name="i-lucide-external-link" class="download-icon" aria-hidden="true" />
                 </a>
               </li>
             </ul>

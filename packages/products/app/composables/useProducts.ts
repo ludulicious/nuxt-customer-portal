@@ -64,6 +64,8 @@ export const useProducts = () => ({
     $fetch(`/api/products/admin/products/${encodeURIComponent(productId)}/offers/${encodeURIComponent(offerId)}`, {
       method: 'DELETE'
     }),
+  saveLinks: (id: string, links: NonNullable<Product['links']>) =>
+    $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}/links`, { method: 'PUT', body: { links } }),
   savePricing: (id: string, input: Pick<ProductInput, 'isFree' | 'prices'>) =>
     $fetch<Product>(`/api/products/admin/products/${encodeURIComponent(id)}/pricing`, { method: 'PUT', body: input }),
   saveContent: (id: string, input: Pick<ProductInput, 'content' | 'nextSteps'>) =>

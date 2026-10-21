@@ -1,3 +1,4 @@
+import { purchasedLinksSchema, type PurchasedLink } from '../../shared/links'
 import { productThankYouCopies } from './thank-you'
 import type { PoolClient } from 'pg'
 import { effectivePricing } from '../../shared/offers'
@@ -45,7 +46,8 @@ export function normalizeProductImages(data: ProductData): ProductData {
         : imageIds[0] || null,
     galleryImageIds: hasPlacements ? ordered(data.galleryImageIds) : [...imageIds],
     detailImageIds: hasPlacements ? ordered(data.detailImageIds) : [...imageIds],
-    fileNames: data.fileNames || {}
+    fileNames: data.fileNames || {},
+    links: data.links || []
   }
 }
 export const selectCopy = (data: ProductData, locale: Locale, fallback: Locale) =>
@@ -246,6 +248,60 @@ export async function saveProductContent(storeId: string, id: string, input: unk
   return getProduct(storeId, id)
 }
 
+function validateLinkLabels(links: PurchasedLink[], languages: Locale[]) {
+  for (const [index, link] of links.entries()) {
+    for (const language of languages) {
+      if (!link.labels[language]) {
+        throw createError({
+          statusCode: 400,
+          message: 'Add a link label in every store language',
+          data: { field: `links.${index}.labels.${language}` }
+        })
+      }
+    }
+  }
+}
+
+export async function saveProductLinks(storeId: string, id: string, input: unknown): Promise<Product> {
+  const links = parseInput(purchasedLinksSchema, input)
+  await transaction(async (tx) => {
+    const [store] = await rows<{ languages: Locale[] }>(
+      'SELECT languages FROM products.store WHERE id=true AND organization_id=$1 FOR SHARE',
+      [storeId],
+      tx
+    )
+    if (!store) {
+      throw createError({ statusCode: 403, message: 'Store access denied' })
+    }
+    validateLinkLabels(links, store.languages)
+    const [product] = await rows<ProductRow>(
+      'SELECT * FROM products.product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id, storeId],
+      tx
+    )
+    if (!product) {
+      throw createError({ statusCode: 404, message: 'Product not found' })
+    }
+    if (
+      product.data.status === 'published' &&
+      product.data.type === 'digital' &&
+      !product.data.fileIds.length &&
+      !links.length
+    ) {
+      throw createError({
+        statusCode: 400,
+        message: 'A digital product needs a file or link',
+        data: { field: 'links' }
+      })
+    }
+    await tx.query(
+      "UPDATE products.product SET data=jsonb_set(data,'{links}',$3::jsonb),updated_at=now() WHERE id=$1 AND store_id=$2",
+      [id, storeId, JSON.stringify(links)]
+    )
+  })
+  return getProduct(storeId, id)
+}
+
 export async function saveProduct(storeId: string, input: unknown, id: string = randomUUID()): Promise<Product> {
   const { prices: inputPrices, categoryId, ...data } = parseInput(productSchema, input)
   const store = await getStore()
@@ -278,6 +334,7 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
           throw createError({ statusCode: 400, message: 'Complete the publish checklist', data: { checks: failed } })
         }
       }
+      validateLinkLabels(data.links, currentStore!.languages)
       const purchasedFiles = data.fileIds.length
         ? await rows<{ id: string; name: string }>(
             'SELECT id,name FROM products.asset WHERE product_id=$1 AND id=ANY($2::text[]) AND visibility=$3 AND ready',

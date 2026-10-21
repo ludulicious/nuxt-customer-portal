@@ -25,7 +25,12 @@ export interface PurchaseDownload {
 
 export function downloadLinksMarkdown(files: PurchaseDownload[]) {
   const escape = (value: string) => value.replace(/[\\`*_[\]<>]/g, '\\$&').replace(/[\r\n]/g, ' ')
-  return files.map((file) => `- [${escape(file.name)}](${file.url})`).join('\n')
+  return files
+    .map(
+      (file) =>
+        `- [${escape(file.name)}](${file.url.replace(/[\s()<>\\]/g, (char) => encodeURIComponent(char).replace(/\(/g, '%28').replace(/\)/g, '%29'))})`
+    )
+    .join('\n')
 }
 
 export function downloadEmailMarkdown(files: PurchaseDownload[], locale: string) {

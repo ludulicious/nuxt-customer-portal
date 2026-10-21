@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { purchasedLinksSchema, type PurchasedLink } from './links'
 import { productPlanningSchema, defaultPlanning } from './planning'
 import { markdownStyleSchema } from './markdown-style'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
@@ -57,6 +58,7 @@ const productShape = {
   galleryImageIds: z.array(text(100).min(1)).max(20).default([]),
   detailImageIds: z.array(text(100).min(1)).max(20).default([]),
   fileIds: z.array(text(100).min(1)).max(100),
+  links: purchasedLinksSchema.default([]),
   fileNames: z.record(z.string(), z.object({ en: text(200), nl: text(200) })).default({}),
   videoUrl: z
     .string()
@@ -103,8 +105,8 @@ const validateProduct = (v: z.infer<ReturnType<typeof z.object<typeof productSha
   if (v.status === 'published' && !v.isFree && !v.prices.length) {
     ctx.addIssue({ code: 'custom', path: ['prices'], message: 'A paid product needs a price' })
   }
-  if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length) {
-    ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file' })
+  if (v.status === 'published' && v.type === 'digital' && !v.fileIds.length && !v.links.length) {
+    ctx.addIssue({ code: 'custom', path: ['fileIds'], message: 'A digital product needs a file or link' })
   }
   if (v.status === 'published' && !v.thumbnailImageId) {
     ctx.addIssue({ code: 'custom', path: ['thumbnailImageId'], message: 'Choose a thumbnail image' })
@@ -308,6 +310,7 @@ export const emptyProduct = () => ({
   galleryImageIds: [] as string[],
   detailImageIds: [] as string[],
   fileIds: [] as string[],
+  links: [] as PurchasedLink[],
   fileNames: {} as Record<string, Record<'en' | 'nl', string>>,
   videoUrl: '',
   prices: [{ currency: 'EUR', amount: 1000, taxBehavior: 'inclusive' as const }]

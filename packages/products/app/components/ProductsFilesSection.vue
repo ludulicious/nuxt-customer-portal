@@ -13,8 +13,8 @@ interface PurchasedFileRow {
   status: Asset['status']
 }
 
-const props = defineProps<{ product: Product; editing: boolean }>()
-const emit = defineEmits<{ edit: []; saved: []; cancel: [] }>()
+const props = defineProps<{ product: Product; editing: boolean; linksEditing: boolean }>()
+const emit = defineEmits<{ edit: []; editLinks: []; saved: []; cancel: [] }>()
 const { t } = useI18n()
 const api = useProducts()
 const toast = useToast()
@@ -135,7 +135,7 @@ watch(() => props.product.updatedAt, loadAssets)
     <template #header>
       <div class="flex items-center justify-between gap-3">
         <h2 class="font-semibold">{{ t('products.purchasedFiles') }}</h2>
-        <div v-if="!editing" class="flex items-center gap-2">
+        <div v-if="!editing && !linksEditing" class="flex items-center gap-2">
           <UButton icon="i-lucide-plus" variant="outline" @click="startAdding">
             {{ t('products.addPurchasedFile') }}
           </UButton>
@@ -199,6 +199,7 @@ watch(() => props.product.updatedAt, loadAssets)
               variant="soft"
               size="xs"
               :aria-label="t('products.editPurchasedFile')"
+              :disabled="linksEditing"
               @click="startEditing(row.original)"
             />
             <UButton
@@ -207,6 +208,7 @@ watch(() => props.product.updatedAt, loadAssets)
               variant="ghost"
               size="xs"
               :aria-label="t('products.removePurchasedFile')"
+              :disabled="linksEditing"
               @click="confirmRemove(row.original)"
             />
           </div>
@@ -214,6 +216,14 @@ watch(() => props.product.updatedAt, loadAssets)
       </UTable>
       <p v-else class="text-sm text-muted">{{ t('products.noPurchasedFiles') }}</p>
     </template>
+    <ProductsLinksSection
+      v-if="!editing"
+      :product="product"
+      :editing="linksEditing"
+      @edit="emit('editLinks')"
+      @cancel="emit('cancel')"
+      @saved="emit('saved')"
+    />
     <ConfirmationModal
       v-if="removing && selectedFile"
       v-model:open="removing"
