@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { portalLanguages, type PortalLanguage } from '@nuxt-customer-portal/core/shared/languages'
+
+const { data: settings, error: settingsError } = await useAsyncData('store-text-settings', () =>
+  useProducts().settings()
+)
+const languages = computed(() => portalLanguages.filter((item) => settings.value?.languages.includes(item.value)))
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -8,7 +14,10 @@ const section = computed(() =>
     ? String(route.query.type)
     : 'order-details'
 )
-const language = computed<'en' | 'nl'>(() => (route.query.locale === 'nl' ? 'nl' : 'en'))
+const language = computed<PortalLanguage>(() => {
+  const selected = languages.value.find((item) => item.value === route.query.locale)
+  return selected?.value || settings.value?.defaultLocale || 'en'
+})
 const groups = computed(() => [
   {
     label: t('products.storeTextOrderPages'),
@@ -38,7 +47,8 @@ function select(type: string, locale = language.value) {
     :subtitle="t('products.storeTextsIntro')"
     icon="i-lucide-text-cursor-input"
   >
-    <div class="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+    <UAlert v-if="settingsError" color="error" variant="subtle" :title="t('products.loadFailed')" />
+    <div v-else-if="settings" class="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
       <nav class="space-y-5 lg:sticky lg:top-0" :aria-label="t('products.storeTextNavigation')">
         <section v-for="group in groups" :key="group.label" class="space-y-1">
           <h2 class="flex items-center gap-2 px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -64,10 +74,7 @@ function select(type: string, locale = language.value) {
           <h2 class="text-lg font-semibold">{{ title }}</h2>
           <div class="flex gap-2" role="group" :aria-label="t('products.thankYouLanguage')">
             <UButton
-              v-for="item in [
-                { value: 'en' as const, label: 'English' },
-                { value: 'nl' as const, label: 'Nederlands' }
-              ]"
+              v-for="item in languages"
               :key="item.value"
               type="button"
               :label="item.label"

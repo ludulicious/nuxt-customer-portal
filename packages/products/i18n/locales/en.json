@@ -690,7 +690,7 @@
     "privateOrderLinkHelp": "Keep this link private. Anyone with it can view your order and access available content. No portal account is needed.",
     "orderFilesPreparing": "Some files are not ready yet. Please check again in a moment.",
     "storeTexts": "Store texts",
-    "storeTextsIntro": "Edit the English and Dutch wording shown on your checkout and order pages.",
+    "storeTextsIntro": "Edit the wording shown on your checkout and order pages.",
     "storeTextNavigation": "Store text navigation",
     "storeTextOrderPages": "Order pages",
     "storeTextOrderDetails": "Order details",
