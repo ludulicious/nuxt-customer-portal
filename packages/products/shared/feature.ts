@@ -50,10 +50,10 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           audiences: ['providerAdmin']
         },
         {
-          id: 'thank-you-texts',
+          id: 'store-texts',
           icon: 'i-lucide-message-square-heart',
-          labelKey: 'products.thankYouTexts',
-          to: '/admin/products/thank-you',
+          labelKey: 'products.storeTexts',
+          to: '/admin/products/texts',
           audiences: ['providerAdmin']
         },
         {

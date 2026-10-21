@@ -146,6 +146,20 @@ test(
       assert.equal(order.items[0]?.files[1]?.content_type, 'video/mp4')
       assert.equal(order.items[0]?.links[0]?.name, 'Oefenvideo')
       assert.equal(order.items[0]?.nextSteps, 'Geniet van je oefening')
+      const texts = await import('../server/utils/page-texts')
+      await texts.savePageText('store', {
+        page: 'order-details',
+        locale: 'nl',
+        copy: { title: 'Je materialen', downloadLabel: 'Bewaren' }
+      })
+      const updatedWording = (await (await get()).json()) as PublicOrderDetails
+      assert.equal(updatedWording.copy.title, 'Je materialen')
+      assert.equal(updatedWording.copy.downloadLabel, 'Bewaren')
+      assert.equal(updatedWording.items[0]?.nextSteps, 'Geniet van je oefening')
+      assert.equal(updatedWording.items[0]?.files[0]?.name, order.items[0]?.files[0]?.name)
+      await texts.resetPageText('store', { page: 'order-details', locale: 'nl' })
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).copy.title, 'Je bestelling')
+
       assert.deepEqual(order.items[1]?.files, [])
       assert.deepEqual(order.items[1]?.links, [])
       assert.equal(order.items[1]?.nextSteps, '')

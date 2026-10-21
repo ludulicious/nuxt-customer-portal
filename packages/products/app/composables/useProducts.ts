@@ -1,3 +1,4 @@
+import type { PageText } from '../../shared/page-texts'
 import type { ThankYouText } from '../../shared/thank-you'
 import type { OfferInput } from '../../shared/offers'
 import type {
@@ -22,6 +23,11 @@ import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
+  pageTexts: () => $fetch<PageText[]>('/api/products/admin/page-texts'),
+  savePageText: (body: PageText) => $fetch<PageText>('/api/products/admin/page-texts', { method: 'PUT', body }),
+  resetPageText: (body: Omit<PageText, 'copy'>) => $fetch('/api/products/admin/page-texts', { method: 'DELETE', body }),
+  renderStoreText: (content: string, signal?: AbortSignal) =>
+    $fetch<{ html: string }>('/api/products/admin/page-texts/render', { method: 'POST', body: { content }, signal }),
   renderThankYou: (content: string, signal?: AbortSignal) =>
     $fetch<{ html: string }>('/api/products/admin/thank-you/render', { method: 'POST', body: { content }, signal }),
   thankYouTexts: () => $fetch<ThankYouText[]>('/api/products/admin/thank-you'),

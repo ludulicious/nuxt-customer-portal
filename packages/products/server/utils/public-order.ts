@@ -1,3 +1,4 @@
+import { orderPageCopy } from './page-texts'
 import type { Order } from '../../shared/types'
 import type { PublicOrderDetails } from '../../shared/public-order'
 import { hasPurchaseAccess } from '../../shared/access'
@@ -24,6 +25,7 @@ export async function publicOrderDetails(order: Order, token: string): Promise<P
       )
     : []
   return {
+    copy: await orderPageCopy(order.store_id, order.snapshot.locale),
     reference: order.booking_reference,
     createdAt: order.created_at,
     locale: order.snapshot.locale,

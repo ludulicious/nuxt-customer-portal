@@ -53,3 +53,12 @@ test('account-free order details expose only their token-scoped read endpoint', 
   assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/details/extra'), false)
   assert.equal(isPublicStoreRoute('GET', '/api/products/admin/orders/order/link'), false)
 })
+
+test('public store wording is read-only and administrative editing stays protected', () => {
+  assert.equal(isPublicStoreRoute('GET', '/api/store/page-texts/order-details'), true)
+  for (const method of ['POST', 'PUT', 'DELETE']) {
+    assert.equal(isPublicStoreRoute(method, '/api/store/page-texts/order-details'), false)
+  }
+  assert.equal(isPublicStoreRoute('GET', '/api/store/page-texts/unknown'), false)
+  assert.equal(isPublicStoreRoute('GET', '/api/products/admin/page-texts'), false)
+})

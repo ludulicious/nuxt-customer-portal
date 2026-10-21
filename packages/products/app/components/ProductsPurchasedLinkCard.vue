@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import type { OrderPageCopy } from '../../shared/page-texts'
 import type { PurchaseLink } from '../../shared/links'
 import { purchaseMedia } from '../../shared/purchase-media'
 
-const props = defineProps<{ link: PurchaseLink }>()
+const props = defineProps<{
+  link: PurchaseLink
+  copy?: Pick<OrderPageCopy, 'openLinkLabel' | 'previewVideoLabel' | 'externalVideoHelp' | 'externalPlaybackFailed'>
+  preview?: boolean
+}>()
 const { t } = useI18n()
 const media = computed(() => purchaseMedia(props.link.url))
 const showingPreview = ref(false)
@@ -26,10 +31,12 @@ watch(
         rel="noopener noreferrer"
         referrerpolicy="no-referrer"
         external
+        :disabled="preview"
         icon="i-lucide-external-link"
         variant="outline"
         size="sm"
-        >{{ t('products.openPurchasedLink') }}</UButton
+        @click="preview && $event.preventDefault()"
+        >{{ copy?.openLinkLabel || t('products.openPurchasedLink') }}</UButton
       >
     </div>
     <template v-if="media?.kind === 'embed'">
@@ -45,14 +52,20 @@ watch(
           allowfullscreen
         />
       </div>
-      <UButton v-else class="mt-4" icon="i-lucide-circle-play" variant="soft" @click="showingPreview = true">{{
-        t('products.previewPurchasedVideo')
-      }}</UButton>
-      <p class="mt-2 text-xs text-muted">{{ t('products.externalVideoHelp') }}</p>
+      <UButton
+        v-else
+        class="mt-4"
+        icon="i-lucide-circle-play"
+        variant="soft"
+        :disabled="preview"
+        @click="showingPreview = true"
+        >{{ copy?.previewVideoLabel || t('products.previewPurchasedVideo') }}</UButton
+      >
+      <p class="mt-2 text-xs text-muted">{{ copy?.externalVideoHelp || t('products.externalVideoHelp') }}</p>
     </template>
     <audio
       v-else-if="media?.kind === 'audio'"
-      :src="media.url"
+      :src="preview ? undefined : media.url"
       controls
       preload="none"
       class="mt-4 w-full"
@@ -60,14 +73,14 @@ watch(
     />
     <video
       v-else-if="media?.kind === 'video'"
-      :src="media.url"
+      :src="preview ? undefined : media.url"
       controls
       preload="none"
       class="mt-4 w-full rounded-lg"
       @error="playbackFailed = true"
     />
     <p v-if="playbackFailed" role="status" class="mt-3 text-sm text-muted">
-      {{ t('products.externalPlaybackFailed') }}
+      {{ copy?.externalPlaybackFailed || t('products.externalPlaybackFailed') }}
     </p>
   </article>
 </template>

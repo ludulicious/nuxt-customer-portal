@@ -5,6 +5,7 @@ export function isPublicStoreRoute(method: string, pathname: string) {
         /^\/api\/store\/v1\/products(?:\/[^/]+)?$/.test(pathname) ||
         /^\/api\/store\/(product|media)\/[^/]+$/.test(pathname) ||
         /^\/api\/store\/planning\/[^/]+\/availability$/.test(pathname) ||
+        pathname === '/api/store/page-texts/order-details' ||
         pathname === '/api/store/planning/hold' ||
         /^\/api\/store\/sandbox-checkout\/[^/]+$/.test(pathname))) ||
     (method === 'POST' &&

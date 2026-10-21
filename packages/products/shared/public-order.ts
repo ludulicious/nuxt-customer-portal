@@ -1,3 +1,4 @@
+import type { OrderPageCopy } from './page-texts'
 import type { Locale, Order } from './types'
 import type { CheckoutAppearance } from './checkout-appearance'
 import type { PurchaseDownload } from './downloads'
@@ -9,6 +10,7 @@ export interface PublicOrderFile extends PurchaseDownload {
   size: number
 }
 export interface PublicOrderDetails {
+  copy: OrderPageCopy
   reference: string
   createdAt: string
   locale: Locale
