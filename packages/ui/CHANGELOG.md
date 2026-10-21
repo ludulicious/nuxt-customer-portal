@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/ui
 
+## 0.8.3
+
+### Patch Changes
+
+- 351d35a: Preserve Markdown source edits when an editor is temporarily disabled during a form save.
+  - @nuxt-customer-portal/core@0.8.3
+
 ## 0.8.2
 
 ### Patch Changes
