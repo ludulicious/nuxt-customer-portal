@@ -22,6 +22,8 @@ import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
+  renderThankYou: (content: string, signal?: AbortSignal) =>
+    $fetch<{ html: string }>('/api/products/admin/thank-you/render', { method: 'POST', body: { content }, signal }),
   thankYouTexts: () => $fetch<ThankYouText[]>('/api/products/admin/thank-you'),
   saveThankYouText: (body: ThankYouText) =>
     $fetch<ThankYouText>('/api/products/admin/thank-you', { method: 'PUT', body }),

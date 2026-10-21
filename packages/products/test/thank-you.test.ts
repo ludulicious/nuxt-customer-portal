@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { renderDescription } from '../server/utils/markdown'
 import {
   purchaseThankYouVariant,
   thankYouCopySchema,
@@ -57,4 +58,44 @@ test('text saves accept partial copy, reject unknown fields and bound the scope'
     false
   )
   assert.equal(saveThankYouSchema.safeParse({ locale: 'de', variant: 'free', copy: {} }).success, false)
+})
+
+test('combined Markdown inherits as one field and preserves legacy copy', () => {
+  const entries: ThankYouText[] = [
+    { productSlug: '', locale: 'en', variant: 'free', copy: { content: '# Welcome\n\nEnjoy **your gift**.' } },
+    { productSlug: 'audio', locale: 'en', variant: 'free', copy: { content: '  ' } }
+  ]
+  assert.equal(resolveThankYouCopy(entries, 'audio', 'free', 'en').content, '# Welcome\n\nEnjoy **your gift**.')
+  entries[1]!.copy.content = '# Your audio\n\n[Next steps](https://example.com)'
+  assert.match(resolveThankYouCopy(entries, 'audio', 'free', 'en').content!, /^# Your audio/)
+  assert.doesNotMatch(resolveThankYouCopy(entries, 'audio', 'paid', 'en').content!, /Your audio|your gift/)
+  const legacy = resolveThankYouCopy(
+    [
+      {
+        productSlug: 'audio',
+        locale: 'en',
+        variant: 'free',
+        copy: { heading: 'Old heading', message: '<script>unsafe</script>' }
+      }
+    ],
+    'audio',
+    'free',
+    'en'
+  )
+  assert.match(legacy.content!, /^# Old heading/)
+  assert.match(renderDescription(legacy.content!), /&lt;script&gt;/)
+})
+
+test('thank-you Markdown renders formatting and strips executable content', () => {
+  const html = renderDescription(
+    '# Welcome\n\nEnjoy **your gift**.\n\n- One\n- Two\n\n<script>alert(1)</script>\n\n[bad](javascript:alert(1)) <img src=x onerror=alert(1)>'
+  )
+  assert.match(html, /<h1>Welcome<\/h1>/)
+  assert.match(html, /<strong>your gift<\/strong>/)
+  assert.match(html, /<ul>/)
+  assert.doesNotMatch(html, /<script|javascript:|onerror|<img/)
+  assert.equal(
+    saveThankYouSchema.safeParse({ locale: 'en', variant: 'free', copy: { content: 'x'.repeat(12001) } }).success,
+    false
+  )
 })

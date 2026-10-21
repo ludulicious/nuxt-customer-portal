@@ -1,3 +1,4 @@
+import { renderDescription } from './markdown'
 import { rows } from './database'
 import { resolveThankYouCopy, type ThankYouText } from '../../shared/thank-you'
 
@@ -9,9 +10,11 @@ export async function thankYouTexts(storeId: string, locale?: 'en' | 'nl', slug?
 }
 export async function productThankYouCopies(storeId: string, slug: string, locale: 'en' | 'nl') {
   const entries = await thankYouTexts(storeId, locale, slug)
+  const free = resolveThankYouCopy(entries, slug, 'free', locale)
+  const paid = resolveThankYouCopy(entries, slug, 'paid', locale)
   return {
-    free: resolveThankYouCopy(entries, slug, 'free', locale),
-    paid: resolveThankYouCopy(entries, slug, 'paid', locale)
+    free: { ...free, contentHtml: renderDescription(free.content!) },
+    paid: { ...paid, contentHtml: renderDescription(paid.content!) }
   }
 }
 

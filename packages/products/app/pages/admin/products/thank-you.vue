@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   defaultThankYouCopy,
+  thankYouMarkdown,
   resolveThankYouCopy,
   thankYouOverrideSchema,
   type ThankYouText,
@@ -19,10 +20,18 @@ const scope = ref<'default' | 'product'>('default')
 const locale = ref<'en' | 'nl'>('en')
 const variant = ref<ThankYouVariant>('free')
 const slugInput = ref('')
+const productSearch = ref('')
+const productOptions = ref<Array<{ value: string; label: string }>>([])
+const productsBusy = ref(false)
 const activeSlug = ref('')
 const previewSlug = ref('')
 const previewProduct = ref<CatalogProduct>()
-const empty = () => ({ statusLabel: '', heading: '', message: '', helpText: '', downloadsHeading: '' })
+const empty = () => ({ statusLabel: '', content: '', downloadsHeading: '' })
+const editorCopy = (copy: ReturnType<typeof defaultThankYouCopy>) => ({
+  statusLabel: copy.statusLabel,
+  content: thankYouMarkdown(copy),
+  downloadsHeading: copy.downloadsHeading
+})
 const state = reactive(empty())
 const drafts = new Map<string, ThankYouText>()
 const target = computed(() => ({
@@ -32,7 +41,7 @@ const target = computed(() => ({
 }))
 const targetKey = computed(() => JSON.stringify(target.value))
 const editable = computed(() => scope.value === 'default' || !!activeSlug.value)
-const fields = ['statusLabel', 'heading', 'message', 'helpText', 'downloadsHeading'] as const
+const fields = ['statusLabel', 'downloadsHeading'] as const
 const schema = useProductFormSchema(thankYouOverrideSchema)
 const matches = (a: Omit<ThankYouText, 'copy'>, b: Omit<ThankYouText, 'copy'>) =>
   a.productSlug === b.productSlug && a.locale === b.locale && a.variant === b.variant
@@ -50,11 +59,24 @@ watch(
       drafts.set(previousKey, { ...JSON.parse(previousKey), copy: { ...state } })
     }
     const saved = drafts.get(key!) || entries.value.find((entry) => matches(entry, target.value))
-    Object.assign(
-      state,
-      scope.value === 'default' ? defaultThankYouCopy(variant.value, locale.value) : empty(),
-      saved?.copy || {}
-    )
+    const baseline = scope.value === 'default' ? editorCopy(defaultThankYouCopy(variant.value, locale.value)) : empty()
+    const savedContent =
+      saved?.copy.content ??
+      (saved && (saved.copy.heading || saved.copy.message || saved.copy.helpText)
+        ? thankYouMarkdown(
+            resolveThankYouCopy(
+              [...entries.value.filter((entry) => !matches(entry, saved)), saved],
+              saved.productSlug,
+              saved.variant,
+              saved.locale
+            )
+          )
+        : baseline.content)
+    Object.assign(state, {
+      statusLabel: saved?.copy.statusLabel ?? baseline.statusLabel,
+      downloadsHeading: saved?.copy.downloadsHeading ?? baseline.downloadsHeading,
+      content: savedContent
+    })
     previousWasEditable = editable.value
   },
   { immediate: true, flush: 'sync' }
@@ -82,8 +104,71 @@ const inherited = computed(() =>
     locale.value
   )
 )
-const previewCopy = computed(() =>
+const resolvedPreview = computed(() =>
   resolveThankYouCopy(effectiveEntries.value, previewProduct.value?.slug || '', variant.value, locale.value)
+)
+const renderedPreview = ref<{ content: string; html: string }>()
+const previewCopy = computed(() => {
+  const rendered = renderedPreview.value
+  return {
+    ...resolvedPreview.value,
+    contentHtml: rendered && rendered.content === resolvedPreview.value.content ? rendered.html : undefined
+  }
+})
+watch(
+  () => resolvedPreview.value.content,
+  (content, _, onCleanup) => {
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const result = await api.renderThankYou(content || '', controller.signal)
+        renderedPreview.value = { content: content || '', html: result.html }
+      } catch {
+        if (!controller.signal.aborted) {
+          error.value = t('products.loadFailed')
+        }
+      }
+    }, 200)
+    onCleanup(() => {
+      clearTimeout(timer)
+      controller.abort()
+    })
+  },
+  { immediate: true }
+)
+watch(
+  [productSearch, locale],
+  (_, __, onCleanup) => {
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      productsBusy.value = true
+      try {
+        const page = await api.list(
+          { search: productSearch.value, locale: locale.value, sortBy: 'title', sortDir: 'asc' },
+          controller.signal
+        )
+        productOptions.value = page.items
+          .filter((product) => product.slug)
+          .map((product) => ({
+            value: product.slug,
+            label: `${product.content[locale.value].title || product.content.en.title || product.content.nl.title} (${product.slug})`
+          }))
+      } catch {
+        if (!controller.signal.aborted) {
+          error.value = t('products.loadFailed')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          productsBusy.value = false
+        }
+      }
+    }, 150)
+    onCleanup(() => {
+      clearTimeout(timer)
+      controller.abort()
+    })
+  },
+  { immediate: true }
 )
 const scopeOptions = computed(() => [
   { value: 'default', label: t('products.thankYouDefault') },
@@ -156,7 +241,10 @@ async function reset() {
     await api.resetThankYouText({ ...target.value })
     entries.value = entries.value.filter((entry) => !matches(entry, target.value))
     drafts.delete(targetKey.value)
-    Object.assign(state, scope.value === 'default' ? defaultThankYouCopy(variant.value, locale.value) : empty())
+    Object.assign(
+      state,
+      scope.value === 'default' ? editorCopy(defaultThankYouCopy(variant.value, locale.value)) : empty()
+    )
     toast.add({ title: t('products.thankYouResetDone'), color: 'success' })
   } catch {
     error.value = t('products.saveFailed')
@@ -184,15 +272,24 @@ async function reset() {
         ><USelect v-model="variant" :items="variantOptions" :disabled="busy || previewBusy" class="w-48"
       /></UFormField>
       <div v-if="scope === 'product'" class="flex flex-wrap items-end gap-2">
-        <UFormField :label="t('products.slug')"
-          ><UInput v-model="slugInput" :disabled="busy || previewBusy" class="w-64 max-w-full"
+        <UFormField :label="t('products.thankYouChooseProduct')"
+          ><USelectMenu
+            v-model="slugInput"
+            v-model:search-term="productSearch"
+            :items="productOptions"
+            value-key="value"
+            :ignore-filter="true"
+            :loading="productsBusy"
+            :disabled="busy || previewBusy"
+            :placeholder="t('products.thankYouChooseProduct')"
+            class="w-80 max-w-full"
         /></UFormField>
         <UButton :loading="previewBusy" :disabled="busy" variant="outline" @click="loadProduct">{{
           t('products.thankYouOpenProduct')
         }}</UButton>
       </div>
     </div>
-    <div class="mt-4 grid gap-6 xl:grid-cols-[minmax(20rem,0.7fr)_minmax(0,1.3fr)]">
+    <div class="mt-4 space-y-6">
       <UForm
         v-if="editable"
         :state="state"
@@ -208,17 +305,22 @@ async function reset() {
               : t('products.thankYouOverrideHelp', { slug: activeSlug })
           }}
         </p>
-        <UFormField v-for="field in fields" :key="field" :name="field" :label="t(`products.thankYouFields.${field}`)">
-          <UTextarea
-            v-if="field === 'message' || field === 'helpText'"
-            v-model="state[field]"
-            :placeholder="inherited[field]"
+        <div class="grid gap-4 sm:grid-cols-2">
+          <UFormField v-for="field in fields" :key="field" :name="field" :label="t(`products.thankYouFields.${field}`)">
+            <UInput v-model="state[field]" :placeholder="inherited[field]" :disabled="busy" class="w-full" />
+          </UFormField>
+        </div>
+        <UFormField name="content" :label="t('products.thankYouFields.content')">
+          <PortalMarkdownEditor
+            :key="targetKey"
+            v-model="state.content"
+            :placeholder="thankYouMarkdown(inherited)"
             :disabled="busy"
-            :rows="field === 'message' ? 5 : 3"
+            :rows="12"
             class="w-full"
           />
-          <UInput v-else v-model="state[field]" :placeholder="inherited[field]" :disabled="busy" class="w-full" />
         </UFormField>
+        <p class="text-xs text-muted">{{ t('products.thankYouMarkdownHelp') }}</p>
         <div class="flex flex-wrap gap-3">
           <UButton type="submit" :loading="busy" icon="i-lucide-save">{{ t('products.save') }}</UButton>
           <UButton type="button" variant="outline" :disabled="busy" @click="reset">{{
@@ -230,7 +332,16 @@ async function reset() {
       <section class="min-w-0 space-y-4" :aria-label="t('products.thankYouPreview')">
         <div class="flex flex-wrap items-end gap-3">
           <UFormField :label="t('products.thankYouPreviewSlug')"
-            ><UInput v-model="previewSlug" :disabled="previewBusy || busy" class="w-64 max-w-full"
+            ><USelectMenu
+              v-model="previewSlug"
+              v-model:search-term="productSearch"
+              :items="productOptions"
+              value-key="value"
+              :ignore-filter="true"
+              :loading="productsBusy"
+              :disabled="previewBusy || busy"
+              :placeholder="t('products.thankYouChooseProduct')"
+              class="w-96 max-w-full"
           /></UFormField>
           <UButton :loading="previewBusy" :disabled="busy" icon="i-lucide-eye" variant="outline" @click="preview">{{
             t('products.thankYouPreview')

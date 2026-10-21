@@ -116,3 +116,15 @@ test('visual edits preserve conditional email tags and file placeholders', () =>
   assert.ok(result.includes('Your audio files:'))
   editor.destroy()
 })
+
+test('disabling a visual editor during source-mode saves does not emit stale content', () => {
+  const editor = createEditor('Previous visual text')
+  let source = '# New source text'
+  editor.on('update', () => {
+    source = editor.getMarkdown()
+  })
+  editor.setEditable(false, false)
+  editor.setEditable(true, false)
+  assert.equal(source, '# New source text')
+  editor.destroy()
+})

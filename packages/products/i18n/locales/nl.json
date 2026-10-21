@@ -639,19 +639,22 @@
     "thankYouOpenProduct": "Product openen",
     "thankYouDefaultHelp": "Deze teksten gelden voor producten zonder eigen tekst. Lege velden gebruiken de standaardtekst.",
     "thankYouOverrideHelp": "Tekst voor {slug}. Laat een veld leeg om de bijbehorende winkelstandaard te gebruiken.",
-    "thankYouSlugRequired": "Vul een productslug in om de tekst of het voorbeeld te openen.",
-    "thankYouProductMissing": "Het product kon niet worden geladen. Controleer de slug en probeer opnieuw.",
+    "thankYouSlugRequired": "Kies een product om de tekst of het voorbeeld te openen.",
+    "thankYouProductMissing": "Het product kon niet worden geladen. Selecteer het opnieuw.",
     "thankYouReset": "Overgenomen tekst herstellen",
     "thankYouResetDone": "Overgenomen bedanktekst hersteld",
     "thankYouPreview": "Voorbeeld",
-    "thankYouPreviewSlug": "Productslug voor het voorbeeld",
+    "thankYouPreviewSlug": "Product om te bekijken",
     "thankYouPreviewHelp": "Bekijk niet-opgeslagen wijzigingen in de afrekenopmaak. Er wordt geen bestelling of betaling aangemaakt; bestandslinks zijn voorbeelden.",
     "thankYouFields": {
       "statusLabel": "Statuslabel",
       "heading": "Kop",
       "message": "Bedankbericht",
       "helpText": "Aanvullende informatie",
-      "downloadsHeading": "Kop boven downloads"
-    }
+      "downloadsHeading": "Kop boven downloads",
+      "content": "Bedanktekst"
+    },
+    "thankYouChooseProduct": "Kies een product",
+    "thankYouMarkdownHelp": "Combineer hier je kop, bericht en volgende stappen. Gebruik de opmaakknoppen of schakel over naar Markdown."
   }
 }

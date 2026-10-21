@@ -5,9 +5,10 @@ export const thankYouCopySchema = z.object({
   heading: z.string().trim().min(1).max(240),
   message: z.string().trim().min(1).max(4000),
   helpText: z.string().trim().max(2000),
-  downloadsHeading: z.string().trim().min(1).max(120)
+  downloadsHeading: z.string().trim().min(1).max(120),
+  content: z.string().trim().max(12000).optional()
 })
-export type ThankYouCopy = z.infer<typeof thankYouCopySchema>
+export type ThankYouCopy = z.infer<typeof thankYouCopySchema> & { contentHtml?: string }
 export type ThankYouVariant = 'free' | 'paid'
 
 export function purchaseThankYouVariant(order: {
@@ -22,6 +23,7 @@ export function purchaseThankYouVariant(order: {
 
 export const thankYouOverrideSchema = z
   .object({
+    content: z.string().trim().max(12000).optional(),
     statusLabel: z.string().trim().max(120).optional(),
     heading: z.string().trim().max(240).optional(),
     message: z.string().trim().max(4000).optional(),
@@ -72,12 +74,27 @@ export function resolveThankYouCopy(
     if (!entry) {
       continue
     }
-    for (const key of Object.keys(copy) as Array<keyof ThankYouCopy>) {
+    if (entry.copy.content?.trim()) {
+      copy.content = entry.copy.content.trim()
+    } else if (['heading', 'message', 'helpText'].some((key) => entry.copy[key as keyof typeof entry.copy]?.trim())) {
+      copy.content = undefined
+    }
+    for (const key of Object.keys(copy) as Array<keyof ThankYouOverride>) {
       const value = entry.copy[key]?.trim()
       if (value) {
         copy[key] = value
       }
     }
   }
+  copy.content = thankYouMarkdown(copy)
   return copy
+}
+
+// Older saved texts remain readable when opened in the combined editor.
+export function thankYouMarkdown(copy: ThankYouCopy): string {
+  if (copy.content?.trim()) {
+    return copy.content.trim()
+  }
+  const escape = (value: string) => value.replace(/[\\`*_{}[\]()#+.!<>-]/g, '\\$&')
+  return [`# ${escape(copy.heading)}`, escape(copy.message), escape(copy.helpText)].filter(Boolean).join('\n\n')
 }
