@@ -44,3 +44,12 @@ test('guest purchase routes allow only the file listing and download GET endpoin
   assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/files'), false)
   assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/files/file/extra'), false)
 })
+
+test('account-free order details expose only their token-scoped read endpoint', () => {
+  assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/details'), true)
+  for (const method of ['POST', 'PUT', 'DELETE']) {
+    assert.equal(isPublicStoreRoute(method, '/api/store/purchases/token/details'), false)
+  }
+  assert.equal(isPublicStoreRoute('GET', '/api/store/purchases/token/details/extra'), false)
+  assert.equal(isPublicStoreRoute('GET', '/api/products/admin/orders/order/link'), false)
+})

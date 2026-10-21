@@ -2,8 +2,10 @@
 const props = defineProps<{
   file: { id: string; name: string; content_type: string; size: number }
   source: string
+  inlineSource?: string
 }>()
 const { t, locale } = useI18n()
+const playbackFailed = ref(false)
 
 const extension = computed(() => {
   const value = props.file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1]
@@ -93,13 +95,22 @@ const size = computed(() => {
         </UButton>
       </div>
     </div>
-    <audio v-if="file.content_type.startsWith('audio/')" :src="source" controls preload="none" class="mt-4 w-full" />
+    <audio
+      v-if="file.content_type.startsWith('audio/')"
+      :src="inlineSource || source"
+      controls
+      preload="none"
+      class="mt-4 w-full"
+      @error="playbackFailed = true"
+    />
     <video
       v-else-if="file.content_type.startsWith('video/')"
-      :src="source"
+      :src="inlineSource || source"
       controls
       preload="none"
       class="mt-4 w-full rounded-md"
+      @error="playbackFailed = true"
     />
+    <p v-if="playbackFailed" role="status" class="mt-3 text-sm text-muted">{{ t('products.mediaPlaybackFailed') }}</p>
   </article>
 </template>

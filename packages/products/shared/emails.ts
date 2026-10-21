@@ -4,12 +4,12 @@ export const purchaseConfirmationEmail = {
   defaults: {
     en: {
       subject: 'Your purchase: {{product}}',
-      body: 'Dear {{recipient_name}},\n\nThank you for your purchase of **{{product}}**. We are pleased to confirm that your order has been completed successfully.\n\n- **Booking reference:** {{bookingReference}}\n\n{{instructions}}\n\n{{#if downloads}}You can access your purchased files and links here:\n\n{{downloads}}\n{{/if}}\n\nYou can view your purchase details in [your portal]({{url}}).',
+      body: 'Dear {{recipient_name}},\n\nThank you for your purchase of **{{product}}**. We are pleased to confirm that your order has been completed successfully.\n\n- **Booking reference:** {{bookingReference}}\n\n{{instructions}}\n\n{{#if downloads}}You can access your purchased files and links here:\n\n{{downloads}}\n{{/if}}\n\n[View your order, downloads and media]({{orderUrl}}). No portal account is needed.',
       footer: 'Please keep this email for your records. We hope you enjoy your purchase.'
     },
     nl: {
       subject: 'Je aankoop: {{product}}',
-      body: 'Beste {{recipient_name}},\n\nBedankt voor je aankoop van **{{product}}**. We bevestigen graag dat je bestelling succesvol is afgerond.\n\n- **Boekingsnummer:** {{bookingReference}}\n\n{{instructions}}\n\n{{#if downloads}}Je vindt je gekochte bestanden en links hier:\n\n{{downloads}}\n{{/if}}\n\nJe kunt de gegevens van je aankoop bekijken in [je portaal]({{url}}).',
+      body: 'Beste {{recipient_name}},\n\nBedankt voor je aankoop van **{{product}}**. We bevestigen graag dat je bestelling succesvol is afgerond.\n\n- **Boekingsnummer:** {{bookingReference}}\n\n{{instructions}}\n\n{{#if downloads}}Je vindt je gekochte bestanden en links hier:\n\n{{downloads}}\n{{/if}}\n\n[Bekijk je bestelling, downloads en media]({{orderUrl}}). Je hebt geen portaalaccount nodig.',
       footer: 'Bewaar deze e-mail voor je administratie. We wensen je veel plezier met je aankoop.'
     }
   },
@@ -19,6 +19,11 @@ export const purchaseConfirmationEmail = {
     { key: 'bookingReference', labelKey: 'products.bookingReference', example: 'BK-7F3A9C12D4E8' },
     { key: 'instructions', labelKey: 'products.nextSteps', example: 'Welcome' },
     { key: 'downloads', labelKey: 'products.purchasedFiles', example: '[Download](https://example.com/file)' },
+    {
+      key: 'orderUrl',
+      labelKey: 'products.clientOrderLink',
+      example: 'https://example.com/store/orders/private-purchase-token'
+    },
     { key: 'url', labelKey: 'products.purchases', example: 'https://example.com/purchases' }
   ]
 }

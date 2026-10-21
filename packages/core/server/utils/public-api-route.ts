@@ -1,7 +1,7 @@
 export function isPublicStoreRoute(method: string, pathname: string) {
   return (
     (method === 'GET' &&
-      (/^\/api\/store\/purchases\/[^/]+(?:\/files\/[^/]+)?$/.test(pathname) ||
+      (/^\/api\/store\/purchases\/[^/]+(?:\/files\/[^/]+|\/details)?$/.test(pathname) ||
         /^\/api\/store\/v1\/products(?:\/[^/]+)?$/.test(pathname) ||
         /^\/api\/store\/(product|media)\/[^/]+$/.test(pathname) ||
         /^\/api\/store\/planning\/[^/]+\/availability$/.test(pathname) ||

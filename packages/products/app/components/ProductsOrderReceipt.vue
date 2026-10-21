@@ -4,6 +4,7 @@ import type { PurchaseLink } from '../../shared/links'
 import type { PurchaseDownload } from '../../shared/downloads'
 import type { ThankYouCopy, ThankYouVariant } from '../../shared/thank-you'
 import { defaultCheckoutAppearance } from '../../shared/checkout-appearance'
+import { publicOrderPath } from '../../shared/purchase-media'
 import { formatMoney } from '../../shared/money'
 
 const props = defineProps<{
@@ -186,11 +187,21 @@ const themeStyle = computed(() => ({
           <div class="return-actions">
             <NuxtLink
               :aria-disabled="preview || undefined"
-              :to="outcome === 'success' ? '/purchases' : checkoutUrl"
+              :to="
+                outcome === 'success' ? (purchaseToken ? publicOrderPath(purchaseToken) : '/purchases') : checkoutUrl
+              "
               class="retry-action"
               @click="preview && $event.preventDefault()"
             >
-              {{ t(outcome === 'success' ? 'products.purchases' : 'products.tryAgain') }}
+              {{
+                t(
+                  outcome === 'success'
+                    ? purchaseToken
+                      ? 'products.viewOrder'
+                      : 'products.purchases'
+                    : 'products.tryAgain'
+                )
+              }}
             </NuxtLink>
             <a
               v-if="thankYouUrl"
