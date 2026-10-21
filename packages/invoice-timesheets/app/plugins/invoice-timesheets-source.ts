@@ -6,7 +6,14 @@ export default defineNuxtPlugin(() => {
     labelKey: 'features.invoices.admin.approvedTime',
     descriptionKey: 'features.invoices.admin.approvedTimeDescription',
     load: (query) =>
-      $fetch<{ enabled: boolean; entries: InvoiceSourceEntryDto[] }>('/api/invoice-timesheets/sources', { query }),
-    create: (input) => $fetch<{ id: string }>('/api/invoice-timesheets/invoices', { method: 'POST', body: input })
+      $fetch<{ enabled: boolean; entries: InvoiceSourceEntryDto[] }, '/api/invoice-timesheets/sources'>(
+        '/api/invoice-timesheets/sources',
+        { query }
+      ),
+    create: (input) =>
+      $fetch<{ id: string }, '/api/invoice-timesheets/invoices'>('/api/invoice-timesheets/invoices', {
+        method: 'POST',
+        body: input
+      })
   })
 })

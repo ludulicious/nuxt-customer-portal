@@ -14,7 +14,7 @@ test('configures the SaaS portal OpenAPI documentation interfaces', async () => 
 test('assembles the ordered document through an authenticated local request', async () => {
   const route = await readFile(new URL('../server/routes/api-docs/openapi.json.get.ts', import.meta.url), 'utf8')
 
-  assert.match(route, /event\.\$fetch<OpenApiDocument>\('\/api-docs\/openapi\.raw\.json'\)/)
+  assert.match(route, /event\.\$fetch(?:<[^>]+>)?\(\s*'\/api-docs\/openapi\.raw\.json'\s*\)/)
   assert.doesNotMatch(route, /getRequestURL/)
   assert.match(route, /orderOpenApiDocument\(enrichOpenApiContracts\(mergeBetterAuthOpenApi\(/)
 })

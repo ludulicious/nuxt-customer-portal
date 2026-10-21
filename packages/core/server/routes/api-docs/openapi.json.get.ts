@@ -13,8 +13,10 @@ defineRouteMeta({
   }
 })
 
-export default defineEventHandler(async (event) => {
-  const document = await event.$fetch<OpenApiDocument>('/api-docs/openapi.raw.json')
+export default defineEventHandler(async (event): Promise<OpenApiDocument> => {
+  const document: OpenApiDocument = await event.$fetch<OpenApiDocument, '/api-docs/openapi.raw.json'>(
+    '/api-docs/openapi.raw.json'
+  )
   const authDocument = (await auth.api.generateOpenAPISchema()) as unknown as OpenApiDocument
   return orderOpenApiDocument(enrichOpenApiContracts(mergeBetterAuthOpenApi(document, authDocument)))
 })

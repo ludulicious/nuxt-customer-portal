@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- Bind capability fetch types to their concrete route to avoid excessive type inference in host applications.
+
 - Updated dependencies [170c58f]
   - @nuxt-customer-portal/core@0.8.4
   - @nuxt-customer-portal/clients@0.8.4

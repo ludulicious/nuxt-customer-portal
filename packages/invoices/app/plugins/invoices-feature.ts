@@ -41,7 +41,7 @@ export default defineNuxtPlugin(() => {
         return register(empty)
       }
       try {
-        register(await $fetch<InvoiceCapabilitiesDto>('/api/invoices/capabilities'))
+        register(await $fetch<InvoiceCapabilitiesDto, '/api/invoices/capabilities'>('/api/invoices/capabilities'))
       } catch {
         register(empty)
       }
@@ -51,7 +51,7 @@ export default defineNuxtPlugin(() => {
   if (import.meta.client) {
     window.addEventListener('invoices:capabilities-refresh', async () => {
       try {
-        register(await $fetch<InvoiceCapabilitiesDto>('/api/invoices/capabilities'))
+        register(await $fetch<InvoiceCapabilitiesDto, '/api/invoices/capabilities'>('/api/invoices/capabilities'))
       } catch {
         register(empty)
       }
