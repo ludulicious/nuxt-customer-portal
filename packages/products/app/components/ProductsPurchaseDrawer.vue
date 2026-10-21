@@ -77,15 +77,7 @@ const source = (orderId: string, assetId: string) => `/api/products/purchases/${
           </header>
           <ul class="space-y-3 p-4">
             <li v-for="link in purchase.links" :key="link.id">
-              <a
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                referrerpolicy="no-referrer"
-                class="flex items-center gap-2 text-primary hover:underline"
-              >
-                <UIcon name="i-lucide-external-link" aria-hidden="true" />{{ link.name }}
-              </a>
+              <ProductsPurchasedLinkCard :link="link" />
             </li>
           </ul>
         </section>

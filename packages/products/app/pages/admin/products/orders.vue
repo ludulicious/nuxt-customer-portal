@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
 import type { Order, Page } from '../../../../shared/types'
 import { formatMoney } from '../../../../shared/money'
 
 const { t, locale } = useI18n()
 const api = useProducts()
 const toast = useToast()
+const { copy } = useClipboard()
 const route = useRoute()
 const router = useRouter()
 const result = ref<Page<Order>>()
@@ -163,6 +165,17 @@ async function goToPage(value: number) {
   await router.replace({ query: { ...route.query, page: value, scroll: undefined } })
   scrollContainer()?.scrollTo({ top: 0, behavior: 'smooth' })
 }
+async function copyOrderLink(order: Order) {
+  busyId.value = `${order.id}:link`
+  try {
+    await copy((await api.orderLink(order.id)).url)
+    toast.add({ title: t('products.orderLinkCopied'), color: 'success' })
+  } catch {
+    toast.add({ title: t('products.orderLinkFailed'), color: 'error' })
+  } finally {
+    busyId.value = ''
+  }
+}
 async function action(order: Order, name: 'retry' | 'fulfill') {
   busyId.value = `${order.id}:${name}`
   error.value = ''
@@ -282,6 +295,15 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
                 )
               }}
             </p>
+            <UButton
+              icon="i-lucide-link"
+              variant="outline"
+              size="xs"
+              :loading="busyId === `${order.id}:link`"
+              @click.stop="copyOrderLink(order)"
+            >
+              {{ t('products.copyClientOrderLink') }}
+            </UButton>
             <UButton v-if="order.invoice_id" to="/admin/invoices" variant="ghost" color="neutral" size="xs">{{
               t('products.invoice')
             }}</UButton>

@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import type { OrderPageCopy } from '../../shared/page-texts'
+
 const props = defineProps<{
   file: { id: string; name: string; content_type: string; size: number }
   source: string
+  inlineSource?: string
+  copy?: Pick<OrderPageCopy, 'downloadLabel' | 'filePlaybackFailed'>
+  preview?: boolean
 }>()
 const { t, locale } = useI18n()
+const playbackFailed = ref(false)
 
 const extension = computed(() => {
   const value = props.file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1]
@@ -84,22 +90,35 @@ const size = computed(() => {
         <UButton
           :href="`${source}?download=1`"
           external
+          :disabled="preview"
           variant="outline"
           icon="i-lucide-download"
           size="xs"
           class="mt-3"
+          @click="preview && $event.preventDefault()"
         >
-          {{ t('products.download') }}
+          {{ copy?.downloadLabel || t('products.download') }}
         </UButton>
       </div>
     </div>
-    <audio v-if="file.content_type.startsWith('audio/')" :src="source" controls preload="none" class="mt-4 w-full" />
+    <audio
+      v-if="file.content_type.startsWith('audio/')"
+      :src="preview ? undefined : inlineSource || source"
+      controls
+      preload="none"
+      class="mt-4 w-full"
+      @error="playbackFailed = true"
+    />
     <video
       v-else-if="file.content_type.startsWith('video/')"
-      :src="source"
+      :src="preview ? undefined : inlineSource || source"
       controls
       preload="none"
       class="mt-4 w-full rounded-md"
+      @error="playbackFailed = true"
     />
+    <p v-if="playbackFailed" role="status" class="mt-3 text-sm text-muted">
+      {{ copy?.filePlaybackFailed || t('products.mediaPlaybackFailed') }}
+    </p>
   </article>
 </template>

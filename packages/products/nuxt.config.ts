@@ -14,6 +14,15 @@ export default defineNuxtConfig({
       productGallery: { modifiers: { quality: 88 } }
     }
   },
+  routeRules: {
+    '/store/orders/**': {
+      headers: {
+        'Cache-Control': 'private, no-store',
+        'Referrer-Policy': 'no-referrer',
+        'X-Robots-Tag': 'noindex, nofollow, noarchive'
+      }
+    }
+  },
   runtimeConfig: { public: { productsImageKitUrlEndpoint: process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT || '' } },
   nitro: { experimental: { tasks: true }, scheduledTasks: { '* * * * *': ['products:reconcile'] } },
   components: [{ path: fileURLToPath(new URL('./app/components', import.meta.url)), global: true }],

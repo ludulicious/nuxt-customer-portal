@@ -1,3 +1,4 @@
+import { publicOrderPath } from '@nuxt-customer-portal/products/shared/purchase-media'
 import { orderDownloadToken, purchaseDownloads } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { downloadEmailMarkdown } from '@nuxt-customer-portal/products/shared/downloads'
 import { randomUUID } from 'node:crypto'
@@ -192,7 +193,10 @@ async function appointmentEffects(
         : '',
       a.status === 'cancelled'
         ? ''
-        : downloadEmailMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)), locale)
+        : downloadEmailMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)), locale),
+      a.status === 'cancelled'
+        ? ''
+        : `[${locale === 'nl' ? 'Bekijk je bestelling, downloads en media' : 'View your order, downloads and media'}](${baseUrl()}${publicOrderPath(await orderDownloadToken(order.id))})`
     ]
       .filter(Boolean)
       .join('\n\n'),

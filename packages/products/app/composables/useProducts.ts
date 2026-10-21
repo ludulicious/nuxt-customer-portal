@@ -1,3 +1,5 @@
+import type { PublicOrderDetails } from '../../shared/public-order'
+import type { PageText } from '../../shared/page-texts'
 import type { ThankYouText } from '../../shared/thank-you'
 import type { OfferInput } from '../../shared/offers'
 import type {
@@ -22,6 +24,13 @@ import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
+  previewOrderPage: (slug: string, locale: 'en' | 'nl') =>
+    $fetch<PublicOrderDetails>('/api/products/admin/page-texts/preview', { query: { slug, locale } }),
+  pageTexts: () => $fetch<PageText[]>('/api/products/admin/page-texts'),
+  savePageText: (body: PageText) => $fetch<PageText>('/api/products/admin/page-texts', { method: 'PUT', body }),
+  resetPageText: (body: Omit<PageText, 'copy'>) => $fetch('/api/products/admin/page-texts', { method: 'DELETE', body }),
+  renderStoreText: (content: string, signal?: AbortSignal) =>
+    $fetch<{ html: string }>('/api/products/admin/page-texts/render', { method: 'POST', body: { content }, signal }),
   renderThankYou: (content: string, signal?: AbortSignal) =>
     $fetch<{ html: string }>('/api/products/admin/thank-you/render', { method: 'POST', body: { content }, signal }),
   thankYouTexts: () => $fetch<ThankYouText[]>('/api/products/admin/thank-you'),
@@ -113,6 +122,7 @@ export const useProducts = () => ({
   checkout: (body: Record<string, unknown>) => $fetch<{ url: string }>('/api/store/checkout', { method: 'POST', body }),
   orders: (query: Record<string, unknown>, signal?: AbortSignal) =>
     $fetch<Page<Order>>('/api/products/admin/orders', { query, signal }),
+  orderLink: (id: string) => $fetch<{ url: string }>(`/api/products/admin/orders/${encodeURIComponent(id)}/link`),
   orderAction: (id: string, action: 'retry' | 'fulfill') =>
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
   settings: () =>

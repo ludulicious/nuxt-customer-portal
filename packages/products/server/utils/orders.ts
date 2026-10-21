@@ -1,3 +1,4 @@
+import { publicOrderPath } from '../../shared/purchase-media'
 import { purchaseLinks } from '../../shared/links'
 import { downloadLinksMarkdown } from '../../shared/downloads'
 import { purchaseDownloads, orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
@@ -382,6 +383,7 @@ export async function notifyOrder(id: string) {
       }),
       product: order.lines.map((line) => line.snapshot.title).join(', '),
       bookingReference: order.booking_reference,
+      orderUrl: `${baseUrl()}${publicOrderPath(await orderDownloadToken(order.id))}`,
       url,
       instructions: [
         primaryLine.snapshot.product.nextSteps[order.snapshot.locale],

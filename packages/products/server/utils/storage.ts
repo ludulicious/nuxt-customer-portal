@@ -11,7 +11,16 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
-import { createError, readRawBody, sendRedirect, sendStream, setResponseHeader, type H3Event } from 'h3'
+import {
+  createError,
+  getHeader,
+  readRawBody,
+  sendRedirect,
+  sendStream,
+  setResponseHeader,
+  setResponseStatus,
+  type H3Event
+} from 'h3'
 import sharp from 'sharp'
 import { z } from 'zod'
 import { parseInput } from './validation'
@@ -368,12 +377,35 @@ export async function sendAsset(
     await beforeSend?.()
     return sendRedirect(event, url)
   }
-  const response = await bunnyFetch(config, asset.object_key)
+  const requestedRange = !download ? getHeader(event, 'range') : undefined
+  const range = requestedRange && /^bytes=(?:\d+-\d*|-\d+)$/.test(requestedRange) ? requestedRange : undefined
+  const response = await bunnyFetch(config, asset.object_key, range ? { headers: { Range: range } } : {})
+  if (response.status === 416) {
+    setResponseStatus(event, 416)
+    const contentRange = response.headers.get('content-range')
+    if (contentRange) {
+      setResponseHeader(event, 'Content-Range', contentRange)
+    }
+    await response.body?.cancel()
+    return ''
+  }
   if (!response.ok || !response.body) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
   setResponseHeader(event, 'Content-Type', asset.content_type)
-  setResponseHeader(event, 'Content-Length', Number(asset.size))
+  setResponseStatus(event, response.status)
+  const contentLength = response.headers.get('content-length')
+  if (contentLength) {
+    setResponseHeader(event, 'Content-Length', Number(contentLength))
+  } else if (response.status === 200) {
+    setResponseHeader(event, 'Content-Length', Number(asset.size))
+  }
+  for (const header of ['content-range', 'accept-ranges']) {
+    const value = response.headers.get(header)
+    if (value) {
+      setResponseHeader(event, header, value)
+    }
+  }
   setResponseHeader(event, 'Content-Disposition', assetContentDisposition(responseFileName, download))
   await beforeSend?.()
   return sendStream(event, Readable.fromWeb(response.body as import('node:stream/web').ReadableStream))
