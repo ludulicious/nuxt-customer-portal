@@ -1,6 +1,6 @@
 export default {
   id: 'service-requests',
-  version: '0.8.3',
+  version: '0.8.4',
   source: '@nuxt-customer-portal/service-requests',
   clientModuleId: 'service-requests',
   dependsOn: ['core', 'clients'],
