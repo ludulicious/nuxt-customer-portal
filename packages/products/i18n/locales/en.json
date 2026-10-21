@@ -695,7 +695,7 @@
     "storeTextOrderPages": "Order pages",
     "storeTextOrderDetails": "Order details",
     "storeTextCheckout": "Checkout confirmations",
-    "storeTextOrderHelp": "Edit shared page wording per language, or customize only the purchase introduction for a specific product. Empty product introductions inherit the store introduction. Product introductions apply to orders containing only that product; mixed orders use the store introduction. Product titles, instructions, files and links come from the purchased product.",
+    "storeTextOrderHelp": "Edit shared page texts or a product’s purchase introduction. Empty product introductions use the store default.",
     "storeTextPageWording": "Page wording",
     "storeTextCustomized": "Customized",
     "storeTextDefault": "Default wording",

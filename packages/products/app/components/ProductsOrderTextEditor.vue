@@ -41,7 +41,9 @@ const target = computed(() => ({
   productSlug: scope.value === 'product' ? activeSlug.value : ''
 }))
 const targetKey = computed(() => JSON.stringify(target.value))
-const editable = computed(() => scope.value === 'default' || !!activeSlug.value)
+const editable = computed(
+  () => scope.value === 'default' || (!!activeSlug.value && !!productPreview.value && !previewBusy.value)
+)
 const scopeOptions = computed(() => [
   { value: 'default', label: t('products.thankYouDefault') },
   { value: 'product', label: t('products.thankYouProduct') }
@@ -159,34 +161,42 @@ watch(
   { immediate: true }
 )
 watch(
-  () => props.locale,
-  () => {
-    productPreview.value = undefined
-  }
-)
-async function loadPreview(edit = false) {
-  const slug = (edit ? slugInput.value : previewSlug.value).trim()
-  if (!slug) {
-    error.value = t('products.thankYouSlugRequired')
-    return
-  }
-  previewBusy.value = true
-  productPreview.value = undefined
-  error.value = ''
-  try {
-    const result = await api.previewOrderPage(slug, props.locale)
-    if (edit) {
+  [scope, slugInput, previewSlug, () => props.locale],
+  async (_, __, onCleanup) => {
+    const slug = (scope.value === 'product' ? slugInput.value : previewSlug.value).trim()
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    if (scope.value === 'product') {
       activeSlug.value = slug
     }
-    previewSlug.value = slug
-    loadedPreviewSlug.value = slug
-    productPreview.value = result
-  } catch {
-    error.value = t('products.thankYouProductMissing')
-  } finally {
-    previewBusy.value = false
-  }
-}
+    productPreview.value = undefined
+    loadedPreviewSlug.value = ''
+    error.value = ''
+    if (!slug) {
+      previewBusy.value = false
+      return
+    }
+    previewBusy.value = true
+    try {
+      const result = await api.previewOrderPage(slug, props.locale)
+      if (!cancelled) {
+        loadedPreviewSlug.value = slug
+        productPreview.value = result
+      }
+    } catch {
+      if (!cancelled) {
+        error.value = t('products.thankYouProductMissing')
+      }
+    } finally {
+      if (!cancelled) {
+        previewBusy.value = false
+      }
+    }
+  },
+  { immediate: true }
+)
 watch(
   () => copy.value.content,
   (content, _, onCleanup) => {
@@ -361,17 +371,10 @@ async function reset() {
               :items="productOptions"
               value-key="value"
               :ignore-filter="true"
-              :loading="productsBusy"
-              :disabled="busy || previewBusy"
+              :loading="productsBusy || previewBusy"
+              :disabled="busy"
               class="w-80 max-w-full"
           /></UFormField>
-          <UButton
-            variant="outline"
-            :disabled="busy || previewBusy"
-            :loading="previewBusy"
-            @click="loadPreview(true)"
-            >{{ t('products.thankYouOpenProduct') }}</UButton
-          >
         </template>
       </div>
       <UForm v-if="editable" :schema="schema" :state="state" novalidate class="space-y-4" @submit="save">
@@ -447,37 +450,35 @@ async function reset() {
         </UCard>
       </UForm>
       <section class="min-w-0 space-y-3" :aria-label="t('products.thankYouPreview')">
-        <div class="flex flex-wrap items-end justify-between gap-3">
-          <h3 class="font-semibold">{{ t('products.thankYouPreview') }}</h3>
-          <UFormField :label="t('products.storeTextPreviewState')"
-            ><USelect v-model="previewState" :items="previewOptions" class="w-56"
-          /></UFormField>
-        </div>
-        <div class="flex flex-wrap items-end gap-3">
-          <UFormField :label="t('products.thankYouPreviewSlug')"
-            ><USelectMenu
+        <h3 class="font-semibold">{{ t('products.thankYouPreview') }}</h3>
+        <div class="flex flex-wrap items-end gap-3 rounded-lg border border-default p-4">
+          <UFormField v-if="scope === 'default'" :label="t('products.thankYouPreviewSlug')">
+            <USelectMenu
               v-model="previewSlug"
               v-model:search-term="productSearch"
               :items="productOptions"
               value-key="value"
               :ignore-filter="true"
-              :loading="productsBusy"
-              :disabled="busy || previewBusy"
+              :loading="productsBusy || previewBusy"
+              :disabled="busy"
+              :placeholder="t('products.thankYouChooseProduct')"
               class="w-80 max-w-full"
-          /></UFormField>
-          <UButton variant="outline" :loading="previewBusy" :disabled="busy || previewBusy" @click="loadPreview()">{{
-            t('products.thankYouPreview')
-          }}</UButton>
-          <UButton
-            v-if="productPreview"
-            variant="ghost"
-            :disabled="busy || previewBusy"
-            @click="productPreview = undefined"
-            >{{ t('products.storeTextExamplePreview') }}</UButton
-          >
+            />
+          </UFormField>
+          <UFormField :label="t('products.storeTextPreviewState')">
+            <USelect v-model="previewState" :items="previewOptions" class="w-56" />
+          </UFormField>
+          <UButton v-if="scope === 'default' && previewSlug" variant="ghost" :disabled="busy" @click="previewSlug = ''">
+            {{ t('products.storeTextExamplePreview') }}
+          </UButton>
         </div>
         <p class="text-sm text-muted">{{ t('products.storeTextPreviewHelp') }}</p>
+        <p v-if="previewBusy" role="status" class="text-sm text-muted">{{ t('products.loading') }}</p>
+        <p v-else-if="scope === 'product' && !productPreview" class="text-sm text-muted">
+          {{ t('products.thankYouChooseProduct') }}
+        </p>
         <ProductsPublicOrder
+          v-else
           :order="previewOrder"
           :copy="copy"
           :error="['missing', 'error'].includes(previewState)"

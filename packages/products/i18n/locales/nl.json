@@ -695,7 +695,7 @@
     "storeTextOrderPages": "Bestelpagina’s",
     "storeTextOrderDetails": "Bestelgegevens",
     "storeTextCheckout": "Bevestigingen na afrekenen",
-    "storeTextOrderHelp": "Bewerk de algemene paginateksten per taal, of pas alleen de aankoopintroductie voor een specifiek product aan. Lege productintroducties gebruiken de winkelintroductie. Productintroducties gelden voor bestellingen met alleen dat product; gemengde bestellingen gebruiken de winkelintroductie. Producttitels, instructies, bestanden en links komen uit het gekochte product.",
+    "storeTextOrderHelp": "Bewerk algemene paginateksten of de aankoopintroductie van een product. Lege productintroducties gebruiken de winkelstandaard.",
     "storeTextPageWording": "Paginateksten",
     "storeTextCustomized": "Aangepast",
     "storeTextDefault": "Standaardteksten",
