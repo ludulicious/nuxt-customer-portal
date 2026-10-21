@@ -1,6 +1,7 @@
+import { renderDescription } from '../../../../../utils/markdown'
 import { markdownStyleSchema } from '@nuxt-customer-portal/products/shared/markdown-style'
 import { admin, getStore } from '@nuxt-customer-portal/products/server/utils/access'
-import { getProduct, renderDescription } from '@nuxt-customer-portal/products/server/utils/catalog'
+import { getProduct } from '@nuxt-customer-portal/products/server/utils/catalog'
 import type { ProductPreview } from '@nuxt-customer-portal/products/shared/types'
 
 export default defineEventHandler(async (event): Promise<ProductPreview> => {

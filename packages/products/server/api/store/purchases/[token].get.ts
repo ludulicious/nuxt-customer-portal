@@ -1,4 +1,5 @@
 import { downloadOrder, purchaseDownloads } from '@nuxt-customer-portal/products/server/utils/downloads'
+import { purchaseThankYouVariant } from '../../../../shared/thank-you'
 import { publicLimit } from '@nuxt-customer-portal/products/server/utils/access'
 
 export default defineEventHandler(async (event) => {
@@ -12,5 +13,5 @@ export default defineEventHandler(async (event) => {
     setHeader(event, 'Access-Control-Allow-Origin', origin)
     setHeader(event, 'Vary', 'Origin')
   }
-  return { status: order.status, files: await purchaseDownloads(order, token) }
+  return { status: order.status, variant: purchaseThankYouVariant(order), files: await purchaseDownloads(order, token) }
 })

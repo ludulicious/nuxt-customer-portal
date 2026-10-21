@@ -623,6 +623,34 @@
     "paymentpaid": "Betaald",
     "orderDownloads": "Je downloads",
     "orderDownloadsPending": "Je bestanden verschijnen hier zodra je bestelling is bevestigd.",
-    "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail."
+    "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail.",
+    "thankYouPreviewNotice": "Voorbeeld",
+    "thankYouExampleFile": "Voorbeelddownload.pdf",
+    "thankYouPaidPreview": "Betaalde variant (voorbeeld)",
+    "thankYouTexts": "Bedankteksten",
+    "thankYouIntro": "Bewerk de bevestiging na het bestellen, met aparte gratis en betaalde standaardteksten en teksten per product.",
+    "thankYouScope": "Te bewerken tekst",
+    "thankYouDefault": "Winkelstandaard",
+    "thankYouProduct": "Specifiek product",
+    "thankYouLanguage": "Taal",
+    "thankYouVariant": "Bestelvariant",
+    "thankYouFree": "Gratis bestelling",
+    "thankYouPaid": "Betaalde bestelling",
+    "thankYouOpenProduct": "Product openen",
+    "thankYouSlugRequired": "Kies een product om de tekst of het voorbeeld te openen.",
+    "thankYouProductMissing": "Het product kon niet worden geladen. Selecteer het opnieuw.",
+    "thankYouReset": "Standaard herstellen",
+    "thankYouResetDone": "Standaard bedanktekst hersteld",
+    "thankYouPreview": "Voorbeeld",
+    "thankYouPreviewSlug": "Product om te bekijken",
+    "thankYouFields": {
+      "statusLabel": "Statuslabel",
+      "heading": "Kop",
+      "message": "Bedankbericht",
+      "helpText": "Aanvullende informatie",
+      "downloadsHeading": "Kop boven downloads",
+      "content": "Bedanktekst"
+    },
+    "thankYouChooseProduct": "Kies een product"
   }
 }

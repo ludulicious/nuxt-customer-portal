@@ -1,5 +1,7 @@
+import type { ThankYouOverride } from '../../../shared/thank-you'
 import {
   foreignKey,
+  primaryKey,
   pgSchema,
   text,
   boolean,
@@ -322,5 +324,26 @@ export const download = schema.table(
   (t) => [
     index('download_order').on(t.orderId, t.createdAt),
     check('download_source_valid', sql`${t.source} IN ('public', 'portal')`)
+  ]
+)
+
+export const thankYouText = schema.table(
+  'thank_you_text',
+  {
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    productSlug: text('product_slug').notNull().default(''),
+    locale: text('locale').notNull(),
+    variant: text('variant').notNull(),
+    copy: jsonb('copy').$type<ThankYouOverride>().notNull().default({}),
+    updatedAt: stamp('updated_at')
+  },
+  (table) => [
+    primaryKey({ columns: [table.storeId, table.productSlug, table.locale, table.variant] }),
+    check('thank_you_slug_length', sql`length(${table.productSlug}) <= 200`),
+    check('thank_you_locale', sql`${table.locale} IN ('en','nl')`),
+    check('thank_you_variant', sql`${table.variant} IN ('free','paid')`),
+    check('thank_you_copy_object', sql`jsonb_typeof(${table.copy}) = 'object'`)
   ]
 )

@@ -95,7 +95,7 @@ watch(source, (raw) => {
     syncContent()
   }
 })
-watch(disabled, (value) => editor.value?.setEditable(!value))
+watch(disabled, (value) => editor.value?.setEditable(!value, false))
 watch(
   [id, ariaAttrs],
   () =>

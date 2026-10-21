@@ -1,3 +1,4 @@
+import { productThankYouCopies } from './thank-you'
 import type { PoolClient } from 'pg'
 import { effectivePricing } from '../../shared/offers'
 import { productOffers, validateOutstandingOffers } from './offers'
@@ -7,8 +8,7 @@ import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { createError } from 'h3'
-import { marked } from 'marked'
-import sanitizeHtml from 'sanitize-html'
+import { renderDescription } from './markdown'
 import type { z } from 'zod'
 import type { Product, ProductData, Price, Locale, CatalogProduct, Page } from '../../shared/types'
 import {
@@ -48,32 +48,6 @@ export function normalizeProductImages(data: ProductData): ProductData {
     fileNames: data.fileNames || {}
   }
 }
-export const renderDescription = (source: string) =>
-  sanitizeHtml(marked.parse(source, { async: false }), {
-    allowedTags: [
-      'p',
-      'br',
-      'strong',
-      'em',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'ul',
-      'ol',
-      'li',
-      'blockquote',
-      'a',
-      'hr',
-      'code',
-      'pre'
-    ],
-    allowedAttributes: { a: ['href', 'title'] },
-    allowedSchemes: ['https', 'http', 'mailto'],
-    allowProtocolRelative: false
-  })
 export const selectCopy = (data: ProductData, locale: Locale, fallback: Locale) =>
   data.content[locale].title
     ? data.content[locale]
@@ -492,6 +466,7 @@ export async function publicProduct(
   )
   const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
   return {
+    thankYou: await productThankYouCopies(store.organization_id, product.slug, locale),
     storeMode: store.mode,
     visibility: product.visibility || 'listed',
     paymentMethods: [

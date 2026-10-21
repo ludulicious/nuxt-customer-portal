@@ -1,3 +1,4 @@
+import type { ThankYouCopy } from './thank-you'
 import type { ProductPlanning } from './planning'
 import type { MarkdownStyle } from './markdown-style'
 import type { CheckoutAppearance } from './checkout-appearance'
@@ -202,6 +203,7 @@ export interface CartLine {
   updated_at: string
 }
 export interface CatalogProduct {
+  thankYou?: { free: ThankYouCopy; paid: ThankYouCopy }
   visibility?: 'listed' | 'unlisted'
   paymentMethods?: Array<'online' | 'invoice'>
   planningEnabled: boolean

@@ -623,6 +623,34 @@
     "paymentpaid": "Paid",
     "orderDownloads": "Your downloads",
     "orderDownloadsPending": "Your files will appear here once your order is confirmed.",
-    "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email."
+    "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email.",
+    "thankYouPreviewNotice": "Preview",
+    "thankYouExampleFile": "Example download.pdf",
+    "thankYouPaidPreview": "Paid variant (preview)",
+    "thankYouTexts": "Thank-you texts",
+    "thankYouIntro": "Edit the confirmation shown after checkout, with separate free and paid defaults and product-specific texts.",
+    "thankYouScope": "Text to edit",
+    "thankYouDefault": "Store default",
+    "thankYouProduct": "Specific product",
+    "thankYouLanguage": "Language",
+    "thankYouVariant": "Order variant",
+    "thankYouFree": "Free order",
+    "thankYouPaid": "Paid order",
+    "thankYouOpenProduct": "Open product",
+    "thankYouSlugRequired": "Choose a product to open its text or preview.",
+    "thankYouProductMissing": "The product could not be loaded. Please select it again.",
+    "thankYouReset": "Reset to default",
+    "thankYouResetDone": "Default thank-you text restored",
+    "thankYouPreview": "Preview",
+    "thankYouPreviewSlug": "Product to preview",
+    "thankYouFields": {
+      "statusLabel": "Status label",
+      "heading": "Heading",
+      "message": "Thank-you message",
+      "helpText": "Additional information",
+      "downloadsHeading": "Downloads heading",
+      "content": "Thank-you text"
+    },
+    "thankYouChooseProduct": "Choose a product"
   }
 }
