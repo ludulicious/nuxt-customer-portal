@@ -623,6 +623,11 @@
     "paymentpaid": "Paid",
     "orderDownloads": "Your downloads",
     "orderDownloadsPending": "Your files will appear here once your order is confirmed.",
-    "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email."
+    "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email.",
+    "thankYouContentUrl": "Thank-you content URL",
+    "thankYouContentUrlHelp": "Public JSON endpoint managed by your website content editor. Receives only the product slug, language and free/paid variant. Leave empty to use the standard texts.",
+    "thankYouPreviewNotice": "Preview — no order is placed. Downloads and purchase actions are disabled.",
+    "thankYouExampleFile": "Example download.pdf",
+    "thankYouPaidPreview": "Paid variant (preview)"
   }
 }

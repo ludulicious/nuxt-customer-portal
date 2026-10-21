@@ -12,6 +12,7 @@ export const checkoutAppearanceSchema = z.object({
   hostName: text(120).default(''),
   logoUrl: optionalUrl.default(''),
   returnUrl: optionalUrl.default(''),
+  thankYouContentUrl: optionalUrl.default(''),
   displayFontFamily: text(200).default('ui-serif, Georgia, serif'),
   bodyFontFamily: text(200).default('ui-sans-serif, system-ui, sans-serif'),
   paperColor: color.default('#faf7fa'),

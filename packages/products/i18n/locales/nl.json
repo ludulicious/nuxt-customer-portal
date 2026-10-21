@@ -623,6 +623,11 @@
     "paymentpaid": "Betaald",
     "orderDownloads": "Je downloads",
     "orderDownloadsPending": "Je bestanden verschijnen hier zodra je bestelling is bevestigd.",
-    "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail."
+    "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail.",
+    "thankYouContentUrl": "URL voor bedankteksten",
+    "thankYouContentUrlHelp": "Openbaar JSON-eindpunt beheerd via de website-editor. Ontvangt alleen de productslug, taal en gratis/betaalde variant. Laat leeg voor de standaardteksten.",
+    "thankYouPreviewNotice": "Voorbeeld — er wordt geen bestelling geplaatst. Downloads en aankoopacties zijn uitgeschakeld.",
+    "thankYouExampleFile": "Voorbeelddownload.pdf",
+    "thankYouPaidPreview": "Betaalde variant (voorbeeld)"
   }
 }
