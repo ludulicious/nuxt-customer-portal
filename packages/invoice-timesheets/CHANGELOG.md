@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- Bind invoice-source fetch types to their concrete routes to keep host application type checking bounded.
+
 - Updated dependencies [170c58f]
   - @nuxt-customer-portal/core@0.8.4
   - @nuxt-customer-portal/invoices@0.8.4
