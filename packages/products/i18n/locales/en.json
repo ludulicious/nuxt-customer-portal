@@ -624,7 +624,7 @@
     "orderDownloads": "Your downloads",
     "orderDownloadsPending": "Your files will appear here once your order is confirmed.",
     "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email.",
-    "thankYouPreviewNotice": "Preview — no order is placed. Downloads and purchase actions are disabled.",
+    "thankYouPreviewNotice": "Preview",
     "thankYouExampleFile": "Example download.pdf",
     "thankYouPaidPreview": "Paid variant (preview)",
     "thankYouTexts": "Thank-you texts",
@@ -637,15 +637,12 @@
     "thankYouFree": "Free order",
     "thankYouPaid": "Paid order",
     "thankYouOpenProduct": "Open product",
-    "thankYouDefaultHelp": "These texts apply to products without an override. Blank fields use the standard wording.",
-    "thankYouOverrideHelp": "Text for {slug}. Leave a field blank to inherit the matching store default.",
     "thankYouSlugRequired": "Choose a product to open its text or preview.",
     "thankYouProductMissing": "The product could not be loaded. Please select it again.",
     "thankYouReset": "Reset to default",
     "thankYouResetDone": "Default thank-you text restored",
     "thankYouPreview": "Preview",
     "thankYouPreviewSlug": "Product to preview",
-    "thankYouPreviewHelp": "Preview unsaved edits in the checkout layout. No order or payment is created; file links are examples.",
     "thankYouFields": {
       "statusLabel": "Status label",
       "heading": "Heading",
@@ -654,7 +651,6 @@
       "downloadsHeading": "Downloads heading",
       "content": "Thank-you text"
     },
-    "thankYouChooseProduct": "Choose a product",
-    "thankYouMarkdownHelp": "Combine your heading, message and next steps here. Use the formatting toolbar or switch to Markdown."
+    "thankYouChooseProduct": "Choose a product"
   }
 }

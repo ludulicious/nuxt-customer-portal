@@ -624,7 +624,7 @@
     "orderDownloads": "Je downloads",
     "orderDownloadsPending": "Je bestanden verschijnen hier zodra je bestelling is bevestigd.",
     "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail.",
-    "thankYouPreviewNotice": "Voorbeeld — er wordt geen bestelling geplaatst. Downloads en aankoopacties zijn uitgeschakeld.",
+    "thankYouPreviewNotice": "Voorbeeld",
     "thankYouExampleFile": "Voorbeelddownload.pdf",
     "thankYouPaidPreview": "Betaalde variant (voorbeeld)",
     "thankYouTexts": "Bedankteksten",
@@ -637,15 +637,12 @@
     "thankYouFree": "Gratis bestelling",
     "thankYouPaid": "Betaalde bestelling",
     "thankYouOpenProduct": "Product openen",
-    "thankYouDefaultHelp": "Deze teksten gelden voor producten zonder eigen tekst. Lege velden gebruiken de standaardtekst.",
-    "thankYouOverrideHelp": "Tekst voor {slug}. Laat een veld leeg om de bijbehorende winkelstandaard te gebruiken.",
     "thankYouSlugRequired": "Kies een product om de tekst of het voorbeeld te openen.",
     "thankYouProductMissing": "Het product kon niet worden geladen. Selecteer het opnieuw.",
     "thankYouReset": "Standaard herstellen",
     "thankYouResetDone": "Standaard bedanktekst hersteld",
     "thankYouPreview": "Voorbeeld",
     "thankYouPreviewSlug": "Product om te bekijken",
-    "thankYouPreviewHelp": "Bekijk niet-opgeslagen wijzigingen in de afrekenopmaak. Er wordt geen bestelling of betaling aangemaakt; bestandslinks zijn voorbeelden.",
     "thankYouFields": {
       "statusLabel": "Statuslabel",
       "heading": "Kop",
@@ -654,7 +651,6 @@
       "downloadsHeading": "Kop boven downloads",
       "content": "Bedanktekst"
     },
-    "thankYouChooseProduct": "Kies een product",
-    "thankYouMarkdownHelp": "Combineer hier je kop, bericht en volgende stappen. Gebruik de opmaakknoppen of schakel over naar Markdown."
+    "thankYouChooseProduct": "Kies een product"
   }
 }

@@ -298,13 +298,6 @@ async function reset() {
         class="space-y-4 rounded-lg border border-default p-5"
         @submit="save"
       >
-        <p class="text-sm text-muted">
-          {{
-            scope === 'default'
-              ? t('products.thankYouDefaultHelp')
-              : t('products.thankYouOverrideHelp', { slug: activeSlug })
-          }}
-        </p>
         <div class="grid gap-4 sm:grid-cols-2">
           <UFormField v-for="field in fields" :key="field" :name="field" :label="t(`products.thankYouFields.${field}`)">
             <UInput v-model="state[field]" :placeholder="inherited[field]" :disabled="busy" class="w-full" />
@@ -320,7 +313,6 @@ async function reset() {
             class="w-full"
           />
         </UFormField>
-        <p class="text-xs text-muted">{{ t('products.thankYouMarkdownHelp') }}</p>
         <div class="flex flex-wrap gap-3">
           <UButton type="submit" :loading="busy" icon="i-lucide-save">{{ t('products.save') }}</UButton>
           <UButton type="button" variant="outline" :disabled="busy" @click="reset">{{
@@ -328,7 +320,6 @@ async function reset() {
           }}</UButton>
         </div>
       </UForm>
-      <p v-else class="text-sm text-muted">{{ t('products.thankYouSlugRequired') }}</p>
       <section class="min-w-0 space-y-4" :aria-label="t('products.thankYouPreview')">
         <div class="flex flex-wrap items-end gap-3">
           <UFormField :label="t('products.thankYouPreviewSlug')"
@@ -347,7 +338,6 @@ async function reset() {
             t('products.thankYouPreview')
           }}</UButton>
         </div>
-        <p class="text-sm text-muted">{{ t('products.thankYouPreviewHelp') }}</p>
         <ProductsOrderReceipt
           v-if="previewProduct"
           :product="previewProduct"
