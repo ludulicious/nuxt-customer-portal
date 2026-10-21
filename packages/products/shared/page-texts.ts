@@ -41,9 +41,23 @@ export const orderPageOverrideSchema = orderPageCopySchema.partial()
 export type OrderPageOverride = z.infer<typeof orderPageOverrideSchema>
 export type OrderPageCopy = z.infer<typeof orderPageCopySchema> & { contentHtml?: string }
 export const pageTextTargetSchema = z
-  .object({ page: z.literal('order-details'), locale: z.enum(['en', 'nl']) })
+  .object({
+    page: z.literal('order-details'),
+    locale: z.enum(['en', 'nl']),
+    productSlug: z.string().trim().max(200).default('')
+  })
   .strict()
-export const savePageTextSchema = pageTextTargetSchema.extend({ copy: orderPageOverrideSchema })
+export const savePageTextSchema = pageTextTargetSchema
+  .extend({ copy: orderPageOverrideSchema })
+  .superRefine((entry, ctx) => {
+    if (entry.productSlug && Object.keys(entry.copy).some((key) => key !== 'content')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['copy'],
+        message: 'Only the purchase introduction can be customized per product'
+      })
+    }
+  })
 export type PageText = z.infer<typeof savePageTextSchema>
 
 const defaults: Record<'en' | 'nl', z.infer<typeof orderPageCopySchema>> = {
@@ -134,6 +148,18 @@ export function resolveOrderPageCopy(overrides: OrderPageOverride | undefined, l
     }
   }
   return copy
+}
+export function resolveProductOrderPageCopy(
+  entries: PageText[],
+  productSlug: string,
+  locale: 'en' | 'nl'
+): OrderPageCopy {
+  const store = resolveOrderPageCopy(
+    entries.find((entry) => !entry.productSlug && entry.locale === locale)?.copy,
+    locale
+  )
+  const product = entries.find((entry) => entry.productSlug === productSlug && entry.locale === locale)?.copy
+  return product?.content?.trim() ? { ...store, content: product.content.trim() } : store
 }
 export const orderPageTextGroups = [
   { id: 'welcome', fields: ['eyebrow', 'title', 'content'] },

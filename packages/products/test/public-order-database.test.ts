@@ -91,6 +91,7 @@ test(
       ]
       const product = {
         ...emptyProduct(),
+        slug: 'practice',
         fileIds: ['audio', 'video'],
         fileNames: { audio: { en: 'Guided practice', nl: 'Begeleide oefening' } },
         links,
@@ -157,6 +158,21 @@ test(
       assert.equal(updatedWording.copy.downloadLabel, 'Bewaren')
       assert.equal(updatedWording.items[0]?.nextSteps, 'Geniet van je oefening')
       assert.equal(updatedWording.items[0]?.files[0]?.name, order.items[0]?.files[0]?.name)
+      await texts.savePageText('store', {
+        page: 'order-details',
+        locale: 'nl',
+        productSlug: 'practice',
+        copy: { content: 'Welkom bij je oefeningen' }
+      })
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).copy.content, 'Welkom bij je oefeningen')
+      await db.query(
+        `UPDATE products.order_line SET snapshot=jsonb_set(snapshot,'{product,slug}','"different"') WHERE id='refunded'`
+      )
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).copy.content, '')
+      await db.query(
+        `UPDATE products.order_line SET snapshot=jsonb_set(snapshot,'{product,slug}','"practice"') WHERE id='refunded'`
+      )
+      await texts.resetPageText('store', { page: 'order-details', locale: 'nl', productSlug: 'practice' })
       await texts.resetPageText('store', { page: 'order-details', locale: 'nl' })
       assert.equal(((await (await get()).json()) as PublicOrderDetails).copy.title, 'Je bestelling')
 

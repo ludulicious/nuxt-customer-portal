@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import {
   defaultOrderPageCopy,
   resolveOrderPageCopy,
+  resolveProductOrderPageCopy,
   savePageTextSchema,
   pageTextTargetSchema,
   orderPageCopySchema,
@@ -76,4 +77,49 @@ test('both admin languages label every editable field and section', async () => 
       }
     }
   }
+})
+
+test('only product introductions vary by product; all page wording stays shared per language', () => {
+  const entries = [
+    {
+      page: 'order-details' as const,
+      locale: 'en' as const,
+      productSlug: '',
+      copy: { title: 'Our library', content: 'Store introduction', footer: 'Store footer' }
+    },
+    {
+      page: 'order-details' as const,
+      locale: 'en' as const,
+      productSlug: 'audio',
+      copy: { content: 'Your audio message' }
+    },
+    {
+      page: 'order-details' as const,
+      locale: 'nl' as const,
+      productSlug: 'audio',
+      copy: { content: 'Je audiobericht' }
+    }
+  ]
+  assert.equal(resolveProductOrderPageCopy(entries, 'audio', 'en').title, 'Our library')
+  assert.equal(resolveProductOrderPageCopy(entries, 'audio', 'en').content, 'Your audio message')
+  assert.equal(resolveProductOrderPageCopy(entries, 'video', 'en').content, 'Store introduction')
+  assert.equal(resolveProductOrderPageCopy(entries, 'audio', 'nl').content, 'Je audiobericht')
+  assert.equal(
+    savePageTextSchema.safeParse({
+      page: 'order-details',
+      locale: 'en',
+      productSlug: 'audio',
+      copy: { title: 'Product title' }
+    }).success,
+    false
+  )
+  assert.equal(
+    savePageTextSchema.safeParse({
+      page: 'order-details',
+      locale: 'en',
+      productSlug: 'audio',
+      copy: { content: 'Product introduction' }
+    }).success,
+    true
+  )
 })

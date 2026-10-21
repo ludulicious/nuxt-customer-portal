@@ -356,12 +356,13 @@ export const pageText = schema.table(
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
     page: text('page').notNull(),
+    productSlug: text('product_slug').notNull().default(''),
     locale: text('locale').notNull(),
     copy: jsonb('copy').$type<OrderPageOverride>().notNull().default({}),
     updatedAt: stamp('updated_at')
   },
   (table) => [
-    primaryKey({ columns: [table.storeId, table.page, table.locale] }),
+    primaryKey({ columns: [table.storeId, table.page, table.locale, table.productSlug] }),
     check('page_text_page', sql`${table.page} IN ('order-details')`),
     check('page_text_locale', sql`${table.locale} IN ('en','nl')`),
     check('page_text_copy_object', sql`jsonb_typeof(${table.copy}) = 'object'`)

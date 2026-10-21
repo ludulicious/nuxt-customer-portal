@@ -2,6 +2,7 @@
 import {
   defaultOrderPageCopy,
   resolveOrderPageCopy,
+  resolveProductOrderPageCopy,
   orderPageOverrideSchema,
   orderPageTextGroups,
   type OrderPageCopy,
@@ -24,17 +25,60 @@ const busy = ref(false)
 const loadFailed = ref(false)
 const state = reactive<Required<OrderPageOverride>>(defaultOrderPageCopy(props.locale))
 const drafts = new Map<string, OrderPageOverride>()
+const scope = ref<'default' | 'product'>('default')
+const activeSlug = ref('')
+const slugInput = ref('')
+const previewSlug = ref('')
+const loadedPreviewSlug = ref('')
+const productSearch = ref('')
+const productOptions = ref<Array<{ value: string; label: string }>>([])
+const productsBusy = ref(false)
+const previewBusy = ref(false)
+const productPreview = ref<PublicOrderDetails>()
+const target = computed(() => ({
+  page: 'order-details' as const,
+  locale: props.locale,
+  productSlug: scope.value === 'product' ? activeSlug.value : ''
+}))
+const targetKey = computed(() => JSON.stringify(target.value))
+const editable = computed(() => scope.value === 'default' || !!activeSlug.value)
+const scopeOptions = computed(() => [
+  { value: 'default', label: t('products.thankYouDefault') },
+  { value: 'product', label: t('products.thankYouProduct') }
+])
+const effectiveEntries = computed(() => {
+  const all = new Map(
+    entries.value.map((entry) => [
+      JSON.stringify({ page: entry.page, locale: entry.locale, productSlug: entry.productSlug }),
+      entry
+    ])
+  )
+  for (const [key, copy] of drafts) {
+    all.set(key, { ...JSON.parse(key), copy })
+  }
+  if (editable.value) {
+    all.set(targetKey.value, { ...target.value, copy: { ...state } })
+  }
+  return [...all.values()]
+})
 const previewState = ref<'paid' | 'accepted' | 'pending' | 'revoked' | 'failed' | 'expired' | 'missing' | 'error'>(
   'paid'
 )
 const rendered = ref<{ content: string; html: string }>()
-const defaults = computed(() => defaultOrderPageCopy(props.locale))
+const defaults = computed(() => resolveProductOrderPageCopy(entries.value, '', props.locale))
 const copy = computed<OrderPageCopy>(() => {
-  const resolved = resolveOrderPageCopy(state, props.locale)
+  const resolved = resolveProductOrderPageCopy(
+    effectiveEntries.value,
+    productPreview.value ? loadedPreviewSlug.value : target.value.productSlug,
+    props.locale
+  )
   return { ...resolved, contentHtml: rendered.value?.content === resolved.content ? rendered.value.html : '' }
 })
 const savedOverride = computed(() =>
-  entries.value.some((item) => item.locale === props.locale && Object.keys(item.copy).length)
+  entries.value.some(
+    (item) =>
+      item.locale === props.locale && item.productSlug === target.value.productSlug && Object.keys(item.copy).length
+  )
 )
 const longFields = new Set([
   'invoiceHelp',
@@ -49,7 +93,7 @@ const longFields = new Set([
   'errorText',
   'footer'
 ])
-watch(busy, (value) => emit('busy', value), { immediate: true })
+watch([busy, previewBusy], ([saving, loading]) => emit('busy', saving || loading), { immediate: true })
 try {
   const [texts, settings] = await Promise.all([api.pageTexts(), api.settings()])
   entries.value = texts
@@ -59,19 +103,90 @@ try {
   loadFailed.value = true
 }
 watch(
-  () => props.locale,
-  (language, previous) => {
+  targetKey,
+  (key, previous) => {
     if (previous) {
       drafts.set(previous, structuredClone(toRaw(state)))
     }
-    Object.assign(
-      state,
-      drafts.get(language) ||
-        resolveOrderPageCopy(entries.value.find((entry) => entry.locale === language)?.copy, language)
-    )
+    const saved = entries.value.find(
+      (entry) => entry.locale === props.locale && entry.productSlug === target.value.productSlug
+    )?.copy
+    const baseline =
+      scope.value === 'default'
+        ? resolveOrderPageCopy(saved, props.locale)
+        : Object.fromEntries(
+            Object.keys(defaultOrderPageCopy(props.locale)).map((key) => [
+              key,
+              saved?.[key as keyof OrderPageOverride] || ''
+            ])
+          )
+    Object.assign(state, drafts.get(key) || baseline)
   },
   { immediate: true, flush: 'sync' }
 )
+watch(
+  [productSearch, () => props.locale],
+  (_, __, onCleanup) => {
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      productsBusy.value = true
+      try {
+        const result = await api.list(
+          { search: productSearch.value, locale: props.locale, sortBy: 'title', sortDir: 'asc' },
+          controller.signal
+        )
+        productOptions.value = result.items
+          .filter((item) => item.slug)
+          .map((item) => ({
+            value: item.slug,
+            label: `${item.content[props.locale].title || item.content.en.title || item.content.nl.title} (${item.slug})`
+          }))
+      } catch {
+        if (!controller.signal.aborted) {
+          error.value = t('products.loadFailed')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          productsBusy.value = false
+        }
+      }
+    }, 150)
+    onCleanup(() => {
+      clearTimeout(timer)
+      controller.abort()
+    })
+  },
+  { immediate: true }
+)
+watch(
+  () => props.locale,
+  () => {
+    productPreview.value = undefined
+  }
+)
+async function loadPreview(edit = false) {
+  const slug = (edit ? slugInput.value : previewSlug.value).trim()
+  if (!slug) {
+    error.value = t('products.thankYouSlugRequired')
+    return
+  }
+  previewBusy.value = true
+  productPreview.value = undefined
+  error.value = ''
+  try {
+    const result = await api.previewOrderPage(slug, props.locale)
+    if (edit) {
+      activeSlug.value = slug
+    }
+    previewSlug.value = slug
+    loadedPreviewSlug.value = slug
+    productPreview.value = result
+  } catch {
+    error.value = t('products.thankYouProductMissing')
+  } finally {
+    previewBusy.value = false
+  }
+}
 watch(
   () => copy.value.content,
   (content, _, onCleanup) => {
@@ -121,6 +236,23 @@ const previewOrder = computed<PublicOrderDetails>(() => {
   const status = ['revoked', 'missing', 'error'].includes(previewState.value)
     ? 'paid'
     : (previewState.value as PublicOrderDetails['status'])
+  if (productPreview.value) {
+    return {
+      ...productPreview.value,
+      copy: copy.value,
+      status,
+      access,
+      total: status === 'pending' ? null : productPreview.value.total,
+      items: productPreview.value.items.map((item) => ({
+        ...item,
+        access,
+        nextSteps: access ? item.nextSteps : '',
+        files: access ? item.files : [],
+        links: access ? item.links : [],
+        filesPending: access && item.filesPending
+      }))
+    }
+  }
   return {
     copy: copy.value,
     reference: 'BK-EXAMPLE',
@@ -170,9 +302,17 @@ async function save() {
   busy.value = true
   error.value = ''
   try {
-    const saved = await api.savePageText({ page: 'order-details', locale: props.locale, copy: { ...state } })
-    entries.value = [...entries.value.filter((entry) => entry.locale !== props.locale), saved]
-    drafts.delete(props.locale)
+    const saved = await api.savePageText({
+      ...target.value,
+      copy: scope.value === 'product' ? { content: state.content } : { ...state }
+    })
+    entries.value = [
+      ...entries.value.filter(
+        (entry) => entry.locale !== props.locale || entry.productSlug !== target.value.productSlug
+      ),
+      saved
+    ]
+    drafts.delete(targetKey.value)
     toast.add({ title: t('products.saved'), color: 'success' })
   } catch {
     error.value = t('products.saveFailed')
@@ -184,10 +324,17 @@ async function reset() {
   busy.value = true
   error.value = ''
   try {
-    await api.resetPageText({ page: 'order-details', locale: props.locale })
-    entries.value = entries.value.filter((entry) => entry.locale !== props.locale)
-    drafts.delete(props.locale)
-    Object.assign(state, defaultOrderPageCopy(props.locale))
+    await api.resetPageText({ ...target.value })
+    entries.value = entries.value.filter(
+      (entry) => entry.locale !== props.locale || entry.productSlug !== target.value.productSlug
+    )
+    drafts.delete(targetKey.value)
+    Object.assign(
+      state,
+      scope.value === 'default'
+        ? defaultOrderPageCopy(props.locale)
+        : Object.fromEntries(Object.keys(defaultOrderPageCopy(props.locale)).map((key) => [key, '']))
+    )
     toast.add({ title: t('products.storeTextResetDone'), color: 'success' })
   } catch {
     error.value = t('products.saveFailed')
@@ -202,7 +349,32 @@ async function reset() {
     <UAlert v-if="error" color="error" variant="subtle" :title="error" />
     <template v-if="!loadFailed">
       <p class="text-sm text-muted">{{ t('products.storeTextOrderHelp') }}</p>
-      <UForm :schema="schema" :state="state" novalidate class="space-y-4" @submit="save">
+      <div class="flex flex-wrap items-end gap-3">
+        <UFormField :label="t('products.thankYouScope')"
+          ><USelect v-model="scope" :items="scopeOptions" :disabled="busy || previewBusy" class="w-56"
+        /></UFormField>
+        <template v-if="scope === 'product'">
+          <UFormField :label="t('products.thankYouChooseProduct')"
+            ><USelectMenu
+              v-model="slugInput"
+              v-model:search-term="productSearch"
+              :items="productOptions"
+              value-key="value"
+              :ignore-filter="true"
+              :loading="productsBusy"
+              :disabled="busy || previewBusy"
+              class="w-80 max-w-full"
+          /></UFormField>
+          <UButton
+            variant="outline"
+            :disabled="busy || previewBusy"
+            :loading="previewBusy"
+            @click="loadPreview(true)"
+            >{{ t('products.thankYouOpenProduct') }}</UButton
+          >
+        </template>
+      </div>
+      <UForm v-if="editable" :schema="schema" :state="state" novalidate class="space-y-4" @submit="save">
         <UCard>
           <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -214,7 +386,9 @@ async function reset() {
           </template>
           <div class="divide-y divide-default">
             <details
-              v-for="group in orderPageTextGroups"
+              v-for="group in scope === 'product'
+                ? [{ id: 'welcome', fields: ['content'] as const }]
+                : orderPageTextGroups"
               :key="group.id"
               :open="group.id === 'welcome'"
               class="group py-3 first:pt-0 last:pb-0"
@@ -233,8 +407,10 @@ async function reset() {
                 >
                   <PortalMarkdownEditor
                     v-if="field === 'content'"
+                    :key="targetKey"
                     v-model="state.content"
-                    :disabled="busy"
+                    :placeholder="defaults.content"
+                    :disabled="busy || previewBusy"
                     :rows="8"
                     class="w-full"
                   />
@@ -242,7 +418,7 @@ async function reset() {
                     v-else-if="longFields.has(field)"
                     v-model="state[field]"
                     :placeholder="defaults[field]"
-                    :disabled="busy"
+                    :disabled="busy || previewBusy"
                     :rows="2"
                     autoresize
                     class="w-full"
@@ -251,7 +427,7 @@ async function reset() {
                     v-else
                     v-model="state[field]"
                     :placeholder="defaults[field]"
-                    :disabled="busy"
+                    :disabled="busy || previewBusy"
                     class="w-full"
                   />
                 </UFormField>
@@ -260,8 +436,10 @@ async function reset() {
           </div>
           <template #footer>
             <div class="flex flex-wrap gap-3">
-              <UButton type="submit" icon="i-lucide-save" :loading="busy">{{ t('products.save') }}</UButton>
-              <UButton type="button" variant="outline" :disabled="busy" @click="reset">{{
+              <UButton type="submit" icon="i-lucide-save" :loading="busy" :disabled="previewBusy">{{
+                t('products.save')
+              }}</UButton>
+              <UButton type="button" variant="outline" :disabled="busy || previewBusy" @click="reset">{{
                 t('products.thankYouReset')
               }}</UButton>
             </div>
@@ -274,6 +452,29 @@ async function reset() {
           <UFormField :label="t('products.storeTextPreviewState')"
             ><USelect v-model="previewState" :items="previewOptions" class="w-56"
           /></UFormField>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <UFormField :label="t('products.thankYouPreviewSlug')"
+            ><USelectMenu
+              v-model="previewSlug"
+              v-model:search-term="productSearch"
+              :items="productOptions"
+              value-key="value"
+              :ignore-filter="true"
+              :loading="productsBusy"
+              :disabled="busy || previewBusy"
+              class="w-80 max-w-full"
+          /></UFormField>
+          <UButton variant="outline" :loading="previewBusy" :disabled="busy || previewBusy" @click="loadPreview()">{{
+            t('products.thankYouPreview')
+          }}</UButton>
+          <UButton
+            v-if="productPreview"
+            variant="ghost"
+            :disabled="busy || previewBusy"
+            @click="productPreview = undefined"
+            >{{ t('products.storeTextExamplePreview') }}</UButton
+          >
         </div>
         <p class="text-sm text-muted">{{ t('products.storeTextPreviewHelp') }}</p>
         <ProductsPublicOrder

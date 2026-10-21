@@ -695,7 +695,7 @@
     "storeTextOrderPages": "Order pages",
     "storeTextOrderDetails": "Order details",
     "storeTextCheckout": "Checkout confirmations",
-    "storeTextOrderHelp": "These shared page texts apply immediately to existing and future orders. Purchased product titles, instructions and resource names keep their original purchase content. Leave a field empty to use its default wording.",
+    "storeTextOrderHelp": "Edit shared page wording per language, or customize only the purchase introduction for a specific product. Empty product introductions inherit the store introduction. Product introductions apply to orders containing only that product; mixed orders use the store introduction. Product titles, instructions, files and links come from the purchased product.",
     "storeTextPageWording": "Page wording",
     "storeTextCustomized": "Customized",
     "storeTextDefault": "Default wording",
@@ -703,7 +703,7 @@
     "storeTextPreviewState": "Preview state",
     "storeTextMissingPreview": "Invalid order link",
     "storeTextErrorPreview": "Page load error",
-    "storeTextPreviewHelp": "Preview with example content. No customer orders are used and links and media are disabled.",
+    "storeTextPreviewHelp": "Preview with example content or a selected product. No customer orders are used and links and media are disabled.",
     "storeTextPreviewFailed": "The formatted text preview could not be loaded",
     "storeTextGroups": {
       "welcome": "Welcome",
@@ -747,6 +747,7 @@
       "statusFailed": "Failed status",
       "statusExpired": "Expired status",
       "statusRevoked": "Revoked access status"
-    }
+    },
+    "storeTextExamplePreview": "Use example content"
   }
 }

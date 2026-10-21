@@ -695,7 +695,7 @@
     "storeTextOrderPages": "Bestelpagina’s",
     "storeTextOrderDetails": "Bestelgegevens",
     "storeTextCheckout": "Bevestigingen na afrekenen",
-    "storeTextOrderHelp": "Deze algemene paginateksten gelden direct voor bestaande en toekomstige bestellingen. Gekochte producttitels, instructies en namen van bestanden en links behouden hun oorspronkelijke inhoud. Laat een veld leeg om de standaardtekst te gebruiken.",
+    "storeTextOrderHelp": "Bewerk de algemene paginateksten per taal, of pas alleen de aankoopintroductie voor een specifiek product aan. Lege productintroducties gebruiken de winkelintroductie. Productintroducties gelden voor bestellingen met alleen dat product; gemengde bestellingen gebruiken de winkelintroductie. Producttitels, instructies, bestanden en links komen uit het gekochte product.",
     "storeTextPageWording": "Paginateksten",
     "storeTextCustomized": "Aangepast",
     "storeTextDefault": "Standaardteksten",
@@ -703,7 +703,7 @@
     "storeTextPreviewState": "Voorbeeldstatus",
     "storeTextMissingPreview": "Ongeldige bestellink",
     "storeTextErrorPreview": "Laadfout pagina",
-    "storeTextPreviewHelp": "Voorbeeld met fictieve inhoud. Er worden geen klantbestellingen gebruikt en links en media zijn uitgeschakeld.",
+    "storeTextPreviewHelp": "Voorbeeld met fictieve inhoud of een geselecteerd product. Er worden geen klantbestellingen gebruikt en links en media zijn uitgeschakeld.",
     "storeTextPreviewFailed": "Het voorbeeld van de opgemaakte tekst kon niet worden geladen",
     "storeTextGroups": {
       "welcome": "Welkom",
@@ -747,6 +747,7 @@
       "statusFailed": "Status mislukt",
       "statusExpired": "Status verlopen",
       "statusRevoked": "Status ingetrokken toegang"
-    }
+    },
+    "storeTextExamplePreview": "Voorbeeldinhoud gebruiken"
   }
 }

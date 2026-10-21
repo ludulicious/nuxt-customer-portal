@@ -77,6 +77,18 @@ test(
       await texts.savePageText('other', { page: 'order-details', locale: 'en', copy: { title: 'Other store' } })
       assert.equal((await texts.orderPageCopy('store', 'nl')).title, 'Je bibliotheek')
       assert.equal((await texts.orderPageCopy('other', 'en')).title, 'Other store')
+      await texts.savePageText('store', {
+        page: 'order-details',
+        locale: 'en',
+        productSlug: 'audio',
+        copy: { content: 'Audio introduction' }
+      })
+      assert.equal((await texts.orderPageCopy('store', 'en', 'audio')).title, 'Your library')
+      assert.equal((await texts.orderPageCopy('store', 'en', 'audio')).content, 'Audio introduction')
+      assert.equal((await texts.orderPageCopy('store', 'en', 'video')).title, 'Your library')
+      await texts.resetPageText('store', { page: 'order-details', locale: 'en', productSlug: 'audio' })
+      assert.equal((await texts.orderPageCopy('store', 'en', 'audio')).title, 'Your library')
+      assert.equal((await texts.orderPageCopy('store', 'en')).title, 'Your library')
       const copy = await texts.orderPageCopy('store', 'en')
       assert.equal(copy.title, 'Your library')
       assert.match(copy.contentHtml, /<strong>your materials<\/strong>/)
@@ -91,11 +103,13 @@ test(
       const getHandler = (await import('../server/api/products/admin/page-texts/index.get')).default
       const putHandler = (await import('../server/api/products/admin/page-texts/index.put')).default
       const deleteHandler = (await import('../server/api/products/admin/page-texts/index.delete')).default
+      const previewHandler = (await import('../server/api/products/admin/page-texts/preview.get')).default
       const renderHandler = (await import('../server/api/products/admin/page-texts/render.post')).default
       const app = h3.createApp()
       const router = h3.createRouter()
       router.get('/api/store/page-texts/order-details', publicHandler)
       router.get('/api/products/admin/page-texts', getHandler)
+      router.get('/api/products/admin/page-texts/preview', previewHandler)
       router.put('/api/products/admin/page-texts', putHandler)
       router.delete('/api/products/admin/page-texts', deleteHandler)
       router.post('/api/products/admin/page-texts/render', renderHandler)
@@ -114,6 +128,7 @@ test(
         assert.equal((await fetch(`${origin}/api/products/admin/page-texts`, { method })).status, 401)
       }
       assert.equal((await fetch(`${origin}/api/products/admin/page-texts/render`, { method: 'POST' })).status, 401)
+      assert.equal((await fetch(`${origin}/api/products/admin/page-texts/preview?slug=audio&locale=en`)).status, 401)
       await texts.resetPageText('store', { page: 'order-details', locale: 'en' })
       assert.equal((await texts.orderPageCopy('store', 'en')).title, 'Your order')
       assert.equal((await texts.orderPageCopy('store', 'nl')).title, 'Je bibliotheek')

@@ -1,3 +1,4 @@
+import type { PublicOrderDetails } from '../../shared/public-order'
 import type { PageText } from '../../shared/page-texts'
 import type { ThankYouText } from '../../shared/thank-you'
 import type { OfferInput } from '../../shared/offers'
@@ -23,6 +24,8 @@ import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
+  previewOrderPage: (slug: string, locale: 'en' | 'nl') =>
+    $fetch<PublicOrderDetails>('/api/products/admin/page-texts/preview', { query: { slug, locale } }),
   pageTexts: () => $fetch<PageText[]>('/api/products/admin/page-texts'),
   savePageText: (body: PageText) => $fetch<PageText>('/api/products/admin/page-texts', { method: 'PUT', body }),
   resetPageText: (body: Omit<PageText, 'copy'>) => $fetch('/api/products/admin/page-texts', { method: 'DELETE', body }),

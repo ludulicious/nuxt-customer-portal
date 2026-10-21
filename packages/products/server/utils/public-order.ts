@@ -24,8 +24,9 @@ export async function publicOrderDetails(order: Order, token: string): Promise<P
         [fileIds]
       )
     : []
+  const slugs = [...new Set(order.lines.map((line) => line.snapshot.product.slug))]
   return {
-    copy: await orderPageCopy(order.store_id, order.snapshot.locale),
+    copy: await orderPageCopy(order.store_id, order.snapshot.locale, slugs.length === 1 ? slugs[0] : ''),
     reference: order.booking_reference,
     createdAt: order.created_at,
     locale: order.snapshot.locale,
