@@ -624,10 +624,34 @@
     "orderDownloads": "Je downloads",
     "orderDownloadsPending": "Je bestanden verschijnen hier zodra je bestelling is bevestigd.",
     "orderDownloadsError": "Je downloads konden niet worden geladen. Probeer het opnieuw of gebruik de links in je bevestigingsmail.",
-    "thankYouContentUrl": "URL voor bedankteksten",
-    "thankYouContentUrlHelp": "Openbaar JSON-eindpunt beheerd via de website-editor. Ontvangt alleen de productslug, taal en gratis/betaalde variant. Laat leeg voor de standaardteksten.",
     "thankYouPreviewNotice": "Voorbeeld — er wordt geen bestelling geplaatst. Downloads en aankoopacties zijn uitgeschakeld.",
     "thankYouExampleFile": "Voorbeelddownload.pdf",
-    "thankYouPaidPreview": "Betaalde variant (voorbeeld)"
+    "thankYouPaidPreview": "Betaalde variant (voorbeeld)",
+    "thankYouTexts": "Bedankteksten",
+    "thankYouIntro": "Bewerk de bevestiging na het bestellen, met aparte gratis en betaalde standaardteksten en teksten per product.",
+    "thankYouScope": "Te bewerken tekst",
+    "thankYouDefault": "Winkelstandaard",
+    "thankYouProduct": "Specifiek product",
+    "thankYouLanguage": "Taal",
+    "thankYouVariant": "Bestelvariant",
+    "thankYouFree": "Gratis bestelling",
+    "thankYouPaid": "Betaalde bestelling",
+    "thankYouOpenProduct": "Product openen",
+    "thankYouDefaultHelp": "Deze teksten gelden voor producten zonder eigen tekst. Lege velden gebruiken de standaardtekst.",
+    "thankYouOverrideHelp": "Tekst voor {slug}. Laat een veld leeg om de bijbehorende winkelstandaard te gebruiken.",
+    "thankYouSlugRequired": "Vul een productslug in om de tekst of het voorbeeld te openen.",
+    "thankYouProductMissing": "Het product kon niet worden geladen. Controleer de slug en probeer opnieuw.",
+    "thankYouReset": "Overgenomen tekst herstellen",
+    "thankYouResetDone": "Overgenomen bedanktekst hersteld",
+    "thankYouPreview": "Voorbeeld",
+    "thankYouPreviewSlug": "Productslug voor het voorbeeld",
+    "thankYouPreviewHelp": "Bekijk niet-opgeslagen wijzigingen in de afrekenopmaak. Er wordt geen bestelling of betaling aangemaakt; bestandslinks zijn voorbeelden.",
+    "thankYouFields": {
+      "statusLabel": "Statuslabel",
+      "heading": "Kop",
+      "message": "Bedankbericht",
+      "helpText": "Aanvullende informatie",
+      "downloadsHeading": "Kop boven downloads"
+    }
   }
 }

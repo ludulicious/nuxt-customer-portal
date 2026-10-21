@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../../../../shared/checkout-query'
 import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
-import { thankYouCopySchema, type ThankYouCopy } from '../../../../shared/thank-you'
 import { purchaseReturnUrl, type PurchaseDownload } from '../../../../shared/downloads'
 
 definePageMeta({ public: true, layout: 'store' })
@@ -66,24 +65,10 @@ const checkoutQuery = new URLSearchParams({
 })
 const checkoutUrl = `/store/${encodeURIComponent(product.slug)}?${checkoutQuery.toString()}`
 
-const contentUrl = computed(() => appearance.value.thankYouContentUrl || '')
 const variant = computed(
   () => delivery.value?.variant || (product.isFree || selectedPrice.value?.amount === 0 ? 'free' : 'paid')
 )
-// Content requests contain presentation selectors only; never purchase credentials.
-const { data: remoteCopy } = await useFetch<ThankYouCopy>(() => contentUrl.value || '/api/store/thank-you-disabled', {
-  server: false,
-  immediate: outcome === 'success' && !!contentUrl.value,
-  query: { slug: product.slug, locale: requestedLocale, variant },
-  credentials: 'omit',
-  referrerPolicy: 'no-referrer',
-  timeout: 3000,
-  retry: 0
-})
-const customCopy = computed(() => {
-  const parsed = thankYouCopySchema.safeParse(remoteCopy.value)
-  return parsed.success ? parsed.data : undefined
-})
+const customCopy = computed(() => product.thankYou?.[variant.value])
 </script>
 
 <template>

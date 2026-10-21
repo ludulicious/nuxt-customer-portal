@@ -624,10 +624,34 @@
     "orderDownloads": "Your downloads",
     "orderDownloadsPending": "Your files will appear here once your order is confirmed.",
     "orderDownloadsError": "Your downloads could not be loaded. Please try again or use the links in your confirmation email.",
-    "thankYouContentUrl": "Thank-you content URL",
-    "thankYouContentUrlHelp": "Public JSON endpoint managed by your website content editor. Receives only the product slug, language and free/paid variant. Leave empty to use the standard texts.",
     "thankYouPreviewNotice": "Preview — no order is placed. Downloads and purchase actions are disabled.",
     "thankYouExampleFile": "Example download.pdf",
-    "thankYouPaidPreview": "Paid variant (preview)"
+    "thankYouPaidPreview": "Paid variant (preview)",
+    "thankYouTexts": "Thank-you texts",
+    "thankYouIntro": "Edit the confirmation shown after checkout, with separate free and paid defaults and product-specific texts.",
+    "thankYouScope": "Text to edit",
+    "thankYouDefault": "Store default",
+    "thankYouProduct": "Specific product",
+    "thankYouLanguage": "Language",
+    "thankYouVariant": "Order variant",
+    "thankYouFree": "Free order",
+    "thankYouPaid": "Paid order",
+    "thankYouOpenProduct": "Open product",
+    "thankYouDefaultHelp": "These texts apply to products without an override. Blank fields use the standard wording.",
+    "thankYouOverrideHelp": "Text for {slug}. Leave a field blank to inherit the matching store default.",
+    "thankYouSlugRequired": "Enter a product slug to open its text or preview.",
+    "thankYouProductMissing": "The product could not be loaded. Check the slug and try again.",
+    "thankYouReset": "Restore inherited text",
+    "thankYouResetDone": "Inherited thank-you text restored",
+    "thankYouPreview": "Preview",
+    "thankYouPreviewSlug": "Product slug to preview",
+    "thankYouPreviewHelp": "Preview unsaved edits in the checkout layout. No order or payment is created; file links are examples.",
+    "thankYouFields": {
+      "statusLabel": "Status label",
+      "heading": "Heading",
+      "message": "Thank-you message",
+      "helpText": "Additional information",
+      "downloadsHeading": "Downloads heading"
+    }
   }
 }

@@ -19,3 +19,65 @@ export function purchaseThankYouVariant(order: {
     ? 'free'
     : 'paid'
 }
+
+export const thankYouOverrideSchema = z
+  .object({
+    statusLabel: z.string().trim().max(120).optional(),
+    heading: z.string().trim().max(240).optional(),
+    message: z.string().trim().max(4000).optional(),
+    helpText: z.string().trim().max(2000).optional(),
+    downloadsHeading: z.string().trim().max(120).optional()
+  })
+  .strict()
+export type ThankYouOverride = z.infer<typeof thankYouOverrideSchema>
+export const thankYouTargetSchema = z
+  .object({
+    productSlug: z.string().trim().max(200).default(''),
+    locale: z.enum(['en', 'nl']),
+    variant: z.enum(['free', 'paid'])
+  })
+  .strict()
+export const saveThankYouSchema = thankYouTargetSchema.extend({ copy: thankYouOverrideSchema })
+export type ThankYouText = z.infer<typeof saveThankYouSchema>
+
+export function defaultThankYouCopy(variant: ThankYouVariant, locale: 'en' | 'nl'): ThankYouCopy {
+  return locale === 'nl'
+    ? {
+        statusLabel: 'Bestelling ontvangen',
+        heading: variant === 'free' ? 'Je cadeau staat voor je klaar' : 'Bedankt voor je bestelling',
+        message: variant === 'free' ? 'Bedankt dat je deze stap voor jezelf zet.' : 'Je bestelling is ontvangen.',
+        helpText: 'Je kunt je bestelling en de volgende stappen in het portaal bekijken.',
+        downloadsHeading: 'Je downloads'
+      }
+    : {
+        statusLabel: 'Order received',
+        heading: variant === 'free' ? 'Your gift is ready' : 'Thank you for your order',
+        message: variant === 'free' ? 'Thank you for taking this step for yourself.' : 'Your order has been received.',
+        helpText: 'You can review your order and next steps in the portal.',
+        downloadsHeading: 'Your downloads'
+      }
+}
+
+export function resolveThankYouCopy(
+  entries: ThankYouText[],
+  slug: string,
+  variant: ThankYouVariant,
+  locale: 'en' | 'nl'
+): ThankYouCopy {
+  const copy = defaultThankYouCopy(variant, locale)
+  for (const productSlug of new Set(['', slug])) {
+    const entry = entries.find(
+      (item) => item.productSlug === productSlug && item.variant === variant && item.locale === locale
+    )
+    if (!entry) {
+      continue
+    }
+    for (const key of Object.keys(copy) as Array<keyof ThankYouCopy>) {
+      const value = entry.copy[key]?.trim()
+      if (value) {
+        copy[key] = value
+      }
+    }
+  }
+  return copy
+}

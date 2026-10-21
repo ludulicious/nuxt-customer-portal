@@ -201,6 +201,9 @@ const themeStyle = computed(() => ({
   background: var(--checkout-surface);
   color: var(--checkout-muted);
 }
+.payment-return-page:has(.preview-notice) {
+  min-height: 0;
+}
 .payment-return-page {
   min-height: 100dvh;
   overflow-x: clip;

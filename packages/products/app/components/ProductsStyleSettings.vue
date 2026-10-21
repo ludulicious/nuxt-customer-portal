@@ -56,13 +56,6 @@ const colors = [
           <UInput v-model="settings.checkoutAppearance.bodyFontFamily" class="w-full" />
         </UFormField>
       </div>
-      <UFormField
-        name="checkoutAppearance.thankYouContentUrl"
-        :label="t('products.thankYouContentUrl')"
-        :help="t('products.thankYouContentUrlHelp')"
-      >
-        <UInput v-model="settings.checkoutAppearance.thankYouContentUrl" type="url" class="w-full" />
-      </UFormField>
       <UFormField name="checkoutAppearance.reassurance" :label="t('products.reassurance')">
         <UTextarea v-model="settings.checkoutAppearance.reassurance" class="w-full" />
       </UFormField>

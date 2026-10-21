@@ -1,3 +1,4 @@
+import { productThankYouCopies } from './thank-you'
 import type { PoolClient } from 'pg'
 import { effectivePricing } from '../../shared/offers'
 import { productOffers, validateOutstandingOffers } from './offers'
@@ -492,6 +493,7 @@ export async function publicProduct(
   )
   const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
   return {
+    thankYou: await productThankYouCopies(store.organization_id, product.slug, locale),
     storeMode: store.mode,
     visibility: product.visibility || 'listed',
     paymentMethods: [

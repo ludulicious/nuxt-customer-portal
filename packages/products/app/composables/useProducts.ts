@@ -1,3 +1,4 @@
+import type { ThankYouText } from '../../shared/thank-you'
 import type { OfferInput } from '../../shared/offers'
 import type {
   ProductOffer,
@@ -21,6 +22,13 @@ import type { productSchema, categorySchema } from '../../shared/validation'
 
 type ProductInput = z.input<typeof productSchema>
 export const useProducts = () => ({
+  thankYouTexts: () => $fetch<ThankYouText[]>('/api/products/admin/thank-you'),
+  saveThankYouText: (body: ThankYouText) =>
+    $fetch<ThankYouText>('/api/products/admin/thank-you', { method: 'PUT', body }),
+  resetThankYouText: (body: Omit<ThankYouText, 'copy'>) =>
+    $fetch('/api/products/admin/thank-you', { method: 'DELETE', body }),
+  previewThankYou: (slug: string, locale: string) =>
+    $fetch<CatalogProduct>('/api/products/admin/thank-you/preview', { query: { slug, locale } }),
   preview: (id: string) => $fetch<ProductPreview>(`/api/products/admin/products/${encodeURIComponent(id)}/preview`),
   previewImageUrl: (id: string, assetId: string) =>
     `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}`,
