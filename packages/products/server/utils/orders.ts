@@ -1,3 +1,4 @@
+import { purchaseLinks } from '../../shared/links'
 import { downloadLinksMarkdown } from '../../shared/downloads'
 import { purchaseDownloads, orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
@@ -392,7 +393,10 @@ export async function notifyOrder(id: string) {
       ]
         .filter(Boolean)
         .join('\n\n'),
-      downloads: downloadLinksMarkdown(await purchaseDownloads(order, await orderDownloadToken(order.id)))
+      downloads: downloadLinksMarkdown([
+        ...(await purchaseDownloads(order, await orderDownloadToken(order.id))),
+        ...purchaseLinks(order)
+      ])
     },
     idempotencyKey: `purchase:${id}`,
     subjectPrefix: order.snapshot.storeMode === 'sandbox' ? '[TEST] ' : undefined

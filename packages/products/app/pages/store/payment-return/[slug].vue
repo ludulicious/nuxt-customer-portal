@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../../../../shared/checkout-query'
 import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
+import type { PurchaseLink } from '../../../../shared/links'
 import { purchaseReturnUrl, type PurchaseDownload } from '../../../../shared/downloads'
 
 definePageMeta({ public: true, layout: 'store' })
@@ -35,7 +36,7 @@ const {
   error: deliveryError,
   status: deliveryStatus,
   refresh: refreshDelivery
-} = await useFetch<{ status: string; variant?: 'free' | 'paid'; files: PurchaseDownload[] }>(
+} = await useFetch<{ status: string; variant?: 'free' | 'paid'; files: PurchaseDownload[]; links?: PurchaseLink[] }>(
   () => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`,
   { immediate: !!purchaseToken, watch: false }
 )

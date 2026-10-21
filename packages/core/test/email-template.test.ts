@@ -87,7 +87,7 @@ test('server-side email validation checks condition names and block structure', 
   )
 })
 
-test('default purchase templates keep their localized heading only when files exist', () => {
+test('default purchase templates keep their localized heading only when purchased resources exist', () => {
   for (const locale of ['en', 'nl'] as const) {
     const template = purchaseConfirmationEmail.defaults[locale].body
     const keys = new Set(purchaseConfirmationEmail.placeholders.map((item) => item.key))
@@ -95,7 +95,9 @@ test('default purchase templates keep their localized heading only when files ex
     const withFiles = renderEmailTemplate(template, values, keys)
     const withoutFiles = renderEmailTemplate(template, { ...values, downloads: '' }, keys)
     const heading =
-      locale === 'en' ? 'You can download your purchased files here:' : 'Je kunt je gekochte bestanden hier downloaden:'
+      locale === 'en'
+        ? 'You can access your purchased files and links here:'
+        : 'Je vindt je gekochte bestanden en links hier:'
     assert.ok(withFiles.includes(heading))
     assert.ok(!withoutFiles.includes(heading))
     assert.ok(!withFiles.includes('{{'))

@@ -25,7 +25,14 @@ export function publishChecks(
           warning: false
         }))),
     ...(product.type === 'digital'
-      ? [{ key: 'publishFile', value: '', passed: product.fileIds.length > 0, warning: false }]
+      ? [
+          {
+            key: 'publishFile',
+            value: '',
+            passed: product.fileIds.length > 0 || !!product.links?.length,
+            warning: false
+          }
+        ]
       : []),
     { key: 'publishStoreOpen', value: '', passed: settings.enabled, warning: true }
   ]

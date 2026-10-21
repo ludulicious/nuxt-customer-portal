@@ -39,6 +39,7 @@ const { t } = useI18n(),
 const state = reactive<z.infer<typeof productSchema>>(
   props.product
     ? {
+        links: [],
         visibility: 'listed',
         isFree: false,
         planning: defaultPlanning(),

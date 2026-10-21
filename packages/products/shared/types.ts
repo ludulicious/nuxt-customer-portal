@@ -1,3 +1,4 @@
+import type { PurchasedLink, PurchaseLink } from './links'
 import type { ThankYouCopy } from './thank-you'
 import type { ProductPlanning } from './planning'
 import type { MarkdownStyle } from './markdown-style'
@@ -30,6 +31,7 @@ export interface ProductData {
   detailImageIds: string[]
   fileIds: string[]
   fileNames: Record<string, Record<Locale, string>>
+  links?: PurchasedLink[]
   videoUrl: string
 }
 export interface Price {
@@ -260,6 +262,7 @@ export interface Purchase {
   invoiceId: string | null
   nextSteps: string
   fileIds: string[]
+  links?: PurchaseLink[]
   createdAt: string
 }
 

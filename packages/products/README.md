@@ -142,3 +142,9 @@ Provider owners and administrators can manage checkout confirmation text at **Pr
 Enter a product slug in the preview controls to render the actual checkout receipt with unsaved edits and current store branding. Draft and unlisted products can also be previewed by authorized administrators. Example file links and purchase actions are disabled, and a preview notice is always visible. No order, payment or customer data is created. Invoice-later orders retain a separate system-generated invoice explanation.
 
 Texts are stored in `products.thank_you_text`, scoped to the owning organization, locale, variant and exact slug (empty for store defaults). Product administration policy guards all read, save, reset and preview endpoints. Catalog responses include only the two resolved copies for that product and language; no external endpoint or caller-website integration is needed. Checkout selects the free/paid copy using the original order amount, so an expired temporary offer does not change its confirmation text.
+
+### Purchased links
+
+Under **Purchased files and links**, add ordered external links with a shared HTTP/HTTPS destination and labels in each enabled store language. Links work for digital and service products; a digital product may contain files, links, or both. Each checkout snapshots the links, so later edits and removals apply only to future purchases. No database migration is needed for this feature.
+
+Eligible buyers receive links in the confirmation email (`{{downloads}}`), order confirmation, and portal purchase drawer. The purchase-delivery API adds `links: [{ id, name, url }]` alongside the existing `files` array. Destinations are excluded from public catalog responses. Existing payment, invoice acceptance, refund and dispute access rules apply before revealing a destination. Once revealed, its external service controls access: removing portal access cannot revoke a shared Google Doc or YouTube URL.

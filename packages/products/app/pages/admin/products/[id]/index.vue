@@ -7,7 +7,7 @@ const { t } = useI18n()
 const route = useRoute()
 const api = useProducts()
 const preview = ref<ProductPreview>()
-const editing = ref<'basic' | 'details' | 'pricing' | 'planning' | 'files' | null>(
+const editing = ref<'basic' | 'details' | 'pricing' | 'planning' | 'files' | 'links' | null>(
   route.query.edit === 'true' ? 'basic' : null
 )
 const toast = useToast()
@@ -61,7 +61,7 @@ const languageOptions = computed(() => {
 const currencyOptions = computed(() => preview.value?.currencies || [])
 const selectedPrice = computed(() => product.value?.prices.find((price) => price.currency === currency.value))
 const backTarget = computed(() => ({ path: '/admin/products', query: route.query }))
-function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'planning' | 'files') {
+function toggleEdit(section: 'basic' | 'details' | 'pricing' | 'planning' | 'files' | 'links') {
   editing.value = editing.value === section ? null : section
 }
 function openMediaEditor() {
@@ -216,6 +216,8 @@ onMounted(() => {
         class="mt-6"
         :product="product"
         :editing="editing === 'files'"
+        :links-editing="editing === 'links'"
+        @edit-links="toggleEdit('links')"
         @edit="toggleEdit('files')"
         @saved="saved"
         @cancel="editing = null"

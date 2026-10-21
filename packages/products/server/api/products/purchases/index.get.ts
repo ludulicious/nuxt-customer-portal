@@ -1,3 +1,4 @@
+import { purchaseLinks } from '../../../../shared/links'
 import { claimPurchases, hasAccess, getOrder } from '@nuxt-customer-portal/products/server/utils/orders'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import type { Order } from '@nuxt-customer-portal/products/shared/types'
@@ -70,6 +71,7 @@ export default defineEventHandler(async (event) => {
         outstandingAmount: order.outstandingAmount,
         invoiceId: order.invoiceStatus === 'DRAFT' ? null : order.invoice_id,
         nextSteps: line.snapshot.product.nextSteps[order.snapshot.locale],
+        links: purchaseLinks(order, line),
         fileIds: hasAccess(order, line) ? line.snapshot.product.fileIds : [],
         createdAt: order.created_at
       }
