@@ -1,5 +1,13 @@
 # Nuxt Customer Portal
 
+## 0.8.6
+
+Fix the starter wizard rejecting valid module selections that include invoice
+integrations. Saved setup metadata can be normalized again when resuming setup.
+
+All 16 public packages and the three portal apps use `0.8.6`. No new database
+migrations are required when upgrading from `0.8.5`. Use `0.8.6` for new portals.
+
 ## 0.8.5
 
 Make manual fulfillment an explicit product setting, off by default for digital

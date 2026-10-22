@@ -1,5 +1,13 @@
 # @nuxt-customer-portal/invoice-timesheets
 
+## 0.8.6
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.8.6
+- @nuxt-customer-portal/invoices@0.8.6
+- @nuxt-customer-portal/timesheets@0.8.6
+
 ## 0.8.5
 
 ### Patch Changes
