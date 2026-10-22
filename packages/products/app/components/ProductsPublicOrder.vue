@@ -12,6 +12,7 @@ const props = defineProps<{
   loading?: boolean
   preview?: boolean
   backUrl?: string
+  embedded?: boolean
 }>()
 defineEmits<{ refresh: [] }>()
 const { t } = useI18n()
@@ -52,6 +53,7 @@ const revoked = computed(
 
 <template>
   <ProductsPurchaseLayout
+    :embedded="embedded"
     :appearance="appearance"
     :test-order="order?.storeMode === 'sandbox'"
     :items="order?.items"

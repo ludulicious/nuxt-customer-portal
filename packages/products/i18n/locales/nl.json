@@ -81,6 +81,17 @@
     "productNameMismatch": "Voer de productnaam exact in zoals weergegeven.",
     "loading": "Laden…",
     "results": "{n} resultaat | {n} resultaten",
+    "adminOrder": {
+      "clientDetails": "Bestelgegevens voor de klant",
+      "title": "Bestelgegevens",
+      "summary": "Besteloverzicht",
+      "customer": "Naam klant",
+      "email": "E-mailadres klant",
+      "noClient": "Geen gekoppelde klant",
+      "online": "Online betaling",
+      "invoice": "Factuur",
+      "outstanding": "Openstaand bedrag"
+    },
     "ordersIntro": "Volg bestellingen, betalingen en facturen.",
     "ordersSearch": "Zoek bestellingen, klanten of boekingsnummers",
     "orderSortCreated": "Besteldatum",

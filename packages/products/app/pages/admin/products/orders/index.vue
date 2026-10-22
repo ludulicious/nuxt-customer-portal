@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
-import type { Order, Page } from '../../../../shared/types'
-import { formatMoney } from '../../../../shared/money'
-import { canFulfillOrderLine, requiresFulfillment } from '../../../../shared/fulfillment'
+import type { Order, Page } from '../../../../../shared/types'
+import { formatMoney } from '../../../../../shared/money'
+import { canFulfillOrderLine, requiresFulfillment } from '../../../../../shared/fulfillment'
 
 const { t, locale } = useI18n()
 const api = useProducts()
@@ -255,8 +255,10 @@ async function openOrder(order: Order) {
   }
   busyId.value = `${order.id}:open`
   try {
-    const { url } = await api.orderLink(order.id)
-    await router.push({ path: new URL(url).pathname, query: { ordersReturnTo: route.fullPath } })
+    await router.push({
+      path: `/admin/products/orders/${encodeURIComponent(order.id)}`,
+      query: { ordersReturnTo: route.fullPath }
+    })
   } catch {
     toast.add({ title: t('products.orderLinkFailed'), color: 'error' })
   } finally {

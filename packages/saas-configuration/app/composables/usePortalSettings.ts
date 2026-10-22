@@ -6,7 +6,7 @@ export const usePortalSettings = () => {
   const bootstrap = useState<PortalOnboardingState | null>('portal-bootstrap-state', () => null)
 
   const refreshPublicSettings = async () => {
-    settings.value = await $fetch<PublicPortalSettings>('/api/portal/public')
+    settings.value = await $fetch<PublicPortalSettings, string>('/api/portal/public')
     enabledModules.value = settings.value.enabledModules
     return settings.value
   }

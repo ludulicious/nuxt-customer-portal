@@ -105,13 +105,15 @@ function selectTab(value: string | number) {
       :ui="{ list: 'justify-start', trigger: 'grow-0' }"
       @update:model-value="selectTab"
     />
-    <NuxtPage
-      :settings="settings"
-      :health="health"
-      :saving="busy"
-      @save-general="save('general')"
-      @save-styles="save('styles')"
-      @changed="load"
-    />
+    <div class="mt-6">
+      <NuxtPage
+        :settings="settings"
+        :health="health"
+        :saving="busy"
+        @save-general="save('general')"
+        @save-styles="save('styles')"
+        @changed="load"
+      />
+    </div>
   </ProductsShell>
 </template>

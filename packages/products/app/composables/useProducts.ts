@@ -1,4 +1,5 @@
 import type { PublicOrderDetails } from '../../shared/public-order'
+import type { AdminOrderDetails } from '../../shared/admin-order'
 import type { PageText } from '../../shared/page-texts'
 import type { ThankYouText } from '../../shared/thank-you'
 import type { OfferInput } from '../../shared/offers'
@@ -122,6 +123,7 @@ export const useProducts = () => ({
   checkout: (body: Record<string, unknown>) => $fetch<{ url: string }>('/api/store/checkout', { method: 'POST', body }),
   orders: (query: Record<string, unknown>, signal?: AbortSignal) =>
     $fetch<Page<Order>>('/api/products/admin/orders', { query, signal }),
+  order: (id: string) => $fetch<AdminOrderDetails>(`/api/products/admin/orders/${encodeURIComponent(id)}`),
   orderLink: (id: string) => $fetch<{ url: string }>(`/api/products/admin/orders/${encodeURIComponent(id)}/link`),
   orderAction: (id: string, action: 'retry' | 'fulfill') =>
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),

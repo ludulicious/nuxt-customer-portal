@@ -157,9 +157,43 @@ test(
       assert.equal(order.appearance.logoUrl, 'https://images.example.test/provider.png')
       assert.equal(order.appearance.hostName, 'Media order preview')
       assert.equal(order.items[0]?.thumbnailImage, 'https://images.example.test/cover.jpg')
+      const { adminOrderDetails } = await import('../server/utils/admin-order')
+      const adminDetails = await adminOrderDetails('store', 'order')
+      assert.equal(adminDetails.order.email, 'private-buyer@example.test')
+      assert.equal(adminDetails.order.snapshot.billing.name, 'Private Buyer')
+      assert.equal(adminDetails.client, null)
+      assert.equal(adminDetails.purchase.reference, order.reference)
+      await assert.rejects(adminOrderDetails('another-provider', 'order'), { statusCode: 404 })
+      await assert.rejects(adminOrderDetails('store', 'missing-order'), { statusCode: 404 })
+      await db.query(
+        `INSERT INTO public.organization(id,name,slug,created_at,organization_type) VALUES('client','Linked Client','client',now(),'CLIENT')`
+      )
+      await db.query(`UPDATE products.orders SET client_id='client' WHERE id='order'`)
+      assert.deepEqual((await adminOrderDetails('store', 'order')).client, { id: 'client', name: 'Linked Client' })
       const uploadedLogo = 'data:image/png;base64,aGVsbG8='
       await db.query('UPDATE public.organization SET logo=$1 WHERE id=$2', [uploadedLogo, 'store'])
       assert.equal(((await (await get()).json()) as PublicOrderDetails).appearance.logoUrl, uploadedLogo)
+      await db.query(
+        await readFile(new URL('../../saas-configuration/migrations/0000_portal_settings.sql', import.meta.url), 'utf8')
+      )
+      const portalLogo = 'data:image/png;base64,cG9ydGFs'
+      const darkLogo = 'data:image/png;base64,ZGFyaw=='
+      await db.query('INSERT INTO saas_configuration.portal_settings(settings) VALUES($1)', [
+        { branding: { logoLight: portalLogo, logoDark: darkLogo } }
+      ])
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).appearance.logoUrl, portalLogo)
+      // Catalog checkout and thank-you pages use the same appearance resolver.
+      const { purchaseAppearance } = await import('../server/utils/purchase-appearance')
+      assert.equal((await purchaseAppearance('store')).logoUrl, portalLogo)
+      await db.query(`UPDATE saas_configuration.portal_settings SET settings=$1`, [
+        { branding: { logoDark: darkLogo } }
+      ])
+      assert.equal((await purchaseAppearance('store')).logoUrl, darkLogo)
+      await db.query(`UPDATE saas_configuration.portal_settings SET settings=$1`, [{ branding: {} }])
+      assert.equal((await purchaseAppearance('store')).logoUrl, uploadedLogo)
+      await db.query(`UPDATE saas_configuration.portal_settings SET settings=$1`, [
+        { branding: { logoLight: portalLogo, logoDark: darkLogo } }
+      ])
       await db.query(`UPDATE products.store SET checkout_appearance=checkout_appearance || $1::jsonb`, [
         { logoUrl: 'https://images.example.test/custom.png' }
       ])
