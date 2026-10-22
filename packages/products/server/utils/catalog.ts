@@ -1,11 +1,11 @@
 import { purchasedLinksSchema, type PurchasedLink } from '../../shared/links'
+import { purchaseAppearance } from './purchase-appearance'
 import { productThankYouCopies } from './thank-you'
 import type { PoolClient } from 'pg'
 import { effectivePricing } from '../../shared/offers'
 import { productOffers, validateOutstandingOffers } from './offers'
 import type { Store } from './access'
 import { markdownStyleSchema } from '../../shared/markdown-style'
-import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { createError } from 'h3'
@@ -565,7 +565,7 @@ export async function publicProduct(
     durationMinutes: product.planning?.durationMinutes ?? null,
     purchaseUrl: `${baseUrl()}/store/${product.slug}${product.planning?.enabled ? '/book' : ''}`,
     locale,
-    checkoutAppearance: checkoutAppearanceSchema.parse(store.checkout_appearance || {})
+    checkoutAppearance: await purchaseAppearance(store.organization_id, store.checkout_appearance)
   } as CatalogProduct
 }
 export type ProductInput = z.infer<typeof productSchema>

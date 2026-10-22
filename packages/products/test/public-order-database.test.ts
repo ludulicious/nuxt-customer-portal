@@ -27,6 +27,7 @@ test(
     process.env.DATABASE_URL = url
     process.env.BETTER_AUTH_SECRET = 'public-order-test-secret-with-at-least-thirty-two-characters'
     process.env.PRODUCTS_STORAGE_PROVIDER = 'bunny'
+    process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT = 'https://images.example.test'
     process.env.PRODUCTS_BUNNY_STORAGE_ZONE = 'test-zone'
     process.env.PRODUCTS_BUNNY_STORAGE_PASSWORD = 'test-key'
     const upstreamRequests: Array<string | undefined> = []
@@ -74,7 +75,7 @@ test(
         }
       }
       await db.query(
-        `INSERT INTO public.organization(id,name,slug,created_at,organization_type) VALUES('store','Store','store',now(),'PROVIDER')`
+        `INSERT INTO public.organization(id,name,slug,created_at,organization_type,logo) VALUES('store','Store','store',now(),'PROVIDER','https://images.example.test/provider.png')`
       )
       await db.query(
         `INSERT INTO public."user"(id,name,email,email_verified) VALUES('owner','Owner','owner@example.test',true)`
@@ -92,6 +93,8 @@ test(
       const product = {
         ...emptyProduct(),
         slug: 'practice',
+        imageIds: ['cover'],
+        thumbnailImageId: 'cover',
         fileIds: ['audio', 'video'],
         fileNames: { audio: { en: 'Guided practice', nl: 'Begeleide oefening' } },
         links,
@@ -117,7 +120,7 @@ test(
         [{ ...snapshot, title: 'Returned item' }]
       )
       await db.query(
-        `INSERT INTO products.asset(id,product_id,name,content_type,size,visibility,object_key,ready) VALUES('audio','product','practice.mp3','audio/mpeg',10,'private','audio.mp3',true),('video','product','practice.mp4','video/mp4',10,'private','video.mp4',true)`
+        `INSERT INTO products.asset(id,product_id,name,content_type,size,visibility,object_key,ready) VALUES('audio','product','practice.mp3','audio/mpeg',10,'private','audio.mp3',true),('video','product','practice.mp4','video/mp4',10,'private','video.mp4',true),('cover','product','cover.jpg','image/jpeg',100,'public','cover.jpg',true)`
       )
       const { orderDownloadToken } = await import('../server/utils/downloads')
       pool = (await import('@nuxt-customer-portal/core/server/utils/db')).pool
@@ -142,6 +145,19 @@ test(
       assert.match(first.headers.get('x-robots-tag')!, /noindex/)
       const order = (await first.json()) as PublicOrderDetails
       assert.equal(order.locale, 'nl')
+      assert.equal(order.appearance.logoUrl, 'https://images.example.test/provider.png')
+      assert.equal(order.appearance.hostName, 'Media order preview')
+      assert.equal(order.items[0]?.thumbnailImage, 'https://images.example.test/cover.jpg')
+      const uploadedLogo = 'data:image/png;base64,aGVsbG8='
+      await db.query('UPDATE public.organization SET logo=$1 WHERE id=$2', [uploadedLogo, 'store'])
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).appearance.logoUrl, uploadedLogo)
+      await db.query(`UPDATE products.store SET checkout_appearance=checkout_appearance || $1::jsonb`, [
+        { logoUrl: 'https://images.example.test/custom.png' }
+      ])
+      assert.equal(
+        ((await (await get()).json()) as PublicOrderDetails).appearance.logoUrl,
+        'https://images.example.test/custom.png'
+      )
       assert.equal(order.items[0]?.files[0]?.size, 10)
       assert.equal(order.items[0]?.files[0]?.name, 'Begeleide oefening.mp3')
       assert.equal(order.items[0]?.files[1]?.content_type, 'video/mp4')

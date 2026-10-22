@@ -6,7 +6,7 @@ import { orderPageCopy } from '../../../../utils/page-texts'
 import { parseInput } from '../../../../utils/validation'
 import { localizedPurchaseLinks } from '../../../../../shared/links'
 import { withFileExtension } from '../../../../../shared/file-name'
-import { checkoutAppearanceSchema } from '../../../../../shared/checkout-appearance'
+import { purchaseAppearance, purchaseThumbnail } from '../../../../utils/purchase-appearance'
 import type { PublicOrderDetails } from '../../../../../shared/public-order'
 
 export default defineEventHandler(async (event): Promise<PublicOrderDetails> => {
@@ -33,11 +33,12 @@ export default defineEventHandler(async (event): Promise<PublicOrderDetails> => 
     access: true,
     total: product.isFree ? 0 : (product.prices[0]?.amount ?? null),
     currency: product.prices[0]?.currency || store.currencies[0] || 'EUR',
-    appearance: checkoutAppearanceSchema.parse(store.checkout_appearance || {}),
+    appearance: await purchaseAppearance(organizationId, store.checkout_appearance),
     items: [
       {
         id: product.id,
         title: selectCopy(product, locale, store.default_locale).title,
+        thumbnailImage: await purchaseThumbnail(product, organizationId),
         quantity: 1,
         amount: product.isFree ? 0 : (product.prices[0]?.amount ?? null),
         access: true,

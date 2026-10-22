@@ -48,14 +48,14 @@ export function defaultThankYouCopy(variant: ThankYouVariant, locale: 'en' | 'nl
         statusLabel: 'Bestelling ontvangen',
         heading: variant === 'free' ? 'Je cadeau staat voor je klaar' : 'Bedankt voor je bestelling',
         message: variant === 'free' ? 'Bedankt dat je deze stap voor jezelf zet.' : 'Je bestelling is ontvangen.',
-        helpText: 'Je kunt je bestelling en de volgende stappen in het portaal bekijken.',
+        helpText: 'Je ontvangt een e-mail met je bestellink, zodat je hier altijd kunt terugkomen.',
         downloadsHeading: 'Je bestanden en links'
       }
     : {
         statusLabel: 'Order received',
         heading: variant === 'free' ? 'Your gift is ready' : 'Thank you for your order',
         message: variant === 'free' ? 'Thank you for taking this step for yourself.' : 'Your order has been received.',
-        helpText: 'You can review your order and next steps in the portal.',
+        helpText: 'We’ll email you a link to your order, so you can return here anytime.',
         downloadsHeading: 'Your files and links'
       }
 }

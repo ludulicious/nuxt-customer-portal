@@ -2,7 +2,7 @@
 import type { OrderPageCopy } from '../../shared/page-texts'
 
 const props = defineProps<{
-  file: { id: string; name: string; content_type: string; size: number }
+  file: { id: string; name: string; content_type: string; size?: number }
   source: string
   inlineSource?: string
   copy?: Pick<OrderPageCopy, 'downloadLabel' | 'filePlaybackFailed'>
@@ -53,6 +53,9 @@ const icon = computed(() => {
   return 'i-lucide-file'
 })
 const size = computed(() => {
+  if (props.file.size === undefined) {
+    return ''
+  }
   if (props.file.size < 1024) {
     return `${props.file.size} B`
   }
@@ -69,9 +72,9 @@ const size = computed(() => {
 
 <template>
   <article class="flex min-w-0 flex-col rounded-lg border border-default bg-default p-4">
-    <div class="flex min-w-0 items-start gap-4">
+    <div class="flex min-w-0 items-start gap-3 sm:gap-4">
       <div
-        class="relative flex h-28 w-22 shrink-0 items-center justify-center overflow-hidden rounded-md border border-default bg-elevated shadow-xs"
+        class="relative flex h-22 w-16 shrink-0 sm:h-28 sm:w-22 items-center justify-center overflow-hidden rounded-md border border-default bg-elevated shadow-xs"
         aria-hidden="true"
       >
         <span
@@ -85,8 +88,8 @@ const size = computed(() => {
         </span>
       </div>
       <div class="min-w-0 flex-1 pt-1">
-        <h3 class="line-clamp-3 text-sm font-semibold" :title="file.name">{{ file.name }}</h3>
-        <p class="mt-1 text-xs text-muted">{{ size }}</p>
+        <h3 class="line-clamp-3 text-sm font-semibold break-words" :title="file.name">{{ file.name }}</h3>
+        <p v-if="size" class="mt-1 text-xs text-muted">{{ size }}</p>
         <UButton
           :href="`${source}?download=1`"
           external

@@ -1,0 +1,35 @@
+import { checkoutAppearanceSchema, type CheckoutAppearance } from '../../shared/checkout-appearance'
+import type { ProductData } from '../../shared/types'
+import { baseUrl } from './access'
+import { rows } from './database'
+
+export async function purchaseAppearance(storeId: string, appearance?: CheckoutAppearance) {
+  const [provider] = await rows<{ name: string; logo: string | null }>(
+    'SELECT name,logo FROM public.organization WHERE id=$1',
+    [storeId]
+  )
+  const configured = checkoutAppearanceSchema.parse(appearance || {})
+  return {
+    ...configured,
+    hostName: configured.hostName || provider?.name || '',
+    // Organization uploads are stored as data URLs as well as hosted image URLs.
+    logoUrl: configured.logoUrl || provider?.logo || ''
+  }
+}
+
+export async function purchaseThumbnail(product: ProductData, storeId: string): Promise<string | null> {
+  const id = product.thumbnailImageId || (product.thumbnailImageId === undefined ? product.imageIds?.[0] : undefined)
+  if (!id || !product.imageIds?.includes(id)) {
+    return null
+  }
+  const [asset] = await rows<{ object_key: string }>(
+    `SELECT a.object_key FROM products.asset a JOIN products.product p ON p.id=a.product_id
+     WHERE a.id=$1 AND p.store_id=$2 AND a.ready AND a.visibility='public'`,
+    [id, storeId]
+  )
+  if (!asset) {
+    return null
+  }
+  const endpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
+  return endpoint ? `${endpoint}/${asset.object_key}` : `${baseUrl()}/api/store/media/${encodeURIComponent(id)}`
+}

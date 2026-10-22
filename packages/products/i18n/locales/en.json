@@ -134,7 +134,7 @@
     "backToCheckout": "Back to checkout",
     "tryAgain": "Try again",
     "paymentReturnHelp": "No purchase was completed and you have not been charged.",
-    "paymentReturnSuccessHelp": "You can review your purchase and next steps in the portal.",
+    "paymentReturnSuccessHelp": "We’ll email you a link to your order, so you can return here anytime.",
     "paymentStatusSuccess": "Order received",
     "paymentStatusCancelled": "Payment cancelled",
     "paymentStatusFailed": "Payment failed",
