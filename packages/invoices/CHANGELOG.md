@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/invoices
 
+## 0.8.5
+
+### Patch Changes
+
+- ddc08fb: Open customer-facing order details from order cards and link directly to each order's invoice. Preserve order list search, filters, sorting, pagination and scroll position through both back links, and disable the Invoice action when no invoice exists.
+- ddc08fb: Avoid automatic provider lookups for resolved invoice email deliveries. Cache failed attempts, back off checks for older unresolved emails, and prevent duplicate concurrent lookups. Keep manual refresh available for later engagement and complaint events with a short cooldown.
+  - @nuxt-customer-portal/clients@0.8.5
+  - @nuxt-customer-portal/core@0.8.5
+  - @nuxt-customer-portal/organizations@0.8.5
+  - @nuxt-customer-portal/ui@0.8.5
+
 ## 0.8.4
 
 ### Patch Changes
