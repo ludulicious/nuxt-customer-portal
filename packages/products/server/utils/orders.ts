@@ -1,4 +1,5 @@
 import { publicOrderPath } from '../../shared/purchase-media'
+import { canFulfillOrderLine } from '../../shared/fulfillment'
 import { purchaseLinks } from '../../shared/links'
 import { downloadLinksMarkdown } from '../../shared/downloads'
 import { purchaseDownloads, orderDownloadToken } from '@nuxt-customer-portal/products/server/utils/downloads'
@@ -47,6 +48,29 @@ export async function attachPaymentState(order: Order, tx?: Parameters<typeof ro
     order.outstandingAmount = state?.outstanding ?? order.total ?? 0
     order.paymentStatus = order.outstandingAmount === 0 ? 'paid' : order.paidAmount > 0 ? 'partial' : 'unpaid'
   }
+}
+
+export async function fulfillOrder(storeId: string, id: string) {
+  await transaction(async (tx) => {
+    const [owned] = await rows(
+      'SELECT id FROM products.orders WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id, storeId],
+      tx
+    )
+    if (!owned) {
+      throw createError({ statusCode: 404, message: 'Order not found' })
+    }
+    const order = (await getOrder(id, tx))!
+    const eligible = order.lines.filter((line) => canFulfillOrderLine(order, line))
+    if (!eligible.length) {
+      throw createError({ statusCode: 409, message: 'This order has no items eligible for manual fulfillment' })
+    }
+    await rows(
+      'UPDATE products.order_line SET fulfilled=true WHERE order_id=$1 AND id=ANY($2::text[])',
+      [id, eligible.map((line) => line.id)],
+      tx
+    )
+  })
 }
 
 export async function createCheckout(event: H3Event, body: unknown) {

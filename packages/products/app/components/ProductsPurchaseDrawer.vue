@@ -62,7 +62,7 @@ const source = (orderId: string, assetId: string) => `/api/products/purchases/${
           </header>
           <div class="space-y-2 p-4 text-sm">
             <UAlert v-if="purchase.disputed" color="error" variant="subtle" :title="t('products.disputed')" />
-            <p v-if="purchase.type === 'service' && !purchase.planningEnabled" class="text-muted">
+            <p v-if="purchase.requiresFulfillment" class="text-muted">
               {{ t(purchase.fulfilled ? 'products.fulfilled' : 'products.awaitingFulfillment') }}
             </p>
             <p class="whitespace-pre-line">{{ purchase.nextSteps }}</p>

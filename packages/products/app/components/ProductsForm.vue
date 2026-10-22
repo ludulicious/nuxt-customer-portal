@@ -42,6 +42,7 @@ const state = reactive<z.infer<typeof productSchema>>(
         links: [],
         visibility: 'listed',
         isFree: false,
+        requiresFulfillment: false,
         planning: defaultPlanning(),
         ...structuredClone(toRaw(props.product)),
         content: {
@@ -748,8 +749,16 @@ function removeFile(id: string, index: number) {
                 @click="categoriesOpen = true"
               /></div></UFormField
           ><UFormField name="type" :label="t('products.type')" :required="section === 'create'"
-            ><USelect v-model="state.type" :items="types" class="w-full" /></UFormField
-          ><UFormField v-if="section !== 'create'" name="status" :label="t('products.status')"
+            ><USelect v-model="state.type" :items="types" class="w-full"
+          /></UFormField>
+          <UFormField
+            name="requiresFulfillment"
+            :label="t('products.requiresFulfillment')"
+            :help="t('products.requiresFulfillmentHelp')"
+          >
+            <USwitch v-model="state.requiresFulfillment" :aria-label="t('products.requiresFulfillment')" />
+          </UFormField>
+          <UFormField v-if="section !== 'create'" name="status" :label="t('products.status')"
             ><div class="flex min-h-8 items-center gap-3">
               <UBadge color="neutral" variant="subtle">{{ t(`products.${state.status}`) }}</UBadge>
             </div></UFormField

@@ -2,6 +2,7 @@
 import { useClipboard } from '@vueuse/core'
 import type { Order, Page } from '../../../../shared/types'
 import { formatMoney } from '../../../../shared/money'
+import { canFulfillOrderLine, requiresFulfillment } from '../../../../shared/fulfillment'
 
 const { t, locale } = useI18n()
 const api = useProducts()
@@ -382,12 +383,14 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
           </div>
           <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-default pt-3" @click.stop @keydown.stop>
             <p
-              v-if="order.lines.some((line) => line.snapshot.product.type === 'service')"
+              v-if="order.lines.some((line) => requiresFulfillment(line.snapshot.product))"
               class="mr-auto text-sm text-muted"
             >
               {{
                 t(
-                  order.lines.filter((line) => line.snapshot.product.type === 'service').every((line) => line.fulfilled)
+                  order.lines
+                    .filter((line) => requiresFulfillment(line.snapshot.product))
+                    .every((line) => line.fulfilled)
                     ? 'products.fulfilled'
                     : 'products.awaitingFulfillment'
                 )
@@ -433,12 +436,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
               >{{ t('products.retry') }}</UButton
             >
             <UButton
-              v-if="
-                ['paid', 'accepted'].includes(order.status) &&
-                order.lines.some((line) => line.snapshot.product.type === 'service' && !line.fulfilled) &&
-                !order.disputed &&
-                order.refunded < (order.total || 0)
-              "
+              v-if="order.lines.some((line) => canFulfillOrderLine(order, line))"
               size="xs"
               :loading="busyId === `${order.id}:fulfill`"
               @click.stop="action(order, 'fulfill')"
