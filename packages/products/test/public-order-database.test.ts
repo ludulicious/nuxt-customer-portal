@@ -145,6 +145,15 @@ test(
       assert.match(first.headers.get('x-robots-tag')!, /noindex/)
       const order = (await first.json()) as PublicOrderDetails
       assert.equal(order.locale, 'nl')
+      assert.equal(order.storeMode, undefined)
+      await db.query(
+        `UPDATE products.orders SET snapshot=jsonb_set(snapshot,'{storeMode}','"sandbox"') WHERE id='order'`
+      )
+      await db.query(`UPDATE products.store SET mode='live'`)
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).storeMode, 'sandbox')
+      await db.query(`UPDATE products.orders SET snapshot=jsonb_set(snapshot,'{storeMode}','"live"') WHERE id='order'`)
+      await db.query(`UPDATE products.store SET mode='sandbox'`)
+      assert.equal(((await (await get()).json()) as PublicOrderDetails).storeMode, 'live')
       assert.equal(order.appearance.logoUrl, 'https://images.example.test/provider.png')
       assert.equal(order.appearance.hostName, 'Media order preview')
       assert.equal(order.items[0]?.thumbnailImage, 'https://images.example.test/cover.jpg')

@@ -36,10 +36,13 @@ const {
   error: deliveryError,
   status: deliveryStatus,
   refresh: refreshDelivery
-} = await useFetch<{ status: string; variant?: 'free' | 'paid'; files: PurchaseDownload[]; links?: PurchaseLink[] }>(
-  () => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`,
-  { immediate: !!purchaseToken, watch: false }
-)
+} = await useFetch<{
+  status: string
+  storeMode?: 'sandbox' | 'live'
+  variant?: 'free' | 'paid'
+  files: PurchaseDownload[]
+  links?: PurchaseLink[]
+}>(() => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`, { immediate: !!purchaseToken, watch: false })
 const thankYouUrl = computed(() =>
   purchaseToken ? purchaseReturnUrl(checkoutReturnUrl.value, purchaseToken) : checkoutReturnUrl.value
 )

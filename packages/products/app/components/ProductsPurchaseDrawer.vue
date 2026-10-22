@@ -22,6 +22,7 @@ const source = (orderId: string, assetId: string) => `/api/products/purchases/${
   >
     <template #body>
       <div class="space-y-5">
+        <ProductsTestOrderNotice v-if="purchase.storeMode === 'sandbox'" />
         <div class="rounded-lg border border-default bg-muted/20 p-4">
           <div class="flex flex-wrap items-center gap-3">
             <UBadge v-if="!purchase.access" color="error" variant="subtle">

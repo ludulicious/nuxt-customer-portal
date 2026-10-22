@@ -15,6 +15,7 @@ export interface PublicOrderDetails {
   createdAt: string
   locale: Locale
   status: Order['status']
+  storeMode?: Order['snapshot']['storeMode']
   access: boolean
   total: number | null
   currency: string

@@ -9,7 +9,12 @@ import { formatMoney } from '../../shared/money'
 const props = defineProps<{
   product: CatalogProduct
   outcome: string
-  delivery?: { status: string; files: PurchaseDownload[]; links?: PurchaseLink[] } | null
+  delivery?: {
+    status: string
+    storeMode?: 'sandbox' | 'live'
+    files: PurchaseDownload[]
+    links?: PurchaseLink[]
+  } | null
   deliveryError?: boolean
   deliveryLoading?: boolean
   purchaseToken?: string
@@ -42,6 +47,7 @@ const outcomeIcon = computed(() => outcomeIcons[props.outcome] || 'i-lucide-circ
 <template>
   <ProductsPurchaseLayout
     :appearance="appearance"
+    :test-order="(delivery?.storeMode ?? (!purchaseToken ? product.storeMode : undefined)) === 'sandbox'"
     :items="[
       { id: product.slug, title: product.title, subtitle: product.subtitle, thumbnailImage: product.thumbnailImage }
     ]"

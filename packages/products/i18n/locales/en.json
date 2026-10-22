@@ -1,5 +1,7 @@
 {
   "products": {
+    "testOrder": "Test order",
+    "testOrderHelp": "This order was created while the store was in test mode.",
     "title": "Products",
     "store": "Store",
     "purchasesModule": "Purchases",

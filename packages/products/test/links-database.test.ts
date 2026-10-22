@@ -81,7 +81,7 @@ test(
       )
       await db.query(
         `INSERT INTO products.orders(id,store_id,request_id,request_hash,email,snapshot,status,total) VALUES('order','store','request','hash','buyer@example.test',$1,'paid',1000)`,
-        [{ locale: 'nl' }]
+        [{ locale: 'nl', storeMode: 'sandbox' }]
       )
       await db.query(
         `INSERT INTO products.order_line(id,order_id,position,product_id,price_id,quantity,snapshot,unit_amount,total) VALUES('line','order',0,$1,$2,1,$3,1000,1000)`,
@@ -100,7 +100,15 @@ test(
       const delivered = await handler(request())
       assert.deepEqual(delivered.links, [{ id: link.id, name: 'Werkboek', url: link.url }])
       assert.deepEqual(delivered.files, [])
-      assert.deepEqual(Object.keys(delivered).sort(), ['files', 'links', 'status', 'variant'])
+      assert.deepEqual(Object.keys(delivered).sort(), ['files', 'links', 'status', 'storeMode', 'variant'])
+      assert.equal(delivered.storeMode, 'sandbox')
+      await db.query(`UPDATE products.store SET mode='live'`)
+      assert.equal((await handler(request())).storeMode, 'sandbox')
+      await db.query(`UPDATE products.orders SET snapshot=jsonb_set(snapshot,'{storeMode}','"live"') WHERE id='order'`)
+      await db.query(`UPDATE products.store SET mode='sandbox'`)
+      assert.equal((await handler(request())).storeMode, 'live')
+      await db.query(`UPDATE products.orders SET snapshot=snapshot-'storeMode' WHERE id='order'`)
+      assert.equal((await handler(request())).storeMode, undefined)
       await db.query(`UPDATE products.orders SET status='pending' WHERE id='order'`)
       assert.deepEqual((await handler(request())).links, [])
       await db.query(`UPDATE products.orders SET status='paid' WHERE id='order'`)
