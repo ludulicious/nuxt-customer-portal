@@ -43,14 +43,6 @@ const themeStyle = computed(() => ({
       <p v-if="previewNotice" class="preview-notice" role="status">{{ previewNotice }}</p>
       <ProductsTestOrderNotice v-if="testOrder" class="test-order-notice" />
       <header class="payment-return-header">
-        <a
-          v-if="backUrl"
-          :href="backUrl"
-          class="host-return"
-          rel="noreferrer"
-          @click="preview && $event.preventDefault()"
-          >← {{ backLabel || t('products.backToOffering') }}</a
-        >
         <img
           v-if="appearance.logoUrl"
           :src="appearance.logoUrl"
@@ -60,6 +52,9 @@ const themeStyle = computed(() => ({
         />
         <span v-else class="return-wordmark">{{ appearance.hostName }}</span>
       </header>
+      <a v-if="backUrl" :href="backUrl" class="host-return" rel="noreferrer" @click="preview && $event.preventDefault()"
+        >← {{ backLabel || t('products.backToOffering') }}</a
+      >
 
       <section class="return-grid" :class="{ 'without-selection': !items?.length }" :aria-label="label">
         <div v-if="items?.length" class="product-half">
@@ -151,7 +146,12 @@ const themeStyle = computed(() => ({
   font-size: 1.35rem;
 }
 .host-return {
+  display: inline-flex;
+  margin-top: 24px;
   color: var(--checkout-muted);
+}
+.host-return + .return-grid {
+  margin-top: 24px;
 }
 .return-grid {
   display: grid;
@@ -251,12 +251,6 @@ const themeStyle = computed(() => ({
   grid-row: 1;
   justify-self: start;
   object-position: left center;
-}
-.host-return {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  white-space: normal;
 }
 .receipt-content {
   order: 2;
