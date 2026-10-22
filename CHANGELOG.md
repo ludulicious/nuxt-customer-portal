@@ -1,5 +1,15 @@
 # Nuxt Customer Portal
 
+## 0.8.8
+
+Avoid generated API route type-inference limits by retrieving admin order details
+through the existing authenticated orders endpoint. Includes the portal branding
+and admin order detail improvements from `0.8.7`.
+
+All 16 public packages and the three portal apps use `0.8.8`. Release `0.8.7`
+failed full verification before npm packages or a portal image were published.
+No new database migrations are required when upgrading from `0.8.6`.
+
 ## 0.8.7
 
 Purchase pages inherit the portal logo unless a checkout-specific logo is defined.

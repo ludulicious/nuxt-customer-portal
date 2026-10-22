@@ -122,8 +122,8 @@ export const useProducts = () => ({
     $fetch<CatalogProduct>(`/api/store/product/${encodeURIComponent(slug)}`, { query: { locale, currency } }),
   checkout: (body: Record<string, unknown>) => $fetch<{ url: string }>('/api/store/checkout', { method: 'POST', body }),
   orders: (query: Record<string, unknown>, signal?: AbortSignal) =>
-    $fetch<Page<Order>>('/api/products/admin/orders', { query, signal }),
-  order: (id: string) => $fetch<AdminOrderDetails>(`/api/products/admin/orders/${encodeURIComponent(id)}`),
+    $fetch<Page<Order>, string>('/api/products/admin/orders', { query, signal }),
+  order: (id: string) => $fetch<AdminOrderDetails, string>('/api/products/admin/orders', { query: { orderId: id } }),
   orderLink: (id: string) => $fetch<{ url: string }>(`/api/products/admin/orders/${encodeURIComponent(id)}/link`),
   orderAction: (id: string, action: 'retry' | 'fulfill') =>
     $fetch(`/api/products/admin/orders/${id}/${action}`, { method: 'POST' }),
