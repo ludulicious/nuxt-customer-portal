@@ -41,6 +41,7 @@ export const priceSchema = z.object({
   taxBehavior: z.enum(['inclusive', 'exclusive'])
 })
 const productShape = {
+  requiresFulfillment: z.boolean().default(false),
   visibility: z.enum(['listed', 'unlisted']).default('listed'),
   planning: productPlanningSchema.default(defaultPlanning()),
   isFree: z.boolean().default(false),
@@ -292,6 +293,7 @@ export const hasRequiredPrices = (
   currencies.every((currency) => product.prices.some((price) => price.currency === currency && price.amount > 0))
 
 export const emptyProduct = () => ({
+  requiresFulfillment: false,
   planning: defaultPlanning(),
   isFree: false,
   visibility: 'listed' as 'listed' | 'unlisted',

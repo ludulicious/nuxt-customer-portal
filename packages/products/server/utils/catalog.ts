@@ -37,6 +37,7 @@ export function normalizeProductImages(data: ProductData): ProductData {
   const ordered = (ids: string[] | undefined) => imageIds.filter((id) => ids?.includes(id))
   return {
     ...data,
+    requiresFulfillment: data.requiresFulfillment === true,
     visibility: data.visibility || 'listed',
     imageIds,
     thumbnailImageId: imageIds.includes(data.thumbnailImageId || '')

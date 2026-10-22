@@ -16,6 +16,7 @@ export interface ProductCopy {
   description: string
 }
 export interface ProductData {
+  requiresFulfillment?: boolean
   planning?: ProductPlanning
   visibility?: 'listed' | 'unlisted'
   isFree?: boolean
@@ -244,6 +245,7 @@ export interface Page<T> {
 }
 
 export interface Purchase {
+  requiresFulfillment?: boolean
   storeMode?: OrderSnapshot['storeMode']
   paymentStatus?: 'unpaid' | 'partial' | 'paid'
   outstandingAmount?: number

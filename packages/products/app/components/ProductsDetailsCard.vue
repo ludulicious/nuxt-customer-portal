@@ -33,6 +33,9 @@ const { t } = useI18n()
       <p class="text-sm text-muted">
         {{ t(product.visibility === 'unlisted' ? 'products.unlisted' : 'products.listed') }}
       </p>
+      <p v-if="product.requiresFulfillment" class="text-sm text-muted">
+        {{ t('products.requiresFulfillment') }}
+      </p>
       <dl class="space-y-4 border-t border-default pt-4 text-sm">
         <div class="flex items-start justify-between gap-4">
           <dt class="flex items-center gap-2 text-muted">
