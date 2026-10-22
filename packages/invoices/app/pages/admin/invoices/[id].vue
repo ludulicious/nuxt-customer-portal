@@ -2,6 +2,12 @@
 defineOptions({ name: 'AdminInvoiceDetailPage' })
 
 const route = useRoute()
+const ordersReturnTo = computed(() =>
+  typeof route.query.ordersReturnTo === 'string' &&
+  /^\/admin\/products\/orders(?:\?|$)/.test(route.query.ordersReturnTo)
+    ? route.query.ordersReturnTo
+    : undefined
+)
 const { t } = useI18n()
 const api = useInvoices()
 const invoiceId = computed(() => String(route.params.id))
@@ -31,6 +37,12 @@ useSeoMeta({
       icon="i-lucide-circle-alert"
       :title="t('features.invoices.admin.invoiceNotFound')"
     />
-    <InvoicesInvoiceDetail v-else-if="invoice" :invoice="invoice" :refresh="refresh" />
+    <InvoicesInvoiceDetail
+      v-else-if="invoice"
+      :invoice="invoice"
+      :refresh="refresh"
+      :back-to="ordersReturnTo"
+      :back-label="ordersReturnTo ? t('features.invoices.admin.backToOrderList') : undefined"
+    />
   </section>
 </template>

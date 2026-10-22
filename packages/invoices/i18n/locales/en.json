@@ -153,6 +153,7 @@
         "paid": "Paid",
         "backToInvoices": "Back to invoices",
         "backToOrders": "Back to purchases",
+        "backToOrderList": "Back to orders",
         "invoiceTitle": "Invoice {number}",
         "invoiceDocumentTitle": "INVOICE",
         "print": "Print",

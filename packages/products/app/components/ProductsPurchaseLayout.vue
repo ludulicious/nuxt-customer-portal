@@ -7,6 +7,7 @@ const props = defineProps<{
   totalLabel?: string
   priceLabel?: string
   backUrl?: string
+  backLabel?: string
   testOrder?: boolean
   preview?: boolean
   previewNotice?: string
@@ -48,7 +49,7 @@ const themeStyle = computed(() => ({
           class="host-return"
           rel="noreferrer"
           @click="preview && $event.preventDefault()"
-          >← {{ t('products.backToOffering') }}</a
+          >← {{ backLabel || t('products.backToOffering') }}</a
         >
         <img
           v-if="appearance.logoUrl"

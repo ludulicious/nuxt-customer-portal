@@ -11,6 +11,7 @@ const props = defineProps<{
   unavailable?: boolean
   loading?: boolean
   preview?: boolean
+  backUrl?: string
 }>()
 defineEmits<{ refresh: [] }>()
 const { t } = useI18n()
@@ -63,6 +64,8 @@ const revoked = computed(
     "
     :price-label="copy.totalLabel"
     :preview="preview"
+    :back-url="backUrl"
+    :back-label="t('products.backToOrders')"
     :label="copy.title"
   >
     <section v-if="error" class="space-y-4" role="alert">
