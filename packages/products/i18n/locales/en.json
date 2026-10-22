@@ -81,6 +81,17 @@
     "productNameMismatch": "Enter the product name exactly as shown.",
     "loading": "Loading…",
     "results": "{n} result | {n} results",
+    "adminOrder": {
+      "clientDetails": "Client order details",
+      "title": "Order details",
+      "summary": "Order overview",
+      "customer": "Customer name",
+      "email": "Customer email",
+      "noClient": "No linked client",
+      "online": "Online payment",
+      "invoice": "Invoice",
+      "outstanding": "Outstanding amount"
+    },
     "ordersIntro": "Track orders, payments, and invoices.",
     "ordersSearch": "Search orders, customers, or booking references",
     "orderSortCreated": "Order date",

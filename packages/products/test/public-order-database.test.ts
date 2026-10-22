@@ -157,6 +157,19 @@ test(
       assert.equal(order.appearance.logoUrl, 'https://images.example.test/provider.png')
       assert.equal(order.appearance.hostName, 'Media order preview')
       assert.equal(order.items[0]?.thumbnailImage, 'https://images.example.test/cover.jpg')
+      const { adminOrderDetails } = await import('../server/utils/admin-order')
+      const adminDetails = await adminOrderDetails('store', 'order')
+      assert.equal(adminDetails.order.email, 'private-buyer@example.test')
+      assert.equal(adminDetails.order.snapshot.billing.name, 'Private Buyer')
+      assert.equal(adminDetails.client, null)
+      assert.equal(adminDetails.purchase.reference, order.reference)
+      await assert.rejects(adminOrderDetails('another-provider', 'order'), { statusCode: 404 })
+      await assert.rejects(adminOrderDetails('store', 'missing-order'), { statusCode: 404 })
+      await db.query(
+        `INSERT INTO public.organization(id,name,slug,created_at,organization_type) VALUES('client','Linked Client','client',now(),'CLIENT')`
+      )
+      await db.query(`UPDATE products.orders SET client_id='client' WHERE id='order'`)
+      assert.deepEqual((await adminOrderDetails('store', 'order')).client, { id: 'client', name: 'Linked Client' })
       const uploadedLogo = 'data:image/png;base64,aGVsbG8='
       await db.query('UPDATE public.organization SET logo=$1 WHERE id=$2', [uploadedLogo, 'store'])
       assert.equal(((await (await get()).json()) as PublicOrderDetails).appearance.logoUrl, uploadedLogo)

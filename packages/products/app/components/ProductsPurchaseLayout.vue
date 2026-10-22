@@ -12,6 +12,7 @@ const props = defineProps<{
   preview?: boolean
   previewNotice?: string
   label?: string
+  embedded?: boolean
 }>()
 const { t } = useI18n()
 const appearance = toRef(props, 'appearance')
@@ -38,11 +39,16 @@ const themeStyle = computed(() => ({
 </script>
 
 <template>
-  <main class="payment-return-page" :class="{ 'is-preview': preview }" :style="themeStyle">
+  <component
+    :is="embedded ? 'div' : 'main'"
+    class="payment-return-page"
+    :class="{ 'is-preview': preview, 'is-embedded': embedded }"
+    :style="themeStyle"
+  >
     <div class="payment-return-shell">
       <p v-if="previewNotice" class="preview-notice" role="status">{{ previewNotice }}</p>
       <ProductsTestOrderNotice v-if="testOrder" class="test-order-notice" />
-      <header class="payment-return-header">
+      <header v-if="!embedded" class="payment-return-header">
         <img
           v-if="appearance.logoUrl"
           :src="appearance.logoUrl"
@@ -89,7 +95,7 @@ const themeStyle = computed(() => ({
       </section>
       <footer v-if="$slots.footer" class="receipt-footer"><slot name="footer" /></footer>
     </div>
-  </main>
+  </component>
 </template>
 
 <style scoped>
@@ -241,6 +247,23 @@ const themeStyle = computed(() => ({
 }
 .payment-return-page.is-preview {
   min-height: 0;
+}
+.payment-return-page.is-embedded {
+  min-height: 0;
+  border-radius: var(--checkout-radius);
+}
+.is-embedded .payment-return-shell {
+  width: 100%;
+  padding: 0;
+}
+.is-embedded .return-grid {
+  margin-block: 0;
+}
+.is-embedded .test-order-notice {
+  margin-top: 0;
+}
+.is-embedded .receipt-footer {
+  padding: 16px;
 }
 .payment-return-header {
   grid-template-columns: minmax(0, 1fr) auto;
