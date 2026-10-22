@@ -36,6 +36,38 @@ test('starter module selection includes required modules and integrations', () =
   assert.throws(() => resolveStarterModules(['unknown']), /supported portal modules/)
 })
 
+test('resolved wizard selections generate projects and remain valid as saved setup metadata', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'portal-starter-resolved-'))
+  try {
+    const templateRoot = join(temp, 'template')
+    await prepareTemplate(templateRoot)
+    for (const [index, selected] of [
+      ['timesheets', 'invoices'],
+      ['products'],
+      ['planning'],
+      ['timesheets', 'invoices', 'products', 'planning']
+    ].entries()) {
+      const modules = resolveStarterModules(selected)
+      const project = await createStarter(
+        { ...input, directory: join(temp, `portal-${index}`), modules },
+        { templateRoot }
+      )
+      const metadata = JSON.parse(await readFile(join(project.directory, 'portal.setup.json'), 'utf8'))
+      assert.deepEqual(metadata.modules, modules)
+      assert.deepEqual(resolveStarterModules(metadata.modules), modules)
+      const manifest = JSON.parse(await readFile(join(project.directory, 'package.json'), 'utf8'))
+      for (const name of modules) {
+        assert.ok(manifest.dependencies[`@nuxt-customer-portal/${name}`])
+      }
+    }
+    assert.deepEqual(resolveStarterModules(['invoice-timesheets']), ['timesheets', 'invoices', 'invoice-timesheets'])
+    assert.deepEqual(resolveStarterModules(['invoice-products']), ['invoices', 'products', 'invoice-products'])
+    assert.throws(() => resolveStarterModules(['unknown-integration']), /supported portal modules/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
 test('starter generates a portable host with unique private secrets and no workspace imports', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'portal-starter-unit-'))
   try {

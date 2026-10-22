@@ -20,7 +20,6 @@ export const starterModules = [
   { id: 'products', label: 'Products', description: 'Product catalog and checkout' },
   { id: 'planning', label: 'Planning', description: 'Product planning and scheduling' }
 ]
-const starterModuleIds = new Set(starterModules.map(({ id }) => id))
 const layerOrder = [
   'service-requests',
   'timesheets',
@@ -30,12 +29,20 @@ const layerOrder = [
   'planning',
   'invoice-products'
 ]
+const supportedModuleIds = new Set(layerOrder)
 
 export function resolveStarterModules(selectedModules) {
-  if (!Array.isArray(selectedModules) || selectedModules.some((id) => !starterModuleIds.has(id))) {
+  if (!Array.isArray(selectedModules) || selectedModules.some((id) => !supportedModuleIds.has(id))) {
     throw new Error('Choose supported portal modules.')
   }
   const resolved = new Set(selectedModules)
+  if (resolved.has('invoice-timesheets')) {
+    resolved.add('timesheets')
+    resolved.add('invoices')
+  }
+  if (resolved.has('invoice-products')) {
+    resolved.add('products')
+  }
   if (resolved.has('planning')) {
     resolved.add('products')
   }
