@@ -247,16 +247,15 @@ const themeStyle = computed(() => ({
 }
 .return-logo,
 .return-wordmark {
-  order: initial;
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  object-position: right center;
-}
-.host-return {
   grid-column: 1;
   grid-row: 1;
   justify-self: start;
+  object-position: left center;
+}
+.host-return {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
   white-space: normal;
 }
 .receipt-content {

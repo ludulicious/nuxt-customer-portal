@@ -9,11 +9,26 @@ export async function purchaseAppearance(storeId: string, appearance?: CheckoutA
     [storeId]
   )
   const configured = checkoutAppearanceSchema.parse(appearance || {})
+  let portalLogo = ''
+  if (!configured.logoUrl) {
+    // Products also runs without the optional SaaS configuration layer.
+    const [table] = await rows<{ name: string | null }>(
+      "SELECT to_regclass('saas_configuration.portal_settings') AS name"
+    )
+    if (table?.name) {
+      const [branding] = await rows<{ logo_light: string | null; logo_dark: string | null }>(
+        `SELECT settings->'branding'->>'logoLight' AS logo_light,
+                settings->'branding'->>'logoDark' AS logo_dark
+         FROM saas_configuration.portal_settings WHERE id=true`
+      )
+      portalLogo = branding?.logo_light || branding?.logo_dark || ''
+    }
+  }
   return {
     ...configured,
     hostName: configured.hostName || provider?.name || '',
     // Organization uploads are stored as data URLs as well as hosted image URLs.
-    logoUrl: configured.logoUrl || provider?.logo || ''
+    logoUrl: configured.logoUrl || portalLogo || provider?.logo || ''
   }
 }
 
