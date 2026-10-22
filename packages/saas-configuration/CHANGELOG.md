@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.8.7
+
+### Patch Changes
+
+- 24b23e1: Use the portal's full logo on checkout, order and thank-you pages unless a checkout logo overrides it. Align receipt logos left and add space below store settings tabs.
+
+  Open admin orders in a regular portal page with customer, client, payment and fulfillment details while preserving separate public customer links.
+  - @nuxt-customer-portal/core@0.8.7
+  - @nuxt-customer-portal/ui@0.8.7
+
 ## 0.8.6
 
 ### Patch Changes

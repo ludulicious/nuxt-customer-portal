@@ -1,5 +1,18 @@
 # Nuxt Customer Portal
 
+## 0.8.7
+
+Purchase pages inherit the portal logo unless a checkout-specific logo is defined.
+Order and thank-you logos and their return links align left, and store settings
+have more space below their tabs.
+
+Admin order cards open a regular portal page with a customer and client overview,
+payment and invoice information, and a **Client order details** card showing the
+customer-facing content without its logo header. Public client links remain available.
+
+All 16 public packages and the three portal apps use `0.8.7`. No new database
+migrations are required when upgrading from `0.8.6`.
+
 ## 0.8.6
 
 Fix the starter wizard rejecting valid module selections that include invoice
