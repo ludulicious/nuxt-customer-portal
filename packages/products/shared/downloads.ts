@@ -21,6 +21,9 @@ export interface PurchaseDownload {
   id: string
   name: string
   url: string
+  previewUrl?: string
+  content_type?: string
+  size?: number
 }
 
 export function downloadLinksMarkdown(files: PurchaseDownload[]) {

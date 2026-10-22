@@ -3,6 +3,7 @@ import test from 'node:test'
 import { readFile, readdir } from 'node:fs/promises'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import { Socket } from 'node:net'
+import { registerHooks } from 'node:module'
 import { Client } from 'pg'
 import { emptyProduct } from '../shared/validation'
 
@@ -10,6 +11,16 @@ test(
   'purchase permalinks authorize snapshot files and persist actual delivery requests',
   { skip: !process.env.PRODUCTS_DOWNLOAD_TEST_DATABASE_URL },
   async () => {
+    const hook = registerHooks({
+      resolve(specifier, context, nextResolve) {
+        return nextResolve(
+          specifier,
+          specifier === 'h3'
+            ? { ...context, parentURL: new URL('../../core/package.json', import.meta.url).href }
+            : context
+        )
+      }
+    })
     const url = process.env.PRODUCTS_DOWNLOAD_TEST_DATABASE_URL!
     assert.match(new URL(url).pathname, /^\/codex_products_test_/)
     process.env.DATABASE_URL = url
@@ -69,7 +80,14 @@ test(
       await db.query("UPDATE products.orders SET status='paid',total=1000 WHERE id='order'")
       const files = await purchaseDownloads(await downloadOrder(token), token)
       assert.deepEqual(files, [
-        { id: 'file', name: 'My audio.mp3', url: `http://localhost:3059/api/store/purchases/${token}/files/file` }
+        {
+          id: 'file',
+          name: 'My audio.mp3',
+          url: `http://localhost:3059/api/store/purchases/${token}/files/file`,
+          previewUrl: `http://localhost:3059/api/store/purchases/${token}/files/file?preview=1`,
+          content_type: 'audio/mpeg',
+          size: 100
+        }
       ])
       await db.query("UPDATE products.orders SET status='accepted' WHERE id='order'")
       assert.deepEqual(await purchaseDownloads(await downloadOrder(token), token), files)
@@ -120,6 +138,7 @@ test(
     } finally {
       await db.end()
       await pool?.end()
+      hook.deregister()
     }
   }
 )

@@ -4,7 +4,7 @@ import type { PublicOrderDetails } from '../../shared/public-order'
 import { hasPurchaseAccess } from '../../shared/access'
 import { localizedPurchaseLinks } from '../../shared/links'
 import { withFileExtension } from '../../shared/file-name'
-import { checkoutAppearanceSchema } from '../../shared/checkout-appearance'
+import { purchaseAppearance, purchaseThumbnail } from './purchase-appearance'
 import { rows } from './database'
 import { getStore, baseUrl } from './access'
 
@@ -34,44 +34,48 @@ export async function publicOrderDetails(order: Order, token: string): Promise<P
     access,
     total: order.total,
     currency: order.lines[0]?.snapshot.price.currency || store.currencies[0] || 'EUR',
-    appearance: checkoutAppearanceSchema.parse(
-      store.organization_id === order.store_id ? store.checkout_appearance || {} : {}
+    appearance: await purchaseAppearance(
+      order.store_id,
+      store.organization_id === order.store_id ? store.checkout_appearance : undefined
     ),
-    items: order.lines.map((line) => {
-      const allowed = access && hasPurchaseAccess(order, line)
-      const files = allowed
-        ? line.snapshot.product.fileIds.flatMap((id) => {
-            const asset = assets.find((asset) => asset.id === id)
-            if (!asset) {
-              return []
-            }
-            const url = `${baseUrl()}/api/store/purchases/${token}/files/${encodeURIComponent(id)}`
-            return [
-              {
-                id,
-                name: withFileExtension(
-                  line.snapshot.product.fileNames?.[id]?.[order.snapshot.locale] || asset.name,
-                  asset.name
-                ),
-                url,
-                previewUrl: `${url}?preview=1`,
-                content_type: asset.content_type,
-                size: Number(asset.size)
+    items: await Promise.all(
+      order.lines.map(async (line) => {
+        const allowed = access && hasPurchaseAccess(order, line)
+        const files = allowed
+          ? line.snapshot.product.fileIds.flatMap((id) => {
+              const asset = assets.find((asset) => asset.id === id)
+              if (!asset) {
+                return []
               }
-            ]
-          })
-        : []
-      return {
-        id: line.id,
-        title: line.snapshot.title,
-        quantity: line.quantity,
-        amount: line.total,
-        access: allowed,
-        nextSteps: allowed ? line.snapshot.product.nextSteps[order.snapshot.locale] || '' : '',
-        filesPending: allowed && files.length < line.snapshot.product.fileIds.length,
-        files,
-        links: allowed ? localizedPurchaseLinks(line.snapshot.product.links, order.snapshot.locale) : []
-      }
-    })
+              const url = `${baseUrl()}/api/store/purchases/${token}/files/${encodeURIComponent(id)}`
+              return [
+                {
+                  id,
+                  name: withFileExtension(
+                    line.snapshot.product.fileNames?.[id]?.[order.snapshot.locale] || asset.name,
+                    asset.name
+                  ),
+                  url,
+                  previewUrl: `${url}?preview=1`,
+                  content_type: asset.content_type,
+                  size: Number(asset.size)
+                }
+              ]
+            })
+          : []
+        return {
+          id: line.id,
+          title: line.snapshot.title,
+          thumbnailImage: await purchaseThumbnail(line.snapshot.product, order.store_id),
+          quantity: line.quantity,
+          amount: line.total,
+          access: allowed,
+          nextSteps: allowed ? line.snapshot.product.nextSteps[order.snapshot.locale] || '' : '',
+          filesPending: allowed && files.length < line.snapshot.product.fileIds.length,
+          files,
+          links: allowed ? localizedPurchaseLinks(line.snapshot.product.links, order.snapshot.locale) : []
+        }
+      })
+    )
   }
 }

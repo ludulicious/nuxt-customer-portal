@@ -22,6 +22,7 @@ export interface PublicOrderDetails {
   items: Array<{
     id: string
     title: string
+    thumbnailImage?: string | null
     quantity: number
     amount: number | null
     access: boolean

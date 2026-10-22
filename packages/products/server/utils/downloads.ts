@@ -36,12 +36,15 @@ export async function purchaseDownloads(order: Order, token: string): Promise<Pu
   if (!ids.length) {
     return []
   }
-  const assets = await rows<{ id: string; name: string }>(
-    'SELECT id,name FROM products.asset WHERE ready AND id=ANY($1::text[])',
+  const assets = await rows<{ id: string; name: string; content_type: string; size: number }>(
+    'SELECT id,name,content_type,size FROM products.asset WHERE ready AND id=ANY($1::text[])',
     [ids]
   )
   return assets.map((asset) => ({
     id: asset.id,
+    content_type: asset.content_type,
+    size: Number(asset.size),
+    previewUrl: `${baseUrl()}/api/store/purchases/${token}/files/${encodeURIComponent(asset.id)}?preview=1`,
     name: withFileExtension(
       downloadableLine(order, asset.id)!.snapshot.product.fileNames?.[asset.id]?.[order.snapshot.locale] || asset.name,
       asset.name
