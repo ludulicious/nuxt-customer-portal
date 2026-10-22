@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/kit
 
+## 0.8.6
+
+### Patch Changes
+
+- aca72d6: Accept and normalize automatically added invoice integration modules when creating a project or validating saved setup metadata, so the interactive starter works with Timesheets + Invoices, Products and Planning selections.
+
 ## 0.8.5
 
 ## 0.8.4
