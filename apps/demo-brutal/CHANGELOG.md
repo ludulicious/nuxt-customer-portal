@@ -1,5 +1,24 @@
 # @nuxt-customer-portal/demo-brutal
 
+## 0.8.5
+
+### Patch Changes
+
+- Updated dependencies [0cc098d]
+- Updated dependencies [31df5dd]
+- Updated dependencies [ddc08fb]
+- Updated dependencies [ddc08fb]
+- Updated dependencies [878a0a9]
+  - @nuxt-customer-portal/products@0.8.5
+  - @nuxt-customer-portal/invoices@0.8.5
+  - @nuxt-customer-portal/invoice-products@0.8.5
+  - @nuxt-customer-portal/invoice-timesheets@0.8.5
+  - @nuxt-customer-portal/kit@0.8.5
+  - @nuxt-customer-portal/planning@0.8.5
+  - @nuxt-customer-portal/preset@0.8.5
+  - @nuxt-customer-portal/service-requests@0.8.5
+  - @nuxt-customer-portal/timesheets@0.8.5
+
 ## 0.8.4
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # Nuxt Customer Portal
 
+## 0.8.5
+
+Make manual fulfillment an explicit product setting, off by default for digital
+products and services. New orders retain the setting from the time of purchase.
+
+Open customer-facing details and individual invoices from order cards, and return
+to the same search, filters, sorting, page and scroll position. Disable Invoice
+when no invoice exists. Reduce email status lookups by caching attempts, skipping
+resolved deliveries and backing off checks for older unresolved messages.
+
+Share the branded product receipt layout across thank-you and order pages, and
+clearly identify test orders using the saved purchase mode.
+
+All 16 public packages and the three portal apps use `0.8.5`. No new database
+migrations are required when upgrading from `0.8.4`.
+
 ## 0.8.2
 
 Use neutral order confirmation wording for free, paid, and invoiced orders.

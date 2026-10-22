@@ -1,5 +1,17 @@
 # Products
 
+## 0.8.5
+
+### Patch Changes
+
+- 0cc098d: Clearly identify test orders with badges in admin and purchase lists and notices on thank-you, order and purchase-detail pages. Use the saved order mode so labels remain accurate after the store switches between test and live mode.
+- 31df5dd: Make manual fulfillment an explicit product setting, disabled by default. Snapshot the setting on purchase, show fulfillment status/actions only for opted-in items, and enforce eligibility on the server for paid, accepted and free orders while protecting refunded/disputed items.
+- ddc08fb: Open customer-facing order details from order cards and link directly to each order's invoice. Preserve order list search, filters, sorting, pagination and scroll position through both back links, and disable the Invoice action when no invoice exists.
+- 878a0a9: Share a welcoming product receipt layout between thank-you and order pages, with provider branding and product images. Use the same download and media preview cards on both pages, remove the thank-you order link, and keep order metadata subtle while hiding payment status for free products.
+  - @nuxt-customer-portal/clients@0.8.5
+  - @nuxt-customer-portal/core@0.8.5
+  - @nuxt-customer-portal/ui@0.8.5
+
 ## 0.8.4
 
 ### Patch Changes
