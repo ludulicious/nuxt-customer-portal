@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
       {
         id: line.id,
         orderId: order.id,
+        storeMode: order.snapshot.storeMode,
         bookingReference: order.booking_reference,
         title: line.snapshot.title,
         locale: order.snapshot.locale,

@@ -1,5 +1,7 @@
 {
   "products": {
+    "testOrder": "Testbestelling",
+    "testOrderHelp": "Deze bestelling is geplaatst terwijl de winkel in testmodus stond.",
     "title": "Producten",
     "store": "Winkel",
     "purchasesModule": "Aankopen",

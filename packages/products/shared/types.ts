@@ -244,6 +244,7 @@ export interface Page<T> {
 }
 
 export interface Purchase {
+  storeMode?: OrderSnapshot['storeMode']
   paymentStatus?: 'unpaid' | 'partial' | 'paid'
   outstandingAmount?: number
   id: string

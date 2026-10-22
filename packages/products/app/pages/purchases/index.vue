@@ -192,6 +192,7 @@ onBeforeUnmount(() => {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="font-semibold">{{ purchase.title }}</h2>
+                <ProductsTestOrderBadge v-if="purchase.storeMode === 'sandbox'" />
                 <UBadge v-if="!purchase.access" color="error" variant="subtle">
                   {{ t('products.accessRevoked') }}
                 </UBadge>

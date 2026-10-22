@@ -52,6 +52,7 @@ const revoked = computed(
 <template>
   <ProductsPurchaseLayout
     :appearance="appearance"
+    :test-order="order?.storeMode === 'sandbox'"
     :items="order?.items"
     :total-label="
       order?.total !== null && order?.total !== undefined

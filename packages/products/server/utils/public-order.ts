@@ -31,6 +31,7 @@ export async function publicOrderDetails(order: Order, token: string): Promise<P
     createdAt: order.created_at,
     locale: order.snapshot.locale,
     status: order.status,
+    storeMode: order.snapshot.storeMode,
     access,
     total: order.total,
     currency: order.lines[0]?.snapshot.price.currency || store.currencies[0] || 'EUR',

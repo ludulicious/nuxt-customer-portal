@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
   }
   return {
     status: order.status,
+    storeMode: order.snapshot.storeMode,
     variant: purchaseThankYouVariant(order),
     files: await purchaseDownloads(order, token),
     links: purchaseLinks(order)

@@ -271,6 +271,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <h2 class="font-semibold">{{ productNames(order) }}</h2>
+                  <ProductsTestOrderBadge v-if="order.snapshot.storeMode === 'sandbox'" />
                   <UBadge :color="statusColor(order.status)" variant="subtle">{{
                     order.paymentStatus ? t(`products.payment${order.paymentStatus}`) : t(`products.${order.status}`)
                   }}</UBadge>

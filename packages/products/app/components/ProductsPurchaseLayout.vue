@@ -7,6 +7,7 @@ const props = defineProps<{
   totalLabel?: string
   priceLabel?: string
   backUrl?: string
+  testOrder?: boolean
   preview?: boolean
   previewNotice?: string
   label?: string
@@ -39,6 +40,7 @@ const themeStyle = computed(() => ({
   <main class="payment-return-page" :class="{ 'is-preview': preview }" :style="themeStyle">
     <div class="payment-return-shell">
       <p v-if="previewNotice" class="preview-notice" role="status">{{ previewNotice }}</p>
+      <ProductsTestOrderNotice v-if="testOrder" class="test-order-notice" />
       <header class="payment-return-header">
         <a
           v-if="backUrl"
@@ -101,6 +103,9 @@ const themeStyle = computed(() => ({
 :global(html),
 :global(body) {
   overflow-x: clip;
+}
+.test-order-notice {
+  margin-block: 12px;
 }
 .preview-notice {
   padding: 12px 16px;
