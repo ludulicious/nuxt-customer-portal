@@ -151,6 +151,8 @@ Eligible buyers receive links in the confirmation email (`{{downloads}}`), order
 
 ### Account-free order details
 
+Clicking an order card opens its customer-facing order details page. **Go back to orders** returns to the same search, filters, sorting, page and scroll position. The loaded page range and scroll offset are saved for each list URL in the current browser tab; the page range is reloaded before restoring the offset. The **Invoice** action opens that order’s invoice with a **Back to orders** link preserving the same list state; the action is disabled until an invoice exists. Card actions work independently from card navigation.
+
 Admins can choose **Copy client link** on an order to share `/store/orders/:purchaseToken`. The recipient can view that order without registering or signing in. New purchase confirmations link to this page through `{{orderUrl}}`; `{{url}}` remains the existing portal/invitation destination for custom templates. Appointment confirmation instructions also include the order link. Existing emails are not resent.
 
 Thank-you and order pages share a responsive receipt layout with provider branding at the top right, product thumbnails, and the same file and link cards. Branding uses the configured checkout logo and name, falling back to the provider organization. The thank-you page omits the order-details link; the confirmation email provides it. Order reference, purchase date and payment status appear as quiet metadata below the content; free orders hide payment status.

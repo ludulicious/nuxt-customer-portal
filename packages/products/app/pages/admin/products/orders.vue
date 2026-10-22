@@ -24,6 +24,49 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined
 let controller: AbortController | undefined
 let previousSignature = ''
 let loaded = new Set<number>()
+let restorePosition = true
+
+type ListPosition = { firstPage: number; lastPage: number; scrollTop: number }
+const positionKey = () => `products:orders:position:${route.fullPath}`
+function readPosition(): ListPosition | undefined {
+  if (!import.meta.client || !restorePosition) {
+    return
+  }
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(positionKey()) || 'null') as ListPosition | null
+    if (
+      saved &&
+      Number.isSafeInteger(saved.firstPage) &&
+      saved.firstPage > 0 &&
+      Number.isSafeInteger(saved.lastPage) &&
+      saved.lastPage >= saved.firstPage &&
+      Number.isFinite(saved.scrollTop) &&
+      saved.scrollTop >= 0
+    ) {
+      return saved
+    }
+  } catch {
+    // Storage can be unavailable; ordinary list navigation still works.
+  }
+}
+onBeforeRouteLeave(() => {
+  const scroll = scrollContainer()
+  if (!scroll || !loaded.size) {
+    return
+  }
+  try {
+    sessionStorage.setItem(
+      positionKey(),
+      JSON.stringify({
+        firstPage: Math.min(...loaded),
+        lastPage: Math.max(...loaded),
+        scrollTop: scroll.scrollTop
+      } satisfies ListPosition)
+    )
+  } catch {
+    // Storage can be unavailable; ordinary list navigation still works.
+  }
+})
 
 const page = computed(() => Math.max(1, Number(route.query.page) || 1))
 const search = computed(() => String(route.query.search || ''))
@@ -84,8 +127,24 @@ async function load(force = false) {
   error.value = ''
   const signature = JSON.stringify({ ...route.query, page: undefined, scroll: undefined })
   const same = signature === previousSignature && !force
+  const savedPosition = force ? undefined : readPosition()
   try {
     const response = await api.orders({ ...route.query, page: page.value }, active.signal)
+    const restoredPages = new Map([[response.pagination.page, response.items]])
+    if (savedPosition) {
+      // Restore the accumulated window before applying its absolute scroll offset.
+      for (
+        let value = savedPosition.firstPage;
+        value <= Math.min(savedPosition.lastPage, response.pagination.totalPages);
+        value++
+      ) {
+        if (value === response.pagination.page) {
+          continue
+        }
+        const restored = await api.orders({ ...route.query, page: value }, active.signal)
+        restoredPages.set(value, restored.items)
+      }
+    }
     if (active.signal.aborted) {
       return
     }
@@ -93,7 +152,17 @@ async function load(force = false) {
     const height = scroll?.scrollHeight ?? 0
     const prepend = same && loaded.size > 0 && page.value < Math.min(...loaded)
     result.value = response
-    if (same && !loaded.has(page.value) && (loaded.has(page.value - 1) || loaded.has(page.value + 1))) {
+    if (savedPosition) {
+      items.value = Array.from(
+        new Map(
+          [...restoredPages]
+            .sort(([a], [b]) => a - b)
+            .flatMap(([, orders]) => orders)
+            .map((order) => [order.id, order])
+        ).values()
+      )
+      loaded = new Set(restoredPages.keys())
+    } else if (same && !loaded.has(page.value) && (loaded.has(page.value - 1) || loaded.has(page.value + 1))) {
       items.value = Array.from(
         new Map(
           (prepend ? [...response.items, ...items.value] : [...items.value, ...response.items]).map((order) => [
@@ -109,9 +178,12 @@ async function load(force = false) {
     loaded.add(page.value)
     previousSignature = signature
     await nextTick()
-    if (prepend && scroll) {
+    if (savedPosition && scroll) {
+      scroll.scrollTop = savedPosition.scrollTop
+    } else if (prepend && scroll) {
       scroll.scrollTop += scroll.scrollHeight - height
     }
+    restorePosition = false
   } catch {
     if (!active.signal.aborted) {
       error.value = t('products.loadFailed')
@@ -170,6 +242,20 @@ async function copyOrderLink(order: Order) {
   try {
     await copy((await api.orderLink(order.id)).url)
     toast.add({ title: t('products.orderLinkCopied'), color: 'success' })
+  } catch {
+    toast.add({ title: t('products.orderLinkFailed'), color: 'error' })
+  } finally {
+    busyId.value = ''
+  }
+}
+async function openOrder(order: Order) {
+  if (busyId.value) {
+    return
+  }
+  busyId.value = `${order.id}:open`
+  try {
+    const { url } = await api.orderLink(order.id)
+    await router.push({ path: new URL(url).pathname, query: { ordersReturnTo: route.fullPath } })
   } catch {
     toast.add({ title: t('products.orderLinkFailed'), color: 'error' })
   } finally {
@@ -264,7 +350,18 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
     <div ref="listRoot">
       <div ref="topBoundary" class="h-px" aria-hidden="true" />
       <div class="grid gap-3">
-        <UCard v-for="order in items" :key="order.id">
+        <UCard
+          v-for="order in items"
+          :key="order.id"
+          role="link"
+          tabindex="0"
+          class="cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
+          :aria-label="t('products.openOrder', { reference: order.booking_reference })"
+          :aria-busy="busyId === `${order.id}:open`"
+          @click="openOrder(order)"
+          @keydown.enter.prevent="openOrder(order)"
+          @keydown.space.prevent="openOrder(order)"
+        >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="flex min-w-0 items-start gap-3">
               <UAvatar icon="i-lucide-calendar-check" class="shrink-0" />
@@ -283,7 +380,7 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
             </div>
             <strong class="shrink-0 font-medium">{{ amount(order) }}</strong>
           </div>
-          <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-default pt-3">
+          <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-default pt-3" @click.stop @keydown.stop>
             <p
               v-if="order.lines.some((line) => line.snapshot.product.type === 'service')"
               class="mr-auto text-sm text-muted"
@@ -305,9 +402,21 @@ async function action(order: Order, name: 'retry' | 'fulfill') {
             >
               {{ t('products.copyClientOrderLink') }}
             </UButton>
-            <UButton v-if="order.invoice_id" to="/admin/invoices" variant="ghost" color="neutral" size="xs">{{
-              t('products.invoice')
-            }}</UButton>
+            <UButton
+              :to="
+                order.invoice_id
+                  ? {
+                      path: `/admin/invoices/${encodeURIComponent(order.invoice_id)}`,
+                      query: { ordersReturnTo: route.fullPath }
+                    }
+                  : undefined
+              "
+              :disabled="!order.invoice_id"
+              icon="i-lucide-file-text"
+              variant="outline"
+              size="xs"
+              >{{ t('products.invoice') }}</UButton
+            >
             <UButton
               v-if="
                 order.status === 'pending' ||

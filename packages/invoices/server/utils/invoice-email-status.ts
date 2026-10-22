@@ -1,12 +1,13 @@
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { retrievePortalEmail } from '@nuxt-customer-portal/core/server/utils/portal-email'
-import { normalizeEmailProviderEvent } from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
+import {
+  normalizeEmailProviderEvent,
+  shouldRefreshInvoiceEmailStatus
+} from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
 import type { InvoiceEmailStatusRefreshDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 import { invoice, invoiceEmailDelivery } from '@nuxt-customer-portal/invoices/server/db/schema/invoices'
 import { getInvoice } from './invoice-repository'
-
-const STATUS_CACHE_MS = 60_000
 
 export const refreshInvoiceEmailStatuses = async (
   organizationId: string,
@@ -26,38 +27,47 @@ export const refreshInvoiceEmailStatuses = async (
       )
     )
   const failures: InvoiceEmailStatusRefreshDto['failures'] = []
-  const staleBefore = Date.now() - STATUS_CACHE_MS
-
-  await Promise.all(
-    deliveries.map(async ({ delivery }) => {
-      if (
-        !forceRefresh &&
-        delivery.providerStatusCheckedAt &&
-        delivery.providerStatusCheckedAt.getTime() > staleBefore
-      ) {
-        return
-      }
-      try {
-        const providerEmail = await retrievePortalEmail(delivery.providerMessageId!)
-        const checkedAt = new Date()
-        await db
-          .update(invoiceEmailDelivery)
-          .set({
-            providerLastEvent: providerEmail.last_event ? normalizeEmailProviderEvent(providerEmail.last_event) : null,
-            providerStatusCheckedAt: checkedAt
-          })
-          .where(eq(invoiceEmailDelivery.id, delivery.id))
-      } catch (error) {
-        failures.push({
-          deliveryId: delivery.id,
-          code:
-            error instanceof Error && error.message.includes('not configured')
-              ? 'PROVIDER_NOT_CONFIGURED'
-              : 'PROVIDER_LOOKUP_FAILED'
+  for (const { delivery } of deliveries) {
+    if (!shouldRefreshInvoiceEmailStatus(delivery, forceRefresh)) {
+      continue
+    }
+    // Claim the attempt before calling the provider. Concurrent requests skip it,
+    // and failures also observe the cooldown without changing the known status.
+    const [claimed] = await db
+      .update(invoiceEmailDelivery)
+      .set({ providerStatusCheckedAt: new Date() })
+      .where(
+        and(
+          eq(invoiceEmailDelivery.id, delivery.id),
+          delivery.providerStatusCheckedAt
+            ? eq(invoiceEmailDelivery.providerStatusCheckedAt, delivery.providerStatusCheckedAt)
+            : isNull(invoiceEmailDelivery.providerStatusCheckedAt)
+        )
+      )
+      .returning({ id: invoiceEmailDelivery.id })
+    if (!claimed) {
+      continue
+    }
+    try {
+      const providerEmail = await retrievePortalEmail(delivery.providerMessageId!)
+      await db
+        .update(invoiceEmailDelivery)
+        .set({
+          providerLastEvent: providerEmail.last_event
+            ? normalizeEmailProviderEvent(providerEmail.last_event)
+            : delivery.providerLastEvent
         })
-      }
-    })
-  )
+        .where(eq(invoiceEmailDelivery.id, delivery.id))
+    } catch (error) {
+      failures.push({
+        deliveryId: delivery.id,
+        code:
+          error instanceof Error && error.message.includes('not configured')
+            ? 'PROVIDER_NOT_CONFIGURED'
+            : 'PROVIDER_LOOKUP_FAILED'
+      })
+    }
+  }
 
   const refreshed = await getInvoice(organizationId, invoiceId)
   return { deliveries: refreshed.emailDeliveries ?? [], failures }

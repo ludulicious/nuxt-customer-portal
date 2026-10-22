@@ -4,6 +4,12 @@ import { defaultOrderPageCopy, type OrderPageCopy } from '../../../../shared/pag
 
 definePageMeta({ public: true, layout: 'store', key: (route) => route.path })
 const route = useRoute()
+const ordersReturnTo = computed(() =>
+  typeof route.query.ordersReturnTo === 'string' &&
+  /^\/admin\/products\/orders(?:\?|$)/.test(route.query.ordersReturnTo)
+    ? route.query.ordersReturnTo
+    : undefined
+)
 const { locale, setLocale } = useI18n()
 const token = String(route.params.token)
 const {
@@ -36,6 +42,7 @@ useHead({
   <ProductsPublicOrder
     :order="order"
     :copy="copy"
+    :back-url="ordersReturnTo"
     :error="!!error"
     :unavailable="unavailable"
     :loading="status === 'pending'"

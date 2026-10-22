@@ -153,6 +153,7 @@
         "paid": "Betaald",
         "backToInvoices": "Terug naar facturen",
         "backToOrders": "Terug naar aankopen",
+        "backToOrderList": "Terug naar bestellingen",
         "invoiceTitle": "Factuur {number}",
         "invoiceDocumentTitle": "FACTUUR",
         "print": "Afdrukken",

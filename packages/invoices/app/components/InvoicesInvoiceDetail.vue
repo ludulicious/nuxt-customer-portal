@@ -6,7 +6,10 @@ import type {
   InvoiceDto,
   InvoiceHistoryDto
 } from '@nuxt-customer-portal/invoices/shared/types/invoice'
-import { isKnownEmailProviderEvent } from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
+import {
+  isKnownEmailProviderEvent,
+  shouldRefreshInvoiceEmailStatus
+} from '@nuxt-customer-portal/invoices/shared/email-delivery-status'
 
 const props = withDefaults(
   defineProps<{
@@ -377,7 +380,10 @@ const attachmentUrl = (attachmentId: string) =>
     ? `/api/invoices/client/invoices/${props.invoice.id}/attachments/${attachmentId}`
     : `/api/invoices/admin/invoices/${props.invoice.id}/attachments/${attachmentId}`
 const refreshEmailStatuses = async (forceRefresh = false) => {
-  if (!emailDeliveries.value.some((delivery) => delivery.providerMessageId)) {
+  if (
+    refreshingEmailStatuses.value ||
+    !emailDeliveries.value.some((delivery) => shouldRefreshInvoiceEmailStatus(delivery, forceRefresh))
+  ) {
     return
   }
   refreshingEmailStatuses.value = true
