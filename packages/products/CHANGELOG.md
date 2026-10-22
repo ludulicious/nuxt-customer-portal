@@ -1,5 +1,14 @@
 # Products
 
+## 0.8.8
+
+### Patch Changes
+
+- Retrieve admin order details through the existing authenticated orders endpoint to avoid generated route type-inference limits in consumer applications.
+  - @nuxt-customer-portal/clients@0.8.8
+  - @nuxt-customer-portal/core@0.8.8
+  - @nuxt-customer-portal/ui@0.8.8
+
 ## 0.8.7
 
 ### Patch Changes

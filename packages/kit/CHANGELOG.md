@@ -1,5 +1,7 @@
 # @nuxt-customer-portal/kit
 
+## 0.8.8
+
 ## 0.8.7
 
 ## 0.8.6

@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/clients
 
+## 0.8.8
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.8.8
+- @nuxt-customer-portal/ui@0.8.8
+
 ## 0.8.7
 
 ### Patch Changes

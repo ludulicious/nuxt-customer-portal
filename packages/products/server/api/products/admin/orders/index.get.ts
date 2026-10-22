@@ -1,14 +1,17 @@
 import { attachPaymentState } from '@nuxt-customer-portal/products/server/utils/orders'
+import { adminOrderDetails } from '@nuxt-customer-portal/products/server/utils/admin-order'
 import { admin } from '@nuxt-customer-portal/products/server/utils/access'
 import { rows } from '@nuxt-customer-portal/products/server/utils/database'
 import { z } from 'zod'
 import { parseInput } from '@nuxt-customer-portal/products/server/utils/validation'
-import type { Order } from '@nuxt-customer-portal/products/shared/types'
+import type { AdminOrderDetails } from '@nuxt-customer-portal/products/shared/admin-order'
+import type { Order, Page } from '@nuxt-customer-portal/products/shared/types'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<Page<Order> | AdminOrderDetails> => {
   const { organizationId } = await admin(event)
   const q = parseInput(
     z.object({
+      orderId: z.string().trim().min(1).max(200).optional(),
       page: z.coerce.number().int().min(1).default(1),
       search: z.string().max(200).default(''),
       status: z.enum(['pending', 'accepted', 'paid', 'failed', 'expired', 'all']).default('all'),
@@ -17,6 +20,11 @@ export default defineEventHandler(async (event) => {
     }),
     getQuery(event)
   )
+  if (q.orderId) {
+    setHeader(event, 'Cache-Control', 'private, no-store')
+    setHeader(event, 'Referrer-Policy', 'no-referrer')
+    return adminOrderDetails(organizationId, q.orderId)
+  }
   const args = [organizationId, `%${q.search}%`, q.status]
   const where =
     "store_id=$1 AND (email ILIKE $2 OR booking_reference ILIKE $2 OR EXISTS(SELECT 1 FROM products.order_line l WHERE l.order_id=products.orders.id AND l.snapshot->>'title' ILIKE $2)) AND ($3='all' OR status=$3)"
