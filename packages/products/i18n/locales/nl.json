@@ -765,6 +765,8 @@
       "statusExpired": "Status verlopen",
       "statusRevoked": "Status ingetrokken toegang"
     },
-    "storeTextExamplePreview": "Voorbeeldinhoud gebruiken"
+    "storeTextExamplePreview": "Voorbeeldinhoud gebruiken",
+    "purchaseAppointments": "Je afspraak",
+    "appointmentCancelled": "Geannuleerd"
   }
 }

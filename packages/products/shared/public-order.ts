@@ -1,3 +1,4 @@
+import type { PurchaseAppointment } from './purchase-appointment'
 import type { OrderPageCopy } from './page-texts'
 import type { Locale, Order } from './types'
 import type { CheckoutAppearance } from './checkout-appearance'
@@ -11,6 +12,7 @@ export interface PublicOrderFile extends PurchaseDownload {
 }
 export interface PublicOrderDetails {
   copy: OrderPageCopy
+  appointments?: PurchaseAppointment[]
   reference: string
   createdAt: string
   locale: Locale

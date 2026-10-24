@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CatalogProduct } from '../../shared/types'
+import type { PurchaseAppointment } from '../../shared/purchase-appointment'
 import type { PurchaseLink } from '../../shared/links'
 import type { PurchaseDownload } from '../../shared/downloads'
 import type { ThankYouCopy, ThankYouVariant } from '../../shared/thank-you'
@@ -12,6 +13,7 @@ const props = defineProps<{
   delivery?: {
     status: string
     storeMode?: 'sandbox' | 'live'
+    appointments?: PurchaseAppointment[]
     files: PurchaseDownload[]
     links?: PurchaseLink[]
   } | null
@@ -86,6 +88,11 @@ const outcomeIcon = computed(() => outcomeIcons[props.outcome] || 'i-lucide-circ
           }}
         </p>
       </template>
+      <ProductsPurchaseAppointments
+        v-if="outcome === 'success' && delivery?.appointments?.length"
+        :appointments="delivery.appointments"
+        :locale="product.locale"
+      />
       <p v-if="delivery?.status === 'accepted'">{{ t('products.invoicePaymentHelp') }}</p>
       <section
         v-if="

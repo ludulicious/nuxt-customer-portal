@@ -765,6 +765,8 @@
       "statusExpired": "Expired status",
       "statusRevoked": "Revoked access status"
     },
-    "storeTextExamplePreview": "Use example content"
+    "storeTextExamplePreview": "Use example content",
+    "purchaseAppointments": "Your appointment",
+    "appointmentCancelled": "Cancelled"
   }
 }
