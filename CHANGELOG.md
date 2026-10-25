@@ -1,5 +1,18 @@
 # Nuxt Customer Portal
 
+## 0.8.9
+
+Show scheduled appointment dates, time ranges, and customer timezones on thank-you
+and order details pages. Rescheduled times and cancellation status stay current.
+Store texts previews can include a sample appointment with an adjustable UTC date,
+time, and display timezone.
+
+Resolve Google and GitHub sign-in button visibility from the running server’s
+opt-in settings and credentials, including in prebuilt portal images.
+
+All 16 public packages and the three portal apps use `0.8.9`. No new database
+migrations are required when upgrading from `0.8.8`.
+
 ## 0.8.8
 
 Avoid generated API route type-inference limits by retrieving admin order details
