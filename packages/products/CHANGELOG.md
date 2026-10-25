@@ -1,5 +1,18 @@
 # Products
 
+## 0.8.9
+
+### Patch Changes
+
+- 17e3384: Show booked appointment dates, time ranges, and timezones on thank-you and order details pages, including cancellation status and current rescheduled times.
+
+  Store text previews can optionally show a sample appointment with adjustable UTC date, time, and display timezone.
+
+- Updated dependencies [6cfe8bc]
+  - @nuxt-customer-portal/core@0.8.9
+  - @nuxt-customer-portal/clients@0.8.9
+  - @nuxt-customer-portal/ui@0.8.9
+
 ## 0.8.8
 
 ### Patch Changes

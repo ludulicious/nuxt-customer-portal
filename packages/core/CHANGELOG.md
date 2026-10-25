@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.8.9
+
+### Patch Changes
+
+- 6cfe8bc: Resolve login and signup provider visibility from the runtime server opt-in flags and credentials, including in prebuilt images, without requiring public Nuxt overrides.
+
 ## 0.8.8
 
 ## 0.8.7

@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/ui
 
+## 0.8.9
+
+### Patch Changes
+
+- Updated dependencies [6cfe8bc]
+  - @nuxt-customer-portal/core@0.8.9
+
 ## 0.8.8
 
 ### Patch Changes
