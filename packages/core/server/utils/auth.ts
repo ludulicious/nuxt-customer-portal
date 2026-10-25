@@ -34,7 +34,7 @@ import {
 import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
 import { runUserIdentityChangedHooks } from './business-hooks'
-import { socialAuthProviderEnabled } from '../../shared/social-auth'
+import { socialAuthProviders } from '../../shared/social-auth'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -48,16 +48,7 @@ const portalAuthConfig = useRuntimeConfig().portalAuth
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? process.env.PORTAL_REGISTRATION_MODE
   : portalAuthConfig.registrationMode
-const githubEnabled = socialAuthProviderEnabled(
-  process.env.PORTAL_GITHUB_ENABLED,
-  process.env.GITHUB_CLIENT_ID,
-  process.env.GITHUB_CLIENT_SECRET
-)
-const googleEnabled = socialAuthProviderEnabled(
-  process.env.PORTAL_GOOGLE_ENABLED,
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET
-)
+const { githubEnabled, googleEnabled } = socialAuthProviders(process.env)
 const systemAdminEmails = isPortalDemo() ? new Set<string>() : parseSystemAdminEmails(process.env.ADMIN_EMAILS)
 
 export const auth = betterAuth({

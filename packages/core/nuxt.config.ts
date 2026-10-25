@@ -1,19 +1,10 @@
 import { fileURLToPath } from 'node:url'
-import { socialAuthProviderEnabled } from './shared/social-auth'
+import { socialAuthProviders } from './shared/social-auth'
 
 const registrationMode = ['open', 'invitation-only', 'disabled'].includes(process.env.PORTAL_REGISTRATION_MODE || '')
   ? (process.env.PORTAL_REGISTRATION_MODE as 'open' | 'invitation-only' | 'disabled')
   : 'open'
-const githubEnabled = socialAuthProviderEnabled(
-  process.env.PORTAL_GITHUB_ENABLED,
-  process.env.GITHUB_CLIENT_ID,
-  process.env.GITHUB_CLIENT_SECRET
-)
-const googleEnabled = socialAuthProviderEnabled(
-  process.env.PORTAL_GOOGLE_ENABLED,
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET
-)
+const { githubEnabled, googleEnabled } = socialAuthProviders(process.env)
 
 export default defineNuxtConfig({
   $meta: { name: 'nuxt-customer-portal-core' },
