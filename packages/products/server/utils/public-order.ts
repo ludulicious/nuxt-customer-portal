@@ -1,3 +1,4 @@
+import { purchaseAppointments } from './purchase-appointments'
 import { orderPageCopy } from './page-texts'
 import type { Order } from '../../shared/types'
 import type { PublicOrderDetails } from '../../shared/public-order'
@@ -27,6 +28,7 @@ export async function publicOrderDetails(order: Order, token: string): Promise<P
   const slugs = [...new Set(order.lines.map((line) => line.snapshot.product.slug))]
   return {
     copy: await orderPageCopy(order.store_id, order.snapshot.locale, slugs.length === 1 ? slugs[0] : ''),
+    appointments: await purchaseAppointments(order),
     reference: order.booking_reference,
     createdAt: order.created_at,
     locale: order.snapshot.locale,

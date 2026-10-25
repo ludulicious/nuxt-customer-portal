@@ -35,6 +35,7 @@ export const runOrderFulfillmentHooks = async (client: PoolClient, order: Order)
 }
 
 export interface PlanningOrderIntegration {
+  purchaseAppointments?(order: Order): Promise<import('../../shared/purchase-appointment').PurchaseAppointment[]>
   prepareCheckout(
     event: import('h3').H3Event,
     input: import('zod').z.infer<typeof import('../../shared/validation').checkoutSchema>

@@ -85,6 +85,11 @@ const revoked = computed(
         <ProductsMarkdown :html="copy.contentHtml" />
       </div>
       <p v-if="order.status === 'accepted' && !isFree" class="mt-4 text-sm">{{ copy.invoiceHelp }}</p>
+      <ProductsPurchaseAppointments
+        v-if="order.appointments?.length"
+        :appointments="order.appointments"
+        :locale="order.locale"
+      />
       <section v-if="!order.access" class="order-content space-y-3" role="status">
         <h2>{{ waiting ? copy.pendingHeading : copy.accessHeading }}</h2>
         <p>{{ waiting ? copy.pendingText : copy.accessText }}</p>

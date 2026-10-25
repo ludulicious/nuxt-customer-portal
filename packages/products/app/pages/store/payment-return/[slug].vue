@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../../../../shared/checkout-query'
 import { defaultCheckoutAppearance } from '../../../../shared/checkout-appearance'
+import type { PurchaseAppointment } from '../../../../shared/purchase-appointment'
 import type { PurchaseLink } from '../../../../shared/links'
 import { purchaseReturnUrl, type PurchaseDownload } from '../../../../shared/downloads'
 
@@ -40,6 +41,7 @@ const {
   status: string
   storeMode?: 'sandbox' | 'live'
   variant?: 'free' | 'paid'
+  appointments?: PurchaseAppointment[]
   files: PurchaseDownload[]
   links?: PurchaseLink[]
 }>(() => `/api/store/purchases/${encodeURIComponent(purchaseToken)}`, { immediate: !!purchaseToken, watch: false })

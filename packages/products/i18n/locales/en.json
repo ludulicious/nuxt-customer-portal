@@ -765,6 +765,14 @@
       "statusExpired": "Expired status",
       "statusRevoked": "Revoked access status"
     },
-    "storeTextExamplePreview": "Use example content"
+    "storeTextExamplePreview": "Use example content",
+    "purchaseAppointments": "Your appointment",
+    "appointmentCancelled": "Cancelled",
+    "appointmentPreviewTitle": "Example appointment",
+    "appointmentPreviewEnabled": "Include a sample appointment",
+    "appointmentPreviewHelp": "Preview only; no appointment is created or saved. Enter the sample date and time in UTC. The preview converts it to the selected timezone and shows a 30-minute appointment.",
+    "appointmentPreviewDate": "Sample date (UTC)",
+    "appointmentPreviewTime": "Sample time (UTC)",
+    "appointmentPreviewTimezone": "Preview timezone"
   }
 }

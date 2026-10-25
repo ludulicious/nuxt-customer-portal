@@ -765,6 +765,14 @@
       "statusExpired": "Status verlopen",
       "statusRevoked": "Status ingetrokken toegang"
     },
-    "storeTextExamplePreview": "Voorbeeldinhoud gebruiken"
+    "storeTextExamplePreview": "Voorbeeldinhoud gebruiken",
+    "purchaseAppointments": "Je afspraak",
+    "appointmentCancelled": "Geannuleerd",
+    "appointmentPreviewTitle": "Voorbeeldafspraak",
+    "appointmentPreviewEnabled": "Voorbeeldafspraak tonen",
+    "appointmentPreviewHelp": "Alleen een voorbeeld; er wordt geen afspraak aangemaakt of opgeslagen. Voer de voorbeelddatum en -tijd in UTC in. Het voorbeeld rekent deze om naar de gekozen tijdzone en toont een afspraak van 30 minuten.",
+    "appointmentPreviewDate": "Voorbeelddatum (UTC)",
+    "appointmentPreviewTime": "Voorbeeldtijd (UTC)",
+    "appointmentPreviewTimezone": "Tijdzone van voorbeeld"
   }
 }
