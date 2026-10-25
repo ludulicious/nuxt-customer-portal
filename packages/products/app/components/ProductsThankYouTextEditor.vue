@@ -7,6 +7,7 @@ import {
   type ThankYouText,
   type ThankYouVariant
 } from '../../shared/thank-you'
+import type { PurchaseAppointment } from '../../shared/purchase-appointment'
 import type { CatalogProduct } from '../../shared/types'
 
 const props = defineProps<{ locale: 'en' | 'nl'; variant: ThankYouVariant }>()
@@ -29,6 +30,7 @@ const productsBusy = ref(false)
 const activeSlug = ref('')
 const previewSlug = ref('')
 const previewProduct = ref<CatalogProduct>()
+const previewAppointments = ref<PurchaseAppointment[]>([])
 const empty = () => ({ statusLabel: '', content: '', downloadsHeading: '' })
 const editorCopy = (copy: ReturnType<typeof defaultThankYouCopy>) => ({
   statusLabel: copy.statusLabel,
@@ -323,11 +325,16 @@ async function reset() {
             t('products.thankYouPreview')
           }}</UButton>
         </div>
+        <ProductsAppointmentPreviewControls v-model="previewAppointments" :title="previewProduct?.title" />
         <ProductsOrderReceipt
           v-if="previewProduct"
           :product="previewProduct"
           outcome="success"
-          :delivery="{ status: 'paid', files: [{ id: 'sample', name: t('products.thankYouExampleFile'), url: '#' }] }"
+          :delivery="{
+            status: 'paid',
+            appointments: previewAppointments,
+            files: [{ id: 'sample', name: t('products.thankYouExampleFile'), url: '#' }]
+          }"
           :copy="previewCopy"
           preview
           :preview-variant="variant"

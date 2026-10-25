@@ -9,6 +9,7 @@ import {
   type OrderPageOverride,
   type PageText
 } from '../../shared/page-texts'
+import type { PurchaseAppointment } from '../../shared/purchase-appointment'
 import type { PublicOrderDetails } from '../../shared/public-order'
 import { defaultCheckoutAppearance } from '../../shared/checkout-appearance'
 
@@ -35,6 +36,7 @@ const productOptions = ref<Array<{ value: string; label: string }>>([])
 const productsBusy = ref(false)
 const previewBusy = ref(false)
 const productPreview = ref<PublicOrderDetails>()
+const previewAppointments = ref<PurchaseAppointment[]>([])
 const target = computed(() => ({
   page: 'order-details' as const,
   locale: props.locale,
@@ -249,6 +251,7 @@ const previewOrder = computed<PublicOrderDetails>(() => {
   if (productPreview.value) {
     return {
       ...productPreview.value,
+      appointments: access ? previewAppointments.value : [],
       copy: copy.value,
       status,
       access,
@@ -265,6 +268,7 @@ const previewOrder = computed<PublicOrderDetails>(() => {
   }
   return {
     copy: copy.value,
+    appointments: access ? previewAppointments.value : [],
     reference: 'BK-EXAMPLE',
     createdAt: '2026-01-15T12:00:00Z',
     locale: props.locale,
@@ -472,6 +476,7 @@ async function reset() {
             {{ t('products.storeTextExamplePreview') }}
           </UButton>
         </div>
+        <ProductsAppointmentPreviewControls v-model="previewAppointments" :title="productPreview?.items[0]?.title" />
         <p class="text-sm text-muted">{{ t('products.storeTextPreviewHelp') }}</p>
         <p v-if="previewBusy" role="status" class="text-sm text-muted">{{ t('products.loading') }}</p>
         <p v-else-if="scope === 'product' && !productPreview" class="text-sm text-muted">
