@@ -1,3 +1,4 @@
+import { purchaseAppointments } from '../../../utils/purchase-appointments'
 import { purchaseLinks } from '../../../../shared/links'
 import { downloadOrder, purchaseDownloads } from '@nuxt-customer-portal/products/server/utils/downloads'
 import { purchaseThankYouVariant } from '../../../../shared/thank-you'
@@ -18,6 +19,7 @@ export default defineEventHandler(async (event) => {
     status: order.status,
     storeMode: order.snapshot.storeMode,
     variant: purchaseThankYouVariant(order),
+    appointments: await purchaseAppointments(order),
     files: await purchaseDownloads(order, token),
     links: purchaseLinks(order)
   }

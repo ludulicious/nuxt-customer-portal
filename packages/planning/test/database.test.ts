@@ -84,6 +84,8 @@ test(
       const staffAppointments = await import('../server/utils/staff-appointments')
       const orders = await import('../../products/server/utils/orders')
       const contracts = await import('../../products/server/utils/contracts')
+      const { orderAppointments: purchaseAppointments } = await import('../server/utils/purchase-appointments')
+      const { publicOrderDetails } = await import('../../products/server/utils/public-order')
       const { stripeProvider } = await import('../../products/server/utils/payments')
       const { registerPlanningAdapters } = await import('../server/utils/adapters')
       const { encrypt } = await import('../server/utils/crypto')
@@ -257,7 +259,8 @@ test(
         prepareCheckout: booking.prepareCheckout,
         bind: booking.bindPrepared,
         prepareOrder: booking.prepareOrder,
-        confirm: booking.confirm
+        confirm: booking.confirm,
+        purchaseAppointments
       })
       function event(cookie = '') {
         const req = new IncomingMessage(new Socket())
@@ -542,6 +545,27 @@ test(
           '1'
         )
       })
+      await t.test('order details expose only public appointment fields and use the customer timezone', async () => {
+        await db.query(
+          `UPDATE planning.appointment SET snapshot=jsonb_set(snapshot,'{customerTimezone}','"Europe/Amsterdam"') WHERE order_id=$1`,
+          [initial.orderId]
+        )
+        const order = await orders.getOrder(initial.orderId)
+        const details = await publicOrderDetails(order, 'test-token')
+        assert.deepEqual(details.appointments, [
+          {
+            id: (await appointment(initial.orderId)).id,
+            orderLineId: order.lines[0]!.id,
+            title: (await appointment(initial.orderId)).snapshot.title,
+            start: `${day}T09:00:00.000Z`,
+            end: `${day}T10:00:00.000Z`,
+            timezone: 'Europe/Amsterdam',
+            status: 'confirmed'
+          }
+        ])
+        assert.deepEqual(await purchaseAppointments({ ...order, store_id: 'other-store' }), [])
+        assert.deepEqual(await purchaseAppointments({ ...order, id: 'other-order' }), [])
+      })
       const a = await appointment(initial.orderId)
       await t.test(
         'verified customers claim guests; other customers and provider members cannot administer',
@@ -610,6 +634,10 @@ test(
         const changed = await appointment(initial.orderId)
         assert.equal(changed.start_at.toISOString(), `${day}T12:00:00.000Z`)
         assert.equal(changed.changes, 1)
+        assert.equal(
+          (await purchaseAppointments(await orders.getOrder(initial.orderId)))[0]?.start,
+          `${day}T12:00:00.000Z`
+        )
         await orders.processOrder(initial.orderId)
         assert.equal((await appointment(initial.orderId)).changes, 1)
       })
@@ -686,6 +714,7 @@ test(
         await management.cancel(event(buyerCookie), a.id)
         await management.cancel(event(buyerCookie), a.id)
         assert.equal((await appointment(initial.orderId)).status, 'cancelled')
+        assert.equal((await purchaseAppointments(await orders.getOrder(initial.orderId)))[0]?.status, 'cancelled')
         await jobs.runJobs()
         assert.equal(refunds.get('pi_' + initial.orderId), 500)
         await jobs.runJobs()
