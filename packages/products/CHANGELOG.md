@@ -1,5 +1,31 @@
 # Products
 
+## 0.9.0
+
+### Minor Changes
+
+- 936f0a2: Add an authenticated store media library with Studio-style image editing, batch review, independent thumbnails, retained originals, and scoped API-key access using existing storage providers. Product images remain unchanged.
+
+  Support configurable store media variants with automatic generation, independent custom crops, and preset changes applied when each image is next saved. Existing thumbnails migrate as custom sources and product image policies remain unchanged.
+
+- af68856: Use the store media library for new product images, with searchable image selection and one reorderable card list with the first image as thumbnail, live shared image updates, protected storefront delivery, and in-use deletion checks. Resolve display variants automatically through the media library. Preserve existing product images and purchased-file uploads.
+
+  Share Studio-style drag sorting between product image cards and the media grid, with vacant drop slots, animated positioning, continuous edge scrolling and keyboard ordering.
+
+  Load the small thumbnail in product image cards, add versioned authenticated preview URLs and permission-checked ETag revalidation, and show a media-grid drag handle only in manual order.
+
+  Keep media-card actions on one line and enforce responsive minimum card widths, with a slightly inset drag handle.
+
+  Anchor media-card dimensions and action icons to the bottom so rows align despite different metadata lengths.
+
+### Patch Changes
+
+- Updated dependencies [936f0a2]
+- Updated dependencies [6696fd0]
+  - @nuxt-customer-portal/core@0.9.0
+  - @nuxt-customer-portal/ui@0.9.0
+  - @nuxt-customer-portal/clients@0.9.0
+
 ## 0.8.9
 
 ### Patch Changes

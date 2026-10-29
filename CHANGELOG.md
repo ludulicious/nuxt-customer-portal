@@ -1,5 +1,20 @@
 # Nuxt Customer Portal
 
+## 0.9.0
+
+Add a store media library with Studio-style image editing, batch review, retained
+originals, configurable variants and independent crops. Select shared media for
+product images, reorder cards with drag or keyboard controls, and protect images
+used by products from deletion. Existing product images and purchased files are
+preserved.
+
+Add opt-in unified sidebar navigation with nested module pages, collapsed flyouts,
+global search entries and footer collapse controls. SaaS Portal enables this layout.
+
+All 16 public packages and the three portal apps use `0.9.0`. Apply Products
+migrations `0024_media_library.sql`, `0025_media_variants.sql`, and
+`0026_product_media.sql` before deploying. Keep all official packages aligned.
+
 ## 0.8.9
 
 Show scheduled appointment dates, time ranges, and customer timezones on thank-you
