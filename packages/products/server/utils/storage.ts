@@ -1,3 +1,4 @@
+import { productMediaContent } from './product-media'
 import { randomUUID } from 'node:crypto'
 import { request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
@@ -333,6 +334,9 @@ export async function assetUrl(id: string, download = false, fileName?: string) 
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
   }
+  if (asset.media_id) {
+    return `/api/store/media/${encodeURIComponent(id)}`
+  }
   if (!download && asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {
     return `${process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '')}/${asset.object_key}`
   }
@@ -360,11 +364,20 @@ export async function sendAsset(
   id: string,
   download = false,
   fileName?: string,
-  beforeSend?: () => Promise<void>
+  beforeSend?: () => Promise<void>,
+  manageMedia = false
 ) {
   const [asset] = await rows<Asset & { object_key: string }>('SELECT * FROM products.asset WHERE id=$1 AND ready', [id])
   if (!asset) {
     throw createError({ statusCode: 404, message: 'File not found' })
+  }
+  if (asset.media_id) {
+    const content = await productMediaContent(id, manageMedia)
+    setResponseHeader(event, 'Content-Type', content.contentType)
+    setResponseHeader(event, 'X-Content-Type-Options', 'nosniff')
+    setResponseHeader(event, 'Cache-Control', 'private, no-store')
+    await beforeSend?.()
+    return content.body
   }
   const responseFileName = fileName ? withFileExtension(fileName, asset.name) : asset.name
   if (!download && asset.visibility === 'public' && process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT) {

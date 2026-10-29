@@ -469,7 +469,7 @@
     "storageAccessKeyRequired": "Access-key ID is required.",
     "storageSecretRequired": "Secret access key must contain at least 8 characters.",
     "imageRequirements": "Product image requirements",
-    "imageRequirementsHelp": "Set one compact output size for each storefront purpose. Uploads are cropped and optimized to these exact dimensions.",
+    "imageRequirementsHelp": "Product images use media-library variants. Configure their dimensions in Image variants; existing product uploads retain their current dimensions.",
     "width": "Width (pixels)",
     "height": "Height (pixels)",
     "imagePurposethumbnail": "Thumbnail",
@@ -481,7 +481,7 @@
     "addImages": "Add images",
     "editImages": "Edit images",
     "productImageLibrary": "Product image library",
-    "productImageLibraryHelp": "Choose where an image will be used before selecting and cropping it.",
+    "productImageLibraryHelp": "Choose reusable images from the media library for each product placement.",
     "uploadPurposethumbnail": "Upload thumbnail",
     "uploadPurposegallery": "Upload product card",
     "uploadPurposedetail": "Upload detail image",
@@ -967,6 +967,20 @@
         "settingsConflict": "Variant settings have changed. Reload before saving.",
         "settingsSaved": "Variant settings saved. Existing images will update when each image is next saved."
       }
+    },
+    "productMedia": {
+      "choose": "Choose from media library",
+      "pickerHelp": "Select a visible library image. The matching variant is selected automatically; you can choose another variant below. Library changes also update linked products.",
+      "select": "Select {title}",
+      "empty": "No visible images found. Add images in the media library first.",
+      "loadMore": "Load more",
+      "manage": "Manage media library",
+      "variant": "Image variant",
+      "use": "Use image",
+      "unavailable": "This image or variant is no longer available. Choose another visible image or reload the library.",
+      "media_in_use": "This image is used by a product. Remove it from the product and save before deleting it.",
+      "variant_in_use": "This variant is used by a product. Change the product image selection and save before removing the variant.",
+      "fullImage": "Full image"
     }
   }
 }

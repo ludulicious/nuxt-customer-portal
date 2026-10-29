@@ -37,8 +37,8 @@ export async function purchaseThumbnail(product: ProductData, storeId: string): 
   if (!id || !product.imageIds?.includes(id)) {
     return null
   }
-  const [asset] = await rows<{ object_key: string }>(
-    `SELECT a.object_key FROM products.asset a JOIN products.product p ON p.id=a.product_id
+  const [asset] = await rows<{ object_key: string; media_id: string | null }>(
+    `SELECT a.object_key,a.media_id FROM products.asset a JOIN products.product p ON p.id=a.product_id
      WHERE a.id=$1 AND p.store_id=$2 AND a.ready AND a.visibility='public'`,
     [id, storeId]
   )
@@ -46,5 +46,7 @@ export async function purchaseThumbnail(product: ProductData, storeId: string): 
     return null
   }
   const endpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
-  return endpoint ? `${endpoint}/${asset.object_key}` : `${baseUrl()}/api/store/media/${encodeURIComponent(id)}`
+  return endpoint && !asset.media_id
+    ? `${endpoint}/${asset.object_key}`
+    : `${baseUrl()}/api/store/media/${encodeURIComponent(id)}`
 }

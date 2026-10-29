@@ -362,6 +362,19 @@ export async function reorderMedia(storeId: string, input: unknown) {
 export async function deleteMedia(storeId: string, id: string, revision: number) {
   return transaction(async (client) => {
     await lockStore(client, storeId)
+    const used = await rows(
+      `SELECT a.id FROM products.asset a JOIN products.product p ON p.id=a.product_id
+      WHERE a.media_id=$1 AND p.store_id=$2 AND p.data->'imageIds' ? a.id LIMIT 1`,
+      [id, storeId],
+      client
+    )
+    if (used.length) {
+      throw createError({
+        statusCode: 409,
+        data: { code: 'media_in_use' },
+        message: 'This image is used by a product. Remove it from the product before deleting it.'
+      })
+    }
     const result = await rows(
       'DELETE FROM products.media WHERE store_id=$1 AND id=$2 AND revision=$3 RETURNING id',
       [storeId, id, revision],

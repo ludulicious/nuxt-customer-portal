@@ -36,7 +36,6 @@ watch(
 const defaultLanguageOptions = computed(() =>
   portalLanguages.filter((language) => settings.value.languages.includes(language.value))
 )
-const imagePurposes = ['thumbnail', 'gallery', 'detail'] as const
 watch(
   () => settings.value.languages,
   (languages) => {
@@ -94,17 +93,9 @@ function save() {
       <fieldset class="space-y-3 rounded-md border p-4">
         <legend class="px-1 font-medium">{{ t('products.imageRequirements') }}</legend>
         <p class="text-sm text-muted">{{ t('products.imageRequirementsHelp') }}</p>
-        <div class="grid gap-4 lg:grid-cols-3">
-          <fieldset v-for="purpose in imagePurposes" :key="purpose" class="space-y-3 rounded-md bg-elevated/40 p-3">
-            <legend class="px-1 text-sm font-medium">{{ t(`products.imagePurpose${purpose}`) }}</legend>
-            <UFormField :name="`imagePolicy.${purpose}.width`" :label="t('products.width')">
-              <UInputNumber v-model="settings.imagePolicy[purpose].width" :min="200" :max="2400" class="w-full" />
-            </UFormField>
-            <UFormField :name="`imagePolicy.${purpose}.height`" :label="t('products.height')">
-              <UInputNumber v-model="settings.imagePolicy[purpose].height" :min="200" :max="2400" class="w-full" />
-            </UFormField>
-          </fieldset>
-        </div>
+        <UButton to="/admin/products/settings/media" color="neutral" variant="outline" icon="i-lucide-images">{{
+          t('products.media.variants.settings')
+        }}</UButton>
       </fieldset>
       <ul class="space-y-1 text-sm">
         <li v-if="settings.mode === 'live' && settings.onlinePayment">

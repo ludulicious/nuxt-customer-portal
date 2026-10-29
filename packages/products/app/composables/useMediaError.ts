@@ -16,6 +16,10 @@ export const useMediaError = () => {
   }
   return (cause: unknown) => {
     const error = cause as { statusCode?: number; status?: number; response?: { status?: number } }
+    const code = (cause as { data?: { data?: { code?: string } } })?.data?.data?.code
+    if (code === 'media_in_use' || code === 'variant_in_use') {
+      return t(`products.productMedia.${code}`)
+    }
     const status = error?.statusCode || error?.status || error?.response?.status
     if (status && keys[status]) {
       return t(`products.media.errors.${keys[status]}`)

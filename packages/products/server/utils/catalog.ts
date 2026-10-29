@@ -1,3 +1,4 @@
+import { lockMediaStore } from './media-variants'
 import { purchasedLinksSchema, type PurchasedLink } from '../../shared/links'
 import { purchaseAppearance } from './purchase-appearance'
 import { productThankYouCopies } from './thank-you'
@@ -317,6 +318,7 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
     : inputPrices
   try {
     await transaction(async (tx) => {
+      await lockMediaStore(tx, storeId)
       const [currentStore] = await rows<{
         currencies: string[]
         languages: Locale[]
@@ -413,8 +415,22 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
           tx
         )
         if (found.length !== new Set(ids).size) {
-          throw createError({ statusCode: 400, message: 'Media must be uploaded to this product first' })
+          throw createError({
+            statusCode: 400,
+            message: 'Choose images from the media library or files uploaded to this product'
+          })
         }
+      }
+      const invalidMedia = await rows(
+        `SELECT a.id FROM products.asset a LEFT JOIN products.media m ON m.id=a.media_id AND m.store_id=$3
+         LEFT JOIN products.media_variant v ON v.media_id=m.id AND v.store_id=m.store_id AND v.key=a.media_variant
+         WHERE a.product_id=$1 AND a.id=ANY($2::text[]) AND a.media_id IS NOT NULL
+         AND (m.id IS NULL OR (NOT m.visible AND NOT ($4::jsonb ? a.id)) OR (a.media_variant<>'image' AND (v.file_id IS NULL OR NOT EXISTS(SELECT 1 FROM products.store s, jsonb_array_elements(s.media_variants) preset WHERE s.organization_id=$3 AND preset->>'key'=a.media_variant))))`,
+        [id, data.imageIds, storeId, JSON.stringify(existing?.data.imageIds || [])],
+        tx
+      )
+      if (invalidMedia.length) {
+        throw createError({ statusCode: 400, message: 'A selected library image or variant is unavailable' })
       }
       for (const price of prices) {
         price.taxBehavior = currentStore!.currency_tax_behavior[price.currency] || 'inclusive'
@@ -505,7 +521,7 @@ export async function publicProduct(
     : category?.content[store.default_locale]
   const imageAssets = product.imageIds.length
     ? await rows<{ id: string; object_key: string }>(
-        "SELECT id,object_key FROM products.asset WHERE ready AND visibility='public' AND id=ANY($1::text[])",
+        "SELECT id,object_key FROM products.asset WHERE ready AND visibility='public' AND media_id IS NULL AND id=ANY($1::text[])",
         [product.imageIds]
       )
     : []

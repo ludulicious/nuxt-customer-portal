@@ -469,7 +469,7 @@
     "storageAccessKeyRequired": "Toegangssleutel-ID is verplicht.",
     "storageSecretRequired": "De geheime toegangssleutel moet minimaal 8 tekens bevatten.",
     "imageRequirements": "Vereisten voor productafbeeldingen",
-    "imageRequirementsHelp": "Stel per toepassing in de webwinkel één compact uitvoerformaat in. Uploads worden tot exact deze afmetingen bijgesneden en geoptimaliseerd.",
+    "imageRequirementsHelp": "Productafbeeldingen gebruiken varianten uit de mediabibliotheek. Stel de afmetingen in bij Afbeeldingsvarianten; bestaande productuploads behouden hun huidige afmetingen.",
     "width": "Breedte (pixels)",
     "height": "Hoogte (pixels)",
     "imagePurposethumbnail": "Thumbnail",
@@ -481,7 +481,7 @@
     "addImages": "Afbeeldingen toevoegen",
     "editImages": "Afbeeldingen bewerken",
     "productImageLibrary": "Productafbeeldingen",
-    "productImageLibraryHelp": "Kies waar een afbeelding wordt gebruikt voordat je deze selecteert en bijsnijdt.",
+    "productImageLibraryHelp": "Kies herbruikbare afbeeldingen uit de mediabibliotheek voor elke productplaatsing.",
     "uploadPurposethumbnail": "Thumbnail uploaden",
     "uploadPurposegallery": "Productkaart uploaden",
     "uploadPurposedetail": "Detailafbeelding uploaden",
@@ -967,6 +967,20 @@
         "settingsConflict": "De variantinstellingen zijn gewijzigd. Laad opnieuw voordat je opslaat.",
         "settingsSaved": "Variantinstellingen opgeslagen. Bestaande afbeeldingen worden bijgewerkt wanneer je elke afbeelding opnieuw opslaat."
       }
+    },
+    "productMedia": {
+      "choose": "Kiezen uit mediabibliotheek",
+      "pickerHelp": "Selecteer een zichtbare afbeelding. De bijpassende variant wordt automatisch gekozen; hieronder kun je een andere variant kiezen. Wijzigingen in de bibliotheek werken ook door in gekoppelde producten.",
+      "select": "{title} selecteren",
+      "empty": "Geen zichtbare afbeeldingen gevonden. Voeg eerst afbeeldingen toe aan de mediabibliotheek.",
+      "loadMore": "Meer laden",
+      "manage": "Mediabibliotheek beheren",
+      "variant": "Afbeeldingsvariant",
+      "use": "Afbeelding gebruiken",
+      "unavailable": "Deze afbeelding of variant is niet meer beschikbaar. Kies een andere zichtbare afbeelding of laad de bibliotheek opnieuw.",
+      "media_in_use": "Deze afbeelding wordt door een product gebruikt. Verwijder de afbeelding uit het product en sla op voordat je deze verwijdert.",
+      "variant_in_use": "Deze variant wordt door een product gebruikt. Wijzig de afbeeldingskeuze van het product en sla op voordat je de variant verwijdert.",
+      "fullImage": "Volledige afbeelding"
     }
   }
 }

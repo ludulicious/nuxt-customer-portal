@@ -74,6 +74,9 @@ export interface Asset {
   width: number | null
   height: number | null
   failure_reason?: string | null
+  media_id?: string | null
+  media_variant?: string | null
+  alternative_text?: string | null
   image_purpose?: ImagePurpose | null
 }
 export type ImagePurpose = 'thumbnail' | 'gallery' | 'detail'

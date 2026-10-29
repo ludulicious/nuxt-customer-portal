@@ -452,6 +452,83 @@ test(
         }),
         { statusCode: 400 }
       )
+      const { linkProductMedia, productMediaContent, productAssets } = await import('../server/utils/product-media')
+      await db.query(
+        `INSERT INTO products.product(id,store_id,slug,data) VALUES('linked-product','media-store','linked-product','{"imageIds":[]}'),('foreign-product','media-other','foreign-product','{"imageIds":[]}')`
+      )
+      const beforeLinkWrites = writes
+      const selection = { mediaId: refreshed.id, purpose: 'gallery', variant: 'gallery' }
+      const linked = await linkProductMedia('media-store', 'linked-product', selection)
+      assert.equal(writes, beforeLinkWrites, 'linking never copies or rewrites image files')
+      assert.equal(
+        (await linkProductMedia('media-store', 'linked-product', selection)).id,
+        linked.id,
+        'attachment retries are idempotent'
+      )
+      await assert.rejects(linkProductMedia('media-store', 'foreign-product', selection), { statusCode: 404 })
+      await assert.rejects(linkProductMedia('media-other', 'foreign-product', selection), { statusCode: 400 })
+      await assert.rejects(linkProductMedia('media-store', 'linked-product', { ...selection, variant: 'original' }), {
+        statusCode: 400
+      })
+      await assert.rejects(linkProductMedia('media-store', 'linked-product', { ...selection, variant: 'missing' }), {
+        statusCode: 400
+      })
+      await db.query(
+        `UPDATE products.product SET data=jsonb_build_object('imageIds',jsonb_build_array($1::text)) WHERE id='linked-product'`,
+        [linked.id]
+      )
+      await assert.rejects(media.deleteMedia('media-store', refreshed.id, refreshed.revision), {
+        statusCode: 409,
+        data: { code: 'media_in_use' }
+      })
+      await assert.rejects(
+        saveMediaVariantConfiguration('media-store', {
+          revision: removed.revision,
+          presets: removed.presets.filter((p) => p.key !== 'gallery')
+        }),
+        { statusCode: 409, data: { code: 'variant_in_use' } }
+      )
+      const linkedBody = (await productMediaContent(linked.id)).body
+      for (const provider of ['s3', 'bunny']) {
+        process.env.PRODUCTS_STORAGE_PROVIDER = provider
+        assert.deepEqual(
+          (await productMediaContent(linked.id)).body,
+          linkedBody,
+          `${provider} resolves linked media content`
+        )
+      }
+      const replacement = await transfer('media-store', original, 'image')
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: refreshed.id,
+        revision: refreshed.revision,
+        uploadId: replacement.id
+      })
+      assert.notDeepEqual(
+        (await productMediaContent(linked.id)).body,
+        linkedBody,
+        'library edits flow through without replacing product references'
+      )
+      const currentAssets = await productAssets('linked-product')
+      assert.equal(currentAssets[0]?.media_id, refreshed.id)
+      assert.equal(currentAssets[0]?.width, refreshed.variants.gallery?.file.width)
+      assert.equal(currentAssets[0]?.alternative_text, refreshed.alt)
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        visible: false,
+        id: refreshed.id,
+        revision: refreshed.revision
+      })
+      await assert.rejects(productMediaContent(linked.id), { statusCode: 404 })
+      assert.ok(
+        (await productMediaContent(linked.id, true)).body.length,
+        'administrators can preview hidden linked media'
+      )
+      await assert.rejects(linkProductMedia('media-store', 'linked-product', { ...selection, purpose: 'detail' }), {
+        statusCode: 400
+      })
+      refreshed = await media.saveMedia('media-store', { ...details, id: refreshed.id, revision: refreshed.revision })
+      await db.query(`DELETE FROM products.product WHERE id IN ('linked-product','foreign-product')`)
       const gifVariant = await media.mediaContent('media-store', gifMedia.id, true, 'thumbnail')
       const gifMetadata = await sharp(gifVariant.body, { animated: true }).metadata()
       assert.equal(gifMetadata.pages, 2, 'automatic GIF variants preserve animation')

@@ -71,7 +71,8 @@ async function save() {
     return true
   } catch (cause) {
     error.value =
-      (cause as { statusCode?: number }).statusCode === 409
+      (cause as { statusCode?: number; data?: { data?: { code?: string } } }).statusCode === 409 &&
+      !(cause as { data?: { data?: { code?: string } } }).data?.data?.code
         ? t('products.media.variants.settingsConflict')
         : mediaError(cause)
     return false

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { createRequire } from 'node:module'
+import { emptyProduct } from '../../packages/products/shared/validation'
 
 const sharp = createRequire(new URL('../../packages/products/package.json', import.meta.url))('sharp')
 test.skip(!process.env.PORTAL_MEDIA_E2E, 'Requires the documented isolated media test portal')
@@ -334,4 +335,143 @@ test('store presets apply on the next save and custom variants stay independent'
   expect((await (await page.request.get(`/api/products/media/${created.id}`)).json()).variants.gallery.mode).toBe(
     'automatic'
   )
+})
+
+test('products select library variants, preserve ordering and publish only linked content', async ({
+  page,
+  playwright,
+  baseURL
+}, testInfo) => {
+  const title = `Product media ${Date.now()}`
+  const file = await image('product-library.png')
+  const upload = await (
+    await page.request.post('/api/products/media/uploads', {
+      data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+    })
+  ).json()
+  expect(
+    (
+      await page.request.put(upload.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+    ).ok()
+  ).toBeTruthy()
+  const media = await (
+    await page.request.post(`/api/products/media/uploads/${upload.id}/complete`, {
+      data: { title, alt: 'Product library photo', categories: ['Products'], credit: '', visible: true }
+    })
+  ).json()
+  const category = await (
+    await page.request.post('/api/products/admin/categories', {
+      data: {
+        code: `media-${Date.now()}`,
+        content: { en: { name: title, description: '' }, nl: { name: title, description: '' } }
+      }
+    })
+  ).json()
+  const body = {
+    ...emptyProduct(),
+    slug: `product-media-${Date.now()}`,
+    categoryId: category.id,
+    type: 'service',
+    isFree: true,
+    prices: [],
+    content: {
+      en: { title, summary: 'Summary', description: 'Description' },
+      nl: { title, summary: 'Samenvatting', description: 'Beschrijving' }
+    }
+  }
+  const response = await page.request.post('/api/products/admin/products', { data: body })
+  expect(response.ok(), await response.text()).toBeTruthy()
+  const product = await response.json()
+  await page.goto(`/admin/products/${product.id}/images`)
+  await expect(page.getByRole('button', { name: 'Choose from media library', exact: true })).toBeVisible()
+  await expect(page.locator('input[type=file]')).toHaveCount(0)
+  for (const [purpose, variant] of [
+    ['Thumbnail', 'Thumbnail'],
+    ['Product card / gallery', 'Gallery'],
+    ['Product detail', 'Detail']
+  ]) {
+    await page.getByRole('tab', { name: new RegExp(`^${purpose}`) }).click()
+    await page.getByRole('button', { name: 'Choose from media library', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Choose from media library', exact: true })
+    await dialog.getByRole('textbox').first().fill(title)
+    await dialog.getByRole('button', { name: `Select ${title}`, exact: true }).click()
+    await expect(dialog.getByRole('combobox').last()).toContainText(variant!)
+    await dialog.getByRole('button', { name: 'Use image', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+  }
+  await page.getByRole('tab', { name: /^Product card \/ gallery/ }).click()
+  await page.getByRole('button', { name: 'Choose from media library', exact: true }).click()
+  const picker = page.getByRole('dialog', { name: 'Choose from media library', exact: true })
+  await picker.getByRole('textbox').first().fill(title)
+  await picker.getByRole('button', { name: `Select ${title}`, exact: true }).click()
+  await picker.getByRole('combobox').last().click()
+  await page.getByRole('option', { name: 'Full image', exact: true }).click()
+  await page.screenshot({ path: testInfo.outputPath('product-library-picker-desktop.png'), fullPage: true })
+  await picker.getByRole('button', { name: 'Use image', exact: true }).click()
+  await page.getByRole('button', { name: 'Earlier', exact: true }).click()
+  const committed = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/products/admin/products/${product.id}`) && response.request().method() === 'PUT'
+  )
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const commit = await committed
+  expect(commit.ok(), await commit.text()).toBeTruthy()
+  await expect(page.getByRole('button', { name: 'Choose from media library', exact: true })).toBeVisible()
+  let saved = (await (await page.request.get(`/api/products/admin/products/${product.id}/preview`)).json()).product
+  expect(saved.imageIds).toHaveLength(4)
+  expect(saved.galleryImageIds).toHaveLength(2)
+  const assets = await (await page.request.get(`/api/products/admin/products/${product.id}/assets`)).json()
+  expect(assets.every((asset: { media_id: string }) => asset.media_id === media.id)).toBeTruthy()
+  expect(assets.find((asset: { id: string }) => asset.id === saved.galleryImageIds[0]).media_variant).toBe('image')
+  const presets = await (await page.request.get('/api/products/media/presets')).json()
+  expect(
+    (
+      await page.request.put('/api/products/media/presets', {
+        data: { ...presets, presets: presets.presets.filter((preset: { key: string }) => preset.key !== 'gallery') }
+      })
+    ).status()
+  ).toBe(409)
+  expect(
+    (
+      await page.request.post(`/api/products/admin/products/${product.id}/uploads`, { data: { visibility: 'public' } })
+    ).status()
+  ).toBe(400)
+  expect(
+    (await page.request.delete(`/api/products/media/${media.id}`, { data: { revision: media.revision } })).status()
+  ).toBe(409)
+  const anonymous = await playwright.request.newContext({ baseURL })
+  try {
+    expect((await anonymous.get(`/api/products/media/${media.id}/content`)).status()).toBe(401)
+    expect((await anonymous.get(`/api/store/media/${saved.thumbnailImageId}`)).status()).toBe(404)
+    const published = await page.request.put(`/api/products/admin/products/${product.id}`, {
+      data: { ...saved, status: 'published' }
+    })
+    expect(published.ok(), await published.text()).toBeTruthy()
+    saved = await published.json()
+    const delivered = await anonymous.get(`/api/store/media/${saved.thumbnailImageId}`)
+    expect(delivered.ok(), await delivered.text()).toBeTruthy()
+    expect(delivered.headers().location).toBeUndefined()
+    expect(await delivered.body()).toEqual(await (await page.request.get(media.thumbnail.url)).body())
+    const hidden = await page.request.put('/api/products/media', { data: { ...media, visible: false } })
+    expect(hidden.ok(), await hidden.text()).toBeTruthy()
+    expect((await anonymous.get(`/api/store/media/${saved.thumbnailImageId}`)).status()).toBe(404)
+    expect(
+      (await page.request.get(`/api/products/admin/products/${product.id}/images/${saved.thumbnailImageId}`)).status()
+    ).toBe(200)
+    const latest = await hidden.json()
+    expect((await page.request.put('/api/products/media', { data: { ...latest, visible: true } })).ok()).toBeTruthy()
+  } finally {
+    await anonymous.dispose()
+  }
+  await page.goto(`/admin/products/${product.id}/images`)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Choose from media library', exact: true }).click()
+  await page
+    .getByRole('dialog', { name: 'Choose from media library', exact: true })
+    .getByRole('textbox')
+    .first()
+    .fill(title)
+  await expect(page.getByRole('button', { name: `Select ${title}`, exact: true })).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath('product-library-mobile.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })

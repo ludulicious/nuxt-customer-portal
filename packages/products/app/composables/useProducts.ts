@@ -1,3 +1,4 @@
+import type { ProductMediaSelection } from '../../shared/product-media'
 import type { PublicOrderDetails } from '../../shared/public-order'
 import type { AdminOrderDetails } from '../../shared/admin-order'
 import type { PageText } from '../../shared/page-texts'
@@ -83,6 +84,8 @@ export const useProducts = () => ({
   deletion: (id: string) => $fetch<{ eligible: boolean }>(`/api/products/admin/products/${id}/deletion`),
   remove: (id: string, name: string) =>
     $fetch(`/api/products/admin/products/${id}`, { method: 'DELETE', body: { name } }),
+  linkMedia: (id: string, body: ProductMediaSelection) =>
+    $fetch<Asset>(`/api/products/admin/products/${encodeURIComponent(id)}/media`, { method: 'POST', body }),
   assets: (id: string) => $fetch<Asset[]>(`/api/products/admin/products/${id}/assets`),
   async upload(
     id: string,

@@ -1,3 +1,4 @@
+import { productMediaSchema } from '../shared/product-media'
 import { defaultMediaVariantPresets, mediaVariantPresetsSchema } from '../shared/media-variants'
 import assert from 'node:assert/strict'
 import test from 'node:test'
@@ -115,4 +116,14 @@ test('variant presets have stable unique keys, bounded sizes and a required thum
     }).success,
     false
   )
+})
+
+test('product media selections validate identifiers, purposes and safe variant keys', () => {
+  const selection = { mediaId: '131aca4f-50e8-4351-a358-c22b5877506a', purpose: 'gallery', variant: 'gallery' }
+  assert.equal(productMediaSchema.safeParse(selection).success, true)
+  assert.equal(productMediaSchema.safeParse({ ...selection, variant: 'image' }).success, true)
+  assert.equal(productMediaSchema.safeParse({ ...selection, variant: 'original' }).success, false)
+  assert.equal(productMediaSchema.safeParse({ ...selection, variant: '../original' }).success, false)
+  assert.equal(productMediaSchema.safeParse({ ...selection, purpose: 'unknown' }).success, false)
+  assert.equal(productMediaSchema.safeParse({ ...selection, mediaId: 'other-store' }).success, false)
 })

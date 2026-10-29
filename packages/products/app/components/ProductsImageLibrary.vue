@@ -1,17 +1,35 @@
 <script setup lang="ts">
-import type { Asset, ImagePolicy, ImagePurpose } from '../../shared/types'
+import type { Asset, ImagePurpose } from '../../shared/types'
 
 const props = defineProps<{
   productId: string
   assets: Asset[]
   busy: boolean
-  imagePolicy: ImagePolicy
 }>()
 const imageIds = defineModel<string[]>('imageIds', { required: true })
 const thumbnailImageId = defineModel<string | null>('thumbnailImageId', { required: true })
 const galleryImageIds = defineModel<string[]>('galleryImageIds', { required: true })
 const detailImageIds = defineModel<string[]>('detailImageIds', { required: true })
-const emit = defineEmits<{ upload: [event: Event, purpose: ImagePurpose] }>()
+const emit = defineEmits<{ linked: [asset: Asset] }>()
+const pickerOpen = ref(false)
+function linked(asset: Asset) {
+  emit('linked', asset)
+  let ids = [...imageIds.value]
+  if (activePurpose.value === 'thumbnail') {
+    ids = ids.filter((id) => id !== thumbnailImageId.value)
+    thumbnailImageId.value = asset.id
+  } else if (activePurpose.value === 'gallery' && !galleryImageIds.value.includes(asset.id)) {
+    galleryImageIds.value.push(asset.id)
+  } else if (activePurpose.value === 'detail' && !detailImageIds.value.includes(asset.id)) {
+    detailImageIds.value.push(asset.id)
+  }
+  if (!ids.includes(asset.id)) {
+    ids.push(asset.id)
+  }
+  imageIds.value = ids
+  selectedId.value = asset.id
+  pickerOpen.value = false
+}
 const { t } = useI18n()
 const api = useProducts()
 const imageAsset = (id: string) => props.assets.find((asset) => asset.id === id)
@@ -144,9 +162,6 @@ function removeSelected() {
                 <span class="truncate text-sm font-medium">{{ t(`products.imagePurpose${purpose}`) }}</span>
                 <UBadge size="xs" color="neutral" variant="subtle">{{ purposeCount(purpose) }}</UBadge>
               </span>
-              <span class="mt-0.5 block text-xs text-muted">
-                {{ imagePolicy[purpose].width }} × {{ imagePolicy[purpose].height }}
-              </span>
             </span>
           </button>
         </div>
@@ -159,29 +174,11 @@ function removeSelected() {
         >
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-4">
             <p class="text-sm text-muted">
-              {{ t(`products.imagePurpose${activePurpose}`) }} · {{ imagePolicy[activePurpose].width }} ×
-              {{ imagePolicy[activePurpose].height }}
+              {{ t(`products.imagePurpose${activePurpose}`) }}
             </p>
-            <label
-              class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition"
-              :class="
-                activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1
-                  ? 'cursor-not-allowed bg-muted text-dimmed'
-                  : 'cursor-pointer bg-primary text-inverted hover:bg-primary/90'
-              "
-              :aria-disabled="busy || (activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1)"
-            >
-              <UIcon name="i-lucide-upload" class="size-4" />
-              {{ t(`products.uploadPurpose${activePurpose}`) }}
-              <input
-                type="file"
-                class="sr-only"
-                :multiple="activePurpose !== 'thumbnail'"
-                accept="image/png,image/jpeg,image/webp,image/avif"
-                :disabled="busy || (activePurpose === 'thumbnail' && purposeCount('thumbnail') >= 1)"
-                @change="emit('upload', $event, activePurpose)"
-              />
-            </label>
+            <UButton type="button" icon="i-lucide-library" :disabled="busy" @click="pickerOpen = true">{{
+              t('products.productMedia.choose')
+            }}</UButton>
           </div>
 
           <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
@@ -201,11 +198,14 @@ function removeSelected() {
                   :aria-pressed="selectedId === id"
                   @click="selectedId = id"
                 >
-                  <img
+                  <ProductsMediaImage
                     :src="api.previewImageUrl(productId, id)"
-                    :alt="imageAsset(id)?.name || t('products.imageNumber', { number: index + 1 })"
+                    :alt="
+                      imageAsset(id)?.alternative_text ||
+                      imageAsset(id)?.name ||
+                      t('products.imageNumber', { number: index + 1 })
+                    "
                     class="absolute inset-0 size-full object-cover transition duration-200 group-hover:scale-[1.02]"
-                    loading="lazy"
                   />
                   <span
                     class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-7 text-xs text-white"
@@ -232,9 +232,9 @@ function removeSelected() {
                   :aria-label="t('products.previewImage')"
                   @click="previewOpen = true"
                 >
-                  <img
+                  <ProductsMediaImage
                     :src="api.previewImageUrl(productId, selectedId)"
-                    :alt="selectedAsset?.name || t('products.previewImage')"
+                    :alt="selectedAsset?.alternative_text || selectedAsset?.name || t('products.previewImage')"
                     class="size-full object-cover"
                   />
                   <span
@@ -296,14 +296,31 @@ function removeSelected() {
     </UFormField>
   </fieldset>
 
+  <UModal
+    v-if="pickerOpen"
+    v-model:open="pickerOpen"
+    :title="t('products.productMedia.choose')"
+    :ui="{ content: 'sm:max-w-4xl' }"
+  >
+    <template #body
+      ><ProductsMediaPicker
+        :product-id="productId"
+        :purpose="activePurpose"
+        @selected="linked"
+        @cancel="pickerOpen = false"
+    /></template>
+  </UModal>
   <UModal v-if="previewOpen" v-model:open="previewOpen" :title="selectedAsset?.name || t('products.previewImage')">
-    <template #body>
-      <img
-        v-if="selectedId"
-        :src="api.previewImageUrl(productId, selectedId)"
-        :alt="selectedAsset?.name || t('products.previewImage')"
-        class="max-h-[75vh] w-full object-contain"
-      />
+    <template #body
+      ><div class="h-[65vh] w-full">
+        <ProductsMediaImage
+          v-if="selectedId"
+          contain
+          :src="api.previewImageUrl(productId, selectedId)"
+          :alt="selectedAsset?.alternative_text || selectedAsset?.name || t('products.previewImage')"
+          class="h-full w-full"
+        />
+      </div>
     </template>
   </UModal>
 </template>

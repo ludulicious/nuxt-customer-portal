@@ -58,6 +58,21 @@ export async function saveMediaVariantConfiguration(storeId: string, input: unkn
   const data = parseInput(mediaVariantSettingsSchema, input)
   return transaction(async (client) => {
     await lockMediaStore(client, storeId)
+    const keys = data.presets.map((preset) => preset.key)
+    const used = await rows(
+      `SELECT a.id FROM products.asset a JOIN products.product p ON p.id=a.product_id
+      WHERE p.store_id=$1 AND a.media_id IS NOT NULL AND a.media_variant<>'image'
+      AND NOT(a.media_variant=ANY($2::text[])) AND p.data->'imageIds' ? a.id LIMIT 1`,
+      [storeId, keys],
+      client
+    )
+    if (used.length) {
+      throw createError({
+        statusCode: 409,
+        data: { code: 'variant_in_use' },
+        message: 'A removed variant is used by a product. Change the product image selection first.'
+      })
+    }
     const result = await rows(
       'UPDATE products.store SET media_variants=$2,media_variants_revision=media_variants_revision+1 WHERE organization_id=$1 AND media_variants_revision=$3 RETURNING id',
       [storeId, JSON.stringify(data.presets), data.revision],

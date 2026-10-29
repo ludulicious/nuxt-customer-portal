@@ -136,25 +136,42 @@ export const price = schema.table(
       .where(sql`${t.active} AND ${t.offerId} IS NOT NULL`)
   ]
 )
-export const asset = schema.table('asset', {
-  id: text('id').primaryKey(),
-  productId: text('product_id')
-    .notNull()
-    .references(() => product.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  contentType: text('content_type').notNull(),
-  size: bigint('size', { mode: 'number' }).notNull(),
-  visibility: text('visibility').notNull(),
-  objectKey: text('object_key').notNull().unique(),
-  ready: boolean('ready').default(false).notNull(),
-  status: text('status').default('uploading').notNull(),
-  width: integer('width'),
-  height: integer('height'),
-  failureReason: text('failure_reason'),
-  imagePurpose: text('image_purpose').$type<'thumbnail' | 'gallery' | 'detail'>(),
-  sourceObjectKey: text('source_object_key'),
-  createdAt: stamp('created_at')
-})
+export const asset = schema.table(
+  'asset',
+  {
+    id: text('id').primaryKey(),
+    productId: text('product_id')
+      .notNull()
+      .references(() => product.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    visibility: text('visibility').notNull(),
+    objectKey: text('object_key').notNull().unique(),
+    ready: boolean('ready').default(false).notNull(),
+    status: text('status').default('uploading').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    failureReason: text('failure_reason'),
+    imagePurpose: text('image_purpose').$type<'thumbnail' | 'gallery' | 'detail'>(),
+    mediaId: text('media_id').references(() => media.id, { onDelete: 'cascade' }),
+    mediaVariant: text('media_variant'),
+    sourceObjectKey: text('source_object_key'),
+    createdAt: stamp('created_at')
+  },
+  (t) => [
+    uniqueIndex('asset_media_placement_unique')
+      .on(t.productId, t.mediaId, t.imagePurpose, t.mediaVariant)
+      .where(sql`${t.mediaId} IS NOT NULL`),
+    index('asset_media_id_idx')
+      .on(t.mediaId)
+      .where(sql`${t.mediaId} IS NOT NULL`),
+    check(
+      'asset_media_link_check',
+      sql`(${t.mediaId} IS NULL AND ${t.mediaVariant} IS NULL) OR (${t.mediaId} IS NOT NULL AND ${t.mediaVariant} IS NOT NULL AND ${t.visibility}='public' AND ${t.imagePurpose} IS NOT NULL)`
+    )
+  ]
+)
 export const orders = schema.table(
   'orders',
   {
