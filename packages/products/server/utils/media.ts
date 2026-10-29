@@ -7,6 +7,7 @@ import { rows, transaction } from './database'
 import { parseInput } from './validation'
 import { mediaObjectStorage, validateMediaImage } from './media-storage'
 import {
+  mediaContentUrl,
   mediaListSchema,
   mediaUploadSchema,
   mediaSaveSchema,
@@ -83,7 +84,7 @@ async function dto(
           size: Number(value.size),
           width: value.width,
           height: value.height,
-          url: `/api/products/media/${row.id}/content?variant=${encodeURIComponent(variant)}${source ? '&source=1' : ''}`
+          url: mediaContentUrl(row.id, variant, value.id, source)
         }
       : undefined
   }
@@ -386,7 +387,7 @@ export async function deleteMedia(storeId: string, id: string, revision: number)
     return { deleted: true }
   })
 }
-export async function mediaContent(storeId: string, id: string, manage: boolean, variant: string, source = false) {
+export async function resolveMediaFile(storeId: string, id: string, manage: boolean, variant: string, source = false) {
   if ((variant === 'original' || source) && !manage) {
     throw notFound()
   }
@@ -426,6 +427,10 @@ export async function mediaContent(storeId: string, id: string, manage: boolean,
   if (!file) {
     throw notFound()
   }
+  return file
+}
+export async function mediaContent(storeId: string, id: string, manage: boolean, variant: string, source = false) {
+  const file = await resolveMediaFile(storeId, id, manage, variant, source)
   return { body: await (await mediaObjectStorage()).get(file.object_key), contentType: file.content_type }
 }
 export async function cleanupMedia() {

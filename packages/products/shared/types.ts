@@ -76,6 +76,8 @@ export interface Asset {
   height: number | null
   failure_reason?: string | null
   media_id?: string | null
+  media_image_url?: string
+  media_thumbnail_url?: string
   media_variant?: string | null
   alternative_text?: string | null
   image_purpose?: ImagePurpose | null

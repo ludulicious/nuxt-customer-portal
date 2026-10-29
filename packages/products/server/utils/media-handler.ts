@@ -1,5 +1,15 @@
+import { mediaObjectStorage } from './media-storage'
 import { mediaVariantConfiguration, saveMediaVariantConfiguration } from './media-variants'
-import { createError, defineEventHandler, getHeader, getQuery, getRequestURL, readBody, setHeader } from 'h3'
+import {
+  createError,
+  defineEventHandler,
+  getHeader,
+  getQuery,
+  getRequestURL,
+  readBody,
+  setHeader,
+  setResponseStatus
+} from 'h3'
 import { z } from 'zod'
 import { mediaAccess } from './media-access'
 import {
@@ -10,7 +20,7 @@ import {
   putMediaUpload,
   reorderMedia,
   deleteMedia,
-  mediaContent
+  resolveMediaFile
 } from './media'
 import { mediaMaximum } from '../../shared/media'
 import { parseInput } from './validation'
@@ -75,16 +85,27 @@ export default defineEventHandler(async (event): Promise<unknown> => {
       return deleteMedia(access.storeId, path[0]!, revision)
     }
   } else if (path.length === 2 && path[1] === 'content' && event.method === 'GET') {
-    const content = await mediaContent(
+    const file = await resolveMediaFile(
       access.storeId,
       path[0]!,
       access.manage,
       String(getQuery(event).variant || 'image'),
       getQuery(event).source === '1'
     )
-    setHeader(event, 'Content-Type', content.contentType)
+    // Always validate authentication and current visibility before revalidation.
+    const etag = `"${file.id}"`
+    setHeader(event, 'Cache-Control', 'private, no-cache')
+    setHeader(event, 'ETag', etag)
+    const matches = getHeader(event, 'if-none-match')
+      ?.split(',')
+      .some((value) => value.trim() === '*' || value.trim().replace(/^W\//, '') === etag)
+    if (matches) {
+      setResponseStatus(event, 304)
+      return ''
+    }
+    setHeader(event, 'Content-Type', file.content_type)
     setHeader(event, 'X-Content-Type-Options', 'nosniff')
-    return content.body
+    return (await mediaObjectStorage()).get(file.object_key)
   }
   throw createError({ statusCode: 404, message: 'Media endpoint not found' })
 })

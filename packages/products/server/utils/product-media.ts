@@ -1,3 +1,4 @@
+import { mediaContentUrl } from '../../shared/media'
 import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
 import { rows, transaction } from './database'
@@ -20,7 +21,7 @@ export async function linkProductMedia(storeId: string, productId: string, input
       throw createError({ statusCode: 404, message: 'Product not found' })
     }
     const [media] = await rows(
-      `SELECT m.title,m.alt,f.content_type,f.size,f.width,f.height FROM products.media m
+      `SELECT m.title,m.alt,m.image_file_id,m.thumbnail_file_id,f.content_type,f.size,f.width,f.height FROM products.media m
        LEFT JOIN products.media_variant v ON v.media_id=m.id AND v.store_id=m.store_id AND v.key=$3
        JOIN products.media_file f ON f.id=CASE WHEN $3='image' THEN m.image_file_id ELSE v.file_id END AND f.store_id=m.store_id AND f.ready
        WHERE m.id=$1 AND m.store_id=$2 AND m.visible`,
@@ -55,7 +56,16 @@ export async function linkProductMedia(storeId: string, productId: string, input
       ],
       client
     )
-    return { ...asset!, alternative_text: media.alt }
+    return {
+      ...asset!,
+      alternative_text: media.alt,
+      media_image_url: mediaContentUrl(data.mediaId, 'image', media.image_file_id),
+      media_thumbnail_url: mediaContentUrl(
+        data.mediaId,
+        media.thumbnail_file_id ? 'thumbnail' : 'image',
+        media.thumbnail_file_id || media.image_file_id
+      )
+    }
   })
 }
 
@@ -86,15 +96,24 @@ export async function productMediaContent(assetId: string, manage = false, purpo
 }
 
 export async function productAssets(productId: string): Promise<Asset[]> {
-  return rows<Asset>(
+  const assets = await rows<Asset & { media_image_file_id: string | null; media_thumbnail_file_id: string | null }>(
     `SELECT a.id,a.product_id,coalesce(m.title,a.name) AS name,coalesce(f.content_type,a.content_type) AS content_type,
      coalesce(f.size,a.size) AS size,a.visibility,a.ready,a.status,coalesce(f.width,a.width) AS width,coalesce(f.height,a.height) AS height,
-     a.failure_reason,a.image_purpose,a.media_id,a.media_variant,m.alt AS alternative_text
+     a.failure_reason,a.image_purpose,a.media_id,a.media_variant,m.alt AS alternative_text,m.image_file_id AS media_image_file_id,m.thumbnail_file_id AS media_thumbnail_file_id
      FROM products.asset a LEFT JOIN products.product p ON p.id=a.product_id
      LEFT JOIN products.media m ON m.id=a.media_id AND m.store_id=p.store_id
      LEFT JOIN products.media_variant v ON v.media_id=m.id AND v.store_id=m.store_id AND v.key=a.media_variant
      LEFT JOIN products.media_file f ON f.id=CASE WHEN a.media_variant='image' THEN m.image_file_id ELSE v.file_id END AND f.store_id=m.store_id
      WHERE a.product_id=$1 ORDER BY a.name,a.id`,
     [productId]
+  )
+  return assets.map(({ media_image_file_id: image, media_thumbnail_file_id: thumbnail, ...asset }) =>
+    asset.media_id && image
+      ? {
+          ...asset,
+          media_image_url: mediaContentUrl(asset.media_id, 'image', image),
+          media_thumbnail_url: mediaContentUrl(asset.media_id, thumbnail ? 'thumbnail' : 'image', thumbnail || image)
+        }
+      : asset
   )
 }

@@ -789,7 +789,7 @@
       "manualOrder": "Manual order",
       "title": "Title",
       "newest": "Date added",
-      "reorderHelp": "Drag images to reorder. Use Alt + Left/Right on a focused card to reorder with the keyboard.",
+      "reorderHelp": "Drag images by the handle to reorder, or use the arrow keys on a focused handle.",
       "filteredOrderHelp": "Clear filters and select ascending manual order to reorder images.",
       "cardSize": "Card size",
       "small": "Small",
@@ -966,7 +966,8 @@
         "validPresets": "Use unique variant keys and keep the required thumbnail variant.",
         "settingsConflict": "Variant settings have changed. Reload before saving.",
         "settingsSaved": "Variant settings saved. Existing images will update when each image is next saved."
-      }
+      },
+      "reorderNamed": "Reorder {title}"
     },
     "productMedia": {
       "choose": "Choose from media library",

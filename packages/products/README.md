@@ -237,3 +237,9 @@ Library URLs require authentication. `/api/store/media/:assetId` exposes visible
 ### Drag sorting
 
 The media grid and product image cards share Marpos Studio-style sorting: the dragged card leaves a vacant, outlined slot while surrounding cards animate to the proposed order. Holding the pointer near the scroll area's top or bottom scrolls continuously, even while the pointer is stationary. Media pagination can continue loading during a drag. Drop into the vacant slot to commit; cancelling, leaving the window, or unmounting the view removes the preview and stops scrolling without persisting the proposed order. Product ordering is saved with the product form; library ordering is saved immediately on drop. Public/filtered library views do not permit reordering.
+
+### Authenticated previews
+
+Product image cards fetch the library thumbnail; opening the large preview fetches the full image. Asset DTOs expose `media_thumbnail_url` and `media_image_url` with file-version query identifiers. Image edits change these URLs; metadata-only saves preserve them. The media grid exposes a drag handle only in the unfiltered ascending manual-order view.
+
+Library image-content responses use `Cache-Control: private, no-cache`, `Vary: Authorization, Cookie` and a file-version ETag. Every conditional request rechecks authentication, scope and current visibility before returning 304; unchanged responses skip object storage and body transfer. Metadata and mutation endpoints keep private/no-store responses. Files remain private, with authenticated blob previews and no public redirects.

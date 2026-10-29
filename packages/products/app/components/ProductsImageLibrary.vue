@@ -27,8 +27,15 @@ function drop() {
   }
 }
 const asset = (id: string) => props.assets.find((item) => item.id === id)
-const preview = (id: string) =>
-  asset(id)?.media_id ? `/api/products/media/${asset(id)!.media_id}/content` : api.previewImageUrl(props.productId, id)
+const preview = (id: string, thumbnail = false) => {
+  const value = asset(id)
+  if (!value?.media_id) {
+    return api.previewImageUrl(props.productId, id)
+  }
+  return thumbnail
+    ? value.media_thumbnail_url || `/api/products/media/${value.media_id}/content?variant=thumbnail`
+    : value.media_image_url || `/api/products/media/${value.media_id}/content`
+}
 const selectedMediaIds = computed(() =>
   imageIds.value.map((id) => asset(id)?.media_id).filter((id): id is string => !!id)
 )
@@ -117,7 +124,7 @@ function showPreview(id: string) {
               @click="showPreview(id)"
             >
               <ProductsMediaImage
-                :src="preview(id)"
+                :src="preview(id, true)"
                 :alt="asset(id)?.alternative_text || asset(id)?.name || ''"
                 contain
               />

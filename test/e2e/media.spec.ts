@@ -203,8 +203,10 @@ test('library preserves search state, supports keyboard ordering and confirms de
   await page.goto('/admin/products/media')
   await expect(page.locator('article').first()).toContainText(b.title)
   const card = page.locator('article').filter({ hasText: a.title })
-  await card.focus()
-  await card.press('Alt+ArrowLeft')
+  const handle = card.getByRole('button', { name: `Reorder ${a.title}`, exact: true })
+  await expect(handle).toBeVisible()
+  await handle.focus()
+  await handle.press('ArrowLeft')
   await expect(page.locator('article').first()).toContainText(a.title)
   await page.locator('article').first().getByRole('button', { name: 'Preview image', exact: true }).click()
   const preview = page.getByRole('dialog', { name: a.title, exact: true })
@@ -212,6 +214,7 @@ test('library preserves search state, supports keyboard ordering and confirms de
   await preview.getByRole('button', { name: 'Close', exact: true }).click()
   await page.getByPlaceholder('Search images…').fill(b.title)
   await expect(page.locator('article')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: `Reorder ${b.title}`, exact: true })).toHaveCount(0)
   await expect(page).toHaveURL(/search=/)
   await page.reload()
   await expect(page.getByPlaceholder('Search images…')).toHaveValue(b.title)
@@ -395,6 +398,12 @@ test('product image cards reorder, use the first thumbnail and resolve variants 
   })
   expect(response.ok(), await response.text()).toBeTruthy()
   const product = await response.json()
+  const contentRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/products/media/') && request.url().includes('/content?')) {
+      contentRequests.push(request.url())
+    }
+  })
   await page.goto(`/admin/products/${product.id}/images`)
   await expect(page.locator('input[type=file]')).toHaveCount(0)
   await expect(page.getByRole('tablist', { name: 'Image purpose' })).toHaveCount(0)
@@ -411,6 +420,33 @@ test('product image cards reorder, use the first thumbnail and resolve variants 
   await add(first)
   await add(second)
   await expect(cards).toHaveCount(2)
+  await expect
+    .poll(() =>
+      contentRequests.some(
+        (url) => url.includes(`/${first.id}/content?`) && new URL(url).searchParams.get('variant') === 'thumbnail'
+      )
+    )
+    .toBeTruthy()
+  expect(
+    contentRequests
+      .filter((url) => url.includes(`/${first.id}/content?`))
+      .every((url) => new URL(url).searchParams.get('variant') === 'thumbnail')
+  ).toBeTruthy()
+  expect(
+    contentRequests
+      .filter((url) => url.includes(`/${first.id}/content?`))
+      .every((url) => new URL(url).searchParams.has('v'))
+  ).toBeTruthy()
+  await page.getByRole('button', { name: `Preview ${first.title}`, exact: true }).click()
+  const fullPreview = page.getByRole('dialog', { name: first.title, exact: true })
+  await expect(fullPreview.getByRole('img', { name: 'Product photo A', exact: true })).toBeVisible()
+  expect(
+    contentRequests.some(
+      (url) => url.includes(`/${first.id}/content?`) && new URL(url).searchParams.get('variant') === 'image'
+    )
+  ).toBeTruthy()
+  await fullPreview.getByRole('button', { name: 'Close', exact: true }).click()
+
   await expect(cards.first()).toContainText(first.title)
   await page.getByRole('button', { name: 'Reorder image 2', exact: true }).press('ArrowUp')
   await expect(cards.first()).toContainText(second.title)
@@ -596,6 +632,9 @@ test('product and media dragging show vacant slots, scroll at edges and clean up
     .toBeGreaterThan(productBounds.scrollTop + 350)
   await page.screenshot({ path: testInfo.outputPath('product-drag-slot.png') })
   await page.mouse.move((productBounds.left + productBounds.right) / 2, (productBounds.bottom + 72) / 2, { steps: 5 })
+  await page
+    .locator('.products-sort-slot')
+    .evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {}))))
   const productSlot = (await page.locator('.products-sort-slot').boundingBox())!
   await page.mouse.move(productSlot.x + productSlot.width / 2, productSlot.y + productSlot.height / 2, { steps: 3 })
   await page.mouse.up()
@@ -636,6 +675,9 @@ test('product and media dragging show vacant slots, scroll at edges and clean up
   await expect.poll(() => libraryCards.count(), { timeout: 12000 }).toBeGreaterThan(20)
   await page.screenshot({ path: testInfo.outputPath('library-drag-slot.png') })
   await page.mouse.move(source.x + source.width / 2, (bounds.top + bounds.bottom) / 2, { steps: 5 })
+  await page
+    .locator('.products-sort-slot')
+    .evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {}))))
   const librarySlot = (await page.locator('.products-sort-slot').boundingBox())!
   await page.mouse.move(librarySlot.x + librarySlot.width / 2, librarySlot.y + librarySlot.height / 2, { steps: 3 })
   const reordered = page.waitForResponse(

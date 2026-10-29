@@ -38,7 +38,8 @@ test(
     await db.connect()
     const objects = new Map<string, Buffer>()
     let failPut = false,
-      writes = 0
+      writes = 0,
+      reads = 0
     const storageServer = createServer(async (request, response) => {
       const key = request.url!.split('?')[0]!
       if (request.method === 'PUT') {
@@ -62,6 +63,9 @@ test(
         response.writeHead(204)
         response.end()
         return
+      }
+      if (request.method === 'GET') {
+        reads++
       }
       const body = objects.get(key)
       response.writeHead(body ? 200 : 404, { 'Content-Type': 'image/png', 'Content-Length': body?.length || 0 })
@@ -264,12 +268,19 @@ test(
       server = createServer(h3.toNodeListener(app))
       await new Promise<void>((resolve) => server!.listen(0, 'localhost', resolve))
       const origin = `http://localhost:${(server.address() as { port: number }).port}`
-      const request = (path: string, token?: string, method = 'GET', body?: unknown) =>
+      const request = (
+        path: string,
+        token?: string,
+        method = 'GET',
+        body?: unknown,
+        extraHeaders: Record<string, string> = {}
+      ) =>
         fetch(`${origin}/api/products/media${path}`, {
           method,
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...(body ? { 'Content-Type': 'application/json' } : {})
+            ...(body ? { 'Content-Type': 'application/json' } : {}),
+            ...extraHeaders
           },
           body: body ? JSON.stringify(body) : undefined
         })
@@ -291,9 +302,59 @@ test(
       assert.equal((await request(`/${saved[0]!.id}/content`)).status, 401)
       const content = await request(`/${saved[0]!.id}/content`, readKey)
       assert.equal(content.status, 200)
-      assert.equal(content.headers.get('cache-control'), 'private, no-store')
+      assert.equal(content.headers.get('cache-control'), 'private, no-cache')
       assert.equal(content.headers.get('location'), null)
       assert.deepEqual(Buffer.from(await content.arrayBuffer()), original)
+      const etag = content.headers.get('etag')!
+      assert.ok(etag)
+      const beforeRevalidation = reads
+      const headers = { 'If-None-Match': `"different", W/${etag}` }
+      const cached = await request(`/${saved[0]!.id}/content`, readKey, 'GET', undefined, headers)
+      assert.equal(cached.status, 304)
+      assert.equal(cached.headers.get('etag'), etag)
+      assert.equal((await cached.arrayBuffer()).byteLength, 0)
+      assert.equal(reads, beforeRevalidation, 'unchanged authenticated revalidation does not contact object storage')
+      assert.equal((await request(`/${saved[0]!.id}/content`, undefined, 'GET', undefined, headers)).status, 401)
+      assert.equal((await request(`/${saved[0]!.id}/content`, 'bad-key', 'GET', undefined, headers)).status, 401)
+      assert.equal(
+        (await request(`/${saved[0]!.id}/content?variant=original`, readKey, 'GET', undefined, headers)).status,
+        404
+      )
+      const hiddenResponse = await request(`/${hidden.id}/content`, manageKey)
+      const hiddenEtag = hiddenResponse.headers.get('etag')!
+      await hiddenResponse.arrayBuffer()
+      assert.equal(
+        (await request(`/${hidden.id}/content`, readKey, 'GET', undefined, { 'If-None-Match': hiddenEtag })).status,
+        404
+      )
+      const currentVersion = await media.getMedia('media-store', saved[0]!.id, true)
+      assert.match(currentVersion.image.url, /[&?]v=/)
+      const metadataVersion = await media.saveMedia('media-store', {
+        ...details,
+        title: 'Metadata cache test',
+        id: currentVersion.id,
+        revision: currentVersion.revision
+      })
+      assert.equal(
+        metadataVersion.image.url,
+        currentVersion.image.url,
+        'metadata-only saves preserve file-version URLs'
+      )
+      const changedUpload = await transfer('media-store', cropped, 'image')
+      const imageVersion = await media.saveMedia('media-store', {
+        ...details,
+        id: currentVersion.id,
+        revision: metadataVersion.revision,
+        uploadId: changedUpload.id
+      })
+      assert.notEqual(imageVersion.image.url, currentVersion.image.url)
+      const changedResponse = await request(`/${saved[0]!.id}/content`, readKey, 'GET', undefined, {
+        'If-None-Match': etag
+      })
+      assert.equal(changedResponse.status, 200)
+      assert.notEqual(changedResponse.headers.get('etag'), etag)
+      assert.deepEqual(Buffer.from(await changedResponse.arrayBuffer()), cropped)
+
       assert.equal((await request(`/${hidden.id}`, readKey, 'DELETE', { revision: hidden.revision })).status, 403)
       const apiUploadResponse = await request('/uploads', manageKey, 'POST', {
         files: [{ role: 'original', name: 'api.png', contentType: 'image/png', size: original.length }]
@@ -513,6 +574,8 @@ test(
       assert.equal(currentAssets[0]?.media_id, refreshed.id)
       assert.equal(currentAssets[0]?.width, refreshed.variants.gallery?.file.width)
       assert.equal(currentAssets[0]?.alternative_text, refreshed.alt)
+      assert.equal(currentAssets[0]?.media_thumbnail_url, refreshed.thumbnail?.url)
+      assert.equal(currentAssets[0]?.media_image_url, refreshed.image.url)
       refreshed = await media.saveMedia('media-store', {
         ...details,
         visible: false,

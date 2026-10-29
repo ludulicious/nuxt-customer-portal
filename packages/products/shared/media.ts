@@ -102,3 +102,7 @@ export interface MediaUpload {
   id: string
   files: { id: string; role: 'original' | 'image' | 'thumbnail' | 'variant'; key?: string; url: string }[]
 }
+
+export function mediaContentUrl(id: string, variant: string, version: string, source = false) {
+  return `/api/products/media/${encodeURIComponent(id)}/content?variant=${encodeURIComponent(variant)}${source ? '&source=1' : ''}&v=${encodeURIComponent(version)}`
+}

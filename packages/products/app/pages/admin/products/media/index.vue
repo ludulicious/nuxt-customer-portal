@@ -386,6 +386,22 @@ async function remove() {
                 >
                 <div class="flex min-w-0 flex-wrap justify-end gap-1">
                   <UButton
+                    v-if="manual"
+                    type="button"
+                    class="mr-auto cursor-grab"
+                    variant="ghost"
+                    color="neutral"
+                    icon="i-lucide-grip-vertical"
+                    :disabled="pending || reordering"
+                    :aria-label="t('products.media.reorderNamed', { title: item.title })"
+                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+                    @click.stop
+                    @keydown.left.prevent.stop="moveBy(item, -1)"
+                    @keydown.up.prevent.stop="moveBy(item, -1)"
+                    @keydown.right.prevent.stop="moveBy(item, 1)"
+                    @keydown.down.prevent.stop="moveBy(item, 1)"
+                  />
+                  <UButton
                     variant="ghost"
                     color="neutral"
                     icon="i-lucide-expand"
