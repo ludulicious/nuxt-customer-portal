@@ -338,14 +338,8 @@ async function remove() {
         <TransitionGroup
           tag="div"
           move-class="products-sort-move"
-          class="grid gap-4 pb-4"
-          :class="
-            cardSize === 'small'
-              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
-              : cardSize === 'large'
-                ? 'grid-cols-1 sm:grid-cols-2'
-                : 'grid-cols-2 sm:grid-cols-3'
-          "
+          class="products-media-grid grid gap-4 pb-4"
+          :class="`products-media-grid-${cardSize}`"
         >
           <article
             v-for="item in displayedItems"
@@ -384,7 +378,7 @@ async function remove() {
                 <span class="whitespace-nowrap text-xs text-muted"
                   >{{ item.image.width }} × {{ item.image.height }}</span
                 >
-                <div class="flex min-w-0 flex-wrap justify-end gap-1">
+                <div class="products-media-card-actions -ml-1 flex min-w-0 flex-nowrap items-center justify-end gap-1">
                   <UButton
                     v-if="manual"
                     type="button"

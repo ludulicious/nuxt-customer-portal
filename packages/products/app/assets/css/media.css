@@ -95,3 +95,19 @@
     transition: none;
   }
 }
+
+.products-media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--media-card-min-width, 17rem)), 1fr));
+}
+.products-media-grid-small {
+  --media-card-min-width: 13rem;
+}
+.products-media-grid-medium {
+  --media-card-min-width: 17rem;
+}
+.products-media-grid-large {
+  --media-card-min-width: 25rem;
+}
+.products-media-card-actions > button {
+  flex-shrink: 0;
+}

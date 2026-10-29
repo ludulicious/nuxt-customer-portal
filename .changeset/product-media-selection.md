@@ -7,3 +7,5 @@ Use the store media library for new product images, with searchable image select
 Share Studio-style drag sorting between product image cards and the media grid, with vacant drop slots, animated positioning, continuous edge scrolling and keyboard ordering.
 
 Load the small thumbnail in product image cards, add versioned authenticated preview URLs and permission-checked ETag revalidation, and show a media-grid drag handle only in manual order.
+
+Keep media-card actions on one line and enforce responsive minimum card widths, with a slightly inset drag handle.
