@@ -1,3 +1,4 @@
+import type { ProductMediaSelection } from '../../shared/product-media'
 import type { PublicOrderDetails } from '../../shared/public-order'
 import type { AdminOrderDetails } from '../../shared/admin-order'
 import type { PageText } from '../../shared/page-texts'
@@ -42,8 +43,8 @@ export const useProducts = () => ({
   previewThankYou: (slug: string, locale: string) =>
     $fetch<CatalogProduct>('/api/products/admin/thank-you/preview', { query: { slug, locale } }),
   preview: (id: string) => $fetch<ProductPreview>(`/api/products/admin/products/${encodeURIComponent(id)}/preview`),
-  previewImageUrl: (id: string, assetId: string) =>
-    `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}`,
+  previewImageUrl: (id: string, assetId: string, purpose?: ImagePurpose) =>
+    `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}${purpose ? '?purpose=' + purpose : ''}`,
 
   categories: () => $fetch<ProductCategory[]>('/api/products/admin/categories'),
   categoryPage: (query: Record<string, unknown>, signal?: AbortSignal) =>
@@ -83,6 +84,8 @@ export const useProducts = () => ({
   deletion: (id: string) => $fetch<{ eligible: boolean }>(`/api/products/admin/products/${id}/deletion`),
   remove: (id: string, name: string) =>
     $fetch(`/api/products/admin/products/${id}`, { method: 'DELETE', body: { name } }),
+  linkMedia: (id: string, body: ProductMediaSelection) =>
+    $fetch<Asset>(`/api/products/admin/products/${encodeURIComponent(id)}/media`, { method: 'POST', body }),
   assets: (id: string) => $fetch<Asset[]>(`/api/products/admin/products/${id}/assets`),
   async upload(
     id: string,

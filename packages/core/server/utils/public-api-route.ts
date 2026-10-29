@@ -19,3 +19,11 @@ export function isPublicStoreRoute(method: string, pathname: string) {
     (method === 'DELETE' && pathname === '/api/store/planning/hold')
   )
 }
+
+// Media endpoints authenticate administrator sessions or scoped API keys themselves.
+export function isMediaLibraryRoute(method: string, pathname: string) {
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(method)) {
+    return false
+  }
+  return pathname === '/api/products/media' || pathname.startsWith('/api/products/media/')
+}

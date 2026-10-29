@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { orderedProductImageIds, orderedProductImagePlacements } from '../../shared/product-media'
+
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
 import { defaultPlanning, defaultPlanningPolicy, productPlanningSchema } from '../../shared/planning'
-import type { Product, Asset, ProductCategory, ImagePolicy, ImagePurpose } from '../../shared/types'
+import type { Product, Asset, ProductCategory } from '../../shared/types'
 import {
   emptyProduct,
   productSchema,
@@ -34,8 +36,7 @@ const { t } = useI18n(),
   schema = useProductFormSchema(productSchema),
   pricingSchema = useProductFormSchema(productPricingSchema),
   contentSchema = useProductFormSchema(productContentSchema),
-  planningSchema = useProductFormSchema(z.object({ planning: productPlanningSchema })),
-  toast = useToast()
+  planningSchema = useProductFormSchema(z.object({ planning: productPlanningSchema }))
 const state = reactive<z.infer<typeof productSchema>>(
   props.product
     ? {
@@ -167,60 +168,7 @@ async function showInvalidLanguage(event: { errors: Array<{ name?: string }> }) 
 }
 const currencies = ref<string[]>([])
 const settingsReady = ref(false)
-const imagePolicy = ref<ImagePolicy>({
-  thumbnail: { width: 400, height: 400 },
-  gallery: { width: 800, height: 1000 },
-  detail: { width: 1200, height: 900 }
-})
-const pendingImage = ref<{ file: File; url: string; width: number; height: number; purpose: ImagePurpose }>()
-const cropOpen = ref(false)
-const imageQueue = ref<Array<{ file: File; purpose: ImagePurpose }>>([])
 const purchasedFilesUploading = ref(false)
-const cropTarget = computed(() => imagePolicy.value[pendingImage.value?.purpose || 'gallery'])
-const cropFocus = reactive({ x: 50, y: 50 })
-const zoom = ref(1)
-const cropViewport = useTemplateRef('cropViewport')
-const pointers = new Map<number, { x: number; y: number }>()
-let pinchDistance = 0
-const baseCrop = computed(() => {
-  if (!pendingImage.value) {
-    return { x: 0, y: 0, width: 1, height: 1 }
-  }
-  const sourceRatio = pendingImage.value.width / pendingImage.value.height
-  const targetRatio = cropTarget.value.width / cropTarget.value.height
-  const width = sourceRatio > targetRatio ? targetRatio / sourceRatio : 1
-  const height = sourceRatio > targetRatio ? 1 : sourceRatio / targetRatio
-  return { width, height }
-})
-const maximumZoom = computed(() => {
-  if (!pendingImage.value) {
-    return 1
-  }
-  return Math.max(
-    1,
-    Math.min(
-      3,
-      (baseCrop.value.width * pendingImage.value.width) / cropTarget.value.width,
-      (baseCrop.value.height * pendingImage.value.height) / cropTarget.value.height
-    )
-  )
-})
-const crop = computed(() => {
-  const width = baseCrop.value.width / zoom.value
-  const height = baseCrop.value.height / zoom.value
-  return {
-    x: ((1 - width) * cropFocus.x) / 100,
-    y: ((1 - height) * cropFocus.y) / 100,
-    width,
-    height
-  }
-})
-const cropLargeEnough = computed(
-  () =>
-    !!pendingImage.value &&
-    crop.value.width * pendingImage.value.width >= cropTarget.value.width &&
-    crop.value.height * pendingImage.value.height >= cropTarget.value.height
-)
 const visiblePrices = computed(() =>
   state.prices
     .map((price, index) => ({ price, index }))
@@ -230,61 +178,6 @@ const pricingErrors = () =>
   state.status === 'published' && !state.isFree && !hasRequiredPrices(state, currencies.value)
     ? [{ name: 'prices', message: t('products.requiredPrices') }]
     : []
-const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value))
-function setZoom(value: number) {
-  zoom.value = clamp(value, 1, maximumZoom.value)
-}
-function pointerDown(event: PointerEvent) {
-  cropViewport.value?.setPointerCapture(event.pointerId)
-  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-  if (pointers.size === 2) {
-    const [first, second] = [...pointers.values()]
-    pinchDistance = Math.hypot(second!.x - first!.x, second!.y - first!.y)
-  }
-}
-function pointerMove(event: PointerEvent) {
-  const previous = pointers.get(event.pointerId)
-  if (!previous) {
-    return
-  }
-  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-  if (pointers.size === 2) {
-    const [first, second] = [...pointers.values()]
-    const distance = Math.hypot(second!.x - first!.x, second!.y - first!.y)
-    if (pinchDistance) {
-      setZoom(zoom.value * (distance / pinchDistance))
-    }
-    pinchDistance = distance
-    return
-  }
-  const bounds = cropViewport.value?.getBoundingClientRect()
-  if (!bounds) {
-    return
-  }
-  cropFocus.x = clamp(cropFocus.x - ((event.clientX - previous.x) / bounds.width) * 100, 0, 100)
-  cropFocus.y = clamp(cropFocus.y - ((event.clientY - previous.y) / bounds.height) * 100, 0, 100)
-}
-function pointerUp(event: PointerEvent) {
-  pointers.delete(event.pointerId)
-  pinchDistance = 0
-}
-function cropKeyboard(event: KeyboardEvent) {
-  const movements: Record<string, [number, number]> = {
-    ArrowLeft: [-2, 0],
-    ArrowRight: [2, 0],
-    ArrowUp: [0, -2],
-    ArrowDown: [0, 2]
-  }
-  if (movements[event.key]) {
-    event.preventDefault()
-    cropFocus.x = clamp(cropFocus.x + movements[event.key]![0], 0, 100)
-    cropFocus.y = clamp(cropFocus.y + movements[event.key]![1], 0, 100)
-  } else if (event.key === '+' || event.key === '=') {
-    setZoom(zoom.value + 0.1)
-  } else if (event.key === '-') {
-    setZoom(zoom.value - 0.1)
-  }
-}
 watch(
   () => state.isFree,
   (free) => {
@@ -359,7 +252,6 @@ async function loadInitialData() {
   try {
     const settings = await api.settings()
     currencies.value = settings.currencies
-    imagePolicy.value = settings.imagePolicy
     if (!state.isFree && (props.section === 'create' || props.section === 'all' || props.section === 'pricing')) {
       state.prices = settings.currencies.map(
         (currency) =>
@@ -377,7 +269,20 @@ async function loadInitialData() {
   }
   if (props.product && ['all', 'media', 'images', 'files'].includes(props.section)) {
     assets.value = await api.assets(props.product!.id)
-    syncThumbnailImageId()
+    if (['all', 'images'].includes(props.section)) {
+      Object.assign(
+        state,
+        orderedProductImagePlacements(
+          orderedProductImageIds(
+            state.imageIds,
+            assets.value,
+            state.imageSelection === 'ordered' ? null : state.thumbnailImageId
+          )
+        )
+      )
+    } else {
+      syncThumbnailImageId()
+    }
     normalizeFileNames()
   }
 }
@@ -477,110 +382,15 @@ watch(
     }
   }
 )
-async function upload(event: Event, visibility: 'public' | 'private', purpose?: ImagePurpose) {
-  const input = event.target as HTMLInputElement
-  const files = [...(input.files || [])]
-  if (!files.length || !props.product) {
+async function uploadPurchasedFile(file: File) {
+  if (!props.product) {
     return
   }
-  input.value = ''
-  if (visibility === 'public') {
-    if (!purpose) {
-      return
-    }
-    imageQueue.value.push(...files.map((file) => ({ file, purpose })))
-    openNextImage()
-    return
-  }
-  await performUpload(files[0]!, visibility)
+  const id = await api.upload(props.product.id, file, 'private')
+  state.fileIds.push(id)
+  state.fileNames[id] = { en: '', nl: '' }
+  assets.value = await api.assets(props.product.id)
 }
-function openNextImage() {
-  if (pendingImage.value) {
-    return
-  }
-  const queued = imageQueue.value.shift()
-  if (!queued) {
-    return
-  }
-  const url = URL.createObjectURL(queued.file),
-    image = new Image()
-  image.onload = () => {
-    pendingImage.value = { ...queued, url, width: image.naturalWidth, height: image.naturalHeight }
-    cropOpen.value = true
-    cropFocus.x = 50
-    cropFocus.y = 50
-    zoom.value = 1
-  }
-  image.onerror = () => {
-    URL.revokeObjectURL(url)
-    error.value = t('products.invalidImage')
-    openNextImage()
-  }
-  image.src = url
-}
-async function performUpload(
-  file: File,
-  visibility: 'public' | 'private',
-  selectedCrop?: { x: number; y: number; width: number; height: number },
-  purpose?: ImagePurpose,
-  trackBusy = true
-) {
-  if (trackBusy) {
-    busy.value = true
-  }
-  error.value = ''
-  try {
-    const id = await api.upload(props.product!.id, file, visibility, selectedCrop, purpose)
-    if (visibility === 'public') {
-      state.imageIds.push(id)
-      if (purpose === 'thumbnail') {
-        state.thumbnailImageId = id
-      } else if (purpose === 'gallery') {
-        state.galleryImageIds.push(id)
-      } else if (purpose === 'detail') {
-        state.detailImageIds.push(id)
-      }
-    } else {
-      state.fileIds.push(id)
-      state.fileNames[id] = { en: '', nl: '' }
-    }
-    assets.value = await api.assets(props.product!.id)
-  } catch (uploadError) {
-    toast.add({
-      title: t('products.uploadFailed'),
-      description: uploadError instanceof Error ? uploadError.message : undefined,
-      color: 'error'
-    })
-  } finally {
-    if (trackBusy) {
-      busy.value = false
-    }
-  }
-}
-async function confirmCrop() {
-  if (!pendingImage.value || !cropLargeEnough.value) {
-    return
-  }
-  const current = pendingImage.value
-  await performUpload(current.file, 'public', crop.value, current.purpose)
-  URL.revokeObjectURL(current.url)
-  pendingImage.value = undefined
-  cropOpen.value = false
-  openNextImage()
-}
-function cancelCrop() {
-  if (pendingImage.value) {
-    URL.revokeObjectURL(pendingImage.value.url)
-  }
-  pendingImage.value = undefined
-  cropOpen.value = false
-  imageQueue.value = []
-}
-watch(cropOpen, (open) => {
-  if (!open && pendingImage.value) {
-    cancelCrop()
-  }
-})
 function move(ids: string[], index: number, delta: number) {
   const target = index + delta
   if (target < 0 || target >= ids.length) {
@@ -871,9 +681,8 @@ function removeFile(id: string, index: number) {
             v-model:detail-image-ids="state.detailImageIds"
             :product-id="product.id"
             :assets="assets"
-            :busy="busy"
-            :image-policy="imagePolicy"
-            @upload="(event, purpose) => upload(event, 'public', purpose)"
+            :busy="busy || saving"
+            @linked="(asset) => assets.push(asset)"
           />
           <div v-if="section === 'all' || section === 'files'" class="space-y-3">
             <UFormField name="fileIds">
@@ -933,7 +742,7 @@ function removeFile(id: string, index: number) {
             <ProductsPurchasedFileUpload
               v-if="section !== 'files' || filesMode === 'add'"
               :disabled="saving"
-              :upload="(file) => performUpload(file, 'private', undefined, undefined, false)"
+              :upload="uploadPurchasedFile"
               @update:uploading="purchasedFilesUploading = $event"
             />
           </div>
@@ -965,75 +774,5 @@ function removeFile(id: string, index: number) {
     :ui="{ content: 'pointer-events-auto' }"
   >
     <template #body><ProductsCategoryForm embedded @saved="categorySaved" @cancel="categoriesOpen = false" /></template>
-  </UModal>
-  <UModal v-if="cropOpen && pendingImage" v-model:open="cropOpen" :title="t('products.cropImage')" :dismissible="!busy">
-    <template #body
-      ><div v-if="pendingImage" class="space-y-4">
-        <p class="text-sm text-muted">
-          {{
-            t('products.cropPurposeHelp', {
-              purpose: t(`products.imagePurpose${pendingImage.purpose}`),
-              width: cropTarget.width,
-              height: cropTarget.height
-            })
-          }}
-        </p>
-        <div
-          ref="cropViewport"
-          class="mx-auto w-full max-w-xl cursor-grab touch-none overflow-hidden rounded-lg bg-muted active:cursor-grabbing"
-          :style="{ aspectRatio: `${cropTarget.width}/${cropTarget.height}` }"
-          role="application"
-          tabindex="0"
-          :aria-label="t('products.cropInteraction')"
-          @pointerdown="pointerDown"
-          @pointermove="pointerMove"
-          @pointerup="pointerUp"
-          @pointercancel="pointerUp"
-          @wheel.prevent="setZoom(zoom + ($event.deltaY < 0 ? 0.1 : -0.1))"
-          @keydown="cropKeyboard"
-        >
-          <img
-            :src="pendingImage.url"
-            :alt="t('products.cropPreview')"
-            class="size-full touch-none select-none object-cover"
-            :style="{
-              objectPosition: `${cropFocus.x}% ${cropFocus.y}%`,
-              transform: `scale(${zoom})`,
-              transformOrigin: `${cropFocus.x}% ${cropFocus.y}%`
-            }"
-            draggable="false"
-          />
-        </div>
-        <p class="flex items-center gap-2 text-xs text-muted">
-          <UIcon name="i-lucide-move" class="size-4" />{{ t('products.cropGestureHelp') }}
-        </p>
-        <UAlert v-if="!cropLargeEnough" color="error" :title="t('products.imageTooSmall')" />
-        <UFormField :label="t('products.zoom')">
-          <input
-            :value="zoom"
-            type="range"
-            min="1"
-            :max="maximumZoom"
-            step="0.01"
-            class="w-full"
-            @input="setZoom(Number(($event.target as HTMLInputElement).value))"
-          />
-        </UFormField>
-        <UFormField :label="t('products.horizontalPosition')"
-          ><input v-model.number="cropFocus.x" type="range" min="0" max="100" class="w-full"
-        /></UFormField>
-        <UFormField :label="t('products.verticalPosition')"
-          ><input v-model.number="cropFocus.y" type="range" min="0" max="100" class="w-full"
-        /></UFormField>
-        <div class="flex justify-end gap-3">
-          <UButton variant="outline" color="neutral" :disabled="busy" @click="cancelCrop">{{
-            t('products.cancel')
-          }}</UButton>
-          <UButton :loading="busy" :disabled="!cropLargeEnough" @click="confirmCrop">{{
-            t('products.uploadImage')
-          }}</UButton>
-        </div>
-      </div></template
-    >
   </UModal>
 </template>

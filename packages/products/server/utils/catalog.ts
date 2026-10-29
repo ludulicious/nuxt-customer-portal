@@ -1,3 +1,5 @@
+import { orderedProductImagePlacements, orderedProductImageIds } from '../../shared/product-media'
+import { lockMediaStore } from './media-variants'
 import { purchasedLinksSchema, type PurchasedLink } from '../../shared/links'
 import { purchaseAppearance } from './purchase-appearance'
 import { productThankYouCopies } from './thank-you'
@@ -304,7 +306,12 @@ export async function saveProductLinks(storeId: string, id: string, input: unkno
 }
 
 export async function saveProduct(storeId: string, input: unknown, id: string = randomUUID()): Promise<Product> {
-  const { prices: inputPrices, categoryId, ...data } = parseInput(productSchema, input)
+  const candidate = input as Partial<ProductData> | null
+  const normalized =
+    candidate?.imageSelection === 'ordered' && Array.isArray(candidate.imageIds)
+      ? { ...candidate, ...orderedProductImagePlacements(candidate.imageIds) }
+      : input
+  const { prices: inputPrices, categoryId, ...data } = parseInput(productSchema, normalized)
   const store = await getStore()
   if (store.organization_id !== storeId) {
     throw createError({ statusCode: 403, message: 'Store access denied' })
@@ -317,6 +324,7 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
     : inputPrices
   try {
     await transaction(async (tx) => {
+      await lockMediaStore(tx, storeId)
       const [currentStore] = await rows<{
         currencies: string[]
         languages: Locale[]
@@ -413,8 +421,30 @@ export async function saveProduct(storeId: string, input: unknown, id: string = 
           tx
         )
         if (found.length !== new Set(ids).size) {
-          throw createError({ statusCode: 400, message: 'Media must be uploaded to this product first' })
+          throw createError({
+            statusCode: 400,
+            message: 'Choose images from the media library or files uploaded to this product'
+          })
         }
+      }
+      if (data.imageSelection === 'ordered') {
+        const linked = await rows<{ id: string; media_id: string | null }>(
+          'SELECT id,media_id FROM products.asset WHERE product_id=$1 AND id=ANY($2::text[])',
+          [id, data.imageIds],
+          tx
+        )
+        Object.assign(data, orderedProductImagePlacements(orderedProductImageIds(data.imageIds, linked)))
+      }
+      const invalidMedia = await rows(
+        `SELECT a.id FROM products.asset a LEFT JOIN products.media m ON m.id=a.media_id AND m.store_id=$3
+         LEFT JOIN products.media_variant v ON v.media_id=m.id AND v.store_id=m.store_id AND v.key=a.media_variant
+         WHERE a.product_id=$1 AND a.id=ANY($2::text[]) AND a.media_id IS NOT NULL
+         AND (m.id IS NULL OR (NOT m.visible AND NOT ($4::jsonb ? a.id)) OR ($5::boolean=false AND a.media_variant<>'image' AND (v.file_id IS NULL OR NOT EXISTS(SELECT 1 FROM products.store s, jsonb_array_elements(s.media_variants) preset WHERE s.organization_id=$3 AND preset->>'key'=a.media_variant))))`,
+        [id, data.imageIds, storeId, JSON.stringify(existing?.data.imageIds || []), data.imageSelection === 'ordered'],
+        tx
+      )
+      if (invalidMedia.length) {
+        throw createError({ statusCode: 400, message: 'A selected library image or variant is unavailable' })
       }
       for (const price of prices) {
         price.taxBehavior = currentStore!.currency_tax_behavior[price.currency] || 'inclusive'
@@ -504,12 +534,12 @@ export async function publicProduct(
     ? category.content[locale]
     : category?.content[store.default_locale]
   const imageAssets = product.imageIds.length
-    ? await rows<{ id: string; object_key: string }>(
-        "SELECT id,object_key FROM products.asset WHERE ready AND visibility='public' AND id=ANY($1::text[])",
+    ? await rows<{ id: string; object_key: string; media_id: string | null }>(
+        "SELECT id,object_key,media_id FROM products.asset WHERE ready AND visibility='public' AND id=ANY($1::text[])",
         [product.imageIds]
       )
     : []
-  const imageKeys = new Map(imageAssets.map((asset) => [asset.id, asset.object_key]))
+  const imageKeys = new Map(imageAssets.filter((asset) => !asset.media_id).map((asset) => [asset.id, asset.object_key]))
   const imageKitEndpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
   const imageUrls = new Map(
     await Promise.all(
@@ -522,7 +552,13 @@ export async function publicProduct(
       })
     )
   )
-  const imageUrl = (id: string) => imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
+  const linkedImages = new Set(imageAssets.filter((asset) => asset.media_id).map((asset) => asset.id))
+  const imageUrl = (id: string, purpose: 'thumbnail' | 'gallery' | 'detail') => {
+    const url = imageUrls.get(id) || `${baseUrl()}/api/store/media/${id}`
+    return product.imageSelection === 'ordered' && linkedImages.has(id)
+      ? `${url}${url.includes('?') ? '&' : '?'}purpose=${purpose}`
+      : url
+  }
   return {
     thankYou: await productThankYouCopies(store.organization_id, product.slug, locale),
     storeMode: store.mode,
@@ -553,9 +589,9 @@ export async function publicProduct(
       detail: { width: 1200, height: 900 }
     },
     descriptionHtml: renderDescription(copy.description),
-    images: product.galleryImageIds.map(imageUrl),
-    thumbnailImage: product.thumbnailImageId ? imageUrl(product.thumbnailImageId) : null,
-    detailImages: product.detailImageIds.map(imageUrl),
+    images: product.galleryImageIds.map((id) => imageUrl(id, 'gallery')),
+    thumbnailImage: product.thumbnailImageId ? imageUrl(product.thumbnailImageId, 'thumbnail') : null,
+    detailImages: product.detailImageIds.map((id) => imageUrl(id, 'detail')),
     videoUrl: product.videoUrl,
     prices: product.prices.filter(
       (p) =>

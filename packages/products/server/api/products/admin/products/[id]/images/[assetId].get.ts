@@ -15,5 +15,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
   setHeader(event, 'Cache-Control', 'no-store')
-  return sendAsset(event, id)
+  return sendAsset(event, id, false, undefined, undefined, true)
 })

@@ -46,7 +46,7 @@ const hasDetailPreview = computed(() => !!props.product.detailImageIds[0])
           }}</UButton>
         </div>
         <img
-          :src="api.previewImageUrl(product.id, previewImageId)"
+          :src="api.previewImageUrl(product.id, previewImageId, 'detail')"
           :alt="copy.title"
           class="w-full rounded-lg object-cover"
           :class="hasDetailPreview ? 'aspect-[4/3]' : 'aspect-square max-w-sm'"

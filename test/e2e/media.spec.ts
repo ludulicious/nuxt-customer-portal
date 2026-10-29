@@ -1,0 +1,721 @@
+import { test, expect } from '@playwright/test'
+import { createRequire } from 'node:module'
+import { emptyProduct } from '../../packages/products/shared/validation'
+
+const sharp = createRequire(new URL('../../packages/products/package.json', import.meta.url))('sharp')
+test.skip(!process.env.PORTAL_MEDIA_E2E, 'Requires the documented isolated media test portal')
+const image = async (name: string) => ({
+  name,
+  mimeType: 'image/png',
+  buffer: await sharp({ create: { width: 800, height: 600, channels: 3, background: '#669933' } })
+    .png()
+    .toBuffer()
+})
+test.beforeEach(async ({ page, baseURL }) => {
+  await page.context().addCookies([{ name: 'cookie-consent', value: 'accepted', url: baseURL! }])
+  const login = await page.request.post('/api/auth/sign-in/email', {
+    timeout: 20000,
+    data: { email: 'media-owner@example.test', password: 'Media-test-password-2026!' }
+  })
+  expect(login.ok(), await login.text()).toBeTruthy()
+  const active = await page.request.post('/api/auth/organization/set-active', {
+    timeout: 20000,
+    data: { organizationId: 'media-store' }
+  })
+  expect(active.ok(), await active.text()).toBeTruthy()
+})
+test('single upload, adjustments, independent thumbnail, metadata, reset, dirty guard and responsive library', async ({
+  page
+}, testInfo) => {
+  const title = `Browser forest ${Date.now()}`
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/admin/products/media/upload')
+  await expect(page.getByRole('heading', { name: 'Upload image', exact: true })).toBeVisible()
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles(await image('forest.png'))
+  await page.getByRole('textbox', { name: /^Title/ }).fill(title)
+  await page.getByRole('textbox', { name: /^Description/ }).fill('A green forest in daylight')
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
+  await page.getByRole('button', { name: 'Rotate right', exact: true }).click()
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  const brightness = page.getByRole('group', { name: 'Brightness', exact: true }).getByRole('slider')
+  await brightness.focus()
+  await brightness.press('ArrowRight')
+  await page.getByRole('tab', { name: 'Details', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Title/ })).toHaveValue(title)
+  await page.getByRole('button', { name: /^Thumbnail/ }).click()
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
+  await page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider').focus()
+  await page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider').press('ArrowRight')
+  await page.getByRole('button', { name: 'Crop image', exact: true }).click()
+  await page.getByRole('tab', { name: 'Details', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  await page.screenshot({ path: testInfo.outputPath('editor-desktop.png'), fullPage: true })
+  await page.getByRole('button', { name: 'Back to library', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Media library', exact: true })).toBeVisible()
+  await page.getByPlaceholder('Search images…').fill(title)
+  await expect(page).toHaveURL(/search=/)
+  await page.getByRole('button', { name: `Edit ${title}`, exact: true }).click()
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
+  await page.getByRole('button', { name: 'Reset to original', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  await page.getByRole('textbox', { name: /^Title/ }).fill('Unsaved forest')
+  await page.getByRole('button', { name: 'Back to library', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Unsaved changes' })).toBeVisible()
+  await page.getByRole('button', { name: 'Keep editing', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Title/ })).toHaveValue('Unsaved forest')
+  await page.getByRole('button', { name: 'Back to library', exact: true }).click()
+  await page.getByRole('button', { name: 'Discard changes', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Media library', exact: true })).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  const heading = await page.getByRole('heading', { name: 'Media library', exact: true }).boundingBox()
+  const upload = await page.getByRole('button', { name: 'Upload image', exact: true }).boundingBox()
+  expect(heading!.y + heading!.height).toBeLessThanOrEqual(upload!.y)
+  await page.screenshot({ path: testInfo.outputPath('library-mobile.png'), fullPage: true })
+  await page.getByRole('button', { name: `Edit ${title}`, exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Title/ })).toHaveValue(title)
+  await expect(page.getByRole('tab', { name: 'Adjust image', exact: true })).toBeEnabled()
+  await page.screenshot({ path: testInfo.outputPath('editor-mobile.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+  expect(errors).toEqual([])
+})
+test('batch review preserves individual edits and retries failed saves without duplicates', async ({ page }) => {
+  const batchTag = `batch-${Date.now()}`
+  await page.goto('/admin/products/media/upload?batch=1')
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles([await image(`${batchTag}-one.png`), await image(`${batchTag}-two.png`)])
+  await page.getByRole('button', { name: 'Review 2 images', exact: true }).click()
+  await page.getByRole('textbox', { name: /^Title/ }).fill(`${batchTag} first`)
+  await page.getByRole('textbox', { name: /^Description/ }).fill('First batch description')
+  await page.getByRole('button', { name: `2. ${batchTag}-two.png`, exact: true }).click()
+  await page.getByRole('textbox', { name: /^Title/ }).fill(`${batchTag} second`)
+  await page.getByRole('textbox', { name: /^Description/ }).fill('Second batch description')
+  await page.getByRole('button', { name: `1. ${batchTag}-one.png`, exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Description/ })).toHaveValue('First batch description')
+  let fail = true
+  await page.route('**/api/products/media/uploads/*/complete', async (route) => {
+    if (fail) {
+      fail = false
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Try again' })
+      })
+    } else {
+      await route.continue()
+    }
+  })
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByText('Image storage is unavailable. Try again.', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Description/ })).toHaveValue('Second batch description')
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'All images saved', exact: true })).toBeVisible()
+  const list = await (await page.request.get(`/api/products/media?search=${batchTag}`)).json()
+  expect(list.items).toHaveLength(2)
+})
+
+test('API keys reach scoped media authentication through the full portal middleware', async ({
+  page,
+  playwright,
+  baseURL
+}) => {
+  const key = async (scope: string) => {
+    const response = await page.request.post('/api/admin/api-keys', {
+      data: { name: 'Media browser test', scopes: [scope] }
+    })
+    expect(response.ok(), await response.text()).toBeTruthy()
+    return (await response.json()).key as string
+  }
+  const read = await key('products.media:read'),
+    manage = await key('products.media:manage')
+  const anonymous = await playwright.request.newContext({ baseURL })
+  try {
+    expect((await anonymous.get('/api/products/media')).status()).toBe(401)
+    expect(
+      (await anonymous.get('/api/products/media', { headers: { Authorization: `Bearer ${read}` } })).status()
+    ).toBe(200)
+    expect(
+      (
+        await anonymous.post('/api/products/media/uploads', { headers: { Authorization: `Bearer ${read}` }, data: {} })
+      ).status()
+    ).toBe(403)
+    expect(
+      (
+        await anonymous.post('/api/products/media/uploads', {
+          headers: { Authorization: `Bearer ${manage}` },
+          data: {}
+        })
+      ).status()
+    ).toBe(400)
+  } finally {
+    await anonymous.dispose()
+  }
+})
+
+test('library preserves search state, supports keyboard ordering and confirms deletion', async ({ page }) => {
+  const tag = `Library ${Date.now()}`
+  const create = async (title: string) => {
+    const file = await image('library.png')
+    const started = await page.request.post('/api/products/media/uploads', {
+      data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+    })
+    expect(started.ok()).toBeTruthy()
+    const upload = await started.json()
+    expect(
+      (
+        await page.request.put(upload.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+      ).ok()
+    ).toBeTruthy()
+    const completed = await page.request.post(`/api/products/media/uploads/${upload.id}/complete`, {
+      data: { title, alt: title, categories: ['E2E library'], credit: '', visible: true }
+    })
+    expect(completed.ok()).toBeTruthy()
+    return completed.json()
+  }
+  const a = await create(`${tag} A`),
+    b = await create(`${tag} B`)
+  const first = (await (await page.request.get('/api/products/media')).json()).items[0]
+  expect(
+    (
+      await page.request.put('/api/products/media/reorder', {
+        data: { id: a.id, beforeId: first.id, revision: a.revision }
+      })
+    ).ok()
+  ).toBeTruthy()
+  const latestB = await (await page.request.get(`/api/products/media/${b.id}`)).json()
+  expect(
+    (
+      await page.request.put('/api/products/media/reorder', {
+        data: { id: b.id, beforeId: a.id, revision: latestB.revision }
+      })
+    ).ok()
+  ).toBeTruthy()
+  await page.goto('/admin/products/media')
+  await expect(page.locator('article').first()).toContainText(b.title)
+  const card = page.locator('article').filter({ hasText: a.title })
+  const handle = card.getByRole('button', { name: `Reorder ${a.title}`, exact: true })
+  await expect(handle).toBeVisible()
+  await handle.focus()
+  await handle.press('ArrowLeft')
+  await expect(page.locator('article').first()).toContainText(a.title)
+  await page.locator('article').first().getByRole('button', { name: 'Preview image', exact: true }).click()
+  const preview = page.getByRole('dialog', { name: a.title, exact: true })
+  await expect(preview.getByRole('img', { name: a.title, exact: true })).toBeVisible()
+  await preview.getByRole('button', { name: 'Close', exact: true }).click()
+  await page.getByPlaceholder('Search images…').fill(b.title)
+  await expect(page.locator('article')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: `Reorder ${b.title}`, exact: true })).toHaveCount(0)
+  await expect(page).toHaveURL(/search=/)
+  await page.reload()
+  await expect(page.getByPlaceholder('Search images…')).toHaveValue(b.title)
+  await page.locator('article').getByRole('button', { name: 'Delete image', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Delete image', exact: true })
+  expect((await page.request.get(`/api/products/media/${b.id}`)).status()).toBe(200)
+  await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
+  expect((await page.request.get(`/api/products/media/${b.id}`)).status()).toBe(200)
+  await page.locator('article').getByRole('button', { name: 'Delete image', exact: true }).click()
+  await confirmation.getByRole('button', { name: 'Delete image', exact: true }).click()
+  await expect(page.locator('article')).toHaveCount(0)
+  expect((await page.request.get(`/api/products/media/${b.id}`)).status()).toBe(404)
+})
+
+test('store presets apply on the next save and custom variants stay independent', async ({ page }) => {
+  const configuration = await (await page.request.get('/api/products/media/presets')).json()
+  expect(
+    (
+      await page.request.put('/api/products/media/presets', {
+        data: {
+          revision: configuration.revision,
+          presets: [
+            { key: 'thumbnail', label: 'Thumbnail', width: 400, height: 400 },
+            { key: 'gallery', label: 'Gallery', width: 800, height: 1000 },
+            { key: 'detail', label: 'Detail', width: 1200, height: 900 }
+          ]
+        }
+      })
+    ).ok()
+  ).toBeTruthy()
+  const title = `Variant workflow ${Date.now()}`
+  const file = await image('variants.png')
+  const started = await (
+    await page.request.post('/api/products/media/uploads', {
+      data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+    })
+  ).json()
+  expect(
+    (
+      await page.request.put(started.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+    ).ok()
+  ).toBeTruthy()
+  const createdResponse = await page.request.post(`/api/products/media/uploads/${started.id}/complete`, {
+    data: { title, alt: title, categories: [], credit: '', visible: true }
+  })
+  expect(createdResponse.ok(), await createdResponse.text()).toBeTruthy()
+  const created = await createdResponse.json()
+  expect(Object.keys(created.variants).sort()).toEqual(['detail', 'gallery', 'thumbnail'])
+  expect(created.variants.thumbnail.mode).toBe('automatic')
+  expect(created.thumbnail.width).toBe(400)
+  const policy = (await (await page.request.get('/api/products/admin/settings')).json()).imagePolicy
+  await page.goto(`/admin/products/media/${created.id}`)
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
+  const zoom = page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider')
+  await zoom.focus()
+  await zoom.press('ArrowRight')
+  await page.getByRole('button', { name: 'Crop image', exact: true }).click()
+  await page.getByRole('button', { name: /^Detail/ }).click()
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await expect(page.getByRole('button', { name: /^Gallery/ })).toContainText('Custom')
+  await page.getByRole('tab', { name: 'Details', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  const custom = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(custom.variants.gallery.mode).toBe('custom')
+  const customBytes = await (await page.request.get(custom.variants.gallery.file.url)).body()
+  expect(await (await page.request.get(custom.image.url)).body()).toEqual(file.buffer)
+  await page.goto('/admin/products/settings/media')
+  await page.getByRole('button', { name: 'Add variant', exact: true }).click()
+  const key = page.getByRole('textbox', { name: /^Key/ }).last()
+  await key.fill('thumbnail')
+  await page.getByRole('textbox', { name: /^Name/ }).last().fill('Social')
+  await page
+    .getByRole('spinbutton', { name: /^Width/ })
+    .last()
+    .fill('640')
+  await page
+    .getByRole('spinbutton', { name: /^Width/ })
+    .last()
+    .press('Tab')
+  await page
+    .getByRole('spinbutton', { name: /^Height/ })
+    .last()
+    .fill('320')
+  await page
+    .getByRole('spinbutton', { name: /^Height/ })
+    .last()
+    .press('Tab')
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(
+    page.getByText('Use unique variant keys and keep the required thumbnail variant.', { exact: true })
+  ).toBeVisible()
+  await key.fill('social')
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(
+    page.getByText('Variant settings saved. Existing images will update when each image is next saved.', {
+      exact: true
+    })
+  ).toBeVisible()
+  const unchanged = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(unchanged.variants.social).toBeUndefined()
+  expect(unchanged.variantsOutdated).toBe(true)
+  expect(await (await page.request.get(unchanged.variants.gallery.file.url)).body()).toEqual(customBytes)
+  expect((await (await page.request.get('/api/products/admin/settings')).json()).imagePolicy).toEqual(policy)
+  await page.goto(`/admin/products/media/${created.id}`)
+  await expect(
+    page.getByText('Variant settings have changed. Save this image to generate the current variants.', { exact: true })
+  ).toBeVisible()
+  await page.getByRole('button', { name: /^Social/ }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  const updated = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(updated.variants.social.file.width).toBe(640)
+  expect(updated.variants.social.file.height).toBe(320)
+  expect(updated.variantsOutdated).toBe(false)
+  expect(updated.variants.gallery.mode).toBe('custom')
+  expect(await (await page.request.get(updated.variants.gallery.file.url)).body()).toEqual(customBytes)
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await page.getByRole('button', { name: 'Reset to automatic', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  expect((await (await page.request.get(`/api/products/media/${created.id}`)).json()).variants.gallery.mode).toBe(
+    'automatic'
+  )
+})
+
+test('product image cards reorder, use the first thumbnail and resolve variants automatically', async ({
+  page,
+  playwright,
+  baseURL
+}, testInfo) => {
+  const title = `Product images ${Date.now()}`
+  const createImage = async (suffix: string) => {
+    const file = await image(`product-${suffix}.png`)
+    const upload = await (
+      await page.request.post('/api/products/media/uploads', {
+        data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+      })
+    ).json()
+    expect(
+      (
+        await page.request.put(upload.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+      ).ok()
+    ).toBeTruthy()
+    const result = await page.request.post(`/api/products/media/uploads/${upload.id}/complete`, {
+      data: {
+        title: `${title} ${suffix}`,
+        alt: `Product photo ${suffix}`,
+        categories: ['Products'],
+        credit: '',
+        visible: true
+      }
+    })
+    expect(result.ok(), await result.text()).toBeTruthy()
+    return result.json()
+  }
+  const first = await createImage('A'),
+    second = await createImage('B')
+  const category = await (
+    await page.request.post('/api/products/admin/categories', {
+      data: {
+        code: `images-${Date.now()}`,
+        content: { en: { name: title, description: '' }, nl: { name: title, description: '' } }
+      }
+    })
+  ).json()
+  const response = await page.request.post('/api/products/admin/products', {
+    data: {
+      ...emptyProduct(),
+      slug: `product-images-${Date.now()}`,
+      categoryId: category.id,
+      type: 'service',
+      isFree: true,
+      prices: [],
+      content: {
+        en: { title, summary: 'Summary', description: 'Description' },
+        nl: { title, summary: 'Samenvatting', description: 'Beschrijving' }
+      }
+    }
+  })
+  expect(response.ok(), await response.text()).toBeTruthy()
+  const product = await response.json()
+  const contentRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/products/media/') && request.url().includes('/content?')) {
+      contentRequests.push(request.url())
+    }
+  })
+  await page.goto(`/admin/products/${product.id}/images`)
+  await expect(page.locator('input[type=file]')).toHaveCount(0)
+  await expect(page.getByRole('tablist', { name: 'Image purpose' })).toHaveCount(0)
+  const cards = page.locator('[data-product-image-id]')
+  const add = async (media: { title: string }) => {
+    await page.getByRole('button', { name: 'Choose from media library', exact: true }).click()
+    const picker = page.getByRole('dialog', { name: 'Choose from media library', exact: true })
+    await picker.getByRole('textbox').first().fill(media.title)
+    await picker.getByRole('button', { name: `Select ${media.title}`, exact: true }).click()
+    await expect(picker.getByText('Image variant', { exact: true })).toHaveCount(0)
+    await picker.getByRole('button', { name: 'Use image', exact: true }).click()
+    await expect(picker).not.toBeVisible()
+  }
+  await add(first)
+  await add(second)
+  await expect(cards).toHaveCount(2)
+  await expect
+    .poll(() =>
+      contentRequests.some(
+        (url) => url.includes(`/${first.id}/content?`) && new URL(url).searchParams.get('variant') === 'thumbnail'
+      )
+    )
+    .toBeTruthy()
+  expect(
+    contentRequests
+      .filter((url) => url.includes(`/${first.id}/content?`))
+      .every((url) => new URL(url).searchParams.get('variant') === 'thumbnail')
+  ).toBeTruthy()
+  expect(
+    contentRequests
+      .filter((url) => url.includes(`/${first.id}/content?`))
+      .every((url) => new URL(url).searchParams.has('v'))
+  ).toBeTruthy()
+  await page.getByRole('button', { name: `Preview ${first.title}`, exact: true }).click()
+  const fullPreview = page.getByRole('dialog', { name: first.title, exact: true })
+  await expect(fullPreview.getByRole('img', { name: 'Product photo A', exact: true })).toBeVisible()
+  expect(
+    contentRequests.some(
+      (url) => url.includes(`/${first.id}/content?`) && new URL(url).searchParams.get('variant') === 'image'
+    )
+  ).toBeTruthy()
+  await fullPreview.getByRole('button', { name: 'Close', exact: true }).click()
+
+  await expect(cards.first()).toContainText(first.title)
+  await page.getByRole('button', { name: 'Reorder image 2', exact: true }).press('ArrowUp')
+  await expect(cards.first()).toContainText(second.title)
+  await expect(cards.first()).toContainText('Thumbnail')
+  await page.getByRole('button', { name: 'Reorder image 1', exact: true }).press('ArrowDown')
+  await expect(cards.first()).toContainText(first.title)
+  await cards.first().dragTo(cards.nth(1))
+  await expect(cards.first()).toContainText(second.title)
+  await page.getByRole('button', { name: 'Remove image 1', exact: true }).click()
+  await expect(cards).toHaveCount(1)
+  await expect(cards.first()).toContainText(first.title)
+  await expect(cards.first()).toContainText('Thumbnail')
+  await add(second)
+  await page.getByRole('button', { name: 'Reorder image 2', exact: true }).press('ArrowUp')
+  await page.screenshot({ path: testInfo.outputPath('product-images-desktop.png'), fullPage: true })
+  const committed = page.waitForResponse(
+    (result) =>
+      result.url().endsWith(`/api/products/admin/products/${product.id}`) && result.request().method() === 'PUT'
+  )
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const commit = await committed
+  expect(commit.ok(), await commit.text()).toBeTruthy()
+  let saved = (await (await page.request.get(`/api/products/admin/products/${product.id}/preview`)).json()).product
+  expect(saved.imageIds).toHaveLength(2)
+  expect(saved.thumbnailImageId).toBe(saved.imageIds[0])
+  expect(saved.galleryImageIds).toEqual(saved.imageIds)
+  expect(saved.detailImageIds).toEqual(saved.imageIds)
+  const assets = await (await page.request.get(`/api/products/admin/products/${product.id}/assets`)).json()
+  expect(assets.find((asset: { id: string }) => asset.id === saved.thumbnailImageId).media_id).toBe(second.id)
+  expect(
+    (await page.request.delete(`/api/products/media/${second.id}`, { data: { revision: second.revision } })).status()
+  ).toBe(409)
+  const anonymous = await playwright.request.newContext({ baseURL })
+  try {
+    expect((await anonymous.get(`/api/products/media/${second.id}/content`)).status()).toBe(401)
+    expect((await anonymous.get(`/api/store/media/${saved.thumbnailImageId}?purpose=thumbnail`)).status()).toBe(404)
+    const published = await page.request.put(`/api/products/admin/products/${product.id}`, {
+      data: { ...saved, status: 'published', thumbnailImageId: saved.imageIds[1] }
+    })
+    expect(published.ok(), await published.text()).toBeTruthy()
+    saved = await published.json()
+    expect(saved.thumbnailImageId).toBe(saved.imageIds[0])
+    const catalogResponse = await anonymous.get(`/api/store/product/${saved.slug}`)
+    expect(catalogResponse.ok(), await catalogResponse.text()).toBeTruthy()
+    const catalog = await catalogResponse.json()
+    expect(catalog.thumbnailImage).toContain(`/${saved.imageIds[0]}?purpose=thumbnail`)
+    expect(catalog.images).toHaveLength(2)
+    expect(catalog.detailImages).toHaveLength(2)
+    for (const [url, expected] of [
+      [catalog.thumbnailImage, second.thumbnail.url],
+      [catalog.images[0], second.variants.gallery.file.url],
+      [catalog.detailImages[0], second.variants.detail.file.url]
+    ]) {
+      const delivered = await anonymous.get(url)
+      expect(delivered.ok(), await delivered.text()).toBeTruthy()
+      expect(delivered.headers().location).toBeUndefined()
+      expect(await delivered.body()).toEqual(await (await page.request.get(expected)).body())
+    }
+    expect((await anonymous.get(`/api/store/media/${saved.thumbnailImageId}?purpose=original`)).status()).toBe(400)
+    const hidden = await page.request.put('/api/products/media', { data: { ...second, visible: false } })
+    expect(hidden.ok(), await hidden.text()).toBeTruthy()
+    expect((await anonymous.get(catalog.thumbnailImage)).status()).toBe(404)
+    expect(
+      (await page.request.get(`/api/products/admin/products/${product.id}/images/${saved.thumbnailImageId}`)).status()
+    ).toBe(200)
+    expect(
+      (await page.request.put('/api/products/media', { data: { ...(await hidden.json()), visible: true } })).ok()
+    ).toBeTruthy()
+  } finally {
+    await anonymous.dispose()
+  }
+  await page.goto(`/admin/products/${product.id}/images`)
+  await expect(cards).toHaveCount(2)
+  await expect(cards.first()).toContainText(second.title)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.screenshot({ path: testInfo.outputPath('product-images-mobile.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+  await page.getByRole('button', { name: 'Choose from media library', exact: true }).click()
+  const picker = page.getByRole('dialog', { name: 'Choose from media library', exact: true })
+  await picker.getByRole('textbox').first().fill(second.title)
+  await expect(picker.getByRole('button', { name: `Select ${second.title}`, exact: true })).toBeDisabled()
+  await page.screenshot({ path: testInfo.outputPath('product-picker-mobile.png'), fullPage: true })
+})
+
+test('product and media dragging show vacant slots, scroll at edges and clean up cancelled drags', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(120000)
+  const title = `Drag scrolling ${Date.now()}`
+  const initial = await (await page.request.get('/api/products/media', { params: { visibility: 'visible' } })).json()
+  const file = await image('drag.png')
+  for (let i = initial.pagination.total; i < 28; i++) {
+    const upload = await (
+      await page.request.post('/api/products/media/uploads', {
+        data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+      })
+    ).json()
+    expect(
+      (
+        await page.request.put(upload.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+      ).ok()
+    ).toBeTruthy()
+    expect(
+      (
+        await page.request.post(`/api/products/media/uploads/${upload.id}/complete`, {
+          data: { title: `${title} ${i}`, alt: `Drag image ${i}`, categories: [], credit: '', visible: true }
+        })
+      ).ok()
+    ).toBeTruthy()
+  }
+  const media = (
+    await (await page.request.get('/api/products/media', { params: { visibility: 'visible' } })).json()
+  ).items.slice(0, 12)
+  const category = await (
+    await page.request.post('/api/products/admin/categories', {
+      data: {
+        code: `drag-${Date.now()}`,
+        content: { en: { name: title, description: '' }, nl: { name: title, description: '' } }
+      }
+    })
+  ).json()
+  const created = await page.request.post('/api/products/admin/products', {
+    data: {
+      ...emptyProduct(),
+      slug: `drag-${Date.now()}`,
+      categoryId: category.id,
+      type: 'service',
+      isFree: true,
+      prices: [],
+      content: { en: { title, summary: '', description: '' }, nl: { title, summary: '', description: '' } }
+    }
+  })
+  expect(created.ok(), await created.text()).toBeTruthy()
+  const product = await created.json()
+  const ids = []
+  for (const item of media) {
+    const linked = await page.request.post(`/api/products/admin/products/${product.id}/media`, {
+      data: { mediaId: item.id }
+    })
+    expect(linked.ok(), await linked.text()).toBeTruthy()
+    ids.push((await linked.json()).id)
+  }
+  expect(
+    (
+      await page.request.put(`/api/products/admin/products/${product.id}`, {
+        data: { ...product, imageSelection: 'ordered', imageIds: ids }
+      })
+    ).ok()
+  ).toBeTruthy()
+  await page.goto(`/admin/products/${product.id}/images`)
+  const cards = page.locator('[data-product-image-id]')
+  await expect(cards).toHaveCount(12)
+  await expect(page.getByRole('button', { name: /^Move image \d+ (earlier|later)$/ })).toHaveCount(0)
+  const startDrag = async (selector: string) => {
+    const source = page.locator(selector).first()
+    await source.hover()
+    await expect(source).toHaveAttribute('draggable', 'true')
+    const bounds = (await source.boundingBox())!
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(bounds.x + bounds.width / 2 + 12, bounds.y + bounds.height / 2 + 12, { steps: 5 })
+    await expect(page.locator('.products-sort-slot')).toHaveCount(1)
+    await expect(page.locator('.products-sort-slot').locator('button').first()).toBeHidden()
+  }
+  const productScroller = await cards.first().evaluateHandle((node) => {
+    let parent = node.parentElement
+    while (parent) {
+      if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) {
+        return parent
+      }
+      parent = parent.parentElement
+    }
+    return document.scrollingElement as HTMLElement
+  })
+  await startDrag('[data-product-image-id]')
+  const productBounds = await productScroller.evaluate((node) => {
+    const rect = node.getBoundingClientRect()
+    return { left: rect.left, right: rect.right, bottom: Math.min(innerHeight, rect.bottom), scrollTop: node.scrollTop }
+  })
+  await page.mouse.move((productBounds.left + productBounds.right) / 2, productBounds.bottom - 12, { steps: 10 })
+  await expect
+    .poll(() => productScroller.evaluate((node) => node.scrollTop), { timeout: 8000 })
+    .toBeGreaterThan(productBounds.scrollTop + 350)
+  await page.screenshot({ path: testInfo.outputPath('product-drag-slot.png') })
+  await page.mouse.move((productBounds.left + productBounds.right) / 2, (productBounds.bottom + 72) / 2, { steps: 5 })
+  await page
+    .locator('.products-sort-slot')
+    .evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {}))))
+  const productSlot = (await page.locator('.products-sort-slot').boundingBox())!
+  await page.mouse.move(productSlot.x + productSlot.width / 2, productSlot.y + productSlot.height / 2, { steps: 3 })
+  await page.mouse.up()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  await expect(cards.first()).not.toHaveAttribute('data-product-image-id', ids[0]!)
+  const nextOrder = await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-product-image-id')))
+  const committed = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/products/admin/products/${product.id}`) && response.request().method() === 'PUT'
+  )
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  expect((await committed).ok()).toBeTruthy()
+  const saved = (await (await page.request.get(`/api/products/admin/products/${product.id}/preview`)).json()).product
+  expect(saved.imageIds).toEqual(nextOrder)
+  expect(saved.thumbnailImageId).toBe(nextOrder[0])
+
+  await page.goto('/admin/products/media')
+  const libraryCards = page.locator('[data-media-id]')
+  await expect(libraryCards.first()).toBeVisible()
+  const originalFirst = await libraryCards.first().getAttribute('data-media-id')
+  const libraryScroller = page.locator('[data-products-scroll] > div.h-full')
+  await startDrag('[data-media-id]')
+  const bounds = await libraryScroller.evaluate((node) => {
+    const rect = node.getBoundingClientRect()
+    return {
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: Math.min(innerHeight, rect.bottom),
+      scrollTop: node.scrollTop
+    }
+  })
+  const source = (await libraryCards.first().boundingBox())!
+  await page.mouse.move(source.x + source.width / 2, bounds.bottom - 12, { steps: 10 })
+  await expect
+    .poll(() => libraryScroller.evaluate((node) => node.scrollTop), { timeout: 8000 })
+    .toBeGreaterThan(bounds.scrollTop + 350)
+  await expect.poll(() => libraryCards.count(), { timeout: 12000 }).toBeGreaterThan(20)
+  await page.screenshot({ path: testInfo.outputPath('library-drag-slot.png') })
+  await page.mouse.move(source.x + source.width / 2, (bounds.top + bounds.bottom) / 2, { steps: 5 })
+  await page
+    .locator('.products-sort-slot')
+    .evaluate((node) => Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {}))))
+  const librarySlot = (await page.locator('.products-sort-slot').boundingBox())!
+  await page.mouse.move(librarySlot.x + librarySlot.width / 2, librarySlot.y + librarySlot.height / 2, { steps: 3 })
+  const reordered = page.waitForResponse(
+    (response) => response.url().endsWith('/api/products/media/reorder') && response.request().method() === 'PUT'
+  )
+  await page.mouse.up()
+  const reorder = await reordered
+  expect(reorder.ok(), await reorder.text()).toBeTruthy()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  const firstPage = await (await page.request.get('/api/products/media')).json()
+  expect(firstPage.items[0].id).not.toBe(originalFirst)
+  await page.goto('/admin/products/media')
+  await expect(libraryCards.first()).toBeVisible()
+  await startDrag('[data-media-id]')
+  const beforeCancel = await libraryCards.evaluateAll((nodes) =>
+    nodes.map((node) => node.getAttribute('data-media-id'))
+  )
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')))
+  await page.mouse.up()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  expect(await libraryCards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-media-id')))).toEqual(
+    beforeCancel
+  )
+  const stoppedAt = await libraryScroller.evaluate(
+    (node) =>
+      new Promise<number>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve(node.scrollTop)))
+      )
+  )
+  expect(
+    await libraryScroller.evaluate(
+      (node) =>
+        new Promise<number>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve(node.scrollTop)))
+        )
+    )
+  ).toBe(stoppedAt)
+  await page.getByPlaceholder('Search images…').fill(firstPage.items[0].title)
+  await expect(page).toHaveURL(/search=/)
+  await expect(libraryCards.first()).toHaveAttribute('draggable', 'false')
+})

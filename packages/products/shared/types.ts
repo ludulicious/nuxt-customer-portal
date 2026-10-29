@@ -26,6 +26,7 @@ export interface ProductData {
   content: Record<Locale, ProductCopy>
   taxCode: string
   nextSteps: Record<Locale, string>
+  imageSelection?: 'ordered'
   imageIds: string[]
   thumbnailImageId: string | null
   galleryImageIds: string[]
@@ -74,6 +75,11 @@ export interface Asset {
   width: number | null
   height: number | null
   failure_reason?: string | null
+  media_id?: string | null
+  media_image_url?: string
+  media_thumbnail_url?: string
+  media_variant?: string | null
+  alternative_text?: string | null
   image_purpose?: ImagePurpose | null
 }
 export type ImagePurpose = 'thumbnail' | 'gallery' | 'detail'

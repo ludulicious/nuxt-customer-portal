@@ -51,7 +51,7 @@ const title = (product: Product) =>
 const cardImageId = (product: Product) => product.thumbnailImageId || product.imageIds[0]
 const cardImageUrl = (product: Product) => {
   const imageId = cardImageId(product)
-  return imageId ? api.previewImageUrl(product.id, imageId) : undefined
+  return imageId ? api.previewImageUrl(product.id, imageId, 'thumbnail') : undefined
 }
 function toolbarFilter(key: string, value: string | undefined) {
   filter(

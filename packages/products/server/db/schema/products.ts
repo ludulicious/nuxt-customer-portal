@@ -1,3 +1,4 @@
+import { defaultMediaVariantPresets, type MediaVariantPreset } from '../../../shared/media-variants'
 import type { OrderPageOverride } from '../../../shared/page-texts'
 import type { ThankYouOverride } from '../../../shared/thank-you'
 import {
@@ -61,6 +62,8 @@ export const store = schema.table('store', {
   stripeSecretKey: text('stripe_secret_key'),
   stripeWebhookSecret: text('stripe_webhook_secret'),
   stripeTestedAt: timestamp('stripe_tested_at', { withTimezone: true }),
+  mediaVariants: jsonb('media_variants').$type<MediaVariantPreset[]>().notNull().default(defaultMediaVariantPresets()),
+  mediaVariantsRevision: integer('media_variants_revision').notNull().default(1),
   imagePolicy: jsonb('image_policy')
     .$type<{
       thumbnail: { width: number; height: number }
@@ -133,25 +136,42 @@ export const price = schema.table(
       .where(sql`${t.active} AND ${t.offerId} IS NOT NULL`)
   ]
 )
-export const asset = schema.table('asset', {
-  id: text('id').primaryKey(),
-  productId: text('product_id')
-    .notNull()
-    .references(() => product.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  contentType: text('content_type').notNull(),
-  size: bigint('size', { mode: 'number' }).notNull(),
-  visibility: text('visibility').notNull(),
-  objectKey: text('object_key').notNull().unique(),
-  ready: boolean('ready').default(false).notNull(),
-  status: text('status').default('uploading').notNull(),
-  width: integer('width'),
-  height: integer('height'),
-  failureReason: text('failure_reason'),
-  imagePurpose: text('image_purpose').$type<'thumbnail' | 'gallery' | 'detail'>(),
-  sourceObjectKey: text('source_object_key'),
-  createdAt: stamp('created_at')
-})
+export const asset = schema.table(
+  'asset',
+  {
+    id: text('id').primaryKey(),
+    productId: text('product_id')
+      .notNull()
+      .references(() => product.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    visibility: text('visibility').notNull(),
+    objectKey: text('object_key').notNull().unique(),
+    ready: boolean('ready').default(false).notNull(),
+    status: text('status').default('uploading').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    failureReason: text('failure_reason'),
+    imagePurpose: text('image_purpose').$type<'thumbnail' | 'gallery' | 'detail'>(),
+    mediaId: text('media_id').references(() => media.id, { onDelete: 'cascade' }),
+    mediaVariant: text('media_variant'),
+    sourceObjectKey: text('source_object_key'),
+    createdAt: stamp('created_at')
+  },
+  (t) => [
+    uniqueIndex('asset_media_placement_unique')
+      .on(t.productId, t.mediaId, t.imagePurpose, t.mediaVariant)
+      .where(sql`${t.mediaId} IS NOT NULL`),
+    index('asset_media_id_idx')
+      .on(t.mediaId)
+      .where(sql`${t.mediaId} IS NOT NULL`),
+    check(
+      'asset_media_link_check',
+      sql`(${t.mediaId} IS NULL AND ${t.mediaVariant} IS NULL) OR (${t.mediaId} IS NOT NULL AND ${t.mediaVariant} IS NOT NULL AND ${t.visibility}='public' AND ${t.imagePurpose} IS NOT NULL)`
+    )
+  ]
+)
 export const orders = schema.table(
   'orders',
   {
@@ -366,5 +386,104 @@ export const pageText = schema.table(
     check('page_text_page', sql`${table.page} IN ('order-details')`),
     check('page_text_locale', sql`${table.locale} IN ('en','nl')`),
     check('page_text_copy_object', sql`jsonb_typeof(${table.copy}) = 'object'`)
+  ]
+)
+
+export const mediaUpload = schema.table(
+  'media_upload',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    committedMediaId: text('committed_media_id'),
+    createdAt: stamp('created_at')
+  },
+  (t) => [index('media_upload_created').on(t.createdAt)]
+)
+export const mediaFile = schema.table(
+  'media_file',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    uploadId: text('upload_id')
+      .notNull()
+      .references(() => mediaUpload.id, { onDelete: 'cascade' }),
+    role: text('role').$type<'original' | 'image' | 'thumbnail' | 'variant' | 'rendition'>().notNull(),
+    variantKey: text('variant_key'),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    objectKey: text('object_key').notNull().unique(),
+    width: integer('width'),
+    height: integer('height'),
+    ready: boolean('ready').default(false).notNull(),
+    createdAt: stamp('created_at')
+  },
+  (t) => [
+    uniqueIndex('media_file_upload_role_variant').on(t.uploadId, t.role, sql`COALESCE(${t.variantKey},'')`),
+    uniqueIndex('media_file_store_id').on(t.storeId, t.id),
+    index('media_file_upload').on(t.uploadId),
+    check('media_file_role', sql`${t.role} IN ('original','image','thumbnail','variant','rendition')`),
+    check('media_file_variant_key', sql`(${t.role} IN ('variant','rendition')) = (${t.variantKey} IS NOT NULL)`),
+    check('media_file_type', sql`${t.contentType} IN ('image/jpeg','image/png','image/webp','image/gif')`),
+    check('media_file_size', sql`${t.size} > 0 AND ${t.size} <= 10485760`)
+  ]
+)
+export const media = schema.table(
+  'media',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    title: text('title').notNull(),
+    alt: text('alt').notNull(),
+    categories: text('categories')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    credit: text('credit').notNull().default(''),
+    visible: boolean('visible').notNull().default(true),
+    position: integer('position').notNull().default(0),
+    revision: integer('revision').notNull().default(1),
+    originalFileId: text('original_file_id').notNull(),
+    imageFileId: text('image_file_id').notNull(),
+    thumbnailFileId: text('thumbnail_file_id'),
+    createdAt: stamp('created_at'),
+    updatedAt: stamp('updated_at')
+  },
+  (t) => [
+    index('media_store_order').on(t.storeId, t.position, t.id),
+    uniqueIndex('media_store_id_unique').on(t.storeId, t.id),
+    foreignKey({ columns: [t.storeId, t.originalFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.imageFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.thumbnailFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] })
+  ]
+)
+
+export const mediaVariant = schema.table(
+  'media_variant',
+  {
+    storeId: text('store_id').notNull(),
+    mediaId: text('media_id').notNull(),
+    key: text('key').notNull(),
+    label: text('label').notNull(),
+    mode: text('mode').$type<'automatic' | 'custom'>().notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    fileId: text('file_id').notNull(),
+    sourceFileId: text('source_file_id').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.storeId, t.mediaId, t.key] }),
+    foreignKey({ columns: [t.storeId, t.mediaId], foreignColumns: [media.storeId, media.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.storeId, t.fileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.sourceFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    index('media_variant_file').on(t.fileId),
+    index('media_variant_source').on(t.sourceFileId),
+    check('media_variant_mode', sql`${t.mode} IN ('automatic','custom')`)
   ]
 )
