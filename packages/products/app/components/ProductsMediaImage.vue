@@ -62,7 +62,14 @@ const { t } = useI18n()
 
 <template>
   <div ref="element" class="flex h-full w-full items-center justify-center bg-elevated">
-    <img v-if="url" :src="url" :alt="alt" class="h-full w-full" :class="contain ? 'object-contain' : 'object-cover'" />
+    <img
+      v-if="url"
+      draggable="false"
+      :src="url"
+      :alt="alt"
+      class="h-full w-full"
+      :class="contain ? 'object-contain' : 'object-cover'"
+    />
     <UButton
       v-else-if="failed"
       variant="ghost"

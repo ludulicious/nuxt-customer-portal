@@ -59,6 +59,8 @@ test('single upload, adjustments, independent thumbnail, metadata, reset, dirty 
   await page.screenshot({ path: testInfo.outputPath('editor-desktop.png'), fullPage: true })
   await page.getByRole('button', { name: 'Back to library', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Media library', exact: true })).toBeVisible()
+  await page.getByPlaceholder('Search images…').fill(title)
+  await expect(page).toHaveURL(/search=/)
   await page.getByRole('button', { name: `Edit ${title}`, exact: true }).click()
   await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
   await page.getByRole('button', { name: 'Reset to original', exact: true }).click()
@@ -201,8 +203,8 @@ test('library preserves search state, supports keyboard ordering and confirms de
   await page.goto('/admin/products/media')
   await expect(page.locator('article').first()).toContainText(b.title)
   const card = page.locator('article').filter({ hasText: a.title })
-  await card.getByRole('button', { name: 'Move earlier', exact: true }).focus()
-  await card.getByRole('button', { name: 'Move earlier', exact: true }).press('Enter')
+  await card.focus()
+  await card.press('Alt+ArrowLeft')
   await expect(page.locator('article').first()).toContainText(a.title)
   await page.locator('article').first().getByRole('button', { name: 'Preview image', exact: true }).click()
   const preview = page.getByRole('dialog', { name: a.title, exact: true })
@@ -410,7 +412,7 @@ test('product image cards reorder, use the first thumbnail and resolve variants 
   await add(second)
   await expect(cards).toHaveCount(2)
   await expect(cards.first()).toContainText(first.title)
-  await page.getByRole('button', { name: 'Move image 2 earlier', exact: true }).click()
+  await page.getByRole('button', { name: 'Reorder image 2', exact: true }).press('ArrowUp')
   await expect(cards.first()).toContainText(second.title)
   await expect(cards.first()).toContainText('Thumbnail')
   await page.getByRole('button', { name: 'Reorder image 1', exact: true }).press('ArrowDown')
@@ -422,7 +424,7 @@ test('product image cards reorder, use the first thumbnail and resolve variants 
   await expect(cards.first()).toContainText(first.title)
   await expect(cards.first()).toContainText('Thumbnail')
   await add(second)
-  await page.getByRole('button', { name: 'Move image 2 earlier', exact: true }).click()
+  await page.getByRole('button', { name: 'Reorder image 2', exact: true }).press('ArrowUp')
   await page.screenshot({ path: testInfo.outputPath('product-images-desktop.png'), fullPage: true })
   const committed = page.waitForResponse(
     (result) =>
@@ -491,4 +493,187 @@ test('product image cards reorder, use the first thumbnail and resolve variants 
   await picker.getByRole('textbox').first().fill(second.title)
   await expect(picker.getByRole('button', { name: `Select ${second.title}`, exact: true })).toBeDisabled()
   await page.screenshot({ path: testInfo.outputPath('product-picker-mobile.png'), fullPage: true })
+})
+
+test('product and media dragging show vacant slots, scroll at edges and clean up cancelled drags', async ({
+  page
+}, testInfo) => {
+  test.setTimeout(120000)
+  const title = `Drag scrolling ${Date.now()}`
+  const initial = await (await page.request.get('/api/products/media', { params: { visibility: 'visible' } })).json()
+  const file = await image('drag.png')
+  for (let i = initial.pagination.total; i < 28; i++) {
+    const upload = await (
+      await page.request.post('/api/products/media/uploads', {
+        data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+      })
+    ).json()
+    expect(
+      (
+        await page.request.put(upload.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+      ).ok()
+    ).toBeTruthy()
+    expect(
+      (
+        await page.request.post(`/api/products/media/uploads/${upload.id}/complete`, {
+          data: { title: `${title} ${i}`, alt: `Drag image ${i}`, categories: [], credit: '', visible: true }
+        })
+      ).ok()
+    ).toBeTruthy()
+  }
+  const media = (
+    await (await page.request.get('/api/products/media', { params: { visibility: 'visible' } })).json()
+  ).items.slice(0, 12)
+  const category = await (
+    await page.request.post('/api/products/admin/categories', {
+      data: {
+        code: `drag-${Date.now()}`,
+        content: { en: { name: title, description: '' }, nl: { name: title, description: '' } }
+      }
+    })
+  ).json()
+  const created = await page.request.post('/api/products/admin/products', {
+    data: {
+      ...emptyProduct(),
+      slug: `drag-${Date.now()}`,
+      categoryId: category.id,
+      type: 'service',
+      isFree: true,
+      prices: [],
+      content: { en: { title, summary: '', description: '' }, nl: { title, summary: '', description: '' } }
+    }
+  })
+  expect(created.ok(), await created.text()).toBeTruthy()
+  const product = await created.json()
+  const ids = []
+  for (const item of media) {
+    const linked = await page.request.post(`/api/products/admin/products/${product.id}/media`, {
+      data: { mediaId: item.id }
+    })
+    expect(linked.ok(), await linked.text()).toBeTruthy()
+    ids.push((await linked.json()).id)
+  }
+  expect(
+    (
+      await page.request.put(`/api/products/admin/products/${product.id}`, {
+        data: { ...product, imageSelection: 'ordered', imageIds: ids }
+      })
+    ).ok()
+  ).toBeTruthy()
+  await page.goto(`/admin/products/${product.id}/images`)
+  const cards = page.locator('[data-product-image-id]')
+  await expect(cards).toHaveCount(12)
+  await expect(page.getByRole('button', { name: /^Move image \d+ (earlier|later)$/ })).toHaveCount(0)
+  const startDrag = async (selector: string) => {
+    const source = page.locator(selector).first()
+    await source.hover()
+    await expect(source).toHaveAttribute('draggable', 'true')
+    const bounds = (await source.boundingBox())!
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(bounds.x + bounds.width / 2 + 12, bounds.y + bounds.height / 2 + 12, { steps: 5 })
+    await expect(page.locator('.products-sort-slot')).toHaveCount(1)
+    await expect(page.locator('.products-sort-slot').locator('button').first()).toBeHidden()
+  }
+  const productScroller = await cards.first().evaluateHandle((node) => {
+    let parent = node.parentElement
+    while (parent) {
+      if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) {
+        return parent
+      }
+      parent = parent.parentElement
+    }
+    return document.scrollingElement as HTMLElement
+  })
+  await startDrag('[data-product-image-id]')
+  const productBounds = await productScroller.evaluate((node) => {
+    const rect = node.getBoundingClientRect()
+    return { left: rect.left, right: rect.right, bottom: Math.min(innerHeight, rect.bottom), scrollTop: node.scrollTop }
+  })
+  await page.mouse.move((productBounds.left + productBounds.right) / 2, productBounds.bottom - 12, { steps: 10 })
+  await expect
+    .poll(() => productScroller.evaluate((node) => node.scrollTop), { timeout: 8000 })
+    .toBeGreaterThan(productBounds.scrollTop + 350)
+  await page.screenshot({ path: testInfo.outputPath('product-drag-slot.png') })
+  await page.mouse.move((productBounds.left + productBounds.right) / 2, (productBounds.bottom + 72) / 2, { steps: 5 })
+  const productSlot = (await page.locator('.products-sort-slot').boundingBox())!
+  await page.mouse.move(productSlot.x + productSlot.width / 2, productSlot.y + productSlot.height / 2, { steps: 3 })
+  await page.mouse.up()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  await expect(cards.first()).not.toHaveAttribute('data-product-image-id', ids[0]!)
+  const nextOrder = await cards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-product-image-id')))
+  const committed = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/products/admin/products/${product.id}`) && response.request().method() === 'PUT'
+  )
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  expect((await committed).ok()).toBeTruthy()
+  const saved = (await (await page.request.get(`/api/products/admin/products/${product.id}/preview`)).json()).product
+  expect(saved.imageIds).toEqual(nextOrder)
+  expect(saved.thumbnailImageId).toBe(nextOrder[0])
+
+  await page.goto('/admin/products/media')
+  const libraryCards = page.locator('[data-media-id]')
+  await expect(libraryCards.first()).toBeVisible()
+  const originalFirst = await libraryCards.first().getAttribute('data-media-id')
+  const libraryScroller = page.locator('[data-products-scroll] > div.h-full')
+  await startDrag('[data-media-id]')
+  const bounds = await libraryScroller.evaluate((node) => {
+    const rect = node.getBoundingClientRect()
+    return {
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: Math.min(innerHeight, rect.bottom),
+      scrollTop: node.scrollTop
+    }
+  })
+  const source = (await libraryCards.first().boundingBox())!
+  await page.mouse.move(source.x + source.width / 2, bounds.bottom - 12, { steps: 10 })
+  await expect
+    .poll(() => libraryScroller.evaluate((node) => node.scrollTop), { timeout: 8000 })
+    .toBeGreaterThan(bounds.scrollTop + 350)
+  await expect.poll(() => libraryCards.count(), { timeout: 12000 }).toBeGreaterThan(20)
+  await page.screenshot({ path: testInfo.outputPath('library-drag-slot.png') })
+  await page.mouse.move(source.x + source.width / 2, (bounds.top + bounds.bottom) / 2, { steps: 5 })
+  const librarySlot = (await page.locator('.products-sort-slot').boundingBox())!
+  await page.mouse.move(librarySlot.x + librarySlot.width / 2, librarySlot.y + librarySlot.height / 2, { steps: 3 })
+  const reordered = page.waitForResponse(
+    (response) => response.url().endsWith('/api/products/media/reorder') && response.request().method() === 'PUT'
+  )
+  await page.mouse.up()
+  const reorder = await reordered
+  expect(reorder.ok(), await reorder.text()).toBeTruthy()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  const firstPage = await (await page.request.get('/api/products/media')).json()
+  expect(firstPage.items[0].id).not.toBe(originalFirst)
+  await page.goto('/admin/products/media')
+  await expect(libraryCards.first()).toBeVisible()
+  await startDrag('[data-media-id]')
+  const beforeCancel = await libraryCards.evaluateAll((nodes) =>
+    nodes.map((node) => node.getAttribute('data-media-id'))
+  )
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')))
+  await page.mouse.up()
+  await expect(page.locator('.products-sort-slot')).toHaveCount(0)
+  expect(await libraryCards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-media-id')))).toEqual(
+    beforeCancel
+  )
+  const stoppedAt = await libraryScroller.evaluate(
+    (node) =>
+      new Promise<number>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve(node.scrollTop)))
+      )
+  )
+  expect(
+    await libraryScroller.evaluate(
+      (node) =>
+        new Promise<number>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve(node.scrollTop)))
+        )
+    )
+  ).toBe(stoppedAt)
+  await page.getByPlaceholder('Search images…').fill(firstPage.items[0].title)
+  await expect(page).toHaveURL(/search=/)
+  await expect(libraryCards.first()).toHaveAttribute('draggable', 'false')
 })

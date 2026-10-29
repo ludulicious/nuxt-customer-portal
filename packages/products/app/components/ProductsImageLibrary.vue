@@ -12,8 +12,20 @@ const { t } = useI18n(),
   api = useProducts()
 const pickerOpen = ref(false),
   previewOpen = ref(false),
-  previewId = ref(''),
-  draggedId = ref('')
+  previewId = ref('')
+const listContainer = ref<HTMLElement | null>(null)
+const { draggedId, orderedIds, start, over, finish, cancel } = useMediaDragOrder({
+  ids: computed(() => imageIds.value),
+  disabled: computed(() => props.busy),
+  container: listContainer,
+  selector: '[data-product-image-id]'
+})
+function drop() {
+  const result = finish()
+  if (result) {
+    update(result.ids)
+  }
+}
 const asset = (id: string) => props.assets.find((item) => item.id === id)
 const preview = (id: string) =>
   asset(id)?.media_id ? `/api/products/media/${asset(id)!.media_id}/content` : api.previewImageUrl(props.productId, id)
@@ -48,34 +60,9 @@ function move(id: string, delta: number) {
   ids.splice(target, 0, id)
   update(ids)
 }
-function drop(id: string) {
-  if (!draggedId.value || draggedId.value === id || props.busy) {
-    return
-  }
-  const ids = [...imageIds.value],
-    from = ids.indexOf(draggedId.value),
-    to = ids.indexOf(id)
-  if (from < 0 || to < 0) {
-    return
-  }
-  ids.splice(from, 1)
-  ids.splice(to, 0, draggedId.value)
-  update(ids)
-  draggedId.value = ''
-}
 function showPreview(id: string) {
   previewId.value = id
   previewOpen.value = true
-}
-function drag(event: DragEvent, id: string) {
-  if (props.busy) {
-    return
-  }
-  draggedId.value = id
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', id)
-  }
 }
 </script>
 
@@ -89,80 +76,75 @@ function drag(event: DragEvent, id: string) {
       }}</UButton>
     </div>
     <UFormField name="imageIds" class="w-full">
-      <ol v-if="imageIds.length" class="w-full space-y-3" :aria-label="t('products.productMedia.selectedImages')">
-        <li
-          v-for="(id, index) in imageIds"
-          :key="id"
-          :data-product-image-id="id"
-          :draggable="!busy"
-          class="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-default p-3 sm:flex-nowrap"
-          :class="draggedId === id ? 'opacity-50' : ''"
-          @dragstart="drag($event, id)"
-          @dragend="draggedId = ''"
-          @dragover.prevent
-          @drop.prevent="drop(id)"
+      <div
+        v-if="imageIds.length"
+        ref="listContainer"
+        class="relative w-full"
+        @dragover="over"
+        @drop.prevent.stop="drop"
+      >
+        <TransitionGroup
+          tag="ol"
+          move-class="products-sort-move"
+          class="w-full space-y-3"
+          :aria-label="t('products.productMedia.selectedImages')"
         >
-          <button
-            type="button"
-            class="cursor-grab text-muted focus-visible:outline-2 focus-visible:outline-primary"
-            :disabled="busy"
-            :aria-label="t('products.productMedia.reorder', { number: index + 1 })"
-            aria-keyshortcuts="ArrowUp ArrowDown"
-            @keydown.up.prevent="move(id, -1)"
-            @keydown.down.prevent="move(id, 1)"
+          <li
+            v-for="(id, index) in orderedIds"
+            :key="id"
+            :data-product-image-id="id"
+            :draggable="!busy"
+            class="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-default p-3 sm:flex-nowrap"
+            :class="draggedId === id ? 'products-sort-slot' : ''"
+            @dragstart="start($event, id)"
+            @dragend="cancel"
           >
-            <UIcon name="i-lucide-grip-vertical" class="size-5" />
-          </button>
-          <button
-            type="button"
-            class="h-20 w-24 shrink-0 overflow-hidden rounded-md focus-visible:outline-2 focus-visible:outline-primary"
-            :aria-label="t('products.productMedia.preview', { title: asset(id)?.name || '' })"
-            @click="showPreview(id)"
-          >
-            <ProductsMediaImage
-              :src="preview(id)"
-              :alt="asset(id)?.alternative_text || asset(id)?.name || ''"
-              contain
-            />
-          </button>
-          <div class="min-w-0 flex-1 basis-32">
-            <p class="truncate text-sm font-medium">
-              {{ asset(id)?.name || t('products.imageNumber', { number: index + 1 }) }}
-            </p>
-            <UBadge v-if="index === 0" class="mt-1" variant="subtle">{{ t('products.imagePurposethumbnail') }}</UBadge>
-            <span v-else class="mt-1 block text-xs text-muted">{{ index + 1 }}</span>
-          </div>
-          <div class="ml-auto flex items-center gap-1">
-            <UButton
+            <button
               type="button"
-              icon="i-lucide-arrow-up"
-              color="neutral"
-              variant="ghost"
-              :disabled="busy || index === 0"
-              :aria-label="t('products.productMedia.earlier', { number: index + 1 })"
-              @click="move(id, -1)"
-            />
-            <UButton
-              type="button"
-              icon="i-lucide-arrow-down"
-              color="neutral"
-              variant="ghost"
-              :disabled="busy || index === imageIds.length - 1"
-              :aria-label="t('products.productMedia.later', { number: index + 1 })"
-              @click="move(id, 1)"
-            />
-            <UButton
-              type="button"
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
+              class="cursor-grab text-muted focus-visible:outline-2 focus-visible:outline-primary"
               :disabled="busy"
-              :aria-label="t('products.productMedia.remove', { number: index + 1 })"
-              @click="update(imageIds.filter((value) => value !== id))"
-            />
-          </div>
-        </li>
-      </ol>
+              :aria-label="t('products.productMedia.reorder', { number: index + 1 })"
+              aria-keyshortcuts="ArrowUp ArrowDown"
+              @keydown.up.prevent="move(id, -1)"
+              @keydown.down.prevent="move(id, 1)"
+            >
+              <UIcon name="i-lucide-grip-vertical" class="size-5" />
+            </button>
+            <button
+              type="button"
+              class="h-20 w-24 shrink-0 overflow-hidden rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+              :aria-label="t('products.productMedia.preview', { title: asset(id)?.name || '' })"
+              @click="showPreview(id)"
+            >
+              <ProductsMediaImage
+                :src="preview(id)"
+                :alt="asset(id)?.alternative_text || asset(id)?.name || ''"
+                contain
+              />
+            </button>
+            <div class="min-w-0 flex-1 basis-32">
+              <p class="truncate text-sm font-medium">
+                {{ asset(id)?.name || t('products.imageNumber', { number: index + 1 }) }}
+              </p>
+              <UBadge v-if="index === 0" class="mt-1" variant="subtle">{{
+                t('products.imagePurposethumbnail')
+              }}</UBadge>
+              <span v-else class="mt-1 block text-xs text-muted">{{ index + 1 }}</span>
+            </div>
+            <div class="ml-auto flex items-center gap-1">
+              <UButton
+                type="button"
+                icon="i-lucide-x"
+                color="neutral"
+                variant="ghost"
+                :disabled="busy"
+                :aria-label="t('products.productMedia.remove', { number: index + 1 })"
+                @click="update(imageIds.filter((value) => value !== id))"
+              />
+            </div>
+          </li>
+        </TransitionGroup>
+      </div>
       <div v-else class="rounded-lg border border-dashed border-default p-8 text-center text-muted">
         {{ t('products.noProductImages') }}
       </div>

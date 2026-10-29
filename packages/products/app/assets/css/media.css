@@ -77,3 +77,21 @@
   flex: 1;
   min-height: 0;
 }
+
+.products-sort-slot {
+  background: color-mix(in oklab, var(--ui-primary) 8%, transparent);
+  outline: 2px dashed var(--ui-primary);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+.products-sort-slot > * {
+  visibility: hidden;
+}
+.products-sort-move {
+  transition: transform 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .products-sort-move {
+    transition: none;
+  }
+}

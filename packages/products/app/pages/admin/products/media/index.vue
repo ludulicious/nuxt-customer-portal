@@ -33,7 +33,6 @@ const sizeOptions = computed(() =>
   ['small', 'medium', 'large'].map((value) => ({ value, label: t(`products.media.${value}`) }))
 )
 const reordering = ref(false),
-  dragged = ref<StoreMedia>(),
   mutationError = ref('')
 const manual = computed(
   () =>
@@ -43,6 +42,41 @@ const manual = computed(
     filters.value.sortBy === 'order' &&
     filters.value.sortDir === 'asc'
 )
+const listContainer = ref<HTMLElement | null>(null),
+  optimisticIds = ref<string[]>([])
+const { draggedId, orderedIds, start, over, finish, cancel } = useMediaDragOrder({
+  ids: computed(() => items.value.map((item) => item.id)),
+  disabled: computed(() => !manual.value || reordering.value),
+  container: listContainer,
+  scrollContainer,
+  selector: '[data-media-id]'
+})
+const displayedItems = computed(() => {
+  const byId = new Map(items.value.map((item) => [item.id, item]))
+  return (optimisticIds.value.length ? optimisticIds.value : orderedIds.value)
+    .map((id) => byId.get(id))
+    .filter((item): item is StoreMedia => !!item)
+})
+function startMediaDrag(event: DragEvent, item: StoreMedia) {
+  if (pending.value) {
+    event.preventDefault()
+    return
+  }
+  start(event, item.id)
+}
+async function dropMedia() {
+  const result = finish()
+  if (!result) {
+    return
+  }
+  const item = items.value.find((item) => item.id === result.id)
+  if (!item) {
+    return
+  }
+  optimisticIds.value = result.ids
+  await move(item, result.beforeId, true)
+  optimisticIds.value = []
+}
 const deleting = ref<StoreMedia>(),
   deleteOpen = ref(false),
   deletingBusy = ref(false)
@@ -162,6 +196,9 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => clearTimeout(timer))
 async function moveBy(item: StoreMedia, direction: -1 | 1) {
+  if (!manual.value || pending.value || reordering.value) {
+    return
+  }
   let index = items.value.findIndex((row) => row.id === item.id)
   if (direction === -1 && index === 0 && hasPreviousPage.value) {
     await boundary(true)
@@ -175,8 +212,8 @@ async function moveBy(item: StoreMedia, direction: -1 | 1) {
     await move(item, beforeId)
   }
 }
-async function move(item: StoreMedia, beforeId: string | null) {
-  if (!manual.value || reordering.value || pending.value || item.id === beforeId) {
+async function move(item: StoreMedia, beforeId: string | null, allowPending = false) {
+  if (!manual.value || reordering.value || (pending.value && !allowPending) || item.id === beforeId) {
     return
   }
   mutationError.value = ''
@@ -188,7 +225,7 @@ async function move(item: StoreMedia, beforeId: string | null) {
     mutationError.value = mediaError(cause)
   } finally {
     reordering.value = false
-    dragged.value = undefined
+    cancel()
   }
 }
 function openPreview(item: StoreMedia) {
@@ -297,92 +334,83 @@ async function remove() {
         @create="openEditor()"
         @reset="router.replace({ query: {} })"
       />
-      <div
-        class="grid gap-4 pb-4"
-        :class="
-          cardSize === 'small'
-            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
-            : cardSize === 'large'
-              ? 'grid-cols-1 sm:grid-cols-2'
-              : 'grid-cols-2 sm:grid-cols-3'
-        "
-      >
-        <article
-          v-for="(item, index) in items"
-          :key="item.id"
-          :data-media-id="item.id"
-          class="overflow-hidden rounded-lg border border-default bg-default"
-          :draggable="manual && !pending && !reordering"
-          @dragstart="dragged = item"
-          @dragend="dragged = undefined"
-          @dragover.prevent
-          @drop.prevent="dragged && move(dragged, item.id)"
+      <div ref="listContainer" class="relative" @dragover="over" @drop.prevent.stop="dropMedia">
+        <TransitionGroup
+          tag="div"
+          move-class="products-sort-move"
+          class="grid gap-4 pb-4"
+          :class="
+            cardSize === 'small'
+              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+              : cardSize === 'large'
+                ? 'grid-cols-1 sm:grid-cols-2'
+                : 'grid-cols-2 sm:grid-cols-3'
+          "
         >
-          <button
-            type="button"
-            class="block aspect-4/3 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
-            :aria-label="t('products.media.editNamed', { title: item.title })"
-            @click="openEditor(item)"
+          <article
+            v-for="item in displayedItems"
+            :key="item.id"
+            :data-media-id="item.id"
+            class="overflow-hidden rounded-lg border border-default bg-default"
+            :class="draggedId === item.id ? 'products-sort-slot' : ''"
+            :draggable="manual && (!pending || !!draggedId) && !reordering"
+            :tabindex="manual ? 0 : undefined"
+            :aria-keyshortcuts="manual ? 'Alt+ArrowLeft Alt+ArrowRight' : undefined"
+            @keydown.alt.left.prevent.stop="moveBy(item, -1)"
+            @keydown.alt.right.prevent.stop="moveBy(item, 1)"
+            @dragstart="startMediaDrag($event, item)"
+            @dragend="cancel"
           >
-            <ProductsMediaImage :src="item.thumbnail?.url || item.image.url" :alt="item.alt" />
-          </button>
-          <div class="space-y-2 p-3">
-            <div class="flex items-start justify-between gap-2">
-              <h2 class="truncate font-semibold">{{ item.title }}</h2>
-              <UBadge v-if="!item.visible" color="neutral" variant="soft">{{ t('products.media.hidden') }}</UBadge>
-            </div>
-            <p class="truncate text-sm text-muted">{{ item.alt }}</p>
-            <div class="flex flex-wrap gap-1">
-              <UBadge v-for="category in item.categories" :key="category" variant="subtle" color="neutral">{{
-                category
-              }}</UBadge>
-            </div>
-            <div class="flex flex-col gap-2">
-              <span class="whitespace-nowrap text-xs text-muted">{{ item.image.width }} × {{ item.image.height }}</span>
-              <div class="flex min-w-0 flex-wrap justify-end gap-1">
-                <UButton
-                  v-if="manual"
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-arrow-left"
-                  :disabled="(index === 0 && !hasPreviousPage) || pending || reordering"
-                  :aria-label="t('products.media.moveEarlier')"
-                  @click="moveBy(item, -1)"
-                />
-                <UButton
-                  v-if="manual"
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-arrow-right"
-                  :disabled="(index === items.length - 1 && !hasNextPage) || pending || reordering"
-                  :aria-label="t('products.media.moveLater')"
-                  @click="moveBy(item, 1)"
-                />
-                <UButton
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-expand"
-                  :aria-label="t('products.media.preview')"
-                  @click="openPreview(item)"
-                />
-                <UButton
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-pencil"
-                  :aria-label="t('products.media.edit')"
-                  @click="openEditor(item)"
-                />
-                <UButton
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-trash-2"
-                  :aria-label="t('products.media.delete')"
-                  @click="openDelete(item)"
-                />
+            <button
+              type="button"
+              class="block aspect-4/3 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
+              :aria-label="t('products.media.editNamed', { title: item.title })"
+              @click="openEditor(item)"
+            >
+              <ProductsMediaImage :src="item.thumbnail?.url || item.image.url" :alt="item.alt" />
+            </button>
+            <div class="space-y-2 p-3">
+              <div class="flex items-start justify-between gap-2">
+                <h2 class="truncate font-semibold">{{ item.title }}</h2>
+                <UBadge v-if="!item.visible" color="neutral" variant="soft">{{ t('products.media.hidden') }}</UBadge>
+              </div>
+              <p class="truncate text-sm text-muted">{{ item.alt }}</p>
+              <div class="flex flex-wrap gap-1">
+                <UBadge v-for="category in item.categories" :key="category" variant="subtle" color="neutral">{{
+                  category
+                }}</UBadge>
+              </div>
+              <div class="flex flex-col gap-2">
+                <span class="whitespace-nowrap text-xs text-muted"
+                  >{{ item.image.width }} × {{ item.image.height }}</span
+                >
+                <div class="flex min-w-0 flex-wrap justify-end gap-1">
+                  <UButton
+                    variant="ghost"
+                    color="neutral"
+                    icon="i-lucide-expand"
+                    :aria-label="t('products.media.preview')"
+                    @click="openPreview(item)"
+                  />
+                  <UButton
+                    variant="ghost"
+                    color="neutral"
+                    icon="i-lucide-pencil"
+                    :aria-label="t('products.media.edit')"
+                    @click="openEditor(item)"
+                  />
+                  <UButton
+                    variant="ghost"
+                    color="neutral"
+                    icon="i-lucide-trash-2"
+                    :aria-label="t('products.media.delete')"
+                    @click="openDelete(item)"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </article>
+          </article>
+        </TransitionGroup>
       </div>
       <div v-if="pending" class="flex justify-center p-4" role="status">
         <UIcon name="i-lucide-loader-circle" class="animate-spin" /><span class="sr-only">{{

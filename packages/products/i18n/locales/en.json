@@ -789,7 +789,7 @@
       "manualOrder": "Manual order",
       "title": "Title",
       "newest": "Date added",
-      "reorderHelp": "Drag images to reorder, or use the arrow buttons.",
+      "reorderHelp": "Drag images to reorder. Use Alt + Left/Right on a focused card to reorder with the keyboard.",
       "filteredOrderHelp": "Clear filters and select ascending manual order to reorder images.",
       "cardSize": "Card size",
       "small": "Small",
