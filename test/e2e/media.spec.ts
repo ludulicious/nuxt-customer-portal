@@ -224,6 +224,21 @@ test('library preserves search state, supports keyboard ordering and confirms de
 })
 
 test('store presets apply on the next save and custom variants stay independent', async ({ page }) => {
+  const configuration = await (await page.request.get('/api/products/media/presets')).json()
+  expect(
+    (
+      await page.request.put('/api/products/media/presets', {
+        data: {
+          revision: configuration.revision,
+          presets: [
+            { key: 'thumbnail', label: 'Thumbnail', width: 400, height: 400 },
+            { key: 'gallery', label: 'Gallery', width: 800, height: 1000 },
+            { key: 'detail', label: 'Detail', width: 1200, height: 900 }
+          ]
+        }
+      })
+    ).ok()
+  ).toBeTruthy()
   const title = `Variant workflow ${Date.now()}`
   const file = await image('variants.png')
   const started = await (
