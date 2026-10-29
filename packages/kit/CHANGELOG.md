@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/kit
 
+## 0.9.0
+
+### Patch Changes
+
+- 6696fd0: Add an opt-in unified sidebar with nested module navigation and keyboard-accessible collapsed flyouts. Include module subpages in global search, preserve standalone destinations, and place sidebar collapse controls in the footer. Enable the unified layout for SaaS Portal.
+
 ## 0.8.9
 
 ## 0.8.8

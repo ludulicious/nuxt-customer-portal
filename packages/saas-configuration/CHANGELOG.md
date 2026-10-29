@@ -1,5 +1,18 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.9.0
+
+### Patch Changes
+
+- 936f0a2: Add an authenticated store media library with Studio-style image editing, batch review, independent thumbnails, retained originals, and scoped API-key access using existing storage providers. Product images remain unchanged.
+
+  Support configurable store media variants with automatic generation, independent custom crops, and preset changes applied when each image is next saved. Existing thumbnails migrate as custom sources and product image policies remain unchanged.
+
+- Updated dependencies [936f0a2]
+- Updated dependencies [6696fd0]
+  - @nuxt-customer-portal/core@0.9.0
+  - @nuxt-customer-portal/ui@0.9.0
+
 ## 0.8.9
 
 ### Patch Changes
