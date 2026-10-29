@@ -1,3 +1,4 @@
+import type { MediaVariantConfiguration, MediaVariantPreset } from '../../shared/media-variants'
 import type { MediaRequest } from '../utils/media-request'
 import type { MediaDetails, MediaPage, MediaUpload, StoreMedia } from '../../shared/media'
 import type { ImageSubmission } from '../components/ProductsMediaImageEditor.vue'
@@ -6,8 +7,8 @@ export const useStoreMedia = () => {
   const request = useRequestFetch() as MediaRequest
   // Retain completed transfers after a completion/network failure so retry is safe.
   let pending: { signature: string; upload: MediaUpload; sent: Set<string> } | undefined
-  const save = async (value: ImageSubmission, media?: StoreMedia) => {
-    const files: { role: 'original' | 'image' | 'thumbnail'; blob: Blob; name: string }[] = []
+  const save = async (value: ImageSubmission, media?: StoreMedia, presetRevision?: number) => {
+    const files: { role: 'original' | 'image' | 'thumbnail' | 'variant'; key?: string; blob: Blob; name: string }[] = []
     if (value.originalImage) {
       files.push({ role: 'original', blob: value.originalImage.blob, name: value.originalImage.filename })
     }
@@ -20,6 +21,9 @@ export const useStoreMedia = () => {
     if (value.thumbnail) {
       files.push({ role: 'thumbnail', blob: value.thumbnail.blob, name: value.thumbnail.filename })
     }
+    for (const variant of value.variants || []) {
+      files.push({ role: 'variant', key: variant.key, blob: variant.blob, name: variant.filename })
+    }
     const details: MediaDetails = {
       title: value.title,
       alt: value.alt,
@@ -27,7 +31,13 @@ export const useStoreMedia = () => {
       credit: value.credit,
       visible: value.visible
     }
-    const body = { ...details, id: media?.id, revision: media?.revision }
+    const body = {
+      ...details,
+      id: media?.id,
+      revision: media?.revision,
+      presetRevision,
+      resetVariants: value.resetVariants || []
+    }
     if (!files.length) {
       return request<StoreMedia>('/api/products/media', { method: 'PUT', body })
     }
@@ -41,7 +51,7 @@ export const useStoreMedia = () => {
     )
     const signature = JSON.stringify({
       body,
-      files: files.map((file, index) => [file.role, file.name, file.blob.type, hashes[index]])
+      files: files.map((file, index) => [file.role, file.key, file.name, file.blob.type, hashes[index]])
     })
     if (pending?.signature !== signature) {
       const upload = await request<MediaUpload>('/api/products/media/uploads', {
@@ -49,6 +59,7 @@ export const useStoreMedia = () => {
         body: {
           files: files.map((file) => ({
             role: file.role,
+            key: file.key,
             name: file.name,
             contentType: file.blob.type,
             size: file.blob.size
@@ -61,7 +72,10 @@ export const useStoreMedia = () => {
       if (pending.sent.has(file.id)) {
         continue
       }
-      await request(file.url, { method: 'PUT', body: files.find((item) => item.role === file.role)!.blob })
+      await request(file.url, {
+        method: 'PUT',
+        body: files.find((item) => item.role === file.role && item.key === file.key)!.blob
+      })
       pending.sent.add(file.id)
     }
     const saved = await request<StoreMedia>(`/api/products/media/uploads/${pending.upload.id}/complete`, {
@@ -72,6 +86,9 @@ export const useStoreMedia = () => {
     return saved
   }
   return {
+    presets: () => request<MediaVariantConfiguration>('/api/products/media/presets'),
+    savePresets: (presets: MediaVariantPreset[], revision: number) =>
+      request<MediaVariantConfiguration>('/api/products/media/presets', { method: 'PUT', body: { presets, revision } }),
     list: (query: Record<string, unknown>, signal?: AbortSignal) =>
       request<MediaPage>('/api/products/media', { query, signal }),
     get: (id: string) => request<StoreMedia>(`/api/products/media/${encodeURIComponent(id)}`),

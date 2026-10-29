@@ -942,6 +942,30 @@
         "invalidImage": "Deze afbeelding kan niet worden gelezen of overschrijdt de pixellimiet.",
         "storage": "De afbeeldingsopslag is niet beschikbaar. Probeer het opnieuw.",
         "save": "De afbeelding kon niet worden opgeslagen. Probeer het opnieuw."
+      },
+      "variants": {
+        "settings": "Afbeeldingsvarianten",
+        "settingsHelp": "Bepaal welke afbeeldingen uit elke volledige afbeelding worden gemaakt. Bestaande bibliotheekafbeeldingen gebruiken deze instellingen wanneer je ze opnieuw opslaat. Productuploads behouden hun bestaande instellingen.",
+        "presets": "Varianten",
+        "thumbnail": "Miniatuur",
+        "gallery": "Galerij",
+        "detail": "Detail",
+        "automatic": "Automatisch",
+        "custom": "Aangepast",
+        "pendingUpdate": "De variantinstellingen zijn gewijzigd. Sla deze afbeelding op om de huidige varianten te maken.",
+        "output": "Uitvoer: {width} × {height} px",
+        "upscaled": "Deze bron is kleiner dan de gewenste variant en wordt vergroot.",
+        "resetAutomatic": "Automatisch herstellen",
+        "key": "Code",
+        "label": "Naam",
+        "keyHelp": "Codes identificeren varianten in de API en kunnen na het opslaan niet worden hernoemd. De miniatuur is verplicht. Verwijder een variant en voeg een nieuwe toe om de code te wijzigen.",
+        "newVariant": "Nieuwe variant",
+        "add": "Variant toevoegen",
+        "remove": "Variant verwijderen",
+        "validKey": "Gebruik een unieke code met kleine letters, cijfers en koppeltekens. image, original en full zijn gereserveerd.",
+        "validPresets": "Gebruik unieke variantcodes en behoud de verplichte miniatuurvariant.",
+        "settingsConflict": "De variantinstellingen zijn gewijzigd. Laad opnieuw voordat je opslaat.",
+        "settingsSaved": "Variantinstellingen opgeslagen. Bestaande afbeeldingen worden bijgewerkt wanneer je elke afbeelding opnieuw opslaat."
       }
     }
   }

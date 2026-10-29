@@ -1,3 +1,4 @@
+import { defaultMediaVariantPresets, mediaVariantPresetsSchema } from '../shared/media-variants'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { mediaDetailsSchema, mediaListSchema, mediaUploadSchema, mediaSaveSchema, mediaMaximum } from '../shared/media'
@@ -80,4 +81,38 @@ test('brightness preserves alpha and GIF edits are rejected before rasterizing a
   assert.equal(await prepareImage(gif, { x: 0, y: 0, width: 1, height: 1 }), gif)
   await assert.rejects(prepareImage(gif, { x: 0, y: 0, width: 0.5, height: 0.5 }), /animation/)
   assert.throws(() => imageGeometry(100, 100, { rotation: 1, straighten: 0, brightness: 100 }))
+})
+
+test('variant presets have stable unique keys, bounded sizes and a required thumbnail', () => {
+  assert.equal(mediaVariantPresetsSchema.parse(defaultMediaVariantPresets()).length, 3)
+  assert.equal(
+    mediaVariantPresetsSchema.safeParse([{ key: 'image', label: 'Image', width: 400, height: 400 }]).success,
+    false
+  )
+  assert.equal(
+    mediaVariantPresetsSchema.safeParse([defaultMediaVariantPresets()[0], defaultMediaVariantPresets()[0]]).success,
+    false
+  )
+  assert.equal(
+    mediaVariantPresetsSchema.safeParse([{ key: 'hero', label: 'Hero', width: 400, height: 400 }]).success,
+    false
+  )
+  assert.equal(
+    mediaVariantPresetsSchema.safeParse([{ key: 'thumbnail', label: 'Thumbnail', width: 1, height: 400 }]).success,
+    false
+  )
+  assert.equal(
+    mediaUploadSchema.safeParse({ files: [{ role: 'variant', name: 'crop.png', contentType: 'image/png', size: 1 }] })
+      .success,
+    false
+  )
+  assert.equal(
+    mediaUploadSchema.safeParse({
+      files: [
+        { role: 'thumbnail', name: 'crop.png', contentType: 'image/png', size: 1 },
+        { role: 'variant', key: 'thumbnail', name: 'crop.png', contentType: 'image/png', size: 1 }
+      ]
+    }).success,
+    false
+  )
 })

@@ -169,7 +169,9 @@ test(
           uploadId: edit.id
         })
         assert.equal(image.image.width, 400)
-        assert.equal(image.thumbnail?.width, 200)
+        assert.equal(image.thumbnail?.width, 400)
+        assert.equal(image.variants.thumbnail?.mode, 'custom')
+        assert.equal(image.variants.thumbnail?.source?.width, 200)
         assert.deepEqual((await media.mediaContent('media-store', image.id, true, 'original')).body, original)
         const reset = await transfer('media-store', original, 'image')
         image = await media.saveMedia('media-store', {
@@ -179,7 +181,7 @@ test(
           uploadId: reset.id
         })
         assert.equal(image.image.width, 800)
-        assert.equal(image.thumbnail?.width, 200, 'reset leaves independent thumbnail intact')
+        assert.equal(image.thumbnail?.width, 400, 'reset leaves independent thumbnail intact')
         saved.push(image)
         const invalid = await media.startMediaUpload('media-store', {
           files: [{ role: 'original', name: 'bad.png', contentType: 'image/png', size: 8 }]
@@ -334,6 +336,127 @@ test(
         }),
         { statusCode: 400 }
       )
+      const { mediaVariantConfiguration, saveMediaVariantConfiguration } =
+        await import('../server/utils/media-variants')
+      const beforePolicy = (await db.query('SELECT image_policy FROM products.store')).rows[0].image_policy
+      const config = await mediaVariantConfiguration('media-store')
+      const beforeSettings = await media.getMedia('media-store', saved[1]!.id, true)
+      const beforeFiles = (
+        await db.query('SELECT key,file_id FROM products.media_variant WHERE media_id=$1 ORDER BY key', [
+          beforeSettings.id
+        ])
+      ).rows
+      const oldThumbnail = (await media.mediaContent('media-store', beforeSettings.id, true, 'thumbnail')).body
+      const beforeConfigWrites = writes
+      const changed = await saveMediaVariantConfiguration('media-store', {
+        revision: config.revision,
+        presets: [
+          ...config.presets.map((preset) =>
+            preset.key === 'thumbnail' ? { ...preset, width: 320, height: 240 } : preset
+          ),
+          { key: 'hero', label: 'Hero', width: 1000, height: 640 }
+        ]
+      })
+      assert.equal(writes, beforeConfigWrites, 'preset changes do not generate files')
+      assert.deepEqual(
+        (
+          await db.query('SELECT key,file_id FROM products.media_variant WHERE media_id=$1 ORDER BY key', [
+            beforeSettings.id
+          ])
+        ).rows,
+        beforeFiles
+      )
+      assert.equal((await media.getMedia('media-store', beforeSettings.id, true)).variantsOutdated, true)
+      assert.deepEqual(
+        (await db.query('SELECT image_policy FROM products.store')).rows[0].image_policy,
+        beforePolicy,
+        'product dimensions are unchanged'
+      )
+      await assert.rejects(
+        media.saveMedia('media-store', {
+          ...details,
+          id: beforeSettings.id,
+          revision: beforeSettings.revision,
+          presetRevision: config.revision
+        }),
+        { statusCode: 409 }
+      )
+      let refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: beforeSettings.id,
+        revision: beforeSettings.revision,
+        presetRevision: changed.revision
+      })
+      assert.equal(refreshed.variantsOutdated, false)
+      assert.equal(refreshed.variants.hero?.width, 1000)
+      assert.equal(refreshed.variants.hero?.height, 640)
+      assert.equal(refreshed.variants.thumbnail?.mode, 'custom')
+      assert.equal(refreshed.thumbnail?.width, 320)
+      assert.equal(refreshed.thumbnail?.height, 240)
+      assert.equal(refreshed.variants.thumbnail?.source?.width, 200)
+      const customThumbnail = (await media.mediaContent('media-store', refreshed.id, true, 'thumbnail')).body
+      assert.notDeepEqual(customThumbnail, oldThumbnail, 'custom sources are resized to new dimensions on save')
+      const heroBefore = (await media.mediaContent('media-store', refreshed.id, true, 'hero')).body
+      const newFullSource = await sharp({ create: { width: 400, height: 400, channels: 3, background: '#cc3322' } })
+        .png()
+        .toBuffer()
+      const newFull = await transfer('media-store', newFullSource, 'image')
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: refreshed.id,
+        revision: refreshed.revision,
+        uploadId: newFull.id,
+        presetRevision: changed.revision
+      })
+      assert.deepEqual(
+        (await media.mediaContent('media-store', refreshed.id, true, 'thumbnail')).body,
+        customThumbnail,
+        'custom crops survive full-image edits'
+      )
+      assert.notDeepEqual(
+        (await media.mediaContent('media-store', refreshed.id, true, 'hero')).body,
+        heroBefore,
+        'automatic variants follow the new full image'
+      )
+      await assert.rejects(media.mediaContent('media-store', refreshed.id, false, 'hero', true), { statusCode: 404 })
+      assert.equal('source' in (await media.getMedia('media-store', refreshed.id, false)).variants.hero!, false)
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: refreshed.id,
+        revision: refreshed.revision,
+        resetVariants: ['thumbnail'],
+        presetRevision: changed.revision
+      })
+      assert.equal(refreshed.variants.thumbnail?.mode, 'automatic')
+      assert.equal(refreshed.variants.thumbnail?.source?.width, 400)
+      const removed = await saveMediaVariantConfiguration('media-store', {
+        revision: changed.revision,
+        presets: changed.presets.filter((preset) => preset.key !== 'hero')
+      })
+      assert.ok(
+        (await media.getMedia('media-store', refreshed.id, true)).variants.hero,
+        'removed presets remain until that image is saved'
+      )
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: refreshed.id,
+        revision: refreshed.revision,
+        presetRevision: removed.revision
+      })
+      assert.equal(refreshed.variants.hero, undefined)
+      await assert.rejects(media.mediaContent('media-store', refreshed.id, true, 'hero'), { statusCode: 404 })
+      await assert.rejects(
+        saveMediaVariantConfiguration('media-store', {
+          revision: removed.revision,
+          presets: removed.presets.filter((preset) => preset.key !== 'thumbnail')
+        }),
+        { statusCode: 400 }
+      )
+      const gifVariant = await media.mediaContent('media-store', gifMedia.id, true, 'thumbnail')
+      const gifMetadata = await sharp(gifVariant.body, { animated: true }).metadata()
+      assert.equal(gifMetadata.pages, 2, 'automatic GIF variants preserve animation')
+      assert.equal(gifMetadata.width, 400)
+      assert.equal(gifMetadata.pageHeight, 400)
       const oversizedPixels = await sharp({ create: { width: 8000, height: 5001, channels: 3, background: '#000000' } })
         .png()
         .toBuffer()

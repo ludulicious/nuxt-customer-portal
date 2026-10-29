@@ -82,6 +82,7 @@ async function save(tab: 'general' | 'styles') {
 }
 const tabs = computed(() => [
   { label: t('products.generalSettings'), value: '/admin/products/settings' },
+  { label: t('products.media.variants.settings'), value: '/admin/products/settings/media' },
   { label: t('products.styles'), value: '/admin/products/settings/styles' },
   ...(health.value?.stripe.source === 'environment'
     ? []

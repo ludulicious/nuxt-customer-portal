@@ -1,5 +1,5 @@
 import type { MediaRequest } from './media-request'
-import type { StoreMedia } from '../../shared/media'
+import type { MediaVariant, StoreMedia } from '../../shared/media'
 
 export interface MediaEditorDocument {
   data: {
@@ -7,8 +7,10 @@ export interface MediaEditorDocument {
     categories: string[]
     credit: string
     visible: boolean
-    image: { src: string; alt: string; originalSrc?: string }
+    image: { src: string; alt: string; originalSrc?: string; name?: string }
     thumbnail?: { src: string }
+    variants?: Record<string, MediaVariant>
+    variantsOutdated?: boolean
   }
 }
 export function mediaEditorDocument(media: StoreMedia): MediaEditorDocument {
@@ -18,8 +20,10 @@ export function mediaEditorDocument(media: StoreMedia): MediaEditorDocument {
       categories: media.categories,
       credit: media.credit,
       visible: media.visible,
-      image: { src: media.image.url, alt: media.alt, originalSrc: media.original?.url },
-      thumbnail: media.thumbnail ? { src: media.thumbnail.url } : undefined
+      image: { src: media.image.url, alt: media.alt, originalSrc: media.original?.url, name: media.image.name },
+      thumbnail: media.thumbnail ? { src: media.thumbnail.url } : undefined,
+      variants: media.variants,
+      variantsOutdated: media.variantsOutdated
     }
   }
 }

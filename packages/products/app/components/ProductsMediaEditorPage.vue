@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StoreMedia } from '../../shared/media'
+import { defaultMediaVariantPresets, type MediaVariantConfiguration } from '../../shared/media-variants'
 import { mediaFormats, mediaMaximum } from '../../shared/media'
 import type { ImageSubmission } from './ProductsMediaImageEditor.vue'
 import { mediaEditorDocument } from '../utils/media-editor'
@@ -17,6 +18,7 @@ const media = ref<StoreMedia>(),
   dirty = ref(false),
   working = ref(false),
   version = ref(0)
+const configuration = ref<MediaVariantConfiguration>({ presets: defaultMediaVariantPresets(), revision: 1 })
 const configured = ref(true)
 const editor = ref<{ savePending: () => Promise<boolean> }>(),
   discardOpen = ref(false)
@@ -29,14 +31,16 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [list, settings, existing] = await Promise.all([
+    const [list, settings, existing, presets] = await Promise.all([
       api.list({}),
       useProducts().settings(),
-      props.id ? api.get(props.id) : undefined
+      props.id ? api.get(props.id) : undefined,
+      api.presets()
     ])
     categories.value = list.categories
     configured.value = settings.storageConfigured
     media.value = existing
+    configuration.value = presets
   } catch (cause) {
     error.value = mediaError(cause)
   } finally {
@@ -47,7 +51,7 @@ onMounted(load)
 async function save(value: ImageSubmission) {
   error.value = ''
   try {
-    const saved = await api.save(value, props.batch ? undefined : media.value)
+    const saved = await api.save(value, props.batch ? undefined : media.value, configuration.value.revision)
     if (!props.batch) {
       media.value = saved
       version.value++
@@ -120,7 +124,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       :maximum="mediaMaximum"
       :categories="categories"
       :busy="false"
-      :thumbnail-aspect-ratio="4 / 3"
+      :presets="configuration.presets"
       :save-image="save"
       @back="back"
       @dirty="dirty = $event"
@@ -135,7 +139,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       :maximum="mediaMaximum"
       :categories="categories"
       :busy="false"
-      :thumbnail-aspect-ratio="4 / 3"
+      :presets="configuration.presets"
       :save-image="save"
       @back="back"
       @dirty="dirty = $event"

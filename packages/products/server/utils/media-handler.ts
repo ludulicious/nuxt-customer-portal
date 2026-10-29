@@ -1,3 +1,4 @@
+import { mediaVariantConfiguration, saveMediaVariantConfiguration } from './media-variants'
 import { createError, defineEventHandler, getHeader, getQuery, getRequestURL, readBody, setHeader } from 'h3'
 import { z } from 'zod'
 import { mediaAccess } from './media-access'
@@ -26,6 +27,14 @@ export default defineEventHandler(async (event): Promise<unknown> => {
     }
     if (event.method === 'PUT') {
       return saveMedia(access.storeId, await readBody(event))
+    }
+  }
+  if (path.length === 1 && path[0] === 'presets') {
+    if (event.method === 'GET') {
+      return mediaVariantConfiguration(access.storeId)
+    }
+    if (event.method === 'PUT') {
+      return saveMediaVariantConfiguration(access.storeId, await readBody(event))
     }
   }
   if (path.length === 1 && path[0] === 'reorder' && event.method === 'PUT') {
@@ -70,7 +79,8 @@ export default defineEventHandler(async (event): Promise<unknown> => {
       access.storeId,
       path[0]!,
       access.manage,
-      String(getQuery(event).variant || 'image')
+      String(getQuery(event).variant || 'image'),
+      getQuery(event).source === '1'
     )
     setHeader(event, 'Content-Type', content.contentType)
     setHeader(event, 'X-Content-Type-Options', 'nosniff')

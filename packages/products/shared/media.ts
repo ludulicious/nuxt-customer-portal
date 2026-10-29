@@ -1,3 +1,4 @@
+import { mediaVariantKeySchema } from './media-variants'
 import { z } from 'zod'
 
 export const mediaFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif']
@@ -18,23 +19,34 @@ export const mediaUploadSchema = z
     files: z
       .array(
         z.object({
-          role: z.enum(['original', 'image', 'thumbnail']),
+          role: z.enum(['original', 'image', 'thumbnail', 'variant']),
+          key: mediaVariantKeySchema.optional(),
           name: z.string().trim().min(1).max(250),
           contentType: z.enum(mediaContentTypes),
           size: z.number().int().positive().max(mediaMaximum)
         })
       )
       .min(1)
-      .max(3)
+      .max(15)
   })
-  .refine((value) => new Set(value.files.map((file) => file.role)).size === value.files.length, {
-    message: 'Duplicate file role'
+  .superRefine((value, ctx) => {
+    const keys = new Set<string>()
+    value.files.forEach((file, index) => {
+      const key =
+        file.role === 'variant' ? `variant:${file.key}` : file.role === 'thumbnail' ? 'variant:thumbnail' : file.role
+      if ((file.role === 'variant') !== !!file.key || keys.has(key)) {
+        ctx.addIssue({ code: 'custom', path: ['files', index], message: 'Invalid or duplicate image variant' })
+      }
+      keys.add(key)
+    })
   })
 export const mediaSaveSchema = mediaDetailsSchema
   .extend({
     id: z.string().uuid().optional(),
     revision: z.number().int().positive().optional(),
-    uploadId: z.string().uuid().optional()
+    uploadId: z.string().uuid().optional(),
+    presetRevision: z.number().int().positive().optional(),
+    resetVariants: z.array(mediaVariantKeySchema).max(12).default([])
   })
   .refine((value) => !value.id || !!value.revision, { message: 'Revision is required' })
 export const mediaListSchema = z.object({
@@ -60,6 +72,15 @@ export interface MediaFile {
   height: number
   url: string
 }
+export interface MediaVariant {
+  key: string
+  label: string
+  mode: 'automatic' | 'custom'
+  width: number
+  height: number
+  file: MediaFile
+  source?: MediaFile
+}
 export interface StoreMedia extends MediaDetails {
   id: string
   revision: number
@@ -69,6 +90,8 @@ export interface StoreMedia extends MediaDetails {
   image: MediaFile
   thumbnail?: MediaFile
   original?: MediaFile
+  variants: Record<string, MediaVariant>
+  variantsOutdated: boolean
 }
 export interface MediaPage {
   items: StoreMedia[]
@@ -77,5 +100,5 @@ export interface MediaPage {
 }
 export interface MediaUpload {
   id: string
-  files: { id: string; role: 'original' | 'image' | 'thumbnail'; url: string }[]
+  files: { id: string; role: 'original' | 'image' | 'thumbnail' | 'variant'; key?: string; url: string }[]
 }

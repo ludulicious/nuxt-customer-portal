@@ -1,3 +1,5 @@
+import { mediaVariantConfiguration, reconcileMediaVariants, type MediaVariantRow } from './media-variants'
+import type { MediaVariantConfiguration } from '../../shared/media-variants'
 import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
 import type { PoolClient } from 'pg'
@@ -20,6 +22,7 @@ interface FileRow {
   store_id: string
   upload_id: string
   role: string
+  variant_key: string | null
   name: string
   content_type: string
   size: string
@@ -48,16 +51,30 @@ const notFound = () => createError({ statusCode: 404, message: 'Image not found'
 const conflict = () => createError({ statusCode: 409, message: 'This image has changed. Reload before saving.' })
 const lockStore = (client: PoolClient, storeId: string) =>
   client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`products.media:${storeId}`])
-async function dto(row: MediaRow, manage: boolean, client?: PoolClient): Promise<StoreMedia> {
-  const files = await rows<FileRow>(
-    'SELECT * FROM products.media_file WHERE store_id=$1 AND id=ANY($2::text[]) AND ready',
-    [
-      row.store_id,
-      [row.image_file_id, row.thumbnail_file_id, ...(manage ? [row.original_file_id] : [])].filter(Boolean)
-    ],
+async function dto(
+  row: MediaRow,
+  manage: boolean,
+  client?: PoolClient,
+  configuration?: MediaVariantConfiguration
+): Promise<StoreMedia> {
+  const config = configuration || (await mediaVariantConfiguration(row.store_id, client))
+  const variants = await rows<MediaVariantRow>(
+    'SELECT * FROM products.media_variant WHERE store_id=$1 AND media_id=$2 ORDER BY key',
+    [row.store_id, row.id],
     client
   )
-  const file = (id: string | null, variant: string): MediaFile | undefined => {
+  const ids = [
+    row.image_file_id,
+    row.thumbnail_file_id,
+    ...(manage ? [row.original_file_id] : []),
+    ...variants.flatMap((variant) => [variant.file_id, ...(manage ? [variant.source_file_id] : [])])
+  ].filter(Boolean)
+  const files = await rows<FileRow>(
+    'SELECT * FROM products.media_file WHERE store_id=$1 AND id=ANY($2::text[]) AND ready',
+    [row.store_id, ids],
+    client
+  )
+  const file = (id: string | null, variant: string, source = false): MediaFile | undefined => {
     const value = files.find((item) => item.id === id)
     return value
       ? {
@@ -66,7 +83,7 @@ async function dto(row: MediaRow, manage: boolean, client?: PoolClient): Promise
           size: Number(value.size),
           width: value.width,
           height: value.height,
-          url: `/api/products/media/${row.id}/content?variant=${variant}`
+          url: `/api/products/media/${row.id}/content?variant=${encodeURIComponent(variant)}${source ? '&source=1' : ''}`
         }
       : undefined
   }
@@ -82,8 +99,36 @@ async function dto(row: MediaRow, manage: boolean, client?: PoolClient): Promise
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     image: file(row.image_file_id, 'image')!,
-    thumbnail: file(row.thumbnail_file_id, 'thumbnail'),
-    ...(manage ? { original: file(row.original_file_id, 'original') } : {})
+    thumbnail: file(
+      variants.find((variant) => variant.key === 'thumbnail')?.file_id || row.thumbnail_file_id,
+      'thumbnail'
+    ),
+    ...(manage ? { original: file(row.original_file_id, 'original') } : {}),
+    variants: Object.fromEntries(
+      variants.map((variant) => [
+        variant.key,
+        {
+          key: variant.key,
+          label: variant.label,
+          mode: variant.mode,
+          width: variant.width,
+          height: variant.height,
+          file: file(variant.file_id, variant.key)!,
+          ...(manage ? { source: file(variant.source_file_id, variant.key, true) } : {})
+        }
+      ])
+    ),
+    variantsOutdated:
+      variants.length !== config.presets.length ||
+      config.presets.some((preset) => {
+        const variant = variants.find((item) => item.key === preset.key)
+        return (
+          !variant ||
+          variant.width !== preset.width ||
+          variant.height !== preset.height ||
+          variant.label !== preset.label
+        )
+      })
   }
 }
 export async function getMedia(storeId: string, id: string, manage: boolean, client?: PoolClient): Promise<StoreMedia> {
@@ -114,8 +159,9 @@ export async function listMedia(storeId: string, manage: boolean, input: unknown
     'SELECT DISTINCT unnest(categories) AS category FROM products.media WHERE store_id=$1 AND ($2::boolean OR visible) ORDER BY category',
     [storeId, manage]
   )
+  const configuration = await mediaVariantConfiguration(storeId)
   return {
-    items: await Promise.all(result.map((row) => dto(row, manage))),
+    items: await Promise.all(result.map((row) => dto(row, manage, undefined, configuration))),
     categories: categories.map((row) => row.category),
     pagination: { total, page, pageSize: 20, pageCount }
   }
@@ -131,11 +177,11 @@ export async function startMediaUpload(storeId: string, input: unknown): Promise
         extension = file.contentType === 'image/jpeg' ? 'jpg' : file.contentType.slice(6)
       const key = `products/media/${storeId}/${id}/${fileId}.${extension}`
       await rows(
-        'INSERT INTO products.media_file(id,store_id,upload_id,role,name,content_type,size,object_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
-        [fileId, storeId, id, file.role, file.name, file.contentType, file.size, key],
+        'INSERT INTO products.media_file(id,store_id,upload_id,role,name,content_type,size,object_key,variant_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+        [fileId, storeId, id, file.role, file.name, file.contentType, file.size, key, file.key || null],
         client
       )
-      files.push({ id: fileId, role: file.role, url: `/api/products/media/uploads/${id}/${fileId}` })
+      files.push({ id: fileId, role: file.role, key: file.key, url: `/api/products/media/uploads/${id}/${fileId}` })
     }
     return { id, files }
   })
@@ -204,6 +250,10 @@ export async function saveMedia(storeId: string, input: unknown): Promise<StoreM
         throw createError({ statusCode: 409, message: 'Finish uploading every image file before saving' })
       }
     }
+    const configuration = await mediaVariantConfiguration(storeId, client)
+    if (data.presetRevision && data.presetRevision !== configuration.revision) {
+      throw createError({ statusCode: 409, message: 'Variant settings have changed. Reload before saving.' })
+    }
     const original = files.find((file) => file.role === 'original'),
       image = files.find((file) => file.role === 'image'),
       thumbnail = files.find((file) => file.role === 'thumbnail')
@@ -256,6 +306,21 @@ export async function saveMedia(storeId: string, input: unknown): Promise<StoreM
         client
       )
     }
+    const [current] = await rows<{ image_file_id: string }>(
+      'SELECT image_file_id FROM products.media WHERE store_id=$1 AND id=$2',
+      [storeId, id],
+      client
+    )
+    await reconcileMediaVariants(
+      storeId,
+      id,
+      current!.image_file_id,
+      !!original,
+      files,
+      data.resetVariants,
+      configuration,
+      client
+    )
     if (data.uploadId) {
       await rows('UPDATE products.media_upload SET committed_media_id=$2 WHERE id=$1', [data.uploadId, id], client)
     }
@@ -308,19 +373,43 @@ export async function deleteMedia(storeId: string, id: string, revision: number)
     return { deleted: true }
   })
 }
-export async function mediaContent(storeId: string, id: string, manage: boolean, variant: string) {
-  if (!['image', 'thumbnail', 'original'].includes(variant) || (variant === 'original' && !manage)) {
+export async function mediaContent(storeId: string, id: string, manage: boolean, variant: string, source = false) {
+  if ((variant === 'original' || source) && !manage) {
     throw notFound()
   }
-  const column = {
-    image: 'image_file_id',
-    thumbnail: 'coalesce(thumbnail_file_id,image_file_id)',
-    original: 'original_file_id'
-  }[variant]!
-  const [file] = await rows<FileRow>(
-    `SELECT f.* FROM products.media m JOIN products.media_file f ON f.id=${column} AND f.store_id=m.store_id WHERE m.store_id=$1 AND m.id=$2 AND ($3::boolean OR m.visible) AND f.ready`,
+  const [media] = await rows<MediaRow>(
+    'SELECT * FROM products.media WHERE store_id=$1 AND id=$2 AND ($3::boolean OR visible)',
     [storeId, id, manage]
   )
+  if (!media) {
+    throw notFound()
+  }
+  let fileId: string | null | undefined
+  if (variant === 'image' || variant === 'original') {
+    if (source) {
+      throw notFound()
+    }
+    fileId = variant === 'image' ? media.image_file_id : media.original_file_id
+  } else {
+    const [saved] = await rows<MediaVariantRow>(
+      'SELECT * FROM products.media_variant WHERE store_id=$1 AND media_id=$2 AND key=$3',
+      [storeId, id, variant]
+    )
+    fileId = saved
+      ? source
+        ? saved.source_file_id
+        : saved.file_id
+      : variant === 'thumbnail' && !source
+        ? media.thumbnail_file_id || media.image_file_id
+        : undefined
+  }
+  if (!fileId) {
+    throw notFound()
+  }
+  const [file] = await rows<FileRow>('SELECT * FROM products.media_file WHERE store_id=$1 AND id=$2 AND ready', [
+    storeId,
+    fileId
+  ])
   if (!file) {
     throw notFound()
   }
@@ -328,7 +417,7 @@ export async function mediaContent(storeId: string, id: string, manage: boolean,
 }
 export async function cleanupMedia() {
   const candidates = await rows<{ id: string }>(
-    "SELECT u.id FROM products.media_upload u WHERE u.created_at<now()-interval '24 hours' AND (NOT EXISTS(SELECT 1 FROM products.media_file f WHERE f.upload_id=u.id) OR EXISTS(SELECT 1 FROM products.media_file f WHERE f.upload_id=u.id AND NOT EXISTS(SELECT 1 FROM products.media m WHERE f.id IN(m.original_file_id,m.image_file_id,m.thumbnail_file_id)))) ORDER BY u.created_at LIMIT 50"
+    "SELECT u.id FROM products.media_upload u WHERE u.created_at<now()-interval '24 hours' AND (NOT EXISTS(SELECT 1 FROM products.media_file f WHERE f.upload_id=u.id) OR EXISTS(SELECT 1 FROM products.media_file f WHERE f.upload_id=u.id AND NOT EXISTS(SELECT 1 FROM products.media m WHERE f.id IN(m.original_file_id,m.image_file_id,m.thumbnail_file_id)) AND NOT EXISTS(SELECT 1 FROM products.media_variant v WHERE f.id IN(v.file_id,v.source_file_id)))) ORDER BY u.created_at LIMIT 50"
   )
   let removed = 0
   for (const candidate of candidates) {
@@ -342,7 +431,7 @@ export async function cleanupMedia() {
         return
       }
       const files = await rows<FileRow>(
-        'SELECT f.* FROM products.media_file f WHERE upload_id=$1 AND NOT EXISTS(SELECT 1 FROM products.media m WHERE f.id IN(m.original_file_id,m.image_file_id,m.thumbnail_file_id))',
+        'SELECT f.* FROM products.media_file f WHERE upload_id=$1 AND NOT EXISTS(SELECT 1 FROM products.media m WHERE f.id IN(m.original_file_id,m.image_file_id,m.thumbnail_file_id)) AND NOT EXISTS(SELECT 1 FROM products.media_variant v WHERE f.id IN(v.file_id,v.source_file_id))',
         [candidate.id],
         client
       )

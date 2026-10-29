@@ -47,7 +47,8 @@ test('single upload, adjustments, independent thumbnail, metadata, reset, dirty 
   await brightness.press('ArrowRight')
   await page.getByRole('tab', { name: 'Details', exact: true }).click()
   await expect(page.getByRole('textbox', { name: /^Title/ })).toHaveValue(title)
-  await page.getByRole('button', { name: 'Add thumbnail', exact: true }).click()
+  await page.getByRole('button', { name: /^Thumbnail/ }).click()
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
   await page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider').focus()
   await page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider').press('ArrowRight')
   await page.getByRole('button', { name: 'Crop image', exact: true }).click()
@@ -220,4 +221,102 @@ test('library preserves search state, supports keyboard ordering and confirms de
   await confirmation.getByRole('button', { name: 'Delete image', exact: true }).click()
   await expect(page.locator('article')).toHaveCount(0)
   expect((await page.request.get(`/api/products/media/${b.id}`)).status()).toBe(404)
+})
+
+test('store presets apply on the next save and custom variants stay independent', async ({ page }) => {
+  const title = `Variant workflow ${Date.now()}`
+  const file = await image('variants.png')
+  const started = await (
+    await page.request.post('/api/products/media/uploads', {
+      data: { files: [{ role: 'original', name: file.name, contentType: file.mimeType, size: file.buffer.length }] }
+    })
+  ).json()
+  expect(
+    (
+      await page.request.put(started.files[0].url, { data: file.buffer, headers: { 'Content-Type': file.mimeType } })
+    ).ok()
+  ).toBeTruthy()
+  const createdResponse = await page.request.post(`/api/products/media/uploads/${started.id}/complete`, {
+    data: { title, alt: title, categories: [], credit: '', visible: true }
+  })
+  expect(createdResponse.ok(), await createdResponse.text()).toBeTruthy()
+  const created = await createdResponse.json()
+  expect(Object.keys(created.variants).sort()).toEqual(['detail', 'gallery', 'thumbnail'])
+  expect(created.variants.thumbnail.mode).toBe('automatic')
+  expect(created.thumbnail.width).toBe(400)
+  const policy = (await (await page.request.get('/api/products/admin/settings')).json()).imagePolicy
+  await page.goto(`/admin/products/media/${created.id}`)
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await page.getByRole('tab', { name: 'Adjust image', exact: true }).click()
+  const zoom = page.getByRole('group', { name: 'Zoom', exact: true }).getByRole('slider')
+  await zoom.focus()
+  await zoom.press('ArrowRight')
+  await page.getByRole('button', { name: 'Crop image', exact: true }).click()
+  await page.getByRole('button', { name: /^Detail/ }).click()
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await expect(page.getByRole('button', { name: /^Gallery/ })).toContainText('Custom')
+  await page.getByRole('tab', { name: 'Details', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  const custom = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(custom.variants.gallery.mode).toBe('custom')
+  const customBytes = await (await page.request.get(custom.variants.gallery.file.url)).body()
+  expect(await (await page.request.get(custom.image.url)).body()).toEqual(file.buffer)
+  await page.goto('/admin/products/settings/media')
+  await page.getByRole('button', { name: 'Add variant', exact: true }).click()
+  const key = page.getByRole('textbox', { name: /^Key/ }).last()
+  await key.fill('thumbnail')
+  await page.getByRole('textbox', { name: /^Name/ }).last().fill('Social')
+  await page
+    .getByRole('spinbutton', { name: /^Width/ })
+    .last()
+    .fill('640')
+  await page
+    .getByRole('spinbutton', { name: /^Width/ })
+    .last()
+    .press('Tab')
+  await page
+    .getByRole('spinbutton', { name: /^Height/ })
+    .last()
+    .fill('320')
+  await page
+    .getByRole('spinbutton', { name: /^Height/ })
+    .last()
+    .press('Tab')
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(
+    page.getByText('Use unique variant keys and keep the required thumbnail variant.', { exact: true })
+  ).toBeVisible()
+  await key.fill('social')
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(
+    page.getByText('Variant settings saved. Existing images will update when each image is next saved.', {
+      exact: true
+    })
+  ).toBeVisible()
+  const unchanged = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(unchanged.variants.social).toBeUndefined()
+  expect(unchanged.variantsOutdated).toBe(true)
+  expect(await (await page.request.get(unchanged.variants.gallery.file.url)).body()).toEqual(customBytes)
+  expect((await (await page.request.get('/api/products/admin/settings')).json()).imagePolicy).toEqual(policy)
+  await page.goto(`/admin/products/media/${created.id}`)
+  await expect(
+    page.getByText('Variant settings have changed. Save this image to generate the current variants.', { exact: true })
+  ).toBeVisible()
+  await page.getByRole('button', { name: /^Social/ }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  const updated = await (await page.request.get(`/api/products/media/${created.id}`)).json()
+  expect(updated.variants.social.file.width).toBe(640)
+  expect(updated.variants.social.file.height).toBe(320)
+  expect(updated.variantsOutdated).toBe(false)
+  expect(updated.variants.gallery.mode).toBe('custom')
+  expect(await (await page.request.get(updated.variants.gallery.file.url)).body()).toEqual(customBytes)
+  await page.getByRole('button', { name: /^Gallery/ }).click()
+  await page.getByRole('button', { name: 'Reset to automatic', exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save changes · All changes saved', exact: true })).toBeDisabled()
+  expect((await (await page.request.get(`/api/products/media/${created.id}`)).json()).variants.gallery.mode).toBe(
+    'automatic'
+  )
 })

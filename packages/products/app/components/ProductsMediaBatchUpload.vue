@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { z } from 'zod'
+import type { MediaVariantPreset } from '../../shared/media-variants'
 import ProductsMediaImageEditor, { type ImageSubmission } from './ProductsMediaImageEditor.vue'
 
 const mt = useMediaText()
@@ -20,6 +21,7 @@ const props = defineProps<{
   busy: boolean
   aspectRatio?: number | null
   aspectRatioLabel?: string
+  presets?: MediaVariantPreset[]
   thumbnailAspectRatio?: number | null
   thumbnailAspectRatioLabel?: string
   configurationError?: string
@@ -256,10 +258,7 @@ defineExpose({ savePending })
           :maximum="maximum"
           :categories="categories"
           :busy="busy"
-          :aspect-ratio="aspectRatio"
-          :aspect-ratio-label="aspectRatioLabel"
-          :thumbnail-aspect-ratio="thumbnailAspectRatio"
-          :thumbnail-aspect-ratio-label="thumbnailAspectRatioLabel"
+          :presets="presets"
           :configuration-error="configurationError"
           :save-label="remaining.length > 1 ? mt('Save and next') : mt('Save image')"
           :save-image="(value) => saveEntry(current!, value)"

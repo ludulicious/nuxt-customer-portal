@@ -942,6 +942,30 @@
         "invalidImage": "This image could not be decoded or exceeds the pixel limit.",
         "storage": "Image storage is unavailable. Try again.",
         "save": "The image could not be saved. Try again."
+      },
+      "variants": {
+        "settings": "Image variants",
+        "settingsHelp": "Define the images generated from each full image. Existing library images adopt these settings when they are next saved. Product image uploads keep their existing settings.",
+        "presets": "Variants",
+        "thumbnail": "Thumbnail",
+        "gallery": "Gallery",
+        "detail": "Detail",
+        "automatic": "Automatic",
+        "custom": "Custom",
+        "pendingUpdate": "Variant settings have changed. Save this image to generate the current variants.",
+        "output": "Output: {width} × {height} px",
+        "upscaled": "This source is smaller than the requested variant and will be enlarged.",
+        "resetAutomatic": "Reset to automatic",
+        "key": "Key",
+        "label": "Name",
+        "keyHelp": "Keys identify variants in the API and cannot be renamed after saving. The thumbnail is required. To change a key, remove that variant and add a new one.",
+        "newVariant": "New variant",
+        "add": "Add variant",
+        "remove": "Remove variant",
+        "validKey": "Use a unique lowercase key with letters, numbers and hyphens. image, original and full are reserved.",
+        "validPresets": "Use unique variant keys and keep the required thumbnail variant.",
+        "settingsConflict": "Variant settings have changed. Reload before saving.",
+        "settingsSaved": "Variant settings saved. Existing images will update when each image is next saved."
       }
     }
   }

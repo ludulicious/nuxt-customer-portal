@@ -1,3 +1,4 @@
+import { defaultMediaVariantPresets, type MediaVariantPreset } from '../../../shared/media-variants'
 import type { OrderPageOverride } from '../../../shared/page-texts'
 import type { ThankYouOverride } from '../../../shared/thank-you'
 import {
@@ -61,6 +62,8 @@ export const store = schema.table('store', {
   stripeSecretKey: text('stripe_secret_key'),
   stripeWebhookSecret: text('stripe_webhook_secret'),
   stripeTestedAt: timestamp('stripe_tested_at', { withTimezone: true }),
+  mediaVariants: jsonb('media_variants').$type<MediaVariantPreset[]>().notNull().default(defaultMediaVariantPresets()),
+  mediaVariantsRevision: integer('media_variants_revision').notNull().default(1),
   imagePolicy: jsonb('image_policy')
     .$type<{
       thumbnail: { width: number; height: number }
@@ -391,7 +394,8 @@ export const mediaFile = schema.table(
     uploadId: text('upload_id')
       .notNull()
       .references(() => mediaUpload.id, { onDelete: 'cascade' }),
-    role: text('role').$type<'original' | 'image' | 'thumbnail'>().notNull(),
+    role: text('role').$type<'original' | 'image' | 'thumbnail' | 'variant' | 'rendition'>().notNull(),
+    variantKey: text('variant_key'),
     name: text('name').notNull(),
     contentType: text('content_type').notNull(),
     size: bigint('size', { mode: 'number' }).notNull(),
@@ -402,10 +406,11 @@ export const mediaFile = schema.table(
     createdAt: stamp('created_at')
   },
   (t) => [
-    uniqueIndex('media_file_upload_role').on(t.uploadId, t.role),
+    uniqueIndex('media_file_upload_role_variant').on(t.uploadId, t.role, sql`COALESCE(${t.variantKey},'')`),
     uniqueIndex('media_file_store_id').on(t.storeId, t.id),
     index('media_file_upload').on(t.uploadId),
-    check('media_file_role', sql`${t.role} IN ('original','image','thumbnail')`),
+    check('media_file_role', sql`${t.role} IN ('original','image','thumbnail','variant','rendition')`),
+    check('media_file_variant_key', sql`(${t.role} IN ('variant','rendition')) = (${t.variantKey} IS NOT NULL)`),
     check('media_file_type', sql`${t.contentType} IN ('image/jpeg','image/png','image/webp','image/gif')`),
     check('media_file_size', sql`${t.size} > 0 AND ${t.size} <= 10485760`)
   ]
@@ -435,8 +440,33 @@ export const media = schema.table(
   },
   (t) => [
     index('media_store_order').on(t.storeId, t.position, t.id),
+    uniqueIndex('media_store_id_unique').on(t.storeId, t.id),
     foreignKey({ columns: [t.storeId, t.originalFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
     foreignKey({ columns: [t.storeId, t.imageFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
     foreignKey({ columns: [t.storeId, t.thumbnailFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] })
+  ]
+)
+
+export const mediaVariant = schema.table(
+  'media_variant',
+  {
+    storeId: text('store_id').notNull(),
+    mediaId: text('media_id').notNull(),
+    key: text('key').notNull(),
+    label: text('label').notNull(),
+    mode: text('mode').$type<'automatic' | 'custom'>().notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    fileId: text('file_id').notNull(),
+    sourceFileId: text('source_file_id').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.storeId, t.mediaId, t.key] }),
+    foreignKey({ columns: [t.storeId, t.mediaId], foreignColumns: [media.storeId, media.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.storeId, t.fileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.sourceFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    index('media_variant_file').on(t.fileId),
+    index('media_variant_source').on(t.sourceFileId),
+    check('media_variant_mode', sql`${t.mode} IN ('automatic','custom')`)
   ]
 )
