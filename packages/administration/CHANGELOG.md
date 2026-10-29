@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/administration
 
+## 0.9.1
+
+### Patch Changes
+
+- Avoid generated API route type-inference limits in administration requests.
+
+- @nuxt-customer-portal/core@0.9.1
+- @nuxt-customer-portal/ui@0.9.1
+
 ## 0.9.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/timesheets
 
+## 0.9.1
+
+### Patch Changes
+
+- Avoid generated API route type-inference limits when refreshing timesheet navigation capabilities in hosts with many routes. Release verification no longer forces Nuxt modules to use an older incompatible Nuxt Kit version.
+  - @nuxt-customer-portal/clients@0.9.1
+  - @nuxt-customer-portal/core@0.9.1
+  - @nuxt-customer-portal/organizations@0.9.1
+  - @nuxt-customer-portal/ui@0.9.1
+
 ## 0.9.0
 
 ### Patch Changes

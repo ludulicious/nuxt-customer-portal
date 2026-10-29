@@ -55,12 +55,12 @@ const loadOrganization = async () => {
     userOrganizationRole.value = (roleData?.role as MemberRole | undefined) ?? null
     personalAccount.value = false
     if (runtimeConfig.public.clients) {
-      const accounts = await $fetch<{ organizationId: string; clientType: string }[]>('/api/client-account')
+      const accounts = await $fetch<{ organizationId: string; clientType: string }[], string>('/api/client-account')
       personalAccount.value = accounts.some(
         (account) => account.organizationId === activeOrganizationId.value && account.clientType === 'person'
       )
     }
-    organization.value = await $fetch<Organization>(`/api/organizations/${activeOrganizationId.value}`)
+    organization.value = await $fetch<Organization, string>(`/api/organizations/${activeOrganizationId.value}`)
     if (organization.value && canViewOrganizationDirectory.value) {
       await loadMembers()
       await loadInvitations()
@@ -102,7 +102,7 @@ const loadInvitations = async () => {
   }
 
   try {
-    invitations.value = await $fetch<OrganizationInvitationsResponse>(
+    invitations.value = await $fetch<OrganizationInvitationsResponse, string>(
       `/api/organizations/${organization.value.id}/invitations`
     )
   } catch (err) {

@@ -96,18 +96,21 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
       })
     }
 
-    const response = await $fetch<{
-      success: boolean
-      message: string
-      user?: {
-        id: string
-        name: string
-        firstName: string
-        lastName: string
-        email: string
-        image: string | null
-      }
-    }>('/api/profile', {
+    const response = await $fetch<
+      {
+        success: boolean
+        message: string
+        user?: {
+          id: string
+          name: string
+          firstName: string
+          lastName: string
+          email: string
+          image: string | null
+        }
+      },
+      string
+    >('/api/profile', {
       method: 'PATCH',
       body: {
         name: event.data.name,

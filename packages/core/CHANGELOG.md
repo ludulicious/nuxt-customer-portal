@@ -1,8 +1,12 @@
 # @nuxt-customer-portal/core
 
+## 0.9.1
+
 ## 0.9.0
 
 ### Patch Changes
+
+- Avoid generated API route type-inference limits when updating organizations.
 
 - 936f0a2: Add an authenticated store media library with Studio-style image editing, batch review, independent thumbnails, retained originals, and scoped API-key access using existing storage providers. Product images remain unchanged.
 

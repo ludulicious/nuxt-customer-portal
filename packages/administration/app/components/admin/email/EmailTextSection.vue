@@ -127,7 +127,7 @@ const save = async () => {
   busy.value = true
   try {
     const item = selectedItem.value!
-    const result = await $fetch<PortalEmailSettings>(
+    const result = await $fetch<PortalEmailSettings, string>(
       `/api/admin/email/texts/${encodeURIComponent(item.moduleId)}/${encodeURIComponent(item.definition.id)}/${selectedLocale.value}`,
       { method: 'PUT', body: { definition: item.definition, text: selectedText.value } }
     )
@@ -143,7 +143,7 @@ const reset = async () => {
   busy.value = true
   try {
     const item = selectedItem.value!
-    const result = await $fetch<PortalEmailSettings>(
+    const result = await $fetch<PortalEmailSettings, string>(
       `/api/admin/email/texts/${encodeURIComponent(item.moduleId)}/${encodeURIComponent(item.definition.id)}/${selectedLocale.value}`,
       { method: 'DELETE' }
     )
@@ -160,7 +160,7 @@ const preview = async () => {
   previewHtml.value = ''
   try {
     previewHtml.value = (
-      await $fetch<{ html: string }>('/api/admin/email/preview', { method: 'POST', body: payload() })
+      await $fetch<{ html: string }, string>('/api/admin/email/preview', { method: 'POST', body: payload() })
     ).html
   } catch (error) {
     const response = error as { data?: { statusCode?: number; message?: string } }
@@ -177,7 +177,10 @@ const preview = async () => {
 const sendTest = async () => {
   busy.value = true
   try {
-    await $fetch('/api/admin/email/test', { method: 'POST', body: { ...payload(), to: testAddress.value } })
+    await $fetch<unknown, string>('/api/admin/email/test', {
+      method: 'POST',
+      body: { ...payload(), to: testAddress.value }
+    })
     toast.add({ title: t('admin.email.testSent'), color: 'success' })
   } catch (error) {
     toast.add({ title: t('admin.email.testFailed'), description: String(error), color: 'error' })

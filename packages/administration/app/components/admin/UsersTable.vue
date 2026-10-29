@@ -82,7 +82,7 @@ const updateUserRole = async (userId: string) => {
   }
   try {
     updating.value = true
-    await $fetch<UpdateUserRoleResponse>(`/api/admin/users/${userId}/role`, {
+    await $fetch<UpdateUserRoleResponse, string>(`/api/admin/users/${userId}/role`, {
       method: 'PATCH',
       body: { role: editingRole.value } satisfies UpdateUserRoleRequest
     })

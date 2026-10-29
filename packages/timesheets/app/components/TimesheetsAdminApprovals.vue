@@ -137,7 +137,7 @@ const requestApproval = async (submissionId: string, clientOrganizationId: strin
   }
   busy.value = true
   try {
-    await $fetch(`/api/timesheets/submissions/${submissionId}/request-client-approval`, {
+    await $fetch<unknown, string>(`/api/timesheets/submissions/${submissionId}/request-client-approval`, {
       method: 'POST',
       body: { clientOrganizationId, message: requestState.message }
     })

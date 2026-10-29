@@ -197,7 +197,7 @@ export const useUserStore = defineStore('user', () => {
 
     // console.log('Fetching user permissions from API for user:', currentUser.value.id)
     try {
-      const data = await $fetch<PermissionsResponse>('/api/auth/permissions')
+      const data = await $fetch<PermissionsResponse, string>('/api/auth/permissions')
       if (data) {
         permissions.value = data.permissions
         role.value = data.role

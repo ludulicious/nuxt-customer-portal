@@ -17,16 +17,21 @@ const {
   error,
   status,
   refresh
-} = await useFetch<PublicOrderDetails>(`/api/store/purchases/${encodeURIComponent(token)}/details`)
+} = await useFetch<PublicOrderDetails, import('#app').NuxtError<unknown>, string>(
+  `/api/store/purchases/${encodeURIComponent(token)}/details`
+)
 if (order.value && locale.value !== order.value.locale) {
   await setLocale(order.value.locale)
 }
 const language = locale.value === 'nl' ? 'nl' : 'en'
-const { data: fallbackCopy } = await useFetch<OrderPageCopy>('/api/store/page-texts/order-details', {
-  query: { locale: language },
-  immediate: !order.value,
-  watch: false
-})
+const { data: fallbackCopy } = await useFetch<OrderPageCopy, import('#app').NuxtError<unknown>, string>(
+  '/api/store/page-texts/order-details',
+  {
+    query: { locale: language },
+    immediate: !order.value,
+    watch: false
+  }
+)
 const copy = computed(() => order.value?.copy || fallbackCopy.value || defaultOrderPageCopy(language))
 const unavailable = computed(() => !!error.value && [400, 404].includes(error.value.statusCode || 0))
 useHead({

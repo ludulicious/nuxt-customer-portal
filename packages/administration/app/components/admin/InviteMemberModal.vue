@@ -33,7 +33,9 @@ const checkingOwner = ref(false)
 
 checkingOwner.value = true
 try {
-  const members = await $fetch<Array<{ role: string }>>(`/api/admin/organizations/${props.organizationId}/members`)
+  const members = await $fetch<Array<{ role: string }>, string>(
+    `/api/admin/organizations/${props.organizationId}/members`
+  )
   hasOwner.value = members?.some((member) => member.role === 'owner') || false
   form.role = hasOwner.value ? 'member' : 'owner'
 } catch (err) {
@@ -57,7 +59,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
     inviting.value = true
 
     // Use server-side API endpoint for admins to bypass membership check
-    const result = await $fetch(`/api/admin/organizations/${props.organizationId}/invitations`, {
+    const result = await $fetch<unknown, string>(`/api/admin/organizations/${props.organizationId}/invitations`, {
       method: 'POST',
       body: {
         email: event.data.email,

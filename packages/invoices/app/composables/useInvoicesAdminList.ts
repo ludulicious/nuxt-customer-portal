@@ -28,7 +28,7 @@ export const useInvoicesAdminList = <Item>(options: {
     pageSize,
     getKey: (item) => (item as { id: string }).id,
     fetchPage: ({ filters: query, page, pageSize, signal }) =>
-      $fetch<InvoicesListResponse<Item>>(options.endpoint, { query: { ...query, page, pageSize }, signal })
+      $fetch<InvoicesListResponse<Item>, string>(options.endpoint, { query: { ...query, page, pageSize }, signal })
   })
   const query = () => ({
     ...(search.value.trim() ? { search: search.value.trim() } : {}),

@@ -66,7 +66,7 @@ const loadOrganizations = async () => {
   try {
     loading.value = true
     error.value = ''
-    organizations.value = await $fetch<AdminOrganizationsResponse>('/api/admin/organizations')
+    organizations.value = await $fetch<AdminOrganizationsResponse, string>('/api/admin/organizations')
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('admin.errors.failedToLoadUsers')

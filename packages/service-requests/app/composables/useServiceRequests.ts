@@ -19,7 +19,7 @@ export const useServiceRequests = () => {
     loading.value = true
     error.value = null
     try {
-      const response = await $fetch<ServiceRequestListResponse>('/api/service-requests', { query: filters })
+      const response = await $fetch<ServiceRequestListResponse, string>('/api/service-requests', { query: filters })
       requests.value = response.items
       pagination.value = response.pagination
       return response
@@ -34,7 +34,7 @@ export const useServiceRequests = () => {
   const createRequest = async (data: ServiceRequestCreateInput) => {
     loading.value = true
     try {
-      const created = await $fetch<ServiceRequest>('/api/service-requests', { method: 'POST', body: data })
+      const created = await $fetch<ServiceRequest, string>('/api/service-requests', { method: 'POST', body: data })
       requests.value.unshift(created)
       return created
     } finally {
@@ -45,7 +45,10 @@ export const useServiceRequests = () => {
   const updateRequest = async (id: string, data: ServiceRequestUpdateInput) => {
     loading.value = true
     try {
-      const updated = await $fetch<ServiceRequest>(`/api/service-requests/${id}`, { method: 'PATCH', body: data })
+      const updated = await $fetch<ServiceRequest, string>(`/api/service-requests/${id}`, {
+        method: 'PATCH',
+        body: data
+      })
       const index = requests.value.findIndex((request) => request.id === id)
       if (index >= 0) {
         requests.value[index] = updated
@@ -57,11 +60,11 @@ export const useServiceRequests = () => {
   }
 
   const deleteRequest = async (id: string) => {
-    await $fetch(`/api/service-requests/${id}`, { method: 'DELETE' as never })
+    await $fetch<unknown, string>(`/api/service-requests/${id}`, { method: 'DELETE' as never })
     requests.value = requests.value.filter((request) => request.id !== id)
   }
 
-  const getRequest = (id: string) => $fetch<ServiceRequest>(`/api/service-requests/${id}`)
+  const getRequest = (id: string) => $fetch<ServiceRequest, string>(`/api/service-requests/${id}`)
   const getStatusBadgeText = (status: ServiceRequestStatus) =>
     t(`features.serviceRequests.status.${status.toLowerCase()}`)
   const getPriorityBadgeText = (priority: ServiceRequestPriority) =>

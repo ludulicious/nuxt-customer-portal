@@ -37,7 +37,9 @@ if (!['provider', 'template', 'text'].includes(section.value)) {
   await navigateTo('/admin/email/provider', { replace: true })
 }
 
-const { data: settings, error } = await useFetch<PortalEmailSettings>('/api/admin/email')
+const { data: settings, error } = await useFetch<PortalEmailSettings, import('#app').NuxtError<unknown>, string>(
+  '/api/admin/email'
+)
 if (error.value) {
   if (error.value.statusCode === 401) {
     await navigateTo({ path: '/login', query: { redirect: route.fullPath } })

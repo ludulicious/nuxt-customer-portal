@@ -5,7 +5,10 @@ const props = defineProps<{ section: 'salesInvoices' | 'receivedInvoices' }>()
 const { t } = useI18n()
 const sales = props.section === 'salesInvoices'
 const endpoint = sales ? '/api/invoices/admin/invoices' : '/api/invoices/client/invoices'
-const { data, pending } = await useFetch<InvoicesListResponse<unknown>>(endpoint, { query: { pageSize: 1 } })
+const { data, pending } = await useFetch<InvoicesListResponse<unknown>, import('#app').NuxtError<unknown>, string>(
+  endpoint,
+  { query: { pageSize: 1 } }
+)
 const total = computed(() => data.value?.pagination.total ?? 0)
 </script>
 

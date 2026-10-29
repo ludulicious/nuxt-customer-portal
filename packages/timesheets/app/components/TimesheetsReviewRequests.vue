@@ -8,7 +8,11 @@ const route = useRoute()
 const toast = useToast()
 const prefix = 'features.timesheets.reviewPeriods.'
 const endpoint = computed(() => `/api/timesheets/${props.clientSide ? 'client' : 'admin'}/review-requests`)
-const { data: requests, error, refresh } = await useFetch<ClientReviewRequestDto[]>(endpoint)
+const {
+  data: requests,
+  error,
+  refresh
+} = await useFetch<ClientReviewRequestDto[], import('#app').NuxtError<unknown>, string>(endpoint)
 const month = ref(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7))
 const search = ref('')
 const status = ref(typeof route.query.status === 'string' ? route.query.status : 'ALL')
@@ -19,7 +23,10 @@ const busy = ref(false)
 const affectedRequests = ref<Array<{ id: string; clientName: string; startsOn: string; endsOn: string }>>([])
 const loadPeriods = async () => {
   if (!props.clientSide) {
-    const result = await $fetch('/api/timesheets/admin/review-periods', { query: { month: month.value } })
+    const result = await $fetch<{ periods: ClientReviewPeriodDto[]; startsOn: string }, string>(
+      '/api/timesheets/admin/review-periods',
+      { query: { month: month.value } }
+    )
     periods.value = result.periods
     startsOn.value = result.startsOn
   }
@@ -61,7 +68,7 @@ const submit = async () => {
   busy.value = true
   try {
     if (action.value === 'SEND' && selectedPeriod.value) {
-      await $fetch('/api/timesheets/admin/review-requests', {
+      await $fetch<unknown, string>('/api/timesheets/admin/review-requests', {
         method: 'POST',
         body: { ...selectedPeriod.value, message: state.comment }
       })
@@ -70,7 +77,7 @@ const submit = async () => {
         action.value === 'WITHDRAW'
           ? `/api/timesheets/admin/review-requests/${selected.value.id}/withdraw`
           : `/api/timesheets/client/review-requests/${selected.value.id}`
-      await $fetch(url, {
+      await $fetch<unknown, string>(url, {
         method: 'POST',
         body: { version: selected.value.version, action: action.value, comment: state.comment }
       })
@@ -89,7 +96,7 @@ const submit = async () => {
 const reopen = async (submissionId: string) => {
   busy.value = true
   try {
-    await $fetch(`/api/timesheets/admin/review-submissions/${submissionId}/reopen`, { method: 'POST' })
+    await $fetch<unknown, string>(`/api/timesheets/admin/review-submissions/${submissionId}/reopen`, { method: 'POST' })
     affectedRequests.value = []
     await Promise.all([refresh(), loadPeriods()])
     toast.add({ title: t(prefix + 'reopened'), color: 'success' })

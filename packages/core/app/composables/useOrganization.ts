@@ -39,7 +39,7 @@ export const useOrganization = () => {
     organizationId: string,
     data: { name: string; slug: string; officialCompanyName: string; logo: string; avatarLogo?: string }
   ) => {
-    return await $fetch<Organization>(`/api/admin/organizations/${organizationId}`, {
+    return await $fetch<Organization, string>(`/api/admin/organizations/${organizationId}`, {
       method: 'PATCH',
       body: data
     })

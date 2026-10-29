@@ -48,10 +48,14 @@ if (authenticatedSession) {
   await userStore.setSession(authenticatedSession)
 }
 const initialBillingProfile = authenticatedSession
-  ? await requestFetch<CheckoutProfile>('/api/products/checkout-profile', { cache: 'no-store' }).catch(() => null)
+  ? await requestFetch<CheckoutProfile, string>('/api/products/checkout-profile', { cache: 'no-store' }).catch(
+      () => null
+    )
   : null
 const initialPersonalAddress = authenticatedSession
-  ? await requestFetch<PersonalAddress | null>('/api/personal-client/address', { cache: 'no-store' }).catch(() => null)
+  ? await requestFetch<PersonalAddress | null, string>('/api/personal-client/address', { cache: 'no-store' }).catch(
+      () => null
+    )
   : null
 const savedPersonalAddress = ref(
   initialPersonalAddress && !initialPersonalAddress.archived ? initialPersonalAddress.address : ''
@@ -121,7 +125,10 @@ const bookingTimeRange = computed(() => {
 let holdTimer: ReturnType<typeof setInterval> | undefined
 if (holdToken) {
   try {
-    hold.value = await requestFetch('/api/store/planning/hold', { query: { holdToken }, cache: 'no-store' })
+    hold.value = await requestFetch<typeof hold.value, string>('/api/store/planning/hold', {
+      query: { holdToken },
+      cache: 'no-store'
+    })
   } catch {
     holdExpired.value = true
   }
@@ -153,7 +160,7 @@ async function backToTimeSelection() {
   releasingHold.value = true
   error.value = ''
   try {
-    await $fetch('/api/store/planning/hold', { method: 'DELETE', body: { holdToken } })
+    await $fetch<unknown, string>('/api/store/planning/hold', { method: 'DELETE', body: { holdToken } })
     sessionStorage.removeItem(`planning-hold:${product.value.id}`)
     await navigateTo({
       path:
@@ -210,9 +217,9 @@ let requestId = crypto.randomUUID()
 
 async function applySession() {
   const [profile, availableClients, personalAddress] = await Promise.all([
-    $fetch<CheckoutProfile>('/api/products/checkout-profile', { cache: 'no-store' }).catch(() => null),
+    $fetch<CheckoutProfile, string>('/api/products/checkout-profile', { cache: 'no-store' }).catch(() => null),
     api.checkoutClients().catch(() => []),
-    $fetch<PersonalAddress | null>('/api/personal-client/address', { cache: 'no-store' }).catch(() => null)
+    $fetch<PersonalAddress | null, string>('/api/personal-client/address', { cache: 'no-store' }).catch(() => null)
   ])
   state.billing.type = profile?.buyerType || 'person'
   canBuyAsBusiness.value = profile?.canBuyAsBusiness ?? true

@@ -10,12 +10,15 @@ defineOptions({ name: 'TimesheetsWorkbenchPage' })
 
 definePageMeta({
   middleware: async () => {
-    const capabilities = await $fetch<{
-      canEnterTime: boolean
-      canReviewClientTimesheets: boolean
-      canApproveInternalTimesheets: boolean
-      canViewSupplierTime: boolean
-    }>('/api/timesheets/capabilities')
+    const capabilities = await $fetch<
+      {
+        canEnterTime: boolean
+        canReviewClientTimesheets: boolean
+        canApproveInternalTimesheets: boolean
+        canViewSupplierTime: boolean
+      },
+      string
+    >('/api/timesheets/capabilities')
     if (capabilities.canEnterTime) {
       return
     }

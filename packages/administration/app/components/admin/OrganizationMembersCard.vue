@@ -44,9 +44,12 @@ const removeMember = async () => {
   }
   try {
     removing.value = true
-    await $fetch(`/api/admin/organizations/${props.organizationId}/members/${selectedMember.value.id}`, {
-      method: 'DELETE'
-    })
+    await $fetch<unknown, string>(
+      `/api/admin/organizations/${props.organizationId}/members/${selectedMember.value.id}`,
+      {
+        method: 'DELETE'
+      }
+    )
     toast.add({
       title: t('common.success'),
       description: t('admin.organization.detail.members.removeSuccess'),

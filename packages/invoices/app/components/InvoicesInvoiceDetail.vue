@@ -51,7 +51,7 @@ const taxReviewSchema = z.object({
 async function reviewTaxes() {
   busy.value = true
   try {
-    await $fetch(`/api/invoices/admin/invoices/${encodeURIComponent(props.invoice.id)}/tax-review`, {
+    await $fetch<unknown, string>(`/api/invoices/admin/invoices/${encodeURIComponent(props.invoice.id)}/tax-review`, {
       method: 'POST',
       body: {
         rates: taxReview.rates.map((line) => ({ lineId: line.lineId, vatRateBasisPoints: Math.round(line.rate * 100) }))

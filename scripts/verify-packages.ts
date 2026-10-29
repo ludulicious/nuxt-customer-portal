@@ -222,10 +222,11 @@ try {
         doctor: 'nuxt-customer-portal doctor'
       }
     }
+    // Modules must resolve their own compatible Kit version; forcing the host
+    // version here can remove APIs required by newly resolved module releases.
     const pnpmOverrides = {
       ...dependencies,
       nuxt: '4.5.1',
-      '@nuxt/kit': '4.5.1',
       '@nuxt/schema': '4.5.1',
       '@nuxt/nitro-server': '4.5.1',
       '@nuxt/vite-builder': '4.5.1',

@@ -58,7 +58,7 @@ const loadOrganization = async () => {
     memberRole.value = roleData?.role ?? null
     if (member?.organizationId) {
       // Fetch organization details using organizationId
-      const organization = await $fetch<Organization>(`/api/organizations/${member.organizationId}`)
+      const organization = await $fetch<Organization, string>(`/api/organizations/${member.organizationId}`)
       if (organization) {
         formState.id = organization.id
         formState.name = organization.name

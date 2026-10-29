@@ -15,7 +15,7 @@ const schema = z.object({
   accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
   reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY'])
 })
-const { data } = await useFetch<ClientTimesheetSettingsDto>(
+const { data } = await useFetch<ClientTimesheetSettingsDto, import('#app').NuxtError<unknown>, string>(
   `/api/timesheets/admin/client-settings/${props.client.organizationId}`
 )
 if (data.value) {
@@ -24,7 +24,7 @@ if (data.value) {
 const save = async () => {
   busy.value = true
   try {
-    data.value = await $fetch<ClientTimesheetSettingsDto>(
+    data.value = await $fetch<ClientTimesheetSettingsDto, string>(
       `/api/timesheets/admin/client-settings/${props.client.organizationId}`,
       {
         method: 'PUT',

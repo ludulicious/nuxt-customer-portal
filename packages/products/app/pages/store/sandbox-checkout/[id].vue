@@ -6,24 +6,30 @@ const { t } = useI18n()
 const route = useRoute()
 const busy = ref(false)
 const error = ref('')
-const checkout = await $fetch<{
-  id: string
-  status: string
-  title: string
-  amount: number
-  currency: string
-  email: string
-  developmentEffectsEnabled: boolean
-}>(`/api/store/sandbox-checkout/${encodeURIComponent(String(route.params.id))}`)
+const checkout = await $fetch<
+  {
+    id: string
+    status: string
+    title: string
+    amount: number
+    currency: string
+    email: string
+    developmentEffectsEnabled: boolean
+  },
+  string
+>(`/api/store/sandbox-checkout/${encodeURIComponent(String(route.params.id))}`)
 
 async function finish(scenario: 'paid' | 'failed' | 'expired') {
   busy.value = true
   error.value = ''
   try {
-    const result = await $fetch<{ url: string }>(`/api/store/sandbox-checkout/${encodeURIComponent(checkout.id)}`, {
-      method: 'POST',
-      body: { scenario }
-    })
+    const result = await $fetch<{ url: string }, string>(
+      `/api/store/sandbox-checkout/${encodeURIComponent(checkout.id)}`,
+      {
+        method: 'POST',
+        body: { scenario }
+      }
+    )
     await navigateTo(result.url, { external: true })
   } catch (e) {
     error.value = (e as { data?: { message?: string } }).data?.message || t('products.sandboxCheckoutFailed')

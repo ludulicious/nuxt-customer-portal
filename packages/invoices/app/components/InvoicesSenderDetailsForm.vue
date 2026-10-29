@@ -16,10 +16,12 @@ const canConfigureProvider = computed(() => isSystemAdmin.value)
 const busy = ref(false)
 const checkingDomain = ref(false)
 type DomainStatus = { email: string | null; domain: string | null; configured: boolean; verified: boolean }
-const { data: domainStatus, refresh: refreshDomainStatus } = await useFetch<DomainStatus>(
-  '/api/invoices/admin/email-domain'
-)
-const draft = reactive({
+const { data: domainStatus, refresh: refreshDomainStatus } = await useFetch<
+  DomainStatus,
+  import('#app').NuxtError<unknown>,
+  string
+>('/api/invoices/admin/email-domain')
+const draft = ref({
   address: '',
   country: '',
   registrationNumber: '',
@@ -54,7 +56,7 @@ const countryOptions = computed(() => {
 const checkDomain = async (forceRefresh = true) => {
   checkingDomain.value = true
   try {
-    const status = await $fetch<DomainStatus>('/api/invoices/admin/email-domain', {
+    const status = await $fetch<DomainStatus, string>('/api/invoices/admin/email-domain', {
       query: forceRefresh ? { refresh: '1' } : undefined
     })
     domainStatus.value = status
@@ -80,7 +82,7 @@ const checkDomain = async (forceRefresh = true) => {
 watch(
   () => props.profile,
   (profile) => {
-    Object.assign(draft, {
+    Object.assign(draft.value, {
       address: profile.address,
       country: profile.country ?? '',
       registrationNumber: profile.registrationNumber ?? '',
@@ -97,7 +99,7 @@ const save = async () => {
   busy.value = true
   try {
     const input = Object.fromEntries(
-      Object.entries(draft).map(([key, value]) => [key, value || (key === 'address' ? '' : null)])
+      Object.entries(draft.value).map(([key, value]) => [key, value || (key === 'address' ? '' : null)])
     )
     await invoices.updateSettings({
       enabled: props.profile.enabled,
@@ -128,7 +130,7 @@ const save = async () => {
         {{ t('features.invoices.admin.senderInvoiceDetails') }}
       </h2>
     </template>
-    <UForm :state="draft" :schema="schema" class="space-y-4" @submit="save">
+    <UForm novalidate :state="draft" :schema="schema" class="space-y-4" @submit="save">
       <UAlert
         v-if="!domainStatus?.configured"
         color="warning"

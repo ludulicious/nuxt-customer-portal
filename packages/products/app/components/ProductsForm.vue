@@ -237,8 +237,8 @@ const planningPolicy = computed({
 const types = computed(() => ['digital', 'service'].map((value) => ({ value, label: t(`products.${value}`) })))
 async function loadInitialData() {
   try {
-    planningProviders.value = await $fetch('/api/planning/admin/providers')
-    planningDefaults.value = await $fetch('/api/planning/admin/policy')
+    planningProviders.value = await $fetch<typeof planningProviders.value, string>('/api/planning/admin/providers')
+    planningDefaults.value = await $fetch<typeof planningDefaults.value, string>('/api/planning/admin/policy')
     planningInstalled.value = true
   } catch {
     /* Planning is an optional package. */
@@ -325,10 +325,13 @@ async function save() {
     saving.value = true
     error.value = ''
     try {
-      const saved = await $fetch<Product>(`/api/planning/admin/products/${encodeURIComponent(props.product.id)}`, {
-        method: 'PUT',
-        body: state.planning
-      })
+      const saved = await $fetch<Product, string>(
+        `/api/planning/admin/products/${encodeURIComponent(props.product.id)}`,
+        {
+          method: 'PUT',
+          body: state.planning
+        }
+      )
       emit('saved', saved)
     } catch (e) {
       error.value = t('products.saveFailed')

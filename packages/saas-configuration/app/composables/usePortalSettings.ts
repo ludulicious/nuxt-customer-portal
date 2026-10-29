@@ -11,7 +11,7 @@ export const usePortalSettings = () => {
     return settings.value
   }
   const refreshBootstrap = async () => {
-    bootstrap.value = await $fetch<PortalOnboardingState>('/api/portal/bootstrap')
+    bootstrap.value = await $fetch<PortalOnboardingState, string>('/api/portal/bootstrap')
     return bootstrap.value
   }
   return { settings, bootstrap, enabledModules, refreshPublicSettings, refreshBootstrap }

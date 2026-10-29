@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/authentication
 
+## 0.9.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/core@0.9.1
+- @nuxt-customer-portal/ui@0.9.1
+
 ## 0.9.0
 
 ### Patch Changes

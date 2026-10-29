@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/invoices
 
+## 0.9.1
+
+### Patch Changes
+
+- Keep the invoice sender form compatible with current Vue template type checking and disable browser-native validation.
+
+- @nuxt-customer-portal/clients@0.9.1
+- @nuxt-customer-portal/core@0.9.1
+- @nuxt-customer-portal/organizations@0.9.1
+- @nuxt-customer-portal/ui@0.9.1
+
 ## 0.9.0
 
 ### Patch Changes

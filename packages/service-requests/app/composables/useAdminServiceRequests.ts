@@ -21,7 +21,9 @@ export const useAdminServiceRequests = () => {
     loading.value = true
     error.value = null
     try {
-      const response = await $fetch<ServiceRequestListResponse>('/api/service-requests/admin', { query: filters })
+      const response = await $fetch<ServiceRequestListResponse, string>('/api/service-requests/admin', {
+        query: filters
+      })
       requests.value = response.items
       pagination.value = response.pagination
     } catch (cause) {
@@ -33,7 +35,7 @@ export const useAdminServiceRequests = () => {
   }
 
   const adminUpdateRequest = async (id: string, data: AdminServiceRequestUpdateInput) => {
-    const updated = await $fetch<ServiceRequest>(`/api/service-requests/admin/${id}`, {
+    const updated = await $fetch<ServiceRequest, string>(`/api/service-requests/admin/${id}`, {
       method: 'PATCH',
       body: data
     })
@@ -46,7 +48,9 @@ export const useAdminServiceRequests = () => {
 
   return {
     getAssignees: () =>
-      $fetch<Array<{ id: string; name: string; image: string | null }>>('/api/service-requests/admin/assignees'),
+      $fetch<Array<{ id: string; name: string; image: string | null }>, string>(
+        '/api/service-requests/admin/assignees'
+      ),
     requests: readonly(requests),
     loading: readonly(loading),
     error: readonly(error),

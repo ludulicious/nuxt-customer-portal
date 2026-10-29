@@ -34,7 +34,7 @@ export const useServiceRequestList = (options: {
     pageSize,
     getKey: (item) => (item as { id: string }).id,
     fetchPage: async ({ filters: query, page, pageSize, signal }) => {
-      const result = await $fetch<ServiceRequestListResponse>(options.endpoint, {
+      const result = await $fetch<ServiceRequestListResponse, string>(options.endpoint, {
         query: { ...query, page, pageSize },
         signal
       })

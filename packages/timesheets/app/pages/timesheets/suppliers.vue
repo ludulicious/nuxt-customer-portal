@@ -1,8 +1,9 @@
 <script setup lang="ts">
 const { t } = useI18n()
-const capabilities = await $fetch<{ canAccessApprovals: boolean; canEnterTime: boolean; canViewSupplierTime: boolean }>(
-  '/api/timesheets/capabilities'
-)
+const capabilities = await $fetch<
+  { canAccessApprovals: boolean; canEnterTime: boolean; canViewSupplierTime: boolean },
+  string
+>('/api/timesheets/capabilities')
 
 if (!capabilities.canViewSupplierTime) {
   await navigateTo(
