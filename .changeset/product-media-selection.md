@@ -9,3 +9,5 @@ Share Studio-style drag sorting between product image cards and the media grid, 
 Load the small thumbnail in product image cards, add versioned authenticated preview URLs and permission-checked ETag revalidation, and show a media-grid drag handle only in manual order.
 
 Keep media-card actions on one line and enforce responsive minimum card widths, with a slightly inset drag handle.
+
+Anchor media-card dimensions and action icons to the bottom so rows align despite different metadata lengths.

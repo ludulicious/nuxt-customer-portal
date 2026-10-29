@@ -345,7 +345,7 @@ async function remove() {
             v-for="item in displayedItems"
             :key="item.id"
             :data-media-id="item.id"
-            class="overflow-hidden rounded-lg border border-default bg-default"
+            class="flex flex-col overflow-hidden rounded-lg border border-default bg-default"
             :class="draggedId === item.id ? 'products-sort-slot' : ''"
             :draggable="manual && (!pending || !!draggedId) && !reordering"
             :tabindex="manual ? 0 : undefined"
@@ -357,13 +357,13 @@ async function remove() {
           >
             <button
               type="button"
-              class="block aspect-4/3 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
+              class="block aspect-4/3 w-full shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-primary"
               :aria-label="t('products.media.editNamed', { title: item.title })"
               @click="openEditor(item)"
             >
               <ProductsMediaImage :src="item.thumbnail?.url || item.image.url" :alt="item.alt" />
             </button>
-            <div class="space-y-2 p-3">
+            <div class="flex flex-1 flex-col gap-2 p-3">
               <div class="flex items-start justify-between gap-2">
                 <h2 class="truncate font-semibold">{{ item.title }}</h2>
                 <UBadge v-if="!item.visible" color="neutral" variant="soft">{{ t('products.media.hidden') }}</UBadge>
@@ -374,7 +374,7 @@ async function remove() {
                   category
                 }}</UBadge>
               </div>
-              <div class="flex flex-col gap-2">
+              <div class="mt-auto flex flex-col gap-2">
                 <span class="whitespace-nowrap text-xs text-muted"
                   >{{ item.image.width }} × {{ item.image.height }}</span
                 >
