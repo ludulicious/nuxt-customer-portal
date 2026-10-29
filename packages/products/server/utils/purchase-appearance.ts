@@ -48,5 +48,5 @@ export async function purchaseThumbnail(product: ProductData, storeId: string): 
   const endpoint = process.env.PRODUCTS_IMAGEKIT_URL_ENDPOINT?.replace(/\/$/, '')
   return endpoint && !asset.media_id
     ? `${endpoint}/${asset.object_key}`
-    : `${baseUrl()}/api/store/media/${encodeURIComponent(id)}`
+    : `${baseUrl()}/api/store/media/${encodeURIComponent(id)}${product.imageSelection === 'ordered' && asset.media_id ? '?purpose=thumbnail' : ''}`
 }

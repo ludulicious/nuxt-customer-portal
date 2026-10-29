@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { productMediaSchema } from '../../shared/product-media'
 import type { StoreMedia } from '../../shared/media'
-import type { Asset, ImagePurpose } from '../../shared/types'
+import type { Asset } from '../../shared/types'
 
-const props = defineProps<{ productId: string; purpose: ImagePurpose }>()
+const props = defineProps<{ productId: string; excludedMediaIds: string[] }>()
 const emit = defineEmits<{ selected: [asset: Asset]; cancel: [] }>()
 const { t } = useI18n(),
   api = useStoreMedia(),
-  products = useProducts(),
-  variantLabel = useMediaVariantLabel()
-const state = reactive({ mediaId: '', purpose: props.purpose, variant: 'image' })
-const schema = useProductFormSchema(productMediaSchema)
-const presetKeys = ref<string[]>([])
+  products = useProducts()
+const state = reactive({ mediaId: '' })
+const schema = useProductFormSchema(productMediaSchema.pick({ mediaId: true }))
 
 const selected = ref<StoreMedia>(),
   saving = ref(false),
@@ -26,8 +24,7 @@ const filters = reactive({
 const categories = ref<string[]>([])
 const resource = usePaginatedResource<StoreMedia, typeof filters>({
   fetchPage: async ({ filters: values, page, signal }) => {
-    const [response, configuration] = await Promise.all([api.list({ ...values, page }, signal), api.presets()])
-    presetKeys.value = configuration.presets.map((preset) => preset.key)
+    const response = await api.list({ ...values, page }, signal)
     categories.value = response.categories
     return response
   },
@@ -60,26 +57,8 @@ useAutoPagination({
 function choose(media: StoreMedia) {
   selected.value = media
   state.mediaId = media.id
-  state.variant = media.variants[props.purpose] && presetKeys.value.includes(props.purpose) ? props.purpose : 'image'
   mutationError.value = ''
 }
-const options = computed(() =>
-  selected.value
-    ? [
-        { label: t('products.productMedia.fullImage'), value: 'image' },
-        ...Object.values(selected.value.variants)
-          .filter((variant) => presetKeys.value.includes(variant.key))
-          .map((variant) => ({
-            label: `${variantLabel(variant)} · ${variant.file.width} × ${variant.file.height}`,
-            value: variant.key
-          }))
-      ]
-    : []
-)
-const preview = computed(
-  () =>
-    selected.value && (state.variant === 'image' ? selected.value.image : selected.value.variants[state.variant]?.file)
-)
 async function submit() {
   saving.value = true
   mutationError.value = ''
@@ -131,7 +110,7 @@ async function submit() {
             type="button"
             :aria-label="t('products.productMedia.select', { title: item.title })"
             :aria-pressed="state.mediaId === item.id"
-            :disabled="saving"
+            :disabled="saving || excludedMediaIds.includes(item.id)"
             class="overflow-hidden rounded-lg border text-left focus-visible:outline-2 focus-visible:outline-primary"
             :class="state.mediaId === item.id ? 'border-primary ring-2 ring-primary/30' : 'border-default'"
             @click="choose(item)"
@@ -168,17 +147,6 @@ async function submit() {
         trailing-icon="i-lucide-external-link"
         >{{ t('products.productMedia.manage') }}</UButton
       >
-    </div>
-    <div v-if="selected" class="flex items-start gap-4 rounded-lg border border-default p-3">
-      <div v-if="preview" class="aspect-[4/3] w-24 shrink-0 overflow-hidden rounded">
-        <ProductsMediaImage :src="preview.url" :alt="selected.alt" contain />
-      </div>
-      <div class="min-w-0 flex-1">
-        <p class="mb-2 truncate text-sm font-medium">{{ selected.title }}</p>
-        <UFormField name="variant" :label="t('products.productMedia.variant')"
-          ><USelect v-model="state.variant" :items="options" :disabled="saving" class="w-full"
-        /></UFormField>
-      </div>
     </div>
     <div class="flex justify-end gap-3">
       <UButton type="button" color="neutral" variant="outline" :disabled="saving" @click="emit('cancel')">{{

@@ -61,7 +61,7 @@ export async function saveMediaVariantConfiguration(storeId: string, input: unkn
     const keys = data.presets.map((preset) => preset.key)
     const used = await rows(
       `SELECT a.id FROM products.asset a JOIN products.product p ON p.id=a.product_id
-      WHERE p.store_id=$1 AND a.media_id IS NOT NULL AND a.media_variant<>'image'
+      WHERE p.store_id=$1 AND coalesce(p.data->>'imageSelection','')<>'ordered' AND a.media_id IS NOT NULL AND a.media_variant<>'image'
       AND NOT(a.media_variant=ANY($2::text[])) AND p.data->'imageIds' ? a.id LIMIT 1`,
       [storeId, keys],
       client

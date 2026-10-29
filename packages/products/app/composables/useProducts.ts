@@ -43,8 +43,8 @@ export const useProducts = () => ({
   previewThankYou: (slug: string, locale: string) =>
     $fetch<CatalogProduct>('/api/products/admin/thank-you/preview', { query: { slug, locale } }),
   preview: (id: string) => $fetch<ProductPreview>(`/api/products/admin/products/${encodeURIComponent(id)}/preview`),
-  previewImageUrl: (id: string, assetId: string) =>
-    `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}`,
+  previewImageUrl: (id: string, assetId: string, purpose?: ImagePurpose) =>
+    `/api/products/admin/products/${encodeURIComponent(id)}/images/${encodeURIComponent(assetId)}${purpose ? '?purpose=' + purpose : ''}`,
 
   categories: () => $fetch<ProductCategory[]>('/api/products/admin/categories'),
   categoryPage: (query: Record<string, unknown>, signal?: AbortSignal) =>

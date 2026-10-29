@@ -62,19 +62,6 @@ test('product edit buttons use Nuxt UI soft styling for interaction feedback', (
   }
 })
 
-test('product image tabs are visually and accessibly joined to their panel', () => {
-  const source = readFileSync(new URL('../app/components/ProductsImageLibrary.vue', import.meta.url), 'utf8')
-
-  assert.match(source, /overflow-hidden rounded-t-lg border border-b-0/)
-  assert.match(source, /role="tabpanel"/)
-  assert.match(source, /rounded-b-lg border border-t-0 border-default/)
-  assert.doesNotMatch(source, /grid gap-1 rounded-t-lg|rounded-md px-3 py-2\.5 text-left/)
-  assert.match(source, /:aria-controls="`product-image-panel-\$\{purpose\}`"/)
-  assert.match(source, /:aria-labelledby="`product-image-tab-\$\{activePurpose\}`"/)
-  assert.match(source, /const activePurpose = ref<ImagePurpose>\('thumbnail'\)/)
-  assert.match(source, /thumbnailImageId\.value \|\| imageIds\.value\.find/)
-})
-
 test('image editing uses a dirty-aware back-to-product flow', () => {
   const detail = readFileSync(new URL('../app/pages/admin/products/[id]/index.vue', import.meta.url), 'utf8')
   const page = readFileSync(new URL('../app/pages/admin/products/[id]/images.vue', import.meta.url), 'utf8')

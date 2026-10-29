@@ -54,6 +54,7 @@ const productShape = {
   content: z.object({ en: copy, nl: copy }),
   taxCode: z.string().regex(/^txcd_\d{8}$/),
   nextSteps: z.object({ en: text(5000), nl: text(5000) }),
+  imageSelection: z.literal('ordered').optional(),
   imageIds: z.array(text(100).min(1)).max(20),
   thumbnailImageId: text(100).min(1).nullable().default(null),
   galleryImageIds: z.array(text(100).min(1)).max(20).default([]),

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { orderedProductImageIds, orderedProductImagePlacements } from '../../shared/product-media'
+
 import { portalLanguages } from '@nuxt-customer-portal/core/shared/languages'
 import { z } from 'zod'
 import { defaultPlanning, defaultPlanningPolicy, productPlanningSchema } from '../../shared/planning'
@@ -267,7 +269,20 @@ async function loadInitialData() {
   }
   if (props.product && ['all', 'media', 'images', 'files'].includes(props.section)) {
     assets.value = await api.assets(props.product!.id)
-    syncThumbnailImageId()
+    if (['all', 'images'].includes(props.section)) {
+      Object.assign(
+        state,
+        orderedProductImagePlacements(
+          orderedProductImageIds(
+            state.imageIds,
+            assets.value,
+            state.imageSelection === 'ordered' ? null : state.thumbnailImageId
+          )
+        )
+      )
+    } else {
+      syncThumbnailImageId()
+    }
     normalizeFileNames()
   }
 }
@@ -666,7 +681,7 @@ function removeFile(id: string, index: number) {
             v-model:detail-image-ids="state.detailImageIds"
             :product-id="product.id"
             :assets="assets"
-            :busy="busy"
+            :busy="busy || saving"
             @linked="(asset) => assets.push(asset)"
           />
           <div v-if="section === 'all' || section === 'files'" class="space-y-3">

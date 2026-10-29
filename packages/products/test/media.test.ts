@@ -1,4 +1,4 @@
-import { productMediaSchema } from '../shared/product-media'
+import { orderedProductImageIds, orderedProductImagePlacements, productMediaSchema } from '../shared/product-media'
 import { defaultMediaVariantPresets, mediaVariantPresetsSchema } from '../shared/media-variants'
 import assert from 'node:assert/strict'
 import test from 'node:test'
@@ -126,4 +126,31 @@ test('product media selections validate identifiers, purposes and safe variant k
   assert.equal(productMediaSchema.safeParse({ ...selection, variant: '../original' }).success, false)
   assert.equal(productMediaSchema.safeParse({ ...selection, purpose: 'unknown' }).success, false)
   assert.equal(productMediaSchema.safeParse({ ...selection, mediaId: 'other-store' }).success, false)
+})
+
+test('ordered product images deduplicate sources and always derive the thumbnail from the first image', () => {
+  const assets = [
+    { id: 'thumb', media_id: 'photo' },
+    { id: 'detail', media_id: 'photo' },
+    { id: 'second', media_id: 'other' },
+    { id: 'legacy' }
+  ]
+  assert.deepEqual(orderedProductImageIds(['detail', 'second', 'thumb', 'legacy'], assets, 'thumb'), [
+    'thumb',
+    'second',
+    'legacy'
+  ])
+  assert.deepEqual(orderedProductImagePlacements(['second', 'thumb', 'second']), {
+    imageSelection: 'ordered',
+    imageIds: ['second', 'thumb'],
+    thumbnailImageId: 'second',
+    galleryImageIds: ['second', 'thumb'],
+    detailImageIds: ['second', 'thumb']
+  })
+  assert.equal(orderedProductImagePlacements([]).thumbnailImageId, null)
+  assert.deepEqual(productMediaSchema.parse({ mediaId: '131aca4f-50e8-4351-a358-c22b5877506a' }), {
+    mediaId: '131aca4f-50e8-4351-a358-c22b5877506a',
+    purpose: 'gallery',
+    variant: 'image'
+  })
 })

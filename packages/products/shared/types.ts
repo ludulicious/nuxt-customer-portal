@@ -26,6 +26,7 @@ export interface ProductData {
   content: Record<Locale, ProductCopy>
   taxCode: string
   nextSteps: Record<Locale, string>
+  imageSelection?: 'ordered'
   imageIds: string[]
   thumbnailImageId: string | null
   galleryImageIds: string[]

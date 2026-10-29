@@ -480,8 +480,8 @@
     "cropImage": "Crop product image",
     "addImages": "Add images",
     "editImages": "Edit images",
-    "productImageLibrary": "Product image library",
-    "productImageLibraryHelp": "Choose reusable images from the media library for each product placement.",
+    "productImageLibrary": "Product images",
+    "productImageLibraryHelp": "Choose images from the media library and drag the cards to reorder them. The first image is always the thumbnail.",
     "uploadPurposethumbnail": "Upload thumbnail",
     "uploadPurposegallery": "Upload product card",
     "uploadPurposedetail": "Upload detail image",
@@ -970,7 +970,7 @@
     },
     "productMedia": {
       "choose": "Choose from media library",
-      "pickerHelp": "Select a visible library image. The matching variant is selected automatically; you can choose another variant below. Library changes also update linked products.",
+      "pickerHelp": "Select an image to add to this product. Manage image editing and variants in the media library.",
       "select": "Select {title}",
       "empty": "No visible images found. Add images in the media library first.",
       "loadMore": "Load more",
@@ -980,7 +980,14 @@
       "unavailable": "This image or variant is no longer available. Choose another visible image or reload the library.",
       "media_in_use": "This image is used by a product. Remove it from the product and save before deleting it.",
       "variant_in_use": "This variant is used by a product. Change the product image selection and save before removing the variant.",
-      "fullImage": "Full image"
+      "fullImage": "Full image",
+      "selectedImages": "Selected product images",
+      "reorder": "Reorder image {number}",
+      "earlier": "Move image {number} earlier",
+      "later": "Move image {number} later",
+      "remove": "Remove image {number}",
+      "preview": "Preview {title}",
+      "pageHelp": "Choose and arrange the images shown with this product."
     }
   }
 }

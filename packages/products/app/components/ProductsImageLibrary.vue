@@ -1,103 +1,81 @@
 <script setup lang="ts">
-import type { Asset, ImagePurpose } from '../../shared/types'
+import { orderedProductImagePlacements } from '../../shared/product-media'
+import type { Asset } from '../../shared/types'
 
-const props = defineProps<{
-  productId: string
-  assets: Asset[]
-  busy: boolean
-}>()
+const props = defineProps<{ productId: string; assets: Asset[]; busy: boolean }>()
 const imageIds = defineModel<string[]>('imageIds', { required: true })
 const thumbnailImageId = defineModel<string | null>('thumbnailImageId', { required: true })
 const galleryImageIds = defineModel<string[]>('galleryImageIds', { required: true })
 const detailImageIds = defineModel<string[]>('detailImageIds', { required: true })
 const emit = defineEmits<{ linked: [asset: Asset] }>()
-const pickerOpen = ref(false)
-function linked(asset: Asset) {
-  emit('linked', asset)
-  let ids = [...imageIds.value]
-  if (activePurpose.value === 'thumbnail') {
-    ids = ids.filter((id) => id !== thumbnailImageId.value)
-    thumbnailImageId.value = asset.id
-  } else if (activePurpose.value === 'gallery' && !galleryImageIds.value.includes(asset.id)) {
-    galleryImageIds.value.push(asset.id)
-  } else if (activePurpose.value === 'detail' && !detailImageIds.value.includes(asset.id)) {
-    detailImageIds.value.push(asset.id)
+const { t } = useI18n(),
+  api = useProducts()
+const pickerOpen = ref(false),
+  previewOpen = ref(false),
+  previewId = ref(''),
+  draggedId = ref('')
+const asset = (id: string) => props.assets.find((item) => item.id === id)
+const preview = (id: string) =>
+  asset(id)?.media_id ? `/api/products/media/${asset(id)!.media_id}/content` : api.previewImageUrl(props.productId, id)
+const selectedMediaIds = computed(() =>
+  imageIds.value.map((id) => asset(id)?.media_id).filter((id): id is string => !!id)
+)
+function update(ids: string[]) {
+  const placements = orderedProductImagePlacements(ids)
+  imageIds.value = placements.imageIds
+  thumbnailImageId.value = placements.thumbnailImageId
+  galleryImageIds.value = placements.galleryImageIds
+  detailImageIds.value = placements.detailImageIds
+}
+function linked(value: Asset) {
+  if (!value.media_id || !selectedMediaIds.value.includes(value.media_id)) {
+    emit('linked', value)
+    update([...imageIds.value, value.id])
   }
-  if (!ids.includes(asset.id)) {
-    ids.push(asset.id)
-  }
-  imageIds.value = ids
-  selectedId.value = asset.id
   pickerOpen.value = false
 }
-const { t } = useI18n()
-const api = useProducts()
-const imageAsset = (id: string) => props.assets.find((asset) => asset.id === id)
-const purposes = ['thumbnail', 'gallery', 'detail'] as const
-const activePurpose = ref<ImagePurpose>('thumbnail')
-const selectedId = ref(
-  thumbnailImageId.value || imageIds.value.find((id) => imageAsset(id)?.image_purpose === 'thumbnail') || ''
-)
-const previewOpen = ref(false)
-const selectedAsset = computed(() => props.assets.find(({ id }) => id === selectedId.value))
-const purposeImageIds = computed(() =>
-  imageIds.value.filter((id) => imageAsset(id)?.image_purpose === activePurpose.value)
-)
-const selectedIndex = computed(() => purposeImageIds.value.indexOf(selectedId.value))
-const purposeCount = (purpose: ImagePurpose) =>
-  imageIds.value.filter((id) => imageAsset(id)?.image_purpose === purpose).length
-
-watch(
-  purposeImageIds,
-  (ids) => {
-    if (!ids.includes(selectedId.value)) {
-      selectedId.value = ids[0] || ''
-    }
-  },
-  { deep: true }
-)
-
-function selectPurpose(purpose: ImagePurpose) {
-  activePurpose.value = purpose
-  selectedId.value = imageIds.value.find((id) => imageAsset(id)?.image_purpose === purpose) || ''
-}
-
-function move(delta: number) {
-  const index = selectedIndex.value
-  const target = index + delta
-  if (index < 0 || target < 0 || target >= purposeImageIds.value.length) {
+function move(id: string, delta: number) {
+  if (props.busy) {
     return
   }
-  const currentId = purposeImageIds.value[index]!
-  const targetId = purposeImageIds.value[target]!
-  const ids = [...imageIds.value]
-  const currentGlobalIndex = ids.indexOf(currentId)
-  const targetGlobalIndex = ids.indexOf(targetId)
-  ids[currentGlobalIndex] = targetId
-  ids[targetGlobalIndex] = currentId
-  imageIds.value = ids
-  galleryImageIds.value = ids.filter((imageId) => galleryImageIds.value.includes(imageId))
-  detailImageIds.value = ids.filter((imageId) => detailImageIds.value.includes(imageId))
-}
-
-function removeSelected() {
-  const index = imageIds.value.indexOf(selectedId.value)
-  if (index < 0) {
+  const ids = [...imageIds.value],
+    index = ids.indexOf(id),
+    target = index + delta
+  if (index < 0 || target < 0 || target >= ids.length) {
     return
   }
-  const nextPurposeId =
-    purposeImageIds.value.filter((id) => id !== selectedId.value)[
-      Math.min(selectedIndex.value, purposeImageIds.value.length - 2)
-    ] || ''
-  const ids = [...imageIds.value]
   ids.splice(index, 1)
-  imageIds.value = ids
-  if (thumbnailImageId.value === selectedId.value) {
-    thumbnailImageId.value = null
+  ids.splice(target, 0, id)
+  update(ids)
+}
+function drop(id: string) {
+  if (!draggedId.value || draggedId.value === id || props.busy) {
+    return
   }
-  galleryImageIds.value = galleryImageIds.value.filter((id) => id !== selectedId.value)
-  detailImageIds.value = detailImageIds.value.filter((id) => id !== selectedId.value)
-  selectedId.value = nextPurposeId
+  const ids = [...imageIds.value],
+    from = ids.indexOf(draggedId.value),
+    to = ids.indexOf(id)
+  if (from < 0 || to < 0) {
+    return
+  }
+  ids.splice(from, 1)
+  ids.splice(to, 0, draggedId.value)
+  update(ids)
+  draggedId.value = ''
+}
+function showPreview(id: string) {
+  previewId.value = id
+  previewOpen.value = true
+}
+function drag(event: DragEvent, id: string) {
+  if (props.busy) {
+    return
+  }
+  draggedId.value = id
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', id)
+  }
 }
 </script>
 
@@ -105,197 +83,92 @@ function removeSelected() {
   <fieldset class="space-y-4">
     <legend class="sr-only">{{ t('products.productImageLibrary') }}</legend>
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-sm text-muted">{{ t('products.productImageLibraryHelp') }}</p>
-      <div class="flex flex-wrap gap-2">
-        <UBadge :color="thumbnailImageId ? 'success' : 'warning'" variant="subtle">
-          {{ t('products.thumbnailCount', { count: thumbnailImageId ? 1 : 0 }) }}
-        </UBadge>
-        <UBadge :color="galleryImageIds.length ? 'success' : 'warning'" variant="subtle">
-          {{ t('products.galleryCount', { count: galleryImageIds.length }) }}
-        </UBadge>
-        <UBadge :color="detailImageIds.length ? 'success' : 'warning'" variant="subtle">
-          {{ t('products.detailsCount', { count: detailImageIds.length }) }}
-        </UBadge>
-      </div>
+      <p class="max-w-xl text-sm text-muted">{{ t('products.productImageLibraryHelp') }}</p>
+      <UButton type="button" icon="i-lucide-library" :disabled="busy" @click="pickerOpen = true">{{
+        t('products.productMedia.choose')
+      }}</UButton>
     </div>
-
-    <UFormField name="imageIds">
-      <div>
-        <div
-          class="grid divide-y divide-default overflow-hidden rounded-t-lg border border-b-0 border-default bg-elevated sm:grid-cols-3 sm:divide-x sm:divide-y-0"
-          role="tablist"
-          :aria-label="t('products.imagePurpose')"
+    <UFormField name="imageIds" class="w-full">
+      <ol v-if="imageIds.length" class="w-full space-y-3" :aria-label="t('products.productMedia.selectedImages')">
+        <li
+          v-for="(id, index) in imageIds"
+          :key="id"
+          :data-product-image-id="id"
+          :draggable="!busy"
+          class="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-default p-3 sm:flex-nowrap"
+          :class="draggedId === id ? 'opacity-50' : ''"
+          @dragstart="drag($event, id)"
+          @dragend="draggedId = ''"
+          @dragover.prevent
+          @drop.prevent="drop(id)"
         >
           <button
-            v-for="purpose in purposes"
-            :id="`product-image-tab-${purpose}`"
-            :key="purpose"
             type="button"
-            role="tab"
-            class="flex items-center gap-3 px-3 py-2.5 text-left transition focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary"
-            :class="
-              activePurpose === purpose
-                ? 'bg-default text-highlighted shadow-sm'
-                : 'text-muted hover:bg-default/60 hover:text-highlighted'
-            "
-            :aria-selected="activePurpose === purpose"
-            :aria-controls="`product-image-panel-${purpose}`"
-            @click="selectPurpose(purpose)"
+            class="cursor-grab text-muted focus-visible:outline-2 focus-visible:outline-primary"
+            :disabled="busy"
+            :aria-label="t('products.productMedia.reorder', { number: index + 1 })"
+            aria-keyshortcuts="ArrowUp ArrowDown"
+            @keydown.up.prevent="move(id, -1)"
+            @keydown.down.prevent="move(id, 1)"
           >
-            <span
-              class="flex size-9 shrink-0 items-center justify-center rounded-md"
-              :class="activePurpose === purpose ? 'bg-primary/10 text-primary' : 'bg-muted'"
-            >
-              <UIcon
-                :name="
-                  purpose === 'thumbnail'
-                    ? 'i-lucide-square'
-                    : purpose === 'gallery'
-                      ? 'i-lucide-rectangle-vertical'
-                      : 'i-lucide-rectangle-horizontal'
-                "
-                class="size-4"
-              />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="flex items-center justify-between gap-2">
-                <span class="truncate text-sm font-medium">{{ t(`products.imagePurpose${purpose}`) }}</span>
-                <UBadge size="xs" color="neutral" variant="subtle">{{ purposeCount(purpose) }}</UBadge>
-              </span>
-            </span>
+            <UIcon name="i-lucide-grip-vertical" class="size-5" />
           </button>
-        </div>
-
-        <div
-          :id="`product-image-panel-${activePurpose}`"
-          role="tabpanel"
-          :aria-labelledby="`product-image-tab-${activePurpose}`"
-          class="space-y-4 rounded-b-lg border border-t-0 border-default bg-default p-4"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default pb-4">
-            <p class="text-sm text-muted">
-              {{ t(`products.imagePurpose${activePurpose}`) }}
+          <button
+            type="button"
+            class="h-20 w-24 shrink-0 overflow-hidden rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+            :aria-label="t('products.productMedia.preview', { title: asset(id)?.name || '' })"
+            @click="showPreview(id)"
+          >
+            <ProductsMediaImage
+              :src="preview(id)"
+              :alt="asset(id)?.alternative_text || asset(id)?.name || ''"
+              contain
+            />
+          </button>
+          <div class="min-w-0 flex-1 basis-32">
+            <p class="truncate text-sm font-medium">
+              {{ asset(id)?.name || t('products.imageNumber', { number: index + 1 }) }}
             </p>
-            <UButton type="button" icon="i-lucide-library" :disabled="busy" @click="pickerOpen = true">{{
-              t('products.productMedia.choose')
-            }}</UButton>
+            <UBadge v-if="index === 0" class="mt-1" variant="subtle">{{ t('products.imagePurposethumbnail') }}</UBadge>
+            <span v-else class="mt-1 block text-xs text-muted">{{ index + 1 }}</span>
           </div>
-
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
-            <div class="rounded-lg border border-default bg-elevated/20 p-3">
-              <div v-if="purposeImageIds.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                <button
-                  v-for="(id, index) in purposeImageIds"
-                  :key="id"
-                  type="button"
-                  class="group relative aspect-square overflow-hidden rounded-lg border bg-muted text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  :class="
-                    selectedId === id
-                      ? 'border-primary ring-2 ring-primary/30'
-                      : 'border-default hover:border-primary/60'
-                  "
-                  :aria-label="t('products.selectImage', { number: index + 1 })"
-                  :aria-pressed="selectedId === id"
-                  @click="selectedId = id"
-                >
-                  <ProductsMediaImage
-                    :src="api.previewImageUrl(productId, id)"
-                    :alt="
-                      imageAsset(id)?.alternative_text ||
-                      imageAsset(id)?.name ||
-                      t('products.imageNumber', { number: index + 1 })
-                    "
-                    class="absolute inset-0 size-full object-cover transition duration-200 group-hover:scale-[1.02]"
-                  />
-                  <span
-                    class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-7 text-xs text-white"
-                  >
-                    {{ index + 1 }} · {{ imageAsset(id)?.width || '—' }} × {{ imageAsset(id)?.height || '—' }}
-                  </span>
-                </button>
-              </div>
-              <div
-                v-else
-                class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-default text-center text-muted"
-              >
-                <UIcon name="i-lucide-images" class="size-8" />
-                <p class="text-sm font-medium">{{ t('products.noProductImages') }}</p>
-                <p class="max-w-xs text-xs">{{ t('products.chooseImageToStart') }}</p>
-              </div>
-            </div>
-
-            <aside class="rounded-lg border border-default bg-elevated/30 p-3">
-              <template v-if="selectedId">
-                <button
-                  type="button"
-                  class="group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-muted focus-visible:outline-2 focus-visible:outline-primary"
-                  :aria-label="t('products.previewImage')"
-                  @click="previewOpen = true"
-                >
-                  <ProductsMediaImage
-                    :src="api.previewImageUrl(productId, selectedId)"
-                    :alt="selectedAsset?.alternative_text || selectedAsset?.name || t('products.previewImage')"
-                    class="size-full object-cover"
-                  />
-                  <span
-                    class="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/30"
-                  >
-                    <UIcon
-                      name="i-lucide-expand"
-                      class="size-6 text-white opacity-0 transition group-hover:opacity-100"
-                    />
-                  </span>
-                </button>
-                <div class="mt-3 space-y-1">
-                  <p class="truncate text-sm font-medium">{{ selectedAsset?.name }}</p>
-                  <p class="text-xs text-muted">
-                    {{ selectedAsset?.width || '—' }} × {{ selectedAsset?.height || '—' }}
-                  </p>
-                </div>
-                <div class="mt-3 grid grid-cols-2 gap-2">
-                  <UButton
-                    v-if="activePurpose !== 'thumbnail'"
-                    color="neutral"
-                    variant="outline"
-                    icon="i-lucide-arrow-left"
-                    :disabled="selectedIndex <= 0"
-                    @click="move(-1)"
-                    >{{ t('products.moveEarlier') }}</UButton
-                  >
-                  <UButton
-                    v-if="activePurpose !== 'thumbnail'"
-                    color="neutral"
-                    variant="outline"
-                    trailing-icon="i-lucide-arrow-right"
-                    :disabled="selectedIndex >= purposeImageIds.length - 1"
-                    @click="move(1)"
-                    >{{ t('products.moveLater') }}</UButton
-                  >
-                  <UButton
-                    class="col-span-2 justify-center"
-                    color="error"
-                    variant="subtle"
-                    icon="i-lucide-trash-2"
-                    @click="removeSelected"
-                    >{{ t('products.removeImage') }}</UButton
-                  >
-                </div>
-                <p class="mt-2 text-xs text-muted">{{ t('products.removeImageHelp') }}</p>
-              </template>
-              <div
-                v-else
-                class="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-muted"
-              >
-                <UIcon name="i-lucide-mouse-pointer-2" class="size-7" />
-                <p class="text-sm font-medium">{{ t('products.selectImageToEdit') }}</p>
-              </div>
-            </aside>
+          <div class="ml-auto flex items-center gap-1">
+            <UButton
+              type="button"
+              icon="i-lucide-arrow-up"
+              color="neutral"
+              variant="ghost"
+              :disabled="busy || index === 0"
+              :aria-label="t('products.productMedia.earlier', { number: index + 1 })"
+              @click="move(id, -1)"
+            />
+            <UButton
+              type="button"
+              icon="i-lucide-arrow-down"
+              color="neutral"
+              variant="ghost"
+              :disabled="busy || index === imageIds.length - 1"
+              :aria-label="t('products.productMedia.later', { number: index + 1 })"
+              @click="move(id, 1)"
+            />
+            <UButton
+              type="button"
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              :disabled="busy"
+              :aria-label="t('products.productMedia.remove', { number: index + 1 })"
+              @click="update(imageIds.filter((value) => value !== id))"
+            />
           </div>
-        </div>
+        </li>
+      </ol>
+      <div v-else class="rounded-lg border border-dashed border-default p-8 text-center text-muted">
+        {{ t('products.noProductImages') }}
       </div>
     </UFormField>
+    <p v-if="imageIds.length" class="text-xs text-muted">{{ t('products.removeImageHelp') }}</p>
   </fieldset>
-
   <UModal
     v-if="pickerOpen"
     v-model:open="pickerOpen"
@@ -305,22 +178,19 @@ function removeSelected() {
     <template #body
       ><ProductsMediaPicker
         :product-id="productId"
-        :purpose="activePurpose"
+        :excluded-media-ids="selectedMediaIds"
         @selected="linked"
         @cancel="pickerOpen = false"
     /></template>
   </UModal>
-  <UModal v-if="previewOpen" v-model:open="previewOpen" :title="selectedAsset?.name || t('products.previewImage')">
+  <UModal v-if="previewOpen" v-model:open="previewOpen" :title="asset(previewId)?.name || t('products.previewImage')">
     <template #body
       ><div class="h-[65vh] w-full">
         <ProductsMediaImage
-          v-if="selectedId"
+          :src="preview(previewId)"
+          :alt="asset(previewId)?.alternative_text || asset(previewId)?.name || ''"
           contain
-          :src="api.previewImageUrl(productId, selectedId)"
-          :alt="selectedAsset?.alternative_text || selectedAsset?.name || t('products.previewImage')"
-          class="h-full w-full"
-        />
-      </div>
-    </template>
+        /></div
+    ></template>
   </UModal>
 </template>

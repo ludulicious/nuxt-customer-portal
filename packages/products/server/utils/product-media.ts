@@ -59,16 +59,30 @@ export async function linkProductMedia(storeId: string, productId: string, input
   })
 }
 
-export async function productMediaContent(assetId: string, manage = false) {
-  const [asset] = await rows<{ media_id: string; media_variant: string; store_id: string }>(
-    `SELECT a.media_id,a.media_variant,p.store_id FROM products.asset a JOIN products.product p ON p.id=a.product_id
+export async function productMediaContent(assetId: string, manage = false, purpose?: string) {
+  const [asset] = await rows<{ media_id: string; media_variant: string; store_id: string; ordered: boolean }>(
+    `SELECT a.media_id,a.media_variant,p.store_id,(p.data->>'imageSelection'='ordered') AS ordered FROM products.asset a JOIN products.product p ON p.id=a.product_id
      WHERE a.id=$1 AND a.ready AND a.visibility='public' AND a.media_id IS NOT NULL`,
     [assetId]
   )
   if (!asset) {
     throw createError({ statusCode: 404, message: 'Image not found' })
   }
-  return mediaContent(asset.store_id, asset.media_id, manage, asset.media_variant)
+  let variant = asset.media_variant
+  if (asset.ordered) {
+    if (purpose && !['thumbnail', 'gallery', 'detail'].includes(purpose)) {
+      throw createError({ statusCode: 400, message: 'Invalid image purpose' })
+    }
+    const [available] = purpose
+      ? await rows('SELECT file_id FROM products.media_variant WHERE store_id=$1 AND media_id=$2 AND key=$3', [
+          asset.store_id,
+          asset.media_id,
+          purpose
+        ])
+      : []
+    variant = available ? purpose! : 'image'
+  }
+  return mediaContent(asset.store_id, asset.media_id, manage, variant)
 }
 
 export async function productAssets(productId: string): Promise<Asset[]> {

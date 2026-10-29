@@ -15,6 +15,7 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import {
   createError,
   getHeader,
+  getQuery,
   readRawBody,
   sendRedirect,
   sendStream,
@@ -372,7 +373,11 @@ export async function sendAsset(
     throw createError({ statusCode: 404, message: 'File not found' })
   }
   if (asset.media_id) {
-    const content = await productMediaContent(id, manageMedia)
+    const content = await productMediaContent(
+      id,
+      manageMedia,
+      getQuery(event).purpose === undefined ? undefined : String(getQuery(event).purpose)
+    )
     setResponseHeader(event, 'Content-Type', content.contentType)
     setResponseHeader(event, 'X-Content-Type-Options', 'nosniff')
     setResponseHeader(event, 'Cache-Control', 'private, no-store')

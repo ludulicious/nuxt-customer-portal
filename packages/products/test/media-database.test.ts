@@ -528,6 +528,32 @@ test(
         statusCode: 400
       })
       refreshed = await media.saveMedia('media-store', { ...details, id: refreshed.id, revision: refreshed.revision })
+      await db.query(
+        `UPDATE products.product SET data=data || '{"imageSelection":"ordered"}'::jsonb WHERE id='linked-product'`
+      )
+      assert.deepEqual(
+        (await productMediaContent(linked.id, false, 'thumbnail')).body,
+        (await media.mediaContent('media-store', refreshed.id, false, 'thumbnail')).body
+      )
+      assert.deepEqual(
+        (await productMediaContent(linked.id)).body,
+        (await media.mediaContent('media-store', refreshed.id, false, 'image')).body
+      )
+      await assert.rejects(productMediaContent(linked.id, false, 'original'), { statusCode: 400 })
+      const withoutGallery = await saveMediaVariantConfiguration('media-store', {
+        revision: removed.revision,
+        presets: removed.presets.filter((preset) => preset.key !== 'gallery')
+      })
+      refreshed = await media.saveMedia('media-store', {
+        ...details,
+        id: refreshed.id,
+        revision: refreshed.revision,
+        presetRevision: withoutGallery.revision
+      })
+      assert.deepEqual(
+        (await productMediaContent(linked.id, false, 'gallery')).body,
+        (await media.mediaContent('media-store', refreshed.id, false, 'image')).body
+      )
       await db.query(`DELETE FROM products.product WHERE id IN ('linked-product','foreign-product')`)
       const gifVariant = await media.mediaContent('media-store', gifMedia.id, true, 'thumbnail')
       const gifMetadata = await sharp(gifVariant.body, { animated: true }).metadata()
