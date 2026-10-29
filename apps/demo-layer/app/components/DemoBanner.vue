@@ -20,13 +20,13 @@ onMounted(async () => {
       resizeObserver = new ResizeObserver(updateHeight)
       resizeObserver.observe(banner.value)
     }
-    users.value = await $fetch('/api/demo/users')
+    users.value = await $fetch<typeof users.value, string>('/api/demo/users')
   }
 })
 async function switchUser(id: string) {
   pending.value = true
   try {
-    await $fetch('/api/demo/switch', { method: 'POST', body: { userId: id } })
+    await $fetch<unknown, string>('/api/demo/switch', { method: 'POST', body: { userId: id } })
     window.location.assign('/dashboard')
   } finally {
     pending.value = false

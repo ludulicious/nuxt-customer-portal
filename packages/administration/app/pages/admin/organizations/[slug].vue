@@ -95,7 +95,7 @@ const loadOrganization = async () => {
   try {
     loading.value = true
     error.value = ''
-    organization.value = await $fetch<Organization>(`/api/admin/organizations/by-slug/${slug.value}`)
+    organization.value = await $fetch<Organization, string>(`/api/admin/organizations/by-slug/${slug.value}`)
 
     if (organization.value) {
       await Promise.all([loadMembers(), loadInvitations()])
@@ -116,7 +116,7 @@ const loadMembers = async () => {
 
   try {
     // Use admin API endpoint that bypasses membership check
-    members.value = await $fetch<OrganizationMemberWithUser[]>(
+    members.value = await $fetch<OrganizationMemberWithUser[], string>(
       `/api/admin/organizations/${organization.value.id}/members`
     )
   } catch (err) {
@@ -133,7 +133,7 @@ const loadInvitations = async () => {
 
   try {
     // Use admin API endpoint that bypasses membership check
-    invitations.value = await $fetch<OrganizationInvitationsResponse>(
+    invitations.value = await $fetch<OrganizationInvitationsResponse, string>(
       `/api/admin/organizations/${organization.value.id}/invitations`
     )
   } catch (err) {

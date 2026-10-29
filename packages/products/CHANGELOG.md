@@ -1,5 +1,13 @@
 # Products
 
+## 0.9.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/clients@0.9.1
+- @nuxt-customer-portal/core@0.9.1
+- @nuxt-customer-portal/ui@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes

@@ -35,10 +35,13 @@ const schema = computed(() =>
   })
 )
 const endpoint = `/api/invoices/admin/clients/${props.client.organizationId}/contacts`
-const { data: contacts, refresh } = await useFetch<InvoiceContactDto[]>(endpoint, {
-  default: () => [],
-  immediate: props.client.clientType !== 'person'
-})
+const { data: contacts, refresh } = await useFetch<InvoiceContactDto[], import('#app').NuxtError<unknown>, string>(
+  endpoint,
+  {
+    default: () => [],
+    immediate: props.client.clientType !== 'person'
+  }
+)
 const reset = () => {
   editingId.value = ''
   formOpen.value = false
@@ -60,9 +63,9 @@ const save = async () => {
     const validated = schema.value.parse(state)
     const body = { ...validated, phone: validated.phone || null, jobTitle: validated.jobTitle || null }
     if (editingId.value) {
-      await $fetch(`${endpoint}/${editingId.value}`, { method: 'PATCH', body })
+      await $fetch<unknown, string>(`${endpoint}/${editingId.value}`, { method: 'PATCH', body })
     } else {
-      await $fetch(endpoint, { method: 'POST', body })
+      await $fetch<unknown, string>(endpoint, { method: 'POST', body })
     }
     await refresh()
     reset()
@@ -74,7 +77,7 @@ const save = async () => {
   }
 }
 const remove = async (contact: InvoiceContactDto) => {
-  await $fetch(`${endpoint}/${contact.id}`, { method: 'DELETE' })
+  await $fetch<unknown, string>(`${endpoint}/${contact.id}`, { method: 'DELETE' })
   await refresh()
 }
 </script>

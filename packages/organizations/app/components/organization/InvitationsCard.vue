@@ -27,7 +27,9 @@ const busyInvitationId = ref<string | null>(null)
 const resend = async (invitation: Invitation) => {
   try {
     busyInvitationId.value = invitation.id
-    await $fetch(`/api/organizations/${props.organizationId}/invitations/${invitation.id}/resend`, { method: 'POST' })
+    await $fetch<unknown, string>(`/api/organizations/${props.organizationId}/invitations/${invitation.id}/resend`, {
+      method: 'POST'
+    })
     toast.add({
       title: t('common.success'),
       description: t('organization.members.invitations.resendSuccess'),

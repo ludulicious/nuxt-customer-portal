@@ -127,11 +127,14 @@ const { isAuthenticated, currentUser } = storeToRefs(userStore)
 const fetchInvitationDetails = async (id: string) => {
   try {
     // Use custom endpoint to bypass inviter membership check
-    const data = await $fetch<{
-      organizationName?: string
-      role?: string
-      email?: string
-    }>(`/api/organizations/get-invitation?id=${encodeURIComponent(id)}`)
+    const data = await $fetch<
+      {
+        organizationName?: string
+        role?: string
+        email?: string
+      },
+      string
+    >(`/api/organizations/get-invitation?id=${encodeURIComponent(id)}`)
 
     if (data) {
       invitationInfo.value = {
@@ -160,13 +163,16 @@ const handleLoggedInInvitation = async (invId: string) => {
     } | null = null
 
     try {
-      invitationData = await $fetch<{
-        email?: string
-        role?: string
-        organizationName?: string
-        status?: string
-        expiresAt?: Date | string
-      }>(`/api/organizations/get-invitation?id=${encodeURIComponent(invId)}`)
+      invitationData = await $fetch<
+        {
+          email?: string
+          role?: string
+          organizationName?: string
+          status?: string
+          expiresAt?: Date | string
+        },
+        string
+      >(`/api/organizations/get-invitation?id=${encodeURIComponent(invId)}`)
     } catch (fetchErr: unknown) {
       const apiError = fetchErr as { data?: { message?: string }; message?: string }
       const errorMessage =
@@ -214,7 +220,7 @@ const handleLoggedInInvitation = async (invId: string) => {
     // Accept the invitation using custom endpoint to bypass inviter membership check
     // This is necessary because admins who create organizations are removed as members
     try {
-      const result = await $fetch<{ success: boolean; organization?: { id: string; name: string } }>(
+      const result = await $fetch<{ success: boolean; organization?: { id: string; name: string } }, string>(
         '/api/organizations/accept-invitation',
         {
           method: 'POST',
@@ -310,7 +316,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
 
   try {
     if (invId) {
-      const result = await $fetch<{ success: boolean; organization: { id: string; name: string } }>(
+      const result = await $fetch<{ success: boolean; organization: { id: string; name: string } }, string>(
         '/api/organizations/invitation-signup',
         {
           method: 'POST',

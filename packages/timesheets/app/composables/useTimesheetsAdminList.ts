@@ -30,7 +30,7 @@ export const useTimesheetsAdminList = <Item>(options: {
     pageSize,
     getKey: (item) => (item as { id: string }).id,
     fetchPage: ({ filters: query, page, pageSize, signal }) =>
-      $fetch<TimesheetsListResponse<Item>>(options.endpoint, { query: { ...query, page, pageSize }, signal })
+      $fetch<TimesheetsListResponse<Item>, string>(options.endpoint, { query: { ...query, page, pageSize }, signal })
   })
   const query = () => ({
     ...(search.value.trim() ? { search: search.value.trim() } : {}),

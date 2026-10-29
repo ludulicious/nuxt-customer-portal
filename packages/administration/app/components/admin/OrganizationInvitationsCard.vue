@@ -50,9 +50,12 @@ const handleResendInvitation = async () => {
     return
   }
   try {
-    await $fetch(`/api/admin/organizations/${props.organizationId}/invitations/${selectedInvitation.value.id}/resend`, {
-      method: 'POST'
-    })
+    await $fetch<unknown, string>(
+      `/api/admin/organizations/${props.organizationId}/invitations/${selectedInvitation.value.id}/resend`,
+      {
+        method: 'POST'
+      }
+    )
     emit('refresh')
     toast.add({
       title: t('common.success'),

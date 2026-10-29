@@ -33,7 +33,7 @@ const schema = z.object({
 const save = async () => {
   busy.value = true
   try {
-    const result = await $fetch<PortalEmailSettings>('/api/admin/email/provider', {
+    const result = await $fetch<PortalEmailSettings, string>('/api/admin/email/provider', {
       method: 'PUT',
       body: { ...state, apiKey: state.apiKey || undefined }
     })
@@ -54,7 +54,7 @@ const checkProvider = async (notify = true) => {
   busy.value = true
   providerError.value = ''
   try {
-    const result = await $fetch<{ verifiedDomains: string[] }>('/api/admin/email/provider')
+    const result = await $fetch<{ verifiedDomains: string[] }, string>('/api/admin/email/provider')
     providerStatus.value = result
     if (notify) {
       toast.add({

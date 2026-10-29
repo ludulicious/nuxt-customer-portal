@@ -50,11 +50,11 @@ async function complete() {
   if (pendingInvitationId) {
     const session = await authClient.getSession()
     try {
-      const invitation = await $fetch<{ email?: string }>(
+      const invitation = await $fetch<{ email?: string }, string>(
         `/api/organizations/get-invitation?id=${encodeURIComponent(pendingInvitationId)}`
       )
       if (session.data?.user.email?.toLowerCase() === invitation.email?.toLowerCase()) {
-        await $fetch('/api/organizations/accept-invitation', {
+        await $fetch<unknown, string>('/api/organizations/accept-invitation', {
           method: 'POST',
           body: { invitationId: pendingInvitationId }
         })

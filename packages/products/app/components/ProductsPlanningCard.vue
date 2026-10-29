@@ -12,7 +12,7 @@ const assigned = computed(() =>
   members.value.filter((member) => planning.value.providerUserIds.includes(member.userId))
 )
 try {
-  members.value = await $fetch('/api/planning/admin/providers')
+  members.value = await $fetch<typeof members.value, string>('/api/planning/admin/providers')
   installed.value = true
 } catch {
   /* Planning is an optional layer. */

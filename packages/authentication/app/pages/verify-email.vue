@@ -230,7 +230,7 @@ const acceptPendingInvitation = async () => {
   acceptingInvitation.value = true
   try {
     console.log('Accepting invitation:', invitationId.value)
-    await $fetch('/api/organizations/accept-invitation', {
+    await $fetch<unknown, string>('/api/organizations/accept-invitation', {
       method: 'POST',
       body: { invitationId: invitationId.value }
     })

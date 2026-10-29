@@ -1,5 +1,19 @@
 # Nuxt Customer Portal
 
+## 0.9.1
+
+Include the media library, product image selection, and unified sidebar from
+`0.9.0`, whose full verification failed before npm or Docker publication.
+
+Avoid generated API route type-inference limits when loading timesheet navigation
+capabilities and switching demo users. Keep the invoice sender form compatible
+with current Vue template type checking. Let consumer modules resolve their required Nuxt Kit versions during
+release verification instead of forcing an incompatible older version.
+
+All 16 public packages and the three portal apps use `0.9.1`. Apply the same
+Products migrations `0024_media_library.sql`, `0025_media_variants.sql`, and
+`0026_product_media.sql` when upgrading from `0.8.9`.
+
 ## 0.9.0
 
 Add a store media library with Studio-style image editing, batch review, retained

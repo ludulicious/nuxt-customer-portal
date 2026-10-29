@@ -4,7 +4,9 @@ import type { Notification } from '@nuxt-customer-portal/core/app/types'
 
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-const { data: notifications } = await useFetch<Notification[]>('/api/notifications')
+const { data: notifications } = await useFetch<Notification[], import('#app').NuxtError<unknown>, string>(
+  '/api/notifications'
+)
 </script>
 
 <template>

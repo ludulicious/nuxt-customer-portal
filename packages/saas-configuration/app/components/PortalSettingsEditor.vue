@@ -9,9 +9,11 @@ const {
   data,
   status,
   error: loadError
-} = await useFetch<{ settings: PortalSettings; step: PortalOnboardingStep; completed: boolean }>(
-  '/api/admin/portal-settings'
-)
+} = await useFetch<
+  { settings: PortalSettings; step: PortalOnboardingStep; completed: boolean },
+  import('#app').NuxtError<unknown>,
+  string
+>('/api/admin/portal-settings')
 const state = ref<PortalSettings | null>(null)
 const step = ref<PortalOnboardingStep>('general')
 const busy = ref(false)
@@ -94,7 +96,7 @@ async function save(next?: PortalOnboardingStep) {
   }
   busy.value = true
   try {
-    const result = await $fetch<{ settings: PortalSettings; step: PortalOnboardingStep }>(
+    const result = await $fetch<{ settings: PortalSettings; step: PortalOnboardingStep }, string>(
       '/api/admin/portal-settings',
       { method: 'PUT', body: { settings: parsed.data, step: next || step.value } }
     )
@@ -119,7 +121,10 @@ async function complete() {
   }
   busy.value = true
   try {
-    await $fetch('/api/admin/portal-settings/complete', { method: 'POST', body: { settings: state.value } })
+    await $fetch<unknown, string>('/api/admin/portal-settings/complete', {
+      method: 'POST',
+      body: { settings: state.value }
+    })
     await Promise.all([usePortalSettings().refreshBootstrap(), usePortalSettings().refreshPublicSettings()])
     window.location.assign('/dashboard')
   } catch {

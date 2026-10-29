@@ -48,7 +48,7 @@ const loadInvitations = async () => {
     // Better-auth doesn't have a direct list invitations endpoint,
     // so we'll need to create a custom API endpoint or fetch from the database
     // For now, we'll fetch from a custom endpoint
-    const data = await $fetch<OrganizationInvitationsResponse>(`/api/organizations/${organizationId.value}/invitations`)
+    const data = await $fetch<OrganizationInvitationsResponse, string>(`/api/organizations/${organizationId.value}/invitations`)
     invitations.value = data || []
   } catch (err) {
     const apiError = err as ApiError

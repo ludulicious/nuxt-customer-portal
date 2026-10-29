@@ -8,7 +8,9 @@ const emit = defineEmits<{ submit: [value: Record<string, unknown>]; cancel: [] 
 const { t } = useI18n()
 const configuration = useClientConfiguration()
 const allowedTypes = computed(() => configuration.value.allowedTypes ?? ['organization'])
-const { data: timezones } = await useFetch<{ providerTimezone: string }>('/api/timezones')
+const { data: timezones } = await useFetch<{ providerTimezone: string }, import('#app').NuxtError<unknown>, string>(
+  '/api/timezones'
+)
 const form = reactive({
   clientType: (allowedTypes.value[0] ?? 'organization') as 'organization' | 'person',
   timezone: null as string | null,

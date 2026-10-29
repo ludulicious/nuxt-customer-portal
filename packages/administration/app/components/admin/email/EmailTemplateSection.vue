@@ -46,7 +46,7 @@ const schema = z.object({
 const save = async () => {
   busy.value = true
   try {
-    const result = await $fetch<PortalEmailSettings>('/api/admin/email/template', {
+    const result = await $fetch<PortalEmailSettings, string>('/api/admin/email/template', {
       method: 'PUT',
       body: { htmlTemplate: state.htmlTemplate || null }
     })
@@ -62,7 +62,7 @@ const save = async () => {
 const reset = async () => {
   busy.value = true
   try {
-    const result = await $fetch<PortalEmailSettings>('/api/admin/email/template', { method: 'DELETE' })
+    const result = await $fetch<PortalEmailSettings, string>('/api/admin/email/template', { method: 'DELETE' })
     state.htmlTemplate = result.htmlTemplate
     usingProjectTemplate.value = result.usingProjectTemplate
     toast.add({ title: t('admin.email.templateReset'), color: 'success' })

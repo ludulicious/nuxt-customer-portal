@@ -1,6 +1,7 @@
 import type {
   AdminUserResponse,
   AdminUsersResponse,
+  Member,
   MemberRole,
   UpdateUserRoleRequest,
   UpdateUserRoleResponse
@@ -18,36 +19,43 @@ export const useAdministration = () => {
         lastUsedAt: string | null
         createdAt: string
         permissions: Record<string, string[]>
-      }>
+      }>,
+      string
     >('/api/admin/api-keys', { cache: 'no-store' })
   const createKey = (body: Record<string, unknown>) =>
-    $fetch<{ key: string }>('/api/admin/api-keys', { method: 'POST', body })
-  const revoke = (id: string) => $fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' })
+    $fetch<{ key: string }, string>('/api/admin/api-keys', { method: 'POST', body })
+  const revoke = (id: string) => $fetch<{ ok: boolean }, string>(`/api/admin/api-keys/${id}`, { method: 'DELETE' })
   const listInvitations = (page: number, search: string) =>
-    $fetch<{
-      items: Array<{
-        id: string
-        email: string
-        role: string | null
-        organizationId: string
-        organizationName: string
-        isPersonalClient: boolean
-        expiresAt: string
-      }>
-      total: number
-    }>('/api/admin/invitations', { query: { page, search } })
+    $fetch<
+      {
+        items: Array<{
+          id: string
+          email: string
+          role: string | null
+          organizationId: string
+          organizationName: string
+          isPersonalClient: boolean
+          expiresAt: string
+        }>
+        total: number
+      },
+      string
+    >('/api/admin/invitations', { query: { page, search } })
   const searchUsers = async (search: string) =>
-    await $fetch<AdminUsersResponse>('/api/admin/users', {
+    await $fetch<AdminUsersResponse, string>('/api/admin/users', {
       query: search.trim() ? { search: search.trim() } : undefined
     })
 
-  const getUser = async (id: string) => await $fetch<AdminUserResponse>(`/api/admin/users/${id}`)
+  const getUser = async (id: string) => await $fetch<AdminUserResponse, string>(`/api/admin/users/${id}`)
 
   const updateUserRole = async (id: string, input: UpdateUserRoleRequest) =>
-    await $fetch<UpdateUserRoleResponse>(`/api/admin/users/${id}/role`, { method: 'PATCH', body: input })
+    await $fetch<UpdateUserRoleResponse, string>(`/api/admin/users/${id}/role`, { method: 'PATCH', body: input })
 
   const linkOrganizationMember = async (organizationId: string, input: { userId: string; role: MemberRole }) =>
-    await $fetch(`/api/admin/organizations/${organizationId}/members`, { method: 'POST', body: input })
+    await $fetch<Omit<Member, 'createdAt'> & { createdAt: string }, string>(
+      `/api/admin/organizations/${organizationId}/members`,
+      { method: 'POST', body: input }
+    )
 
   return { keys, createKey, revoke, searchUsers, getUser, updateUserRole, linkOrganizationMember, listInvitations }
 }
