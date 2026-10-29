@@ -49,7 +49,9 @@
     "settings": {
       "title": "Settings"
     },
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "searchDescription": "Find a page in your workspace.",
+    "searchPages": "Search pages…"
   },
   "dashboard": {
     "title": "Dashboard",

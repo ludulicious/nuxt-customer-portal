@@ -5,11 +5,13 @@ import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 const props = withDefaults(
   defineProps<{
     showNavigation?: boolean
+    sidebarNavigation?: boolean
     brandName?: string
     brandTagline?: string
   }>(),
   {
     showNavigation: true,
+    sidebarNavigation: false,
     brandName: 'Nuxt Customer Portal',
     brandTagline: 'Customer workspace'
   }
@@ -66,7 +68,21 @@ const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrg
 
 const showOrgSwitcherModal = ref(false)
 const searchOpen = ref(false)
+// Register on the header so search remains available while its modal is unmounted.
+defineShortcuts({
+  meta_k: {
+    usingInput: true,
+    handler: () => {
+      headerMenuOpen.value = false
+      searchOpen.value = !searchOpen.value
+    }
+  }
+})
 const headerMenuOpen = ref(false)
+const openSearch = () => {
+  headerMenuOpen.value = false
+  searchOpen.value = true
+}
 
 const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
@@ -254,7 +270,7 @@ const stopImpersonating = async () => {
       </div>
     </template>
 
-    <nav v-if="showNavigation" class="hidden lg:flex flex-1 items-center justify-center gap-6">
+    <nav v-if="showNavigation && !sidebarNavigation" class="hidden lg:flex flex-1 items-center justify-center gap-6">
       <template v-for="module in moduleItems" :key="module.id">
         <NuxtLink
           :to="module.to"
@@ -272,7 +288,15 @@ const stopImpersonating = async () => {
 
     <template #right>
       <div class="hidden lg:flex items-center gap-3 ml-auto">
-        <UButton icon="i-lucide-search" color="neutral" variant="ghost" size="sm" square @click="searchOpen = true" />
+        <UButton
+          :aria-label="t('menu.search')"
+          icon="i-lucide-search"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          @click="openSearch"
+        />
         <ULocaleSelect
           v-if="availableLanguages.length > 1"
           v-model="currentLocale"
@@ -315,7 +339,7 @@ const stopImpersonating = async () => {
             variant="outline"
             size="md"
             class="min-h-11 justify-start"
-            @click="searchOpen = true"
+            @click="openSearch"
           />
           <ULocaleSelect
             v-if="availableLanguages.length > 1"
@@ -328,7 +352,13 @@ const stopImpersonating = async () => {
         </div>
       </div>
 
-      <nav v-if="showNavigation" :aria-label="t('menu.moduleNavigation')" class="space-y-5 p-5 pt-4">
+      <PortalSidebarNavigation
+        v-if="showNavigation && sidebarNavigation"
+        :collapsed="false"
+        class="p-4"
+        @navigate="headerMenuOpen = false"
+      />
+      <nav v-else-if="showNavigation" :aria-label="t('menu.moduleNavigation')" class="space-y-5 p-5 pt-4">
         <section v-for="module in moduleNavigationGroups" :key="module.id" class="space-y-1">
           <button
             v-if="module.menuItems.length > 1"
@@ -425,8 +455,13 @@ const stopImpersonating = async () => {
 
   <!-- Dashboard Search Modal -->
   <UDashboardSearch
+    v-if="searchOpen"
     v-model:open="searchOpen"
+    shortcut=""
     :groups="searchGroups"
+    :title="t('menu.search')"
+    :description="t('menu.searchDescription')"
+    :placeholder="t('menu.searchPages')"
     :fuse="{
       fuseOptions: {
         ignoreLocation: true,

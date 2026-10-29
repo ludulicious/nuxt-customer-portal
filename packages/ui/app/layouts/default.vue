@@ -5,6 +5,8 @@ const toast = useToast()
 const { t } = useI18n()
 const open = ref(false)
 const sidebarCollapsed = ref(false)
+const appConfig = useAppConfig()
+const unifiedNavigation = computed(() => appConfig.portal.sidebarNavigation)
 const showFooter = computed(() => route.meta?.public === true)
 
 const { activeModule, activeModuleMenuItems } = useModuleNavigation(open)
@@ -45,7 +47,7 @@ onMounted(async () => {
     <!-- AppHeader - fixed at top -->
     <div class="fixed left-0 right-0 z-50" style="top: var(--portal-top-bar-height, 0px)">
       <div class="mx-auto w-full max-w-[1600px] px-4">
-        <AppHeader />
+        <AppHeader :sidebar-navigation="unifiedNavigation" />
       </div>
     </div>
 
@@ -65,37 +67,48 @@ onMounted(async () => {
         :default-size="18"
         :min-size="18"
         :max-size="24"
-        class="min-w-72 bg-elevated/25 lg:pb-12 data-[collapsed=true]:min-w-16"
-        :ui="{ footer: 'lg:border-t lg:border-default' }"
+        class="min-w-72 bg-elevated/25 data-[collapsed=true]:min-w-16"
+        :class="unifiedNavigation ? '' : 'lg:pb-12'"
+        :ui="{ footer: 'border-t border-default' }"
       >
         <template #header="{ collapsed }">
-          <div v-if="activeModule && !collapsed" class="flex min-w-0 items-center gap-2 px-2 text-sm font-semibold">
+          <div
+            v-if="activeModule && !collapsed && !unifiedNavigation"
+            class="flex min-w-0 items-center gap-2 px-2 text-sm font-semibold"
+          >
             <UIcon v-if="activeModule.icon" :name="activeModule.icon" class="size-4 shrink-0 text-primary" />
             <span class="truncate">{{ activeModule.label }}</span>
           </div>
         </template>
-        <template #default="{ collapsed, collapse }">
-          <div class="flex items-center pt-3 pb-1" :class="collapsed ? 'justify-center' : 'justify-between px-2.5'">
-            <span v-if="!collapsed && activeModule" class="text-xs font-semibold uppercase text-muted">
+        <template #default="{ collapsed }">
+          <div v-if="!unifiedNavigation && !collapsed && activeModule" class="flex items-center px-2.5 pt-3 pb-1">
+            <span class="text-xs font-semibold uppercase text-muted">
               {{ activeModule.label }}
             </span>
-            <UButton
-              :icon="collapsed ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :aria-label="t(collapsed ? 'common.expandSidebar' : 'common.collapseSidebar')"
-              :title="t(collapsed ? 'common.expandSidebar' : 'common.collapseSidebar')"
-              @click="collapse(!collapsed)"
-            />
           </div>
+          <PortalSidebarNavigation v-if="unifiedNavigation" :collapsed="collapsed" @navigate="open = false" />
           <UNavigationMenu
+            v-else
             :collapsed="collapsed"
             :items="activeModuleMenuItems"
             orientation="vertical"
             tooltip
             popover
           />
+        </template>
+        <template #footer="{ collapsed, collapse }">
+          <div class="flex w-full py-2" :class="collapsed ? 'justify-center' : 'justify-end'">
+            <UButton
+              :icon="collapsed ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              class="min-h-11 min-w-11"
+              :aria-label="t(collapsed ? 'common.expandSidebar' : 'common.collapseSidebar')"
+              :title="t(collapsed ? 'common.expandSidebar' : 'common.collapseSidebar')"
+              @click="collapse(!collapsed)"
+            />
+          </div>
         </template>
       </UDashboardSidebar>
 

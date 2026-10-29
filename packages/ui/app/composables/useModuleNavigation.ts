@@ -111,6 +111,7 @@ export const useModuleNavigation = (sidebarOpen?: Ref<boolean>) => {
         )
         .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
         .map((item) => ({
+          id: item.id,
           label: t(item.labelKey),
           icon: item.icon,
           to: item.to,

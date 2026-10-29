@@ -1,4 +1,5 @@
 import type { CommandPaletteGroup, CommandPaletteItem, NavigationMenuItem } from '@nuxt/ui'
+import { buildNavigationSearchGroups } from '../utils/navigation-search'
 import type { PortalAudience } from '@nuxt-customer-portal/core/shared/types/feature'
 
 const hasAudience = (
@@ -45,6 +46,7 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const route = useRoute()
   const { navigation } = usePortalFeatures()
+  const { moduleNavigationGroups } = useModuleNavigation(sidebarOpen)
   const {
     isAuthenticated,
     isSystemAdmin,
@@ -81,18 +83,9 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
     }))
   ])
 
-  const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
-    {
-      id: 'navigation',
-      label: t('menu.search'),
-      items: visibleItems.value.map((item) => ({
-        id: item.id,
-        label: t(item.labelKey),
-        icon: item.icon,
-        to: item.to
-      }))
-    }
-  ])
+  const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() =>
+    buildNavigationSearchGroups(moduleNavigationGroups.value, links.value.flat(), t('menu.search'))
+  )
 
   return { links, searchGroups }
 }
