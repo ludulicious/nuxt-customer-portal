@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boolean }>()
+defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boolean; stackActions?: boolean }>()
 </script>
 
 <template>
@@ -10,7 +10,10 @@ defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boo
         :class="constrained ? 'h-full min-h-0' : ''"
       >
         <slot name="back" />
-        <header class="flex shrink-0 items-center justify-between gap-3 border-b border-default pb-4 sm:items-end">
+        <header
+          class="flex shrink-0 justify-between gap-3 border-b border-default pb-4"
+          :class="stackActions ? 'flex-col items-stretch sm:flex-row sm:items-end' : 'items-center sm:items-end'"
+        >
           <div class="flex min-w-0 gap-3">
             <UIcon :name="icon || 'i-lucide-shopping-bag'" class="mt-1 size-6 shrink-0 text-primary" />
             <div class="min-w-0">
@@ -18,7 +21,9 @@ defineProps<{ title: string; subtitle?: string; icon?: string; constrained?: boo
               <p v-if="subtitle" class="hidden text-sm text-muted sm:block">{{ subtitle }}</p>
             </div>
           </div>
-          <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1"><slot name="actions" /></div>
+          <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1" :class="stackActions ? 'flex-wrap' : ''">
+            <slot name="actions" />
+          </div>
         </header>
         <div v-if="$slots.controls" class="shrink-0"><slot name="controls" /></div>
         <div data-products-scroll :class="constrained ? 'min-h-0 flex-1 overflow-y-auto' : ''">

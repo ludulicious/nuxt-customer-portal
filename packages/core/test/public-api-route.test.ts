@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isPublicStoreRoute } from '../server/utils/public-api-route'
+import { isMediaLibraryRoute, isPublicStoreRoute } from '../server/utils/public-api-route'
 
 test('guest booking allows only public availability and hold operations', () => {
   assert.equal(isPublicStoreRoute('GET', '/api/store/planning/product/availability'), true)
@@ -61,4 +61,14 @@ test('public store wording is read-only and administrative editing stays protect
   }
   assert.equal(isPublicStoreRoute('GET', '/api/store/page-texts/unknown'), false)
   assert.equal(isPublicStoreRoute('GET', '/api/products/admin/page-texts'), false)
+})
+
+test('media library delegates only its own path boundary to scoped authentication', () => {
+  for (const method of ['GET', 'POST', 'PUT', 'DELETE']) {
+    assert.equal(isMediaLibraryRoute(method, '/api/products/media'), true)
+    assert.equal(isMediaLibraryRoute(method, '/api/products/media/uploads/upload/file'), true)
+    assert.equal(isMediaLibraryRoute(method, '/api/products/media-other'), false)
+    assert.equal(isMediaLibraryRoute(method, '/api/products/admin/products'), false)
+  }
+  assert.equal(isMediaLibraryRoute('PATCH', '/api/products/media'), false)
 })

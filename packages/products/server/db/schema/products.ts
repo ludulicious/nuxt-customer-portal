@@ -368,3 +368,75 @@ export const pageText = schema.table(
     check('page_text_copy_object', sql`jsonb_typeof(${table.copy}) = 'object'`)
   ]
 )
+
+export const mediaUpload = schema.table(
+  'media_upload',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    committedMediaId: text('committed_media_id'),
+    createdAt: stamp('created_at')
+  },
+  (t) => [index('media_upload_created').on(t.createdAt)]
+)
+export const mediaFile = schema.table(
+  'media_file',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    uploadId: text('upload_id')
+      .notNull()
+      .references(() => mediaUpload.id, { onDelete: 'cascade' }),
+    role: text('role').$type<'original' | 'image' | 'thumbnail'>().notNull(),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    objectKey: text('object_key').notNull().unique(),
+    width: integer('width'),
+    height: integer('height'),
+    ready: boolean('ready').default(false).notNull(),
+    createdAt: stamp('created_at')
+  },
+  (t) => [
+    uniqueIndex('media_file_upload_role').on(t.uploadId, t.role),
+    uniqueIndex('media_file_store_id').on(t.storeId, t.id),
+    index('media_file_upload').on(t.uploadId),
+    check('media_file_role', sql`${t.role} IN ('original','image','thumbnail')`),
+    check('media_file_type', sql`${t.contentType} IN ('image/jpeg','image/png','image/webp','image/gif')`),
+    check('media_file_size', sql`${t.size} > 0 AND ${t.size} <= 10485760`)
+  ]
+)
+export const media = schema.table(
+  'media',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => organization.id),
+    title: text('title').notNull(),
+    alt: text('alt').notNull(),
+    categories: text('categories')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    credit: text('credit').notNull().default(''),
+    visible: boolean('visible').notNull().default(true),
+    position: integer('position').notNull().default(0),
+    revision: integer('revision').notNull().default(1),
+    originalFileId: text('original_file_id').notNull(),
+    imageFileId: text('image_file_id').notNull(),
+    thumbnailFileId: text('thumbnail_file_id'),
+    createdAt: stamp('created_at'),
+    updatedAt: stamp('updated_at')
+  },
+  (t) => [
+    index('media_store_order').on(t.storeId, t.position, t.id),
+    foreignKey({ columns: [t.storeId, t.originalFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.imageFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] }),
+    foreignKey({ columns: [t.storeId, t.thumbnailFileId], foreignColumns: [mediaFile.storeId, mediaFile.id] })
+  ]
+)

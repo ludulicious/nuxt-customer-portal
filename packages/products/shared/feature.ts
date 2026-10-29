@@ -6,6 +6,18 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
   emails: [purchaseConfirmationEmail],
   apiScopes: [
     {
+      id: 'products.media',
+      action: 'read',
+      labelKey: 'products.media.readScope',
+      descriptionKey: 'products.media.readScopeHelp'
+    },
+    {
+      id: 'products.media',
+      action: 'manage',
+      labelKey: 'products.media.manageScope',
+      descriptionKey: 'products.media.manageScopeHelp'
+    },
+    {
       id: 'products.catalog',
       action: 'read',
       labelKey: 'products.catalogReadScope',
@@ -40,6 +52,13 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
           icon: 'i-lucide-tags',
           labelKey: 'products.categories',
           to: '/admin/products/categories',
+          audiences: ['providerAdmin']
+        },
+        {
+          id: 'media',
+          icon: 'i-lucide-images',
+          labelKey: 'products.media.library',
+          to: '/admin/products/media',
           audiences: ['providerAdmin']
         },
         {

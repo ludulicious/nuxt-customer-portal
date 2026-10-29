@@ -170,3 +170,48 @@ Under **Store → Store texts → Order details**, provider owners and administr
 Overrides are stored in `products.page_text`; apply `0022_page_texts.sql` through the normal migration command when upgrading. Shared wording is resolved on each request and updates existing order pages immediately, including the generic error screen for invalid links. Purchased titles, instructions, file names and link labels still come from their immutable purchase snapshots. Existing thank-you overrides remain in their original table and retain store/product and free/paid inheritance. The old `/admin/products/thank-you` URL redirects into Store texts; its existing API endpoints remain supported.
 
 Store texts also support product-specific purchase introductions. All page headings, labels, actions, statuses and errors remain shared per language. Empty product introductions inherit the store introduction; reset removes only the selected product/language introduction. Orders containing a single distinct product use that product’s introduction, while mixed-product orders use the store introduction. Selecting a product automatically loads its introduction and previews its current title, price, instructions, files and links. Product-specific editing always previews that same product. Store-default editing has a separate preview product selector. Preview state sits with the preview controls; previews use no customer orders and disable media/download actions. Apply products migration `0023_product_page_texts.sql` before deploying this update.
+
+## Store media library
+
+**Store → Media library** manages images independently of products. Existing product image uploads, purpose-specific crops, catalog output and purchased files are unchanged. The library matches Marpos Studio's image workflow: a searchable grid with category/visibility filters, adjustable card sizes, manual ordering, single-image upload and batch review. Search, filters, sorting and pagination are reflected in the URL. Drag ordering and accessible move buttons are available in the unfiltered, ascending manual-order view.
+
+The editor has **Details** and **Adjust image** tabs. Title and alternative text are required; categories are free-form media tags, separate from product categories. Photo credit and visibility are optional. Metadata values are not translated; the interface supports English and Dutch. Batch uploads accept shared categories, credit and visibility, then review and save each image individually. Switching between queued images retains edits. A failed completion can be retried without uploading already-transferred bytes again.
+
+JPEG, PNG, WebP and GIF images up to 10 MB are accepted. Decoding is limited to 40 million input pixels, including animated frames. GIF animation is preserved and its adjustment controls are disabled. Other images support crop/shape/zoom, quarter-turn rotation, straighten, brightness, undo/redo, and reset to the retained original. The full image has no fixed aspect ratio; an optional independent thumbnail defaults to 4:3. Resetting the full image preserves the thumbnail. Replacing the source image clears its previous thumbnail unless a new thumbnail is supplied.
+
+Media uses the existing environment-managed or store-managed S3/Bunny configuration, with keys under `products/media/`. No additional provider configuration is required. New uploads and edited versions are stored separately; saving atomically switches the media record only after every file passes validation. Metadata-only saves leave image bytes unchanged. Revisions reject stale updates with HTTP 409; reload before applying changes again. Removed/superseded files and abandoned uploads are cleaned by the existing reconciliation task after 24 hours. Committed originals and current/thumbnail versions are retained.
+
+### Authenticated media API
+
+All endpoints are under `/api/products/media`. They accept a provider administrator's session or an organization API key using `Authorization: Bearer <key>`. Add permissions in **API keys**:
+
+- `products.media:read`: list visible images, read their metadata, and retrieve their current image/thumbnail.
+- `products.media:manage`: includes read access, hidden entries, original images, uploads, editing, ordering, and deletion.
+
+Keys belonging to other organizations or with catalog-only permissions cannot access the library. Visibility takes effect when saved; there is no publishing step. There are no anonymous image URLs. Content endpoints check permissions on every request and return private, non-cacheable bytes rather than public CDN redirects. Browser consumers must fetch images with authentication and use a blob URL for `<img>` previews. Keep API keys on a trusted server when building a public website.
+
+| Method and path                                       | Input / result                                                                                                                                                                                                                    |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /`                                               | `search`, `category`, `visibility=all\|visible\|hidden`, `sortBy=order\|title\|created`, `sortDir=asc\|desc`, `page`; returns `items`, permitted `categories`, and `pagination` (`total`, `page`, `pageSize=20`, `pageCount`).    |
+| `GET /:id`                                            | Metadata, revision, current image and optional thumbnail; manage access also includes the original. File descriptors contain authenticated `url`, `name`, `contentType`, `size`, `width`, `height`.                               |
+| `POST /uploads`                                       | `{ files: [{ role: "original"\|"image"\|"thumbnail", name, contentType, size }] }`; returns upload `id` and per-file `id`, `role`, and upload `url`. Maximum one file of each role.                                               |
+| `PUT /uploads/:uploadId/:fileId`                      | Raw image bytes with `Content-Length`; verifies size, decoded MIME type and dimensions, then stores the object. A successful transfer is immutable and safe to retry.                                                             |
+| `POST /uploads/:uploadId/complete`                    | Metadata `{ title, alt, categories, credit, visible }`, plus `id` and `revision` when editing. Requires every file to be ready; creation requires an `original`. Returns the saved media item. Completion retries are idempotent. |
+| `PUT /`                                               | Same metadata, optional `uploadId`, and `id`/`revision` for updates. Without an upload, updates metadata only.                                                                                                                    |
+| `PUT /reorder`                                        | `{ id, beforeId: string\|null, revision }`; moves an entry before another entry or to the end.                                                                                                                                    |
+| `DELETE /:id`                                         | `{ revision }`; permanently removes the library entry.                                                                                                                                                                            |
+| `GET /:id/content?variant=image\|thumbnail\|original` | Authenticated image bytes; thumbnail falls back to the current image when absent. Original requires manage access.                                                                                                                |
+
+Image IDs are independent of product asset IDs. Library entries are not yet selectable from products, and the catalog API does not include them.
+
+### Media verification
+
+Run `pnpm test:packages` for unit/regression coverage. To include storage and API integration coverage, set `PRODUCTS_MEDIA_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** named `codex_products_test_*`, then run:
+
+```sh
+node --import tsx --test packages/products/test/media.test.ts packages/products/test/media-database.test.ts
+```
+
+The integration test applies core/products migrations and starts local in-memory S3/Bunny HTTP servers; it never uses production storage credentials. It covers image validation, transfer retries, completion idempotence, metadata-only writes, retained originals, independent thumbnails, stale revisions, hidden images, organization isolation, real API-key permissions, ordering, and cleanup.
+
+Browser coverage is available with `PORTAL_MEDIA_E2E=1 pnpm exec playwright test --config test/e2e/media.config.ts`. Use an isolated SaaS portal with all enabled module migrations applied, existing storage pointed at a disposable S3/Bunny endpoint, and a verified system administrator `media-owner@example.test` (password `Media-test-password-2026!`) who owns provider organization `media-store`. Configure its store row and complete portal onboarding with Products, Invoices and the product invoice integration enabled. Set `PORTAL_MEDIA_E2E_URL` to its `http://localhost:<port>` origin (default `http://localhost:55440`) and set `BETTER_AUTH_URL` to that same origin. Tests cover uploads, adjustments, thumbnail editing, metadata preservation, navigation guards, desktop/mobile layouts, batch review, and retry without duplicates. Never configure these fixtures in a real portal.

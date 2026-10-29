@@ -1,3 +1,4 @@
+import { cleanupMedia } from '../../utils/media'
 import { rows } from '../../utils/database'
 import { reconcileCheckout, processOrder } from '../../utils/orders'
 import { handleWebhook } from '../../utils/webhooks'
@@ -43,6 +44,7 @@ export default defineTask({
       }
     }
     await rows('DELETE FROM products.rate_limit WHERE bucket_minute<$1', [Math.floor(Date.now() / 60000) - 60])
+    await cleanupMedia().catch(() => 0)
     await cleanupOrphanedAssets().catch(() => 0)
     return { result: { processed, failed } }
   }
