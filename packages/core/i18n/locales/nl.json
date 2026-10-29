@@ -49,7 +49,9 @@
     "settings": {
       "title": "Instellingen"
     },
-    "logout": "Uitloggen"
+    "logout": "Uitloggen",
+    "searchDescription": "Vind een pagina in uw werkruimte.",
+    "searchPages": "Zoek pagina’s…"
   },
   "dashboard": {
     "title": "Dashboard",

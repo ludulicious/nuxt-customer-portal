@@ -3,6 +3,7 @@ const selectItem =
   'data-highlighted:not-data-disabled:before:bg-accented data-[state=checked]:before:bg-elevated data-[state=checked]:font-medium'
 
 export default defineAppConfig({
+  portal: { sidebarNavigation: false },
   ui: {
     button: {
       compoundVariants: [
