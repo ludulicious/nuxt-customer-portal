@@ -81,9 +81,9 @@ onMounted(async () => {
           </div>
         </template>
         <template #default="{ collapsed }">
-          <div class="flex items-center pt-3 pb-1" :class="collapsed ? 'justify-center' : 'justify-between px-2.5'">
-            <span v-if="!collapsed" class="text-xs font-semibold uppercase text-muted">
-              {{ unifiedNavigation ? t('menu.moduleNavigation') : activeModule?.label }}
+          <div v-if="!unifiedNavigation && !collapsed && activeModule" class="flex items-center px-2.5 pt-3 pb-1">
+            <span class="text-xs font-semibold uppercase text-muted">
+              {{ activeModule.label }}
             </span>
           </div>
           <PortalSidebarNavigation v-if="unifiedNavigation" :collapsed="collapsed" @navigate="open = false" />
