@@ -160,6 +160,7 @@ test(
       let calendarFailure = false,
         effectFailure = false,
         replaceAvailabilityEventId = false,
+        mirrorRepair: 'missing' | 'changed' | undefined,
         meetingEnsures = 0
       const mirrors = new Map<string, unknown>(),
         meetings = new Map<string, { id: string; url: string }>()
@@ -179,6 +180,13 @@ test(
             const returnedId =
               replaceAvailabilityEventId && event.id.startsWith('a') ? `${event.id}r12345678` : event.id
             mirrors.set(returnedId, { ...event, id: returnedId })
+            if (mirrorRepair) {
+              return {
+                id: returnedId,
+                wasMissing: mirrorRepair === 'missing',
+                externalChangeKey: mirrorRepair === 'changed' ? 'external-edit' : undefined
+              }
+            }
             return returnedId === event.id ? undefined : { id: returnedId, wasMissing: true }
           },
           remove: async (_s, _u, _c, id) => {
@@ -709,6 +717,43 @@ test(
         await jobs.runJobs()
         assert.equal(meetingEnsures, before)
         assert.equal(meetings.size, 1)
+      })
+      await t.test('calendar mirror repairs do not enqueue notices or send emails', async () => {
+        const before = emails.length
+        for (const repair of ['missing', 'changed'] as const) {
+          mirrorRepair = repair
+          try {
+            await jobs.syncProvider('store', 'provider')
+            const result = await jobs.runJobs()
+            assert.equal(result.failed, 0)
+            assert.ok(result.completed > 0)
+            assert.equal(emails.length, before)
+            assert.equal(
+              (await db.query("SELECT count(*)::int AS count FROM planning.job WHERE kind='mirror-notice'")).rows[0]
+                .count,
+              0
+            )
+          } finally {
+            mirrorRepair = undefined
+          }
+        }
+      })
+      await t.test('queued mirror notices complete silently while calendar conflicts still send emails', async () => {
+        for (const kind of ['mirror-notice', 'conflict']) {
+          const id = randomUUID(),
+            before = emails.length
+          await db.query('INSERT INTO planning.job(id,kind,payload) VALUES($1,$2,$3)', [
+            id,
+            kind,
+            { userId: 'provider', storeId: 'store' }
+          ])
+          assert.deepEqual(await jobs.runJobs(1, 'store', id), { completed: 1, failed: 0 })
+          assert.ok((await db.query('SELECT completed_at FROM planning.job WHERE id=$1', [id])).rows[0].completed_at)
+          assert.equal(emails.length, before + (kind === 'conflict' ? 1 : 0))
+          if (kind === 'conflict') {
+            assert.match(String(emails.at(-1)?.subject), /Calendar conflict/)
+          }
+        }
       })
       await t.test('cancellation releases the slot and refunds policy amount exactly once', async () => {
         await management.cancel(event(buyerCookie), a.id)

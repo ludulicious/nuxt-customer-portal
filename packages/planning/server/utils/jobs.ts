@@ -125,17 +125,6 @@ async function appointmentEffects(
         }),
         extendedProperties: { private: { portalPlanning: id, portalRevision: String(revision) } }
       })
-      if (
-        written?.externalChangeKey ||
-        (written?.wasMissing && a.calendar_event_id && a.calendar_id === provider.write_calendar_id)
-      ) {
-        await enqueue(
-          pool,
-          `mirror-notice:${id}:${revision}:${written.externalChangeKey || 'missing'}`,
-          'mirror-notice',
-          { userId: a.user_id }
-        )
-      }
       await rows(
         'UPDATE planning.appointment SET calendar_event_id=$2,calendar_id=$3,calendar_user_id=user_id WHERE id=$1',
         [id, written?.id || eventId, provider.write_calendar_id]
@@ -356,17 +345,6 @@ async function availabilityEffects(id: string) {
     extendedProperties: { private: { portalPlanning: id, portalRevision: String(window.revision) } },
     ...(recurrence.length ? { recurrence } : {})
   })
-  if (
-    written?.externalChangeKey ||
-    (written?.wasMissing && window.calendar_event_id && window.calendar_id === provider.write_calendar_id)
-  ) {
-    await enqueue(
-      pool,
-      `mirror-notice:${id}:${window.revision}:${written.externalChangeKey || 'missing'}`,
-      'mirror-notice',
-      { userId: window.user_id }
-    )
-  }
   await rows('UPDATE planning.availability SET calendar_event_id=$2,calendar_id=$3 WHERE id=$1', [
     id,
     written?.id || eventId,
@@ -512,7 +490,7 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
             idempotencyKey: job.id
           })
         }
-      } else if (job.kind === 'conflict' || job.kind === 'mirror-notice') {
+      } else if (job.kind === 'conflict') {
         const [provider] = await rows<{ email: string; first_name: string | null; name: string | null }>(
           'SELECT email,first_name,name FROM public."user" WHERE id=$1',
           [p.userId]
@@ -529,11 +507,9 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
                 displayName: provider.name,
                 email: provider.email
               }),
-              product: job.kind === 'conflict' ? 'Calendar conflict' : 'Calendar synchronization',
+              product: 'Calendar conflict',
               status:
-                job.kind === 'conflict'
-                  ? 'An external appointment overlaps a confirmed portal appointment. Resolve the conflict in your calendar or contact the customer.'
-                  : 'An externally changed or removed portal event was restored. Manage portal availability and appointments in the portal.',
+                'An external appointment overlaps a confirmed portal appointment. Resolve the conflict in your calendar or contact the customer.',
               time: '',
               timezone: '',
               meetingUrl: `${baseUrl()}/planning`,
@@ -544,7 +520,7 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
             idempotencyKey: job.id
           })
         }
-      } else {
+      } else if (job.kind !== 'mirror-notice') {
         throw new Error('Unknown planning job')
       }
       await rows(
