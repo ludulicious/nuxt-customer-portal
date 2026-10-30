@@ -4,6 +4,7 @@
     "planning": "Planning",
     "appointments": "Afspraken",
     "emailNewAppointment": "Nieuwe afspraak",
+    "emailHostAppointment": "Afspraakmelding voor de host",
     "emailUpdatedAppointment": "Bijgewerkte afspraak",
     "emailCanceledAppointment": "Geannuleerde afspraak",
     "emailZoomLinkReady": "Zoom-link gereed",

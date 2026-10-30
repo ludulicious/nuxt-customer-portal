@@ -30,6 +30,7 @@ import {
   planningOrderIntegration
 } from './contracts'
 import { developmentSandboxEffectsEnabled } from './development'
+import { notifyStoreOwners } from './order-notifications'
 
 export async function getOrder(id: string, tx?: Parameters<typeof rows>[2]) {
   const [order] = await rows<Order>('SELECT * FROM products.orders WHERE id=$1', [id], tx)
@@ -385,6 +386,7 @@ export async function notifyOrder(id: string) {
   if (order.notified) {
     return
   }
+  await notifyStoreOwners(order, store)
   if (
     order.snapshot.planningReservationId ||
     order.snapshot.planningFailure ||

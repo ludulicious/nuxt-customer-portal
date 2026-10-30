@@ -19,6 +19,10 @@ The migration requires permission to install PostgreSQL's `btree_gist` extension
 
 Run Nitro's scheduled tasks every minute in production. HTTP deployments need a reachable HTTPS public URL for Google change notifications. Calendar checks remain live on booking requests; a five-minute polling fallback detects external conflicts and repairs portal mirrors when notifications are unavailable. Ensure only trusted proxy headers determine public API client IPs.
 
+## Host notifications
+
+The assigned host receives an email when an appointment is booked, updated/rescheduled or canceled, in addition to the existing customer confirmation and calendar synchronization. The email includes customer contact details, the booking reference, appointment time in the host's scheduling timezone, the meeting link when available (except for cancellations), and an authenticated **My appointments** link. It does not attach a customer calendar invitation or expose private customer order links. Customize **Appointment notification for the host** in email settings (English/Dutch); internal notifications use the store's default language. Delivery receipts are stored per appointment revision, so retrying a failed host delivery does not resend the successful customer email or already-delivered host notifications. Silent calendar repairs do not send host emails. Sandbox safety and `[TEST]` subjects follow the existing development-effects policy. Nitro planning tasks must run for queued notifications and retries.
+
 ## Credentials and setup
 
 Use dedicated Google and Zoom OAuth applications, separate from portal sign-in applications:

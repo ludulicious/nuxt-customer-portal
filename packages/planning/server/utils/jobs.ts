@@ -14,6 +14,7 @@ import {
 } from '@nuxt-customer-portal/products/server/utils/orders'
 import { stripeProvider } from '@nuxt-customer-portal/products/server/utils/payments'
 import { baseUrl } from '@nuxt-customer-portal/products/server/utils/access'
+import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products/server/utils/development'
 import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
 import { calendarInvitation } from '../../shared/invitation'
 import { calendarWallDateTime, wallInstant } from '../../shared/availability'
@@ -21,6 +22,7 @@ import { appointmentCalendarDescription, appointmentCalendarTitle } from '../../
 import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
 import { digest, secret } from './crypto'
 import { enqueue, lockProvider } from './booking'
+import { notifyAppointmentHost } from './host-notifications'
 
 import {
   appointmentEmail,
@@ -240,6 +242,7 @@ async function appointmentEffects(
       [id, revision]
     )
   }
+  await notifyAppointmentHost(a, order)
   if (a.status === 'confirmed' && a.snapshot.meetingProvider === 'zoom') {
     if (!a.meeting_url) {
       a.snapshot.zoomLinkNotificationPending = true
