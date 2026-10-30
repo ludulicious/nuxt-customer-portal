@@ -1,5 +1,21 @@
 # @nuxt-customer-portal/authentication
 
+## 0.10.0
+
+### Patch Changes
+
+- 1235d0f: Redirect the portal home route to `/dashboard` instead of showing the public landing page. Preserve dashboard authentication, onboarding, and saved homepage content. Send portal logout directly to `/login` instead of the home route, and remove the home back button from authentication pages.
+
+  Use a neutral welcome heading on the sign-in page in English and Dutch so it also welcomes first-time visitors.
+
+  Show translated email and password prompts instead of technical validation errors when sign-in fields are empty or missing.
+
+- Updated dependencies [f115496]
+- Updated dependencies [1235d0f]
+- Updated dependencies [1235d0f]
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/ui@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes

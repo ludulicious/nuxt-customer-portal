@@ -1,5 +1,21 @@
 # @nuxt-customer-portal/preset
 
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [2e267be]
+- Updated dependencies [f115496]
+- Updated dependencies [1235d0f]
+- Updated dependencies [d25ff2e]
+- Updated dependencies [1235d0f]
+  - @nuxt-customer-portal/organizations@0.10.0
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/ui@0.10.0
+  - @nuxt-customer-portal/authentication@0.10.0
+  - @nuxt-customer-portal/clients@0.10.0
+  - @nuxt-customer-portal/administration@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes
