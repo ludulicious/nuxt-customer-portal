@@ -47,7 +47,7 @@
     "module": "Module",
     "dashboard": "Dashboard",
     "settings": {
-      "title": "Settings"
+      "title": "Account Settings"
     },
     "logout": "Log Out",
     "searchDescription": "Find a page in your workspace.",

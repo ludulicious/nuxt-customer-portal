@@ -2,6 +2,30 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { runInNewContext } from 'node:vm'
+import { accountOrganizationsFeature } from '../../organizations/shared/feature'
+
+test('main navigation omits redundant organization and account settings links', () => {
+  const navigation = accountOrganizationsFeature.navigation ?? []
+
+  assert.ok(!navigation.some((item) => item.to === '/my-organizations' || item.to === '/settings'))
+})
+
+test('desktop and inline user menus use the translated Account Settings label', async () => {
+  const source = await readFile(new URL('../app/components/AppUserMenu.vue', import.meta.url), 'utf8')
+
+  assert.match(source, /label: t\('menu.settings.title'\),\s+icon: 'i-lucide-cog',\s+to: '\/settings'/)
+  assert.match(source, /:label="t\('menu.settings.title'\)"\s+icon="i-lucide-cog"\s+to="\/settings"/)
+
+  for (const [locale, expected] of [
+    ['en', 'Account Settings'],
+    ['nl', 'Accountinstellingen']
+  ]) {
+    const messages = JSON.parse(
+      await readFile(new URL(`../../core/i18n/locales/${locale}.json`, import.meta.url), 'utf8')
+    )
+    assert.equal(messages.menu.settings.title, expected)
+  }
+})
 
 test('logout clears the session and user data before redirecting directly to login', async () => {
   const source = await readFile(new URL('../app/components/AppUserMenu.vue', import.meta.url), 'utf8')
