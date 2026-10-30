@@ -18,6 +18,29 @@ const appointmentStatusPlaceholders = [
   { key: 'status', labelKey: 'planning.status', example: 'Appointment confirmed' }
 ]
 
+export const hostAppointmentEmail = {
+  id: 'appointment-host',
+  labelKey: 'planning.emailHostAppointment',
+  defaults: {
+    en: {
+      subject: '{{status}}: {{product}}',
+      body: 'Dear {{recipient_name}},\n\n**{{status}}**\n\n- **Appointment:** {{product}}\n- **Customer:** {{customer_name}} ({{customer_email}})\n- **Date and time:** {{time}} ({{timezone}})\n- **Booking reference:** {{bookingReference}}\n\n{{meetingDetails}}\n\n[View your appointments]({{url}}).',
+      footer: 'The latest appointment details are available in the portal.'
+    },
+    nl: {
+      subject: '{{status}}: {{product}}',
+      body: 'Beste {{recipient_name}},\n\n**{{status}}**\n\n- **Afspraak:** {{product}}\n- **Klant:** {{customer_name}} ({{customer_email}})\n- **Datum en tijd:** {{time}} ({{timezone}})\n- **Boekingsnummer:** {{bookingReference}}\n\n{{meetingDetails}}\n\n[Bekijk je afspraken]({{url}}).',
+      footer: 'De meest recente afspraakgegevens zijn beschikbaar in het portaal.'
+    }
+  },
+  placeholders: [
+    ...appointmentStatusPlaceholders,
+    { key: 'customer_name', labelKey: 'products.adminOrder.customer', example: 'Sam' },
+    { key: 'customer_email', labelKey: 'products.email', example: 'sam@example.com' },
+    { key: 'bookingReference', labelKey: 'products.bookingReference', example: 'BK-7F3A9C12D4E8' }
+  ]
+}
+
 export const newAppointmentEmail = {
   id: 'appointment-new',
   labelKey: 'planning.emailNewAppointment',

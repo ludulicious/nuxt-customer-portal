@@ -36,5 +36,5 @@ test('appointment purchases send confirmation independently and schedule delayed
   assert.match(jobs, /await notifyOrder\(order\.id\)/)
   assert.match(jobs, /customerNotificationRevision[\s\S]+idempotency key has been used/)
   assert.match(productEmails, /id: 'purchase'/)
-  assert.match(productFeature, /emails: \[purchaseConfirmationEmail\]/)
+  assert.match(productFeature, /emails: \[purchaseConfirmationEmail, storeOrderNotificationEmail\]/)
 })
