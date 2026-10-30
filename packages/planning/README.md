@@ -61,7 +61,7 @@ Availability supports individual windows and weekly series, end dates, skipped o
 
 Changing a provider's scheduling timezone keeps availability at its configured local wall times in the new timezone. Confirmed appointments retain their original UTC instants and timezone snapshots. Product and grace-time changes likewise do not alter confirmed appointments.
 
-Google availability mirrors are free events; confirmed appointments are busy events with the grace time described. Customer checkout holds remain internal. Portal mirrors are managed from the portal; external edits/removals are repaired and reported to the provider. Personal Google events get no additional grace time. New conflicts preserve confirmed bookings and alert their provider.
+Google availability mirrors are free events; confirmed appointments are busy events with the grace time described. Customer checkout holds remain internal. Portal mirrors are managed from the portal; external edits/removals are repaired without sending synchronization emails. Personal Google events get no additional grace time. New conflicts preserve confirmed bookings and alert their provider.
 
 Catalog products expose `planningEnabled`, `durationMinutes`, and the existing `purchaseUrl`, which points to `/store/{slug}/book` for plannable services. Customers choose their timezone, any available provider or a named provider, then a slot. Exactly one appointment product, quantity one, is supported per checkout.
 
