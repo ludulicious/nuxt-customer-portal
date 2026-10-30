@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.10.0
+
+### Patch Changes
+
+- f115496: Remove the redundant My Organizations and Settings links from the main navigation. Label the remaining account settings link Account Settings in both the mobile user menu and desktop avatar menu, with English and Dutch translations.
+
 ## 0.9.1
 
 ## 0.9.0

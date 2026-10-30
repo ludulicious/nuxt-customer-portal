@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/service-requests
 
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [f115496]
+- Updated dependencies [d25ff2e]
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/clients@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # Nuxt Customer Portal
 
+## 0.10.0
+
+Add separate desktop and mobile authentication backgrounds with upload, preview,
+removal, and single-image fallback controls. Keep existing branding compatible
+and position sign-in forms near the top on mobile.
+
+Send the portal home route to `/dashboard` and logout directly to `/login`.
+Improve sign-in welcome and required-field messages in English and Dutch. Remove
+redundant main-navigation links, clarify Account Settings labels, and use the
+standard portal background for account settings. Personal client avatars use the
+account owner's profile image when available.
+
+Notify store owners of paid or accepted orders and appointment hosts of bookings,
+updates, and cancellations with customizable English/Dutch emails and retry-safe
+delivery. Silence calendar synchronization notices while preserving conflict
+alerts and customer appointment notifications.
+
+All 16 public packages and the three portal apps use `0.10.0`. No new database
+migrations are required when upgrading from `0.9.1`. Review the home-route and
+logout changes in custom integrations and the new internal notification templates
+before deployment.
+
 ## 0.9.1
 
 Include the media library, product image selection, and unified sidebar from

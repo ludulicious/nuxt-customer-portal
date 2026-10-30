@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.0
+
+### Patch Changes
+
+- 7445b49: Repair calendar synchronization changes without emailing providers, and silently complete previously queued synchronization notices. Preserve calendar-conflict alerts and customer appointment notifications.
+- 271377c: Notify store owners of new paid or accepted orders and appointment hosts of bookings, updates and cancellations, with customizable English/Dutch emails and retry-safe delivery receipts.
+- Updated dependencies [f115496]
+- Updated dependencies [1235d0f]
+- Updated dependencies [1235d0f]
+- Updated dependencies [271377c]
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/ui@0.10.0
+  - @nuxt-customer-portal/products@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes

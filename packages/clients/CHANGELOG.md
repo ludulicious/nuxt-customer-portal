@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/clients
 
+## 0.10.0
+
+### Patch Changes
+
+- d25ff2e: Show the personal account owner's profile image in client avatars across client list and detail views. Preserve organization logo behavior and existing logo or initials fallbacks when no profile image is available.
+- Updated dependencies [f115496]
+- Updated dependencies [1235d0f]
+- Updated dependencies [1235d0f]
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/ui@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes

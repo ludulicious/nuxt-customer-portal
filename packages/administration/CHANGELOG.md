@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/administration
 
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [f115496]
+- Updated dependencies [1235d0f]
+- Updated dependencies [1235d0f]
+  - @nuxt-customer-portal/core@0.10.0
+  - @nuxt-customer-portal/ui@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes
