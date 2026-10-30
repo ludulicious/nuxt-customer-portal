@@ -15,14 +15,19 @@ const portalAuth = useRuntimeConfig().public.portalAuth
 const loading = ref(false)
 const errorMessage = ref('')
 const fields = computed(() => [
-  { name: 'email', type: 'text' as const, label: t('login.fields.email'), required: true },
-  { name: 'password', type: 'password' as const, label: t('login.fields.password') },
+  { name: 'email', type: 'text' as const, label: t('login.fields.email'), defaultValue: '', required: true },
+  { name: 'password', type: 'password' as const, label: t('login.fields.password'), defaultValue: '', required: true },
   { name: 'remember', type: 'checkbox' as const, label: t('login.fields.remember') }
 ])
 const schema = computed(() =>
   z.object({
-    email: z.string().email(t('login.validation.invalidEmail')),
-    password: z.string().min(8, t('login.validation.passwordMinLength'))
+    email: z.string({ error: t('login.validation.emailRequired') }).email({
+      error: (issue) => t(issue.input === '' ? 'login.validation.emailRequired' : 'login.validation.invalidEmail')
+    }),
+    password: z.string({ error: t('login.validation.passwordRequired') }).min(8, {
+      error: (issue) =>
+        t(issue.input === '' ? 'login.validation.passwordRequired' : 'login.validation.passwordMinLength')
+    })
   })
 )
 const forgotUrl = computed(() => `/forgot-password?redirect=${encodeURIComponent(props.redirectTo)}`)
@@ -113,6 +118,7 @@ async function social(provider: 'google' | 'github') {
   <div :class="embedded ? 'checkout-sign-in' : ''">
     <UAlert v-if="errorMessage" color="error" :description="errorMessage" variant="outline" class="mb-4" />
     <UAuthForm
+      novalidate
       :fields="fields"
       :schema="schema"
       :providers="providers"

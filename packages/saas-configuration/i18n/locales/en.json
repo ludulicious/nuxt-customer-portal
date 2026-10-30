@@ -28,6 +28,8 @@
       },
       "appearanceSection": "Appearance",
       "logoSection": "Logos for the selected color mode",
+      "authBackgroundSection": "Sign-in backgrounds",
+      "authBackgroundDescription": "Give your sign-in, signup, and password recovery pages their own atmosphere. Add a landscape image for desktop and a portrait image for mobile. Both are optional; if you upload only one, it is used on all screens. Changes go live when you save.",
       "fields": {
         "portalName": "Portal name",
         "tagline": "Tagline",
@@ -37,6 +39,8 @@
         "markDark": "Compact icon for dark mode",
         "logoLight": "Full logo for light mode",
         "logoDark": "Full logo for dark mode",
+        "authBackgroundDesktop": "Desktop background",
+        "authBackgroundMobile": "Mobile background",
         "theme": "Theme",
         "colorMode": "Color mode",
         "primaryLight": "Primary color — light",
@@ -58,7 +62,9 @@
         "markLight": "Square icon for compact UI elements on light backgrounds, such as the login and signup screens.",
         "markDark": "Square icon for compact UI elements on dark backgrounds, such as the login and signup screens.",
         "logoLight": "Wide logo for headers and pages with a light background.",
-        "logoDark": "Wide logo for headers and pages with a dark background."
+        "logoDark": "Wide logo for headers and pages with a dark background.",
+        "authBackgroundDesktop": "Landscape image for screens 1024 px and wider. Keep important details on the right, away from the form. PNG, JPEG, or WebP; up to 2 MB and 2400×2400 px.",
+        "authBackgroundMobile": "Portrait image for screens below 1024 px. The form sits near the top of the image. PNG, JPEG, or WebP; up to 2 MB and 2400×2400 px."
       },
       "themes": {
         "apex": "Apex",

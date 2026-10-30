@@ -26,7 +26,7 @@ const signOut = async () => {
   await authClient.signOut()
   userStore.clearUserData()
   emit('navigate')
-  await navigateTo('/')
+  await navigateTo('/login', { replace: true })
 }
 
 const userMenuItems = computed(() => {

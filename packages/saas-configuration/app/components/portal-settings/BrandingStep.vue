@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { PortalSettings } from '../../../shared/settings'
+import type { PortalBrandImageField, PortalSettings } from '../../../shared/settings'
 
 const state = defineModel<PortalSettings>({ required: true })
 const emit = defineEmits<{ error: [message: string] }>()
 const { t } = useI18n()
-type BrandAssetField = 'markLight' | 'markDark' | 'logoLight' | 'logoDark'
+type BrandAssetField = PortalBrandImageField
 const assetErrors = reactive<Partial<Record<BrandAssetField, string>>>({})
 const assetFields = computed<BrandAssetField[]>(() => {
   if (state.value.appearance.colorMode === 'light-only') {
@@ -15,6 +15,15 @@ const assetFields = computed<BrandAssetField[]>(() => {
   }
   return ['markLight', 'markDark', 'logoLight', 'logoDark']
 })
+const assetGroups = computed<{ id: string; title: string; description?: string; fields: BrandAssetField[] }[]>(() => [
+  { id: 'logos', title: t('saasSettings.editor.logoSection'), fields: assetFields.value },
+  {
+    id: 'auth-backgrounds',
+    title: t('saasSettings.editor.authBackgroundSection'),
+    description: t('saasSettings.editor.authBackgroundDescription'),
+    fields: ['authBackgroundDesktop', 'authBackgroundMobile']
+  }
+])
 
 function readAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -74,34 +83,44 @@ function removeImage(field: BrandAssetField) {
 <template>
   <div class="settings-grid">
     <PortalSettingsAppearanceControls v-model="state" />
-    <h2 class="section-heading">{{ t('saasSettings.editor.logoSection') }}</h2>
-    <UFormField
-      v-for="field in assetFields"
-      :key="field"
-      :name="`branding.${field}`"
-      :label="t(`saasSettings.editor.fields.${field}`)"
-      :description="t(`saasSettings.editor.assetDescriptions.${field}`)"
-      :error="assetErrors[field]"
-    >
-      <div class="asset-field">
-        <img v-if="state.branding[field]" :src="state.branding[field]" alt="" /><UFileUpload
-          variant="button"
-          accept="image/png,image/jpeg,image/webp"
-          reset
-          :label="t('saasSettings.editor.actions.chooseImage')"
-          @update:model-value="readImage($event, field)"
-        /><UButton
-          v-if="state.branding[field]"
-          type="button"
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          @click="removeImage(field)"
+    <template v-for="group in assetGroups" :key="group.id">
+      <h2 class="section-heading">{{ group.title }}</h2>
+      <p v-if="group.description" class="section-description">{{ group.description }}</p>
+      <UFormField
+        v-for="field in group.fields"
+        :key="field"
+        :name="`branding.${field}`"
+        :label="t(`saasSettings.editor.fields.${field}`)"
+        :description="t(`saasSettings.editor.assetDescriptions.${field}`)"
+        :error="assetErrors[field]"
+      >
+        <div
+          class="asset-field"
+          :class="{
+            'asset-field--background': field.startsWith('authBackground'),
+            'asset-field--portrait': field === 'authBackgroundMobile'
+          }"
         >
-          {{ t('saasSettings.editor.actions.remove') }}
-        </UButton>
-      </div>
-    </UFormField>
+          <img v-if="state.branding[field]" :src="state.branding[field]" alt="" /><UFileUpload
+            variant="button"
+            :preview="false"
+            accept="image/png,image/jpeg,image/webp"
+            reset
+            :label="t('saasSettings.editor.actions.chooseImage')"
+            @update:model-value="readImage($event, field)"
+          /><UButton
+            v-if="state.branding[field]"
+            type="button"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="removeImage(field)"
+          >
+            {{ t('saasSettings.editor.actions.remove') }}
+          </UButton>
+        </div>
+      </UFormField>
+    </template>
   </div>
 </template>
 
@@ -119,6 +138,11 @@ function removeImage(field: BrandAssetField) {
   font-size: 1rem;
   font-weight: 700;
 }
+.section-description {
+  grid-column: 1/-1;
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+}
 .asset-field {
   display: flex;
   flex-wrap: wrap;
@@ -132,6 +156,16 @@ function removeImage(field: BrandAssetField) {
   object-fit: contain;
   border: 1px solid var(--ui-border);
   border-radius: 0.5rem;
+}
+.asset-field--background img {
+  width: 10rem;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.asset-field--portrait img {
+  width: 5rem;
+  aspect-ratio: 2 / 3;
 }
 .color-input {
   width: 100%;
