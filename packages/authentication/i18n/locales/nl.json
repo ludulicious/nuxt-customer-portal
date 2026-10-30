@@ -56,9 +56,11 @@
     "signupLink": "Aanmelden",
     "submitButton": "Inloggen",
     "termsLink": "Servicevoorwaarden",
-    "title": "Welkom terug",
+    "title": "Welkom",
     "validation": {
+      "emailRequired": "Voer je e-mailadres in",
       "invalidEmail": "Ongeldig e-mailadres",
+      "passwordRequired": "Voer je wachtwoord in",
       "passwordMinLength": "Moet minimaal 8 tekens zijn"
     }
   },

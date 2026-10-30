@@ -56,9 +56,11 @@
     "signupLink": "Sign up",
     "submitButton": "Sign in",
     "termsLink": "Terms of Service",
-    "title": "Welcome back",
+    "title": "Welcome",
     "validation": {
+      "emailRequired": "Enter your email address",
       "invalidEmail": "Invalid email",
+      "passwordRequired": "Enter your password",
       "passwordMinLength": "Must be at least 8 characters"
     }
   },

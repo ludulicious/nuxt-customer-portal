@@ -10,6 +10,19 @@ import {
 } from '../shared/settings'
 import { initializeEnabledModules } from '../server/utils/module-initialization'
 
+test('the portal home route redirects to the protected dashboard instead of showing the public landing page', async () => {
+  const [home, dashboard, authMiddleware] = await Promise.all([
+    readFile(new URL('../app/pages/index.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../../ui/app/pages/dashboard.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../../core/app/middleware/auth.global.ts', import.meta.url), 'utf8')
+  ])
+
+  assert.match(home, /definePageMeta\(\{[^}]*redirect: '\/dashboard'[^}]*\}\)/)
+  assert.doesNotMatch(dashboard, /public:\s*true/)
+  assert.match(authMiddleware, /if \(to\.meta\.public === true\)/)
+  assert.match(authMiddleware, /encodeURIComponent\(to\.fullPath\)/)
+})
+
 test('default SaaS portal settings are complete and bilingual', () => {
   const settings = defaultPortalSettings('Acme Portal')
   assert.equal(portalSettingsSchema.safeParse(settings).success, true)

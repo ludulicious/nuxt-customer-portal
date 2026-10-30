@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import type { PublicPortalSettings } from '@nuxt-customer-portal/saas-configuration/shared/settings'
 
-definePageMeta({ layout: 'portal', public: true })
+definePageMeta({ layout: 'portal', public: true, redirect: '/dashboard' })
 const { locale, t } = useI18n()
 const { isAuthenticated } = usePortalSession()
 const settings = useState<PublicPortalSettings | null>('portal-runtime-settings')

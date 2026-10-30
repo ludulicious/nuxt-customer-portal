@@ -16,6 +16,15 @@ export const portalThemeNames = ['apex', 'brutal'] as const
 export type PortalThemeName = (typeof portalThemeNames)[number]
 export const portalColorModePolicies = ['light-only', 'dark-only', 'user-choice'] as const
 export type PortalColorModePolicy = (typeof portalColorModePolicies)[number]
+export const portalBrandImageFields = [
+  'markLight',
+  'markDark',
+  'logoLight',
+  'logoDark',
+  'authBackgroundDesktop',
+  'authBackgroundMobile'
+] as const
+export type PortalBrandImageField = (typeof portalBrandImageFields)[number]
 export const portalOnboardingSteps = [
   'general',
   'appearance',
@@ -60,7 +69,9 @@ export const portalBrandingSchema = z.object({
   markLight: image,
   markDark: image,
   logoLight: image,
-  logoDark: image
+  logoDark: image,
+  authBackgroundDesktop: image.default(''),
+  authBackgroundMobile: image.default('')
 })
 
 const featureSchema = z.object({ title: text(120), description: text(500), visible: z.boolean() })
@@ -192,7 +203,9 @@ export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings 
     markLight: '',
     markDark: '',
     logoLight: '',
-    logoDark: ''
+    logoDark: '',
+    authBackgroundDesktop: '',
+    authBackgroundMobile: ''
   },
   appearance: portalAppearanceSchema.parse({
     theme: 'apex',

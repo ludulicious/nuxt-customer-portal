@@ -28,6 +28,8 @@
       },
       "appearanceSection": "Weergave",
       "logoSection": "Logo's voor de gekozen kleurmodus",
+      "authBackgroundSection": "Achtergronden voor inloggen",
+      "authBackgroundDescription": "Geef de pagina's voor inloggen, registreren en wachtwoordherstel een eigen sfeer. Voeg een liggende afbeelding toe voor desktop en een staande voor mobiel. Beide zijn optioneel; upload je er maar één, dan wordt die op alle schermen gebruikt. Wijzigingen worden zichtbaar na het opslaan.",
       "fields": {
         "portalName": "Portaalnaam",
         "tagline": "Ondertitel",
@@ -37,6 +39,8 @@
         "markDark": "Pictogram voor donkere modus",
         "logoLight": "Volledig logo voor lichte modus",
         "logoDark": "Volledig logo voor donkere modus",
+        "authBackgroundDesktop": "Desktopachtergrond",
+        "authBackgroundMobile": "Mobiele achtergrond",
         "theme": "Thema",
         "colorMode": "Kleurmodus",
         "primaryLight": "Primaire kleur — licht",
@@ -58,7 +62,9 @@
         "markLight": "Vierkant pictogram voor compacte onderdelen op een lichte achtergrond, zoals de login- en registratieschermen.",
         "markDark": "Vierkant pictogram voor compacte onderdelen op een donkere achtergrond, zoals de login- en registratieschermen.",
         "logoLight": "Breed logo voor kopteksten en pagina's met een lichte achtergrond.",
-        "logoDark": "Breed logo voor kopteksten en pagina's met een donkere achtergrond."
+        "logoDark": "Breed logo voor kopteksten en pagina's met een donkere achtergrond.",
+        "authBackgroundDesktop": "Liggende afbeelding voor schermen vanaf 1024 px. Houd belangrijke details rechts, buiten het formulier. PNG, JPEG of WebP; maximaal 2 MB en 2400×2400 px.",
+        "authBackgroundMobile": "Staande afbeelding voor schermen smaller dan 1024 px. Het formulier staat bovenaan in de afbeelding. PNG, JPEG of WebP; maximaal 2 MB en 2400×2400 px."
       },
       "themes": {
         "apex": "Apex",
