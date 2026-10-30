@@ -4,6 +4,7 @@
     "planning": "Planning",
     "appointments": "Appointments",
     "emailNewAppointment": "New appointment",
+    "emailHostAppointment": "Appointment notification for the host",
     "emailUpdatedAppointment": "Updated appointment",
     "emailCanceledAppointment": "Canceled appointment",
     "emailZoomLinkReady": "Zoom link ready",

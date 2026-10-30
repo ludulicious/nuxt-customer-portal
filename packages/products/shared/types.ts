@@ -124,6 +124,7 @@ export interface Billing {
   clientId?: string
 }
 export interface OrderSnapshot {
+  ownerNotificationUserIds?: string[]
   paymentMethod?: 'online' | 'invoice'
   acceptedAt?: string
   planningReservationId?: string

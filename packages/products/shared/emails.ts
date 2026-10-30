@@ -1,3 +1,28 @@
+export const storeOrderNotificationEmail = {
+  id: 'store-order-new',
+  labelKey: 'products.emailStoreOrderNotification',
+  defaults: {
+    en: {
+      subject: 'New order: {{product}}',
+      body: 'Dear {{recipient_name}},\n\nA new order has been received.\n\n- **Customer:** {{customer_name}} ({{customer_email}})\n- **Items:** {{product}}\n- **Booking reference:** {{bookingReference}}\n\n[View the order]({{url}}).',
+      footer: 'Payment and fulfillment details are available in the portal.'
+    },
+    nl: {
+      subject: 'Nieuwe bestelling: {{product}}',
+      body: 'Beste {{recipient_name}},\n\nEr is een nieuwe bestelling ontvangen.\n\n- **Klant:** {{customer_name}} ({{customer_email}})\n- **Producten:** {{product}}\n- **Boekingsnummer:** {{bookingReference}}\n\n[Bekijk de bestelling]({{url}}).',
+      footer: 'Betaal- en leveringsgegevens zijn beschikbaar in het portaal.'
+    }
+  },
+  placeholders: [
+    { key: 'recipient_name', labelKey: 'admin.email.placeholders.recipientName', example: 'Alex' },
+    { key: 'customer_name', labelKey: 'products.adminOrder.customer', example: 'Sam' },
+    { key: 'customer_email', labelKey: 'products.email', example: 'sam@example.com' },
+    { key: 'product', labelKey: 'products.title', example: 'Consultation' },
+    { key: 'bookingReference', labelKey: 'products.bookingReference', example: 'BK-7F3A9C12D4E8' },
+    { key: 'url', labelKey: 'products.orders', example: 'https://example.com/admin/products/orders/order-id' }
+  ]
+}
+
 export const purchaseConfirmationEmail = {
   id: 'purchase',
   labelKey: 'products.emailPurchaseConfirmation',
