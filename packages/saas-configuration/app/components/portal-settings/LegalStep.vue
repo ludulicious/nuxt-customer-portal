@@ -23,11 +23,11 @@ const section = computed(() => state.value.content[locale.value])
     <UFormField :name="`content.${locale}.terms.title`" :label="t('saasSettings.editor.fields.termsTitle')">
       <UInput v-model="section.terms.title" class="w-full" /> </UFormField
     ><UFormField :name="`content.${locale}.terms.body`" :label="t('saasSettings.editor.fields.termsText')">
-      <UTextarea v-model="section.terms.body" :rows="12" class="w-full" /> </UFormField
+      <PortalMarkdownEditor :key="`${locale}-terms`" v-model="section.terms.body" :rows="12" /> </UFormField
     ><UFormField :name="`content.${locale}.privacy.title`" :label="t('saasSettings.editor.fields.privacyTitle')">
       <UInput v-model="section.privacy.title" class="w-full" /> </UFormField
     ><UFormField :name="`content.${locale}.privacy.body`" :label="t('saasSettings.editor.fields.privacyText')">
-      <UTextarea v-model="section.privacy.body" :rows="12" class="w-full" />
+      <PortalMarkdownEditor :key="`${locale}-privacy`" v-model="section.privacy.body" :rows="12" />
     </UFormField>
   </div>
 </template>

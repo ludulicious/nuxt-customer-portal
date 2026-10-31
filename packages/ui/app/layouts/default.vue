@@ -97,7 +97,8 @@ onMounted(async () => {
           />
         </template>
         <template #footer="{ collapsed, collapse }">
-          <div class="flex w-full py-2" :class="collapsed ? 'justify-center' : 'justify-end'">
+          <div class="flex w-full items-center py-2" :class="collapsed ? 'flex-col' : 'justify-between'">
+            <PortalLegalLinks :collapsed="collapsed" @navigate="open = false" />
             <UButton
               :icon="collapsed ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
               color="neutral"
