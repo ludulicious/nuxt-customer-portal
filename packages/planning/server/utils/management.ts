@@ -12,7 +12,7 @@ import { availabilityEditSchema, providerSettingsSchema } from '../../shared/val
 import type { Appointment, ProviderSettings, AvailabilityWindow } from '../../shared/types'
 import { planningAdmin, providerAccess, appointmentAccess } from './access'
 import { calendarAdapter } from './adapters'
-import { enqueue, lockProvider, policy } from './booking'
+import { enqueue, lockProvider, policy, refreshAvailability } from './booking'
 import { auditLock } from './jobs'
 
 export async function listProviders(event: H3Event): Promise<ProviderSettings[]> {
@@ -342,6 +342,7 @@ export async function cancel(event: H3Event, id: string) {
     if (amount) {
       await enqueue(tx, `cancel-refund:${id}`, 'refund', { orderId: a!.order_id, amount })
     }
+    await refreshAvailability(tx, a!.store_id, [a!.user_id])
     return { success: true, refundAmount: amount }
   })
 }

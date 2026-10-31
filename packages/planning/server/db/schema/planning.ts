@@ -92,7 +92,11 @@ export const availability = schema.table(
     revision: integer('revision').notNull().default(1),
     deleted: boolean('deleted').notNull().default(false),
     calendarEventId: text('calendar_event_id'),
-    calendarId: text('calendar_id')
+    calendarId: text('calendar_id'),
+    calendarSegments: jsonb('calendar_segments')
+      .$type<Array<{ id: string; calendarId: string }>>()
+      .notNull()
+      .default([])
   },
   (t) => [providerFk(t)]
 )
