@@ -380,8 +380,12 @@ export async function externalBusyDetails(
   calendarIds: string[],
   from: Date,
   to: Date
-): Promise<Array<Interval & { title?: string; allDay?: boolean; startDate?: string; endDate?: string }>> {
-  const events: Array<Interval & { title?: string; allDay?: boolean; startDate?: string; endDate?: string }> = []
+): Promise<
+  Array<Interval & { busy: boolean; title?: string; allDay?: boolean; startDate?: string; endDate?: string }>
+> {
+  const events: Array<
+    Interval & { busy: boolean; title?: string; allDay?: boolean; startDate?: string; endDate?: string }
+  > = []
   for (const calendarId of calendarIds) {
     try {
       let pageToken: string | undefined
@@ -404,11 +408,7 @@ export async function externalBusyDetails(
           `${calendarPath(calendarId)}?${new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: 'true', maxResults: '2500', fields: 'items(summary,status,transparency,start,end,extendedProperties),nextPageToken,timeZone', ...(pageToken ? { pageToken } : {}) })}`
         )
         for (const event of result.items || []) {
-          if (
-            event.status === 'cancelled' ||
-            event.transparency === 'transparent' ||
-            event.extendedProperties?.private?.portalPlanning
-          ) {
+          if (event.status === 'cancelled' || event.extendedProperties?.private?.portalPlanning) {
             continue
           }
           events.push({
@@ -416,6 +416,7 @@ export async function externalBusyDetails(
               event.start.dateTime || wallInstant(event.start.date!, '00:00', result.timeZone || 'UTC').toISOString(),
             end: event.end.dateTime || wallInstant(event.end.date!, '00:00', result.timeZone || 'UTC').toISOString(),
             title: event.summary?.trim() || undefined,
+            busy: event.transparency !== 'transparent',
             allDay: Boolean(event.start.date && event.end.date),
             startDate: event.start.date,
             endDate: event.end.date
@@ -425,7 +426,12 @@ export async function externalBusyDetails(
       } while (pageToken)
     } catch {
       // Calendars shared as free/busy-only cannot expose titles, but still block time.
-      events.push(...(await googleCalendar.busy(storeId, userId, [calendarId], from, to)))
+      events.push(
+        ...(await googleCalendar.busy(storeId, userId, [calendarId], from, to)).map((period) => ({
+          ...period,
+          busy: true
+        }))
+      )
     }
   }
   return events

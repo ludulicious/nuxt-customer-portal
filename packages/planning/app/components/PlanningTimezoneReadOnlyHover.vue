@@ -7,6 +7,7 @@ const props = defineProps<{
   title?: string
   icon?: string
   allDay?: boolean
+  availabilityStatus?: 'busy' | 'free'
   customerName?: string
   email?: string
   country?: string
@@ -99,6 +100,14 @@ function edit() {
               <p class="text-xs text-muted">{{ timezoneName(timezone || userTimezone) }}</p>
               <p class="text-sm font-semibold">{{ viewedTimezoneRange }}</p>
             </div>
+            <p v-if="availabilityStatus" class="flex items-center gap-2 text-sm">
+              <UIcon
+                :name="availabilityStatus === 'busy' ? 'i-lucide-circle-minus' : 'i-lucide-circle-check'"
+                class="size-4 shrink-0"
+                :class="availabilityStatus === 'busy' ? 'text-warning' : 'text-success'"
+              />
+              {{ t(availabilityStatus === 'busy' ? 'planning.externalEventBusy' : 'planning.externalEventFree') }}
+            </p>
           </div>
           <div
             v-if="customerName || email || countryName || customerTimezoneRange"

@@ -61,7 +61,13 @@ In hosts using SaaS configuration, enable the Planning module alongside Products
 
 ## Availability and reservations
 
+The availability toolbar includes a calendar week picker between the previous/next buttons. Select any date to jump to its Monday–Sunday week; the displayed week is highlighted in the picker. The selected week is saved in the URL alongside the chosen viewing timezone.
+
 Availability supports individual windows and weekly series, end dates, skipped occurrences, and edits to one occurrence or the entire series. Windows apply to all assigned plannable products, including future assignments, or to selected products. UTC slot iteration preserves duration across daylight-saving changes and presents repeated wall times with timezone information.
+
+External calendar event details show **Busy** or **Free**, including for all-day events. Free events remain visible but do not block availability. Events without an explicit status and free/busy-only calendar intervals are treated as Busy.
+
+Busy all-day external events shade the affected date headers, all-day row, and time columns. A subtle inline information icon beside the date explains the blocked status in a tooltip, accessible on hover or keyboard focus. Multi-day events shade each included day, excluding their end date. Free all-day events do not shade the day. Providers can still edit saved availability on blocked days.
 
 Deleting recurring availability offers explicit **Delete this occurrence**, **Delete series**, and **Cancel** actions, independent of the editor's occurrence-only toggle. Cancelling keeps the editor open without deleting anything. Individual windows offer **Delete availability** and **Cancel**. Confirmed appointments are preserved in either deletion scope.
 

@@ -697,6 +697,9 @@ importers:
 
   packages/planning:
     dependencies:
+      '@internationalized/date':
+        specifier: ^3.10.0
+        version: 3.12.3
       '@nuxt-customer-portal/core':
         specifier: workspace:^
         version: link:../core
@@ -891,6 +894,9 @@ importers:
 
   packages/timesheets:
     dependencies:
+      '@internationalized/date':
+        specifier: ^3.10.0
+        version: 3.12.3
       '@nuxt-customer-portal/clients':
         specifier: workspace:^
         version: link:../clients

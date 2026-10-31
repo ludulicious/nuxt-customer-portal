@@ -10,6 +10,8 @@
       "subtitle": "Registreer je werk zolang de details nog vers zijn.",
       "loading": "Urenstaat laden…",
       "previousWeek": "Vorige week",
+      "pickWeek": "Kies een week, momenteel {week}",
+      "selectWeek": "Selecteer een datum om de bijbehorende week te bekijken",
       "nextWeek": "Volgende week",
       "projectActivity": "Project / activiteit",
       "total": "Totaal",

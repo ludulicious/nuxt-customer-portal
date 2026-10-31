@@ -36,6 +36,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@internationalized/date": "^3.10.0",
     "@nuxt-customer-portal/core": "workspace:^",
     "@nuxt-customer-portal/clients": "workspace:^",
     "@nuxt-customer-portal/organizations": "workspace:^",

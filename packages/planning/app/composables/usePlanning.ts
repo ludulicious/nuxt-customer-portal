@@ -74,6 +74,7 @@ export interface AppointmentListItem {
 export interface CalendarBusyPeriod {
   start: string
   end: string
+  busy?: boolean
   title?: string
   allDay?: boolean
   startDate?: string

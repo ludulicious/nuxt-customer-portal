@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { parseDate } from '@internationalized/date'
+import type { CalendarProps } from '@nuxt/ui'
 import { z } from 'zod'
 import { localParts, wallInstant } from '../../shared/availability'
 import type { availabilitySchema } from '../../shared/validation'
@@ -10,7 +12,7 @@ const { activeOrganizationRole } = usePortalSession()
 const canManagePlanning = computed(() => ['owner', 'admin'].includes(activeOrganizationRole.value || ''))
 
 const api = usePlanning(),
-  { t } = useI18n(),
+  { t, locale } = useI18n(),
   settings = ref<ProviderConfiguration>(),
   windows = ref<AvailabilityWindow[]>([]),
   appointments = ref<AppointmentListItem[]>([]),
@@ -18,7 +20,8 @@ const api = usePlanning(),
   calendarWarning = ref(''),
   error = ref(''),
   busy = ref(false),
-  calendarNavigationDirection = ref<'previous' | 'next'>(),
+  calendarNavigationDirection = ref<'previous' | 'next' | 'pick'>(),
+  weekPickerOpen = ref(false),
   windowOpen = ref(false),
   deleteOpen = ref(false),
   appointmentDrawerOpen = ref(false),
@@ -92,6 +95,26 @@ function daysForWeek(value: string) {
   return Array.from({ length: 7 }, (_, i) => new Date(first.getTime() + i * 86400000).toISOString().slice(0, 10))
 }
 const days = computed(() => daysForWeek(week.value))
+const calendarWeek = computed(() => parseDate(days.value[0]!))
+const weekLabel = computed(() => {
+  const formatter = new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  })
+  return formatter.formatRange(new Date(days.value[0]!), new Date(days.value[6]!))
+})
+async function selectWeek(value: CalendarProps<boolean, boolean>['modelValue']) {
+  weekPickerOpen.value = false
+  if (!value || Array.isArray(value) || !('day' in value)) {
+    return
+  }
+  const targetWeek = daysForWeek(value.toString())[0]!
+  if (targetWeek !== days.value[0]) {
+    await navigateWeek(targetWeek, 'pick')
+  }
+}
 const canEditCalendar = computed(() => calendarTimezone.value === providerState.timezone)
 watch(canEditCalendar, (value) => {
   if (!value) {
@@ -185,12 +208,15 @@ watch(editOne, (value) => {
 })
 let preloadedCalendarKey = ''
 async function moveWeek(delta: number) {
+  const targetWeek = new Date(Date.parse(week.value) + delta * 7 * 86400000).toISOString().slice(0, 10)
+  await navigateWeek(targetWeek, delta < 0 ? 'previous' : 'next')
+}
+async function navigateWeek(targetWeek: string, direction: 'previous' | 'next' | 'pick') {
   if (calendarNavigationDirection.value) {
     return
   }
-  calendarNavigationDirection.value = delta < 0 ? 'previous' : 'next'
+  calendarNavigationDirection.value = direction
   error.value = ''
-  const targetWeek = new Date(Date.parse(week.value) + delta * 7 * 86400000).toISOString().slice(0, 10)
   const targetTimezone = calendarTimezone.value
   try {
     const targetBusy = await fetchExternalBusy(daysForWeek(targetWeek), targetTimezone)
@@ -408,7 +434,29 @@ async function removeWindow(scope: 'occurrence' | 'series') {
             :ui="{ leadingIcon: calendarNavigationDirection === 'previous' ? 'animate-spin' : '' }"
             @click="moveWeek(-1)"
           />
-
+          <UPopover v-model:open="weekPickerOpen">
+            <UButton
+              icon="i-lucide-calendar-days"
+              :label="weekLabel"
+              :aria-label="t('planning.pickWeek', { week: weekLabel })"
+              :loading="calendarNavigationDirection === 'pick'"
+              :disabled="busy || !!calendarNavigationDirection"
+              variant="outline"
+            />
+            <template #content>
+              <UCalendar
+                v-if="weekPickerOpen"
+                :model-value="calendarWeek"
+                :week-starts-on="1"
+                :locale="locale"
+                :aria-label="t('planning.selectWeek')"
+                :ui="{ gridRow: 'has-[[data-selected]]:bg-primary/10 rounded-md' }"
+                class="p-2"
+                week-numbers
+                @update:model-value="selectWeek"
+              />
+            </template>
+          </UPopover>
           <UButton
             :icon="calendarNavigationDirection === 'next' ? 'i-lucide-loader-circle' : 'i-lucide-chevron-right'"
             :aria-label="t('planning.nextWeek')"
