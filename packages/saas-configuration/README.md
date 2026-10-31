@@ -38,6 +38,18 @@ migration. Preset fonts are loaded by the included SaaS host. Custom hosts shoul
 configure Nuxt Fonts to load Playfair Display, Lato, Geist and Bricolage Grotesque
 when exposing these options. The shared schema rejects arbitrary font/CSS values.
 
+## Legal content
+
+In **Portal settings → Legal**, edit English and Dutch terms and privacy policies
+with the shared visual/Markdown editor. Titles remain plain text. **Save changes**
+publishes the draft to `/terms` and `/privacy`, which render sanitized Markdown
+including headings, lists, links, quotes, code and tables. Scripts, embedded content,
+unsafe links and arbitrary HTML attributes are removed. Existing plain text remains
+readable, including line breaks; no data migration is required.
+
+The dashboard sidebar footer includes localized terms and privacy policy links.
+Collapsed sidebars show accessible icons; selecting a link closes the mobile menu.
+
 ## Sign-in backgrounds
 
 In **Portal settings → Appearance → Sign-in backgrounds**, administrators can upload

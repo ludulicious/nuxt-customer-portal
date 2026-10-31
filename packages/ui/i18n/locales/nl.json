@@ -1,4 +1,9 @@
 {
+  "portalLegal": {
+    "navigation": "Juridische informatie",
+    "terms": "Voorwaarden",
+    "privacy": "Privacybeleid"
+  },
   "portalMarkdown": {
     "visual": "Visuele editor",
     "source": "Markdown",

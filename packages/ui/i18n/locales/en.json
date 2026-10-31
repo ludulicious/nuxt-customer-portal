@@ -1,4 +1,9 @@
 {
+  "portalLegal": {
+    "navigation": "Legal information",
+    "terms": "Terms",
+    "privacy": "Privacy policy"
+  },
   "portalMarkdown": {
     "visual": "Visual editor",
     "source": "Markdown",
