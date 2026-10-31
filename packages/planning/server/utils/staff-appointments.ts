@@ -6,7 +6,7 @@ import { staffRescheduleSchema } from '../../shared/validation'
 import { generateSlots } from '../../shared/availability'
 import type { Appointment, AvailabilityWindow } from '../../shared/types'
 import { appointmentAccess, planningAdmin } from './access'
-import { providers, lockProvider, enqueue, bookingBusy } from './booking'
+import { providers, lockProvider, enqueue, bookingBusy, refreshAvailability } from './booking'
 import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
 import { auditLock } from './jobs'
 import { digest } from './crypto'
@@ -147,6 +147,7 @@ export async function staffReschedule(event: H3Event, id: string, body: unknown)
         appointmentId: id,
         revision: a.revision + 1
       })
+      await refreshAvailability(tx, a.store_id, [a.user_id, provider.user_id])
     })
   } catch (error) {
     if ((error as { code?: string }).code === '23P01') {

@@ -46,6 +46,16 @@ export async function policy(storeId: string) {
   ])
   return effectivePolicy(defaultPlanningPolicy(), row?.policy || {})
 }
+export async function refreshAvailability(tx: Pick<PoolClient, 'query'>, storeId: string, userIds: string[]) {
+  const windows = await rows<{ id: string; revision: number }>(
+    'UPDATE planning.availability SET revision=revision+1 WHERE store_id=$1 AND user_id=ANY($2::text[]) AND NOT deleted RETURNING id,revision',
+    [storeId, [...new Set(userIds)]],
+    tx
+  )
+  for (const window of windows) {
+    await enqueue(tx, `availability:${window.id}:${window.revision}`, 'availability', { id: window.id })
+  }
+}
 export async function bookingBusy(
   storeId: string,
   userId: string,
@@ -571,6 +581,7 @@ export async function confirm(tx: PoolClient, order: Order) {
     }
     await tx.query("UPDATE planning.reservation SET status='superseded' WHERE id=$1", [original.reservation_id])
     if (original.user_id !== hold.user_id) {
+      await refreshAvailability(tx, original.store_id, [original.user_id])
       await enqueue(tx, `cleanup:${id}:${original.revision}`, 'cleanup', {
         storeId: original.store_id,
         userId: original.calendar_user_id || original.user_id,
@@ -616,4 +627,5 @@ export async function confirm(tx: PoolClient, order: Order) {
     { reservationId: hold.id, changeOrderId: hold.replaces_id ? order.id : null }
   ])
   await enqueue(tx, `appointment:${id}:${a!.revision}`, 'appointment', { appointmentId: id, revision: a!.revision })
+  await refreshAvailability(tx, a!.store_id, [a!.user_id])
 }

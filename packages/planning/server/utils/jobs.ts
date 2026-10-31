@@ -18,6 +18,7 @@ import { developmentSandboxEffectsEnabled } from '@nuxt-customer-portal/products
 import type { Appointment, AvailabilityWindow, Reservation } from '../../shared/types'
 import { calendarInvitation } from '../../shared/invitation'
 import { calendarWallDateTime, wallInstant } from '../../shared/availability'
+import { availabilityCalendarOverrides } from '../../shared/availability-calendar'
 import { appointmentCalendarDescription, appointmentCalendarTitle } from '../../shared/appointment-calendar'
 import { calendarAdapter, meetingAdapter, externalBusy } from './adapters'
 import { digest, secret } from './crypto'
@@ -279,6 +280,7 @@ async function availabilityEffects(id: string) {
     deleted: boolean
     calendar_event_id: string | null
     calendar_id: string | null
+    calendar_segments: Array<{ id: string; calendarId: string }>
   }>('SELECT * FROM planning.availability WHERE id=$1', [id])
   if (!window) {
     return
@@ -293,11 +295,15 @@ async function availabilityEffects(id: string) {
     [window.store_id, window.user_id]
   )
   if (window.deleted || !provider?.availability_sync_enabled) {
+    for (const segment of window.calendar_segments) {
+      await calendarAdapter().remove(window.store_id, window.user_id, segment.calendarId, segment.id)
+    }
+    await rows("UPDATE planning.availability SET calendar_segments='[]' WHERE id=$1", [id])
     if (window.calendar_id) {
       await calendarAdapter().remove(window.store_id, window.user_id, window.calendar_id, eventId)
       await rows('UPDATE planning.availability SET calendar_event_id=NULL,calendar_id=NULL WHERE id=$1', [id])
     }
-    return
+    return window.revision
   }
   if (!provider?.write_calendar_id) {
     throw new Error('Select a writable calendar')
@@ -307,6 +313,17 @@ async function availabilityEffects(id: string) {
   }
   const w = window.data,
     recurrence: string[] = []
+  const appointments = await rows<{ start_at: Date; end_at: Date; snapshot: Appointment['snapshot'] }>(
+    "SELECT start_at,end_at,snapshot FROM planning.appointment WHERE store_id=$1 AND user_id=$2 AND status='confirmed' AND end_at + ((snapshot->>'graceMinutes')::int * interval '1 minute') > $3",
+    [window.store_id, window.user_id, wallInstant(w.date, '00:00', w.timezone)]
+  )
+  const overrides = availabilityCalendarOverrides(
+    w,
+    appointments.map((appointment) => ({
+      start: appointment.start_at.toISOString(),
+      end: new Date(appointment.end_at.getTime() + appointment.snapshot.graceMinutes * 60000).toISOString()
+    }))
+  )
   const products = await rows<{ title: string }>(
     `SELECT COALESCE(NULLIF(data->'content'->'en'->>'title',''),data->'content'->'nl'->>'title',id) AS title
      FROM products.product
@@ -332,22 +349,79 @@ async function availabilityEffects(id: string) {
           : ''
       }`
     )
-    if (w.exceptions.length) {
+    const exceptions = [...new Set([...w.exceptions, ...overrides.map((override) => override.date)])].sort()
+    if (exceptions.length) {
       recurrence.push(
-        `EXDATE;TZID=${w.timezone}:${w.exceptions.map((d) => `${d.replace(/-/g, '')}T${w.startTime.replace(':', '')}00`).join(',')}`
+        `EXDATE;TZID=${w.timezone}:${exceptions.map((d) => `${d.replace(/-/g, '')}T${w.startTime.replace(':', '')}00`).join(',')}`
       )
     }
   }
-  const written = await calendarAdapter().put(window.store_id, window.user_id, provider.write_calendar_id, {
+  const event = {
     id: eventId,
     summary: provider.availability_calendar_title,
     description: productDescription,
     start: { dateTime: calendarWallDateTime(w.date, w.startTime), timeZone: w.timezone },
     end: { dateTime: calendarWallDateTime(w.date, w.endTime), timeZone: w.timezone },
-    transparency: 'transparent',
+    transparency: 'transparent' as const,
     extendedProperties: { private: { portalPlanning: id, portalRevision: String(window.revision) } },
     ...(recurrence.length ? { recurrence } : {})
-  })
+  }
+  const desired = overrides.flatMap((override) =>
+    override.segments.map((segment) => ({
+      ...event,
+      id: `a${digest(`${id}:${segment.start}:${segment.end}`).slice(0, 48)}`,
+      recurrence: [],
+      start: { dateTime: segment.start, timeZone: w.timezone },
+      end: { dateTime: segment.end, timeZone: w.timezone }
+    }))
+  )
+  const savedSegments = window.calendar_segments
+  for (const segment of desired) {
+    const tracked = savedSegments.find(
+      (saved) => saved.calendarId === provider.write_calendar_id && saved.id === segment.id
+    )
+    if (!tracked) {
+      savedSegments.push({ id: segment.id, calendarId: provider.write_calendar_id })
+      await rows('UPDATE planning.availability SET calendar_segments=$2 WHERE id=$1', [
+        id,
+        JSON.stringify(savedSegments)
+      ])
+    }
+  }
+  const written =
+    w.recurring || !overrides.length
+      ? await calendarAdapter().put(window.store_id, window.user_id, provider.write_calendar_id, event)
+      : undefined
+  if (!w.recurring && overrides.length && window.calendar_id) {
+    await calendarAdapter().remove(window.store_id, window.user_id, window.calendar_id, eventId)
+  }
+  const retained = new Set<string>()
+  for (const segment of desired) {
+    const writtenSegment = await calendarAdapter().put(
+      window.store_id,
+      window.user_id,
+      provider.write_calendar_id,
+      segment
+    )
+    const actualId = writtenSegment?.id || segment.id
+    retained.add(actualId)
+    if (actualId !== segment.id) {
+      savedSegments.push({ id: actualId, calendarId: provider.write_calendar_id })
+      await rows('UPDATE planning.availability SET calendar_segments=$2 WHERE id=$1', [
+        id,
+        JSON.stringify(savedSegments)
+      ])
+    }
+  }
+  for (const segment of savedSegments) {
+    if (segment.calendarId !== provider.write_calendar_id || !retained.has(segment.id)) {
+      await calendarAdapter().remove(window.store_id, window.user_id, segment.calendarId, segment.id)
+    }
+  }
+  await rows('UPDATE planning.availability SET calendar_segments=$2 WHERE id=$1', [
+    id,
+    JSON.stringify([...retained].map((segmentId) => ({ id: segmentId, calendarId: provider.write_calendar_id })))
+  ])
   await rows('UPDATE planning.availability SET calendar_event_id=$2,calendar_id=$3 WHERE id=$1', [
     id,
     written?.id || eventId,
@@ -362,6 +436,7 @@ async function availabilityEffects(id: string) {
       result: written.externalChangeKey ? 'external-change-repaired' : 'event-created'
     })
   }
+  return window.revision
 }
 async function refund(orderId: string, amount: number, key: string) {
   const order = await getOrder(orderId)
@@ -402,7 +477,8 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
     const client = await pool.connect(),
       key = `planning-job:${job.id}`
     let acquired = false,
-      effectsKey: string | undefined
+      effectsKey: string | undefined,
+      availabilityRevision: number | undefined
     try {
       acquired = (await client.query<{ locked: boolean }>('SELECT pg_try_advisory_lock(hashtext($1)) AS locked', [key]))
         .rows[0]!.locked
@@ -440,7 +516,9 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
           )
         }
       } else if (job.kind === 'availability') {
-        await availabilityEffects(String(p.id))
+        effectsKey = `planning-availability:${p.id}`
+        await client.query('SELECT pg_advisory_lock(hashtext($1))', [effectsKey])
+        availabilityRevision = await availabilityEffects(String(p.id))
       } else if (job.kind === 'refund') {
         await refund(String(p.orderId), Number(p.amount), job.id)
       } else if (job.kind === 'cleanup') {
@@ -526,11 +604,29 @@ export async function runJobs(limit = 20, storeId?: string, jobId?: string) {
       } else if (job.kind !== 'mirror-notice') {
         throw new Error('Unknown planning job')
       }
-      await rows(
-        'UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1',
-        [job.id],
-        client
-      )
+      if (job.kind === 'availability' && availabilityRevision !== undefined) {
+        await transaction(async (tx) => {
+          const [window] = await rows<{ revision: number }>(
+            'SELECT revision FROM planning.availability WHERE id=$1 FOR UPDATE',
+            [job.payload.id],
+            tx
+          )
+          await tx.query('UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1', [
+            job.id
+          ])
+          if (window && window.revision !== availabilityRevision) {
+            await enqueue(tx, `availability:${job.payload.id}:${window.revision}`, 'availability', {
+              id: job.payload.id
+            })
+          }
+        })
+      } else {
+        await rows(
+          'UPDATE planning.job SET completed_at=now(),last_attempt_at=now(),error=NULL WHERE id=$1',
+          [job.id],
+          client
+        )
+      }
       completed++
     } catch (error) {
       failed++
