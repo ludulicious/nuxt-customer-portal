@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/ui
 
+## 0.10.1
+
+### Patch Changes
+
+- 7c0f8df: Edit localized terms and privacy policies with the shared Markdown editor, render sanitized Markdown on legal pages, and add subtle localized links to the sidebar footer in expanded and collapsed modes.
+  - @nuxt-customer-portal/core@0.10.1
+
 ## 0.10.0
 
 ### Minor Changes

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.1
+
+### Patch Changes
+
+- 08a7749: Split Google Calendar availability mirrors around confirmed appointments and their grace time. Automatically restore and recalculate remaining availability after bookings, reschedules, provider changes, and cancellations, while preserving recurring availability and retryable synchronization.
+- 490651a: Offer explicit delete-this-occurrence, delete-series, and cancel actions when deleting recurring availability, with deletion scope independent of the editor toggle and English/Dutch labels.
+- 91bd778: Add a localized calendar week picker to availability navigation, with a visible date range and URL-persisted Monday–Sunday week selection.
+- 91bd778: Shade availability calendar days blocked by Busy all-day external events and add subtle inline information icons with localized tooltips, while leaving Free events and availability editing unchanged.
+- 91bd778: Show Busy/Free status in external calendar event details, including all-day events. Display Free events without treating them as availability conflicts, with English/Dutch labels.
+- 2a3ea24: Confirm staff appointment changes before saving, show rescheduling errors in the dialog, and update the open appointment drawer after a successful change.
+- Updated dependencies [7c0f8df]
+- Updated dependencies [91bd778]
+  - @nuxt-customer-portal/ui@0.10.1
+  - @nuxt-customer-portal/products@0.10.1
+  - @nuxt-customer-portal/core@0.10.1
+
 ## 0.10.0
 
 ### Patch Changes

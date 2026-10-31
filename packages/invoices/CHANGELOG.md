@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/invoices
 
+## 0.10.1
+
+### Patch Changes
+
+- 91bd778: Preserve sales invoice search, filters, sort direction, pagination window, and scroll position when returning from invoice details. Restore collection controls on browser Back/Forward and retain the existing order-list return flow.
+- Updated dependencies [7c0f8df]
+  - @nuxt-customer-portal/ui@0.10.1
+  - @nuxt-customer-portal/clients@0.10.1
+  - @nuxt-customer-portal/core@0.10.1
+  - @nuxt-customer-portal/organizations@0.10.1
+
 ## 0.10.0
 
 ### Patch Changes
