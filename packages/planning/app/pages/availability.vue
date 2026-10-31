@@ -362,7 +362,7 @@ async function saveWindow() {
     busy.value = false
   }
 }
-async function removeWindow() {
+async function removeWindow(scope: 'occurrence' | 'series') {
   if (!canEditCalendar.value) {
     return
   }
@@ -371,7 +371,7 @@ async function removeWindow() {
   }
   busy.value = true
   try {
-    await api.deleteWindow(selected.value.id, editOne.value ? occurrence.value : undefined)
+    await api.deleteWindow(selected.value.id, scope === 'occurrence' ? occurrence.value : undefined)
     deleteOpen.value = false
     windowOpen.value = false
     await load()
@@ -590,14 +590,31 @@ async function removeWindow() {
         </template>
       </UModal>
 
-      <UModal v-if="deleteOpen" v-model:open="deleteOpen" :title="t('planning.delete')"
-        ><template #body
-          ><p>{{ t(editOne ? 'planning.deleteOccurrenceConfirm' : 'planning.deleteSeriesConfirm') }}</p>
-          <UButton class="mt-4" color="error" :loading="busy" @click="removeWindow">{{
-            t('planning.delete')
-          }}</UButton></template
-        ></UModal
-      >
+      <UModal v-if="deleteOpen" v-model:open="deleteOpen" :title="t('planning.delete')">
+        <template #body>
+          <p>{{ t(selected?.recurring ? 'planning.deleteSeriesConfirm' : 'planning.deleteWindowConfirm') }}</p>
+        </template>
+        <template #footer>
+          <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <UButton color="neutral" variant="outline" :disabled="busy" @click="deleteOpen = false">
+              {{ t('planning.cancelAction') }}
+            </UButton>
+            <UButton
+              v-if="selected?.recurring"
+              color="error"
+              variant="outline"
+              :loading="busy"
+              :disabled="busy"
+              @click="removeWindow('occurrence')"
+            >
+              {{ t('planning.deleteThisOccurrence') }}
+            </UButton>
+            <UButton color="error" :loading="busy" :disabled="busy" @click="removeWindow('series')">
+              {{ t(selected?.recurring ? 'planning.deleteSeries' : 'planning.delete') }}
+            </UButton>
+          </div>
+        </template>
+      </UModal>
     </UContainer>
   </div>
 </template>
