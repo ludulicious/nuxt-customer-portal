@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import type { AppointmentFile, AppointmentListItem } from '../composables/usePlanning'
+import type { AppointmentDetails, AppointmentFile, AppointmentListItem } from '../composables/usePlanning'
 
 const props = defineProps<{ item: AppointmentListItem; timezone: string; staff?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 const { t } = useI18n()
 const { appointmentRange } = usePlanningTimeDisplay()
+const updatedAppointment = ref<AppointmentDetails>()
+watch(
+  () => props.item,
+  () => {
+    updatedAppointment.value = undefined
+  }
+)
+const item = computed(() => ({ ...props.item, ...updatedAppointment.value }))
+function changed(appointment: AppointmentDetails) {
+  updatedAppointment.value = appointment
+  emit('changed')
+}
 const files = ref<AppointmentFile[]>([])
 const filesError = ref(false)
 try {
@@ -81,7 +93,7 @@ const fileSource = (assetId: string) => `/api/planning/appointments/${props.item
           :key="item.id"
           :timezone="timezone"
           :show-summary="false"
-          @changed="emit('changed')"
+          @changed="changed"
         />
         <section v-if="files.length || filesError" class="overflow-hidden rounded-lg border border-default bg-muted/20">
           <header class="border-b border-default px-4 py-3">

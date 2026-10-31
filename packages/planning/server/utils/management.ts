@@ -244,7 +244,9 @@ export async function appointmentDetails(event: H3Event, id: string) {
   } catch {
     /* A missing currency fee disables paid self-service changes. */
   }
-  const [provider] = await rows<{ name: string }>('SELECT name FROM public."user" WHERE id=$1', [a.user_id])
+  const [provider] = await rows<{ name: string; email: string }>('SELECT name,email FROM public."user" WHERE id=$1', [
+    a.user_id
+  ])
   const [pending] = await rows<{ expires_at: Date }>(
     "SELECT expires_at FROM planning.reservation WHERE replaces_id=$1 AND status='reserved' ORDER BY expires_at DESC LIMIT 1",
     [id]
@@ -259,6 +261,8 @@ export async function appointmentDetails(event: H3Event, id: string) {
     productSlug: order!.lines[0]!.snapshot.product.slug,
     title: a.snapshot.title,
     providerName: provider!.name,
+    providerUserId: a.user_id,
+    providerEmail: staff ? provider!.email : undefined,
     start: a.start_at,
     end: a.end_at,
     status: a.status,
