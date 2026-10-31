@@ -10,6 +10,8 @@
       "subtitle": "Record your work while the details are still fresh.",
       "loading": "Loading timesheet…",
       "previousWeek": "Previous week",
+      "pickWeek": "Pick a week, currently {week}",
+      "selectWeek": "Select any date to view its week",
       "nextWeek": "Next week",
       "projectActivity": "Project / activity",
       "total": "Total",

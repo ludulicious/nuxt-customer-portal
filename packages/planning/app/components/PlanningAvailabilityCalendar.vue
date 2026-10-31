@@ -175,6 +175,9 @@ function appointmentsFor(date: string) {
       return { ...a, startMinute: start, endMinute: end.date > date ? 1440 : minutes(end.time) }
     })
 }
+function externalEventTitle(period: CalendarBusyPeriod) {
+  return period.title || t(period.busy === false ? 'planning.externalCalendarFree' : 'planning.externalCalendarBusy')
+}
 function externalBusyFor(date: string) {
   return (Array.isArray(props.externalBusy) ? props.externalBusy : [])
     .filter((period) => !period.allDay)
@@ -197,6 +200,9 @@ function allDayBusyFor(date: string) {
   return (Array.isArray(props.externalBusy) ? props.externalBusy : []).filter(
     (period) => period.allDay && period.startDate && period.endDate && date >= period.startDate && date < period.endDate
   )
+}
+function isDayBlocked(date: string) {
+  return allDayBusyFor(date).some((period) => period.busy !== false)
 }
 function eventStyle(date: string, key: string, start: number, end: number) {
   const verticalPosition = position(start, end)
@@ -255,7 +261,7 @@ function windowStyle(window: AvailabilityWindow) {
 function windowHasBusyOverlap(date: string, window: AvailabilityWindow) {
   const start = minutes(window.startTime)
   const end = minutes(window.endTime)
-  return [...appointmentsFor(date), ...externalBusyFor(date)].some(
+  return [...appointmentsFor(date), ...externalBusyFor(date).filter((period) => period.busy !== false)].some(
     (item) => item.startMinute < end && item.endMinute > start
   )
 }
@@ -324,16 +330,28 @@ function finishDrag(event: PointerEvent) {
           <div
             v-for="date in days"
             :key="date"
-            class="border-l border-default px-2 py-3 text-center text-sm font-medium"
+            class="flex items-center justify-center gap-1 border-l border-default px-1 py-3 text-center text-sm font-medium"
+            :class="{ 'bg-warning/10': isDayBlocked(date) }"
           >
-            {{
-              new Intl.DateTimeFormat(locale, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                timeZone: 'UTC'
-              }).format(new Date(date))
-            }}
+            <span class="whitespace-nowrap">
+              {{
+                new Intl.DateTimeFormat(locale, {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                  timeZone: 'UTC'
+                }).format(new Date(date))
+              }}
+            </span>
+            <UTooltip v-if="isDayBlocked(date)" :text="t('planning.dayBlockedForAppointments')">
+              <button
+                type="button"
+                class="inline-flex shrink-0 cursor-help items-center rounded-sm text-muted focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-label="t('planning.dayBlockedForAppointments')"
+              >
+                <UIcon name="i-lucide-info" class="size-3" />
+              </button>
+            </UTooltip>
           </div>
         </div>
         <div
@@ -343,15 +361,21 @@ function finishDrag(event: PointerEvent) {
           <div class="flex items-center justify-end px-2 py-1 text-[10px] text-muted">
             {{ t('planning.allDay') }}
           </div>
-          <div v-for="date in days" :key="date" class="min-h-8 space-y-1 border-l border-default p-1">
+          <div
+            v-for="date in days"
+            :key="date"
+            class="min-h-8 space-y-1 border-l border-default p-1"
+            :class="{ 'bg-warning/10': isDayBlocked(date) }"
+          >
             <PlanningTimezoneReadOnlyHover
               v-for="period in allDayBusyFor(date)"
               :key="`${period.start}-${period.end}-${period.title}`"
               :readonly="false"
               :user-timezone="userTimezone || timezone"
               :timezone="timezone"
-              :title="period.title || t('planning.externalCalendarBusy')"
+              :title="externalEventTitle(period)"
               icon="i-lucide-lock"
+              :availability-status="period.busy === false ? 'free' : 'busy'"
               :start="period.start"
               :end="period.end"
               all-day
@@ -360,7 +384,7 @@ function finishDrag(event: PointerEvent) {
                 class="flex items-center gap-1 overflow-hidden rounded border border-default bg-elevated px-1.5 py-1 text-xs text-muted"
               >
                 <UIcon name="i-lucide-lock" class="size-3 shrink-0" />
-                <span class="truncate">{{ period.title || t('planning.externalCalendarBusy') }}</span>
+                <span class="truncate">{{ externalEventTitle(period) }}</span>
               </span>
             </PlanningTimezoneReadOnlyHover>
           </div>
@@ -381,7 +405,13 @@ function finishDrag(event: PointerEvent) {
             :data-calendar-date="date"
             :style="{ height: 'clamp(576px, calc(100dvh - 280px), 1152px)' }"
             class="relative touch-none select-none border-l border-default"
-            :aria-label="t('planning.addWindow') + ' ' + date"
+            :class="{ 'bg-warning/10': isDayBlocked(date) }"
+            :aria-label="
+              t('planning.addWindow') +
+              ' ' +
+              date +
+              (isDayBlocked(date) ? ' · ' + t('planning.dayBlockedForAppointments') : '')
+            "
             @pointerdown="startDrag($event, date)"
             @pointermove="moveDrag"
             @pointerup="finishDrag"
@@ -484,8 +514,9 @@ function finishDrag(event: PointerEvent) {
               :readonly="false"
               :user-timezone="userTimezone || timezone"
               :timezone="timezone"
-              :title="period.title || t('planning.externalCalendarBusy')"
+              :title="externalEventTitle(period)"
               icon="i-lucide-lock"
+              :availability-status="period.busy === false ? 'free' : 'busy'"
               :start="period.start"
               :end="period.end"
               class="absolute z-[5] min-w-0"
@@ -493,12 +524,12 @@ function finishDrag(event: PointerEvent) {
             >
               <span
                 class="flex h-full w-full items-center overflow-hidden rounded-md border border-default bg-elevated/80 px-1.5 py-0 text-xs leading-none text-muted shadow-sm"
-                :aria-label="period.title || t('planning.externalCalendarBusy')"
+                :aria-label="externalEventTitle(period)"
               >
                 <span class="flex min-w-0 items-center gap-1 font-medium">
                   <UIcon name="i-lucide-lock" class="size-3 shrink-0" />
                   <span v-if="period.endMinute - period.startMinute >= 30" class="truncate">{{
-                    period.title || t('planning.externalCalendarBusy')
+                    externalEventTitle(period)
                   }}</span>
                 </span>
               </span>

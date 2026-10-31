@@ -8,6 +8,7 @@ import type { InvoiceDto, InvoiceableEntryDto } from '@nuxt-customer-portal/invo
 const props = defineProps<{ data: InvoicesAdminBootstrap; refresh: () => Promise<unknown>; createPage?: boolean }>()
 const { t, locale } = useI18n()
 const api = useInvoices()
+const route = useRoute()
 const { providers } = useInvoiceSources()
 const availableProviders = ref<typeof providers.value>([])
 const toast = useToast()
@@ -23,7 +24,8 @@ const listing = useInvoicesAdminList<InvoiceDto>({
   endpoint: '/api/invoices/admin/invoices',
   filterKeys: ['status', 'clientOrganizationId', 'overdue'],
   defaultSort: 'issueDate',
-  defaultSortDir: 'desc'
+  defaultSortDir: 'desc',
+  preservePosition: !props.createPage
 })
 const invoiceFilters = computed(() => [
   {
@@ -362,7 +364,7 @@ defineExpose({
 if (props.createPage) {
   await Promise.all([openWizard(), refreshAvailableProviders()])
 } else {
-  await listing.load()
+  await listing.restore()
 }
 </script>
 
@@ -726,6 +728,7 @@ if (props.createPage) {
 
     <InvoicesAdminPaginatedList
       v-if="!formOpen && listing.items.value.length"
+      :key="listing.scrollKey.value"
       class="min-h-0 flex-1"
       :pagination="listing.pagination.value"
       :pending="listing.pending.value"
@@ -733,6 +736,8 @@ if (props.createPage) {
       :loading-previous="listing.loadingPreviousPage.value"
       :has-next="listing.hasNextPage.value"
       :has-previous="listing.hasPreviousPage.value"
+      :initial-scroll-top="listing.initialScrollTop.value"
+      @scroll="listing.updateScroll"
       @next="listing.loadNext"
       @previous="listing.loadPrevious"
       @page="listing.goToPage"
@@ -746,7 +751,7 @@ if (props.createPage) {
         >
           <div class="grid grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-3">
             <NuxtLink
-              :to="`/admin/invoices/${invoice.id}`"
+              :to="{ path: `/admin/invoices/${invoice.id}`, query: { invoicesReturnTo: route.fullPath } }"
               class="group min-w-0 flex-1 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               <div class="flex flex-wrap items-center gap-2">
@@ -775,7 +780,7 @@ if (props.createPage) {
               </p>
             </NuxtLink>
             <NuxtLink
-              :to="`/admin/invoices/${invoice.id}`"
+              :to="{ path: `/admin/invoices/${invoice.id}`, query: { invoicesReturnTo: route.fullPath } }"
               :aria-label="t('features.invoices.admin.openInvoice', { number: invoice.number })"
               class="grid size-11 shrink-0 place-items-center justify-self-end rounded focus-visible:outline-2 focus-visible:outline-primary"
               ><UIcon name="i-lucide-chevron-right" class="size-5 text-muted"

@@ -711,6 +711,7 @@ defineExpose({ savePending })
               :selection="editing ? current.selection : current.crop"
               :applied-crop="current.crop"
               :editing="editing"
+              :crop-selection-required="editing"
               :controls-target="`#${adjustmentControlsId}`"
               :can-crop="!isGif"
               :aspect-ratio="ratio"

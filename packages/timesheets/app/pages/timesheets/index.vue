@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { formatTimesheetPeriod } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
+import { parseDate } from '@internationalized/date'
+import type { CalendarProps } from '@nuxt/ui'
+import { formatTimesheetPeriod, mondayFor } from '@nuxt-customer-portal/timesheets/shared/timesheet-dates'
 import { addDays, addWeeks, format, getISOWeek, parseISO } from 'date-fns'
 import { z } from 'zod'
 import { submissionReplySchema } from '@nuxt-customer-portal/timesheets/shared/submission-reply'
@@ -49,6 +51,7 @@ const route = useRoute()
 const selectedWeek = ref<string | undefined>(
   typeof route.query.week === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(route.query.week) ? route.query.week : undefined
 )
+const weekPickerOpen = ref(false)
 const selectedDay = ref('')
 const modalOpen = ref(false)
 const cellEntriesOpen = ref(false)
@@ -271,6 +274,22 @@ const formatWeekPeriod = (startsOn: string) =>
     parseISO(startsOn),
     addDays(parseISO(startsOn), 6)
   )
+const calendarWeek = computed(() => (week.value ? parseDate(week.value.weekStartsOn) : undefined))
+const weekLabel = computed(() =>
+  week.value
+    ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.value.weekStartsOn)) })} · ${formatWeekPeriod(week.value.weekStartsOn)}`
+    : '—'
+)
+const selectWeek = (value: CalendarProps<boolean, boolean>['modelValue']) => {
+  weekPickerOpen.value = false
+  if (pending.value || !value || Array.isArray(value) || !('day' in value) || !week.value) {
+    return
+  }
+  const targetWeek = mondayFor(value.toString())
+  if (targetWeek !== week.value.weekStartsOn) {
+    selectedWeek.value = targetWeek
+  }
+}
 const hasOtherUnsubmittedHours = (submission: TimesheetSubmissionDto) =>
   (week.value?.entries ?? []).some(
     (entry) =>
@@ -646,21 +665,30 @@ const runningDuration = computed(() => {
           :aria-label="t('features.timesheets.previousWeek')"
           @click="changeWeek(-1)"
         />
-        <UBadge color="neutral" variant="subtle" size="lg" class="relative">
-          <span
-            v-if="pending && data"
-            class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-full"
-            role="status"
-            :aria-label="t('features.timesheets.loading')"
-          >
-            <span class="block h-full w-full animate-pulse bg-primary" />
-          </span>
-          {{
-            week
-              ? `${t('features.timesheets.weekNumber', { number: getISOWeek(parseISO(week.weekStartsOn)) })} · ${formatWeekPeriod(week.weekStartsOn)}`
-              : '—'
-          }}
-        </UBadge>
+        <UPopover v-model:open="weekPickerOpen">
+          <UButton
+            icon="i-lucide-calendar-days"
+            color="neutral"
+            variant="subtle"
+            :label="weekLabel"
+            :aria-label="t('features.timesheets.pickWeek', { week: weekLabel })"
+            :loading="pending && !!data"
+            :disabled="pending || !week"
+          />
+          <template #content>
+            <UCalendar
+              v-if="weekPickerOpen && week"
+              :model-value="calendarWeek"
+              :week-starts-on="1"
+              :locale="locale"
+              :aria-label="t('features.timesheets.selectWeek')"
+              :ui="{ gridRow: 'has-[[data-selected]]:bg-primary/10 rounded-md' }"
+              class="p-2"
+              week-numbers
+              @update:model-value="selectWeek"
+            />
+          </template>
+        </UPopover>
         <UButton
           icon="i-lucide-chevron-right"
           color="neutral"

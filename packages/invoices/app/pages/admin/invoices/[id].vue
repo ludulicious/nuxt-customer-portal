@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { invoiceListReturnTo } from '@nuxt-customer-portal/invoices/shared/invoice-list-navigation'
+
 defineOptions({ name: 'AdminInvoiceDetailPage' })
 
 const route = useRoute()
+const invoicesReturnTo = computed(() => invoiceListReturnTo(route.query.invoicesReturnTo))
 const ordersReturnTo = computed(() =>
   typeof route.query.ordersReturnTo === 'string' &&
   /^\/admin\/products\/orders(?:\?|$)/.test(route.query.ordersReturnTo)
@@ -41,7 +44,7 @@ useSeoMeta({
       v-else-if="invoice"
       :invoice="invoice"
       :refresh="refresh"
-      :back-to="ordersReturnTo"
+      :back-to="ordersReturnTo || invoicesReturnTo"
       :back-label="ordersReturnTo ? t('features.invoices.admin.backToOrderList') : undefined"
     />
   </section>
