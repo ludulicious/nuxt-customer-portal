@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/timesheets
 
+## 0.10.1
+
+### Patch Changes
+
+- 91bd778: Turn the timesheet toolbar's week label into a localized calendar picker for jumping directly to any Monday–Sunday week.
+- Updated dependencies [7c0f8df]
+  - @nuxt-customer-portal/ui@0.10.1
+  - @nuxt-customer-portal/clients@0.10.1
+  - @nuxt-customer-portal/core@0.10.1
+  - @nuxt-customer-portal/organizations@0.10.1
+
 ## 0.10.0
 
 ### Patch Changes

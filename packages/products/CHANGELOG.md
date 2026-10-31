@@ -1,5 +1,15 @@
 # Products
 
+## 0.10.1
+
+### Patch Changes
+
+- 91bd778: Show the uncropped editing source and crop overlay immediately when entering image adjustment mode, allowing crop repositioning without first changing zoom.
+- Updated dependencies [7c0f8df]
+  - @nuxt-customer-portal/ui@0.10.1
+  - @nuxt-customer-portal/clients@0.10.1
+  - @nuxt-customer-portal/core@0.10.1
+
 ## 0.10.0
 
 ### Patch Changes
