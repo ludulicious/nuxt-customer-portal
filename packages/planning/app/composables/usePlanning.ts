@@ -15,6 +15,8 @@ export interface AppointmentDetails {
   productSlug: string
   title: string
   providerName: string
+  providerUserId: string
+  providerEmail?: string
   start: string
   end: string
   status: 'confirmed' | 'cancelled'

@@ -6,7 +6,8 @@ import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 const props = withDefaults(defineProps<{ id: string; timezone?: string; showSummary?: boolean }>(), {
   showSummary: true
 })
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: [appointment: AppointmentDetails] }>()
+const toast = useToast()
 const { appointmentRange } = usePlanningTimeDisplay()
 const api = usePlanning(),
   { t, locale } = useI18n(),
@@ -15,6 +16,12 @@ const api = usePlanning(),
   busy = ref(false),
   changeOpen = ref(false),
   cancelOpen = ref(false)
+const pendingChange = ref<{ slot: Slot; timezone: string }>()
+function openChange() {
+  pendingChange.value = undefined
+  error.value = ''
+  changeOpen.value = true
+}
 async function load() {
   try {
     item.value = await api.appointment(props.id)
@@ -34,18 +41,24 @@ async function abandonChange() {
   try {
     await api.abandonChange(item.value!.id)
     await load()
-    emit('changed')
+    emit('changed', item.value!)
   } catch {
     error.value = t('planning.actionError')
   } finally {
     busy.value = false
   }
 }
-async function selected(slot: Slot, timezone: string) {
-  if (busy.value) {
+function selected(slot: Slot, timezone: string) {
+  pendingChange.value = { slot, timezone }
+  error.value = ''
+}
+async function confirmChange() {
+  if (busy.value || !pendingChange.value || !item.value) {
     return
   }
+  const { slot, timezone } = pendingChange.value
   busy.value = true
+  error.value = ''
   try {
     await api.staffReschedule(item.value!.id, {
       providerUserId: slot.providerUserId,
@@ -55,7 +68,8 @@ async function selected(slot: Slot, timezone: string) {
     })
     changeOpen.value = false
     await load()
-    emit('changed')
+    emit('changed', item.value!)
+    toast.add({ title: t('planning.appointmentChanged'), color: 'success' })
   } catch {
     error.value = t('planning.actionError')
   } finally {
@@ -68,7 +82,7 @@ async function cancel() {
     await api.cancel(item.value!.id)
     cancelOpen.value = false
     await load()
-    emit('changed')
+    emit('changed', item.value!)
   } catch {
     error.value = t('planning.actionError')
   } finally {
@@ -107,12 +121,9 @@ async function cancel() {
           class="space-y-3 rounded-lg border border-default bg-muted/20 p-4"
         >
           <div v-if="item.canReschedule || item.canCancel" class="flex flex-wrap gap-3">
-            <UButton
-              v-if="item.canReschedule"
-              icon="i-lucide-calendar-sync"
-              variant="outline"
-              @click="changeOpen = true"
-              >{{ t('planning.reschedule') }}</UButton
+            <UButton v-if="item.canReschedule" icon="i-lucide-calendar-sync" variant="outline" @click="openChange">{{
+              t('planning.reschedule')
+            }}</UButton
             ><UButton
               v-if="item.canCancel"
               icon="i-lucide-calendar-x-2"
@@ -127,9 +138,10 @@ async function cancel() {
           </p>
         </div>
       </template>
-      <UModal v-if="changeOpen" v-model:open="changeOpen" :title="t('planning.reschedule')"
+      <UModal v-if="changeOpen" v-model:open="changeOpen" :title="t('planning.reschedule')" :dismissible="!busy"
         ><template #body
-          ><p v-if="item" class="mb-4">
+          ><UAlert v-if="error" class="mb-4" variant="outline" color="error" :title="error" />
+          <p v-if="item" class="mb-4">
             {{
               item.staff
                 ? t('planning.staffChangeNotice')
@@ -138,8 +150,23 @@ async function cancel() {
                   : t('planning.freeChange')
             }}
           </p>
+          <div v-if="pendingChange" class="space-y-4">
+            <p>{{ t('planning.confirmChangePrompt') }}</p>
+            <p class="font-semibold">
+              {{ appointmentRange(pendingChange.slot.start, pendingChange.slot.end, pendingChange.timezone) }}
+            </p>
+            <p>{{ pendingChange.slot.providerName }} · {{ pendingChange.timezone }}</p>
+            <div class="flex flex-wrap gap-3">
+              <UButton variant="outline" :disabled="busy" @click="pendingChange = undefined">{{
+                t('planning.back')
+              }}</UButton>
+              <UButton :loading="busy" :disabled="busy" @click="confirmChange">{{
+                t('planning.confirmChange')
+              }}</UButton>
+            </div>
+          </div>
           <PlanningSlotPicker
-            v-if="item"
+            v-else-if="item"
             :product-id="item.productId"
             :currency="item.currency"
             :locale="locale === 'nl' ? 'nl' : 'en'"

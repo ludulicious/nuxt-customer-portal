@@ -91,6 +91,8 @@ Cancellation must be explicitly enabled. Configure one notice cutoff and a refun
 
 Appointment invites keep their UID, organizer and incrementing sequence across changes and cancellations. Meetings, mirror updates and email use retryable jobs and stable identifiers. Admins can see appointments, conflicts and outstanding synchronization/refund jobs, and retry them at `/admin/planning`. The database retains an audit trail and permanent reservation confirmation evidence so replaying an original purchase never reverses a later reschedule or cancellation.
 
+Staff changes show the selected time, timezone, and host for confirmation before saving. They bypass customer checkout and preserve the customer change allowance. Successful changes update the open appointment drawer and list; failed saves remain visible in the change dialog.
+
 ## APIs and adapters
 
 Public portal-origin booking mutations:
