@@ -63,6 +63,8 @@ In hosts using SaaS configuration, enable the Planning module alongside Products
 
 Availability supports individual windows and weekly series, end dates, skipped occurrences, and edits to one occurrence or the entire series. Windows apply to all assigned plannable products, including future assignments, or to selected products. UTC slot iteration preserves duration across daylight-saving changes and presents repeated wall times with timezone information.
 
+Deleting recurring availability offers explicit **Delete this occurrence**, **Delete series**, and **Cancel** actions, independent of the editor's occurrence-only toggle. Cancelling keeps the editor open without deleting anything. Individual windows offer **Delete availability** and **Cancel**. Confirmed appointments are preserved in either deletion scope.
+
 Changing a provider's scheduling timezone keeps availability at its configured local wall times in the new timezone. Confirmed appointments retain their original UTC instants and timezone snapshots. Product and grace-time changes likewise do not alter confirmed appointments.
 
 Google availability mirrors are free events; confirmed appointments are busy events with the grace time described. Customer checkout holds remain internal. Portal mirrors are managed from the portal; external edits/removals are repaired without sending synchronization emails. Personal Google events get no additional grace time. New conflicts preserve confirmed bookings and alert their provider.
