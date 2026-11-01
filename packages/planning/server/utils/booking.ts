@@ -83,8 +83,8 @@ export async function providers(storeId: string, productId: string) {
     busy_calendar_ids: string[]
     write_calendar_id: string
   }>(
-    `SELECT DISTINCT p.*,u.name,u.email FROM planning.provider p JOIN public.member m ON m.organization_id=p.store_id AND m.user_id=p.user_id JOIN public."user" u ON u.id=p.user_id WHERE p.store_id=$1 AND p.enabled AND p.user_id=ANY($2::text[]) AND ($4::boolean OR (p.write_calendar_id IS NOT NULL AND cardinality(p.busy_calendar_ids)>0 AND EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=p.store_id AND c.user_id=p.user_id AND c.provider='google' AND c.healthy) AND ($3='none' OR EXISTS(SELECT 1 FROM planning.connection z WHERE z.store_id=p.store_id AND z.user_id=p.user_id AND z.provider='zoom' AND z.healthy))))`,
-    [storeId, product.planning.providerUserIds, product.planning.meetingProvider, sandbox]
+    `SELECT DISTINCT p.*,u.name,u.email FROM planning.provider p JOIN public.member m ON m.organization_id=p.store_id AND m.user_id=p.user_id JOIN public."user" u ON u.id=p.user_id WHERE p.store_id=$1 AND p.enabled AND p.user_id=ANY($2::text[]) AND ($3::boolean OR (p.write_calendar_id IS NOT NULL AND cardinality(p.busy_calendar_ids)>0 AND EXISTS(SELECT 1 FROM planning.connection c WHERE c.store_id=p.store_id AND c.user_id=p.user_id AND c.provider='google' AND c.healthy)))`,
+    [storeId, product.planning.providerUserIds, sandbox]
   )
   return { product, users }
 }

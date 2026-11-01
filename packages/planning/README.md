@@ -132,7 +132,7 @@ Planning settings use separate components for the Team members, Booking policy, 
 
 Personal connections and preferences are managed under My appointment settings (`/planning/settings`): Calendar settings contains Google connection, timezone, grace time, and calendar selection; Meeting settings contains the Zoom connection. Availability (`/availability`) contains only the availability editor and appointment blocks.
 
-Sandbox bookings use internal availability, holds, and appointments without requiring Google or Zoom connections or external calendar conflict checks. Live bookings still require healthy connections and configured calendars.
+Sandbox bookings use internal availability, holds, and appointments without requiring Google or Zoom connections or external calendar conflict checks. Live bookings require a healthy Google Calendar connection and configured calendars for conflict checking, but do not require a configured or healthy Zoom connection. Missing or expired Zoom authorization does not hide slots or block bookings or rescheduling: the appointment is confirmed with a pending meeting link, meeting creation remains retryable, and the customer receives a separate link-ready email after it succeeds. Restore Zoom authorization to allow pending meeting jobs to complete.
 
 ### Google Calendar authorization recovery
 
