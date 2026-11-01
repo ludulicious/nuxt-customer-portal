@@ -85,6 +85,8 @@ The default hold is **60 minutes from selection**, configurable by organization 
 
 Calendar API failure closes new availability and retries paid-order processing. Google and PostgreSQL cannot be atomically locked together; conflicts appearing after confirmation are flagged for provider resolution.
 
+Booking availability indexes windows by local date and timezone and merges busy intervals before generating slots, so historical windows and overlapping appointments do not trigger repeated per-slot scans. Independent provider checks run concurrently. The slot picker reuses up to four recently visited months for 30 seconds and shares in-flight requests within that picker; failed reservation attempts force a fresh load. This is a display-only cache: reservation, checkout, and rescheduling continue to perform live calendar conflict checks, and calendar failures still close that provider's availability.
+
 ## Appointment management and policies
 
 Guest customers sign in or verify a portal account and claim purchases by verified email before managing appointments at `/appointments`. Other users cannot manage those appointments.

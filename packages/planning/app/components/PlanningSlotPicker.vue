@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Slot } from '../../shared/types'
 import { localParts } from '../../shared/availability'
+import { createAvailabilityLoader } from '../../shared/availability-loader'
 import type { HoldResult } from '../composables/usePlanning'
 
 const props = defineProps<{
@@ -91,20 +92,28 @@ const daySlots = computed(() => {
   return candidates
 })
 let request = 0
-async function load() {
+const loadMonth = createAvailabilityLoader(async (key) => {
+  const [productId, replacesId, monthStart] = JSON.parse(key) as [string, string | null, string]
+  const first = new Date(monthStart),
+    from = new Date(first.getTime() - 14 * 3600000),
+    mid = new Date(from.getTime() + 16 * 86400000),
+    to = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1) + 14 * 3600000)
+  return (
+    await Promise.all([
+      api.available(productId, { from: from.toISOString(), to: mid.toISOString() }, replacesId ?? undefined),
+      api.available(productId, { from: mid.toISOString(), to: to.toISOString() }, replacesId ?? undefined)
+    ])
+  ).flat()
+})
+async function load(fresh = false) {
   const current = ++request
   loading.value = true
   error.value = ''
   try {
-    const from = new Date(month.value.getTime() - 14 * 3600000),
-      mid = new Date(from.getTime() + 16 * 86400000),
-      to = new Date(Date.UTC(month.value.getUTCFullYear(), month.value.getUTCMonth() + 1, 1) + 14 * 3600000)
-    const values = (
-      await Promise.all([
-        api.available(props.productId, { from: from.toISOString(), to: mid.toISOString() }, props.replacesId),
-        api.available(props.productId, { from: mid.toISOString(), to: to.toISOString() }, props.replacesId)
-      ])
-    ).flat()
+    const values = await loadMonth(
+      JSON.stringify([props.productId, props.replacesId, month.value.toISOString()]),
+      fresh
+    )
     if (current === request) {
       slots.value = values
       if (
@@ -159,12 +168,12 @@ async function confirmTime() {
   } catch {
     selectedSlot.value = undefined
     error.value = t('planning.slotUnavailable')
-    await load()
+    await load(true)
   } finally {
     busy.value = false
   }
 }
-watch(month, load)
+watch([month, () => props.productId, () => props.replacesId], () => load())
 watch([timezone, provider, () => props.currency], () => {
   selectedSlot.value = undefined
 })

@@ -18,8 +18,94 @@ function functions(path: string, names: string[]) {
   ).outputText
 }
 const providerSource = functions('../server/utils/booking.ts', ['providers'])
+const availabilitySource = functions('../server/utils/booking.ts', ['available', 'bookingBusy'])
 const staffSource = functions('../server/utils/staff-appointments.ts', ['staffReschedule'])
 const createError = (error: { message: string; statusCode: number }) => Object.assign(new Error(error.message), error)
+
+test('availability overlaps independent provider checks and closes only a failing calendar', async () => {
+  const calls: string[] = []
+  const generated: Array<{ providerUserId: string; busy: unknown[] }> = []
+  const transactions: unknown[] = []
+  const tx = {}
+  let finishFirst!: () => void
+  const secondStarted = new Promise<void>((resolve) => {
+    finishFirst = resolve
+  })
+  const exports = {} as typeof import('../server/utils/booking')
+  runInNewContext(availabilitySource, {
+    exports,
+    minute: 60000,
+    parseInput: (_schema: unknown, input: unknown) => input,
+    availabilityQuerySchema: {},
+    getStore: async () => ({ organization_id: 'store' }),
+    providers: async () => ({
+      product: { planning: { durationMinutes: 30 } },
+      users: ['first', 'second', 'empty'].map((user_id) => ({
+        user_id,
+        name: user_id,
+        busy_calendar_ids: ['calendar'],
+        grace_minutes: 5
+      }))
+    }),
+    policy: async () => defaultPlanningPolicy(),
+    effectivePolicy: (policy: unknown) => policy,
+    rows: async (sql: string, params: string[], transaction: unknown) => {
+      transactions.push(transaction)
+      if (sql.includes('planning.availability')) {
+        return params[1] === 'empty' ? [] : [{ id: 'window', data: {} }]
+      }
+      calls.push(`reservations:${params[0]}`)
+      return [{ start_at: new Date('2026-11-02T08:00:00Z'), blocked_until: new Date('2026-11-02T09:00:00Z') }]
+    },
+    calendarAdapter: () => ({
+      busy: async (_store: string, user: string) => {
+        calls.push(`calendar:${user}`)
+        if (user === 'first') {
+          await secondStarted
+          return []
+        }
+        finishFirst()
+        throw new Error('Calendar unavailable')
+      }
+    }),
+    generateSlots: (input: { providerUserId: string; busy: unknown[] }) => {
+      generated.push(input)
+      return [{ start: '2026-11-02T09:00:00Z', providerUserId: input.providerUserId }]
+    }
+  })
+  const result = await exports.available(
+    'product',
+    { from: '2026-11-01T00:00:00Z', to: '2026-11-15T00:00:00Z' },
+    { tx: tx as never }
+  )
+  assert.equal(result.length, 1)
+  assert.equal(result[0]?.providerUserId, 'first')
+  assert.ok(calls.includes('reservations:first'))
+  assert.ok(calls.includes('reservations:second'))
+  assert.ok(!calls.includes('calendar:empty'))
+  assert.equal(generated.length, 1)
+  assert.equal(generated[0]?.busy.length, 1)
+  assert.ok(transactions.every((transaction) => transaction === tx))
+})
+
+test('booking conflict checks never reuse a previous calendar result', async () => {
+  let calls = 0
+  const exports = {} as typeof import('../server/utils/booking')
+  runInNewContext(availabilitySource, {
+    exports,
+    calendarAdapter: () => ({
+      busy: async () => {
+        calls++
+        return []
+      }
+    })
+  })
+  const from = new Date('2026-11-01T00:00:00Z'),
+    to = new Date('2026-11-02T00:00:00Z')
+  await exports.bookingBusy('store', 'host', ['calendar'], from, to)
+  await exports.bookingBusy('store', 'host', ['calendar'], from, to)
+  assert.equal(calls, 2)
+})
 
 function providerHarness(rows: (sql: string, params: unknown[]) => Promise<unknown[]>, sandbox = false) {
   const product = {

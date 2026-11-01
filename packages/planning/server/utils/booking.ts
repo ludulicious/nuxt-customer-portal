@@ -98,53 +98,57 @@ export async function available(
     { product, users } = await providers(store.organization_id, productId)
   const rules =
     options.policy || effectivePolicy(await policy(store.organization_id), product.planning!.policyOverrides)
-  const slots = []
-  for (const u of users.filter((u) => !q.providerUserId || q.providerUserId === u.user_id)) {
-    const windowRows = await rows<{ id: string; data: AvailabilityWindow }>(
-      'SELECT id,data FROM planning.availability WHERE store_id=$1 AND user_id=$2 AND NOT deleted',
-      [store.organization_id, u.user_id],
-      options.tx
-    )
-    // Each provider failure closes their availability; do not offer stale slots.
-    let busy
-    try {
-      busy = await bookingBusy(
-        store.organization_id,
-        u.user_id,
-        u.busy_calendar_ids,
-        new Date(q.from),
-        new Date(Date.parse(q.to) + u.grace_minutes * minute)
-      )
-    } catch {
-      continue
-    }
-    const internal = await rows<{ start_at: Date; blocked_until: Date }>(
-      `SELECT start_at,blocked_until FROM planning.reservation WHERE user_id=$1 AND status IN ('reserved','confirmed') AND start_at<$3 AND blocked_until>$2`,
-      [u.user_id, q.from, q.to],
-      options.tx
-    )
-    slots.push(
-      ...generateSlots({
-        from: new Date(q.from),
-        to: new Date(q.to),
-        now: new Date(),
-        durationMinutes: options.duration || product.planning!.durationMinutes!,
-        graceMinutes: options.grace ?? u.grace_minutes,
-        intervalMinutes: rules.slotIntervalMinutes,
-        displayIntervalMinutes: rules.displayIntervalMinutes ?? 30,
-        noticeMinutes: rules.minimumNoticeMinutes,
-        horizonDays: rules.bookingHorizonDays,
-        productId,
-        providerUserId: u.user_id,
-        providerName: u.name,
-        windows: windowRows.map((w) => ({ ...w.data, id: w.id })),
-        busy: [
-          ...busy,
-          ...internal.map((b) => ({ start: b.start_at.toISOString(), end: b.blocked_until.toISOString() }))
-        ]
+  const providerSlots = await Promise.all(
+    users
+      .filter((u) => !q.providerUserId || q.providerUserId === u.user_id)
+      .map(async (u) => {
+        const windowRows = await rows<{ id: string; data: AvailabilityWindow }>(
+          'SELECT id,data FROM planning.availability WHERE store_id=$1 AND user_id=$2 AND NOT deleted',
+          [store.organization_id, u.user_id],
+          options.tx
+        )
+        if (!windowRows.length) {
+          return []
+        }
+        const [busy, internal] = await Promise.all([
+          bookingBusy(
+            store.organization_id,
+            u.user_id,
+            u.busy_calendar_ids,
+            new Date(q.from),
+            new Date(Date.parse(q.to) + u.grace_minutes * minute)
+          ).catch(() => null),
+          rows<{ start_at: Date; blocked_until: Date }>(
+            `SELECT start_at,blocked_until FROM planning.reservation WHERE user_id=$1 AND status IN ('reserved','confirmed') AND start_at<$3 AND blocked_until>$2`,
+            [u.user_id, q.from, q.to],
+            options.tx
+          )
+        ])
+        if (!busy) {
+          return []
+        }
+        return generateSlots({
+          from: new Date(q.from),
+          to: new Date(q.to),
+          now: new Date(),
+          durationMinutes: options.duration || product.planning!.durationMinutes!,
+          graceMinutes: options.grace ?? u.grace_minutes,
+          intervalMinutes: rules.slotIntervalMinutes,
+          displayIntervalMinutes: rules.displayIntervalMinutes ?? 30,
+          noticeMinutes: rules.minimumNoticeMinutes,
+          horizonDays: rules.bookingHorizonDays,
+          productId,
+          providerUserId: u.user_id,
+          providerName: u.name,
+          windows: windowRows.map((w) => ({ ...w.data, id: w.id })),
+          busy: [
+            ...busy,
+            ...internal.map((b) => ({ start: b.start_at.toISOString(), end: b.blocked_until.toISOString() }))
+          ]
+        })
       })
-    )
-  }
+  )
+  const slots = providerSlots.flat()
   return slots.sort((a, b) => a.start.localeCompare(b.start) || a.providerUserId.localeCompare(b.providerUserId))
 }
 const sessions = new WeakMap<H3Event, string>()
