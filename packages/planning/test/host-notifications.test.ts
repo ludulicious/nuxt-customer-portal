@@ -60,6 +60,7 @@ function harness() {
   let locale = 'en',
     kind = 'appointment',
     failHost = false,
+    failMeeting = false,
     development = false,
     hostExists = true,
     revision = 1
@@ -86,6 +87,16 @@ function harness() {
       }
       if (sql.includes("'{hostNotificationRevision}'")) {
         appointment.snapshot.hostNotificationRevision = Number(params[1])
+      }
+      if (sql.startsWith('UPDATE planning.appointment SET meeting_id=')) {
+        appointment.meeting_id = String(params[1])
+        appointment.meeting_url = String(params[2])
+      }
+      if (sql.includes("'{zoomLinkNotificationPending}'")) {
+        appointment.snapshot.zoomLinkNotificationPending = true
+      }
+      if (sql.includes("snapshot=snapshot-'zoomLinkNotificationPending'")) {
+        delete appointment.snapshot.zoomLinkNotificationPending
       }
       return []
     }
@@ -146,7 +157,17 @@ function harness() {
       return { appointmentCalendarTitle: () => 'Consultation', appointmentCalendarDescription: () => 'Details' }
     }
     if (id.endsWith('/adapters')) {
-      return { calendarAdapter: () => ({ put: async () => ({ id: 'event' }), remove: async () => {} }) }
+      return {
+        calendarAdapter: () => ({ put: async () => ({ id: 'event' }), remove: async () => {} }),
+        meetingAdapter: () => ({
+          ensure: async () => {
+            if (failMeeting) {
+              throw new Error('Zoom authorization unavailable')
+            }
+            return { id: 'meeting', url: 'https://example.test/zoom' }
+          }
+        })
+      }
     }
     if (id.startsWith('.') || id.startsWith('@nuxt-customer-portal/')) {
       return {}
@@ -174,6 +195,9 @@ function harness() {
     },
     failHost: (value: boolean) => {
       failHost = value
+    },
+    failMeeting: (value: boolean) => {
+      failMeeting = value
     },
     removeHost: () => {
       hostExists = false
@@ -219,6 +243,30 @@ test('failed host delivery retries without resending the customer email', async 
     fixture.emails.map((email) => email.to),
     ['customer@example.test', 'host@example.test']
   )
+})
+
+test('unavailable Zoom sends confirmation with a pending link, then delivers the link once on retry', async () => {
+  const fixture = harness()
+  fixture.appointment.snapshot.meetingProvider = 'zoom'
+  fixture.appointment.meeting_url = null
+  fixture.failMeeting(true)
+  assert.equal((await fixture.runJobs()).failed, 1)
+  assert.equal(fixture.appointment.status, 'confirmed')
+  assert.equal(fixture.appointment.snapshot.zoomLinkNotificationPending, true)
+  assert.equal(fixture.emails.length, 2)
+  assert.match(fixture.emails[0]!.values.meetingDetails!, /meeting link will be added later/)
+  assert.equal(fixture.emails[0]!.values.meetingUrl, 'http://localhost:3059/appointments')
+
+  fixture.failMeeting(false)
+  assert.equal((await fixture.runJobs()).completed, 1)
+  assert.equal(fixture.appointment.meeting_url, 'https://example.test/zoom')
+  assert.equal(fixture.appointment.snapshot.zoomLinkNotificationPending, undefined)
+  assert.equal(fixture.emails.length, 3)
+  assert.equal(fixture.emails[2]!.definition.id, emailDefinitions.zoomLinkReadyEmail.id)
+  assert.equal(fixture.emails[2]!.to, 'customer@example.test')
+  assert.equal(fixture.emails[2]!.values.meetingUrl, 'https://example.test/zoom')
+  await fixture.runJobs()
+  assert.equal(fixture.emails.length, 3)
 })
 
 test('reschedules and cancellations send distinct revision-keyed notifications in the store language', async () => {

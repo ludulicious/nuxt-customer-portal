@@ -7,7 +7,6 @@ import { generateSlots } from '../../shared/availability'
 import type { Appointment, AvailabilityWindow } from '../../shared/types'
 import { appointmentAccess, planningAdmin } from './access'
 import { providers, lockProvider, enqueue, bookingBusy, refreshAvailability } from './booking'
-import { getStore } from '@nuxt-customer-portal/products/server/utils/access'
 import { auditLock } from './jobs'
 import { digest } from './crypto'
 
@@ -19,15 +18,6 @@ export async function staffReschedule(event: H3Event, id: string, body: unknown)
     provider = users.find((u) => u.user_id === input.providerUserId)
   if (!provider) {
     throw createError({ statusCode: 409, message: 'Choose an eligible team member' })
-  }
-  if (initial.snapshot.meetingProvider === 'zoom' && (await getStore()).mode !== 'sandbox') {
-    const [connection] = await rows(
-      "SELECT user_id FROM planning.connection WHERE store_id=$1 AND user_id=$2 AND provider='zoom' AND healthy",
-      [initial.store_id, provider.user_id]
-    )
-    if (!connection) {
-      throw createError({ statusCode: 409, message: 'A healthy Zoom connection is required' })
-    }
   }
   const start = new Date(input.start),
     end = new Date(start.getTime() + initial.snapshot.durationMinutes * 60000),

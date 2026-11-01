@@ -45,45 +45,99 @@ export function generateSlots(input: {
   busy: Interval[]
 }): Slot[] {
   const slots: Slot[] = []
-  const busy = input.busy.map((b) => ({ start: Date.parse(b.start), end: Date.parse(b.end) }))
+  const busy: Array<{ start: number; end: number }> = []
+  for (const period of input.busy
+    .map((period) => ({ start: Date.parse(period.start), end: Date.parse(period.end) }))
+    .filter((period) => period.end > period.start)
+    .sort((first, second) => first.start - second.start)) {
+    const previous = busy.at(-1)
+    if (previous && period.start <= previous.end) {
+      previous.end = Math.max(previous.end, period.end)
+    } else {
+      busy.push(period)
+    }
+  }
+  const groups = new Map<
+    string,
+    {
+      windows: Array<{ window: AvailabilityWindow; index: number; weekday: number; startMinute: number }>
+      date: string
+      active: Array<{ window: AvailabilityWindow; index: number; weekday: number; startMinute: number }>
+    }
+  >()
+  const wallMinute = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
+  input.windows.forEach((window, index) => {
+    if (window.productIds && !window.productIds.includes(input.productId)) {
+      return
+    }
+    let group = groups.get(window.timezone)
+    if (!group) {
+      group = { windows: [], date: '', active: [] }
+      groups.set(window.timezone, group)
+    }
+    group.windows.push({
+      window,
+      index,
+      weekday: new Date(window.date).getUTCDay(),
+      startMinute: wallMinute(window.startTime)
+    })
+  })
+  if (!groups.size) {
+    return slots
+  }
   const lower = Math.max(input.from.getTime(), input.now.getTime() + input.noticeMinutes * minute)
   const upper = Math.min(input.to.getTime(), input.now.getTime() + input.horizonDays * 86400000)
+  let busyIndex = 0
   for (let start = Math.ceil(lower / minute) * minute; start < upper; start += minute) {
     const end = start + input.durationMinutes * minute
     if (end > upper) {
       break
     }
-    let slotTimezone = 'UTC'
-    const fits = input.windows.some((w) => {
-      if (w.productIds && !w.productIds.includes(input.productId)) {
-        return false
+    while (busy[busyIndex] && busy[busyIndex]!.end <= start) {
+      busyIndex++
+    }
+    const conflict = busy[busyIndex]
+    if (conflict && start < conflict.end && end + input.graceMinutes * minute > conflict.start) {
+      start = Math.ceil(conflict.end / minute) * minute - minute
+      continue
+    }
+    let matchingIndex = Infinity
+    let matchingTime = ''
+    for (const [timezone, group] of groups) {
+      const first = localParts(new Date(start), timezone)
+      if (group.date !== first.date) {
+        group.date = first.date
+        const weekday = new Date(first.date).getUTCDay()
+        group.active = group.windows.filter(
+          ({ window, weekday: windowWeekday }) =>
+            first.date >= window.date &&
+            (!window.endDate || first.date <= window.endDate) &&
+            !window.exceptions.includes(first.date) &&
+            (window.recurring ? weekday === windowWeekday : first.date === window.date)
+        )
       }
-      const first = localParts(new Date(start), w.timezone),
-        last = localParts(new Date(end), w.timezone)
-      const endsAtMidnight =
-        w.endTime === '24:00' && last.time === '00:00' && Date.parse(last.date) === Date.parse(first.date) + 86400000
-      if (
-        (first.date !== last.date && !endsAtMidnight) ||
-        first.date < w.date ||
-        (w.endDate && first.date > w.endDate) ||
-        w.exceptions.includes(first.date)
-      ) {
-        return false
+      let last: ReturnType<typeof localParts> | undefined
+      for (const { window, index, startMinute } of group.active) {
+        if (index >= matchingIndex) {
+          break
+        }
+        if (first.time < window.startTime || (wallMinute(first.time) - startMinute) % input.intervalMinutes !== 0) {
+          continue
+        }
+        last ??= localParts(new Date(end), timezone)
+        const endsAtMidnight =
+          window.endTime === '24:00' &&
+          last.time === '00:00' &&
+          Date.parse(last.date) === Date.parse(first.date) + 86400000
+        if ((first.date !== last.date && !endsAtMidnight) || (!endsAtMidnight && last.time > window.endTime)) {
+          continue
+        }
+        matchingIndex = index
+        matchingTime = first.time
+        break
       }
-      if (w.recurring ? new Date(first.date).getUTCDay() !== new Date(w.date).getUTCDay() : first.date !== w.date) {
-        return false
-      }
-      const wallMinute = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3))
-      const matches =
-        first.time >= w.startTime &&
-        (endsAtMidnight || last.time <= w.endTime) &&
-        (wallMinute(first.time) - wallMinute(w.startTime)) % input.intervalMinutes === 0
-      if (matches) {
-        slotTimezone = w.timezone
-      }
-      return matches
-    })
-    if (!fits || busy.some((b) => start < b.end && end + input.graceMinutes * minute > b.start)) {
+    }
+    if (matchingIndex === Infinity) {
       continue
     }
     const slot = {
@@ -92,7 +146,8 @@ export function generateSlots(input: {
       providerUserId: input.providerUserId,
       providerName: input.providerName
     }
-    if (input.displayIntervalMinutes && !isDisplaySlot(slot, slotTimezone, input.displayIntervalMinutes)) {
+    const displayInterval = Math.min(input.durationMinutes, input.displayIntervalMinutes || input.durationMinutes)
+    if (input.displayIntervalMinutes && !(displayInterval > 0 && wallMinute(matchingTime) % displayInterval === 0)) {
       continue
     }
     slots.push(slot)
