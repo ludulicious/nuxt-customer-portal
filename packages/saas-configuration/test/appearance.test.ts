@@ -85,3 +85,14 @@ test('light-only surface overrides cannot leak into the dark theme', () => {
   assert.equal(appearanceVariables(appearance, true)['--ui-bg'], undefined)
   assert.equal(appearanceVariables(appearance, true)['--portal-surface'], undefined)
 })
+
+test('soft appearance uses compact control rounding rather than pill-sized global radii', async () => {
+  const appearance = applyAppearancePreset(defaultPortalSettings().appearance, 'soft-editorial')
+  assert.equal(appearanceVariables(appearance, false)['--ui-radius'], '0.25rem')
+  assert.equal(appearanceVariables(appearance, true)['--ui-radius'], '0.25rem')
+  const { readFile } = await import('node:fs/promises')
+  const css = await readFile(new URL('../app/assets/css/appearance.css', import.meta.url), 'utf8')
+  assert.doesNotMatch(css, /border-radius: 999px/)
+  assert.match(css, /border-radius: var\(--portal-control-radius\)/)
+  assert.match(css, /border-radius: var\(--portal-panel-radius\)/)
+})

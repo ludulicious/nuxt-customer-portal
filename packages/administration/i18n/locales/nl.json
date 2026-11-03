@@ -36,7 +36,8 @@
       "sections": "Onderdelen van e-mailinstellingen",
       "providerPage": "E-mailprovider",
       "templatePage": "E-mailsjabloon",
-      "textPage": "E-mailtekst",
+      "textPage": "E-mailteksten",
+      "textDescription": "Beheer het onderwerp en de berichtteksten van portaale-mails per taal.",
       "messageNavigation": "E-mailsoorten",
       "modules": {
         "appointments": "Afspraken",

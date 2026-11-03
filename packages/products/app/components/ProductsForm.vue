@@ -436,7 +436,7 @@ function removeFile(id: string, index: number) {
         :class="section === 'planning' ? 'space-y-4' : 'space-y-4 rounded border border-default p-4'"
       >
         <UFormField v-if="!appointmentSetupRequired" name="planning.enabled">
-          <div class="flex items-center justify-between gap-4 rounded-lg border border-default bg-muted/20 p-3">
+          <div class="flex items-center justify-between gap-4 border-y border-default py-3">
             <div class="flex min-w-0 items-center gap-3">
               <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <UIcon name="i-lucide-calendar-check-2" class="size-4" />
@@ -471,10 +471,7 @@ function removeFile(id: string, index: number) {
             :error="planningProviderOptions.length ? undefined : false"
           >
             <div class="space-y-2">
-              <div
-                v-if="!planningProviderOptions.length"
-                class="space-y-3 rounded-lg border border-default bg-elevated p-3"
-              >
+              <div v-if="!planningProviderOptions.length" class="space-y-3 border-l border-default pl-4">
                 <p class="text-sm text-muted">{{ t('products.noEligibleAppointmentMembers') }}</p>
                 <UButton to="/admin/planning" size="sm" variant="soft" icon="i-lucide-users">{{
                   t('products.enableTeamScheduling')
@@ -690,7 +687,7 @@ function removeFile(id: string, index: number) {
           <div v-if="section === 'all' || section === 'files'" class="space-y-3">
             <UFormField name="fileIds">
               <div class="space-y-2">
-                <div v-for="id in editableFileIds" :key="id" class="space-y-3 rounded-lg border border-default p-3">
+                <div v-for="id in editableFileIds" :key="id" class="space-y-3 border-t border-default pt-3">
                   <div class="flex items-center gap-2">
                     <UIcon name="i-lucide-file" class="size-5 shrink-0 text-muted" />
                     <span class="min-w-0 flex-1 truncate text-sm text-muted">{{

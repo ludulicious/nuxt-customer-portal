@@ -6,6 +6,8 @@
  */
 
 :is(html, .portal-appearance-preview)[data-portal-theme='brutal'] {
+  --portal-surface: var(--color-paper);
+  --portal-surface-ink: var(--color-ink);
   --ui-primary: var(--color-accent);
   --ui-secondary: var(--color-secondary-600);
   --ui-success: var(--color-success-600);
@@ -188,7 +190,7 @@
   min-height: 2.75rem;
   border: var(--rule-hairline) solid var(--color-rule);
   border-radius: var(--radius-flat);
-  background: var(--color-paper);
+  background: var(--portal-surface);
   outline: 2px solid transparent;
   outline-offset: 1px;
   transition:
@@ -198,7 +200,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   :is(html, .portal-appearance-preview)[data-portal-theme='brutal'] .brutal-input:hover {
-    background: var(--color-paper-2);
+    background: var(--portal-surface-hover);
   }
 }
 
@@ -223,7 +225,7 @@
 :is(html, .portal-appearance-preview)[data-portal-theme='brutal'] .brutal-dashboard-panel {
   border: var(--rule-heavy) solid var(--color-rule);
   border-radius: var(--radius-flat);
-  background: var(--color-paper);
+  background: var(--portal-surface);
   box-shadow: none;
 }
 

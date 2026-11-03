@@ -141,7 +141,7 @@ html[data-portal-theme='apex'] .portal-header .portal-wordmark {
   --ui-text-inverted: #ffffff;
 
   /* Background colors - warmer, more vibrant with subtle gradients */
-  --ui-bg: #ffffff;
+  --ui-bg: #f8fafc;
   --ui-bg-muted: #f8fafc;
   --ui-bg-elevated: var(--ui-color-neutral-100);
   --ui-bg-accented: #f0f9ff;
@@ -154,7 +154,7 @@ html[data-portal-theme='apex'] .portal-header .portal-wordmark {
   --ui-border-inverted: var(--color-neutral-800);
 
   /* Special effects */
-  --ui-radius: 0.75rem;
+  --ui-radius: 0.25rem;
   --ui-container: var(--container-7xl);
   --ui-header-height: 4.5rem;
 

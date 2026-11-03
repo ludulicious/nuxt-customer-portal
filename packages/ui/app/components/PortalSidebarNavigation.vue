@@ -10,6 +10,7 @@ const { links } = useNavigationLinks(mobileOpen)
 const expanded = ref<string[]>([])
 const flyout = ref('')
 const panel = ref<HTMLElement[]>([])
+const mainMenuButtonUi = { base: 'hover:bg-primary/10 hover:text-primary active:bg-primary/10' }
 let returnFocus: HTMLElement | undefined
 let leaveTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -98,7 +99,6 @@ const badgeProps = (badge: (typeof moduleNavigationGroups.value)[number]['badge'
             collisionPadding: 12,
             onOpenAutoFocus: (event: Event) => event.preventDefault()
           }"
-          :ui="{ content: 'bg-default ring-1 ring-default shadow-lg' }"
           @update:open="flyout = $event ? module.id : ''"
         >
           <template #anchor>
@@ -109,6 +109,7 @@ const badgeProps = (badge: (typeof moduleNavigationGroups.value)[number]['badge'
               :aria-expanded="flyout === module.id"
               :color="module.id === activeModuleId ? 'primary' : 'neutral'"
               variant="ghost"
+              :ui="mainMenuButtonUi"
               class="min-h-11 w-full justify-center rounded-md"
               @click="enter(module.id, $event)"
               @pointerenter="show(module.id)"
@@ -142,6 +143,7 @@ const badgeProps = (badge: (typeof moduleNavigationGroups.value)[number]['badge'
             :icon="module.icon"
             :color="module.id === activeModuleId ? 'primary' : 'neutral'"
             variant="ghost"
+            :ui="mainMenuButtonUi"
             class="min-h-11 w-full justify-start rounded-md px-3"
             :aria-expanded="expanded.includes(module.id)"
             :aria-controls="`sidebar-module-${module.id}`"
@@ -173,6 +175,7 @@ const badgeProps = (badge: (typeof moduleNavigationGroups.value)[number]['badge'
           :aria-label="module.label"
           :color="module.id === activeModuleId ? 'primary' : 'neutral'"
           variant="ghost"
+          :ui="mainMenuButtonUi"
           class="min-h-11 w-full rounded-md px-3"
           :class="collapsed ? 'justify-center' : 'justify-start'"
           @click="emit('navigate')"
@@ -197,6 +200,7 @@ const badgeProps = (badge: (typeof moduleNavigationGroups.value)[number]['badge'
         :aria-label="item.label"
         :color="route.path === item.to ? 'primary' : 'neutral'"
         variant="ghost"
+        :ui="mainMenuButtonUi"
         class="min-h-11 w-full rounded-md px-3"
         :class="collapsed ? 'justify-center' : 'justify-start'"
         @click="emit('navigate')"

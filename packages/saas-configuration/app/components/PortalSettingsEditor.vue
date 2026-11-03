@@ -5,6 +5,19 @@ import { primaryForeground } from '../../shared/primary-contrast'
 
 const props = defineProps<{ onboarding?: boolean }>()
 const { t } = useI18n()
+const route = useRoute()
+const { contributionsFor } = usePortalFeatures()
+const settingsSections = contributionsFor('administration.portal-settings')
+const activeSettingsSection = computed(() =>
+  props.onboarding ? undefined : settingsSections.value.find((item) => item.id === route.query.settingsTab)
+)
+function selectStep(next: PortalOnboardingStep) {
+  step.value = next
+  if (route.query.settingsTab) {
+    const { settingsTab: _settingsTab, ...query } = route.query
+    void navigateTo({ path: route.path, query }, { replace: true })
+  }
+}
 const {
   data,
   status,
@@ -188,15 +201,34 @@ async function submitForm() {
                 :key="item"
                 type="button"
                 color="neutral"
-                :variant="step === item ? 'soft' : 'ghost'"
-                @click="step = item"
+                :variant="!activeSettingsSection && step === item ? 'soft' : 'ghost'"
+                @click="selectStep(item)"
               >
                 {{ stepLabels[item] }}
               </UButton>
+              <UButton
+                v-for="item in settingsSections"
+                :key="item.id"
+                :to="{ path: route.path, query: { ...route.query, settingsTab: item.id } }"
+                color="neutral"
+                :variant="activeSettingsSection?.id === item.id ? 'soft' : 'ghost'"
+              >
+                {{ t(item.labelKey || item.id) }}
+              </UButton>
             </nav>
-            <h2>{{ stepLabels[step] }}</h2>
+            <h2>
+              {{
+                activeSettingsSection ? t(activeSettingsSection.labelKey || activeSettingsSection.id) : stepLabels[step]
+              }}
+            </h2>
           </header>
+          <PortalSettingsContribution
+            v-if="activeSettingsSection"
+            :key="activeSettingsSection.id"
+            :component="activeSettingsSection.component"
+          />
           <UForm
+            v-else
             class="settings-form"
             :state="state"
             :schema="portalSettingsSchema"
