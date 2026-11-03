@@ -48,13 +48,29 @@ export const administrationFeature: PortalFeatureDefinition = {
         },
         {
           id: 'admin-email',
-          labelKey: 'admin.email.title',
+          labelKey: 'admin.email.textPage',
           icon: 'i-lucide-mail',
-          to: '/admin/email',
+          to: '/admin/email-texts',
           audiences: ['admin'],
           order: 40
         }
       ]
+    }
+  ],
+  surfaces: [
+    {
+      id: 'email-provider',
+      surface: 'administration.portal-settings',
+      component: 'AdminEmailProviderSettings',
+      labelKey: 'admin.email.providerPage',
+      order: 10
+    },
+    {
+      id: 'email-template',
+      surface: 'administration.portal-settings',
+      component: 'AdminEmailTemplateSettings',
+      labelKey: 'admin.email.templatePage',
+      order: 20
     }
   ],
   policy: { owner: [], admin: [], member: [] }

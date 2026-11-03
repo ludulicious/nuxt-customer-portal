@@ -91,8 +91,9 @@ export interface PortalClientIntegration {
 
 export interface PortalSurfaceContribution {
   id: string
-  surface: 'administration.organization.detail'
+  surface: 'administration.organization.detail' | 'administration.portal-settings'
   component: string
+  labelKey?: string
   order?: number
 }
 

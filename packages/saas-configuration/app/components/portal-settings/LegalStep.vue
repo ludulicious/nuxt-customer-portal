@@ -4,14 +4,23 @@ import type { PortalSettings } from '../../../shared/settings'
 const state = defineModel<PortalSettings>({ required: true })
 const locale = ref<'en' | 'nl'>('en')
 const { t } = useI18n()
+watch(
+  () => state.value.languages,
+  (languages) => {
+    if (!languages.includes(locale.value)) {
+      locale.value = languages[0] || 'en'
+    }
+  },
+  { immediate: true, deep: true }
+)
 const section = computed(() => state.value.content[locale.value])
 </script>
 
 <template>
   <div class="content-editor">
-    <div class="locale-tabs">
+    <div v-if="state.languages.length > 1" class="locale-tabs">
       <UButton
-        v-for="code in ['en', 'nl'] as const"
+        v-for="code in state.languages"
         :key="code"
         type="button"
         :variant="locale === code ? 'solid' : 'outline'"

@@ -230,7 +230,14 @@ onBeforeUnmount(() => editor.value?.destroy())
 </script>
 
 <template>
-  <div class="w-full rounded-md border overflow-hidden" :class="color === 'error' ? 'border-error' : 'border-default'">
+  <div
+    class="portal-markdown-editor portal-field-surface w-full rounded-lg border overflow-hidden focus-within:ring-2"
+    :class="
+      color === 'error'
+        ? 'border-error focus-within:ring-error'
+        : 'border-(--portal-control-border) focus-within:ring-primary'
+    "
+  >
     <div class="flex flex-wrap items-center gap-2 border-b border-default p-2">
       <UButton
         type="button"
@@ -269,7 +276,7 @@ onBeforeUnmount(() => editor.value?.destroy())
       :disabled="disabled"
       :placeholder="placeholder"
       class="w-full font-mono"
-      :ui="{ base: 'rounded-none ring-0' }"
+      :ui="{ base: 'rounded-none ring-0 bg-inherit text-inherit' }"
       @update:model-value="update(String($event))"
       @focus="emitFormFocus"
       @blur="emitFormBlur"

@@ -36,7 +36,8 @@
       "sections": "Email settings sections",
       "providerPage": "Email Provider",
       "templatePage": "Email Template",
-      "textPage": "Email Text",
+      "textPage": "Email Texts",
+      "textDescription": "Manage the subject and message text for portal emails in each language.",
       "messageNavigation": "Email kinds",
       "modules": {
         "appointments": "Appointments",

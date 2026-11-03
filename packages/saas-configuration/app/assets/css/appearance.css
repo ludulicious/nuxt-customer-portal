@@ -20,11 +20,11 @@ html:root[data-portal-surfaces='custom'] .portal-header {
   color: var(--portal-surface-ink, var(--ui-text));
 }
 :is(html, .portal-appearance-preview)[data-portal-shape='soft'] :is(button.bg-primary, a.bg-primary) {
-  border-radius: 999px;
+  border-radius: var(--portal-control-radius);
 }
 :is(html, .portal-appearance-preview)[data-portal-shape='soft'] .portal-appearance-card {
-  border-radius: 0.75rem;
-  box-shadow: 0 0.75rem 2rem -1.25rem color-mix(in srgb, var(--ui-primary) 25%, transparent);
+  border-radius: var(--portal-panel-radius);
+  box-shadow: none;
 }
 html[data-portal-theme] :where(button.bg-primary, a.bg-primary),
 .portal-appearance-preview :where(button.bg-primary, a.bg-primary) {
@@ -47,7 +47,7 @@ html[data-portal-theme] :where(button.bg-primary, a.bg-primary),
   --ui-text-muted: #475569;
   --ui-border: #e2e8f0;
   --ui-secondary: #2563eb;
-  --ui-radius: 0.75rem;
+  --ui-radius: 0.25rem;
 }
 .portal-appearance-preview.dark {
   --portal-surface: #1e293b;
@@ -68,7 +68,7 @@ html:root[data-portal-surfaces='custom'] .portal-appearance-card {
 }
 
 .portal-appearance-preview[data-portal-theme='brutal'] {
-  --portal-surface: var(--color-paper-2);
+  --portal-surface: var(--color-paper);
   --portal-surface-ink: var(--color-ink);
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-await navigateTo('/admin/email/provider', { replace: true })
+await navigateTo('/admin/portal-settings?settingsTab=email-provider', { replace: true })
 </script>
 
 <template>

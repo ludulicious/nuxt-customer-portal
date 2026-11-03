@@ -132,7 +132,7 @@ export function appearanceVariables(input: PortalAppearance, dark: boolean): Rec
     vars['--portal-heading-font'] = portalFonts[appearance.headingFont]
   }
   if (appearance.shape === 'soft') {
-    vars['--ui-radius'] = '0.75rem'
+    vars['--ui-radius'] = '0.25rem'
   }
   return vars
 }

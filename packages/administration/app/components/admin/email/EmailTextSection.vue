@@ -12,6 +12,7 @@ const props = defineProps<{ settings: PortalEmailSettings }>()
 const { t } = useI18n()
 const toast = useToast()
 const { enabledFeatures } = usePortalFeatures()
+const portalSettings = useState<{ languages?: PortalEmailLocale[] } | null>('portal-runtime-settings', () => null)
 const catalog = computed<Array<{ moduleId: string; definition: PortalEmailDefinition }>>(() =>
   enabledFeatures.value.flatMap((feature) =>
     (feature.emails ?? []).map((definition) => ({ moduleId: feature.id, definition }))
@@ -64,10 +65,21 @@ const messageGroups = computed(() => {
     }))
     .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
 })
-const locales = [
-  { label: 'English', value: 'en' as const },
-  { label: 'Nederlands', value: 'nl' as const }
-]
+const locales = computed(() =>
+  [
+    { label: 'English', value: 'en' as const },
+    { label: 'Nederlands', value: 'nl' as const }
+  ].filter((locale) => !portalSettings.value?.languages || portalSettings.value.languages.includes(locale.value))
+)
+watch(
+  locales,
+  (available) => {
+    if (!available.some((locale) => locale.value === selectedLocale.value)) {
+      selectedLocale.value = available[0]?.value || 'en'
+    }
+  },
+  { immediate: true }
+)
 const schema = z
   .object({
     subject: z.string().trim().min(1, t('admin.email.validation.subject')).max(500),
@@ -193,9 +205,6 @@ const sendTest = async () => {
 <template>
   <UForm v-if="selectedItem" novalidate :schema="schema" :state="selectedText" class="space-y-6" @submit="save">
     <UCard>
-      <template #header
-        ><h2 class="font-semibold">{{ t('admin.email.texts') }}</h2></template
-      >
       <div class="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <nav class="space-y-5" :aria-label="t('admin.email.messageNavigation')">
           <section v-for="group in messageGroups" :key="group.moduleId" class="space-y-1">
@@ -218,7 +227,12 @@ const sendTest = async () => {
         </nav>
         <div class="space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex gap-2" role="group" :aria-label="t('admin.email.languageNavigation')">
+            <div
+              v-if="locales.length > 1"
+              class="flex gap-2"
+              role="group"
+              :aria-label="t('admin.email.languageNavigation')"
+            >
               <UButton
                 v-for="locale in locales"
                 :key="locale.value"
@@ -236,6 +250,7 @@ const sendTest = async () => {
               icon="i-lucide-rotate-ccw"
               :disabled="!hasOverride"
               :loading="busy"
+              class="ml-auto"
               @click="reset"
             >
               {{ t('admin.email.resetText') }}
