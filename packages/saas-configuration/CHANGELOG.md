@@ -1,5 +1,19 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.10.2
+
+### Patch Changes
+
+- c2985a7: Restrict legal page language selection to enabled portal languages and hide the selector for single-language portals. Use the configured surface and text colors for legal title inputs and Markdown editors, including source mode.
+- c2985a7: Move email provider and template configuration into Portal Settings tabs and give Email Texts a standalone administration page. Redirect existing email administration URLs to their new locations.
+- c2985a7: Centralize portal surface styling so cards, inputs, rich-text editors, dialogs, and menus use the configured surface in both light and dark mode. Use Nuxt UI theme overrides and Tailwind rounding utilities while preserving native size variants and input padding. Keep neutral outline actions transparent and preserve branded selection states and the Brutal theme. Remove page-specific input background overrides and simplify nested Products form sections.
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+  - @nuxt-customer-portal/ui@0.10.2
+  - @nuxt-customer-portal/core@0.10.2
+
 ## 0.10.1
 
 ### Patch Changes

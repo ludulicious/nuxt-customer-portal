@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.2
+
+### Patch Changes
+
+- a12ae89: Allow live bookings and rescheduling while Zoom authorization is missing or expired, using the existing pending-link and later notification flow. Preserve required Google Calendar access and conflict checks.
+- a12ae89: Speed up booking availability generation for large calendars, run independent provider checks concurrently, and reuse recently visited months in the slot picker without caching booking-time conflict checks.
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+  - @nuxt-customer-portal/ui@0.10.2
+  - @nuxt-customer-portal/core@0.10.2
+  - @nuxt-customer-portal/products@0.10.2
+
 ## 0.10.1
 
 ### Patch Changes

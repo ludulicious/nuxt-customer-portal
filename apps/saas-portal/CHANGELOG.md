@@ -1,5 +1,25 @@
 # @nuxt-customer-portal/saas-portal
 
+## 0.10.2
+
+### Patch Changes
+
+- Updated dependencies [a12ae89]
+- Updated dependencies [a12ae89]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+- Updated dependencies [c2985a7]
+  - @nuxt-customer-portal/planning@0.10.2
+  - @nuxt-customer-portal/saas-configuration@0.10.2
+  - @nuxt-customer-portal/products@0.10.2
+  - @nuxt-customer-portal/invoice-products@0.10.2
+  - @nuxt-customer-portal/invoice-timesheets@0.10.2
+  - @nuxt-customer-portal/invoices@0.10.2
+  - @nuxt-customer-portal/kit@0.10.2
+  - @nuxt-customer-portal/preset@0.10.2
+  - @nuxt-customer-portal/service-requests@0.10.2
+  - @nuxt-customer-portal/timesheets@0.10.2
+
 ## 0.10.1
 
 ### Patch Changes
