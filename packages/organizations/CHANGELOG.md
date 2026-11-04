@@ -1,5 +1,13 @@
 # @nuxt-customer-portal/organizations
 
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [b604141]
+  - @nuxt-customer-portal/core@0.11.0
+  - @nuxt-customer-portal/ui@0.11.0
+
 ## 0.10.3
 
 ### Patch Changes
