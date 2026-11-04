@@ -14,10 +14,22 @@ test('timezone selector appears beside month navigation above the booking calend
   assert.match(header, /planning\.nextMonth/)
   assert.match(header, /planning\.timezone/)
   assert.match(header, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
-  assert.equal((picker.match(/<PlanningTimezoneSelect/g) || []).length, 1)
+  assert.equal((picker.match(/<PlanningTimezoneSelect/g) || []).length, 2)
   assert.doesNotMatch(picker, /grid-column: 2/)
 })
 
 test('lower selector area is omitted when no team-member choice is needed', () => {
   assert.match(picker, /<div v-if="availableProviders.length > 1" class="booking-selectors">/)
+})
+
+test('time selection exposes the same timezone model and clears a previously selected time on change', () => {
+  const timeHeaderStart = picker.indexOf('<div class="mobile-times-heading">')
+  const timeSlotsStart = picker.indexOf('<div class="slot-grid')
+  const timeHeader = picker.slice(timeHeaderStart, timeSlotsStart)
+  assert.match(timeHeader, /planning\.timezone/)
+  assert.match(timeHeader, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
+  assert.match(
+    picker,
+    /watch\(\[timezone, provider, \(\) => props.currency\], \(\) => \{\s*selectedSlot.value = undefined/
+  )
 })

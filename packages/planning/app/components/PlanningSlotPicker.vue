@@ -286,6 +286,9 @@ if (import.meta.client) {
                 )
               }}
             </h3>
+            <UFormField class="border-label-field mt-2 w-56 max-w-full" :label="t('planning.timezone')"
+              ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
+            /></UFormField>
           </div>
           <p v-if="selectedDate && !loading && !daySlots.length" role="status">{{ t('planning.noAvailability') }}</p>
           <p v-if="daySlots.length" class="text-sm text-muted">
