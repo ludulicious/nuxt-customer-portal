@@ -10,7 +10,7 @@ import type { ProductOffer } from '../shared/types'
 const card = readFileSync(new URL('../app/components/ProductsOffersCard.vue', import.meta.url), 'utf8')
 const script = card.match(/<script setup lang="ts">([\s\S]*?)<\/script>/)![1]!
 const parsed = ts.createSourceFile('offers.ts', script, ts.ScriptTarget.Latest, true)
-const declarations = ['showArchived', 'visibleOffers', 'busy', 'error']
+const declarations = ['showArchived', 'hasArchivedOffers', 'visibleOffers', 'busy', 'error']
 const source = ts.transpileModule(
   parsed.statements
     .filter(
@@ -22,7 +22,7 @@ const source = ts.transpileModule(
         (ts.isFunctionDeclaration(statement) && statement.name?.text === 'archive')
     )
     .map((statement) => statement.getText(parsed))
-    .join('\n') + '\nexport { showArchived, visibleOffers, busy, error, archive }',
+    .join('\n') + '\nexport { showArchived, hasArchivedOffers, visibleOffers, busy, error, archive }',
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
 ).outputText
 
@@ -44,6 +44,7 @@ function harness(fail = false) {
   const events: string[] = []
   const exports = {} as {
     showArchived: Ref<boolean>
+    hasArchivedOffers: Ref<boolean>
     visibleOffers: Ref<ProductOffer[]>
     busy: Ref<boolean>
     error: Ref<string>
@@ -113,15 +114,31 @@ test('archive failures keep the list intact and show a localized error', async (
   assert.equal(state.props.product.offers[0]!.archived, false)
 })
 
+test('archive link is available only when archived offers exist', () => {
+  const state = harness()
+  assert.equal(state.hasArchivedOffers.value, true)
+  state.props.product.offers[1]!.archived = false
+  assert.equal(state.hasArchivedOffers.value, false)
+  state.props.product.offers = []
+  assert.equal(state.hasArchivedOffers.value, false)
+})
+
+test('empty offers use an icon with a conditional archive link below the list instead of a checkbox', () => {
+  assert.match(card, /<UEmpty\s+v-if="!visibleOffers.length && !editing"\s+icon="i-lucide-tag"/)
+  assert.match(card, /v-if="hasArchivedOffers && !editing"/)
+  assert.match(card, /variant="link"[\s\S]*?:aria-expanded="showArchived"[\s\S]*?@click="showArchived = !showArchived"/)
+  assert.ok(card.indexOf('v-if="hasArchivedOffers && !editing"') > card.indexOf('</ul>'))
+  assert.doesNotMatch(card, /<UCheckbox|products\.offers\.archiveHelp/)
+})
+
 test('archive controls retain ended status, disable busy actions and have English and Dutch labels', () => {
-  assert.match(card, /v-model="showArchived"/)
   assert.match(card, /v-for="offer in visibleOffers"/)
   assert.match(card, /offer.archived \|\| canArchiveOffer\(offer, new Date\(now\)\)/)
   assert.match(card, /:disabled="disabled \|\| busy"\s+@click="archive\(offer\)"/)
   assert.match(card, /products\.offers\.\$\{status\(offer\)\}/)
   for (const locale of ['en', 'nl']) {
     const { products } = JSON.parse(readFileSync(new URL(`../i18n/locales/${locale}.json`, import.meta.url), 'utf8'))
-    for (const key of ['archive', 'restore', 'archived', 'showArchived', 'archiveHelp', 'archiveFailed']) {
+    for (const key of ['archive', 'restore', 'archived', 'showArchived', 'hideArchived', 'archiveFailed']) {
       assert.ok(products.offers[key]?.length, `${locale}: ${key}`)
     }
   }

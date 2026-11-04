@@ -13,6 +13,7 @@ const selectedId = ref<string>()
 const busy = ref(false)
 const error = ref('')
 const showArchived = ref(false)
+const hasArchivedOffers = computed(() => (props.product.offers || []).some((offer) => offer.archived))
 const visibleOffers = computed(() =>
   (props.product.offers || []).filter((offer) => showArchived.value || !offer.archived)
 )
@@ -216,9 +217,12 @@ async function archive(offer: ProductOffer) {
         }}</UButton>
       </div>
     </UForm>
-    <UCheckbox v-model="showArchived" :label="t('products.offers.showArchived')" class="mb-4" />
-    <p class="mb-4 text-sm text-muted">{{ t('products.offers.archiveHelp') }}</p>
-    <p v-if="!visibleOffers.length && !editing" class="text-sm text-muted">{{ t('products.offers.empty') }}</p>
+    <UEmpty
+      v-if="!visibleOffers.length && !editing"
+      icon="i-lucide-tag"
+      :title="t('products.offers.empty')"
+      variant="outline"
+    />
     <ul class="divide-y divide-default">
       <li v-for="offer in visibleOffers" :key="offer.id" class="space-y-2 py-4 first:pt-0 last:pb-0">
         <div class="flex flex-wrap gap-2">
@@ -249,5 +253,10 @@ async function archive(offer: ProductOffer) {
         >
       </li>
     </ul>
+    <div v-if="hasArchivedOffers && !editing" class="mt-4 flex justify-center">
+      <UButton type="button" variant="link" :aria-expanded="showArchived" @click="showArchived = !showArchived">{{
+        t(showArchived ? 'products.offers.hideArchived' : 'products.offers.showArchived')
+      }}</UButton>
+    </div>
   </UCard>
 </template>

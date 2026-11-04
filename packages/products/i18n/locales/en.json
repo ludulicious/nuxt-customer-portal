@@ -623,7 +623,7 @@
       "restore": "Restore offer",
       "archived": "Archived",
       "showArchived": "Show archived offers",
-      "archiveHelp": "Archive ended or cancelled offers to hide them from this list. Restoring an offer does not reactivate it or change past purchases.",
+      "hideArchived": "Hide archived offers",
       "archiveFailed": "Could not update the offer archive. Refresh and try again.",
       "invalidTime": "Choose a valid, unambiguous local date and time.",
       "invalidEnd": "End must be in the future and after start.",

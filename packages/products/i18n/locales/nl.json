@@ -623,7 +623,7 @@
       "restore": "Aanbieding terugzetten",
       "archived": "Gearchiveerd",
       "showArchived": "Gearchiveerde aanbiedingen tonen",
-      "archiveHelp": "Archiveer afgelopen of geannuleerde aanbiedingen om ze uit deze lijst te verbergen. Terugzetten activeert de aanbieding niet opnieuw en wijzigt eerdere aankopen niet.",
+      "hideArchived": "Gearchiveerde aanbiedingen verbergen",
       "archiveFailed": "Het archief kon niet worden bijgewerkt. Vernieuw de pagina en probeer het opnieuw.",
       "invalidTime": "Kies een geldige, eenduidige lokale datum en tijd.",
       "invalidEnd": "Het einde moet in de toekomst en na het begin liggen.",
