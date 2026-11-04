@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
+import { canCreditInvoice } from '@nuxt-customer-portal/invoices/shared/invoice-copy'
+import { invoiceLogoCandidates } from '@nuxt-customer-portal/invoices/shared/invoice-logo'
 import { z } from 'zod'
 import type {
   ClientInvoiceDto,
@@ -26,21 +28,11 @@ const { t, locale } = useI18n()
 const countryName = (country: string | null) =>
   country ? new Intl.DisplayNames(locale.value, { type: 'region' }).of(country) || country : ''
 const portalRuntimeSettings = useState<{
-  branding?: { portalName?: string; markLight?: string; markDark?: string }
+  branding?: { logoLight?: string }
 } | null>('portal-runtime-settings', () => null)
-const colorMode = useColorMode()
-const senderLogo = computed(() => {
-  if (props.invoice.senderLogo) {
-    return props.invoice.senderLogo
-  }
-  const branding = portalRuntimeSettings.value?.branding
-  if (branding?.portalName?.trim().toLowerCase() !== props.invoice.senderName.trim().toLowerCase()) {
-    return ''
-  }
-  return colorMode.value === 'dark'
-    ? branding?.markDark || branding?.markLight || ''
-    : branding?.markLight || branding?.markDark || ''
-})
+const senderLogo = computed(
+  () => invoiceLogoCandidates(portalRuntimeSettings.value?.branding?.logoLight, props.invoice.senderLogo)[0] || ''
+)
 const deferredInvoice = computed(() => 'agreedTotalMinor' in props.invoice && props.invoice.agreedTotalMinor !== null)
 const taxReview = reactive({
   rates: props.invoice.lines.map((line) => ({ lineId: line.id, rate: line.vatRateBasisPoints / 100 }))
@@ -254,9 +246,70 @@ const saveEdit = async () => {
   )
   editOpen.value = false
 }
+const creditConfirmationOpen = ref(false)
+const deleteConfirmationOpen = ref(false)
+const recipientRefreshOpen = ref(false)
+const deleteDraft = async () => {
+  if (busy.value) {
+    return
+  }
+  busy.value = true
+  try {
+    await api.deleteInvoice(props.invoice.id)
+    await navigateTo(props.backTo || '/admin/invoices')
+    toast.add({ title: t('features.invoices.admin.invoiceDeleted'), color: 'success' })
+  } catch (error) {
+    toast.add({
+      title: t('features.invoices.messages.saveError'),
+      description: (error as { data?: { message?: string } }).data?.message || String(error),
+      color: 'error'
+    })
+  } finally {
+    busy.value = false
+  }
+}
+const createCopy = async (credit: boolean) => {
+  if (busy.value) {
+    return
+  }
+  busy.value = true
+  try {
+    const created = credit ? await api.creditInvoice(props.invoice.id) : await api.duplicateInvoice(props.invoice.id)
+    creditConfirmationOpen.value = false
+    await navigateTo(`/admin/invoices/${created.id}`)
+    toast.add({
+      title: t(credit ? 'features.invoices.admin.creditCreated' : 'features.invoices.admin.invoiceDuplicated'),
+      color: 'success'
+    })
+  } catch (error) {
+    toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
+  } finally {
+    busy.value = false
+  }
+}
 const menuItems = computed(() => {
+  const items = []
+  if (props.invoice.documentType !== 'credit') {
+    items.push({
+      label: t('features.invoices.admin.duplicateInvoice'),
+      icon: 'i-lucide-copy',
+      disabled: busy.value,
+      onSelect: () => createCopy(false)
+    })
+  }
+  if (canCreditInvoice(props.invoice)) {
+    items.push({
+      label: t('features.invoices.admin.creditInvoice'),
+      icon: 'i-lucide-receipt-text',
+      disabled: busy.value,
+      onSelect: () => {
+        creditConfirmationOpen.value = true
+      }
+    })
+  }
   if (props.invoice.status === 'VOID') {
     return [
+      ...items,
       {
         label: t('features.invoices.admin.unvoid'),
         icon: 'i-lucide-rotate-ccw',
@@ -265,9 +318,17 @@ const menuItems = computed(() => {
     ]
   }
 
-  const items = []
   if (props.invoice.status === 'DRAFT') {
     items.push({ label: t('features.invoices.admin.editInvoice'), icon: 'i-lucide-pencil', onSelect: openEdit })
+    items.push({
+      label: t('features.invoices.admin.deleteDraftInvoice'),
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      disabled: busy.value,
+      onSelect: () => {
+        deleteConfirmationOpen.value = true
+      }
+    })
   }
   items.push({
     label: t('features.invoices.admin.void'),
@@ -359,7 +420,7 @@ const mobileMenuItems = computed(() => {
       onSelect: () => openEmail('resend')
     })
   }
-  if (!isClient.value && props.invoice.status === 'ISSUED') {
+  if (!isClient.value && props.invoice.status === 'ISSUED' && props.invoice.outstandingMinor > 0) {
     items.push({
       label: t('features.invoices.admin.registerPayment'),
       icon: 'i-lucide-circle-dollar-sign',
@@ -500,7 +561,7 @@ if (!isClient.value) {
           {{ t('features.invoices.admin.resendInvoice') }}
         </UButton>
         <UButton
-          v-if="!isClient && invoice.status === 'ISSUED'"
+          v-if="!isClient && invoice.status === 'ISSUED' && invoice.outstandingMinor > 0"
           class="invoice-actions-wide"
           color="success"
           variant="outline"
@@ -691,7 +752,19 @@ if (!isClient.value) {
       </div>
       <div class="invoice-parties">
         <section>
-          <p class="invoice-label">{{ t('features.invoices.admin.recipient') }}</p>
+          <div class="flex items-center gap-2">
+            <p class="invoice-label">{{ t('features.invoices.admin.recipient') }}</p>
+            <UButton
+              v-if="!isClient && invoice.status === 'DRAFT' && invoice.clientOrganizationId"
+              icon="i-lucide-refresh-cw"
+              size="xs"
+              variant="link"
+              class="print:hidden"
+              :disabled="busy"
+              @click="recipientRefreshOpen = true"
+              >{{ t('features.invoices.admin.refreshRecipient') }}</UButton
+            >
+          </div>
           <p class="font-semibold">{{ invoice.recipientName }}</p>
           <address class="not-italic text-sm">
             <span v-for="(line, index) in addressLines(invoice.recipientAddress)" :key="index" class="block">{{
@@ -882,6 +955,31 @@ if (!isClient.value) {
         </div>
       </div>
     </section>
+    <InvoicesRecipientRefreshModal
+      v-if="!isClient && recipientRefreshOpen"
+      v-model:open="recipientRefreshOpen"
+      :invoice-id="invoice.id"
+      @saved="refresh"
+    />
+    <ConfirmationModal
+      v-if="!isClient && deleteConfirmationOpen"
+      v-model:open="deleteConfirmationOpen"
+      :title="t('features.invoices.admin.deleteDraftInvoice')"
+      :message="t('features.invoices.admin.deleteDraftInvoiceDescription', { number: invoice.number })"
+      :confirm-text="t('features.invoices.admin.deleteDraftInvoice')"
+      :cancel-text="t('features.invoices.cancel')"
+      confirm-color="error"
+      @confirm="deleteDraft"
+    />
+    <ConfirmationModal
+      v-if="!isClient && creditConfirmationOpen"
+      v-model:open="creditConfirmationOpen"
+      :title="t('features.invoices.admin.creditInvoice')"
+      :message="t('features.invoices.admin.creditInvoiceDescription', { number: invoice.number })"
+      :confirm-text="t('features.invoices.admin.creditInvoice')"
+      :cancel-text="t('features.invoices.cancel')"
+      @confirm="createCopy(true)"
+    />
     <ConfirmationModal
       v-if="!isClient && attachmentDeleteOpen"
       v-model:open="attachmentDeleteOpen"

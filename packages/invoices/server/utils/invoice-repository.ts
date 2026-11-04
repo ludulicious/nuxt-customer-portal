@@ -1,5 +1,7 @@
 import { invoiceRecipientEmail } from '../../shared/recipient-email'
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { suggestedInvoiceContact } from '../../shared/invoice-recipient'
+import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm'
+import { canCreditInvoice, copiedInvoiceDates, copyInvoiceLines, invoiceLineAmount } from '../../shared/invoice-copy'
 import { nanoid } from 'nanoid'
 import {
   db,
@@ -18,6 +20,7 @@ import type { InvoiceCreateInput } from './invoice-validation'
 import type {
   InvoiceDto,
   InvoiceSettingsDto,
+  InvoiceRecipientPreviewDto,
   InvoiceClientAccessOverviewDto
 } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 import {
@@ -481,12 +484,9 @@ const totals = (
   }>,
   payments: Array<{ amountMinor: number }>
 ) => {
-  const subtotalMinor = lines.reduce(
-    (sum, line) => sum + Math.round((line.quantityMilli * line.unitPriceMinor) / 1000),
-    0
-  )
+  const subtotalMinor = lines.reduce((sum, line) => sum + invoiceLineAmount(line.quantityMilli, line.unitPriceMinor), 0)
   const vatMinor = lines.reduce((sum, line) => {
-    const amount = Math.round((line.quantityMilli * line.unitPriceMinor) / 1000)
+    const amount = invoiceLineAmount(line.quantityMilli, line.unitPriceMinor)
     return sum + (line.exactTaxMinor ?? Math.round((amount * line.vatRateBasisPoints) / 10_000))
   }, 0)
   const totalMinor = subtotalMinor + vatMinor
@@ -537,7 +537,7 @@ export const listInvoices = async (organizationId: string, invoiceId?: string): 
       issuedAt: row.issuedAt?.toISOString() ?? null,
       lines: selectedLines.map((line) => ({
         ...line,
-        amountMinor: Math.round((line.quantityMilli * line.unitPriceMinor) / 1000)
+        amountMinor: invoiceLineAmount(line.quantityMilli, line.unitPriceMinor)
       })),
       payments: selectedPayments.map(({ id, paidOn, amountMinor, reference, note }) => ({
         id,
@@ -562,7 +562,7 @@ export const getInvoice = async (organizationId: string, id: string): Promise<In
   if (!selected) {
     throw createError({ statusCode: 404, message: 'Invoice not found' })
   }
-  const [histories, attachments, deliveries] = await Promise.all([
+  const [histories, attachments, deliveries, providers] = await Promise.all([
     db
       .select({ history: invoiceHistory, actorName: user.name })
       .from(invoiceHistory)
@@ -580,10 +580,12 @@ export const getInvoice = async (organizationId: string, id: string): Promise<In
       .from(invoiceEmailDelivery)
       .innerJoin(user, eq(user.id, invoiceEmailDelivery.actorUserId))
       .where(eq(invoiceEmailDelivery.invoiceId, id))
-      .orderBy(desc(invoiceEmailDelivery.createdAt))
+      .orderBy(desc(invoiceEmailDelivery.createdAt)),
+    db.select({ logo: organization.logo }).from(organization).where(eq(organization.id, organizationId)).limit(1)
   ])
   return {
     ...selected,
+    senderLogo: providers[0] ? providers[0].logo : selected.senderLogo,
     history: histories.map(({ history, actorName }) => ({
       ...history,
       actorName,
@@ -717,6 +719,103 @@ export const createInvoice = async (organizationId: string, actorUserId: string,
   return db.transaction((tx) => createInvoiceInTransaction(tx, organizationId, actorUserId, input))
 }
 
+export const copyInvoice = async (organizationId: string, actorUserId: string, sourceId: string, credit: boolean) => {
+  await requireInvoicesEnabled(organizationId)
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`invoice-number:${organizationId}`}))`)
+    const [source] = await tx
+      .select()
+      .from(invoice)
+      .where(and(eq(invoice.id, sourceId), eq(invoice.organizationId, organizationId)))
+      .for('update')
+    if (!source) {
+      throw createError({ statusCode: 404, message: 'Invoice not found' })
+    }
+    if (source.documentType === 'credit') {
+      throw createError({ statusCode: 409, message: 'Credit notes cannot be duplicated or credited' })
+    }
+    const lines = await tx
+      .select()
+      .from(invoiceLine)
+      .where(eq(invoiceLine.invoiceId, sourceId))
+      .orderBy(asc(invoiceLine.position))
+    if (credit) {
+      if (!canCreditInvoice({ ...source, totalMinor: totals(lines, []).totalMinor }) || source.taxReviewRequired) {
+        throw createError({
+          statusCode: 409,
+          message: 'Only issued or paid invoices with a positive total can be credited'
+        })
+      }
+      const [existingCredit] = await tx
+        .select({ id: invoice.id })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.organizationId, organizationId),
+            eq(invoice.originalInvoiceId, sourceId),
+            ne(invoice.status, 'VOID')
+          )
+        )
+        .limit(1)
+      if (existingCredit) {
+        throw createError({ statusCode: 409, message: 'This invoice already has a credit note' })
+      }
+    }
+    const existing = await tx
+      .select({ number: invoice.number })
+      .from(invoice)
+      .where(eq(invoice.organizationId, organizationId))
+      .orderBy(desc(invoice.createdAt), desc(invoice.id))
+    const used = new Set(existing.map((item) => item.number))
+    const latest = existing.find((item) => hasNumericInvoiceSequence(item.number))
+    let number = latest ? incrementInvoiceNumber(latest.number) : firstInvoiceNumber()
+    while (used.has(number)) {
+      number = incrementInvoiceNumber(number)
+    }
+    const id = nanoid()
+    await tx.insert(invoice).values({
+      id,
+      organizationId,
+      createdById: actorUserId,
+      clientOrganizationId: source.clientOrganizationId,
+      number,
+      documentType: credit ? 'credit' : 'invoice',
+      originalInvoiceId: credit ? sourceId : null,
+      currency: source.currency,
+      ...copiedInvoiceDates(source),
+      subject: source.subject,
+      notes: credit
+        ? `${source.recipientLocale === 'nl' ? 'Credit op factuur' : 'Credit against invoice'} ${source.number}`
+        : source.notes,
+      senderName: source.senderName,
+      senderLogo: source.senderLogo,
+      senderAddress: source.senderAddress,
+      senderCountry: source.senderCountry,
+      senderRegistration: source.senderRegistration,
+      senderVatNumber: source.senderVatNumber,
+      senderIban: source.senderIban,
+      senderBic: source.senderBic,
+      recipientName: source.recipientName,
+      recipientAddress: source.recipientAddress,
+      recipientContactName: source.recipientContactName,
+      recipientEmail: source.recipientEmail,
+      recipientLocale: source.recipientLocale,
+      agreedTotalMinor: credit ? null : source.agreedTotalMinor,
+      taxReviewRequired: credit ? false : source.taxReviewRequired
+    })
+    for (const line of copyInvoiceLines(lines, credit)) {
+      await tx.insert(invoiceLine).values({ ...line, id: nanoid(), invoiceId: id })
+    }
+    await tx.insert(invoiceHistory).values({
+      id: nanoid(),
+      invoiceId: id,
+      action: 'CREATED',
+      actorUserId
+    })
+    return { id }
+  })
+}
+
 export const changeInvoiceStatus = async (
   organizationId: string,
   actorUserId: string,
@@ -724,6 +823,7 @@ export const changeInvoiceStatus = async (
   action: 'VOID' | 'UNVOID'
 ) =>
   db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`invoice-number:${organizationId}`}))`)
     const [current] = await tx
       .select()
       .from(invoice)
@@ -737,6 +837,23 @@ export const changeInvoiceStatus = async (
     }
     if (action === 'UNVOID' && current.status !== 'VOID') {
       throw createError({ statusCode: 409, message: 'Only voided invoices can be unvoided' })
+    }
+    if (action === 'UNVOID' && current.documentType === 'credit' && current.originalInvoiceId) {
+      const [existingCredit] = await tx
+        .select({ id: invoice.id })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.organizationId, organizationId),
+            eq(invoice.originalInvoiceId, current.originalInvoiceId),
+            ne(invoice.id, id),
+            ne(invoice.status, 'VOID')
+          )
+        )
+        .limit(1)
+      if (existingCredit) {
+        throw createError({ statusCode: 409, message: 'This invoice already has a credit note' })
+      }
     }
     const status = action === 'VOID' ? 'VOID' : current.issuedAt ? 'ISSUED' : 'DRAFT'
     const [updated] = await tx.update(invoice).set({ status }).where(eq(invoice.id, id)).returning()
@@ -767,6 +884,138 @@ export const updateInvoice = async (
     await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
     return updated!
   })
+const loadDraftInvoiceRecipient = async (
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  organizationId: string,
+  id: string
+) => {
+  const [current] = await tx
+    .select()
+    .from(invoice)
+    .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId)))
+    .for('update')
+  if (!current) {
+    throw createError({ statusCode: 404, message: 'Invoice not found' })
+  }
+  if (current.status !== 'DRAFT') {
+    throw createError({ statusCode: 409, message: 'Only draft invoice recipient details can be refreshed' })
+  }
+  if (!current.clientOrganizationId) {
+    throw createError({ statusCode: 409, message: 'This invoice is not linked to a client' })
+  }
+  const client = await requireInvoiceClient(current.clientOrganizationId)
+  const contacts =
+    client.clientType === 'person'
+      ? []
+      : await tx
+          .select()
+          .from(billingContact)
+          .where(eq(billingContact.organizationId, current.clientOrganizationId))
+          .orderBy(asc(billingContact.name))
+  return { current, client, contacts }
+}
+
+export const getDraftInvoiceRecipient = async (
+  organizationId: string,
+  id: string
+): Promise<InvoiceRecipientPreviewDto> => {
+  await requireInvoicesEnabled(organizationId)
+  return db.transaction(async (tx) => {
+    const { current, client, contacts } = await loadDraftInvoiceRecipient(tx, organizationId, id)
+    return {
+      clientType: client.clientType,
+      recipientName: client.officialName || client.name,
+      recipientAddress: client.address,
+      recipientEmail: client.clientType === 'person' ? client.invoiceEmail : null,
+      suggestedContactId: suggestedInvoiceContact(current, contacts),
+      contacts: contacts.map(({ id, name, email }) => ({ id, name, email }))
+    }
+  })
+}
+
+export const refreshDraftInvoiceRecipient = async (
+  organizationId: string,
+  actorUserId: string,
+  id: string,
+  contactId: string | null
+) => {
+  await requireInvoicesEnabled(organizationId)
+  return db.transaction(async (tx) => {
+    const { client, contacts } = await loadDraftInvoiceRecipient(tx, organizationId, id)
+    const contact = contactId ? contacts.find((item) => item.id === contactId) : undefined
+    if (contactId && !contact) {
+      throw createError({ statusCode: 400, message: 'Contact does not belong to this client' })
+    }
+    await tx
+      .update(invoice)
+      .set({
+        recipientName: client.officialName || client.name,
+        recipientAddress: client.address,
+        recipientContactName: contact?.name ?? null,
+        recipientEmail: invoiceRecipientEmail(client, contact),
+        recipientLocale: client.preferredLocale,
+        updatedAt: new Date()
+      })
+      .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId), eq(invoice.status, 'DRAFT')))
+    await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
+    return { id }
+  })
+}
+
+export const deleteDraftInvoice = async (organizationId: string, id: string) => {
+  await requireInvoicesEnabled(organizationId)
+  try {
+    return await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`invoice-number:${organizationId}`}))`)
+      const [current] = await tx
+        .select()
+        .from(invoice)
+        .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId)))
+        .for('update')
+      if (!current) {
+        throw createError({ statusCode: 404, message: 'Invoice not found' })
+      }
+      if (current.status !== 'DRAFT' || current.issuedAt) {
+        throw createError({ statusCode: 409, message: 'Only unissued draft invoices can be deleted' })
+      }
+      if (current.automated || current.externalReference) {
+        throw createError({ statusCode: 409, message: 'Externally managed invoices cannot be deleted' })
+      }
+      const [payment] = await tx
+        .select({ id: invoicePayment.id })
+        .from(invoicePayment)
+        .where(eq(invoicePayment.invoiceId, id))
+        .limit(1)
+      const [delivery] = await tx
+        .select({ id: invoiceEmailDelivery.id })
+        .from(invoiceEmailDelivery)
+        .where(and(eq(invoiceEmailDelivery.invoiceId, id), inArray(invoiceEmailDelivery.status, ['PENDING', 'SENT'])))
+        .limit(1)
+      const [credit] = await tx
+        .select({ id: invoice.id })
+        .from(invoice)
+        .where(and(eq(invoice.organizationId, organizationId), eq(invoice.originalInvoiceId, id)))
+        .limit(1)
+      if (payment || delivery || credit) {
+        throw createError({
+          statusCode: 409,
+          message: 'Invoices with payments, active deliveries or credit notes cannot be deleted'
+        })
+      }
+      await tx
+        .delete(invoice)
+        .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId), eq(invoice.status, 'DRAFT')))
+      return { id }
+    })
+  } catch (error) {
+    const failure = error as { code?: string; cause?: { code?: string } }
+    if (failure.code === '23503' || failure.cause?.code === '23503') {
+      throw createError({ statusCode: 409, message: 'Invoices linked to other records cannot be deleted' })
+    }
+    throw error
+  }
+}
+
 export const registerInvoicePayment = async (
   organizationId: string,
   actorUserId: string,
