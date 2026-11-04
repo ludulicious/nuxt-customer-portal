@@ -16,7 +16,8 @@ import {
   decryptLegacyDotSecret,
   decryptPortalSecret,
   encryptPortalSecret,
-  isPortalSecretCiphertext
+  isPortalSecretCiphertext,
+  PortalEncryptionConfigurationError
 } from './portal-encryption'
 
 export type PortalEmailTextOverrides = Record<string, Partial<PortalEmailText>>
@@ -159,7 +160,21 @@ const emailEncryption = {
   overrides: [{ env: 'PORTAL_EMAIL_ENCRYPTION_KEY', format: 'sha256' as const }]
 }
 
-export const encryptPortalEmailSecret = (value: string) => encryptPortalSecret(value, emailEncryption)
+export const encryptPortalEmailSecret = (value: string) => {
+  try {
+    return encryptPortalSecret(value, emailEncryption)
+  } catch (error) {
+    if (error instanceof PortalEncryptionConfigurationError) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Email credential encryption is not configured correctly',
+        data: { code: 'EMAIL_ENCRYPTION_CONFIGURATION', message: error.message },
+        cause: error
+      })
+    }
+    throw error
+  }
+}
 
 export const decryptPortalEmailSecret = (value: string) => {
   try {

@@ -13,14 +13,18 @@ export type PortalEncryptionOptions = {
 const VERSION = 'v2'
 const ROOT_KEY_ENV = 'PORTAL_ENCRYPTION_KEY'
 
+export class PortalEncryptionConfigurationError extends Error {
+  override name = 'PortalEncryptionConfigurationError'
+}
+
 const decodeBase64Key = (value: string, name: string) => {
   const normalized = value.trim()
   if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(normalized)) {
-    throw new Error(`${name} must be a base64-encoded 32-byte key`)
+    throw new PortalEncryptionConfigurationError(`${name} must be a base64-encoded 32-byte key`)
   }
   const key = Buffer.from(normalized, normalized.includes('-') || normalized.includes('_') ? 'base64url' : 'base64')
   if (key.length !== 32) {
-    throw new Error(`${name} must be a base64-encoded 32-byte key`)
+    throw new PortalEncryptionConfigurationError(`${name} must be a base64-encoded 32-byte key`)
   }
   return key
 }
@@ -58,7 +62,7 @@ const resolvePortalEncryptionMaterial = ({ purpose, overrides = [] }: PortalEncr
 
   const rootValue = process.env.PORTAL_ENCRYPTION_KEY
   if (!rootValue) {
-    throw new Error(missingKeyMessage(overrides))
+    throw new PortalEncryptionConfigurationError(missingKeyMessage(overrides))
   }
   const rootKey = decodeBase64Key(rootValue, ROOT_KEY_ENV)
   return {
@@ -74,7 +78,7 @@ const materialForSource = (source: string, options: PortalEncryptionOptions) => 
   if (source === ROOT_KEY_ENV) {
     const rootValue = process.env.PORTAL_ENCRYPTION_KEY
     if (!rootValue) {
-      throw new Error(`Configure ${ROOT_KEY_ENV} to decrypt this credential`)
+      throw new PortalEncryptionConfigurationError(`Configure ${ROOT_KEY_ENV} to decrypt this credential`)
     }
     const rootKey = decodeBase64Key(rootValue, ROOT_KEY_ENV)
     return Buffer.from(hkdfSync('sha256', rootKey, Buffer.alloc(0), `nuxt-customer-portal:${options.purpose}`, 32))
@@ -85,7 +89,7 @@ const materialForSource = (source: string, options: PortalEncryptionOptions) => 
   }
   const key = overrideKey(override)
   if (!key) {
-    throw new Error(`Configure ${source} to decrypt this credential`)
+    throw new PortalEncryptionConfigurationError(`Configure ${source} to decrypt this credential`)
   }
   return key
 }
@@ -137,7 +141,9 @@ const requireLegacyOverrideKey = (overrides: PortalEncryptionOverride[]) => {
   if (material) {
     return material.key
   }
-  throw new Error(`Retain ${overrides.map(({ env }) => env).join(' or ')} to decrypt legacy credentials`)
+  throw new PortalEncryptionConfigurationError(
+    `Retain ${overrides.map(({ env }) => env).join(' or ')} to decrypt legacy credentials`
+  )
 }
 
 export const decryptLegacyDotSecret = (value: string, overrides: PortalEncryptionOverride[]) => {

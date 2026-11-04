@@ -46,6 +46,46 @@ test('portal template requires body and rejects undeclared placeholders', () => 
   assert.throws(() => validatePortalEmailTemplate('{{body}}{{unknown}}'), /Unknown template placeholder/)
 })
 
+test('saving an email credential reports missing or invalid encryption configuration without exposing the API key', () => {
+  const originalRoot = process.env.PORTAL_ENCRYPTION_KEY
+  const originalEmail = process.env.PORTAL_EMAIL_ENCRYPTION_KEY
+  const apiKey = 're_private-provider-key'
+  try {
+    delete process.env.PORTAL_EMAIL_ENCRYPTION_KEY
+    for (const root of [undefined, 'invalid-private-root']) {
+      if (root === undefined) {
+        delete process.env.PORTAL_ENCRYPTION_KEY
+      } else {
+        process.env.PORTAL_ENCRYPTION_KEY = root
+      }
+      assert.throws(
+        () => encryptPortalEmailSecret(apiKey),
+        (error: unknown) => {
+          const response = error as { statusCode: number; data: { code: string; message: string } }
+          assert.equal(response.statusCode, 503)
+          assert.equal(response.data.code, 'EMAIL_ENCRYPTION_CONFIGURATION')
+          assert.match(response.data.message, /PORTAL_ENCRYPTION_KEY/)
+          assert.doesNotMatch(JSON.stringify(response), /re_private-provider-key|invalid-private-root/)
+          return true
+        }
+      )
+    }
+    process.env.PORTAL_EMAIL_ENCRYPTION_KEY = 'retained-legacy-email-key'
+    assert.equal(decryptPortalEmailSecret(encryptPortalEmailSecret(apiKey)), apiKey)
+  } finally {
+    for (const [name, value] of [
+      ['PORTAL_ENCRYPTION_KEY', originalRoot],
+      ['PORTAL_EMAIL_ENCRYPTION_KEY', originalEmail]
+    ] as const) {
+      if (value === undefined) {
+        Reflect.deleteProperty(process.env, name)
+      } else {
+        process.env[name] = value
+      }
+    }
+  }
+})
+
 test('message text accepts only placeholders declared by its module', () => {
   const definition = coreFeature.emails!.find((email) => email.id === 'sign-in')!
   assert.doesNotThrow(() => validatePortalEmailText(definition, definition.defaults.en))
