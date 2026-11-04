@@ -2,6 +2,7 @@
 import { z } from 'zod'
 import type { PortalEmailLocale } from '@nuxt-customer-portal/core/shared/types/feature'
 import type { PortalEmailSettings } from '../../../types/admin-email'
+import { emailSettingsErrorMessage } from '../../../../shared/email-settings-error'
 
 const props = defineProps<{ settings: PortalEmailSettings }>()
 const { t } = useI18n()
@@ -45,7 +46,7 @@ const save = async () => {
     }
     toast.add({ title: t('admin.email.saved'), color: 'success' })
   } catch (error) {
-    toast.add({ title: t('admin.email.saveFailed'), description: String(error), color: 'error' })
+    toast.add({ title: t('admin.email.saveFailed'), description: emailSettingsErrorMessage(error), color: 'error' })
   } finally {
     busy.value = false
   }
