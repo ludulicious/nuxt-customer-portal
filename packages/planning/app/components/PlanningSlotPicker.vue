@@ -282,17 +282,17 @@ if (import.meta.client) {
                 @click="timesOpen = false"
                 >{{ t('planning.changeDate') }}</UButton
               >
+              <h3 ref="timesHeading" tabindex="-1" class="self-center whitespace-nowrap">
+                {{
+                  new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+                    new Date(`${selectedDate}T12:00:00Z`)
+                  )
+                }}
+              </h3>
               <UFormField class="border-label-field w-56 max-w-full" :label="t('planning.timezone')"
                 ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
               /></UFormField>
             </div>
-            <h3 ref="timesHeading" tabindex="-1">
-              {{
-                new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
-                  new Date(`${selectedDate}T12:00:00Z`)
-                )
-              }}
-            </h3>
           </div>
           <p v-if="selectedDate && !loading && !daySlots.length" role="status">{{ t('planning.noAvailability') }}</p>
           <div class="slot-grid grid grid-cols-2 gap-2 sm:grid-cols-3">

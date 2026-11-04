@@ -28,7 +28,8 @@ test('time selection exposes the same timezone model and clears a previously sel
   const timeHeader = picker.slice(timeHeaderStart, timeSlotsStart)
   assert.match(timeHeader, /planning\.timezone/)
   assert.match(timeHeader, /booking-calendar-header flex w-full flex-wrap items-start justify-between gap-4/)
-  assert.ok(timeHeader.indexOf('<PlanningTimezoneSelect') < timeHeader.indexOf('<h3'))
+  assert.ok(timeHeader.indexOf('planning.changeDate') < timeHeader.indexOf('<h3'))
+  assert.ok(timeHeader.indexOf('<h3') < timeHeader.indexOf('<PlanningTimezoneSelect'))
   assert.match(timeHeader, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
   assert.doesNotMatch(picker, /planning\.slotTimesTimezone/)
   assert.match(
