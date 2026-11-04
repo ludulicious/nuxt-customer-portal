@@ -295,9 +295,6 @@ if (import.meta.client) {
             </h3>
           </div>
           <p v-if="selectedDate && !loading && !daySlots.length" role="status">{{ t('planning.noAvailability') }}</p>
-          <p v-if="daySlots.length" class="text-sm text-muted">
-            {{ t('planning.slotTimesTimezone', { timezone: timezone.replaceAll('_', ' ') }) }}
-          </p>
           <div class="slot-grid grid grid-cols-2 gap-2 sm:grid-cols-3">
             <UButton
               v-for="slot in daySlots"

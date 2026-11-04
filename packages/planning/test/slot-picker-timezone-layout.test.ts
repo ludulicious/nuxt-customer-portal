@@ -30,6 +30,7 @@ test('time selection exposes the same timezone model and clears a previously sel
   assert.match(timeHeader, /booking-calendar-header flex w-full flex-wrap items-start justify-between gap-4/)
   assert.ok(timeHeader.indexOf('<PlanningTimezoneSelect') < timeHeader.indexOf('<h3'))
   assert.match(timeHeader, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
+  assert.doesNotMatch(picker, /planning\.slotTimesTimezone/)
   assert.match(
     picker,
     /watch\(\[timezone, provider, \(\) => props.currency\], \(\) => \{\s*selectedSlot.value = undefined/
