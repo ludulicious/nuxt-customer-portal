@@ -1,5 +1,12 @@
 # @nuxt-customer-portal/ui
 
+## 0.10.3
+
+### Patch Changes
+
+- 0e54ff2: Make link buttons easier to recognize with full-opacity colors, subtle hover backgrounds, and stronger pressed backgrounds without adding underlines. Preserve native keyboard focus indicators, disabled states, control padding, and rounded corners.
+  - @nuxt-customer-portal/core@0.10.3
+
 ## 0.10.2
 
 ### Patch Changes
