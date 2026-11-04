@@ -1,5 +1,22 @@
 # @nuxt-customer-portal/invoices
 
+## 0.11.0
+
+### Minor Changes
+
+- bd28af9: Allow administrators to permanently delete unissued draft invoices after confirmation. Enforce organization and lifecycle safeguards, cascade draft lines and attachments, and release linked timesheets for invoicing again.
+- 38f28c7: Add Duplicate invoice and Credit invoice menu actions that create new drafts without sending emails. Full credit notes reference the original invoice and reverse its rounded amounts and exact tax, with protection against multiple active credit notes.
+- d3d20bc: Allow administrators to preview and refresh draft invoice recipient details from current client data, including selecting the billing contact. Keep issued invoice recipient snapshots unchanged and validate organization, draft status and contact ownership on save.
+
+### Patch Changes
+
+- 222652d: Use the portal's light-mode full logo on invoice details and PDFs, falling back to the current provider organization logo. Support uploaded PNG, JPEG and WebP branding in PDF output.
+- Updated dependencies [b604141]
+  - @nuxt-customer-portal/core@0.11.0
+  - @nuxt-customer-portal/clients@0.11.0
+  - @nuxt-customer-portal/organizations@0.11.0
+  - @nuxt-customer-portal/ui@0.11.0
+
 ## 0.10.3
 
 ### Patch Changes

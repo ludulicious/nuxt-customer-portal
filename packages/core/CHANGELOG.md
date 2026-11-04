@@ -1,5 +1,11 @@
 # @nuxt-customer-portal/core
 
+## 0.11.0
+
+### Patch Changes
+
+- b604141: Return actionable encryption configuration errors when saving a portal email API key, display the explanation in email settings, and log server failures through Nitro with secret-safe structured diagnostics, including database migration and connectivity hints.
+
 ## 0.10.3
 
 ## 0.10.2

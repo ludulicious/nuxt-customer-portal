@@ -1,5 +1,26 @@
 # Nuxt Customer Portal
 
+## 0.11.0
+
+Add Duplicate invoice and Credit invoice actions that create drafts without
+sending emails. Full credit notes reference the original invoice and reverse its
+rounded amounts and exact tax, with protection against multiple active credits.
+Allow administrators to permanently delete unissued drafts after confirmation,
+releasing linked timesheets for invoicing again. Preview and refresh draft
+recipient details from current client data, including the billing contact, while
+preserving issued invoice snapshots and organization boundaries.
+
+Use the portal's light-mode full logo on invoice details and PDFs, falling back
+to the provider organization logo. Support uploaded PNG, JPEG, and WebP branding
+in PDF output. Explain email-provider encryption configuration failures in email
+settings and log server failures with secret-safe structured diagnostics.
+
+All 16 public packages and the three portal apps use `0.11.0`. No new database
+migrations are required when upgrading from `0.10.3`. Review draft invoice
+actions, credit notes, recipient refresh, invoice branding, and email-provider
+configuration before deployment. Keep the existing encryption key when one is
+already configured; do not replace it as a troubleshooting step.
+
 ## 0.10.0
 
 Add separate desktop and mobile authentication backgrounds with upload, preview,
