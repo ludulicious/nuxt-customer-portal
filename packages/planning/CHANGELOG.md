@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.10.3
+
+### Patch Changes
+
+- 396d2c8: Give booking month-navigation buttons and available calendar dates clearer hover and pressed feedback with accent tints and outlines, while retaining disabled states, rounding, and control dimensions.
+- 3ff8a71: Preserve validated same-portal product return URLs on the appointment booking page and label the return link "Back to product" when visiting from product administration.
+- 208d43a: Keep floating booking field labels within their layout bounds so the timezone label remains fully visible in the scrollable time-selection panel.
+- 03eae60: Move the booking timezone selector beside the month navigation above the calendar, wrapping on smaller screens. Remove the lower selector area when no team-member choice is needed.
+- b5854e7: Render product summaries as sanitized Markdown in checkout and booking, including mobile offering details, using the configured product Markdown theme instead of displaying raw formatting markers.
+- ad5843e: Automatically select the only available booking team member and hide the unnecessary member dropdown. Keep the any-member option for multiple available members and reset unavailable selections when changing months.
+- 7a68b71: Allow changing the booking timezone while choosing a time, keeping the control in the same top-right header position and using the same timezone state as the calendar. Clear any previously selected time when the timezone changes.
+- Updated dependencies [7433544]
+- Updated dependencies [b5854e7]
+- Updated dependencies [0e54ff2]
+- Updated dependencies [3b8bd09]
+  - @nuxt-customer-portal/products@0.10.3
+  - @nuxt-customer-portal/ui@0.10.3
+  - @nuxt-customer-portal/core@0.10.3
+
 ## 0.10.2
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # Products
 
+## 0.10.3
+
+### Patch Changes
+
+- 7433544: Allow administrators to archive ended or cancelled product offers, show archived offers, and restore them without changing historical prices or order references. Apply Products migration `0027_offer_archive.sql` before deploying.
+- b5854e7: Render product summaries as sanitized Markdown in checkout and booking, including mobile offering details, using the configured product Markdown theme instead of displaying raw formatting markers.
+- 3b8bd09: Make the displayed product slug in administration details a link to the product's public store page, with the current URL preserved for a "Back to product" link. Safely allow same-portal product return URLs alongside the configured storefront return URL.
+- Updated dependencies [0e54ff2]
+  - @nuxt-customer-portal/ui@0.10.3
+  - @nuxt-customer-portal/clients@0.10.3
+  - @nuxt-customer-portal/core@0.10.3
+
 ## 0.10.2
 
 ### Patch Changes
