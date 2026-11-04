@@ -282,7 +282,7 @@ if (import.meta.client) {
                 @click="timesOpen = false"
                 >{{ t('planning.changeDate') }}</UButton
               >
-              <h3 ref="timesHeading" tabindex="-1" class="self-center whitespace-nowrap">
+              <h3 ref="timesHeading" tabindex="-1" class="self-center whitespace-nowrap font-semibold">
                 {{
                   new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
                     new Date(`${selectedDate}T12:00:00Z`)
