@@ -3,6 +3,7 @@ import test from 'node:test'
 import { readdir, readFile } from 'node:fs/promises'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import { Socket } from 'node:net'
+import { registerHooks } from 'node:module'
 import { randomUUID } from 'node:crypto'
 import { Client } from 'pg'
 import { emptyProduct } from '../shared/validation'
@@ -17,6 +18,16 @@ test(
     process.env.BETTER_AUTH_URL = 'http://localhost:3059'
     process.env.BETTER_AUTH_SECRET = 'products-offers-test-secret-at-least-thirty-two-characters'
     process.env.IS_DEVELOPMENT = 'false'
+    const hook = registerHooks({
+      resolve(specifier, context, nextResolve) {
+        return nextResolve(
+          specifier,
+          specifier === 'h3'
+            ? { ...context, parentURL: new URL('../../core/package.json', import.meta.url).href }
+            : context
+        )
+      }
+    })
     const h3 = await import('h3')
     Object.assign(globalThis, {
       createError: h3.createError,
@@ -220,9 +231,93 @@ test(
         await offers.cancelOffer('store', product.id, next.id)
         await offers.cancelOffer('store', product.id, adjacent.id)
       })
+      await t.test('archiving validates input and ownership and rejects active or scheduled offers', async () => {
+        const active = await offers.saveOffer('store', product.id, input)
+        assert.equal(active.archived, false)
+        await assert.rejects(offers.setOfferArchived('store', product.id, active.id, {}), { statusCode: 400 })
+        await assert.rejects(offers.setOfferArchived('store', product.id, active.id, { archived: 'true' }), {
+          statusCode: 400
+        })
+        await assert.rejects(offers.setOfferArchived('other', product.id, active.id, { archived: true }), {
+          statusCode: 404
+        })
+        await assert.rejects(offers.setOfferArchived('store', 'missing', active.id, { archived: true }), {
+          statusCode: 404
+        })
+        await assert.rejects(offers.setOfferArchived('store', product.id, 'missing', { archived: true }), {
+          statusCode: 404
+        })
+        await assert.rejects(offers.setOfferArchived('store', product.id, active.id, { archived: true }), {
+          statusCode: 409
+        })
+        const scheduled = await offers.saveOffer('store', product.id, {
+          ...input,
+          startsAt: end,
+          endsAt: new Date(Date.parse(end) + 3600000).toISOString()
+        })
+        await assert.rejects(offers.setOfferArchived('store', product.id, scheduled.id, { archived: true }), {
+          statusCode: 409
+        })
+        await offers.cancelOffer('store', product.id, active.id)
+        await offers.cancelOffer('store', product.id, scheduled.id)
+      })
+      await t.test(
+        'archiving and restoring cancelled purchased offers preserves prices and order history',
+        async () => {
+          const history = async () => ({
+            prices: (await db.query('SELECT * FROM products.price WHERE offer_id=$1 ORDER BY id', [offer.id])).rows,
+            lines: (
+              await db.query(
+                'SELECT l.* FROM products.order_line l JOIN products.price p ON p.id=l.price_id WHERE p.offer_id=$1 ORDER BY l.id',
+                [offer.id]
+              )
+            ).rows
+          })
+          const before = await history()
+          assert.ok(before.lines.length > 0)
+          await offers.setOfferArchived('store', product.id, offer.id, { archived: true })
+          await offers.setOfferArchived('store', product.id, offer.id, { archived: true })
+          const archived = (await catalog.getProduct('store', product.id)).offers!.find(
+            (entry) => entry.id === offer.id
+          )!
+          assert.equal(archived.archived, true)
+          assert.equal(archived.enabled, false)
+          assert.deepEqual(await history(), before)
+          await assert.rejects(offers.saveOffer('store', product.id, input, offer.id), { statusCode: 409 })
+          await offers.setOfferArchived('store', product.id, offer.id, { archived: false })
+          const restored = (await offers.productOffers(product.id)).find((entry) => entry.id === offer.id)!
+          assert.equal(restored.archived, false)
+          assert.equal(restored.enabled, false)
+          assert.deepEqual(await history(), before)
+        }
+      )
+      await t.test('enabled ended offers can be archived and restored without reactivating their price', async () => {
+        const ended = await offers.saveOffer('store', product.id, input)
+        await db.query(
+          "UPDATE products.offer SET starts_at=now()-interval '2 hours',ends_at=now()-interval '1 hour' WHERE id=$1",
+          [ended.id]
+        )
+        await offers.setOfferArchived('store', product.id, ended.id, { archived: true })
+        const archived = (await offers.productOffers(product.id)).find((entry) => entry.id === ended.id)!
+        assert.equal(archived.archived, true)
+        assert.equal(archived.enabled, true)
+        const current = await catalog.publicProduct(await catalog.getProduct('store', product.id), 'en', 'EUR')
+        assert.equal(current.prices[0]!.offer, null)
+        assert.equal(current.prices[0]!.amount, 1000)
+        await offers.setOfferArchived('store', product.id, ended.id, { archived: false })
+        const restored = (await offers.productOffers(product.id)).find((entry) => entry.id === ended.id)!
+        assert.equal(restored.archived, false)
+        assert.equal(restored.enabled, true)
+        assert.deepEqual(restored.prices, archived.prices)
+        assert.equal(
+          (await catalog.publicProduct(await catalog.getProduct('store', product.id), 'en', 'EUR')).prices[0]!.offer,
+          null
+        )
+      })
     } finally {
       await db.end()
       await pool?.end()
+      hook.deregister()
     }
   }
 )

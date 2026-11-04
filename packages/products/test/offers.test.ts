@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { effectivePricing, offerPricesValid, offerSchema, periodsOverlap, localOfferTimestamp } from '../shared/offers'
+import {
+  effectivePricing,
+  offerPricesValid,
+  offerSchema,
+  offerArchiveSchema,
+  canArchiveOffer,
+  periodsOverlap,
+  localOfferTimestamp
+} from '../shared/offers'
 import { emptyProduct } from '../shared/validation'
 import type { Product, ProductOffer } from '../shared/types'
 
@@ -16,6 +24,7 @@ const offer: ProductOffer = {
   startsAt: '2026-10-20T10:00:00Z',
   endsAt: '2026-10-20T11:00:00Z',
   enabled: true,
+  archived: false,
   isFree: false,
   prices: [{ ...base.prices[0]!, id: 'discount', amount: 500 }]
 }
@@ -70,6 +79,22 @@ test('offers validate lower prices, supported currencies, duplicates, and bounde
   assert.equal(offerPricesValid(offer, base, ['EUR', 'USD']), false)
   assert.equal(offerPricesValid(offer, { ...base, isFree: true }, ['EUR']), false)
   assert.equal(offerPricesValid({ ...offer, prices: [{ ...offer.prices[0]!, amount: 0 }] }, base, ['EUR']), true)
+})
+test('archiving is available only after the exact end or cancellation and archived offers never affect pricing', () => {
+  assert.equal(canArchiveOffer(offer, new Date(Date.parse(offer.endsAt) - 1)), false)
+  assert.equal(canArchiveOffer(offer, new Date(offer.endsAt)), true)
+  assert.equal(canArchiveOffer({ ...offer, enabled: false }, new Date(offer.startsAt)), true)
+  assert.equal(canArchiveOffer(offer, new Date(Date.parse(offer.startsAt) - 1)), false)
+  assert.equal(
+    effectivePricing({ ...base, offers: [{ ...offer, archived: true }] }, new Date(offer.startsAt)).prices[0]!.id,
+    'regular'
+  )
+  for (const archived of [true, false]) {
+    assert.deepEqual(offerArchiveSchema.parse({ archived }), { archived })
+  }
+  for (const invalid of [{}, null, { archived: 'false' }, { archived: 1 }]) {
+    assert.equal(offerArchiveSchema.safeParse(invalid).success, false)
+  }
 })
 test('browser-local input converts to UTC and rejects invalid and ambiguous DST times', () => {
   const previous = process.env.TZ
