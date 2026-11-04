@@ -131,6 +131,13 @@ test('empty offers use an icon with a conditional archive link below the list in
   assert.doesNotMatch(card, /<UCheckbox|products\.offers\.archiveHelp/)
 })
 
+test('timezone guidance appears only inside the add/edit offer form', () => {
+  const form = card.match(/<UForm\b[\s\S]*?<\/UForm>/)![0]
+  assert.match(form, /v-if="editing"/)
+  assert.match(form, /products\.offers\.timezone/)
+  assert.equal(card.match(/products\.offers\.timezone/g)?.length, 1)
+})
+
 test('archive controls retain ended status, disable busy actions and have English and Dutch labels', () => {
   assert.match(card, /v-for="offer in visibleOffers"/)
   assert.match(card, /offer.archived \|\| canArchiveOffer\(offer, new Date\(now\)\)/)

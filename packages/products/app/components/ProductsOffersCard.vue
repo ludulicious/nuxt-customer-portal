@@ -175,10 +175,10 @@ async function archive(offer: ProductOffer) {
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">{{ t('products.offers.description') }}</p>
-    <p v-if="timezone" class="mb-4 text-sm text-muted">{{ t('products.offers.timezone', { timezone }) }}</p>
     <p v-if="product.isFree" class="mb-4 text-sm text-muted">{{ t('products.offers.regularFree') }}</p>
     <UAlert v-if="error" color="error" :title="error" class="mb-4" />
     <UForm v-if="editing" :schema="schema" :state="state" novalidate class="mb-6 space-y-4" @submit="save">
+      <p v-if="timezone" class="text-sm text-muted">{{ t('products.offers.timezone', { timezone }) }}</p>
       <UFormField name="startsAt" :label="t('products.offers.startsAt')" required>
         <UInput v-model="state.startsAt" type="datetime-local" :disabled="busy" class="w-full" />
       </UFormField>
