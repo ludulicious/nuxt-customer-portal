@@ -22,6 +22,11 @@ test('lower selector area is omitted when no team-member choice is needed', () =
   assert.match(picker, /<div v-if="availableProviders.length > 1" class="booking-selectors">/)
 })
 
+test('floating labels stay inside their field bounds so the time-panel scroll container cannot clip them', () => {
+  assert.match(picker, /\.border-label-field\s*\{\s*position: relative;\s*padding-top: 8px;/)
+  assert.match(picker, /\.border-label-field :deep\(label\)\s*\{\s*position: absolute;\s*top: 0;/)
+})
+
 test('time selection exposes the same timezone model and clears a previously selected time on change', () => {
   const timeHeaderStart = picker.indexOf('<div class="mobile-times-heading">')
   const timeSlotsStart = picker.indexOf('<div class="slot-grid')

@@ -351,10 +351,11 @@ if (import.meta.client) {
 }
 .border-label-field {
   position: relative;
+  padding-top: 8px;
 }
 .border-label-field :deep(label) {
   position: absolute;
-  top: -8px;
+  top: 0;
   left: 12px;
   z-index: 1;
   padding-inline: 5px;
