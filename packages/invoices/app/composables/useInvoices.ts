@@ -25,6 +25,10 @@ export const useInvoices = () => ({
   createInvoice: (input: Record<string, unknown>) =>
     $fetch<{ id: string }, string>('/api/invoices/admin/invoices', { method: 'POST', body: input }),
   getNextInvoiceNumber: () => $fetch<{ number: string }, string>('/api/invoices/admin/invoices/next-number'),
+  duplicateInvoice: (id: string) =>
+    $fetch<{ id: string }, string>(`/api/invoices/admin/invoices/${id}/duplicate`, { method: 'POST' }),
+  creditInvoice: (id: string) =>
+    $fetch<{ id: string }, string>(`/api/invoices/admin/invoices/${id}/credit`, { method: 'POST' }),
   getInvoice: (id: string) => $fetch<InvoiceDto, string>(`/api/invoices/admin/invoices/${id}`),
   updateInvoice: (id: string, input: Record<string, unknown>) =>
     $fetch<unknown, string>(`/api/invoices/admin/invoices/${id}`, { method: 'PATCH' as never, body: input }),

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
+import { canCreditInvoice } from '@nuxt-customer-portal/invoices/shared/invoice-copy'
 import { z } from 'zod'
 import type {
   ClientInvoiceDto,
@@ -254,9 +255,49 @@ const saveEdit = async () => {
   )
   editOpen.value = false
 }
+const creditConfirmationOpen = ref(false)
+const createCopy = async (credit: boolean) => {
+  if (busy.value) {
+    return
+  }
+  busy.value = true
+  try {
+    const created = credit ? await api.creditInvoice(props.invoice.id) : await api.duplicateInvoice(props.invoice.id)
+    creditConfirmationOpen.value = false
+    await navigateTo(`/admin/invoices/${created.id}`)
+    toast.add({
+      title: t(credit ? 'features.invoices.admin.creditCreated' : 'features.invoices.admin.invoiceDuplicated'),
+      color: 'success'
+    })
+  } catch (error) {
+    toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
+  } finally {
+    busy.value = false
+  }
+}
 const menuItems = computed(() => {
+  const items = []
+  if (props.invoice.documentType !== 'credit') {
+    items.push({
+      label: t('features.invoices.admin.duplicateInvoice'),
+      icon: 'i-lucide-copy',
+      disabled: busy.value,
+      onSelect: () => createCopy(false)
+    })
+  }
+  if (canCreditInvoice(props.invoice)) {
+    items.push({
+      label: t('features.invoices.admin.creditInvoice'),
+      icon: 'i-lucide-receipt-text',
+      disabled: busy.value,
+      onSelect: () => {
+        creditConfirmationOpen.value = true
+      }
+    })
+  }
   if (props.invoice.status === 'VOID') {
     return [
+      ...items,
       {
         label: t('features.invoices.admin.unvoid'),
         icon: 'i-lucide-rotate-ccw',
@@ -265,7 +306,6 @@ const menuItems = computed(() => {
     ]
   }
 
-  const items = []
   if (props.invoice.status === 'DRAFT') {
     items.push({ label: t('features.invoices.admin.editInvoice'), icon: 'i-lucide-pencil', onSelect: openEdit })
   }
@@ -359,7 +399,7 @@ const mobileMenuItems = computed(() => {
       onSelect: () => openEmail('resend')
     })
   }
-  if (!isClient.value && props.invoice.status === 'ISSUED') {
+  if (!isClient.value && props.invoice.status === 'ISSUED' && props.invoice.outstandingMinor > 0) {
     items.push({
       label: t('features.invoices.admin.registerPayment'),
       icon: 'i-lucide-circle-dollar-sign',
@@ -500,7 +540,7 @@ if (!isClient.value) {
           {{ t('features.invoices.admin.resendInvoice') }}
         </UButton>
         <UButton
-          v-if="!isClient && invoice.status === 'ISSUED'"
+          v-if="!isClient && invoice.status === 'ISSUED' && invoice.outstandingMinor > 0"
           class="invoice-actions-wide"
           color="success"
           variant="outline"
@@ -882,6 +922,15 @@ if (!isClient.value) {
         </div>
       </div>
     </section>
+    <ConfirmationModal
+      v-if="!isClient && creditConfirmationOpen"
+      v-model:open="creditConfirmationOpen"
+      :title="t('features.invoices.admin.creditInvoice')"
+      :message="t('features.invoices.admin.creditInvoiceDescription', { number: invoice.number })"
+      :confirm-text="t('features.invoices.admin.creditInvoice')"
+      :cancel-text="t('features.invoices.cancel')"
+      @confirm="createCopy(true)"
+    />
     <ConfirmationModal
       v-if="!isClient && attachmentDeleteOpen"
       v-model:open="attachmentDeleteOpen"
