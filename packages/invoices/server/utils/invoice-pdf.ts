@@ -1,4 +1,6 @@
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
+import { invoiceLogoCandidates } from '@nuxt-customer-portal/invoices/shared/invoice-logo'
+import sharp from 'sharp'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import type { ClientInvoiceDto, InvoiceDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
@@ -144,20 +146,15 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
   addPage()
   const headingTop = y
   let logoDrawn = false
-  let senderLogo = invoice.senderLogo
-  if (!senderLogo) {
-    const { resolvePortalEmailBranding } = await import('@nuxt-customer-portal/core/server/utils/portal-email')
-    const branding = await resolvePortalEmailBranding()
-    if (branding.brandName.trim().toLowerCase() === invoice.senderName.trim().toLowerCase()) {
-      senderLogo = branding.brandIconLight || branding.brandIconDark || null
-    }
-  }
-  if (senderLogo?.startsWith('data:image/')) {
+  const { resolvePortalEmailBranding } = await import('@nuxt-customer-portal/core/server/utils/portal-email')
+  const branding = await resolvePortalEmailBranding()
+  for (const senderLogo of invoiceLogoCandidates(branding.brandLogoLight, invoice.senderLogo)) {
     try {
-      const [, meta, data] = senderLogo.match(/^data:(image\/(?:png|jpeg|jpg));base64,(.+)$/i) ?? []
-      if (meta && data) {
+      const [, data] = senderLogo.match(/^data:image\/(?:png|jpeg|jpg|webp);base64,(.+)$/i) ?? []
+      if (data && data.length <= 4_000_000) {
         const bytes = Buffer.from(data, 'base64')
-        const image = meta.toLowerCase() === 'image/png' ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes)
+        const png = await sharp(bytes, { limitInputPixels: 40_000_000 }).png().toBuffer()
+        const image = await pdf.embedPng(png)
         const scale = Math.min(150 / image.width, 55 / image.height, 1)
         page.drawImage(image, {
           x: margin,
@@ -166,9 +163,10 @@ export async function generateInvoicePdf(invoice: InvoiceDto | ClientInvoiceDto,
           height: image.height * scale
         })
         logoDrawn = true
+        break
       }
     } catch {
-      /* A malformed optional logo must not prevent invoice generation. */
+      continue
     }
   }
   if (!logoDrawn) {

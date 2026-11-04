@@ -560,7 +560,7 @@ export const getInvoice = async (organizationId: string, id: string): Promise<In
   if (!selected) {
     throw createError({ statusCode: 404, message: 'Invoice not found' })
   }
-  const [histories, attachments, deliveries] = await Promise.all([
+  const [histories, attachments, deliveries, providers] = await Promise.all([
     db
       .select({ history: invoiceHistory, actorName: user.name })
       .from(invoiceHistory)
@@ -578,10 +578,12 @@ export const getInvoice = async (organizationId: string, id: string): Promise<In
       .from(invoiceEmailDelivery)
       .innerJoin(user, eq(user.id, invoiceEmailDelivery.actorUserId))
       .where(eq(invoiceEmailDelivery.invoiceId, id))
-      .orderBy(desc(invoiceEmailDelivery.createdAt))
+      .orderBy(desc(invoiceEmailDelivery.createdAt)),
+    db.select({ logo: organization.logo }).from(organization).where(eq(organization.id, organizationId)).limit(1)
   ])
   return {
     ...selected,
+    senderLogo: providers[0] ? providers[0].logo : selected.senderLogo,
     history: histories.map(({ history, actorName }) => ({
       ...history,
       actorName,

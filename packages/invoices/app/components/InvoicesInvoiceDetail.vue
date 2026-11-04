@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { canCreditInvoice } from '@nuxt-customer-portal/invoices/shared/invoice-copy'
+import { invoiceLogoCandidates } from '@nuxt-customer-portal/invoices/shared/invoice-logo'
 import { z } from 'zod'
 import type {
   ClientInvoiceDto,
@@ -27,21 +28,11 @@ const { t, locale } = useI18n()
 const countryName = (country: string | null) =>
   country ? new Intl.DisplayNames(locale.value, { type: 'region' }).of(country) || country : ''
 const portalRuntimeSettings = useState<{
-  branding?: { portalName?: string; markLight?: string; markDark?: string }
+  branding?: { logoLight?: string }
 } | null>('portal-runtime-settings', () => null)
-const colorMode = useColorMode()
-const senderLogo = computed(() => {
-  if (props.invoice.senderLogo) {
-    return props.invoice.senderLogo
-  }
-  const branding = portalRuntimeSettings.value?.branding
-  if (branding?.portalName?.trim().toLowerCase() !== props.invoice.senderName.trim().toLowerCase()) {
-    return ''
-  }
-  return colorMode.value === 'dark'
-    ? branding?.markDark || branding?.markLight || ''
-    : branding?.markLight || branding?.markDark || ''
-})
+const senderLogo = computed(
+  () => invoiceLogoCandidates(portalRuntimeSettings.value?.branding?.logoLight, props.invoice.senderLogo)[0] || ''
+)
 const deferredInvoice = computed(() => 'agreedTotalMinor' in props.invoice && props.invoice.agreedTotalMinor !== null)
 const taxReview = reactive({
   rates: props.invoice.lines.map((line) => ({ lineId: line.id, rate: line.vatRateBasisPoints / 100 }))
