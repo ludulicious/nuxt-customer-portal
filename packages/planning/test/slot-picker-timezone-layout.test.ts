@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import test from 'node:test'
+
+const picker = readFileSync(new URL('../app/components/PlanningSlotPicker.vue', import.meta.url), 'utf8')
+
+test('timezone selector appears beside month navigation above the booking calendar', () => {
+  const headerStart = picker.indexOf('class="booking-calendar-header')
+  const calendarStart = picker.indexOf('class="grid grid-cols-7')
+  const header = picker.slice(headerStart, calendarStart)
+  assert.ok(headerStart > 0 && calendarStart > headerStart)
+  assert.match(header, /flex flex-wrap items-center justify-between gap-4/)
+  assert.match(header, /planning\.previousMonth/)
+  assert.match(header, /planning\.nextMonth/)
+  assert.match(header, /planning\.timezone/)
+  assert.match(header, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
+  assert.equal((picker.match(/<PlanningTimezoneSelect/g) || []).length, 1)
+  assert.doesNotMatch(picker, /grid-column: 2/)
+})
+
+test('lower selector area is omitted when no team-member choice is needed', () => {
+  assert.match(picker, /<div v-if="availableProviders.length > 1" class="booking-selectors">/)
+})

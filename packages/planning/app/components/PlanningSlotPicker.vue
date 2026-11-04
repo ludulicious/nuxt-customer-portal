@@ -206,22 +206,27 @@ if (import.meta.client) {
     <UAlert v-if="error" variant="outline" color="error" :title="error" />
     <div class="slot-workspace">
       <div class="calendar-content">
-        <div class="flex items-center justify-between">
-          <UButton
-            icon="i-lucide-chevron-left"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('planning.previousMonth')"
-            @click="move(-1)"
-          />
-          <h2 class="font-semibold">{{ monthLabel }}</h2>
-          <UButton
-            icon="i-lucide-chevron-right"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('planning.nextMonth')"
-            @click="move(1)"
-          />
+        <div class="booking-calendar-header flex flex-wrap items-center justify-between gap-4">
+          <div class="booking-month-controls flex items-center gap-2">
+            <UButton
+              icon="i-lucide-chevron-left"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('planning.previousMonth')"
+              @click="move(-1)"
+            />
+            <h2 class="whitespace-nowrap font-semibold">{{ monthLabel }}</h2>
+            <UButton
+              icon="i-lucide-chevron-right"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('planning.nextMonth')"
+              @click="move(1)"
+            />
+          </div>
+          <UFormField class="border-label-field w-56 max-w-full" :label="t('planning.timezone')"
+            ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
+          /></UFormField>
         </div>
         <div class="grid grid-cols-7 gap-1" :aria-label="monthLabel">
           <span v-for="day in weekdays" :key="day" class="text-center text-sm text-muted">{{ day }}</span>
@@ -255,12 +260,9 @@ if (import.meta.client) {
             ><span class="calendar-key-dot calendar-key-dot--past" />{{ t('planning.calendarDate.past') }}</span
           >
         </div>
-        <div class="booking-selectors">
+        <div v-if="availableProviders.length > 1" class="booking-selectors">
           <UFormField v-if="availableProviders.length > 1" class="border-label-field" :label="t('planning.provider')"
             ><USelect v-model="provider" :items="providerOptions" class="w-full"
-          /></UFormField>
-          <UFormField class="border-label-field booking-timezone" :label="t('planning.timezone')"
-            ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
           /></UFormField>
         </div>
       </div>
@@ -339,12 +341,9 @@ if (import.meta.client) {
 }
 .booking-selectors {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   padding-top: 8px;
-}
-.booking-timezone {
-  grid-column: 2;
 }
 .border-label-field {
   position: relative;
