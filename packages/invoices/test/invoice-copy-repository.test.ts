@@ -3,7 +3,9 @@ import { registerHooks } from 'node:module'
 import test from 'node:test'
 
 type Expression =
-  { kind: 'and'; values: Expression[] } | { kind: 'eq' | 'ne'; column: { field: string }; value: unknown }
+  | { kind: 'and'; values: Expression[] }
+  | { kind: 'eq' | 'ne'; column: { field: string }; value: unknown }
+  | { kind: 'in'; column: { field: string }; values: unknown[] }
 interface Query {
   from: (table: { name: string }) => Query
   where: (expression: Expression) => Query
@@ -13,7 +15,7 @@ interface Query {
   then: (resolve: (value: unknown) => unknown) => Promise<unknown>
 }
 
-test('invoice copy transactions isolate organizations, reset lifecycle state and prevent repeated credits', async (context) => {
+test('invoice lifecycle transactions isolate organizations and protect credits and draft deletion', async (context) => {
   const tableNames = [
     'invoice',
     'invoiceLine',
@@ -42,9 +44,14 @@ test('invoice copy transactions isolate organizations, reset lifecycle state and
   let locks = 0
   let enabled = true
   let failLineInsert = false
+  let foreignKeyFailure = false
+  const deleted: string[] = []
   const matches = (row: Record<string, unknown>, expression: Expression): boolean => {
     if (expression.kind === 'and') {
       return expression.values.every((value) => matches(row, value))
+    }
+    if (expression.kind === 'in') {
+      return expression.values.includes(row[expression.column.field])
     }
     return expression.kind === 'ne'
       ? row[expression.column.field] !== expression.value
@@ -89,6 +96,14 @@ test('invoice copy transactions isolate organizations, reset lifecycle state and
         return Promise.resolve()
       }
     }),
+    delete: (table: { name: string }) => ({
+      where: async (condition: Expression) => {
+        if (foreignKeyFailure) {
+          throw Object.assign(new Error('Foreign key restriction'), { cause: { code: '23503' } })
+        }
+        deleted.push(...(rows[table.name] ?? []).filter((row) => matches(row, condition)).map((row) => String(row.id)))
+      }
+    }),
     execute: async () => {
       locks += 1
     },
@@ -127,7 +142,7 @@ test('invoice copy transactions isolate organizations, reset lifecycle state and
           .join(';')
       }
       if (specifier === 'drizzle-orm') {
-        source = `export const eq = (column, value) => ({kind: 'eq', column, value}); export const ne = (column, value) => ({kind: 'ne', column, value}); export const and = (...values) => ({kind: 'and', values}); export const asc = value => value; export const desc = value => value; export const inArray = () => {}; export const sql = () => {}`
+        source = `export const eq = (column, value) => ({kind: 'eq', column, value}); export const ne = (column, value) => ({kind: 'ne', column, value}); export const and = (...values) => ({kind: 'and', values}); export const asc = value => value; export const desc = value => value; export const inArray = (column, values) => ({kind: 'in', column, values}); export const sql = () => {}`
       }
       return nextResolve(source ? dataModule(source) : specifier, resolverContext)
     }
@@ -143,7 +158,7 @@ test('invoice copy transactions isolate organizations, reset lifecycle state and
   context.after(() => {
     Object.assign(globalThis, { createError: previousCreateError })
   })
-  const { copyInvoice, changeInvoiceStatus } = await import('../server/utils/invoice-repository')
+  const { copyInvoice, changeInvoiceStatus, deleteDraftInvoice } = await import('../server/utils/invoice-repository')
   const source = {
     id: 'source',
     organizationId: 'provider',
@@ -267,4 +282,60 @@ test('invoice copy transactions isolate organizations, reset lifecycle state and
   ]
   await assert.rejects(changeInvoiceStatus('provider', 'actor', 'void-credit', 'UNVOID'), /already has a credit/)
   assert.deepEqual(writes, [])
+  const draft = { ...source, status: 'DRAFT', issuedAt: null, automated: false, externalReference: null }
+  const resetDraft = () => {
+    reset()
+    deleted.length = 0
+    rows.invoice = [draft]
+  }
+  for (const documentType of ['invoice', 'credit']) {
+    resetDraft()
+    rows.invoice = [{ ...draft, documentType }]
+    assert.deepEqual(await deleteDraftInvoice('provider', 'source'), { id: 'source' })
+    assert.deepEqual(deleted, ['source'])
+    assert.equal(locks, 1)
+  }
+  resetDraft()
+  await assert.rejects(deleteDraftInvoice('other-provider', 'source'), /not found/)
+  assert.deepEqual(deleted, [])
+  for (const patch of [
+    { status: 'ISSUED' },
+    { status: 'PAID' },
+    { status: 'VOID' },
+    { issuedAt: new Date() },
+    { automated: true },
+    { externalReference: 'stripe:source' }
+  ]) {
+    resetDraft()
+    rows.invoice = [{ ...draft, ...patch }]
+    await assert.rejects(deleteDraftInvoice('provider', 'source'), { statusCode: 409 })
+    assert.deepEqual(deleted, [])
+  }
+  for (const dependency of ['payment', 'pending-email', 'sent-email', 'credit']) {
+    resetDraft()
+    if (dependency === 'payment') {
+      rows.invoicePayment = [{ invoiceId: 'source' }]
+    } else if (dependency === 'credit') {
+      rows.invoice!.push({ ...draft, id: 'credit', originalInvoiceId: 'source' })
+    } else {
+      rows.invoiceEmailDelivery = [{ invoiceId: 'source', status: dependency === 'pending-email' ? 'PENDING' : 'SENT' }]
+    }
+    await assert.rejects(deleteDraftInvoice('provider', 'source'), { statusCode: 409 })
+    assert.deepEqual(deleted, [])
+  }
+  resetDraft()
+  rows.invoiceEmailDelivery = [{ invoiceId: 'source', status: 'FAILED' }]
+  await deleteDraftInvoice('provider', 'source')
+  assert.deepEqual(deleted, ['source'])
+  resetDraft()
+  foreignKeyFailure = true
+  await assert.rejects(deleteDraftInvoice('provider', 'source'), {
+    statusCode: 409,
+    message: 'Invoices linked to other records cannot be deleted'
+  })
+  assert.deepEqual(deleted, [])
+  foreignKeyFailure = false
+  enabled = false
+  await assert.rejects(deleteDraftInvoice('provider', 'source'), { statusCode: 403 })
+  assert.deepEqual(deleted, [])
 })

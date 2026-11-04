@@ -880,6 +880,60 @@ export const updateInvoice = async (
     await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
     return updated!
   })
+export const deleteDraftInvoice = async (organizationId: string, id: string) => {
+  await requireInvoicesEnabled(organizationId)
+  try {
+    return await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`invoice-number:${organizationId}`}))`)
+      const [current] = await tx
+        .select()
+        .from(invoice)
+        .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId)))
+        .for('update')
+      if (!current) {
+        throw createError({ statusCode: 404, message: 'Invoice not found' })
+      }
+      if (current.status !== 'DRAFT' || current.issuedAt) {
+        throw createError({ statusCode: 409, message: 'Only unissued draft invoices can be deleted' })
+      }
+      if (current.automated || current.externalReference) {
+        throw createError({ statusCode: 409, message: 'Externally managed invoices cannot be deleted' })
+      }
+      const [payment] = await tx
+        .select({ id: invoicePayment.id })
+        .from(invoicePayment)
+        .where(eq(invoicePayment.invoiceId, id))
+        .limit(1)
+      const [delivery] = await tx
+        .select({ id: invoiceEmailDelivery.id })
+        .from(invoiceEmailDelivery)
+        .where(and(eq(invoiceEmailDelivery.invoiceId, id), inArray(invoiceEmailDelivery.status, ['PENDING', 'SENT'])))
+        .limit(1)
+      const [credit] = await tx
+        .select({ id: invoice.id })
+        .from(invoice)
+        .where(and(eq(invoice.organizationId, organizationId), eq(invoice.originalInvoiceId, id)))
+        .limit(1)
+      if (payment || delivery || credit) {
+        throw createError({
+          statusCode: 409,
+          message: 'Invoices with payments, active deliveries or credit notes cannot be deleted'
+        })
+      }
+      await tx
+        .delete(invoice)
+        .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId), eq(invoice.status, 'DRAFT')))
+      return { id }
+    })
+  } catch (error) {
+    const failure = error as { code?: string; cause?: { code?: string } }
+    if (failure.code === '23503' || failure.cause?.code === '23503') {
+      throw createError({ statusCode: 409, message: 'Invoices linked to other records cannot be deleted' })
+    }
+    throw error
+  }
+}
+
 export const registerInvoicePayment = async (
   organizationId: string,
   actorUserId: string,

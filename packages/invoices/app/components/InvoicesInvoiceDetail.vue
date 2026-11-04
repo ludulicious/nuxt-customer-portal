@@ -256,6 +256,26 @@ const saveEdit = async () => {
   editOpen.value = false
 }
 const creditConfirmationOpen = ref(false)
+const deleteConfirmationOpen = ref(false)
+const deleteDraft = async () => {
+  if (busy.value) {
+    return
+  }
+  busy.value = true
+  try {
+    await api.deleteInvoice(props.invoice.id)
+    await navigateTo(props.backTo || '/admin/invoices')
+    toast.add({ title: t('features.invoices.admin.invoiceDeleted'), color: 'success' })
+  } catch (error) {
+    toast.add({
+      title: t('features.invoices.messages.saveError'),
+      description: (error as { data?: { message?: string } }).data?.message || String(error),
+      color: 'error'
+    })
+  } finally {
+    busy.value = false
+  }
+}
 const createCopy = async (credit: boolean) => {
   if (busy.value) {
     return
@@ -308,6 +328,15 @@ const menuItems = computed(() => {
 
   if (props.invoice.status === 'DRAFT') {
     items.push({ label: t('features.invoices.admin.editInvoice'), icon: 'i-lucide-pencil', onSelect: openEdit })
+    items.push({
+      label: t('features.invoices.admin.deleteDraftInvoice'),
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      disabled: busy.value,
+      onSelect: () => {
+        deleteConfirmationOpen.value = true
+      }
+    })
   }
   items.push({
     label: t('features.invoices.admin.void'),
@@ -922,6 +951,16 @@ if (!isClient.value) {
         </div>
       </div>
     </section>
+    <ConfirmationModal
+      v-if="!isClient && deleteConfirmationOpen"
+      v-model:open="deleteConfirmationOpen"
+      :title="t('features.invoices.admin.deleteDraftInvoice')"
+      :message="t('features.invoices.admin.deleteDraftInvoiceDescription', { number: invoice.number })"
+      :confirm-text="t('features.invoices.admin.deleteDraftInvoice')"
+      :cancel-text="t('features.invoices.cancel')"
+      confirm-color="error"
+      @confirm="deleteDraft"
+    />
     <ConfirmationModal
       v-if="!isClient && creditConfirmationOpen"
       v-model:open="creditConfirmationOpen"
