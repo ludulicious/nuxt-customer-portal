@@ -3,7 +3,7 @@ const dropdownContent = `${surface} rounded-lg ring-1 ring-default shadow-md`
 const selectItem =
   'data-highlighted:not-data-disabled:before:bg-elevated data-[state=checked]:before:bg-primary/10 data-[state=checked]:text-primary data-[state=checked]:font-medium'
 const linkInteraction =
-  'underline-offset-4 decoration-2 hover:underline active:underline focus-visible:underline disabled:no-underline aria-disabled:no-underline hover:disabled:no-underline hover:aria-disabled:no-underline hover:disabled:bg-transparent hover:aria-disabled:bg-transparent active:disabled:bg-transparent active:aria-disabled:bg-transparent'
+  'hover:disabled:bg-transparent hover:aria-disabled:bg-transparent active:disabled:bg-transparent active:aria-disabled:bg-transparent'
 const linkColors = {
   primary: 'hover:text-primary active:text-primary hover:bg-primary/10 active:bg-primary/20',
   secondary: 'hover:text-secondary active:text-secondary hover:bg-secondary/10 active:bg-secondary/20',
@@ -52,14 +52,6 @@ export default defineAppConfig({
           variant: 'link',
           class: `${linkInteraction} ${states}`
         }))
-      ]
-    },
-    link: {
-      compoundVariants: [
-        {
-          disabled: false,
-          class: 'underline-offset-4 decoration-2 hover:underline active:underline focus-visible:underline'
-        }
       ]
     },
     card: {
