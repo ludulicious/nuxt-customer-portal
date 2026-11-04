@@ -5,6 +5,7 @@ import type {
   InvoiceClientDto,
   InvoiceClientAccessOverviewDto,
   InvoiceDto,
+  InvoiceRecipientPreviewDto,
   InvoiceEmailPreviewDto,
   InvoiceEmailStatusRefreshDto,
   InvoiceSettingsDto
@@ -30,6 +31,13 @@ export const useInvoices = () => ({
   creditInvoice: (id: string) =>
     $fetch<{ id: string }, string>(`/api/invoices/admin/invoices/${id}/credit`, { method: 'POST' }),
   getInvoice: (id: string) => $fetch<InvoiceDto, string>(`/api/invoices/admin/invoices/${id}`),
+  getInvoiceRecipient: (id: string) =>
+    $fetch<InvoiceRecipientPreviewDto, string>(`/api/invoices/admin/invoices/${id}/recipient`),
+  refreshInvoiceRecipient: (id: string, contactId: string | null) =>
+    $fetch<{ id: string }, string>(`/api/invoices/admin/invoices/${id}/recipient`, {
+      method: 'PUT',
+      body: { contactId }
+    }),
   deleteInvoice: (id: string) =>
     $fetch<{ id: string }, string>(`/api/invoices/admin/invoices/${id}`, { method: 'DELETE' }),
   updateInvoice: (id: string, input: Record<string, unknown>) =>

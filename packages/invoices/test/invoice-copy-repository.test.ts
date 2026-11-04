@@ -45,6 +45,7 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
   let enabled = true
   let failLineInsert = false
   let foreignKeyFailure = false
+  let client: Record<string, unknown> | null = null
   const deleted: string[] = []
   const matches = (row: Record<string, unknown>, expression: Expression): boolean => {
     if (expression.kind === 'and') {
@@ -96,6 +97,15 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
         return Promise.resolve()
       }
     }),
+    update: (table: { name: string }) => ({
+      set: (value: Record<string, unknown>) => ({
+        where: async (condition: Expression) => {
+          if ((rows[table.name] ?? []).some((row) => matches(row, condition))) {
+            writes.push({ table: table.name, value })
+          }
+        }
+      })
+    }),
     delete: (table: { name: string }) => ({
       where: async (condition: Expression) => {
         if (foreignKeyFailure) {
@@ -117,7 +127,7 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
       }
     }
   }
-  const state = { schema, database }
+  const state = { schema, database, getClient: (id: string) => (client?.organizationId === id ? client : null) }
   Object.assign(globalThis, { __invoiceCopyTest: state })
   const dataModule = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`
   const hook = registerHooks({
@@ -134,7 +144,8 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
         source = 'export const clientModule = {}'
       }
       if (specifier.endsWith('/server/utils/client-repository')) {
-        source = 'export const getClient = () => null; export const listSelectableClients = () => []'
+        source =
+          'export const getClient = (id) => globalThis.__invoiceCopyTest.getClient(id); export const listSelectableClients = () => []'
       }
       if (specifier.endsWith('/server/db/schema/invoices')) {
         source = tableNames
@@ -158,7 +169,13 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
   context.after(() => {
     Object.assign(globalThis, { createError: previousCreateError })
   })
-  const { copyInvoice, changeInvoiceStatus, deleteDraftInvoice } = await import('../server/utils/invoice-repository')
+  const {
+    copyInvoice,
+    changeInvoiceStatus,
+    deleteDraftInvoice,
+    getDraftInvoiceRecipient,
+    refreshDraftInvoiceRecipient
+  } = await import('../server/utils/invoice-repository')
   const source = {
     id: 'source',
     organizationId: 'provider',
@@ -338,4 +355,76 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
   enabled = false
   await assert.rejects(deleteDraftInvoice('provider', 'source'), { statusCode: 403 })
   assert.deepEqual(deleted, [])
+  enabled = true
+  resetDraft()
+  client = {
+    organizationId: 'client',
+    clientType: 'organization',
+    officialName: 'Current Company',
+    name: 'Company',
+    address: 'Current address',
+    preferredLocale: 'nl',
+    invoiceEmail: 'billing@example.test',
+    archivedAt: null
+  }
+  rows.billingContact = [
+    { id: 'contact', organizationId: 'client', name: 'Current Contact', email: 'contact@example.test' }
+  ]
+  const preview = await getDraftInvoiceRecipient('provider', 'source')
+  assert.equal(preview.recipientName, 'Current Company')
+  assert.equal(preview.recipientAddress, 'Current address')
+  assert.equal(preview.suggestedContactId, 'contact')
+  assert.deepEqual(writes, [])
+  client.address = 'Changed since preview'
+  rows.billingContact[0]!.name = 'Renamed since preview'
+  await refreshDraftInvoiceRecipient('provider', 'actor', 'source', 'contact')
+  assert.equal(writes[0]!.value.recipientAddress, 'Changed since preview')
+  assert.equal(writes[0]!.value.recipientContactName, 'Renamed since preview')
+  assert.equal(writes[0]!.value.recipientEmail, 'contact@example.test')
+  assert.equal(writes[0]!.value.recipientLocale, 'nl')
+  assert.deepEqual(
+    Object.keys(writes[0]!.value).sort(),
+    [
+      'recipientName',
+      'recipientAddress',
+      'recipientContactName',
+      'recipientEmail',
+      'recipientLocale',
+      'updatedAt'
+    ].sort()
+  )
+  assert.equal(writes[1]!.value.action, 'EDITED')
+  assert.equal(writes[1]!.value.actorUserId, 'actor')
+  resetDraft()
+  rows.billingContact = [
+    { id: 'other-contact', organizationId: 'other-client', name: 'Other', email: 'other@example.test' }
+  ]
+  await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', 'other-contact'), {
+    statusCode: 400
+  })
+  assert.deepEqual(writes, [])
+  for (const status of ['ISSUED', 'PAID', 'VOID']) {
+    resetDraft()
+    rows.invoice = [{ ...draft, status }]
+    await assert.rejects(getDraftInvoiceRecipient('provider', 'source'), { statusCode: 409 })
+    await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', null), { statusCode: 409 })
+    assert.deepEqual(writes, [])
+  }
+  resetDraft()
+  await assert.rejects(refreshDraftInvoiceRecipient('other-provider', 'actor', 'source', null), { statusCode: 404 })
+  assert.deepEqual(writes, [])
+  rows.invoice = [{ ...draft, clientOrganizationId: null }]
+  await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', null), { statusCode: 409 })
+  resetDraft()
+  client = { ...client, clientType: 'person', officialName: '', name: 'Private Client' }
+  await refreshDraftInvoiceRecipient('provider', 'actor', 'source', null)
+  assert.equal(writes[0]!.value.recipientName, 'Private Client')
+  assert.equal(writes[0]!.value.recipientEmail, 'billing@example.test')
+  assert.equal(writes[0]!.value.recipientContactName, null)
+  writes = []
+  await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', 'contact'), { statusCode: 400 })
+  assert.deepEqual(writes, [])
+  client.archivedAt = new Date()
+  await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', null), { statusCode: 404 })
+  assert.deepEqual(writes, [])
 })

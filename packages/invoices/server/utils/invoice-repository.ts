@@ -1,4 +1,5 @@
 import { invoiceRecipientEmail } from '../../shared/recipient-email'
+import { suggestedInvoiceContact } from '../../shared/invoice-recipient'
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import { canCreditInvoice, copiedInvoiceDates, copyInvoiceLines, invoiceLineAmount } from '../../shared/invoice-copy'
 import { nanoid } from 'nanoid'
@@ -19,6 +20,7 @@ import type { InvoiceCreateInput } from './invoice-validation'
 import type {
   InvoiceDto,
   InvoiceSettingsDto,
+  InvoiceRecipientPreviewDto,
   InvoiceClientAccessOverviewDto
 } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 import {
@@ -882,6 +884,84 @@ export const updateInvoice = async (
     await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
     return updated!
   })
+const loadDraftInvoiceRecipient = async (
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  organizationId: string,
+  id: string
+) => {
+  const [current] = await tx
+    .select()
+    .from(invoice)
+    .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId)))
+    .for('update')
+  if (!current) {
+    throw createError({ statusCode: 404, message: 'Invoice not found' })
+  }
+  if (current.status !== 'DRAFT') {
+    throw createError({ statusCode: 409, message: 'Only draft invoice recipient details can be refreshed' })
+  }
+  if (!current.clientOrganizationId) {
+    throw createError({ statusCode: 409, message: 'This invoice is not linked to a client' })
+  }
+  const client = await requireInvoiceClient(current.clientOrganizationId)
+  const contacts =
+    client.clientType === 'person'
+      ? []
+      : await tx
+          .select()
+          .from(billingContact)
+          .where(eq(billingContact.organizationId, current.clientOrganizationId))
+          .orderBy(asc(billingContact.name))
+  return { current, client, contacts }
+}
+
+export const getDraftInvoiceRecipient = async (
+  organizationId: string,
+  id: string
+): Promise<InvoiceRecipientPreviewDto> => {
+  await requireInvoicesEnabled(organizationId)
+  return db.transaction(async (tx) => {
+    const { current, client, contacts } = await loadDraftInvoiceRecipient(tx, organizationId, id)
+    return {
+      clientType: client.clientType,
+      recipientName: client.officialName || client.name,
+      recipientAddress: client.address,
+      recipientEmail: client.clientType === 'person' ? client.invoiceEmail : null,
+      suggestedContactId: suggestedInvoiceContact(current, contacts),
+      contacts: contacts.map(({ id, name, email }) => ({ id, name, email }))
+    }
+  })
+}
+
+export const refreshDraftInvoiceRecipient = async (
+  organizationId: string,
+  actorUserId: string,
+  id: string,
+  contactId: string | null
+) => {
+  await requireInvoicesEnabled(organizationId)
+  return db.transaction(async (tx) => {
+    const { client, contacts } = await loadDraftInvoiceRecipient(tx, organizationId, id)
+    const contact = contactId ? contacts.find((item) => item.id === contactId) : undefined
+    if (contactId && !contact) {
+      throw createError({ statusCode: 400, message: 'Contact does not belong to this client' })
+    }
+    await tx
+      .update(invoice)
+      .set({
+        recipientName: client.officialName || client.name,
+        recipientAddress: client.address,
+        recipientContactName: contact?.name ?? null,
+        recipientEmail: invoiceRecipientEmail(client, contact),
+        recipientLocale: client.preferredLocale,
+        updatedAt: new Date()
+      })
+      .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId), eq(invoice.status, 'DRAFT')))
+    await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
+    return { id }
+  })
+}
+
 export const deleteDraftInvoice = async (organizationId: string, id: string) => {
   await requireInvoicesEnabled(organizationId)
   try {

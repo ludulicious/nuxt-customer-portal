@@ -248,6 +248,7 @@ const saveEdit = async () => {
 }
 const creditConfirmationOpen = ref(false)
 const deleteConfirmationOpen = ref(false)
+const recipientRefreshOpen = ref(false)
 const deleteDraft = async () => {
   if (busy.value) {
     return
@@ -751,7 +752,19 @@ if (!isClient.value) {
       </div>
       <div class="invoice-parties">
         <section>
-          <p class="invoice-label">{{ t('features.invoices.admin.recipient') }}</p>
+          <div class="flex items-center gap-2">
+            <p class="invoice-label">{{ t('features.invoices.admin.recipient') }}</p>
+            <UButton
+              v-if="!isClient && invoice.status === 'DRAFT' && invoice.clientOrganizationId"
+              icon="i-lucide-refresh-cw"
+              size="xs"
+              variant="link"
+              class="print:hidden"
+              :disabled="busy"
+              @click="recipientRefreshOpen = true"
+              >{{ t('features.invoices.admin.refreshRecipient') }}</UButton
+            >
+          </div>
           <p class="font-semibold">{{ invoice.recipientName }}</p>
           <address class="not-italic text-sm">
             <span v-for="(line, index) in addressLines(invoice.recipientAddress)" :key="index" class="block">{{
@@ -942,6 +955,12 @@ if (!isClient.value) {
         </div>
       </div>
     </section>
+    <InvoicesRecipientRefreshModal
+      v-if="!isClient && recipientRefreshOpen"
+      v-model:open="recipientRefreshOpen"
+      :invoice-id="invoice.id"
+      @saved="refresh"
+    />
     <ConfirmationModal
       v-if="!isClient && deleteConfirmationOpen"
       v-model:open="deleteConfirmationOpen"

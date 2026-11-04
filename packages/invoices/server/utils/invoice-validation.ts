@@ -35,6 +35,7 @@ export const invoiceCreateSchema = z.object(invoiceCreateShape).refine(validateI
   message: 'Due date must not precede invoice date'
 })
 export type InvoiceCreateInput = z.infer<typeof invoiceCreateSchema>
+export const invoiceRecipientRefreshSchema = z.object({ contactId: id.nullable() }).strict()
 export const invoiceUpdateSchema = z
   .object({
     number: invoiceNumber,

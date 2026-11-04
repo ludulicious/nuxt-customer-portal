@@ -200,6 +200,14 @@ export interface InvoiceContactDto {
   phone: string | null
   jobTitle: string | null
 }
+export interface InvoiceRecipientPreviewDto {
+  clientType: 'organization' | 'person'
+  recipientName: string
+  recipientAddress: string
+  recipientEmail: string | null
+  suggestedContactId: string | null
+  contacts: Array<Pick<InvoiceContactDto, 'id' | 'name' | 'email'>>
+}
 export interface InvoiceClientDto {
   clientType: 'organization' | 'person'
   id: string
