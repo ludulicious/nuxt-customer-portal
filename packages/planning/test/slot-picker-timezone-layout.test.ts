@@ -27,6 +27,8 @@ test('time selection exposes the same timezone model and clears a previously sel
   const timeSlotsStart = picker.indexOf('<div class="slot-grid')
   const timeHeader = picker.slice(timeHeaderStart, timeSlotsStart)
   assert.match(timeHeader, /planning\.timezone/)
+  assert.match(timeHeader, /booking-calendar-header flex w-full flex-wrap items-start justify-between gap-4/)
+  assert.ok(timeHeader.indexOf('<PlanningTimezoneSelect') < timeHeader.indexOf('<h3'))
   assert.match(timeHeader, /<PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone"/)
   assert.match(
     picker,

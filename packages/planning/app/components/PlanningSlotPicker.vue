@@ -271,16 +271,21 @@ if (import.meta.client) {
       <Transition name="times-slide">
         <section v-if="selectedDate" class="times-panel" :aria-label="t('planning.chooseAppointmentTime')">
           <div class="mobile-times-heading">
-            <UButton
-              icon="i-lucide-arrow-left"
-              color="neutral"
-              variant="soft"
-              size="lg"
-              class="change-date-button min-h-11"
-              :disabled="busy"
-              @click="timesOpen = false"
-              >{{ t('planning.changeDate') }}</UButton
-            >
+            <div class="booking-calendar-header flex w-full flex-wrap items-start justify-between gap-4">
+              <UButton
+                icon="i-lucide-arrow-left"
+                color="neutral"
+                variant="soft"
+                size="lg"
+                class="change-date-button min-h-11"
+                :disabled="busy"
+                @click="timesOpen = false"
+                >{{ t('planning.changeDate') }}</UButton
+              >
+              <UFormField class="border-label-field w-56 max-w-full" :label="t('planning.timezone')"
+                ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
+              /></UFormField>
+            </div>
             <h3 ref="timesHeading" tabindex="-1">
               {{
                 new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
@@ -288,9 +293,6 @@ if (import.meta.client) {
                 )
               }}
             </h3>
-            <UFormField class="border-label-field mt-2 w-56 max-w-full" :label="t('planning.timezone')"
-              ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
-            /></UFormField>
           </div>
           <p v-if="selectedDate && !loading && !daySlots.length" role="status">{{ t('planning.noAvailability') }}</p>
           <p v-if="daySlots.length" class="text-sm text-muted">
