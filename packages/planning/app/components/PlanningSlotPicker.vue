@@ -389,7 +389,7 @@ if (import.meta.client) {
 }
 .times-panel {
   display: grid;
-  gap: 12px;
+  gap: 24px;
 }
 .time-confirmation-inner {
   display: grid;
