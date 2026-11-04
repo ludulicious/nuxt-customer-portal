@@ -76,6 +76,28 @@ test('submenu hover matches the Clients primary ghost button without replacing a
   assert.match(ui.navigationMenu.slots.link, /focus-visible:before:outline-primary/)
 })
 
+test('link buttons retain full color with underlines and stronger pressed backgrounds across semantic colors', () => {
+  for (const color of ['primary', 'secondary', 'success', 'info', 'warning', 'error', 'neutral']) {
+    const link = ui.button.compoundVariants.find((variant) => variant.color === color && variant.variant === 'link')!
+    assert.ok(link, color)
+    assert.match(link.class, /hover:underline active:underline focus-visible:underline/)
+    assert.match(link.class, /hover:disabled:no-underline hover:aria-disabled:no-underline/)
+    assert.match(link.class, /hover:disabled:bg-transparent hover:aria-disabled:bg-transparent/)
+    assert.doesNotMatch(link.class, /(?:hover|active):text-[\w-]+\/\d+/)
+    if (color !== 'neutral') {
+      assert.ok(link.class.includes(`hover:text-${color} active:text-${color}`))
+      assert.ok(link.class.includes(`hover:bg-${color}/10 active:bg-${color}/20`))
+    }
+  }
+})
+
+test('standalone links underline on hover, press and keyboard focus without changing disabled links', () => {
+  const link = ui.link.compoundVariants[0]!
+  assert.equal(link.disabled, false)
+  assert.match(link.class, /hover:underline active:underline focus-visible:underline/)
+  assert.match(link.class, /underline-offset-4 decoration-2/)
+})
+
 test('main menu buttons share the Clients hover tint even when their inactive color is neutral', async () => {
   const sidebar = await readFile(new URL('../app/components/PortalSidebarNavigation.vue', import.meta.url), 'utf8')
   assert.match(
