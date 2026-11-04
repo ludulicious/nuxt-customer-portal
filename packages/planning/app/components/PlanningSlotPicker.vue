@@ -56,13 +56,17 @@ const days = computed(() => {
     )
   ]
 })
-const providerOptions = computed(() => [
-  { value: 'any', label: t('planning.anyProvider') },
-  ...[...new Map(slots.value.map((s) => [s.providerUserId, s.providerName])).entries()].map(([value, label]) => ({
+const availableProviders = computed(() =>
+  [...new Map(slots.value.map((slot) => [slot.providerUserId, slot.providerName])).entries()].map(([value, label]) => ({
     value,
     label
   }))
-])
+)
+const providerOptions = computed(() =>
+  availableProviders.value.length > 1
+    ? [{ value: 'any', label: t('planning.anyProvider') }, ...availableProviders.value]
+    : availableProviders.value
+)
 const filtered = computed(() =>
   slots.value.filter((s) => provider.value === 'any' || s.providerUserId === provider.value)
 )
@@ -116,6 +120,11 @@ async function load(fresh = false) {
     )
     if (current === request) {
       slots.value = values
+      if (availableProviders.value.length === 1) {
+        provider.value = availableProviders.value[0]!.value
+      } else if (!availableProviders.value.some((option) => option.value === provider.value)) {
+        provider.value = 'any'
+      }
       if (
         !availableDates.value.has(selectedDate.value) ||
         selectedDate.value.slice(0, 7) !== month.value.toISOString().slice(0, 7)
@@ -247,7 +256,7 @@ if (import.meta.client) {
           >
         </div>
         <div class="booking-selectors">
-          <UFormField v-if="providerOptions.length > 1" class="border-label-field" :label="t('planning.provider')"
+          <UFormField v-if="availableProviders.length > 1" class="border-label-field" :label="t('planning.provider')"
             ><USelect v-model="provider" :items="providerOptions" class="w-full"
           /></UFormField>
           <UFormField class="border-label-field booking-timezone" :label="t('planning.timezone')"
