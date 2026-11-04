@@ -4,6 +4,9 @@ import type { Product, Locale } from '../../shared/types'
 defineProps<{ product: Product; language: Locale; editing: boolean }>()
 defineEmits<{ edit: [] }>()
 const { t } = useI18n()
+const route = useRoute()
+const portalOrigin = useRequestURL().origin
+const returnUrl = computed(() => new URL(route.fullPath, portalOrigin).href)
 </script>
 
 <template>
@@ -28,7 +31,11 @@ const { t } = useI18n()
         <p class="flex items-center gap-2 text-sm text-muted">
           <UIcon name="i-lucide-link" class="size-4 shrink-0" />{{ t('products.slug') }}
         </p>
-        <p class="mt-2 break-all font-mono text-sm font-medium">/{{ product.slug }}</p>
+        <NuxtLink
+          :to="{ path: `/store/${encodeURIComponent(product.slug)}`, query: { returnUrl } }"
+          class="mt-2 block break-all font-mono text-sm font-medium text-primary hover:underline focus-visible:underline"
+          >/{{ product.slug }}</NuxtLink
+        >
       </div>
       <p class="text-sm text-muted">
         {{ t(product.visibility === 'unlisted' ? 'products.unlisted' : 'products.listed') }}

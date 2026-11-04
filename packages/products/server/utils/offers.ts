@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
 import type { PoolClient } from 'pg'
 import type { Price, Product, ProductOffer } from '../../shared/types'
-import { offerSchema, offerPricesValid, periodsOverlap } from '../../shared/offers'
+import { offerSchema, offerArchiveSchema, canArchiveOffer, offerPricesValid, periodsOverlap } from '../../shared/offers'
 import { rows, transaction } from './database'
 import { parseInput } from './validation'
 
 export async function productOffers(productId: string, tx?: PoolClient): Promise<ProductOffer[]> {
   const offers = await rows<ProductOffer>(
-    'SELECT id,starts_at AS "startsAt",ends_at AS "endsAt",enabled,is_free AS "isFree" FROM products.offer WHERE product_id=$1 ORDER BY starts_at,id',
+    'SELECT id,starts_at AS "startsAt",ends_at AS "endsAt",enabled,archived,is_free AS "isFree" FROM products.offer WHERE product_id=$1 ORDER BY starts_at,id',
     [productId],
     tx
   )
@@ -63,7 +63,7 @@ export async function saveOffer(storeId: string, productId: string, input: unkno
     }
     const offers = await productOffers(productId, tx)
     const existing = offers.find((o) => o.id === offerId)
-    if (offerId && (!existing || !existing.enabled || Date.parse(existing.endsAt) <= Date.now())) {
+    if (offerId && (!existing || existing.archived || !existing.enabled || Date.parse(existing.endsAt) <= Date.now())) {
       throw createError({ statusCode: 409, message: 'Only active or scheduled offers can be edited' })
     }
     if (Date.parse(data.endsAt) <= Date.now()) {
@@ -117,6 +117,27 @@ export async function cancelOffer(storeId: string, productId: string, offerId: s
     if (!result.rowCount) {
       throw createError({ statusCode: 404, message: 'Offer not found' })
     }
+    await tx.query('UPDATE products.product SET updated_at=now() WHERE id=$1', [productId])
+  })
+  return { success: true }
+}
+
+export async function setOfferArchived(storeId: string, productId: string, offerId: string, input: unknown) {
+  const data = parseInput(offerArchiveSchema, input)
+  await transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`product:${productId}`])
+    const [offer] = await rows<{ enabled: boolean; endsAt: Date }>(
+      'SELECT o.enabled,o.ends_at AS "endsAt" FROM products.offer o JOIN products.product p ON p.id=o.product_id WHERE o.id=$1 AND o.product_id=$2 AND p.store_id=$3 FOR UPDATE OF o',
+      [offerId, productId, storeId],
+      tx
+    )
+    if (!offer) {
+      throw createError({ statusCode: 404, message: 'Offer not found' })
+    }
+    if (data.archived && !canArchiveOffer({ enabled: offer.enabled, endsAt: offer.endsAt.toISOString() })) {
+      throw createError({ statusCode: 409, message: 'Only ended or cancelled offers can be archived' })
+    }
+    await tx.query('UPDATE products.offer SET archived=$2 WHERE id=$1', [offerId, data.archived])
     await tx.query('UPDATE products.product SET updated_at=now() WHERE id=$1', [productId])
   })
   return { success: true }

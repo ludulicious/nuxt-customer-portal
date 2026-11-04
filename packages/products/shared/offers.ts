@@ -18,6 +18,10 @@ export const offerSchema = z
     }
   })
 export type OfferInput = z.infer<typeof offerSchema>
+export const offerArchiveSchema = z.object({ archived: z.boolean() })
+export type OfferArchiveInput = z.infer<typeof offerArchiveSchema>
+export const canArchiveOffer = (offer: Pick<ProductOffer, 'enabled' | 'endsAt'>, at: Date = new Date()) =>
+  !offer.enabled || Date.parse(offer.endsAt) <= at.getTime()
 export const periodsOverlap = (
   a: Pick<ProductOffer, 'startsAt' | 'endsAt'>,
   b: Pick<ProductOffer, 'startsAt' | 'endsAt'>
@@ -54,7 +58,9 @@ export function effectivePricing(
   at: Date = new Date()
 ): Omit<Product, 'prices'> & { prices: CatalogPrice[] } {
   const time = at.getTime()
-  const offer = product.offers?.find((o) => o.enabled && Date.parse(o.startsAt) <= time && time < Date.parse(o.endsAt))
+  const offer = product.offers?.find(
+    (o) => o.enabled && !o.archived && Date.parse(o.startsAt) <= time && time < Date.parse(o.endsAt)
+  )
   const prices = (offer?.prices || product.prices).map((price) => ({
     ...price,
     originalAmount: product.isFree

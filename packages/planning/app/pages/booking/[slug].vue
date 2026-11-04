@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { HoldResult } from '../../composables/usePlanning'
-import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '@nuxt-customer-portal/products/shared/checkout-query'
+import {
+  resolveCheckoutQuery,
+  resolveCheckoutReturnUrl,
+  resolveProductReturnUrl
+} from '@nuxt-customer-portal/products/shared/checkout-query'
 import { formatMoney } from '@nuxt-customer-portal/products/shared/money'
 
 useHead({ meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
@@ -16,7 +20,11 @@ if (locale.value !== query.locale) {
 if (!product.planningEnabled) {
   await navigateTo({ path: `/store/${encodeURIComponent(product.slug)}`, query: route.query })
 }
-const returnUrl = computed(() => resolveCheckoutReturnUrl(route.query.returnUrl, product.checkoutAppearance.returnUrl))
+const portalOrigin = useRequestURL().origin
+const returnUrl = computed(() =>
+  resolveCheckoutReturnUrl(route.query.returnUrl, product.checkoutAppearance.returnUrl, portalOrigin)
+)
+const productReturnUrl = computed(() => resolveProductReturnUrl(returnUrl.value, portalOrigin))
 const currency = ref(
   product.prices.some((p) => p.currency === query.currency) ? query.currency! : product.prices[0]?.currency || 'EUR'
 )
@@ -52,7 +60,9 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
   <main class="checkout-page booking-page" :style="themeStyle">
     <div class="checkout-shell">
       <header class="checkout-header">
-        <a v-if="returnUrl" :href="returnUrl" class="checkout-back">← {{ t('products.backToOffering') }}</a>
+        <a v-if="returnUrl" :href="returnUrl" class="checkout-back"
+          >← {{ t(productReturnUrl ? 'products.backToProduct' : 'products.backToOffering') }}</a
+        >
         <img v-if="appearance.logoUrl" :src="appearance.logoUrl" :alt="appearance.hostName" class="checkout-logo" />
         <span v-else class="checkout-wordmark">{{ appearance.hostName }}</span>
         <span class="checkout-secure" :class="{ 'checkout-test': product.storeMode === 'sandbox' }">{{
@@ -78,10 +88,12 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
               <p v-if="product.subtitle" class="order-subtitle">{{ product.subtitle }}</p>
             </div>
           </div>
-          <p class="order-summary">{{ product.summary }}</p>
+          <div class="order-summary">
+            <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
+          </div>
           <details class="mobile-offering-details">
             <summary>{{ t('planning.offeringDetails') }}</summary>
-            <p>{{ product.summary }}</p>
+            <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
           </details>
           <p class="booking-duration">
             <UIcon name="i-lucide-clock" aria-hidden="true" />{{

@@ -47,6 +47,7 @@ export interface ProductOffer {
   startsAt: string
   endsAt: string
   enabled: boolean
+  archived: boolean
   isFree: boolean
   prices: Price[]
 }

@@ -110,6 +110,7 @@ export const offer = schema.table(
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
     enabled: boolean('enabled').default(true).notNull(),
+    archived: boolean('archived').default(false).notNull(),
     isFree: boolean('is_free').default(false).notNull()
   },
   (t) => [index('offer_product').on(t.productId), check('offer_period_valid', sql`${t.startsAt} < ${t.endsAt}`)]

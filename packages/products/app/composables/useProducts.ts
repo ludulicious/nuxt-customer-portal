@@ -3,7 +3,7 @@ import type { PublicOrderDetails } from '../../shared/public-order'
 import type { AdminOrderDetails } from '../../shared/admin-order'
 import type { PageText } from '../../shared/page-texts'
 import type { ThankYouText } from '../../shared/thank-you'
-import type { OfferInput } from '../../shared/offers'
+import type { OfferInput, OfferArchiveInput } from '../../shared/offers'
 import type {
   ProductOffer,
   Product,
@@ -88,6 +88,11 @@ export const useProducts = () => ({
       {
         method: 'DELETE'
       }
+    ),
+  setOfferArchived: (productId: string, offerId: string, body: OfferArchiveInput) =>
+    $fetch<{ success: boolean }, string>(
+      `/api/products/admin/products/${encodeURIComponent(productId)}/offers/${encodeURIComponent(offerId)}/archive`,
+      { method: 'PUT', body }
     ),
   saveLinks: (id: string, links: NonNullable<Product['links']>) =>
     $fetch<Product, string>(`/api/products/admin/products/${encodeURIComponent(id)}/links`, {

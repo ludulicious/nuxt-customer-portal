@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { Product, ProductOffer } from '../../shared/types'
-import { localOfferTimestamp } from '../../shared/offers'
+import { canArchiveOffer, localOfferTimestamp } from '../../shared/offers'
 import { currencyScale, formatMoney } from '../../shared/money'
 
 const props = defineProps<{ product: Product; currencies: string[]; disabled?: boolean }>()
@@ -12,6 +12,11 @@ const editing = ref(false)
 const selectedId = ref<string>()
 const busy = ref(false)
 const error = ref('')
+const showArchived = ref(false)
+const hasArchivedOffers = computed(() => (props.product.offers || []).some((offer) => offer.archived))
+const visibleOffers = computed(() =>
+  (props.product.offers || []).filter((offer) => showArchived.value || !offer.archived)
+)
 const now = ref(Date.now())
 const timezone = ref('')
 let timer: ReturnType<typeof setInterval> | undefined
@@ -139,6 +144,18 @@ async function cancel(offer: ProductOffer) {
     busy.value = false
   }
 }
+async function archive(offer: ProductOffer) {
+  busy.value = true
+  error.value = ''
+  try {
+    await api.setOfferArchived(props.product.id, offer.id, { archived: !offer.archived })
+    emit('saved')
+  } catch {
+    error.value = t('products.offers.archiveFailed')
+  } finally {
+    busy.value = false
+  }
+}
 </script>
 
 <template>
@@ -158,10 +175,10 @@ async function cancel(offer: ProductOffer) {
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">{{ t('products.offers.description') }}</p>
-    <p v-if="timezone" class="mb-4 text-sm text-muted">{{ t('products.offers.timezone', { timezone }) }}</p>
     <p v-if="product.isFree" class="mb-4 text-sm text-muted">{{ t('products.offers.regularFree') }}</p>
     <UAlert v-if="error" color="error" :title="error" class="mb-4" />
     <UForm v-if="editing" :schema="schema" :state="state" novalidate class="mb-6 space-y-4" @submit="save">
+      <p v-if="timezone" class="text-sm text-muted">{{ t('products.offers.timezone', { timezone }) }}</p>
       <UFormField name="startsAt" :label="t('products.offers.startsAt')" required>
         <UInput v-model="state.startsAt" type="datetime-local" :disabled="busy" class="w-full" />
       </UFormField>
@@ -200,16 +217,24 @@ async function cancel(offer: ProductOffer) {
         }}</UButton>
       </div>
     </UForm>
-    <p v-if="!product.offers?.length && !editing" class="text-sm text-muted">{{ t('products.offers.empty') }}</p>
+    <UEmpty
+      v-if="!visibleOffers.length && !editing"
+      icon="i-lucide-tag"
+      :title="t('products.offers.empty')"
+      variant="outline"
+    />
     <ul class="divide-y divide-default">
-      <li v-for="offer in product.offers" :key="offer.id" class="space-y-2 py-4 first:pt-0 last:pb-0">
-        <UBadge color="neutral" variant="subtle">{{ t(`products.offers.${status(offer)}`) }}</UBadge>
+      <li v-for="offer in visibleOffers" :key="offer.id" class="space-y-2 py-4 first:pt-0 last:pb-0">
+        <div class="flex flex-wrap gap-2">
+          <UBadge color="neutral" variant="subtle">{{ t(`products.offers.${status(offer)}`) }}</UBadge>
+          <UBadge v-if="offer.archived" color="neutral" variant="subtle">{{ t('products.offers.archived') }}</UBadge>
+        </div>
         <p class="text-sm">{{ dateLabel(offer.startsAt) }} — {{ dateLabel(offer.endsAt) }}</p>
         <p v-if="offer.isFree" class="font-medium">{{ t('products.freeProduct') }}</p>
         <p v-else class="font-medium">
           {{ offer.prices.map((p) => formatMoney(p.amount, p.currency, locale)).join(' · ') }}
         </p>
-        <div v-if="offer.enabled && status(offer) !== 'ended' && !editing" class="flex gap-2">
+        <div v-if="!offer.archived && offer.enabled && status(offer) !== 'ended' && !editing" class="flex gap-2">
           <UButton color="neutral" variant="soft" :disabled="disabled || busy" @click="open(offer)">{{
             t('products.offers.edit')
           }}</UButton>
@@ -217,7 +242,21 @@ async function cancel(offer: ProductOffer) {
             t('products.offers.cancelOffer')
           }}</UButton>
         </div>
+        <UButton
+          v-if="!editing && (offer.archived || canArchiveOffer(offer, new Date(now)))"
+          :icon="offer.archived ? 'i-lucide-archive-restore' : 'i-lucide-archive'"
+          color="neutral"
+          variant="soft"
+          :disabled="disabled || busy"
+          @click="archive(offer)"
+          >{{ t(offer.archived ? 'products.offers.restore' : 'products.offers.archive') }}</UButton
+        >
       </li>
     </ul>
+    <div v-if="hasArchivedOffers && !editing" class="mt-4 flex justify-center">
+      <UButton type="button" variant="link" :aria-expanded="showArchived" @click="showArchived = !showArchived">{{
+        t(showArchived ? 'products.offers.hideArchived' : 'products.offers.showArchived')
+      }}</UButton>
+    </div>
   </UCard>
 </template>

@@ -8,7 +8,32 @@ export function resolveCheckoutQuery(query: Record<string, unknown>) {
   return { locale, currency }
 }
 
-export function resolveCheckoutReturnUrl(candidate: unknown, configuredReturnUrl: string) {
+export function resolveProductReturnUrl(candidate: unknown, portalOrigin: string) {
+  if (typeof candidate !== 'string' || !candidate || candidate.length > 2000) {
+    return undefined
+  }
+  try {
+    const url = new URL(candidate)
+    if (
+      ['http:', 'https:'].includes(url.protocol) &&
+      url.origin === new URL(portalOrigin).origin &&
+      !url.username &&
+      !url.password &&
+      /^\/admin\/products\/[a-zA-Z0-9-]+$/.test(url.pathname)
+    ) {
+      return url.href
+    }
+  } catch {
+    return undefined
+  }
+  return undefined
+}
+
+export function resolveCheckoutReturnUrl(candidate: unknown, configuredReturnUrl: string, portalOrigin = '') {
+  const productReturnUrl = resolveProductReturnUrl(candidate, portalOrigin)
+  if (productReturnUrl) {
+    return productReturnUrl
+  }
   if (typeof candidate !== 'string' || !candidate || candidate.length > 2000) {
     return configuredReturnUrl
   }

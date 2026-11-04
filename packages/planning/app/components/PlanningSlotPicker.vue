@@ -56,13 +56,17 @@ const days = computed(() => {
     )
   ]
 })
-const providerOptions = computed(() => [
-  { value: 'any', label: t('planning.anyProvider') },
-  ...[...new Map(slots.value.map((s) => [s.providerUserId, s.providerName])).entries()].map(([value, label]) => ({
+const availableProviders = computed(() =>
+  [...new Map(slots.value.map((slot) => [slot.providerUserId, slot.providerName])).entries()].map(([value, label]) => ({
     value,
     label
   }))
-])
+)
+const providerOptions = computed(() =>
+  availableProviders.value.length > 1
+    ? [{ value: 'any', label: t('planning.anyProvider') }, ...availableProviders.value]
+    : availableProviders.value
+)
 const filtered = computed(() =>
   slots.value.filter((s) => provider.value === 'any' || s.providerUserId === provider.value)
 )
@@ -116,6 +120,11 @@ async function load(fresh = false) {
     )
     if (current === request) {
       slots.value = values
+      if (availableProviders.value.length === 1) {
+        provider.value = availableProviders.value[0]!.value
+      } else if (!availableProviders.value.some((option) => option.value === provider.value)) {
+        provider.value = 'any'
+      }
       if (
         !availableDates.value.has(selectedDate.value) ||
         selectedDate.value.slice(0, 7) !== month.value.toISOString().slice(0, 7)
@@ -197,22 +206,29 @@ if (import.meta.client) {
     <UAlert v-if="error" variant="outline" color="error" :title="error" />
     <div class="slot-workspace">
       <div class="calendar-content">
-        <div class="flex items-center justify-between">
-          <UButton
-            icon="i-lucide-chevron-left"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('planning.previousMonth')"
-            @click="move(-1)"
-          />
-          <h2 class="font-semibold">{{ monthLabel }}</h2>
-          <UButton
-            icon="i-lucide-chevron-right"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('planning.nextMonth')"
-            @click="move(1)"
-          />
+        <div class="booking-calendar-header flex flex-wrap items-center justify-between gap-4">
+          <div class="booking-month-controls flex items-center gap-2">
+            <UButton
+              icon="i-lucide-chevron-left"
+              color="neutral"
+              variant="ghost"
+              class="calendar-navigation"
+              :aria-label="t('planning.previousMonth')"
+              @click="move(-1)"
+            />
+            <h2 class="whitespace-nowrap font-semibold">{{ monthLabel }}</h2>
+            <UButton
+              icon="i-lucide-chevron-right"
+              color="neutral"
+              variant="ghost"
+              class="calendar-navigation"
+              :aria-label="t('planning.nextMonth')"
+              @click="move(1)"
+            />
+          </div>
+          <UFormField class="border-label-field w-56 max-w-full" :label="t('planning.timezone')"
+            ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
+          /></UFormField>
         </div>
         <div class="grid grid-cols-7 gap-1" :aria-label="monthLabel">
           <span v-for="day in weekdays" :key="day" class="text-center text-sm text-muted">{{ day }}</span>
@@ -246,40 +262,39 @@ if (import.meta.client) {
             ><span class="calendar-key-dot calendar-key-dot--past" />{{ t('planning.calendarDate.past') }}</span
           >
         </div>
-        <div class="booking-selectors">
-          <UFormField v-if="providerOptions.length > 1" class="border-label-field" :label="t('planning.provider')"
+        <div v-if="availableProviders.length > 1" class="booking-selectors">
+          <UFormField v-if="availableProviders.length > 1" class="border-label-field" :label="t('planning.provider')"
             ><USelect v-model="provider" :items="providerOptions" class="w-full"
-          /></UFormField>
-          <UFormField class="border-label-field booking-timezone" :label="t('planning.timezone')"
-            ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
           /></UFormField>
         </div>
       </div>
       <Transition name="times-slide">
         <section v-if="selectedDate" class="times-panel" :aria-label="t('planning.chooseAppointmentTime')">
           <div class="mobile-times-heading">
-            <UButton
-              icon="i-lucide-arrow-left"
-              color="neutral"
-              variant="soft"
-              size="lg"
-              class="change-date-button min-h-11"
-              :disabled="busy"
-              @click="timesOpen = false"
-              >{{ t('planning.changeDate') }}</UButton
-            >
-            <h3 ref="timesHeading" tabindex="-1">
-              {{
-                new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
-                  new Date(`${selectedDate}T12:00:00Z`)
-                )
-              }}
-            </h3>
+            <div class="booking-calendar-header flex w-full flex-wrap items-start justify-between gap-4">
+              <UButton
+                icon="i-lucide-arrow-left"
+                color="neutral"
+                variant="soft"
+                size="lg"
+                class="change-date-button min-h-11"
+                :disabled="busy"
+                @click="timesOpen = false"
+                >{{ t('planning.changeDate') }}</UButton
+              >
+              <h3 ref="timesHeading" tabindex="-1" class="self-center whitespace-nowrap font-semibold">
+                {{
+                  new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+                    new Date(`${selectedDate}T12:00:00Z`)
+                  )
+                }}
+              </h3>
+              <UFormField class="border-label-field w-56 max-w-full" :label="t('planning.timezone')"
+                ><PlanningTimezoneSelect v-model="timezone" :user-timezone="userTimezone" class="w-full"
+              /></UFormField>
+            </div>
           </div>
           <p v-if="selectedDate && !loading && !daySlots.length" role="status">{{ t('planning.noAvailability') }}</p>
-          <p v-if="daySlots.length" class="text-sm text-muted">
-            {{ t('planning.slotTimesTimezone', { timezone: timezone.replaceAll('_', ' ') }) }}
-          </p>
           <div class="slot-grid grid grid-cols-2 gap-2 sm:grid-cols-3">
             <UButton
               v-for="slot in daySlots"
@@ -330,19 +345,17 @@ if (import.meta.client) {
 }
 .booking-selectors {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   padding-top: 8px;
 }
-.booking-timezone {
-  grid-column: 2;
-}
 .border-label-field {
   position: relative;
+  padding-top: 8px;
 }
 .border-label-field :deep(label) {
   position: absolute;
-  top: -8px;
+  top: 0;
   left: 12px;
   z-index: 1;
   padding-inline: 5px;
@@ -376,7 +389,7 @@ if (import.meta.client) {
 }
 .times-panel {
   display: grid;
-  gap: 12px;
+  gap: 24px;
 }
 .time-confirmation-inner {
   display: grid;
@@ -534,21 +547,36 @@ if (import.meta.client) {
   border: 1px solid transparent;
   opacity: 1;
 }
+.calendar-navigation:not(:disabled):hover {
+  color: var(--checkout-accent, var(--ui-primary));
+  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 20%, transparent);
+  box-shadow: inset 0 0 0 1px var(--checkout-accent, var(--ui-primary));
+}
+.calendar-navigation:not(:disabled):active {
+  color: white;
+  background: var(--checkout-accent, var(--ui-primary));
+}
 .calendar-date--available {
   color: var(--checkout-accent, var(--ui-primary));
   background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 10%, transparent);
   border-color: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 35%, transparent);
   font-weight: 600;
 }
-.calendar-date--available:hover {
-  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 20%, transparent);
+.calendar-date--available:not(:disabled):hover {
+  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 25%, transparent);
+  border-color: var(--checkout-accent, var(--ui-primary));
+  box-shadow: inset 0 0 0 1px var(--checkout-accent, var(--ui-primary));
+}
+.calendar-date--available:not(:disabled):active {
+  color: white;
+  background: var(--checkout-accent, var(--ui-primary));
 }
 .calendar-date--selected {
   color: white;
   background: var(--checkout-accent, var(--ui-primary));
   border-color: var(--checkout-accent, var(--ui-primary));
 }
-.calendar-date--selected:hover {
+.calendar-date--selected:not(:disabled):hover {
   background: var(--checkout-accent, var(--ui-primary));
 }
 .calendar-date--past {

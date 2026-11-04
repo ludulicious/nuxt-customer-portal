@@ -2,6 +2,18 @@ const surface = 'portal-surface bg-(--portal-surface) text-(--portal-surface-tex
 const dropdownContent = `${surface} rounded-lg ring-1 ring-default shadow-md`
 const selectItem =
   'data-highlighted:not-data-disabled:before:bg-elevated data-[state=checked]:before:bg-primary/10 data-[state=checked]:text-primary data-[state=checked]:font-medium'
+const linkInteraction =
+  'hover:disabled:bg-transparent hover:aria-disabled:bg-transparent active:disabled:bg-transparent active:aria-disabled:bg-transparent'
+const linkColors = {
+  primary: 'hover:text-primary active:text-primary hover:bg-primary/10 active:bg-primary/20',
+  secondary: 'hover:text-secondary active:text-secondary hover:bg-secondary/10 active:bg-secondary/20',
+  success: 'hover:text-success active:text-success hover:bg-success/10 active:bg-success/20',
+  info: 'hover:text-info active:text-info hover:bg-info/10 active:bg-info/20',
+  warning: 'hover:text-warning active:text-warning hover:bg-warning/10 active:bg-warning/20',
+  error: 'hover:text-error active:text-error hover:bg-error/10 active:bg-error/20',
+  neutral:
+    'hover:text-highlighted active:text-highlighted hover:bg-(--portal-surface-hover) active:bg-(--portal-surface-active)'
+}
 const field = {
   slots: { base: 'rounded-lg' },
   variants: {
@@ -34,7 +46,12 @@ export default defineAppConfig({
           variant: 'outline',
           class:
             'bg-transparent hover:bg-(--portal-surface-hover) active:bg-(--portal-surface-active) disabled:bg-transparent aria-disabled:bg-transparent'
-        }
+        },
+        ...Object.entries(linkColors).map(([color, states]) => ({
+          color,
+          variant: 'link',
+          class: `${linkInteraction} ${states}`
+        }))
       ]
     },
     card: {

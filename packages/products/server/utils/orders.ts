@@ -77,7 +77,7 @@ export async function fulfillOrder(storeId: string, id: string) {
 export async function createCheckout(event: H3Event, body: unknown) {
   const input = parseInput(checkoutSchema, body),
     store = await getStore(true)
-  input.returnUrl = resolveCheckoutReturnUrl(input.returnUrl, store.checkout_appearance.returnUrl)
+  input.returnUrl = resolveCheckoutReturnUrl(input.returnUrl, store.checkout_appearance.returnUrl, baseUrl())
   if (store.mode === 'live') {
     await orderIntegration().assertReady(store.organization_id)
   }
