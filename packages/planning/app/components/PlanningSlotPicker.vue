@@ -212,6 +212,7 @@ if (import.meta.client) {
               icon="i-lucide-chevron-left"
               color="neutral"
               variant="ghost"
+              class="calendar-navigation"
               :aria-label="t('planning.previousMonth')"
               @click="move(-1)"
             />
@@ -220,6 +221,7 @@ if (import.meta.client) {
               icon="i-lucide-chevron-right"
               color="neutral"
               variant="ghost"
+              class="calendar-navigation"
               :aria-label="t('planning.nextMonth')"
               @click="move(1)"
             />
@@ -545,21 +547,36 @@ if (import.meta.client) {
   border: 1px solid transparent;
   opacity: 1;
 }
+.calendar-navigation:not(:disabled):hover {
+  color: var(--checkout-accent, var(--ui-primary));
+  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 20%, transparent);
+  box-shadow: inset 0 0 0 1px var(--checkout-accent, var(--ui-primary));
+}
+.calendar-navigation:not(:disabled):active {
+  color: white;
+  background: var(--checkout-accent, var(--ui-primary));
+}
 .calendar-date--available {
   color: var(--checkout-accent, var(--ui-primary));
   background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 10%, transparent);
   border-color: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 35%, transparent);
   font-weight: 600;
 }
-.calendar-date--available:hover {
-  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 20%, transparent);
+.calendar-date--available:not(:disabled):hover {
+  background: color-mix(in srgb, var(--checkout-accent, var(--ui-primary)) 25%, transparent);
+  border-color: var(--checkout-accent, var(--ui-primary));
+  box-shadow: inset 0 0 0 1px var(--checkout-accent, var(--ui-primary));
+}
+.calendar-date--available:not(:disabled):active {
+  color: white;
+  background: var(--checkout-accent, var(--ui-primary));
 }
 .calendar-date--selected {
   color: white;
   background: var(--checkout-accent, var(--ui-primary));
   border-color: var(--checkout-accent, var(--ui-primary));
 }
-.calendar-date--selected:hover {
+.calendar-date--selected:not(:disabled):hover {
   background: var(--checkout-accent, var(--ui-primary));
 }
 .calendar-date--past {
