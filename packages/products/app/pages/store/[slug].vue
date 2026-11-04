@@ -6,7 +6,7 @@ import { formatAppointmentRange } from '@nuxt-customer-portal/core/shared/appoin
 import { authClient } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import type { AuthSessionResponse } from '@nuxt-customer-portal/core/app/utils/auth-client'
 import { billingSchema } from '../../../shared/validation'
-import { resolveCheckoutQuery, resolveCheckoutReturnUrl } from '../../../shared/checkout-query'
+import { resolveCheckoutQuery, resolveCheckoutReturnUrl, resolveProductReturnUrl } from '../../../shared/checkout-query'
 import { formatMoney } from '../../../shared/money'
 import { defaultCheckoutAppearance } from '../../../shared/checkout-appearance'
 import type { CatalogProduct } from '../../../shared/types'
@@ -30,6 +30,7 @@ interface PersonalAddress {
 definePageMeta({ public: true, layout: 'store', key: (route) => `checkout:${route.path}` })
 const { t, locale, setLocale } = useI18n()
 const route = useRoute()
+const portalOrigin = useRequestURL().origin
 const browserDateLocale = ref<string[]>()
 onMounted(() => {
   browserDateLocale.value = [...navigator.languages]
@@ -277,7 +278,10 @@ watch(
 watch(state, () => (requestId = crypto.randomUUID()), { deep: true })
 
 const appearance = computed(() => product.value?.checkoutAppearance || defaultCheckoutAppearance())
-const checkoutReturnUrl = computed(() => resolveCheckoutReturnUrl(route.query.returnUrl, appearance.value.returnUrl))
+const checkoutReturnUrl = computed(() =>
+  resolveCheckoutReturnUrl(route.query.returnUrl, appearance.value.returnUrl, portalOrigin)
+)
+const productReturnUrl = computed(() => resolveProductReturnUrl(checkoutReturnUrl.value, portalOrigin))
 const themeStyle = computed(() => ({
   '--checkout-paper': appearance.value.paperColor,
   '--checkout-surface': appearance.value.surfaceColor,
@@ -379,7 +383,7 @@ async function buy() {
           ← {{ t('products.backToTimeSelection') }}
         </button>
         <a v-else-if="checkoutReturnUrl" :href="checkoutReturnUrl" class="checkout-back"
-          >← {{ t('products.backToOffering') }}</a
+          >← {{ t(productReturnUrl ? 'products.backToProduct' : 'products.backToOffering') }}</a
         >
         <img v-if="appearance.logoUrl" :src="appearance.logoUrl" :alt="appearance.hostName" class="checkout-logo" />
         <span v-else class="checkout-wordmark">{{ appearance.hostName }}</span>

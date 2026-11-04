@@ -8,6 +8,7 @@ import { purchaseReturnUrl, type PurchaseDownload } from '../../../../shared/dow
 definePageMeta({ public: true, layout: 'store' })
 
 const route = useRoute()
+const portalOrigin = useRequestURL().origin
 const api = useProducts()
 const { locale, setLocale } = useI18n()
 const { locale: requestedLocale, currency } = resolveCheckoutQuery(route.query)
@@ -26,7 +27,9 @@ if (!product.prices.length && currency) {
 }
 
 const appearance = computed(() => product.checkoutAppearance || defaultCheckoutAppearance())
-const checkoutReturnUrl = computed(() => resolveCheckoutReturnUrl(route.query.returnUrl, appearance.value.returnUrl))
+const checkoutReturnUrl = computed(() =>
+  resolveCheckoutReturnUrl(route.query.returnUrl, appearance.value.returnUrl, portalOrigin)
+)
 const purchaseToken =
   outcome === 'success' && typeof route.query.purchase === 'string' && /^[a-f0-9]{64}$/.test(route.query.purchase)
     ? route.query.purchase
