@@ -88,10 +88,12 @@ useHead({ title: `${t('planning.bookNow')} — ${product.title}`, meta: [{ name:
               <p v-if="product.subtitle" class="order-subtitle">{{ product.subtitle }}</p>
             </div>
           </div>
-          <p class="order-summary">{{ product.summary }}</p>
+          <div class="order-summary">
+            <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
+          </div>
           <details class="mobile-offering-details">
             <summary>{{ t('planning.offeringDetails') }}</summary>
-            <p>{{ product.summary }}</p>
+            <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
           </details>
           <p class="booking-duration">
             <UIcon name="i-lucide-clock" aria-hidden="true" />{{

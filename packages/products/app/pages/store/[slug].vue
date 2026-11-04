@@ -461,7 +461,9 @@ async function buy() {
               >{{ t('products.chooseAnotherSlot') }}</UButton
             >
           </div>
-          <p class="order-summary">{{ product.summary }}</p>
+          <div class="order-summary">
+            <ProductsMarkdown :html="product.summaryHtml" :theme="product.markdownStyle" />
+          </div>
           <div class="order-price">
             <span>{{ t('products.total') }}</span
             ><span
