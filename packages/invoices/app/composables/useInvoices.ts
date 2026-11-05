@@ -21,6 +21,7 @@ export const useInvoices = () => ({
   clientAccessOverview: (clientId: string) =>
     $fetch<InvoiceClientAccessOverviewDto, string>(`/api/invoices/admin/clients/${clientId}/access`),
   adminBootstrap: () => $fetch<InvoicesAdminBootstrap, string>('/api/invoices/admin/bootstrap'),
+  getSettings: () => $fetch<InvoiceSettingsDto, string>('/api/invoices/admin/settings'),
   updateSettings: (input: Omit<InvoiceSettingsDto, 'organizationId'>) =>
     $fetch<unknown, string>('/api/invoices/admin/settings', { method: 'PUT', body: input }),
   createInvoice: (input: Record<string, unknown>) =>

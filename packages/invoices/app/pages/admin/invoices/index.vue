@@ -32,7 +32,7 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
           icon="i-lucide-plus"
           :aria-label="t('features.invoices.admin.newInvoice')"
           :disabled="!child.canCreate"
-          @click="child.openCreate()"
+          to="/admin/invoices/new"
         /><UButton
           v-if="child?.showCreate"
           class="hidden sm:inline-flex"
@@ -40,7 +40,7 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
           size="sm"
           variant="outline"
           :disabled="!child.canCreate"
-          @click="child.openCreate()"
+          to="/admin/invoices/new"
         >
           {{ t('features.invoices.admin.newInvoice') }} </UButton
         ><UButton

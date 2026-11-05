@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const invoices = useInvoices()
 const { t } = useI18n()
-const { data, refresh } = await useAsyncData('invoice-create-bootstrap', () => invoices.adminBootstrap())
+const { data, error, pending, refresh } = await useAsyncData('invoice-create-bootstrap', () =>
+  invoices.adminBootstrap()
+)
 useSeoMeta({ title: () => t('features.invoices.admin.newInvoice') })
 </script>
 
@@ -13,6 +15,13 @@ useSeoMeta({ title: () => t('features.invoices.admin.newInvoice') })
       </UButton>
       <h1 class="text-2xl font-semibold">{{ t('features.invoices.admin.newInvoice') }}</h1>
     </header>
-    <InvoicesAdminInvoices v-if="data" :data="data" :refresh="refresh" create-page class="min-h-0 flex-1" />
+    <UAlert v-if="error" color="error" :title="t('features.invoices.messages.fetchError')">
+      <template #actions
+        ><UButton :loading="pending" @click="() => refresh()">{{
+          t('features.invoices.admin.retry')
+        }}</UButton></template
+      >
+    </UAlert>
+    <InvoicesAdminInvoices v-else-if="data" :data="data" :refresh="refresh" create-page class="min-h-0 flex-1" />
   </section>
 </template>

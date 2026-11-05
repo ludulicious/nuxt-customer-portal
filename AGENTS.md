@@ -1,6 +1,6 @@
 # Git workflow
 
-Do not edit, commit, or push directly on `master`. Before making changes, inspect the working tree and create or switch to a task branch. Preserve existing work; use a separate worktree when another task owns the current checkout.
+Do not edit, commit, or push directly on `master`. Before making changes, inspect the working tree and create or switch to a task branch. Preserve existing work and use the normal project working folder so the user can test changes there. Never create or work in a separate worktree unless the user explicitly approves it for the current task. If another task owns the checkout and its work cannot be preserved safely, ask the user how to proceed instead of creating a worktree.
 
 Track changes with GitHub issues and integrate them through pull requests targeting `master`. Use a purpose-based branch prefix such as `feat/`, `fix/`, `bug/`, `chore/`, `docs/`, `refactor/`, or `test/`; never use the `codex/` prefix. Include the issue number when known, for example `fix/<issue-number>-<short-description>`. Link the issue in the pull request, describe the resulting behavior, and report the checks actually run. Include documentation and a changeset when the change needs them.
 

@@ -1,5 +1,6 @@
 import { invoiceRecipientEmail } from '../../shared/recipient-email'
 import { suggestedInvoiceContact } from '../../shared/invoice-recipient'
+import { hasSameInvoiceLineAmounts } from '../../shared/invoice-line-edit'
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import { canCreditInvoice, copiedInvoiceDates, copyInvoiceLines, invoiceLineAmount } from '../../shared/invoice-copy'
 import { nanoid } from 'nanoid'
@@ -16,7 +17,7 @@ import {
   hasNumericInvoiceSequence,
   incrementInvoiceNumber
 } from '@nuxt-customer-portal/invoices/shared/invoice-number'
-import type { InvoiceCreateInput } from './invoice-validation'
+import type { InvoiceCreateInput, InvoiceUpdateInput } from './invoice-validation'
 import type {
   InvoiceDto,
   InvoiceSettingsDto,
@@ -866,7 +867,7 @@ export const updateInvoice = async (
   organizationId: string,
   actorUserId: string,
   id: string,
-  input: { number: string; issueDate: string; dueDate: string; subject?: string | null; notes?: string | null }
+  input: InvoiceUpdateInput
 ) =>
   db.transaction(async (tx) => {
     const [current] = await tx
@@ -874,13 +875,65 @@ export const updateInvoice = async (
       .from(invoice)
       .where(and(eq(invoice.id, id), eq(invoice.organizationId, organizationId)))
       .limit(1)
+      .for('update')
     if (!current) {
       throw createError({ statusCode: 404, message: 'Invoice not found' })
     }
     if (current.status !== 'DRAFT') {
       throw createError({ statusCode: 409, message: 'Only draft invoices can be edited' })
     }
-    const [updated] = await tx.update(invoice).set(input).where(eq(invoice.id, id)).returning()
+    const { lines, ...details } = input
+    let taxReviewRequired = current.taxReviewRequired
+    if (lines) {
+      const existing = await tx.select().from(invoiceLine).where(eq(invoiceLine.invoiceId, id))
+      const existingById = new Map(existing.map((line) => [line.id, line]))
+      const retainedIds = lines.flatMap((line) => (line.id ? [line.id] : []))
+      if (new Set(retainedIds).size !== retainedIds.length || retainedIds.some((lineId) => !existingById.has(lineId))) {
+        throw createError({ statusCode: 400, message: 'Invoice lines must belong to this invoice and occur once' })
+      }
+      if (
+        lines.some((line) => (current.documentType === 'credit' ? line.unitPriceMinor > 0 : line.unitPriceMinor < 0))
+      ) {
+        throw createError({ statusCode: 400, message: 'Line prices must match the invoice document type' })
+      }
+      const updatedLines = lines.map((line, position) => {
+        const previous = line.id ? existingById.get(line.id) : undefined
+        const unchangedAmounts = hasSameInvoiceLineAmounts(line, previous)
+        return {
+          ...line,
+          id: line.id ?? nanoid(),
+          invoiceId: id,
+          position,
+          exactTaxMinor: unchangedAmounts ? (previous?.exactTaxMinor ?? null) : null,
+          taxDetails: unchangedAmounts ? (previous?.taxDetails ?? null) : null
+        }
+      })
+      if (current.agreedTotalMinor !== null && totals(updatedLines, []).totalMinor !== current.agreedTotalMinor) {
+        throw createError({ statusCode: 409, message: 'Invoice total must match the agreed purchase total' })
+      }
+      if (current.agreedTotalMinor !== null && updatedLines.some((line) => line.exactTaxMinor === null)) {
+        taxReviewRequired = true
+      }
+      const removedIds = existing.filter((line) => !retainedIds.includes(line.id)).map((line) => line.id)
+      if (removedIds.length) {
+        await tx.delete(invoiceLine).where(and(eq(invoiceLine.invoiceId, id), inArray(invoiceLine.id, removedIds)))
+      }
+      for (const line of updatedLines) {
+        if (existingById.has(line.id)) {
+          await tx
+            .update(invoiceLine)
+            .set(line)
+            .where(and(eq(invoiceLine.invoiceId, id), eq(invoiceLine.id, line.id)))
+        } else {
+          await tx.insert(invoiceLine).values(line)
+        }
+      }
+    }
+    const [updated] = await tx
+      .update(invoice)
+      .set({ ...details, taxReviewRequired, updatedAt: new Date() })
+      .where(eq(invoice.id, id))
+      .returning()
     await tx.insert(invoiceHistory).values({ id: nanoid(), invoiceId: id, action: 'EDITED', actorUserId })
     return updated!
   })

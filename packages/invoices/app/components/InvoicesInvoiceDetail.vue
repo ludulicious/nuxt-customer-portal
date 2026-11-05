@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { canCreditInvoice } from '@nuxt-customer-portal/invoices/shared/invoice-copy'
+import { editableInvoiceLines } from '@nuxt-customer-portal/invoices/shared/invoice-line-edit'
 import { invoiceLogoCandidates } from '@nuxt-customer-portal/invoices/shared/invoice-logo'
 import { z } from 'zod'
 import type {
@@ -20,9 +21,11 @@ const props = withDefaults(
     mode?: 'admin' | 'client'
     backTo?: string
     backLabel?: string
+    startEditing?: boolean
   }>(),
   { mode: 'admin' }
 )
+const emit = defineEmits<{ editStarted: [] }>()
 const isClient = computed(() => props.mode === 'client')
 const { t, locale } = useI18n()
 const countryName = (country: string | null) =>
@@ -37,6 +40,12 @@ const deferredInvoice = computed(() => 'agreedTotalMinor' in props.invoice && pr
 const taxReview = reactive({
   rates: props.invoice.lines.map((line) => ({ lineId: line.id, rate: line.vatRateBasisPoints / 100 }))
 })
+watch(
+  () => props.invoice.lines,
+  (lines) => {
+    taxReview.rates = lines.map((line) => ({ lineId: line.id, rate: line.vatRateBasisPoints / 100 }))
+  }
+)
 const taxReviewSchema = z.object({
   rates: z.array(z.object({ lineId: z.string(), rate: z.number().min(0).max(100).multipleOf(0.01) })).min(1)
 })
@@ -67,6 +76,8 @@ const refreshingEmailStatuses = ref(false)
 const emailDeliveries = ref(props.invoice.emailDeliveries ?? [])
 const paymentOpen = ref(false)
 const editOpen = ref(false)
+const defaultVatRateBasisPoints = ref(2100)
+const lineEditor = ref<{ focusError: (errors: Array<{ name?: string }>) => Promise<void> } | null>(null)
 const emailOpen = ref(false)
 const emailMode = ref<'issue' | 'resend' | 'reminder'>('issue')
 const canResendInvoice = computed(
@@ -89,7 +100,8 @@ const edit = reactive({
   issueDate: props.invoice.issueDate,
   dueDate: props.invoice.dueDate,
   subject: props.invoice.subject ?? '',
-  notes: props.invoice.notes ?? ''
+  notes: props.invoice.notes ?? '',
+  lines: editableInvoiceLines(props.invoice.lines)
 })
 watch(
   () => props.invoice.emailDeliveries,
@@ -120,7 +132,28 @@ const editSchema = computed(() =>
       issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.invoices.validation.validDate')),
       dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('features.invoices.validation.validDate')),
       subject: z.string().trim().max(500),
-      notes: z.string().trim().max(5000)
+      notes: z.string().trim().max(5000),
+      lines: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            description: z.string().trim().min(1, t('features.invoices.validation.required')).max(500),
+            quantityMilli: z
+              .number()
+              .int()
+              .positive(t('features.invoices.validation.positiveQuantity'))
+              .max(100_000_000),
+            unit: z.string().trim().min(1, t('features.invoices.validation.required')).max(30),
+            unitPriceMinor: z
+              .number()
+              .int()
+              .min(props.invoice.documentType === 'credit' ? -1_000_000_000 : 0)
+              .max(props.invoice.documentType === 'credit' ? 0 : 1_000_000_000),
+            vatRateBasisPoints: z.number().int().min(0).max(10_000)
+          })
+        )
+        .min(1, t('features.invoices.validation.invoiceLineRequired'))
+        .max(500)
     })
     .refine((value) => value.dueDate >= value.issueDate, {
       path: ['dueDate'],
@@ -229,23 +262,41 @@ const openEmail = (mode: 'issue' | 'resend' | 'reminder') => {
   emailMode.value = mode
   emailOpen.value = true
 }
-const openEdit = () => {
-  Object.assign(edit, {
-    number: props.invoice.number,
-    issueDate: props.invoice.issueDate,
-    dueDate: props.invoice.dueDate,
-    subject: props.invoice.subject ?? '',
-    notes: props.invoice.notes ?? ''
-  })
-  editOpen.value = true
+const openEdit = async () => {
+  busy.value = true
+  try {
+    const settings = await api.getSettings()
+    defaultVatRateBasisPoints.value = settings.defaultVatRateBasisPoints
+    Object.assign(edit, {
+      number: props.invoice.number,
+      issueDate: props.invoice.issueDate,
+      dueDate: props.invoice.dueDate,
+      subject: props.invoice.subject ?? '',
+      notes: props.invoice.notes ?? '',
+      lines: editableInvoiceLines(props.invoice.lines)
+    })
+    editOpen.value = true
+  } catch (error) {
+    toast.add({ title: t('features.invoices.messages.fetchError'), description: String(error), color: 'error' })
+  } finally {
+    busy.value = false
+  }
 }
 const saveEdit = async () => {
-  await run(
+  const saved = await run(
     () => api.updateInvoice(props.invoice.id, { ...edit, subject: edit.subject || null, notes: edit.notes || null }),
     t('features.invoices.admin.invoiceUpdated')
   )
-  editOpen.value = false
+  if (saved) {
+    editOpen.value = false
+  }
 }
+onMounted(async () => {
+  if (props.startEditing && !isClient.value && props.invoice.status === 'DRAFT') {
+    emit('editStarted')
+    await openEdit()
+  }
+})
 const creditConfirmationOpen = ref(false)
 const deleteConfirmationOpen = ref(false)
 const recipientRefreshOpen = ref(false)
@@ -276,7 +327,7 @@ const createCopy = async (credit: boolean) => {
   try {
     const created = credit ? await api.creditInvoice(props.invoice.id) : await api.duplicateInvoice(props.invoice.id)
     creditConfirmationOpen.value = false
-    await navigateTo(`/admin/invoices/${created.id}`)
+    await navigateTo({ path: `/admin/invoices/${created.id}`, query: { edit: 'true' } })
     toast.add({
       title: t(credit ? 'features.invoices.admin.creditCreated' : 'features.invoices.admin.invoiceDuplicated'),
       color: 'success'
@@ -657,7 +708,15 @@ if (!isClient.value) {
           />
         </div>
       </template>
-      <UForm :state="edit" :schema="editSchema" class="grid gap-4" @submit="saveEdit">
+      <UForm
+        :state="edit"
+        :schema="editSchema"
+        novalidate
+        class="grid gap-4"
+        @submit="saveEdit"
+        @error="lineEditor?.focusError($event.errors)"
+        @keydown.esc="editOpen = false"
+      >
         <UFormField name="number" :label="t('features.invoices.admin.invoiceNumber')">
           <UInput v-model="edit.number" class="w-full" />
         </UFormField>
@@ -673,6 +732,15 @@ if (!isClient.value) {
         ><UFormField name="notes" :label="t('features.invoices.admin.notes')">
           <UTextarea v-model="edit.notes" :rows="5" class="w-full" />
         </UFormField>
+        <p v-if="deferredInvoice" class="text-sm text-muted">{{ t('features.invoices.admin.agreedTotalEditHelp') }}</p>
+        <InvoicesInvoiceLinesEditor
+          ref="lineEditor"
+          v-model="edit.lines"
+          :currency="invoice.currency"
+          :default-vat-rate-basis-points="defaultVatRateBasisPoints"
+          :credit="invoice.documentType === 'credit'"
+          :original-lines="invoice.lines"
+        />
         <div class="flex justify-end gap-2">
           <UButton type="button" color="neutral" variant="ghost" @click="editOpen = false">
             {{ t('features.invoices.cancel') }} </UButton

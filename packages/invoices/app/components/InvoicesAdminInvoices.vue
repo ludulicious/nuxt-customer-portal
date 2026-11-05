@@ -2,6 +2,7 @@
 import { currencyScale } from '@nuxt-customer-portal/invoices/shared/money'
 import { z } from 'zod'
 import { createHoursIntroduction } from '@nuxt-customer-portal/invoices/shared/invoice-introduction'
+import { loadAvailableInvoiceSources } from '@nuxt-customer-portal/invoices/shared/invoice-sources'
 import type { InvoicesAdminBootstrap } from '@nuxt-customer-portal/invoices/app/composables/useInvoices'
 import type { InvoiceDto, InvoiceableEntryDto } from '@nuxt-customer-portal/invoices/shared/types/invoice'
 
@@ -14,8 +15,21 @@ const availableProviders = ref<typeof providers.value>([])
 const toast = useToast()
 const busy = ref(false)
 const formOpen = ref(false)
+const lineEditor = ref<{ focusError: (errors: Array<{ name?: string }>) => Promise<void> } | null>(null)
+const opening = ref(false)
+const initializationError = ref(false)
+const sourcesUnavailable = ref(false)
+const sourcesLoaded = ref(providers.value.length === 0)
 const step = ref(1)
 const source = ref<'FREE' | 'TIME' | ''>('')
+const firstStep = computed(() => (sourcesLoaded.value && !availableProviders.value.length ? 2 : 1))
+const wizardSteps = computed(() => [
+  ...(firstStep.value === 1 ? [1] : []),
+  2,
+  ...(source.value === 'FREE' ? [] : [3, 4]),
+  5
+])
+const wizardPosition = computed(() => wizardSteps.value.indexOf(step.value) + 1)
 const selectedProjectIds = ref<string[]>([])
 const detailLevel = ref<'SUMMARY' | 'DETAILED'>('SUMMARY')
 const groupBy = ref<'PROJECT' | 'PERSON' | 'ACTIVITY' | 'PERSON_ACTIVITY'>('PROJECT')
@@ -127,33 +141,6 @@ const money = (minor: unknown, currency = props.data.settings.currency) =>
   new Intl.NumberFormat(locale.value, { style: 'currency', currency }).format(Number(minor) / currencyScale(currency))
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-const quantityFormat: Intl.NumberFormatOptions = { minimumFractionDigits: 2, maximumFractionDigits: 3 }
-const currencyFormat = computed<Intl.NumberFormatOptions>(() => ({
-  style: 'currency',
-  currency: model.currency,
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-}))
-const percentageFormat: Intl.NumberFormatOptions = {
-  style: 'percent',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-}
-const updateQuantity = (line: (typeof model.lines)[number], value: number | null | undefined) => {
-  line.quantityMilli = Math.round(Number(value ?? 0) * 1000)
-}
-const updateUnitPrice = (line: (typeof model.lines)[number], value: number | null | undefined) => {
-  line.unitPriceMinor = Math.round(Number(value ?? 0) * currencyScale(model.currency))
-}
-const updateVatRate = (line: (typeof model.lines)[number], value: number | null | undefined) => {
-  line.vatRateBasisPoints = Math.round(Number(value ?? 0) * 10_000)
-}
-const lineAmount = (line: (typeof model.lines)[number]) => Math.round((line.quantityMilli * line.unitPriceMinor) / 1000)
-const subtotalMinor = computed(() => model.lines.reduce((sum, line) => sum + lineAmount(line), 0))
-const vatMinor = computed(() =>
-  model.lines.reduce((sum, line) => sum + Math.round((lineAmount(line) * line.vatRateBasisPoints) / 10_000), 0)
-)
-const totalMinor = computed(() => subtotalMinor.value + vatMinor.value)
 const lastInvoiceNumber = computed(() => listing.items.value[0]?.number ?? '—')
 const periodEntries = computed(() =>
   invoiceableEntries.value.filter((entry) => entry.date >= periodFrom.value && entry.date <= periodTo.value)
@@ -216,8 +203,8 @@ const selectedEntries = computed(() =>
 )
 const reset = () => {
   formOpen.value = false
-  step.value = 1
-  source.value = ''
+  step.value = firstStep.value
+  source.value = firstStep.value === 2 ? 'FREE' : ''
   model.clientOrganizationId = ''
   model.contactId = ''
   selectedProjectIds.value = []
@@ -233,17 +220,26 @@ const openWizard = async () => {
     return
   }
   reset()
-  model.number = (await api.getNextInvoiceNumber()).number
-  formOpen.value = true
+  opening.value = true
+  initializationError.value = false
+  try {
+    model.number = (await api.getNextInvoiceNumber()).number
+    formOpen.value = true
+  } catch {
+    initializationError.value = true
+  } finally {
+    opening.value = false
+  }
 }
 const refreshAvailableProviders = async () => {
-  const checks = await Promise.all(
-    providers.value.map(async (provider) => ({
-      provider,
-      result: await provider.load({ from: periodFrom.value, to: periodTo.value })
-    }))
-  )
-  availableProviders.value = checks.filter((item) => item.result.enabled).map((item) => item.provider)
+  const result = await loadAvailableInvoiceSources(providers.value, { from: periodFrom.value, to: periodTo.value })
+  availableProviders.value = result.available
+  sourcesUnavailable.value = result.failed
+  sourcesLoaded.value = true
+  if (step.value === 1 && !result.available.length) {
+    source.value = 'FREE'
+    step.value = 2
+  }
 }
 const chooseClient = (id: string) => {
   model.clientOrganizationId = id
@@ -302,11 +298,8 @@ const next = () => {
   }
 }
 const back = () => {
-  if (source.value === 'FREE' && step.value === 5) {
-    step.value = 2
-  } else {
-    step.value--
-  }
+  const index = wizardSteps.value.indexOf(step.value)
+  step.value = wizardSteps.value[Math.max(0, index - 1)]!
 }
 const canContinue = computed(() =>
   step.value === 1
@@ -362,7 +355,10 @@ defineExpose({
   )
 })
 if (props.createPage) {
-  await Promise.all([openWizard(), refreshAvailableProviders()])
+  onMounted(() => {
+    void openWizard()
+    void refreshAvailableProviders()
+  })
 } else {
   await listing.restore()
 }
@@ -373,6 +369,20 @@ if (props.createPage) {
     class="-mx-1 flex h-full min-h-0 flex-col gap-4 px-1"
     :class="formOpen ? 'overflow-y-auto py-1' : 'overflow-hidden'"
   >
+    <UAlert v-if="createPage && initializationError" color="error" :title="t('features.invoices.messages.fetchError')">
+      <template #actions
+        ><UButton :loading="opening" @click="openWizard">{{ t('features.invoices.admin.retry') }}</UButton></template
+      >
+    </UAlert>
+    <div v-if="createPage && opening" class="flex justify-center py-12" role="status" :aria-label="t('common.loading')">
+      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+    </div>
+    <UAlert
+      v-if="createPage && sourcesUnavailable"
+      color="warning"
+      variant="outline"
+      :title="t('features.invoices.admin.sourcesUnavailable')"
+    />
     <InvoicesAdminListToolbar
       v-if="!createPage"
       v-model:search="listing.search.value"
@@ -422,7 +432,7 @@ if (props.createPage) {
             }}
           </h2>
           <span class="shrink-0 text-sm text-muted">{{
-            t('features.invoices.admin.wizardStep', { step, total: 5 })
+            t('features.invoices.admin.wizardStep', { step: wizardPosition, total: wizardSteps.length })
           }}</span>
         </div>
       </template>
@@ -539,7 +549,15 @@ if (props.createPage) {
         </UFormField>
       </div>
 
-      <UForm v-else :state="model" :schema="invoiceSchema" class="invoice-workbench" @submit="save">
+      <UForm
+        v-else
+        :state="model"
+        :schema="invoiceSchema"
+        novalidate
+        class="invoice-workbench"
+        @submit="save"
+        @error="lineEditor?.focusError($event.errors)"
+      >
         <div class="invoice-meta-grid">
           <div class="invoice-meta-column">
             <UFormField name="number" :label="t('features.invoices.admin.invoiceNumber')" required>
@@ -589,120 +607,13 @@ if (props.createPage) {
           <UTextarea v-model="model.subject" :rows="3" class="w-full" />
         </UFormField>
 
-        <section class="invoice-ledger" :aria-label="t('features.invoices.admin.invoiceDetails')">
-          <div class="invoice-ledger-head" aria-hidden="true">
-            <span>{{ t('features.invoices.admin.description') }}</span
-            ><span>{{ t('features.invoices.admin.quantity') }}</span
-            ><span>{{ t('features.invoices.admin.unitPrice') }}</span
-            ><span>{{ t('features.invoices.admin.amount') }}</span
-            ><span>{{ t('features.invoices.admin.vat') }}</span
-            ><span />
-          </div>
-          <div v-for="(line, index) in model.lines" :key="index" class="invoice-line">
-            <UFormField
-              class="invoice-line-description"
-              :name="`lines.${index}.description`"
-              :label="t('features.invoices.admin.description')"
-            >
-              <UTextarea v-model="line.description" :rows="1" autoresize class="w-full" />
-            </UFormField>
-            <UFormField
-              class="invoice-line-quantity"
-              :name="`lines.${index}.quantityMilli`"
-              :label="t('features.invoices.admin.quantity')"
-            >
-              <UInputNumber
-                :model-value="line.quantityMilli / 1000"
-                :min="0.001"
-                :step="0.001"
-                :format-options="quantityFormat"
-                :increment="false"
-                :decrement="false"
-                :ui="{ base: 'text-right' }"
-                class="w-full"
-                @update:model-value="updateQuantity(line, $event)"
-              />
-            </UFormField>
-            <UFormField
-              class="invoice-line-price"
-              :name="`lines.${index}.unitPriceMinor`"
-              :label="t('features.invoices.admin.unitPrice')"
-            >
-              <UInputNumber
-                :model-value="line.unitPriceMinor / currencyScale(model.currency)"
-                :min="0"
-                :step="0.01"
-                :format-options="currencyFormat"
-                :increment="false"
-                :decrement="false"
-                :ui="{ base: 'text-right' }"
-                class="w-full"
-                @update:model-value="updateUnitPrice(line, $event)"
-              />
-            </UFormField>
-            <div class="invoice-line-amount">
-              <span class="invoice-mobile-label">{{ t('features.invoices.admin.amount') }}</span
-              ><strong>{{ money(lineAmount(line), model.currency) }}</strong>
-            </div>
-            <UFormField
-              class="invoice-line-vat"
-              :name="`lines.${index}.vatRateBasisPoints`"
-              :label="t('features.invoices.admin.vat')"
-            >
-              <UInputNumber
-                :model-value="line.vatRateBasisPoints / 10_000"
-                :min="0"
-                :max="1"
-                :step="0.0001"
-                :format-options="percentageFormat"
-                :increment="false"
-                :decrement="false"
-                :ui="{ base: 'text-right' }"
-                class="w-full"
-                @update:model-value="updateVatRate(line, $event)"
-              />
-            </UFormField>
-            <UButton
-              v-if="source === 'FREE' || !line.timeEntryIds.length"
-              type="button"
-              class="invoice-line-remove self-start justify-self-end"
-              style="transform: translateY(8px)"
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-trash-2"
-              :aria-label="t('features.invoices.admin.removeInvoiceLine', { number: index + 1 })"
-              @click="model.lines.splice(index, 1)"
-            />
-          </div>
-          <div class="invoice-ledger-footer">
-            <div class="invoice-add-line">
-              <UButton
-                type="button"
-                size="sm"
-                variant="outline"
-                icon="i-lucide-plus"
-                @click="model.lines.push(emptyLine())"
-              >
-                {{ t('features.invoices.admin.addLine') }}
-              </UButton>
-            </div>
-            <dl class="invoice-totals">
-              <div>
-                <dt>{{ t('features.invoices.admin.subtotal') }}</dt>
-                <dd>{{ money(subtotalMinor, model.currency) }}</dd>
-              </div>
-              <div>
-                <dt>{{ t('features.invoices.admin.vat') }}</dt>
-                <dd>{{ money(vatMinor, model.currency) }}</dd>
-              </div>
-              <div class="invoice-total">
-                <dt>{{ t('features.invoices.admin.totalPayable') }}</dt>
-                <dd>{{ money(totalMinor, model.currency) }}</dd>
-              </div>
-            </dl>
-          </div>
-        </section>
+        <InvoicesInvoiceLinesEditor
+          ref="lineEditor"
+          v-model="model.lines"
+          :currency="model.currency"
+          :create-line="emptyLine"
+          :can-remove="(line) => source === 'FREE' || !line.timeEntryIds.length"
+        />
 
         <UFormField name="notes" :label="t('features.invoices.admin.notes')">
           <UTextarea v-model="model.notes" :rows="5" class="w-full" />
@@ -718,8 +629,8 @@ if (props.createPage) {
       </UForm>
 
       <div v-if="step < 5" class="mt-6 flex justify-between">
-        <UButton color="neutral" variant="outline" @click="step === 1 ? navigateTo('/admin/invoices') : back()">
-          {{ t(step === 1 ? 'features.invoices.cancel' : 'features.invoices.admin.previous') }} </UButton
+        <UButton color="neutral" variant="outline" @click="step === firstStep ? navigateTo('/admin/invoices') : back()">
+          {{ t(step === firstStep ? 'features.invoices.cancel' : 'features.invoices.admin.previous') }} </UButton
         ><UButton v-if="step > 1" :disabled="!canContinue" @click="next">
           {{ t('features.invoices.admin.next') }}
         </UButton>
@@ -817,75 +728,6 @@ if (props.createPage) {
   gap: 1rem;
   align-content: start;
 }
-.invoice-ledger {
-  overflow: clip;
-  border: 1px solid var(--invoices-rule);
-  border-radius: var(--invoices-radius);
-}
-.invoice-ledger-head {
-  display: none;
-}
-.invoice-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.75rem;
-  padding: 1rem;
-  border-block-end: 1px solid var(--invoices-rule);
-}
-.invoice-line-remove {
-  grid-column: 2;
-  justify-self: end;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-}
-.invoice-line-amount {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  justify-content: end;
-  min-height: 2.75rem;
-}
-.invoice-line-description {
-  grid-column: 1 / -1;
-}
-.invoice-line-amount {
-  text-align: end;
-}
-.invoice-mobile-label {
-  font-size: 0.75rem;
-  color: var(--ui-text-muted);
-}
-.invoice-ledger-footer {
-  display: grid;
-  gap: 1.5rem;
-  align-items: start;
-  padding: 1rem;
-}
-.invoice-add-line {
-  width: fit-content;
-  justify-self: start;
-}
-.invoice-totals {
-  display: grid;
-  gap: 0.75rem;
-  width: min(100%, 22rem);
-}
-.invoice-totals > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2rem;
-}
-.invoice-totals dd {
-  width: 12ch;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-}
-.invoice-total {
-  padding-block-start: 0.75rem;
-  border-block-start: 1px solid var(--invoices-rule);
-  font-weight: 700;
-}
 .invoice-actions {
   display: flex;
   flex-wrap: wrap;
@@ -898,73 +740,6 @@ if (props.createPage) {
   .invoice-meta-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(2rem, 6vw, 6rem);
-  }
-  .invoice-ledger-head,
-  .invoice-line {
-    grid-template-columns: minmax(10rem, 1fr) 6.5rem 8rem 7.5rem 7rem 1.5rem;
-  }
-  .invoice-ledger-head {
-    display: grid;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-block-end: 1px solid var(--invoices-rule);
-    font-size: 0.75rem;
-    color: var(--ui-text-muted);
-  }
-  .invoice-line {
-    align-items: start;
-  }
-  .invoice-line-description {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .invoice-line-quantity {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .invoice-line-price {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .invoice-line-amount {
-    grid-column: 4;
-    grid-row: 1;
-    min-height: 2rem;
-    margin-block-start: 0.25rem;
-    padding-block: 0;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .invoice-line-amount strong {
-    line-height: 1.25rem;
-  }
-  .invoice-line-vat {
-    grid-column: 5;
-    grid-row: 1;
-  }
-  .invoice-line-remove {
-    grid-column: 6;
-    grid-row: 1;
-    align-self: center;
-    justify-self: end;
-    width: 1.5rem;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
-    padding: 0;
-  }
-  .invoice-line :deep(label) {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  .invoice-mobile-label {
-    display: none;
-  }
-  .invoice-ledger-footer {
-    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 @media (prefers-reduced-motion: reduce) {

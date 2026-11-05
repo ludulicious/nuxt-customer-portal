@@ -4,6 +4,7 @@ import { invoiceListReturnTo } from '@nuxt-customer-portal/invoices/shared/invoi
 defineOptions({ name: 'AdminInvoiceDetailPage' })
 
 const route = useRoute()
+const editingStartedFor = ref<string | null>(null)
 const invoicesReturnTo = computed(() => invoiceListReturnTo(route.query.invoicesReturnTo))
 const ordersReturnTo = computed(() =>
   typeof route.query.ordersReturnTo === 'string' &&
@@ -42,10 +43,13 @@ useSeoMeta({
     />
     <InvoicesInvoiceDetail
       v-else-if="invoice"
+      :key="invoice.id"
       :invoice="invoice"
       :refresh="refresh"
+      :start-editing="route.query.edit === 'true' && editingStartedFor !== invoice.id"
       :back-to="ordersReturnTo || invoicesReturnTo"
       :back-label="ordersReturnTo ? t('features.invoices.admin.backToOrderList') : undefined"
+      @edit-started="editingStartedFor = invoice.id"
     />
   </section>
 </template>

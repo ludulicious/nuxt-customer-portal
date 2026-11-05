@@ -42,12 +42,23 @@ export const invoiceUpdateSchema = z
     issueDate: isoDate,
     dueDate: isoDate,
     subject: z.string().trim().max(500).nullable().optional(),
-    notes: z.string().trim().max(5000).nullable().optional()
+    notes: z.string().trim().max(5000).nullable().optional(),
+    lines: z
+      .array(
+        invoiceLineSchema.extend({
+          id: id.optional(),
+          unitPriceMinor: z.number().int().min(-1_000_000_000).max(1_000_000_000)
+        })
+      )
+      .min(1)
+      .max(500)
+      .optional()
   })
   .refine((value) => value.dueDate >= value.issueDate, {
     path: ['dueDate'],
     message: 'Due date must not precede invoice date'
   })
+export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>
 export const invoiceTaxReviewSchema = z.object({
   rates: z
     .array(z.object({ lineId: id, vatRateBasisPoints: z.number().int().min(0).max(10000) }))
