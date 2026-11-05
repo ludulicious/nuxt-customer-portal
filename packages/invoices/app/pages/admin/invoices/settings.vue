@@ -1,9 +1,22 @@
 <script setup lang="ts">
+import { z } from 'zod'
+
 const api = useInvoices()
 const { data, refresh } = await useAsyncData('invoice-settings', () => api.adminBootstrap())
 const { t } = useI18n()
+const toast = useToast()
 const busy = ref(false)
-const general = reactive({ enabled: false, currency: 'EUR', defaultVatRate: 21 })
+const general = reactive({ enabled: false, currency: 'EUR', defaultVatRate: 0.21 })
+const generalSchema = computed(() =>
+  z.object({
+    enabled: z.boolean(),
+    currency: z.string().trim().toUpperCase().length(3, t('features.invoices.validation.currencyLength')),
+    defaultVatRate: z
+      .number({ error: t('features.invoices.validation.vatPercentage') })
+      .min(0, t('features.invoices.validation.vatPercentage'))
+      .max(1, t('features.invoices.validation.vatPercentage'))
+  })
+)
 watch(
   data,
   (value) => {
@@ -11,7 +24,7 @@ watch(
       Object.assign(general, {
         enabled: value.settings.enabled,
         currency: value.settings.currency,
-        defaultVatRate: value.settings.defaultVatRateBasisPoints / 100
+        defaultVatRate: value.settings.defaultVatRateBasisPoints / 10_000
       })
     }
   },
@@ -23,17 +36,21 @@ const saveGeneral = async () => {
   }
   busy.value = true
   try {
+    const validated = generalSchema.value.parse(general)
     const { organizationId: _organizationId, ...settings } = data.value.settings
     await api.updateSettings({
       ...settings,
-      enabled: general.enabled,
-      currency: general.currency.toUpperCase(),
-      defaultVatRateBasisPoints: Math.round(general.defaultVatRate * 100)
+      enabled: validated.enabled,
+      currency: validated.currency,
+      defaultVatRateBasisPoints: Math.round(validated.defaultVatRate * 10_000)
     })
     await refresh()
     if (import.meta.client) {
       window.dispatchEvent(new CustomEvent('invoices:capabilities-refresh'))
     }
+    toast.add({ title: t('features.invoices.messages.workspaceSettingsSaved'), color: 'success' })
+  } catch (error) {
+    toast.add({ title: t('features.invoices.messages.saveError'), description: String(error), color: 'error' })
   } finally {
     busy.value = false
   }
@@ -61,13 +78,28 @@ const saveGeneral = async () => {
           <template #header>
             <h2 class="font-semibold">{{ t('features.invoices.admin.invoiceConfiguration') }}</h2>
           </template>
-          <form class="grid gap-4 md:grid-cols-3" @submit.prevent="saveGeneral">
-            <UFormField class="md:col-span-3">
+          <UForm
+            :schema="generalSchema"
+            :state="general"
+            novalidate
+            class="grid gap-4 md:grid-cols-3"
+            @submit="saveGeneral"
+          >
+            <UFormField name="enabled" class="md:col-span-3">
               <USwitch v-model="general.enabled" :label="t('features.invoices.admin.invoicesEnabled')" /> </UFormField
-            ><UFormField :label="t('features.invoices.admin.currency')">
+            ><UFormField name="currency" :label="t('features.invoices.admin.currency')">
               <UInput v-model="general.currency" maxlength="3" class="w-full" /> </UFormField
-            ><UFormField :label="t('features.invoices.admin.defaultVatRate')">
-              <UInputNumber v-model="general.defaultVatRate" :min="0" :max="100" :step="0.01" class="w-full" />
+            ><UFormField name="defaultVatRate" :label="t('features.invoices.admin.defaultVatRate')">
+              <UInputNumber
+                v-model="general.defaultVatRate"
+                :min="0"
+                :max="1"
+                :step="0.0001"
+                :format-options="{ style: 'percent', maximumFractionDigits: 2 }"
+                :increment="false"
+                :decrement="false"
+                class="w-full"
+              />
             </UFormField>
             <div class="flex items-end justify-end">
               <UButton
@@ -78,7 +110,7 @@ const saveGeneral = async () => {
                 >{{ t('features.invoices.save') }}</UButton
               >
             </div>
-          </form>
+          </UForm>
         </UCard>
         <InvoicesSenderDetailsForm
           v-if="data"

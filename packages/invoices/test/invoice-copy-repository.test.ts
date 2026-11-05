@@ -42,6 +42,7 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
   let rows: Record<string, Record<string, unknown>[]> = {}
   let writes: { table: string; value: Record<string, unknown> }[] = []
   let locks = 0
+  let rowLocks = 0
   let enabled = true
   let failLineInsert = false
   let foreignKeyFailure = false
@@ -77,7 +78,10 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
           limit = value
           return query
         },
-        for: () => query,
+        for: () => {
+          rowLocks += 1
+          return query
+        },
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve(
             resolve((rows[table] ?? []).filter((row) => !condition || matches(row, condition)).slice(0, limit))
@@ -99,10 +103,12 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
     }),
     update: (table: { name: string }) => ({
       set: (value: Record<string, unknown>) => ({
-        where: async (condition: Expression) => {
-          if ((rows[table.name] ?? []).some((row) => matches(row, condition))) {
+        where: (condition: Expression) => {
+          const selected = (rows[table.name] ?? []).filter((row) => matches(row, condition))
+          if (selected.length) {
             writes.push({ table: table.name, value })
           }
+          return { returning: async () => selected.map((row) => ({ ...row, ...value })) }
         }
       })
     }),
@@ -174,7 +180,8 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
     changeInvoiceStatus,
     deleteDraftInvoice,
     getDraftInvoiceRecipient,
-    refreshDraftInvoiceRecipient
+    refreshDraftInvoiceRecipient,
+    updateInvoice
   } = await import('../server/utils/invoice-repository')
   const source = {
     id: 'source',
@@ -427,4 +434,101 @@ test('invoice lifecycle transactions isolate organizations and protect credits a
   client.archivedAt = new Date()
   await assert.rejects(refreshDraftInvoiceRecipient('provider', 'actor', 'source', null), { statusCode: 404 })
   assert.deepEqual(writes, [])
+
+  const edit = {
+    number: '2026.0002',
+    issueDate: '2026-02-01',
+    dueDate: '2026-03-01',
+    lines: [{ ...line, description: 'Updated description' }]
+  }
+  const resetEdit = () => {
+    resetDraft()
+    rowLocks = 0
+    rows.invoice = [{ ...draft, agreedTotalMinor: null, taxReviewRequired: false }]
+    rows.invoiceLine = [{ ...line }]
+  }
+  resetEdit()
+  await updateInvoice('provider', 'actor', 'source', edit)
+  assert.equal(rowLocks, 1)
+  assert.equal(writes[0]!.table, 'invoiceLine')
+  assert.equal(writes[0]!.value.id, 'old-line')
+  assert.equal(writes[0]!.value.description, 'Updated description')
+  assert.equal(writes[0]!.value.exactTaxMinor, 33)
+  assert.equal(writes[1]!.table, 'invoice')
+  assert.ok(!('lines' in writes[1]!.value))
+  assert.equal(writes[2]!.value.action, 'EDITED')
+  assert.deepEqual(deleted, [])
+  resetEdit()
+  await updateInvoice('provider', 'actor', 'source', { ...edit, lines: [{ ...edit.lines[0]!, unitPriceMinor: 200 }] })
+  assert.equal(writes[0]!.value.unitPriceMinor, 200)
+  assert.equal(writes[0]!.value.exactTaxMinor, null)
+  assert.equal(writes[0]!.value.taxDetails, null)
+  resetEdit()
+  const { id: _lineId, ...addedLine } = edit.lines[0]!
+  await updateInvoice('provider', 'actor', 'source', { ...edit, lines: [addedLine] })
+  assert.deepEqual(deleted, ['old-line'])
+  assert.notEqual(writes[0]!.value.id, 'old-line')
+  assert.equal(writes[0]!.value.position, 0)
+  resetEdit()
+  const secondLine = { ...line, id: 'second-line' }
+  rows.invoiceLine!.push(secondLine)
+  await updateInvoice('provider', 'actor', 'source', { ...edit, lines: [secondLine, line] })
+  assert.deepEqual(
+    writes.slice(0, 2).map((write) => [write.value.id, write.value.position]),
+    [
+      ['second-line', 0],
+      ['old-line', 1]
+    ]
+  )
+  assert.deepEqual(deleted, [])
+  resetEdit()
+  await updateInvoice('provider', 'actor', 'source', { ...edit, lines: undefined })
+  assert.equal(writes[0]!.table, 'invoice')
+  assert.deepEqual(deleted, [])
+  for (const lines of [[{ ...line, id: 'foreign-line' }], [line, line], [{ ...line, unitPriceMinor: -100 }]]) {
+    resetEdit()
+    await assert.rejects(updateInvoice('provider', 'actor', 'source', { ...edit, lines }), { statusCode: 400 })
+    assert.deepEqual(writes, [])
+  }
+  for (const status of ['ISSUED', 'PAID', 'VOID']) {
+    resetEdit()
+    rows.invoice![0]!.status = status
+    await assert.rejects(updateInvoice('provider', 'actor', 'source', edit), { statusCode: 409 })
+    assert.deepEqual(writes, [])
+  }
+  resetEdit()
+  await assert.rejects(updateInvoice('other-provider', 'actor', 'source', edit), { statusCode: 404 })
+  assert.deepEqual(writes, [])
+  resetEdit()
+  rows.invoice![0]!.agreedTotalMinor = 185
+  await updateInvoice('provider', 'actor', 'source', edit)
+  assert.equal(writes[0]!.value.exactTaxMinor, 33)
+  assert.equal(writes[1]!.value.taxReviewRequired, false)
+  resetEdit()
+  rows.invoice![0]!.agreedTotalMinor = 185
+  await updateInvoice('provider', 'actor', 'source', {
+    ...edit,
+    lines: [{ ...line, quantityMilli: 1000, unitPriceMinor: 185, vatRateBasisPoints: 0 }]
+  })
+  assert.equal(writes[0]!.value.exactTaxMinor, null)
+  assert.equal(writes[1]!.value.taxReviewRequired, true)
+  resetEdit()
+  rows.invoice![0]!.agreedTotalMinor = 185
+  await assert.rejects(
+    updateInvoice('provider', 'actor', 'source', { ...edit, lines: [{ ...line, unitPriceMinor: 200 }] }),
+    { statusCode: 409 }
+  )
+  assert.deepEqual(writes, [])
+  resetEdit()
+  rows.invoice![0]!.documentType = 'credit'
+  await updateInvoice('provider', 'actor', 'source', { ...edit, lines: [{ ...line, unitPriceMinor: -101 }] })
+  assert.equal(writes[0]!.value.unitPriceMinor, -101)
+  resetEdit()
+  failLineInsert = true
+  await assert.rejects(
+    updateInvoice('provider', 'actor', 'source', { ...edit, lines: [line, addedLine] }),
+    /Line insert failed/
+  )
+  assert.deepEqual(writes, [])
+  failLineInsert = false
 })
