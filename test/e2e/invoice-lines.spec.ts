@@ -156,6 +156,7 @@ test('cancelling a preview leaves the saved order unchanged', async ({ page }) =
 
 test('dragging near the scroll edge reveals later lines and commits the preview', async ({ page }) => {
   await mount(page, 24)
+  const originalOrder = await order(page)
   const handle = await page.locator('[data-invoice-line="0"] [aria-keyshortcuts]').boundingBox()
   const scroll = await page.locator('#scroll').boundingBox()
   const edge = { x: scroll!.x + 80, y: scroll!.y + scroll!.height - 12 }
@@ -167,21 +168,20 @@ test('dragging near the scroll edge reveals later lines and commits the preview'
   const middle = { x: edge.x + 2, y: scroll!.y + scroll!.height / 2 }
   await page.mouse.move(middle.x, middle.y)
   await page.mouse.move(middle.x + 1, middle.y)
-  await expect
-    .poll(() =>
-      page
-        .locator('[data-invoice-line]')
-        .evaluateAll((elements) => elements.findIndex((element) => element.getAttribute('data-invoice-line') === '0'))
-    )
-    .toBeGreaterThan(3)
+  await expect(page.locator('[data-invoice-line]').first()).not.toHaveAttribute('data-invoice-line', '0')
   await waitForSortAnimation(page)
+  const previewOrder = await page
+    .locator('[data-invoice-line]')
+    .evaluateAll((elements) => elements.map((element) => `line-${element.getAttribute('data-invoice-line')}`))
+  expect(previewOrder).not.toEqual(originalOrder)
+  expect(await order(page)).toEqual(originalOrder)
   const target = page.locator('[data-invoice-line="0"]')
   await expect(target).toBeInViewport()
   const drop = await target.boundingBox()
   await page.mouse.move(drop!.x + 80, drop!.y + drop!.height / 2)
   await page.mouse.move(drop!.x + 81, drop!.y + drop!.height / 2)
   await page.mouse.up()
-  await expect.poll(async () => (await order(page)).indexOf('line-0')).toBeGreaterThan(3)
+  await expect.poll(() => order(page)).toEqual(previewOrder)
   await expect(page.locator('[data-drag-preview]')).toHaveCount(0)
 })
 
