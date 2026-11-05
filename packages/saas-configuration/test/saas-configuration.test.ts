@@ -124,6 +124,7 @@ test('release deployment publishes only the verified portal image without npm pu
   assert.match(workflow, /uses: \.\/\.github\/workflows\/release-portal-image\.yml/)
   assert.doesNotMatch(workflow, /^ {2}publish:/m)
   assert.doesNotMatch(workflow, /id-token:|npm publish|pnpm release-packages|registry-url:/)
+  assert.doesNotMatch(workflow, /Check release package versions|manifest\.version|expected release version/)
 })
 
 test('fresh SaaS signup enters organization onboarding without enabling public personal signup', async () => {
