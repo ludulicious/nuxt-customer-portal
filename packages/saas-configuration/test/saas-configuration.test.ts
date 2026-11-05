@@ -113,7 +113,7 @@ test('the deployable app includes its settings migration and image contract', as
 
 test('release deployment publishes only the verified portal image without npm publishing permissions', async () => {
   const workflow = await readFile(
-    new URL('../../../.github/workflows/release-npm-packages.yml', import.meta.url),
+    new URL('../../../.github/workflows/release-saas-portal.yml', import.meta.url),
     'utf8'
   )
   assert.match(workflow, /name: Release portal image/)
@@ -125,6 +125,28 @@ test('release deployment publishes only the verified portal image without npm pu
   assert.doesNotMatch(workflow, /^ {2}publish:/m)
   assert.doesNotMatch(workflow, /id-token:|npm publish|pnpm release-packages|registry-url:/)
   assert.doesNotMatch(workflow, /Check release package versions|manifest\.version|expected release version/)
+})
+
+test('release verification checks source code without npm distribution or installer jobs', async () => {
+  const workflow = await readFile(
+    new URL('../../../.github/workflows/release-verification.yml', import.meta.url),
+    'utf8'
+  )
+  assert.ok(workflow.includes('.github/workflows/release-*.yml'))
+  assert.match(workflow, /pnpm verify:saas-boundary/)
+  assert.match(workflow, /run: pnpm test\s/)
+  assert.match(workflow, /pnpm format:check/)
+  assert.match(workflow, /pnpm typecheck/)
+  assert.match(workflow, /--if-present build/)
+  assert.match(workflow, /pnpm test:e2e:demos/)
+  assert.doesNotMatch(workflow, /pnpm test:e2e:docs|docs-image:/)
+  assert.ok(workflow.includes('ref: ${{ needs.source.outputs.commit_sha }}'))
+  assert.doesNotMatch(workflow, /^ {2}(?:consumers|starter):/m)
+  assert.doesNotMatch(
+    workflow,
+    /pack:check|pack:starter|test:starter|--consumers|verify-packages|sync-package-versions/
+  )
+  assert.doesNotMatch(workflow, /npm publish|pnpm release-packages|id-token:|registry-url:/)
 })
 
 test('fresh SaaS signup enters organization onboarding without enabling public personal signup', async () => {

@@ -68,7 +68,7 @@ Keep all official packages on the same version. Read the [compatibility and rele
 | `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
 | `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
 
-Public package versions are managed with Changesets. Publishing a GitHub release triggers full verification and portal Docker image publication; automated npm publication is disabled. Prepare documentation on a branch and verify the Docker release before announcing it. Installation guides that use npm must remain aligned with versions actually available in the registry; see the [documentation release checklist](apps/docs/README.md#release-checklist).
+Development currently focuses on the repository source and the SaaS portal Docker image. Npm publication, package-distribution checks, and installer verification are paused. Existing packages and installer source remain available, but are not a release target. Publishing a GitHub release triggers source-code verification and portal Docker image publication; no package version bump or Changeset consumption is required for Docker-only releases. Prepare documentation on a branch and verify the Docker release before announcing it; see the [documentation release checklist](apps/docs/README.md#release-checklist).
 
 ## Repository development
 
@@ -77,7 +77,6 @@ pnpm install --frozen-lockfile
 pnpm test
 pnpm typecheck
 pnpm build
-pnpm pack:check
 ```
 
 Run `pnpm dev:apex`, `pnpm dev:brutal`, `pnpm --filter @nuxt-customer-portal/saas-portal dev`, or `pnpm dev:docs`. Apex uses a conventional header/sidebar shell; Brutal uses an independent editorial command-bar/two-pane shell. The SaaS portal adds guided, organization-specific configuration for branding, appearance, modules, public content, support, and legal pages.
