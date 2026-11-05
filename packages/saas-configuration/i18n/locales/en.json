@@ -155,7 +155,6 @@
         "headerBranding": "Header branding",
         "markName": "Icon and portal name",
         "fullLogo": "Full logo",
-        "logoFallback": "Uses the icon and portal name when a full logo is unavailable.",
         "secondaryLight": "Secondary accent — light",
         "secondaryDark": "Secondary accent — dark",
         "backgroundLight": "Page background — light",

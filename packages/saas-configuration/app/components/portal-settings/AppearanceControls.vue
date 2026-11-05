@@ -74,7 +74,12 @@ function applyPreset(preset: PortalAppearancePreset) {
       <p>{{ t('saasSettings.editor.appearance.commonHint') }}</p>
     </div>
     <div class="control-grid">
-      <UFormField name="appearance.colorMode" required :label="t('saasSettings.editor.fields.colorMode')">
+      <UFormField
+        name="appearance.colorMode"
+        required
+        :label="t('saasSettings.editor.fields.colorMode')"
+        class="col-span-full"
+      >
         <USelect
           v-model="state.appearance.colorMode"
           :items="[
@@ -124,10 +129,7 @@ function applyPreset(preset: PortalAppearancePreset) {
           ]"
           class="w-full"
       /></UFormField>
-      <UFormField
-        name="appearance.headerBranding"
-        :label="t('saasSettings.editor.appearance.headerBranding')"
-        :description="t('saasSettings.editor.appearance.logoFallback')"
+      <UFormField name="appearance.headerBranding" :label="t('saasSettings.editor.appearance.headerBranding')"
         ><USelect
           v-model="state.appearance.headerBranding"
           :items="[

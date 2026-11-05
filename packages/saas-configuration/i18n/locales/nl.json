@@ -155,7 +155,6 @@
         "headerBranding": "Logo in de kopbalk",
         "markName": "Pictogram en portaalnaam",
         "fullLogo": "Volledig logo",
-        "logoFallback": "Gebruikt het pictogram en de portaalnaam als er geen volledig logo beschikbaar is.",
         "secondaryLight": "Secundair accent — licht",
         "secondaryDark": "Secundair accent — donker",
         "backgroundLight": "Pagina-achtergrond — licht",

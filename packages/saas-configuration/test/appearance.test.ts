@@ -123,6 +123,18 @@ test('light-only surface overrides cannot leak into the dark theme', () => {
   assert.equal(hasCustomAppearanceSurfaces(darkOnly, true), true)
 })
 
+test('appearance controls keep primary colors together below color mode without the logo sublabel', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const controls = await readFile(
+    new URL('../app/components/portal-settings/AppearanceControls.vue', import.meta.url),
+    'utf8'
+  )
+  assert.match(controls, /<UFormField\s[^>]*name="appearance\.colorMode"[^>]*class="col-span-full"/)
+  assert.ok(controls.indexOf('name="appearance.colorMode"') < controls.indexOf('name="appearance.primaryLight"'))
+  assert.ok(controls.indexOf('name="appearance.primaryLight"') < controls.indexOf('name="appearance.primaryDark"'))
+  assert.doesNotMatch(controls, /logoFallback/)
+})
+
 test('soft appearance uses compact control rounding rather than pill-sized global radii', async () => {
   const appearance = applyAppearancePreset(defaultPortalSettings().appearance, 'soft-editorial')
   assert.equal(appearanceVariables(appearance, false)['--ui-radius'], '0.25rem')
