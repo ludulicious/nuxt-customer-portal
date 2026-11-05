@@ -12,10 +12,11 @@ if (originalDefineAppConfig === undefined) {
 }
 const { ui } = appConfig
 
-test('all standard fields use Nuxt UI surface overrides and Tailwind rounding without replacing native sizes or padding', () => {
+test('default fields retain native Nuxt UI variants, rounding, sizes and padding', () => {
   for (const field of [
     ui.input,
     ui.textarea,
+    ui.inputNumber,
     ui.inputDate,
     ui.inputTime,
     ui.inputTags,
@@ -23,22 +24,16 @@ test('all standard fields use Nuxt UI surface overrides and Tailwind rounding wi
     ui.selectMenu,
     ui.inputMenu
   ]) {
-    assert.equal(field.slots.base, 'rounded-lg')
-    assert.equal('size' in field.variants, false)
-    for (const variant of ['outline', 'soft', 'subtle'] as const) {
-      assert.match(field.variants.variant[variant], /portal-field-surface bg-\(--portal-surface\)/)
-      assert.match(field.variants.variant[variant], /ring-accented/)
-    }
+    assert.equal(field.slots.base, 'portal-field-surface')
+    assert.equal('variants' in field, false)
+    assert.doesNotMatch(JSON.stringify(field), /rounded-|bg-|ring-/)
   }
-  assert.equal('size' in ui.inputNumber.variants, false)
-  assert.equal('variants' in ui.button, false)
-  assert.equal(ui.input.variants.variant.outline, ui.inputNumber.variants.variant.outline)
 })
 
-test('cards and teleported overlays establish the same surface context', () => {
+test('cards and overlays only add opt-in surface hooks without replacing native variants', () => {
   for (const panel of [ui.card, ui.pageCard]) {
-    assert.match(panel.slots.root, /rounded-xl/)
-    assert.match(panel.variants.variant.outline.root, /portal-surface bg-\(--portal-surface\)/)
+    assert.equal(panel.slots.root, 'portal-surface')
+    assert.equal('variants' in panel, false)
   }
   for (const content of [
     ui.select.slots.content,
@@ -50,48 +45,20 @@ test('cards and teleported overlays establish the same surface context', () => {
     ui.popover.slots.content,
     ui.toast.slots.root
   ]) {
-    assert.match(content, /portal-surface bg-\(--portal-surface\)/)
-  }
-  assert.match(ui.select.slots.arrow, /fill-\(--portal-surface\)/)
-})
-
-test('neutral secondary actions remain transparent and selections retain brand tint', () => {
-  const neutral = ui.button.compoundVariants.find(
-    (variant) => variant.color === 'neutral' && variant.variant === 'outline'
-  )
-  assert.match(neutral!.class, /bg-transparent/)
-  assert.match(neutral!.class, /disabled:bg-transparent/)
-  assert.match(ui.select.slots.item, /data-\[state=checked\]:before:bg-primary\/10/)
-  assert.match(ui.button.compoundVariants[0]!.class, /portal-on-primary/)
-})
-
-test('submenu hover matches the Clients primary ghost button without replacing active or disabled states', () => {
-  const hover = ui.navigationMenu.compoundVariants.find((variant) => variant.active === false)!
-  assert.equal(hover.disabled, false)
-  assert.equal(hover.color, 'primary')
-  assert.match(hover.class.link, /hover:before:bg-primary\/10 hover:text-primary/)
-  assert.match(hover.class.childLink, /hover:before:bg-primary\/10 hover:text-primary/)
-  const active = ui.navigationMenu.compoundVariants.find((variant) => variant.active === true)!
-  assert.match(active.class.link, /before:bg-primary\/10 text-primary font-semibold/)
-  assert.match(ui.navigationMenu.slots.link, /focus-visible:before:outline-primary/)
-})
-
-test('link buttons retain full color and stronger pressed backgrounds without underlines across semantic colors', () => {
-  for (const color of ['primary', 'secondary', 'success', 'info', 'warning', 'error', 'neutral']) {
-    const link = ui.button.compoundVariants.find((variant) => variant.color === color && variant.variant === 'link')!
-    assert.ok(link, color)
-    assert.doesNotMatch(link.class, /underline|decoration-/)
-    assert.match(link.class, /hover:disabled:bg-transparent hover:aria-disabled:bg-transparent/)
-    assert.doesNotMatch(link.class, /(?:hover|active):text-[\w-]+\/\d+/)
-    if (color !== 'neutral') {
-      assert.ok(link.class.includes(`hover:text-${color} active:text-${color}`))
-      assert.ok(link.class.includes(`hover:bg-${color}/10 active:bg-${color}/20`))
-    }
+    assert.equal(content, 'portal-surface')
   }
 })
 
-test('standalone links retain native Nuxt UI interaction and focus styles', () => {
+test('primary buttons retain brand contrast without overriding native hover, link or neutral states', () => {
+  assert.equal(ui.button.compoundVariants.length, 1)
+  const [primary] = ui.button.compoundVariants
+  assert.equal(primary!.variant, 'solid')
+  assert.equal(primary!.color, 'primary')
+  assert.match(primary!.class, /portal-on-primary/)
+  assert.doesNotMatch(primary!.class, /hover:|active:|bg-|rounded-/)
+  assert.equal('tabs' in ui, false)
   assert.equal('link' in ui, false)
+  assert.equal('compoundVariants' in ui.navigationMenu, false)
 })
 
 test('main menu buttons share the Clients hover tint even when their inactive color is neutral', async () => {
@@ -112,8 +79,10 @@ test('surface tokens are provided by the UI layer in both modes and remain indep
   assert.doesNotMatch(saasCss, /@import.*\.\.\/ui\//)
   assert.match(css, /--portal-surface: #ffffff/)
   assert.match(css, /:where\(:root.dark, .portal-appearance-preview.dark\)/)
-  assert.match(css, /--portal-surface: #1e293b/)
-  assert.match(css, /\.portal-surface,\s*\.portal-field-surface\s*\{\s*--ui-bg: var\(--portal-surface\)/)
+  assert.match(css, /--portal-surface: var\(--ui-color-neutral-900\)/)
+  assert.match(css, /\[data-portal-surfaces='custom'\]/)
+  assert.match(css, /:not\(\.portal-appearance-preview\[data-portal-surfaces='theme'\] \*\)/)
+  assert.doesNotMatch(css, /\.portal-surface,\s*\.portal-field-surface\s*\{/)
   assert.match(css, /--portal-control-border: color-mix/)
   assert.match(css, /--portal-control-radius: 0.5rem/)
   assert.match(css, /--portal-panel-radius: 0.75rem/)

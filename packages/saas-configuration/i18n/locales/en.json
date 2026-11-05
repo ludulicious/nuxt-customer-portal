@@ -138,8 +138,8 @@
       "appearance": {
         "presets": "Starting style",
         "presetHint": "Choose a deliberate starting point, then customize any detail below.",
-        "business": "Default (Business)",
-        "businessDescription": "Clear system typography, focused orange actions, and neutral surfaces.",
+        "business": "Default (Nuxt UI)",
+        "businessDescription": "Native Nuxt UI typography, neutral surfaces, and primary-colored actions and states.",
         "softEditorial": "Soft Editorial",
         "softEditorialDescription": "Elegant headings, lavender surfaces, and sea-blue accents.",
         "custom": "Custom",
@@ -155,7 +155,6 @@
         "headerBranding": "Header branding",
         "markName": "Icon and portal name",
         "fullLogo": "Full logo",
-        "logoFallback": "Uses the icon and portal name when a full logo is unavailable.",
         "secondaryLight": "Secondary accent — light",
         "secondaryDark": "Secondary accent — dark",
         "backgroundLight": "Page background — light",

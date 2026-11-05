@@ -4,6 +4,7 @@ import {
   activeAppearancePreset,
   appearanceVariables,
   appearanceStylesheet,
+  hasCustomAppearanceSurfaces,
   applyAppearancePreset,
   portalAppearanceSchema
 } from '../shared/appearance'
@@ -78,12 +79,60 @@ test('default appearance does not override theme surfaces or typography', () => 
   assert.equal(vars['--ui-radius'], undefined)
 })
 
+test('changing primary colors updates the complete Nuxt UI palette in each mode without recoloring neutral roles', () => {
+  const appearance = { ...defaultPortalSettings().appearance, primaryLight: '#008877', primaryDark: '#77ddcc' }
+  for (const dark of [false, true]) {
+    const vars = appearanceVariables(appearance, dark)
+    const primary = dark ? appearance.primaryDark : appearance.primaryLight
+    assert.equal(vars['--ui-primary'], primary)
+    for (const shade of [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]) {
+      assert.equal(vars[`--ui-color-primary-${shade}`], vars[`--color-primary-${shade}`])
+      assert.ok(vars[`--ui-color-primary-${shade}`]!.includes(primary))
+    }
+    for (const token of ['--ui-bg', '--ui-text', '--ui-border', '--ui-secondary', '--ui-success', '--ui-error']) {
+      assert.equal(vars[token], undefined)
+    }
+  }
+})
+
+test('default CSS delegates semantic palettes and component states to Nuxt UI', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const css = await readFile(new URL('../app/assets/css/main.css', import.meta.url), 'utf8')
+  assert.match(css, /@import '@nuxt\/ui'/)
+  assert.doesNotMatch(
+    css,
+    /--ui-(?:bg|text|border|primary|secondary|shadow)[\w-]*\s*:|--color-(?:primary|neutral)[\w-]*\s*:/
+  )
+  assert.doesNotMatch(css, /gradient\(|\[class\*=|!important|bg-primary:hover/)
+  assert.match(css, /--portal-logo-surface: var\(--ui-primary\)/)
+  const preview = await readFile(new URL('../app/assets/css/appearance.css', import.meta.url), 'utf8')
+  assert.doesNotMatch(preview, /--ui-(?:bg|text|border|secondary):/)
+  assert.doesNotMatch(preview, /#(?:0f172a|1e293b|f0f9ff|0a0f1a)/)
+})
+
 test('light-only surface overrides cannot leak into the dark theme', () => {
   const appearance = { ...defaultPortalSettings().appearance, backgroundLight: '#ffffff', surfaceLight: '#ffffff' }
   const css = appearanceStylesheet(appearance)
   assert.match(css, /^html:root:not\(\.dark\)/)
   assert.equal(appearanceVariables(appearance, true)['--ui-bg'], undefined)
   assert.equal(appearanceVariables(appearance, true)['--portal-surface'], undefined)
+  assert.equal(hasCustomAppearanceSurfaces(appearance, false), true)
+  assert.equal(hasCustomAppearanceSurfaces(appearance, true), false)
+  const darkOnly = { ...defaultPortalSettings().appearance, backgroundDark: '#112233' }
+  assert.equal(hasCustomAppearanceSurfaces(darkOnly, false), false)
+  assert.equal(hasCustomAppearanceSurfaces(darkOnly, true), true)
+})
+
+test('appearance controls keep primary colors together below color mode without the logo sublabel', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const controls = await readFile(
+    new URL('../app/components/portal-settings/AppearanceControls.vue', import.meta.url),
+    'utf8'
+  )
+  assert.match(controls, /<UFormField\s[^>]*name="appearance\.colorMode"[^>]*class="col-span-full"/)
+  assert.ok(controls.indexOf('name="appearance.colorMode"') < controls.indexOf('name="appearance.primaryLight"'))
+  assert.ok(controls.indexOf('name="appearance.primaryLight"') < controls.indexOf('name="appearance.primaryDark"'))
+  assert.doesNotMatch(controls, /logoFallback/)
 })
 
 test('soft appearance uses compact control rounding rather than pill-sized global radii', async () => {
