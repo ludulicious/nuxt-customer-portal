@@ -146,7 +146,7 @@
         "editLine": "Factuurregel {number} bewerken",
         "reorderLine": "Factuurregel {number} verplaatsen",
         "lineMoved": "Regel verplaatst naar positie {position} van {count}",
-        "lineListHelp": "Selecteer een regel om deze te bewerken. Sleep de greep om de volgorde te wijzigen of focus de greep en gebruik de pijltoetsen omhoog en omlaag.",
+        "lineListHelp": "Selecteer een regel om deze te bewerken. Sluit de regelbewerking voordat je de volgorde wijzigt. Sleep de linkergreep of focus deze en gebruik de pijltoetsen omhoog en omlaag.",
         "doneEditingLine": "Gereed",
         "notes": "Opmerkingen (optioneel)",
         "invoiceDetails": "Factuurregels",

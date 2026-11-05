@@ -42,6 +42,11 @@ const editorHarness = (
   const context = createContext({
     lines,
     activeLine,
+    sortingDisabled: {
+      get value() {
+        return activeLine.value !== null || lines.value.length <= 1
+      }
+    },
     start: (_event: DragEvent, id: string) => started.push(id),
     finish: () => finishedOrder,
     nextTick,
@@ -141,9 +146,10 @@ test('switching the edited line closes the previous fields and reordering preser
   await fixture.editLine(second)
   assert.equal(fixture.activeLine.value, second)
   const key = fixture.lineKey(second)
+  fixture.activeLine.value = null
   fixture.moveLine(second, 0)
   assert.equal(fixture.lines.value[0], second)
-  assert.equal(fixture.activeLine.value, second)
+  assert.equal(fixture.activeLine.value, null)
   assert.equal(fixture.lineKey(second), key)
   assert.equal(fixture.lines.value[1], first)
   assert.deepEqual(first.timeEntryIds, ['entry'])
@@ -156,7 +162,7 @@ test('media-style sorting commits the preview order while retaining line identit
   const fixture = editorHarness([first, second])
   const firstKey = String(fixture.lineKey(first))
   const secondKey = String(fixture.lineKey(second))
-  fixture.startDrag({ target: { closest: () => null } } as unknown as DragEvent, first)
+  fixture.startDrag({ target: { closest: () => ({}) } } as unknown as DragEvent, first)
   assert.deepEqual(fixture.started, [firstKey])
   fixture.finishedOrder({ id: firstKey, ids: [secondKey, firstKey] })
   fixture.dropLine()
@@ -166,8 +172,8 @@ test('media-style sorting commits the preview order while retaining line identit
   assert.deepEqual(first.timeEntryIds, ['entry'])
   assert.match(editorSource, /useDragOrder/)
   assert.ok(editorSource.includes('v-for="(line, index) in orderedLines"'))
-  assert.match(editorSource, /:draggable="lines.length > 1"/)
-  assert.ok(editorSource.includes('@dragstart="startDrag($event, line)"'))
+  assert.match(editorSource, /data-invoice-line-handle\s+:draggable="!sortingDisabled"/)
+  assert.ok(editorSource.includes('@dragstart.stop="startDrag($event, line)"'))
   assert.match(editorSource, /@dragover="over"/)
   assert.match(editorSource, /@drop.prevent.stop="dropLine"/)
   assert.match(editorSource, /@keydown.up.prevent="moveLine/)
@@ -177,12 +183,32 @@ test('media-style sorting commits the preview order while retaining line identit
   assert.match(media, /useMediaDragOrder = useDragOrder/)
 })
 
-test('cancelled drags and dragging from edit inputs leave the line order unchanged', () => {
+test('cancelled drags and dragging outside the handle leave the line order unchanged', () => {
   const first = { ...line }
   const fixture = editorHarness([first, { ...line, id: 'second' }])
   const original = fixture.lines.value
   fixture.dropLine()
   assert.equal(fixture.lines.value, original)
+  let prevented = false
+  fixture.startDrag(
+    {
+      target: { closest: () => null },
+      preventDefault: () => {
+        prevented = true
+      }
+    } as unknown as DragEvent,
+    first
+  )
+  assert.equal(prevented, true)
+  assert.deepEqual(fixture.started, [])
+})
+
+test('drag and keyboard sorting are disabled while any invoice line is being edited', () => {
+  const first = { ...line }
+  const second = { ...line, id: 'second' }
+  const fixture = editorHarness([first, second])
+  const original = fixture.lines.value
+  fixture.activeLine.value = second
   let prevented = false
   fixture.startDrag(
     {
@@ -193,8 +219,13 @@ test('cancelled drags and dragging from edit inputs leave the line order unchang
     } as unknown as DragEvent,
     first
   )
+  fixture.moveLine(first, 1)
   assert.equal(prevented, true)
   assert.deepEqual(fixture.started, [])
+  assert.equal(fixture.lines.value, original)
+  fixture.activeLine.value = null
+  fixture.moveLine(first, 1)
+  assert.equal(fixture.lines.value[0], second)
 })
 
 test('invalid moves are ignored and valid moves preserve the original array and line objects', () => {
