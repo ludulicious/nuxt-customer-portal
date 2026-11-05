@@ -1,5 +1,29 @@
 # @nuxt-customer-portal/invoices
 
+## 0.12.0
+
+### Patch Changes
+
+- cdda978: Skip invoice source discovery when the Timesheets invoicing integration or its required modules are disabled, preventing misleading loading warnings for intentionally unavailable sources. Preserve standalone source discovery and warnings for genuine request failures.
+
+  Skip the invoice source-selection step when only free-form invoicing is available. Keep back navigation within the applicable steps and display the correct step count for the chosen flow.
+
+- cdda978: Allow adding, editing, and removing draft invoice lines with validated quantities, prices, VAT, and live totals. Preserve existing line identities and exact tax amounts when unchanged, protect agreed purchase totals, and keep failed saves open. Restore direct New invoice navigation and allow manual creation even when optional invoice sources fail, with visible initialization errors and retry actions.
+
+  Share a sortable line list between invoice creation and editing, with only the selected line's edit fields open. Reuse the media library's drag sorting, live order preview, and automatic edge scrolling through a shared Core composable. Keep keyboard reordering without separate move buttons, focus the description after adding a line, reopen invalid lines on submission, and explicitly display VAT rates as percentages.
+
+  Open newly duplicated invoices and credit notes directly in draft edit mode.
+
+- cdda978: Clarify the workspace default VAT percentage with percent-formatted input, validated settings, and save feedback. Use the current workspace default for new lines added to draft invoices without overwriting existing line tax rates.
+- Updated dependencies [89bc454]
+- Updated dependencies [24ed7df]
+- Updated dependencies [cdda978]
+- Updated dependencies [c64ed18]
+  - @nuxt-customer-portal/clients@0.12.0
+  - @nuxt-customer-portal/core@0.12.0
+  - @nuxt-customer-portal/ui@0.12.0
+  - @nuxt-customer-portal/organizations@0.12.0
+
 ## 0.11.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @nuxt-customer-portal/clients
 
+## 0.12.0
+
+### Patch Changes
+
+- 89bc454: Suggest editable client slugs from display names and allow changing saved slugs for company and personal clients. Use slug-based detail URLs with canonical redirects from legacy ID links, preserve list return state after slug edits, and display unique-slug conflicts inline without changing stable internal relationships or access checks.
+- Updated dependencies [24ed7df]
+- Updated dependencies [cdda978]
+- Updated dependencies [c64ed18]
+  - @nuxt-customer-portal/core@0.12.0
+  - @nuxt-customer-portal/ui@0.12.0
+
 ## 0.11.0
 
 ### Patch Changes
