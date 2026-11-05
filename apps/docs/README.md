@@ -79,23 +79,14 @@ When documentation moves to a newer product revision, update `NUXT_PUBLIC_PRODUC
 
 ## Release checklist
 
-Prepare documentation changes on a branch. Publish the matching npm packages and verify the registry installation before deploying the updated installation guide or announcing the release.
+Prepare documentation changes on a branch. GitHub releases publish only the portal Docker image after full verification; automated npm publication is disabled. Do not announce new npm versions or advance npm installation guides based only on a GitHub or Docker release. The manual `pnpm release-packages` command remains available only for a separately authorized npm release.
 
-For the first npm publication, sign in with `npm login` using an account that can
-publish under `@nuxt-customer-portal`. Run `pnpm release-packages --dry-run`, then
-`pnpm release-packages` from the reviewed release commit. This packs with pnpm and
-publishes the resulting tarballs with npm. It skips versions already published,
-so a partial publication can be resumed. Configure trusted publishing for each
-package after this initial release; subsequent GitHub releases can then publish
-without a local npm login. The workflow uses `release-npm-packages.yml`, owner
-`ludulicious`, repository `nuxt-customer-portal`, and permission to publish directly.
-
-1. Confirm npm's `latest` tag points to the intended release for every public package used by the installation guides, including the kit and the configurable portal package.
+1. Confirm the release workflow completed full verification and published the intended portal image. Record its version, immutable digest, and verified source commit.
 2. Run the docs checks below and `pnpm pack:check` from the repository root. Use `pnpm pack:consumer:pnpm` (and the other supported package-manager consumer checks) to verify tarballs outside workspace links. These checks do not replace the manual workflow.
 3. Follow the installation guide in an empty directory against locally packed packages and a disposable PostgreSQL database. Generate the project with `init` and use exactly its declared dependencies: broad consumer checks that install every public package can hide missing dependency declarations. Verify both Docker and an existing empty PostgreSQL database, cancellation, and resuming setup. Check the layout, owner login, client creation, time entry, approvals, and an invoice. Test client access using a separate client account and a test email recipient.
-4. Publish the package release using the repository's release process. Verify that all required package versions and their dependencies are available from npm.
-5. Repeat the exact registry installation commands from the guide in a fresh directory without workspace links or tarball overrides. Record the package versions and any setup corrections before publishing the docs.
-6. Check the deployment host's branch and auto-deploy settings before merging. The repository's GitHub workflows cover CI, npm publication, and portal images; they do not establish the docs host's deployment behavior. Keep this documentation branch unpublished until the registry verification passes.
+4. Verify the published Docker image in a disposable deployment before announcing the Docker release. No npm publication is required for a Docker-only release.
+5. For changes to npm installation guides, confirm all referenced package versions and dependencies exist in npm, then repeat the exact registry installation commands in a fresh directory without workspace links or tarball overrides. Keep those guides on verified registry versions if newer versions have not been published.
+6. Check the deployment host's branch and auto-deploy settings before merging. The repository's GitHub workflows cover CI and portal images; they do not establish the docs host's deployment behavior. Keep npm installation-guide changes unpublished until their registry verification passes.
 7. Deploy the matching docs and README, verify the public links, and then announce the release.
 
 Run from the repository root:

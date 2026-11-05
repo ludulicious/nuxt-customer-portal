@@ -68,7 +68,7 @@ Keep all official packages on the same version. Read the [compatibility and rele
 | `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
 | `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
 
-Public package versions are managed with Changesets. Publishing a GitHub release triggers package verification and npm publication. Prepare documentation on a branch, verify the released packages in a fresh application, then publish the matching docs; see the [documentation release checklist](apps/docs/README.md#release-checklist).
+Public package versions are managed with Changesets. Publishing a GitHub release triggers full verification and portal Docker image publication; automated npm publication is disabled. Prepare documentation on a branch and verify the Docker release before announcing it. Installation guides that use npm must remain aligned with versions actually available in the registry; see the [documentation release checklist](apps/docs/README.md#release-checklist).
 
 ## Repository development
 
