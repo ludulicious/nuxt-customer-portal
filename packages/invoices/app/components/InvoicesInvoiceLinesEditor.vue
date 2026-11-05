@@ -24,6 +24,7 @@ const props = withDefaults(
 const lines = defineModel<Line[]>({ required: true })
 const lineEditor = ref<HTMLElement | null>(null)
 const activeLine = shallowRef<Line | null>(lines.value.find((line) => !line.description.trim()) ?? null)
+const isEditingLine = (line: Line): boolean => activeLine.value === line
 const listContainer = ref<HTMLElement | null>(null)
 const orderAnnouncement = ref('')
 const helpId = useId()
@@ -161,7 +162,7 @@ defineExpose({ focusError })
             :draggable="lines.length > 1"
             class="rounded-lg border bg-default"
             :class="[
-              activeLine === line ? 'border-primary' : 'border-default',
+              isEditingLine(line) ? 'border-primary' : 'border-default',
               draggedId === String(lineKey(line)) ? 'opacity-40' : ''
             ]"
             @dragstart="startDrag($event, line)"
@@ -184,9 +185,9 @@ defineExpose({ focusError })
               <button
                 type="button"
                 class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded px-1 py-2 text-left focus-visible:outline-2 focus-visible:outline-primary"
-                :aria-expanded="activeLine === line"
+                :aria-expanded="isEditingLine(line)"
                 :aria-label="t('features.invoices.admin.editLine', { number: index + 1 })"
-                @click="activeLine === line ? closeEditor() : editLine(line)"
+                @click="isEditingLine(line) ? closeEditor() : editLine(line)"
               >
                 <span class="min-w-0 flex-1 basis-40">
                   <span class="block whitespace-pre-line break-words font-medium">{{
@@ -215,7 +216,7 @@ defineExpose({ focusError })
               />
             </div>
             <div
-              v-if="activeLine === line"
+              v-if="isEditingLine(line)"
               class="grid gap-3 border-t border-default p-4 sm:grid-cols-2 xl:grid-cols-4"
               @keydown.esc.stop.prevent="closeEditor"
             >

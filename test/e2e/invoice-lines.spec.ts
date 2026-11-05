@@ -88,6 +88,20 @@ const order = (page: Page) =>
     (window as unknown as { invoiceLines: { value: Array<{ id: string }> } }).invoiceLines.value.map((line) => line.id)
   )
 
+const waitForSortAnimation = (page: Page) =>
+  expect
+    .poll(() =>
+      page
+        .locator('[data-invoice-line]')
+        .evaluateAll(
+          (elements) =>
+            elements
+              .flatMap((element) => element.getAnimations())
+              .filter((animation) => animation.playState === 'running').length
+        )
+    )
+    .toBe(0)
+
 test('dragging the actual handle previews and commits the media-library order', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
@@ -103,18 +117,7 @@ test('dragging the actual handle previews and commits the media-library order', 
   await page.mouse.move(target!.x + 82, target!.y + target!.height / 2)
   await expect(page.locator('[data-invoice-line]').last()).toHaveAttribute('data-invoice-line', '0')
   expect(await order(page)).toEqual(['line-0', 'line-1', 'line-2'])
-  await expect
-    .poll(() =>
-      page
-        .locator('[data-invoice-line]')
-        .evaluateAll(
-          (elements) =>
-            elements
-              .flatMap((element) => element.getAnimations())
-              .filter((animation) => animation.playState === 'running').length
-        )
-    )
-    .toBe(0)
+  await waitForSortAnimation(page)
   await page.mouse.move(target!.x + 83, target!.y + target!.height / 2)
   await page.mouse.move(target!.x + 84, target!.y + target!.height / 2)
   await page.mouse.up()
@@ -161,7 +164,22 @@ test('dragging near the scroll edge reveals later lines and commits the preview'
   await page.mouse.move(edge.x, edge.y, { steps: 12 })
   await page.mouse.move(edge.x + 1, edge.y)
   await expect.poll(() => page.locator('#scroll').evaluate((element) => element.scrollTop)).toBeGreaterThan(100)
-  await page.mouse.move(edge.x + 2, edge.y)
+  const middle = { x: edge.x + 2, y: scroll!.y + scroll!.height / 2 }
+  await page.mouse.move(middle.x, middle.y)
+  await page.mouse.move(middle.x + 1, middle.y)
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-invoice-line]')
+        .evaluateAll((elements) => elements.findIndex((element) => element.getAttribute('data-invoice-line') === '0'))
+    )
+    .toBeGreaterThan(3)
+  await waitForSortAnimation(page)
+  const target = page.locator('[data-invoice-line="0"]')
+  await expect(target).toBeInViewport()
+  const drop = await target.boundingBox()
+  await page.mouse.move(drop!.x + 80, drop!.y + drop!.height / 2)
+  await page.mouse.move(drop!.x + 81, drop!.y + drop!.height / 2)
   await page.mouse.up()
   await expect.poll(async () => (await order(page)).indexOf('line-0')).toBeGreaterThan(3)
   await expect(page.locator('[data-drag-preview]')).toHaveCount(0)

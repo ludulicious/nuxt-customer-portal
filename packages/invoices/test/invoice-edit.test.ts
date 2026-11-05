@@ -127,7 +127,8 @@ test('adding a line opens only its editor and focuses its description after rend
   render()
   await adding
   assert.equal(fixture.focusedLine(), fixture.lines.value[1])
-  assert.match(editorSource, /v-if="activeLine === line"/)
+  assert.match(editorSource, /v-if="isEditingLine\(line\)"/)
+  assert.match(editorSource, /const isEditingLine = \(line: Line\): boolean => activeLine\.value === line/)
   assert.match(editorSource, /ref="lineEditor"/)
   assert.match(editorSource, /@click="addLine"/)
 })

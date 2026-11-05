@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: './test/e2e',
   outputDir: './test-results/demo-shells',
   fullyParallel: true,
-  reporter: 'list',
+  reporter: process.env.CI ? [['list'], ['json', { outputFile: 'test-results/demo-shells/results.json' }]] : 'list',
+  use: { screenshot: 'only-on-failure', trace: 'retain-on-failure' },
   webServer: [
     {
       command: 'pnpm --filter @nuxt-customer-portal/demo-apex preview --port 4181',

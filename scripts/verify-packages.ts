@@ -256,7 +256,7 @@ try {
       }
     }
     if (manager === 'yarn') {
-      fixtureManifest.resolutions = dependencies
+      fixtureManifest.resolutions = { ...dependencies, '@dxup/nuxt': '0.5.5' }
     }
     if (manager === 'bun') {
       fixtureManifest.overrides = dependencies

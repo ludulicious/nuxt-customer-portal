@@ -1,5 +1,15 @@
 # @nuxt-customer-portal/invoices
 
+## 0.12.1
+
+### Patch Changes
+
+- Fix invoice line editor type checking in generated portal installations while preserving single-line editing and drag sorting.
+  - @nuxt-customer-portal/clients@0.12.1
+  - @nuxt-customer-portal/core@0.12.1
+  - @nuxt-customer-portal/organizations@0.12.1
+  - @nuxt-customer-portal/ui@0.12.1
+
 ## 0.12.0
 
 ### Patch Changes
