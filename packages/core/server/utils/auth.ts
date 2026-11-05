@@ -35,6 +35,7 @@ import { canViewOrganizationDirectory } from '../../shared/feature-registry'
 import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowlist'
 import { runUserIdentityChangedHooks } from './business-hooks'
 import { socialAuthProviders } from '../../shared/social-auth'
+import { resolveWebsiteOrigins } from './website-origins'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -53,6 +54,8 @@ const systemAdminEmails = isPortalDemo() ? new Set<string>() : parseSystemAdminE
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
+  // Better Auth initializes without a request, before SaaS settings are available.
+  trustedOrigins: (request) => resolveWebsiteOrigins(Boolean(request)),
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {

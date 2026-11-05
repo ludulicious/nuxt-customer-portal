@@ -67,3 +67,41 @@ Uploads support PNG, JPEG, and WebP, up to 2 MB and 2400×2400 px. Both the brow
 and server validate images. Previews and removal apply to the editor draft;
 **Save changes** publishes them. Existing portals receive empty defaults without
 a database migration.
+
+## Connected website account menus
+
+In **Portal settings → General settings → Connected websites**, add the exact
+HTTPS origin of each website you control, for example `https://www.marpos.nl`,
+and save. Each SaaS instance has its own list. Changes apply to subsequent
+requests without a restart. Existing instances default to an empty list; no
+migration is needed. The list is administrator-only and is not part of public
+portal settings.
+
+Connected websites may call `GET /api/auth/get-session` with
+`credentials: 'include'` to display the user's `user.image`, name or initials,
+and `POST /api/auth/sign-out` with a JSON `{}` body and the same credentials to
+sign out. Handle a null session or unavailable portal by showing a link to the
+portal's `/dashboard`. Keep session responses out of page caches and persistent
+browser storage. Configured websites are trusted authentication clients: only
+add origins you control, since a session response includes authentication data.
+
+The portal sends credentialed CORS headers only on these two routes and handles
+their OPTIONS preflights. The same exact origins are added dynamically to Better
+Auth's trusted origins for sign-out checks; other API routes do not receive CORS
+access. HTTPS origins must contain no credentials, wildcard, path, query or
+fragment. Up to 20 origins are accepted. `http://localhost:<port>` is allowed for
+local development; use localhost consistently for both local applications.
+
+For Marpos, deploy the version containing this feature to `portal.marpos.nl`,
+then save `https://www.marpos.nl` in its connected websites. Sign in to the
+portal, return to the website, and verify the avatar appears and sign-out works.
+An HTTPS website and portal on subdomains of the same site can retain host-only
+portal cookies: the browser sends the cookies directly to the portal. Unrelated
+sites may be blocked by browser third-party-cookie policies; this setting does
+not weaken SameSite, Secure, or HttpOnly cookie protections.
+
+For deployment-managed origins (also available to custom Core hosts), set
+`PORTAL_AUTH_WEBSITE_ORIGINS=https://www.example.com,https://example.com` at
+runtime and restart. These origins are combined with saved settings; remove
+an origin from both sources to revoke it. Neither source accepts wildcards.
+Reference: [Better Auth trusted origins](https://better-auth.com/docs/reference/options#trustedorigins).

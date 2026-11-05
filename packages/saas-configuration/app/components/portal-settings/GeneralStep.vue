@@ -19,6 +19,15 @@ const { t } = useI18n()
     <UFormField name="branding.supportUrl" :label="t('saasSettings.editor.fields.supportUrl')">
       <UInput v-model="state.branding.supportUrl" class="w-full" />
     </UFormField>
+    <UFormField
+      name="websiteOrigins"
+      :error-pattern="/^websiteOrigins(?:\.|$)/"
+      :label="t('saasSettings.editor.fields.websiteOrigins')"
+      :description="t('saasSettings.editor.websiteOriginsDescription')"
+      class="col-span-full"
+    >
+      <UInputTags v-model="state.websiteOrigins" placeholder="https://www.example.com" class="w-full" />
+    </UFormField>
   </div>
 </template>
 

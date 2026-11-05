@@ -56,7 +56,8 @@
         "termsTitle": "Titel van de voorwaarden",
         "termsText": "Algemene voorwaarden",
         "privacyTitle": "Titel van het privacybeleid",
-        "privacyText": "Privacybeleid"
+        "privacyText": "Privacybeleid",
+        "websiteOrigins": "Gekoppelde websites"
       },
       "assetDescriptions": {
         "markLight": "Vierkant pictogram voor compacte onderdelen op een lichte achtergrond, zoals de login- en registratieschermen.",
@@ -173,7 +174,8 @@
         "sampleDescription": "Uw informatie en vervolgstappen samen op één plek.",
         "primaryAction": "Details bekijken",
         "secondaryAccent": "Secundair accent"
-      }
+      },
+      "websiteOriginsDescription": "Deze websites mogen het ingelogde account tonen en uitloggen via dit portaal. Voeg alleen websites toe die u beheert en vertrouwt. Voer elk volledig HTTPS-adres zonder pad in en druk op Enter. Laat leeg om uit te schakelen."
     }
   }
 }

@@ -56,7 +56,8 @@
         "termsTitle": "Terms title",
         "termsText": "Terms text",
         "privacyTitle": "Privacy title",
-        "privacyText": "Privacy text"
+        "privacyText": "Privacy text",
+        "websiteOrigins": "Connected websites"
       },
       "assetDescriptions": {
         "markLight": "Square icon for compact UI elements on light backgrounds, such as the login and signup screens.",
@@ -173,7 +174,8 @@
         "sampleDescription": "Your information and next steps, together in one place.",
         "primaryAction": "View details",
         "secondaryAccent": "Secondary accent"
-      }
+      },
+      "websiteOriginsDescription": "Allow these websites to display the signed-in account and sign out using this portal. Only add websites you control and trust. Enter each full HTTPS address without a path and press Enter. Leave empty to disable."
     }
   }
 }
