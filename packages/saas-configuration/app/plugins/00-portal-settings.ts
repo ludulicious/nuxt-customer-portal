@@ -1,4 +1,4 @@
-import { appearanceStylesheet } from '../../shared/appearance'
+import { appearanceStylesheet, hasCustomAppearanceSurfaces } from '../../shared/appearance'
 
 export default defineNuxtPlugin(async () => {
   const { settings, refreshPublicSettings } = usePortalSettings()
@@ -28,10 +28,7 @@ export default defineNuxtPlugin(async () => {
         'data-portal-shape': appearance.shape,
         'data-portal-heading-font': appearance.headingFont,
         'data-portal-body-font': appearance.bodyFont,
-        'data-portal-surfaces':
-          appearance.backgroundLight || appearance.backgroundDark || appearance.surfaceLight || appearance.surfaceDark
-            ? 'custom'
-            : 'theme'
+        'data-portal-surfaces': hasCustomAppearanceSurfaces(appearance, colorMode.value === 'dark') ? 'custom' : 'theme'
       },
       style: [{ key: 'portal-primary-colors', innerHTML: appearanceStylesheet(appearance) }]
     }

@@ -79,6 +79,11 @@ export function activeAppearancePreset(appearance: PortalAppearance): PortalAppe
   )
 }
 
+export const hasCustomAppearanceSurfaces = (appearance: PortalAppearance, dark: boolean): boolean =>
+  Boolean(
+    dark ? appearance.backgroundDark || appearance.surfaceDark : appearance.backgroundLight || appearance.surfaceLight
+  )
+
 export function appearanceVariables(input: PortalAppearance, dark: boolean): Record<string, string> {
   // Validate before serializing into a style tag; arbitrary CSS is never accepted.
   const appearance = portalAppearanceSchema.parse(input)

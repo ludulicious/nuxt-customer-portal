@@ -15,10 +15,6 @@ html:root[data-portal-surfaces='custom'] body {
 html:root[data-portal-surfaces='custom'] .portal-header {
   background: var(--portal-surface, var(--ui-bg));
 }
-.portal-appearance-card {
-  background: var(--portal-surface, var(--ui-bg));
-  color: var(--portal-surface-ink, var(--ui-text));
-}
 :is(html, .portal-appearance-preview)[data-portal-shape='soft'] :is(button.bg-primary, a.bg-primary) {
   border-radius: var(--portal-control-radius);
 }
@@ -26,53 +22,23 @@ html:root[data-portal-surfaces='custom'] .portal-header {
   border-radius: var(--portal-panel-radius);
   box-shadow: none;
 }
-html[data-portal-theme] :where(button.bg-primary, a.bg-primary),
-.portal-appearance-preview :where(button.bg-primary, a.bg-primary) {
-  color: var(--portal-on-primary);
-}
 
 /* A preview establishes its own defaults, even inside a differently styled portal. */
 .portal-appearance-preview {
-  --font-sans: 'Bricolage Grotesque', sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --portal-heading-font: inherit;
   --portal-body-font: var(--font-sans);
   --portal-surface: #ffffff;
-  --portal-surface-ink: #0f172a;
-  --ui-bg: #ffffff;
-  --ui-bg-muted: #f8fafc;
-  --ui-bg-elevated: #f1f5f9;
-  --ui-bg-accented: #f0f9ff;
-  --ui-text: #0f172a;
-  --ui-text-highlighted: #0f172a;
-  --ui-text-muted: #475569;
-  --ui-border: #e2e8f0;
-  --ui-secondary: #2563eb;
+  --portal-surface-ink: var(--ui-color-neutral-900);
   --ui-radius: 0.25rem;
 }
 .portal-appearance-preview.dark {
-  --portal-surface: #1e293b;
-  --portal-surface-ink: #f8fafc;
-  --ui-bg: #0a0f1a;
-  --ui-bg-muted: #0f172a;
-  --ui-bg-elevated: #1e293b;
-  --ui-bg-accented: #334155;
-  --ui-text: #e2e8f0;
-  --ui-text-highlighted: #f8fafc;
-  --ui-text-muted: #94a3b8;
-  --ui-border: #334155;
-  --ui-secondary: #60a5fa;
-}
-
-html:root[data-portal-surfaces='custom'] .portal-appearance-card {
-  color: var(--portal-surface-ink, var(--ui-text));
+  --portal-surface: var(--ui-color-neutral-900);
+  --portal-surface-ink: #ffffff;
 }
 
 .portal-appearance-preview[data-portal-theme='brutal'] {
   --portal-surface: var(--color-paper);
   --portal-surface-ink: var(--color-ink);
-}
-
-:is(html, .portal-appearance-preview)[data-portal-surfaces='custom'] .portal-appearance-card {
-  background: var(--portal-surface, var(--ui-bg));
-  color: var(--portal-surface-ink, var(--ui-text));
 }

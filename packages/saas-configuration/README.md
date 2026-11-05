@@ -19,6 +19,15 @@ public pages and booking/checkout routes are unchanged.
 
 ## Appearance presets
 
+**Default (Nuxt UI)** uses the installed Nuxt UI theme rather than a separate
+blue/slate skin. Default component variants, rounding, typography, shadows,
+overlays, and hover/focus behavior come from Nuxt UI. Changing the light/dark
+primary colors updates the complete primary palette used by actions, selected
+navigation, focus rings, and primary-tinted states. Nuxt UI intentionally keeps
+page backgrounds, ordinary text, borders, and inactive menus neutral; success
+and error colors retain their semantic meaning instead of following the brand.
+There are no fixed blue gradients or global button/shadow overrides.
+
 Branding and appearance includes a **Soft editorial** preset: Playfair Display
 headings, Lato body text, purple/lavender primary colors, sea-blue accents, pale
 light-mode backgrounds and plum dark-mode surfaces. It selects Apex, rounded
@@ -37,6 +46,17 @@ Existing saved settings gain neutral defaults on read and do not need a database
 migration. Preset fonts are loaded by the included SaaS host. Custom hosts should
 configure Nuxt Fonts to load Playfair Display, Lato, Geist and Bricolage Grotesque
 when exposing these options. The shared schema rejects arbitrary font/CSS values.
+
+Custom surfaces apply only when configured, including fields and teleported
+menus/dialogs. Clearing them restores native Nuxt UI defaults. The live preview
+uses the same semantic tokens and isolates its light/dark defaults from the saved
+portal's custom surfaces. Brutal retains its separate typography and palette.
+
+To run the isolated CSS/browser regressions without starting a server, prepare
+the SaaS app first (`pnpm --filter @nuxt-customer-portal/saas-portal exec nuxt prepare`),
+then run `pnpm exec playwright test --config=test/e2e/appearance.config.ts`.
+These compare computed styles against the installed Nuxt UI stylesheet in light
+and dark modes, including primary updates, preview isolation, and Brutal styling.
 
 ## Legal content
 

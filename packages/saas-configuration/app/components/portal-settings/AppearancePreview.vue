@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PortalSettings } from '../../../shared/settings'
 import { resolveBrandAsset } from '../../../shared/settings'
-import { appearanceVariables } from '../../../shared/appearance'
+import { appearanceVariables, hasCustomAppearanceSurfaces } from '../../../shared/appearance'
 import { resolvePortalTheme } from '../../../shared/theme'
 
 const props = defineProps<{ state: PortalSettings }>()
@@ -50,7 +50,7 @@ const style = computed<Record<string, string>>((previous) => {
       :class="dark ? 'dark' : 'light'"
       :style="style"
       :data-portal-theme="state.appearance.theme"
-      :data-portal-surfaces="state.appearance.surfaceLight || state.appearance.surfaceDark ? 'custom' : 'theme'"
+      :data-portal-surfaces="hasCustomAppearanceSurfaces(state.appearance, dark) ? 'custom' : 'theme'"
       :data-portal-shape="state.appearance.shape"
       :data-portal-heading-font="state.appearance.headingFont"
       :data-portal-body-font="state.appearance.bodyFont"

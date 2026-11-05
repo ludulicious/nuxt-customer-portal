@@ -138,8 +138,8 @@
       "appearance": {
         "presets": "Beginstijl",
         "presetHint": "Kies een duidelijk startpunt en pas daarna elk detail hieronder naar wens aan.",
-        "business": "Standaard (Zakelijk)",
-        "businessDescription": "Heldere systeemtypografie, gerichte oranje acties en neutrale vlakken.",
+        "business": "Standaard (Nuxt UI)",
+        "businessDescription": "De standaardtypografie en neutrale vlakken van Nuxt UI, met acties en statussen in de primaire kleur.",
         "softEditorial": "Zacht redactioneel",
         "softEditorialDescription": "Elegante koppen, lavendelkleurige vlakken en zeeblauwe accenten.",
         "custom": "Aangepast",

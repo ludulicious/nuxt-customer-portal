@@ -1,8 +1,17 @@
 :where(:root, .portal-appearance-preview) {
   --portal-surface: #ffffff;
-  --portal-surface-ink: #0f172a;
+  --portal-surface-ink: var(--ui-color-neutral-900);
   --portal-control-radius: 0.5rem;
   --portal-panel-radius: 0.75rem;
+  --portal-surface-text: var(--ui-text);
+  --portal-surface-muted: var(--ui-text-muted);
+  --portal-surface-border: var(--ui-border);
+  --portal-control-border: var(--ui-border-accented);
+  --portal-surface-hover: var(--ui-bg-elevated);
+  --portal-surface-active: var(--ui-bg-accented);
+}
+
+:is(html, .portal-appearance-preview)[data-portal-surfaces='custom'] {
   --portal-surface-text: color-mix(in srgb, var(--portal-surface-ink) 85%, var(--portal-surface));
   --portal-surface-muted: color-mix(in srgb, var(--portal-surface-ink) 65%, var(--portal-surface));
   --portal-surface-border: color-mix(in srgb, var(--portal-surface) 80%, var(--portal-surface-ink));
@@ -12,12 +21,12 @@
 }
 
 :where(:root.dark, .portal-appearance-preview.dark) {
-  --portal-surface: #1e293b;
-  --portal-surface-ink: #f8fafc;
+  --portal-surface: var(--ui-color-neutral-900);
+  --portal-surface-ink: #ffffff;
 }
 
-.portal-surface,
-.portal-field-surface {
+:is(html, .portal-appearance-preview)[data-portal-surfaces='custom']
+  :is(.portal-surface, .portal-field-surface):not(.portal-appearance-preview[data-portal-surfaces='theme'] *) {
   --ui-bg: var(--portal-surface);
   --ui-bg-muted: var(--portal-surface-hover);
   --ui-bg-elevated: var(--portal-surface-hover);
@@ -30,6 +39,8 @@
   --ui-border: var(--portal-surface-border);
   --ui-border-muted: var(--portal-surface-border);
   --ui-border-accented: var(--portal-control-border);
+  background-color: var(--portal-surface);
+  color: var(--portal-surface-text);
 }
 
 .portal-markdown-editor {
