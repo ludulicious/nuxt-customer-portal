@@ -69,7 +69,7 @@ pnpm --dir apps/docs install --lockfile-only --ignore-workspace --ignore-scripts
 docker build --tag customer-portal-docs:local apps/docs
 ```
 
-Keep `--frozen-lockfile` enabled in the Dockerfile. CI also builds this image to catch differences between the workspace and the deployment dependency graph.
+Keep `--frozen-lockfile` enabled in the Dockerfile. Build this image manually when changing docs dependencies or deployment behavior; the standalone docs image is not a gate for SaaS portal Docker publication.
 
 ## Source verification
 
@@ -79,15 +79,14 @@ When documentation moves to a newer product revision, update `NUXT_PUBLIC_PRODUC
 
 ## Release checklist
 
-Prepare documentation changes on a branch. GitHub releases publish only the portal Docker image after full verification; automated npm publication is disabled. Do not announce new npm versions or advance npm installation guides based only on a GitHub or Docker release. The manual `pnpm release-packages` command remains available only for a separately authorized npm release.
+Prepare documentation changes on a branch. GitHub releases publish only the SaaS portal Docker image after source-code verification. Npm publication, package-distribution checks, and installer verification are paused; they are not prerequisites for Docker releases. Do not announce new npm versions or advance npm installation guides based on a GitHub or Docker release.
 
-1. Confirm the release workflow completed full verification and published the intended portal image. Record its version, immutable digest, and verified source commit.
-2. Run the docs checks below and `pnpm pack:check` from the repository root. Use `pnpm pack:consumer:pnpm` (and the other supported package-manager consumer checks) to verify tarballs outside workspace links. These checks do not replace the manual workflow.
-3. Follow the installation guide in an empty directory against locally packed packages and a disposable PostgreSQL database. Generate the project with `init` and use exactly its declared dependencies: broad consumer checks that install every public package can hide missing dependency declarations. Verify both Docker and an existing empty PostgreSQL database, cancellation, and resuming setup. Check the layout, owner login, client creation, time entry, approvals, and an invoice. Test client access using a separate client account and a test email recipient.
-4. Verify the published Docker image in a disposable deployment before announcing the Docker release. No npm publication is required for a Docker-only release.
-5. For changes to npm installation guides, confirm all referenced package versions and dependencies exist in npm, then repeat the exact registry installation commands in a fresh directory without workspace links or tarball overrides. Keep those guides on verified registry versions if newer versions have not been published.
-6. Check the deployment host's branch and auto-deploy settings before merging. The repository's GitHub workflows cover CI and portal images; they do not establish the docs host's deployment behavior. Keep npm installation-guide changes unpublished until their registry verification passes.
-7. Deploy the matching docs and README, verify the public links, and then announce the release.
+1. Confirm `release-saas-portal.yml` completed verification and published the intended portal image. Record its version, immutable digest, and verified source commit.
+2. Run the docs checks below. No tarball packaging, package-manager consumer matrix, or generated installer verification is required.
+3. Verify the published SaaS portal Docker image in a disposable deployment with PostgreSQL before announcing the release. Check startup and migrations, owner login, client creation, time entry, approvals, and an invoice. Test client access with a separate client account and a test email recipient.
+4. Keep existing npm installation guides on previously verified registry versions. Do not present unpublished source changes as available through the installer.
+5. Check the docs deployment host's branch and auto-deploy settings before merging. GitHub workflows do not establish that host's deployment behavior.
+6. Deploy the matching docs and README, verify the public links, and then announce the release.
 
 Run from the repository root:
 
