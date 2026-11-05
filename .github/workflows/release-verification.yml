@@ -1,6 +1,13 @@
 name: Full release verification
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/release-verification.yml
+      - scripts/verify-packages.ts
+      - scripts/sync-package-versions.mjs
+      - packages/*/package.json
+      - packages/*/portal.manifest.mjs
   workflow_call:
     inputs:
       ref:
@@ -38,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.ref || github.sha }}
       - name: Resolve immutable verification commit
         id: commit
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -82,6 +89,13 @@ jobs:
         run: node ../../packages/kit/bin/nuxt-customer-portal.mjs db migrate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e:demos
+      - name: Upload failed demo browser results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: demo-browser-results
+          path: test-results/demo-shells
+          if-no-files-found: ignore
       - run: pnpm test:e2e:docs
 
   docs-image:

@@ -1,5 +1,14 @@
 # @nuxt-customer-portal/timesheets
 
+## 0.12.1
+
+### Patch Changes
+
+- @nuxt-customer-portal/clients@0.12.1
+- @nuxt-customer-portal/core@0.12.1
+- @nuxt-customer-portal/organizations@0.12.1
+- @nuxt-customer-portal/ui@0.12.1
+
 ## 0.12.0
 
 ### Patch Changes

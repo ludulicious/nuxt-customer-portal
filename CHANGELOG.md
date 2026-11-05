@@ -1,5 +1,20 @@
 # Nuxt Customer Portal
 
+## 0.12.1
+
+Fix invoice line editor type checking in clean generated portal installations
+without changing draft editing or sorting behavior. Keep Yarn consumer verification
+compatible with the supported Node 22.19 baseline by selecting the workspace-tested
+Nuxt development dependency rather than a newer incompatible transitive release.
+
+Run full verification before merging release-infrastructure and package-version
+changes, and retain browser failure reports, screenshots, and traces for diagnosis.
+
+All 16 public packages and the three portal apps use `0.12.1`. This patch carries
+the `0.12.0` features forward without moving its published tag. No new database
+migrations are required. npm and Docker publication still require every release
+verification job to succeed.
+
 ## 0.12.0
 
 Configure trusted connected websites in General settings for credentialed account
