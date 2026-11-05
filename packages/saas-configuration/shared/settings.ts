@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { portalLanguageCodes } from '@nuxt-customer-portal/core/shared/languages'
 import { portalAppearanceSchema } from './appearance'
+import { websiteOriginsSchema } from '@nuxt-customer-portal/core/shared/website-origins'
 
 export const portalModuleIds = [
   'timesheets',
@@ -102,6 +103,7 @@ export const portalClientsSchema = z
 
 export const portalSettingsSchema = z
   .object({
+    websiteOrigins: websiteOriginsSchema.default([]),
     languages: z
       .array(z.enum(portalLanguageCodes))
       .min(1)
@@ -194,6 +196,7 @@ const defaultLocaleContent = (locale: 'en' | 'nl'): PortalContent =>
       }
 
 export const defaultPortalSettings = (name = 'Customer Portal'): PortalSettings => ({
+  websiteOrigins: [],
   languages: [...portalLanguageCodes],
   branding: {
     portalName: name,
