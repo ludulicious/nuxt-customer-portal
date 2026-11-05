@@ -51,7 +51,7 @@ export const genericClientCreateSchema = clientFields.superRefine((input, ctx) =
   }
 })
 export const clientUpdateSchema = clientFields
-  .omit({ slug: true, moduleIds: true, clientType: true })
+  .omit({ moduleIds: true, clientType: true })
   .partial()
   .extend({
     address: z.string().trim().max(1000).optional(),

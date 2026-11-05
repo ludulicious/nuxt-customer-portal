@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { clientsIcon } from '@nuxt-customer-portal/clients/shared/feature'
+import { isClientSlugConflict } from '@nuxt-customer-portal/clients/shared/client-slug'
 import type { ClientListResponse, GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const { t } = useI18n()
@@ -24,6 +25,7 @@ const result = ref<ClientListResponse | null>(null)
 const pending = ref(false)
 const busy = ref(false)
 const formOpen = ref(false)
+const clientForm = useTemplateRef('clientForm')
 const listContainer = ref<HTMLElement | null>(null)
 const listScrollTop = ref(0)
 const scrollRestored = ref(false)
@@ -62,7 +64,7 @@ const listReturnPath = computed(() => {
 })
 
 const clientDetailTo = (client: GenericClientDto) => ({
-  path: `/clients/${client.id}`,
+  path: `/clients/${encodeURIComponent(client.slug)}`,
   query: { returnTo: listReturnPath.value }
 })
 
@@ -177,6 +179,10 @@ const save = async (input: Record<string, unknown>) => {
     toast.add({ title: t('features.clients.saved'), color: 'success' })
     await navigateTo(clientDetailTo(client))
   } catch (error) {
+    if (isClientSlugConflict(error)) {
+      clientForm.value?.setSlugError(t('features.clients.validation.slugTaken'))
+      return
+    }
     toast.add({ title: t('features.clients.saveFailed'), description: String(error), color: 'error' })
   } finally {
     busy.value = false
@@ -269,7 +275,7 @@ onMounted(() => {
           @toggle-direction="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
         />
 
-        <ClientsClientForm v-if="formOpen" :busy="busy" @submit="save" @cancel="formOpen = false" />
+        <ClientsClientForm v-if="formOpen" ref="clientForm" :busy="busy" @submit="save" @cancel="formOpen = false" />
 
         <UCard v-if="!clients.length && !pending && !formOpen" variant="subtle">
           <div class="flex flex-col items-center gap-3 py-10 text-center">

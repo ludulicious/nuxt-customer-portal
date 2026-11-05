@@ -64,6 +64,7 @@
       "emptyDescription": "Maak een klant aan voordat je projecten, uren, facturen of serviceverzoeken koppelt.",
       "resultCount": "{count} klant | {count} klanten",
       "validation": {
+        "slugTaken": "Deze slug is al in gebruik. Kies een andere slug.",
         "name": "Voer minimaal twee tekens in.",
         "firstName": "Voornaam is verplicht.",
         "lastName": "Achternaam is verplicht.",

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { isClientSlugConflict } from '@nuxt-customer-portal/clients/shared/client-slug'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const props = defineProps<{ client: GenericClientDto; refresh: () => Promise<unknown>; startEditing?: boolean }>()
-const emit = defineEmits<{ deleted: [] }>()
+const emit = defineEmits<{ deleted: []; updated: [client: GenericClientDto] }>()
 const { t } = useI18n()
 const toast = useToast()
 const api = useClients()
 const { clientIntegrations } = usePortalFeatures()
 const busy = ref(false)
+const clientForm = useTemplateRef('clientForm')
 const editing = ref(props.startEditing ?? false)
 const deleting = ref(false)
 const deleteName = ref('')
@@ -29,11 +31,15 @@ onKeyStroke('Escape', () => {
 const save = async (input: Record<string, unknown>) => {
   busy.value = true
   try {
-    await api.update(props.client.id, input)
+    const updated = await api.update(props.client.id, input)
     editing.value = false
-    await props.refresh()
+    emit('updated', updated)
     toast.add({ title: t('features.clients.saved'), color: 'success' })
   } catch (error) {
+    if (isClientSlugConflict(error)) {
+      clientForm.value?.setSlugError(t('features.clients.validation.slugTaken'))
+      return
+    }
     toast.add({ title: t('features.clients.saveFailed'), description: String(error), color: 'error' })
   } finally {
     busy.value = false
@@ -156,6 +162,7 @@ const toggleEditing = () => {
 
     <ClientsClientForm
       v-if="editing"
+      ref="clientForm"
       :client="client"
       :editing="true"
       :busy="busy"
@@ -184,7 +191,7 @@ const toggleEditing = () => {
           <dt class="text-sm text-muted">{{ t('features.clients.officialName') }}</dt>
           <dd>{{ client.officialName }}</dd>
         </div>
-        <div v-if="client.clientType === 'organization'">
+        <div>
           <dt class="text-sm text-muted">{{ t('features.clients.slug') }}</dt>
           <dd class="font-mono text-sm">{{ client.slug }}</dd>
         </div>

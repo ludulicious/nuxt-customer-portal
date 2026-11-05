@@ -224,6 +224,16 @@ export const listSelectableClients = async (moduleId?: string) => {
   return page.items
 }
 
+export const getClientBySlug = async (slug: string): Promise<GenericClientDto | null> => {
+  const rows = await db
+    .select(clientSelection)
+    .from(organization)
+    .innerJoin(clientProfile, eq(clientProfile.organizationId, organization.id))
+    .where(and(eq(organization.slug, slug), eq(organization.organizationType, 'CLIENT')))
+    .limit(1)
+  return (await hydrateClients(rows))[0] ?? null
+}
+
 type ClientTransaction = Pick<typeof db, 'select' | 'insert' | 'execute'>
 export const createClientInTransaction = async (
   tx: ClientTransaction,
@@ -234,11 +244,12 @@ export const createClientInTransaction = async (
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('portal-client-configuration'))`)
   await requireAllowedClientType(type)
   const clientSlug =
-    type === 'person'
+    input.slug ??
+    (type === 'person'
       ? `person-${nanoid()
           .toLowerCase()
           .replace(/[^a-z0-9]/g, '')}`
-      : input.slug!
+      : '')
 
   const [existingSlug] = await tx
     .select({ id: organization.id })
@@ -296,6 +307,17 @@ export const updateClient = async (organizationId: string, input: ClientUpdateIn
       throw createError({ statusCode: 400, message: 'Name parts are only available for personal clients' })
     }
     const orgValues: Record<string, unknown> = {}
+    if (input.slug !== undefined) {
+      const [existingSlug] = await tx
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.slug, input.slug))
+        .limit(1)
+      if (existingSlug && existingSlug.id !== organizationId) {
+        throw createError({ statusCode: 409, message: 'Organization slug already exists', data: { field: 'slug' } })
+      }
+      orgValues.slug = input.slug
+    }
     if (input.name !== undefined) {
       orgValues.name = input.name
     }

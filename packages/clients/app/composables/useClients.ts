@@ -25,6 +25,7 @@ export const useClients = () => ({
   list: (query: Record<string, string | number | undefined>) =>
     $fetch<ClientListResponse, string>('/api/clients', { query }),
   get: (id: string) => $fetch<GenericClientDto, string>(`/api/clients/${id}`),
+  resolve: (slug: string) => $fetch<GenericClientDto, string>(`/api/clients/resolve/${encodeURIComponent(slug)}`),
   create: (input: Record<string, unknown>) =>
     $fetch<GenericClientDto, string>('/api/clients', { method: 'POST', body: input }),
   update: (id: string, input: Record<string, unknown>) =>
