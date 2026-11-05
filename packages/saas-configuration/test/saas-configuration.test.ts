@@ -111,6 +111,21 @@ test('the deployable app includes its settings migration and image contract', as
   assert.match(migration, /CHECK \("id" = true\)/)
 })
 
+test('release deployment publishes only the verified portal image without npm publishing permissions', async () => {
+  const workflow = await readFile(
+    new URL('../../../.github/workflows/release-npm-packages.yml', import.meta.url),
+    'utf8'
+  )
+  assert.match(workflow, /name: Release portal image/)
+  assert.match(workflow, /release:\s+types: \[published\]/)
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/release-verification\.yml/)
+  assert.match(workflow, /portal-image:\s+needs: \[resolve, verify\]/)
+  assert.match(workflow, /commit_sha: \$\{\{ needs\.verify\.outputs\.commit_sha \}\}/)
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/release-portal-image\.yml/)
+  assert.doesNotMatch(workflow, /^ {2}publish:/m)
+  assert.doesNotMatch(workflow, /id-token:|npm publish|pnpm release-packages|registry-url:/)
+})
+
 test('fresh SaaS signup enters organization onboarding without enabling public personal signup', async () => {
   const [config, signupPage, onboardingMiddleware] = await Promise.all([
     readFile(new URL('../../../apps/saas-portal/portal.config.ts', import.meta.url), 'utf8'),

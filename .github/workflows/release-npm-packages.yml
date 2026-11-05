@@ -1,4 +1,4 @@
-name: Release packages and portal image
+name: Release portal image
 
 on:
   release:
@@ -65,29 +65,6 @@ jobs:
     uses: ./.github/workflows/release-verification.yml
     with:
       ref: ${{ needs.resolve.outputs.commit_sha }}
-
-  publish:
-    needs: [resolve, verify]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.verify.outputs.commit_sha }}
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-          package-manager-cache: false
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - name: Publish unpublished package versions
-        run: pnpm release-packages
-        env:
-          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
 
   portal-image:
     needs: [resolve, verify]
