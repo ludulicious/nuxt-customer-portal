@@ -25,6 +25,7 @@ const lines = defineModel<Line[]>({ required: true })
 const lineEditor = ref<HTMLElement | null>(null)
 const activeLine = shallowRef<Line | null>(lines.value.find((line) => !line.description.trim()) ?? null)
 const isEditingLine = (line: Line): boolean => activeLine.value === line
+const sortingDisabled = computed(() => activeLine.value !== null || lines.value.length <= 1)
 const listContainer = ref<HTMLElement | null>(null)
 const orderAnnouncement = ref('')
 const helpId = useId()
@@ -38,7 +39,7 @@ const lineKey = (line: Line) => {
 }
 const { draggedId, orderedIds, start, over, finish, cancel } = useDragOrder({
   ids: computed(() => lines.value.map((line) => String(lineKey(line)))),
-  disabled: computed(() => lines.value.length <= 1),
+  disabled: sortingDisabled,
   container: listContainer,
   selector: '[data-invoice-line]'
 })
@@ -88,6 +89,9 @@ const addLine = async () => {
   await editLine(lines.value[lines.value.length - 1]!)
 }
 const moveLine = (line: Line, target: number, event?: KeyboardEvent) => {
+  if (sortingDisabled.value) {
+    return
+  }
   const from = lines.value.indexOf(line)
   const ordered = moveInvoiceLine(lines.value, from, target)
   if (ordered === lines.value) {
@@ -111,7 +115,7 @@ const removeLine = (line: Line) => {
 }
 const startDrag = (event: DragEvent, line: Line) => {
   const target = event.target as HTMLElement
-  if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+  if (sortingDisabled.value || !target.closest('[data-invoice-line-handle]')) {
     event.preventDefault()
     return
   }
@@ -159,23 +163,24 @@ defineExpose({ focusError })
             v-for="(line, index) in orderedLines"
             :key="lineKey(line)"
             :data-invoice-line="lineKey(line)"
-            :draggable="lines.length > 1"
             class="rounded-lg border bg-default"
             :class="[
               isEditingLine(line) ? 'border-primary' : 'border-default',
               draggedId === String(lineKey(line)) ? 'opacity-40' : ''
             ]"
-            @dragstart="startDrag($event, line)"
-            @dragend="cancel"
           >
             <div class="flex items-center gap-1 p-2 sm:gap-2 sm:p-3">
               <button
                 type="button"
-                :disabled="lines.length <= 1"
+                data-invoice-line-handle
+                :draggable="!sortingDisabled"
+                :disabled="sortingDisabled"
                 class="grid size-9 shrink-0 cursor-grab place-items-center rounded text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-primary active:cursor-grabbing disabled:cursor-default disabled:opacity-40"
                 :aria-label="t('features.invoices.admin.reorderLine', { number: index + 1 })"
                 :aria-describedby="helpId"
                 aria-keyshortcuts="ArrowUp ArrowDown"
+                @dragstart.stop="startDrag($event, line)"
+                @dragend="cancel"
                 @keydown.esc.stop.prevent="cancel"
                 @keydown.up.prevent="moveLine(line, index - 1, $event)"
                 @keydown.down.prevent="moveLine(line, index + 1, $event)"

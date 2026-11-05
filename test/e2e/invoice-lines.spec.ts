@@ -138,6 +138,43 @@ test('keyboard sorting retains handle focus and adding a line focuses its descri
   await expect(page.locator('textarea')).toBeFocused()
 })
 
+test('dragging the line body does not start sorting', async ({ page }) => {
+  await mount(page)
+  const first = page.locator('[data-invoice-line="0"]')
+  await expect(first).not.toHaveAttribute('draggable', 'true')
+  const body = await first.getByRole('button', { name: 'Edit invoice line 1', exact: true }).boundingBox()
+  const target = await page.locator('[data-invoice-line="2"]').boundingBox()
+  await page.mouse.move(body!.x + body!.width - 50, body!.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(target!.x + 100, target!.y + 20, { steps: 12 })
+  await page.mouse.up()
+  await expect(page.locator('[data-drag-preview]')).toHaveCount(0)
+  expect(await order(page)).toEqual(['line-0', 'line-1', 'line-2'])
+  await expect(first).toHaveAttribute('data-invoice-line', '0')
+})
+
+test('editing any line disables every drag handle and keyboard reorder until Done', async ({ page }) => {
+  await mount(page)
+  await page.getByRole('button', { name: 'Edit invoice line 2', exact: true }).click()
+  const handles = page.locator('[data-invoice-line-handle]')
+  for (const handle of await handles.all()) {
+    await expect(handle).toBeDisabled()
+    await expect(handle).toHaveAttribute('draggable', 'false')
+  }
+  await handles.first().dispatchEvent('keydown', { key: 'ArrowDown' })
+  await handles.first().dispatchEvent('dragstart')
+  expect(await order(page)).toEqual(['line-0', 'line-1', 'line-2'])
+  await expect(page.locator('[data-drag-preview]')).toHaveCount(0)
+  await expect(page.locator('textarea')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Done', exact: true }).click()
+  await expect(page.locator('textarea')).toHaveCount(0)
+  await expect(handles.first()).toBeEnabled()
+  await expect(handles.first()).toHaveAttribute('draggable', 'true')
+  await handles.first().focus()
+  await page.keyboard.press('ArrowDown')
+  expect(await order(page)).toEqual(['line-1', 'line-0', 'line-2'])
+})
+
 test('cancelling a preview leaves the saved order unchanged', async ({ page }) => {
   await mount(page)
   const handle = await page.locator('[data-invoice-line="0"] [aria-keyshortcuts]').boundingBox()

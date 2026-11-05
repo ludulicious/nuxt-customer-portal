@@ -146,7 +146,7 @@
         "editLine": "Edit invoice line {number}",
         "reorderLine": "Reorder invoice line {number}",
         "lineMoved": "Line moved to position {position} of {count}",
-        "lineListHelp": "Select a line to edit it. Drag its handle to reorder, or focus the handle and press the up and down arrow keys.",
+        "lineListHelp": "Select a line to edit it. Close the line editor before reordering. Drag the left handle, or focus it and press the up and down arrow keys.",
         "doneEditingLine": "Done",
         "notes": "Notes (optional)",
         "invoiceDetails": "Invoice lines",

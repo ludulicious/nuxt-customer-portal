@@ -402,18 +402,15 @@ const savePayment = async () => {
   )
   paymentOpen.value = false
 }
-const selectAttachment = (event: Event) => {
-  attachment.value = (event.target as HTMLInputElement).files?.[0] ?? null
-}
-const uploadAttachment = async () => {
-  if (!attachment.value) {
+const uploadAttachment = async (file: File | null | undefined) => {
+  if (!file || busy.value || isClient.value) {
     return
   }
-  await run(
-    () => api.addInvoiceAttachment(props.invoice.id, attachment.value!),
-    t('features.invoices.admin.attachmentAdded')
-  )
-  attachment.value = null
+  try {
+    await run(() => api.addInvoiceAttachment(props.invoice.id, file), t('features.invoices.admin.attachmentAdded'))
+  } finally {
+    attachment.value = null
+  }
 }
 const requestAttachmentRemoval = (id: string, name: string) => {
   attachmentDeletion.value = { id, name }
@@ -913,18 +910,28 @@ if (!isClient.value) {
       <section class="invoice-attachments print:hidden">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h2 class="font-semibold">{{ t('features.invoices.admin.attachments') }}</h2>
-          <div v-if="!isClient" class="flex flex-wrap items-center gap-2">
-            <input type="file" class="max-w-64 text-sm" @change="selectAttachment" /><UButton
+          <UFileUpload
+            v-if="!isClient"
+            v-slot="{ open }"
+            v-model="attachment"
+            variant="button"
+            :preview="false"
+            :disabled="busy"
+            reset
+            @update:model-value="uploadAttachment"
+          >
+            <UButton
+              type="button"
               size="sm"
               variant="outline"
               icon="i-lucide-paperclip"
-              :disabled="!attachment"
+              :disabled="busy"
               :loading="busy"
-              @click="uploadAttachment"
+              @click="open()"
             >
               {{ t('features.invoices.admin.attachFile') }}
             </UButton>
-          </div>
+          </UFileUpload>
         </div>
         <div v-if="invoice.attachments?.length" class="mt-3 grid gap-2">
           <div
