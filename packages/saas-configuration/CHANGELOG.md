@@ -1,5 +1,23 @@
 # @nuxt-customer-portal/saas-configuration
 
+## 0.12.0
+
+### Minor Changes
+
+- 24ed7df: Allow each SaaS portal to configure trusted connected websites in General settings. Enable credentialed session checks and sign-out only for explicitly allowed origins, and keep Better Auth origin validation synchronized with saved settings. Custom hosts can use PORTAL_AUTH_WEBSITE_ORIGINS instead.
+
+### Patch Changes
+
+- c64ed18: Restore native Nuxt UI styling for the default portal theme. Remove hardcoded blue/slate palettes, gradients, shadow/overlay overrides, and shared field/button/menu variant replacements. Keep primary palettes responsive to configured light/dark brand colors while preserving native neutral surfaces, semantic status colors, and hover/focus behavior.
+
+  Make custom surface styling opt-in and keep live preview defaults isolated from the saved portal appearance. Preserve explicit editorial overrides and the separate Brutal theme. Add light/dark computed-style browser regressions against the installed Nuxt UI stylesheet.
+
+- Updated dependencies [24ed7df]
+- Updated dependencies [cdda978]
+- Updated dependencies [c64ed18]
+  - @nuxt-customer-portal/core@0.12.0
+  - @nuxt-customer-portal/ui@0.12.0
+
 ## 0.11.0
 
 ### Patch Changes

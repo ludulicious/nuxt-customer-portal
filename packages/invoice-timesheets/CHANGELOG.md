@@ -1,5 +1,21 @@
 # @nuxt-customer-portal/invoice-timesheets
 
+## 0.12.0
+
+### Patch Changes
+
+- cdda978: Skip invoice source discovery when the Timesheets invoicing integration or its required modules are disabled, preventing misleading loading warnings for intentionally unavailable sources. Preserve standalone source discovery and warnings for genuine request failures.
+
+  Skip the invoice source-selection step when only free-form invoicing is available. Keep back navigation within the applicable steps and display the correct step count for the chosen flow.
+
+- Updated dependencies [24ed7df]
+- Updated dependencies [cdda978]
+- Updated dependencies [cdda978]
+- Updated dependencies [cdda978]
+  - @nuxt-customer-portal/core@0.12.0
+  - @nuxt-customer-portal/invoices@0.12.0
+  - @nuxt-customer-portal/timesheets@0.12.0
+
 ## 0.11.0
 
 ### Patch Changes

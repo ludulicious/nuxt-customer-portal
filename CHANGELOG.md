@@ -1,5 +1,35 @@
 # Nuxt Customer Portal
 
+## 0.12.0
+
+Configure trusted connected websites in General settings for credentialed account
+session checks and sign-out. Access stays opt-in and limited to explicitly allowed
+origins; custom hosts can use `PORTAL_AUTH_WEBSITE_ORIGINS`.
+
+Restore draft invoice line editing and direct New invoice navigation. Add and
+remove lines, edit one line at a time, drag to reorder with keyboard support, and
+focus the new description automatically. Display VAT as a percentage and use the
+workspace default for new draft lines without changing existing rates. Skip
+disabled invoice sources and the source-selection step when only free-form
+invoicing is available. Open duplicated invoices and credits in draft edit mode.
+
+Restore native Nuxt UI defaults instead of the legacy blue/slate skin, retaining
+neutral surfaces, primary-colored interaction states, explicit appearance
+overrides, and the separate Brutal theme. Keep light/dark live previews isolated
+from saved custom surfaces. Align the primary color controls and remove the logo
+fallback sublabel.
+
+Suggest editable client slugs from display names and use `/clients/<slug>` for
+details. Preserve saved slugs when names change, show duplicate-slug errors
+inline, redirect legacy ID links, and retain list return state after slug edits.
+Previously used slugs are not retained as aliases.
+
+All 16 public packages and the three portal apps use `0.12.0`. No new database
+migrations are required when upgrading from `0.11.0`. Review connected website
+origins, custom appearance overrides, client detail links, and invoice editing
+before deployment. npm and Docker publication remain blocked until full release
+verification succeeds; a GitHub release alone does not establish availability.
+
 ## 0.11.0
 
 Add Duplicate invoice and Credit invoice actions that create drafts without
