@@ -4,7 +4,7 @@ import test from 'node:test'
 import { genericClientInvitationSchema, genericClientListQuerySchema } from '../server/utils/client-validation'
 
 const listUrl = new URL('../app/pages/clients/index.vue', import.meta.url)
-const detailPageUrl = new URL('../app/pages/clients/[id].vue', import.meta.url)
+const detailPageUrl = new URL('../app/pages/clients/[slug].vue', import.meta.url)
 const detailComponentUrl = new URL('../app/components/ClientsClientDetail.vue', import.meta.url)
 
 test('removing a client member requires an explicit confirmation', async () => {
@@ -24,7 +24,7 @@ test('client cards open a dedicated detail route and preserve collection state',
     readFile(detailComponentUrl, 'utf8')
   ])
 
-  assert.match(list, /path: `\/clients\/\$\{client\.id\}`/)
+  assert.match(list, /path: `\/clients\/\$\{encodeURIComponent\(client\.slug\)\}`/)
   assert.match(list, /query: \{ returnTo: listReturnPath\.value \}/)
   assert.match(list, /scroll: String\(Math\.round\(listScrollTop\.value\)\)/)
   assert.match(list, /<NuxtLink\s+:to="clientDetailTo\(client\)"/)
@@ -44,6 +44,11 @@ test('client cards open a dedicated detail route and preserve collection state',
   assert.doesNotMatch(list, /editingId/)
   assert.match(detailPage, /features\.clients\.backToClients/)
   assert.match(detailPage, /value\.startsWith\('\/clients\?'\)/)
+  assert.match(detailPage, /api\.resolve\(clientSlug\.value\)/)
+  assert.match(detailPage, /path: `\/clients\/\$\{encodeURIComponent\(selected\.slug\)\}`/)
+  assert.match(detailPage, /query: route\.query/)
+  assert.match(detailPage, /redirectCode: 302/)
+  assert.match(detailPage, /@updated="handleUpdated"/)
   assert.match(detailComponent, /<ClientsClientForm\s+v-if="editing"/)
   assert.match(detailComponent, /features\.clients\.pendingInvitations/)
   assert.match(detailComponent, /integration\.detailComponent/)

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
+
 const route = useRoute()
 const { t } = useI18n()
 const api = useClients()
-const clientId = computed(() => String(route.params.id))
+const clientSlug = computed(() => String(route.params.slug))
 const returnTo = computed(() => {
   const value = Array.isArray(route.query.returnTo) ? route.query.returnTo[0] : route.query.returnTo
   return typeof value === 'string' && (value === '/clients' || value.startsWith('/clients?')) ? value : '/clients'
@@ -12,7 +14,28 @@ const {
   pending,
   error,
   refresh
-} = await useAsyncData(`client-${clientId.value}`, () => api.get(clientId.value))
+} = await useAsyncData(
+  () => `client-${clientSlug.value}`,
+  () => api.resolve(clientSlug.value)
+)
+
+const canonicalClientUrl = (selected: GenericClientDto) => ({
+  path: `/clients/${encodeURIComponent(selected.slug)}`,
+  query: route.query,
+  hash: route.hash
+})
+if (client.value && clientSlug.value !== client.value.slug) {
+  await navigateTo(canonicalClientUrl(client.value), { replace: true, redirectCode: 302 })
+}
+const handleUpdated = async (updated: GenericClientDto) => {
+  client.value = updated
+  if (clientSlug.value !== updated.slug || route.query.edit !== undefined) {
+    const target = canonicalClientUrl(updated)
+    target.query = { ...target.query }
+    delete target.query.edit
+    await navigateTo(target, { replace: true })
+  }
+}
 
 useSeoMeta({
   title: computed(() => client.value?.name ?? t('features.clients.title'))
@@ -47,6 +70,7 @@ const handleDeleted = async () => {
         :refresh="refresh"
         :start-editing="route.query.edit === 'true'"
         @deleted="handleDeleted"
+        @updated="handleUpdated"
       />
     </div>
   </div>

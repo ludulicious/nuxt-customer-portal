@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { isValidTimezone } from '@nuxt-customer-portal/core/shared/timezone'
+import { createClientSlug } from '@nuxt-customer-portal/clients/shared/client-slug'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const props = defineProps<{ client?: GenericClientDto | null; busy?: boolean; editing?: boolean }>()
 const emit = defineEmits<{ submit: [value: Record<string, unknown>]; cancel: [] }>()
+const clientForm = useTemplateRef('clientForm')
+defineExpose({ setSlugError: (message: string) => clientForm.value?.setErrors([{ name: 'slug', message }]) })
 const { t } = useI18n()
 const configuration = useClientConfiguration()
 const allowedTypes = computed(() => configuration.value.allowedTypes ?? ['organization'])
@@ -26,6 +29,7 @@ const form = reactive({
   preferredLocale: 'nl' as 'nl' | 'en'
 })
 const displayNameCustomized = ref(false)
+const slugCustomized = ref(true)
 const schema = computed(() =>
   z.object({
     clientType: z.enum(['organization', 'person']),
@@ -42,14 +46,12 @@ const schema = computed(() =>
       form.clientType === 'person'
         ? z.string().trim().min(1, t('features.clients.validation.lastName')).max(80)
         : z.string(),
-    slug:
-      props.editing || form.clientType === 'person'
-        ? z.string()
-        : z
-            .string()
-            .trim()
-            .min(1, t('features.clients.validation.slug'))
-            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t('features.clients.validation.slug')),
+    slug: z
+      .string()
+      .trim()
+      .min(1, t('features.clients.validation.slug'))
+      .max(160, t('features.clients.validation.slug'))
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t('features.clients.validation.slug')),
     officialName:
       form.clientType === 'person'
         ? z.string()
@@ -97,10 +99,21 @@ const reset = () =>
 watch(
   () => props.client,
   () => {
+    slugCustomized.value = true
     reset()
     displayNameCustomized.value = Boolean(props.client)
+    slugCustomized.value = Boolean(props.client)
   },
   { immediate: true }
+)
+watch(
+  () => form.name,
+  (name) => {
+    if (!slugCustomized.value) {
+      form.slug = createClientSlug(name)
+    }
+  },
+  { flush: 'sync' }
 )
 watch(
   () => [form.firstName, form.lastName],
@@ -122,10 +135,9 @@ watch(
 const submit = () =>
   emit('submit', {
     name: form.name.trim(),
+    slug: form.slug.trim(),
     ...(form.clientType === 'person' ? { firstName: form.firstName.trim(), lastName: form.lastName.trim() } : {}),
-    ...(props.editing
-      ? {}
-      : { clientType: form.clientType, ...(form.clientType === 'organization' ? { slug: form.slug.trim() } : {}) }),
+    ...(props.editing ? {} : { clientType: form.clientType }),
     timezone: form.timezone,
     officialName: form.clientType === 'person' ? form.name.trim() : form.officialName.trim(),
     address: form.address.trim(),
@@ -161,7 +173,7 @@ const submit = () =>
         />
       </div>
     </template>
-    <UForm novalidate :state="form" :schema="schema" class="space-y-4" @submit="submit">
+    <UForm ref="clientForm" novalidate :state="form" :schema="schema" class="space-y-4" @submit="submit">
       <UFormField
         v-if="!editing && allowedTypes.length > 1"
         name="clientType"
@@ -185,13 +197,8 @@ const submit = () =>
         <UFormField name="name" :label="t('features.clients.name')" required>
           <UInput v-model="form.name" class="w-full" @update:model-value="displayNameCustomized = true" />
         </UFormField>
-        <UFormField
-          v-if="form.clientType === 'organization'"
-          name="slug"
-          :label="t('features.clients.slug')"
-          :required="!editing"
-        >
-          <UInput v-model="form.slug" :disabled="editing" class="w-full" />
+        <UFormField name="slug" :label="t('features.clients.slug')" required>
+          <UInput v-model="form.slug" class="w-full" @update:model-value="slugCustomized = true" />
         </UFormField>
         <UFormField
           v-if="form.clientType === 'organization'"

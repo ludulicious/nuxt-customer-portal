@@ -64,6 +64,7 @@
       "emptyDescription": "Create a client before linking projects, time, invoices, or service requests.",
       "resultCount": "{count} Client | {count} Clients",
       "validation": {
+        "slugTaken": "This slug is already in use. Choose another slug.",
         "name": "Enter at least two characters.",
         "firstName": "First name is required.",
         "lastName": "Last name is required.",
