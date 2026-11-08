@@ -2,6 +2,8 @@
 
 **A customer portal you can make your own.**
 
+[![Nuxt Customer Portal on StartupScores](https://startupscores.com/badge/nuxt-customer-portal.svg?style=shield&v=combo&theme=dark)](https://startupscores.com/open-source/nuxt-customer-portal)
+
 Start with client access, timesheets, approvals, and invoicing. Extend it with modules built around your business. Nuxt Customer Portal is open source under the MIT License, built with Nuxt, and used by our small software agency for timesheets and invoicing.
 
 [Documentation](https://nuxt-customer-portal.com) · [Try the demo](https://demo.nuxt-customer-portal.com) · [Installation](https://nuxt-customer-portal.com/getting-started/installation) · [Build a module](https://nuxt-customer-portal.com/contributing/create-a-layer)
