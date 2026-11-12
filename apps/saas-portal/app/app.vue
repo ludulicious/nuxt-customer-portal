@@ -9,6 +9,22 @@ const settings = useState<Pick<PortalSettings, 'branding' | 'appearance'> | null
 const theme = computed(() => resolvePortalTheme(settings.value?.appearance?.theme))
 const uiLocale = computed(() => (locale.value === 'nl' ? nl : en))
 
+const defaultMarks = {
+  light: '/images/portalnuxt-logo-light.webp',
+  dark: '/images/portalnuxt-logo-dark.webp'
+}
+const compactIcons = computed(() => {
+  const branding = settings.value?.branding
+  // The app supplies default marks for compact UI; keep the original favicons for those.
+  const light = branding?.markLight === defaultMarks.light ? '' : branding?.markLight
+  const dark = branding?.markDark === defaultMarks.dark ? '' : branding?.markDark
+  return {
+    light: light || dark || '/favicon-light.png',
+    dark: dark || light || '/favicon-dark.png',
+    touch: light || dark || '/apple-touch-icon.png'
+  }
+})
+
 watchEffect(() => {
   const branding = settings.value?.branding
   if (!branding) {
@@ -16,10 +32,10 @@ watchEffect(() => {
   }
 
   if (!branding.markLight) {
-    branding.markLight = '/images/portalnuxt-logo-light.webp'
+    branding.markLight = defaultMarks.light
   }
   if (!branding.markDark) {
-    branding.markDark = '/images/portalnuxt-logo-dark.webp'
+    branding.markDark = defaultMarks.dark
   }
 })
 
@@ -41,22 +57,11 @@ useHead(() => ({
     }
   ],
   link: [
-    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
     {
       rel: 'icon',
-      type: 'image/png',
-      sizes: '64x64',
-      href: '/favicon-light.png',
-      media: '(prefers-color-scheme: light)'
+      href: colorMode.value === 'dark' ? compactIcons.value.dark : compactIcons.value.light
     },
-    {
-      rel: 'icon',
-      type: 'image/png',
-      sizes: '64x64',
-      href: '/favicon-dark.png',
-      media: '(prefers-color-scheme: dark)'
-    },
-    { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
+    { rel: 'apple-touch-icon', href: compactIcons.value.touch }
   ]
 }))
 useSeoMeta({
