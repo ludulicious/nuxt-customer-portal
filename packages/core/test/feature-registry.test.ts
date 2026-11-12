@@ -29,12 +29,23 @@ test('feature registration is idempotent and replaces definitions by id', () => 
 })
 
 test('configurable features are enabled only when their modules are active', () => {
-  const timesheets = { ...feature, id: 'timesheets' }
   const core = { ...feature, id: 'portal-core' }
 
-  assert.equal(isPortalFeatureEnabled(timesheets, null), true)
-  assert.equal(isPortalFeatureEnabled(timesheets, ['timesheets']), true)
-  assert.equal(isPortalFeatureEnabled(timesheets, []), false)
+  for (const id of [
+    'timesheets',
+    'invoices',
+    'service-requests',
+    'invoice-timesheets',
+    'products',
+    'planning',
+    'invoice-products'
+  ]) {
+    const configurable = { ...feature, id }
+    assert.equal(isPortalFeatureEnabled(configurable, null), true, `${id}: standalone portal`)
+    assert.equal(isPortalFeatureEnabled(configurable, [id]), true, `${id}: enabled`)
+    assert.equal(isPortalFeatureEnabled(configurable, []), false, `${id}: disabled`)
+    assert.equal(isPortalFeatureEnabled(configurable, ['unrelated']), false, `${id}: another module enabled`)
+  }
   assert.equal(isPortalFeatureEnabled(core, []), true)
 })
 
