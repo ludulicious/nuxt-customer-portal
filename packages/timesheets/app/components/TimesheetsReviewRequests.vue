@@ -320,7 +320,8 @@ watch(
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0 space-y-1">
               <div class="flex flex-wrap items-center gap-2">
-                <h4 class="font-semibold break-words">{{ period.clientName }}</h4>
+                <UAvatar :src="period.clientAvatar || undefined" :alt="period.clientName" size="sm" />
+                <h4 class="min-w-0 font-semibold break-words">{{ period.clientName }}</h4>
                 <UBadge
                   :color="
                     period.canSend
@@ -422,7 +423,16 @@ watch(
     <UCard v-for="request in visible" :id="`request-${request.id}`" :key="request.id">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 class="font-semibold">{{ clientSide ? request.supplierName : request.clientName }}</h3>
+          <div class="flex items-center gap-2">
+            <UAvatar
+              :src="(clientSide ? request.supplierAvatar : request.clientAvatar) || undefined"
+              :alt="clientSide ? request.supplierName : request.clientName"
+              size="sm"
+            />
+            <h3 class="min-w-0 font-semibold break-words">
+              {{ clientSide ? request.supplierName : request.clientName }}
+            </h3>
+          </div>
           <p>
             {{ dateLabel(request.startsOn) }} – {{ dateLabel(request.endsOn) }}
             <template v-if="!request.legacySubmissionId">

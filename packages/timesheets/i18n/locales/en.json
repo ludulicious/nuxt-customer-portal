@@ -529,7 +529,7 @@
           "APPROVED": "Approved",
           "DISPUTED": "Disputed",
           "WITHDRAWN": "Withdrawn",
-          "AUTO_APPROVED": "Automatically approved"
+          "AUTO_APPROVED": "Auto approved"
         },
         "reopen": "Reopen submission — {person}",
         "reopened": "Submission reopened for correction",
@@ -558,7 +558,7 @@
         "emptyPeriod": "No new hours",
         "manageClients": "Choose clients",
         "trackingHelp": "Enable Track hours under a client’s Modules to include them in timesheets. Client approval is configured separately.",
-        "monthHelp": "Hours and approval requests for the selected month.",
+        "monthHelp": "Hours and approval requests for the selected month. Requests are only sent when you choose Send request.",
         "monthRequestsEmpty": "No approval requests for this month",
         "trackingTitle": "Which clients appear here?",
         "previousYear": "Previous year",

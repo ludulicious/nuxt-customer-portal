@@ -23,7 +23,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
   const invoiced = new Set<string>()
   try {
     await pool.query(`
-      CREATE TABLE public.organization (id text PRIMARY KEY, name text NOT NULL);
+      CREATE TABLE public.organization (id text PRIMARY KEY, name text NOT NULL, logo text, metadata text);
       CREATE TABLE public."user" (id text PRIMARY KEY, name text NOT NULL, email text NOT NULL);
       CREATE TABLE public.member (id text PRIMARY KEY, organization_id text NOT NULL, user_id text NOT NULL, role text NOT NULL);
       CREATE SCHEMA clients;
@@ -42,7 +42,9 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
     await pool.query(readFileSync(new URL('../migrations/0007_client_review_requests.sql', import.meta.url), 'utf8'))
     await pool.query(`
       UPDATE timesheets.client_review_rollout SET starts_on = '2020-01-01';
-      INSERT INTO public.organization VALUES ('provider','Provider'), ('client','Client'), ('other','Other'), ('outsider','Outsider');
+      INSERT INTO public.organization (id, name) VALUES ('provider','Provider'), ('client','Client'), ('other','Other'), ('outsider','Outsider');
+      UPDATE public.organization SET logo = 'client-logo.png', metadata = '{"avatarLogo":"client-avatar.png"}' WHERE id = 'client';
+      UPDATE public.organization SET logo = 'supplier-logo.png', metadata = 'invalid' WHERE id = 'provider';
       INSERT INTO public."user" VALUES ('sender','Sender','sender@example.com'), ('person','Person','person@example.com'), ('person2','Second','second@example.com'), ('reviewer','Reviewer','reviewer@example.com'), ('stranger','Stranger','stranger@example.com');
       INSERT INTO clients.client_profile VALUES ('client', null), ('other', null);
       INSERT INTO clients.client_module VALUES ('client', 'timesheets', true), ('other', 'timesheets', true);
@@ -68,6 +70,9 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         exports,
         createError: (input: { message: string }) => Object.assign(new Error(input.message), input),
         require: (id: string) => {
+          if (id.endsWith('/shared/organization-avatar')) {
+            return require('../../core/shared/organization-avatar')
+          }
           if (id.endsWith('/server/portal')) {
             return { db }
           }
@@ -186,7 +191,10 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         await pool.query('DELETE FROM timesheets.workspace_client_reviewer')
         await assert.rejects(send(), /Assign an eligible/)
         await pool.query("INSERT INTO timesheets.workspace_client_reviewer VALUES ('link','reviewer')")
-        const future = (await exports.listReviewPeriods('provider', '2099-01'))[0]!
+        const future = (await exports.listReviewPeriods('provider', '2099-01')).find(
+          (period) => period.workspaceClientId === 'link'
+        )!
+        assert.equal(future.clientAvatar, 'client-avatar.png')
         await assert.rejects(
           exports.sendReviewRequest('provider', 'sender', 'link', future.startsOn, future.endsOn),
           /has not ended/
@@ -199,6 +207,10 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       requestId = (results.find((r) => r.status === 'fulfilled') as PromiseFulfilledResult<{ id: string }>).value.id
       const requests = await exports.listReviewRequests('client', 'reviewer', true, false)
       assert.equal(requests.length, 1)
+      assert.equal(requests[0]!.clientAvatar, 'client-avatar.png')
+      assert.equal(requests[0]!.supplierAvatar, 'supplier-logo.png')
+      assert.ok(!('clientBranding' in requests[0]!))
+      assert.ok(!('supplierBranding' in requests[0]!))
       assert.equal(requests[0]!.entries.length, 3)
       assert.ok(!('rate' in requests[0]!.entries[0]!))
       assert.equal((await exports.listReviewRequests('provider', 'sender', false, true))[0]!.entries[0]!.rate, 10000)
@@ -252,9 +264,17 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         await pool.query('DELETE FROM timesheets.client_review_request WHERE id = $1', [sent.id])
         await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link'")
         const disabledPeriod = (await exports.listReviewPeriods('provider', '2020-01')).find(
-          (period) => period.workspaceClientId === 'link' && period.availableCount > 0
+          (candidate) => candidate.workspaceClientId === 'link' && candidate.startsOn === period.startsOn
         )!
-        assert.equal(disabledPeriod.totalMinutes, 15)
+        assert.equal(disabledPeriod.totalMinutes, 0)
+        const automatic = (await exports.listSubmissionReviewRequests('provider')).find((request) =>
+          request.entries.some((entry) => entry.id === 'off-late')
+        )!
+        assert.equal(automatic.status, 'AUTO_APPROVED')
+        assert.equal(
+          automatic.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          15
+        )
         assert.equal(disabledPeriod.reviewEnabled, false)
         assert.equal(disabledPeriod.canSend, false)
         await assert.rejects(send(), /Review-enabled client relationship not found/)
@@ -479,6 +499,57 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(requests.find((r) => r.id === replacement.id)!.replacesIds.length, 2)
       assert.equal(requests.find((r) => r.id === replacement.id)!.entries.length, 4)
     })
+    await t.test('clients without required approval show automatic decisions instead of hours to send', async () => {
+      await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link2'")
+      await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('no-review-approved', 'provider', 'other', 'submission', 'person', 'project', 'activity', '2020-02-03', 60, true, 10000, 'EUR'),
+          ('no-review-draft', 'provider', 'other', null, 'person', 'project', 'activity', '2020-02-04', 30, true, 10000, 'EUR')`)
+      try {
+        const automatic = (await exports.listSubmissionReviewRequests('provider')).find(
+          (request) => request.workspaceClientId === 'link2' && request.startsOn === '2020-02-03'
+        )!
+        assert.equal(automatic.status, 'AUTO_APPROVED')
+        assert.equal(automatic.entries.length, 1)
+        assert.equal(automatic.entries[0]!.minutes, 60)
+        assert.equal(automatic.clientAvatar, null)
+        const periods = (await exports.listReviewPeriods('provider', '2020-02')).filter(
+          (period) => period.workspaceClientId === 'link2'
+        )
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          30
+        )
+        assert.ok(periods.every((period) => !period.canSend))
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link2'")
+        assert.ok(
+          (await exports.listSubmissionReviewRequests('provider')).some(
+            (request) => request.id === automatic.id && request.status === 'AUTO_APPROVED'
+          )
+        )
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id = 'link2'")
+        assert.ok(
+          !(await exports.listSubmissionReviewRequests('provider')).some((request) => request.id === automatic.id)
+        )
+        const reviewPeriods = (await exports.listReviewPeriods('provider', '2020-02')).filter(
+          (period) => period.workspaceClientId === 'link2'
+        )
+        assert.equal(
+          reviewPeriods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          90
+        )
+        // An already sent request keeps its status if review access is later disabled.
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link'")
+        assert.ok(
+          !(await exports.listSubmissionReviewRequests('provider')).some((request) =>
+            request.entries.some((entry) => entry.id === 'entry')
+          )
+        )
+      } finally {
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id IN ('no-review-approved', 'no-review-draft')")
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id IN ('link', 'link2')")
+      }
+    })
     await t.test(
       'earlier monthly decisions and unsubmitted hours remain visible without duplicating approved time',
       async () => {
@@ -496,6 +567,8 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
           (request) => request.legacySubmissionId === 'earlier-submission'
         )
         assert.equal(earlier.length, 2)
+        assert.ok(earlier.every((request) => request.clientAvatar === 'client-avatar.png'))
+        assert.ok(earlier.every((request) => request.supplierAvatar === 'supplier-logo.png'))
         assert.equal(
           earlier
             .find((request) => request.startsOn === '2019-08-31')!

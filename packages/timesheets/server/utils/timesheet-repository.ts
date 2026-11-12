@@ -1139,33 +1139,6 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
       actorUserId: submission.userId,
       comment: 'Automatically approved because internal approval was disabled'
     })
-    const representedClients = await tx
-      .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-      .from(timeEntry)
-      .innerJoin(
-        workspaceClient,
-        and(
-          eq(workspaceClient.workspaceOrganizationId, organizationId),
-          eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-          eq(workspaceClient.accessMode, 'REVIEW'),
-          isLegacyReviewEntry
-        )
-      )
-      .where(eq(timeEntry.submissionId, submission.id))
-    if (representedClients.length) {
-      await tx
-        .insert(timesheetClientReview)
-        .values(
-          representedClients.map((item) => ({
-            id: nanoid(),
-            weeklyTimesheetId: submission.weeklyTimesheetId,
-            submissionId: submission.id,
-            clientOrganizationId: item.clientOrganizationId,
-            status: 'PENDING' as const
-          }))
-        )
-        .onConflictDoNothing()
-    }
   }
   return approvedSubmissions
 }
@@ -2157,33 +2130,6 @@ export const submitWeek = async (
         actorUserId: userId,
         comment: 'Automatically approved because internal approval is disabled'
       })
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submissionId))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: week.id,
-              submissionId,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
     }
     return created
   })
@@ -2283,33 +2229,6 @@ export const resubmitSubmission = async (
         actorUserId: userId,
         comment: 'Automatically approved because internal approval is disabled'
       })
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submission.id))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: submission.weeklyTimesheetId,
-              submissionId: submission.id,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
     }
     return updated
   })
@@ -2580,35 +2499,6 @@ export const reviewSubmission = async (
       actorUserId,
       comment
     })
-    if (action === 'APPROVE') {
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submission.id))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: submission.weeklyTimesheetId,
-              submissionId: submission.id,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
-    }
     if (action === 'REOPEN') {
       await tx
         .update(timesheetClientReview)

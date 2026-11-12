@@ -19,7 +19,9 @@ export interface ClientReviewRequestDto {
   legacySubmissionId?: string
   id: string
   workspaceClientId: string
+  clientAvatar?: string | null
   clientName: string
+  supplierAvatar?: string | null
   supplierName: string
   startsOn: string
   endsOn: string
@@ -38,6 +40,7 @@ export interface ClientReviewRequestDto {
 }
 export interface ClientReviewPeriodDto {
   workspaceClientId: string
+  clientAvatar?: string | null
   clientName: string
   startsOn: string
   endsOn: string

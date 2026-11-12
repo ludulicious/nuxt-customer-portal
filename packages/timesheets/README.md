@@ -14,6 +14,8 @@ Pending requests can be resent with an edited message. The editor starts with th
 
 ### Client review requests
 
+Client approval requests are sent manually from **Client approvals → Hours to send → Send request**. Submitting or internally approving a timesheet, disabling internal approvals, and reaching a review period boundary never create or send a client request. Weekly/monthly intervals only determine which hours are grouped together.
+
 The provider’s Client approvals page defaults to the previous month and uses one selected month for both **Hours to send** and **Approval requests**. Requests are assigned by their work period, not their send date; periods spanning months appear in each relevant month. Links to a specific request open its work month automatically. Preparation shows periods with unrequested or outstanding time by default, with ready-to-send periods first. Enable **Show empty periods** to inspect the remaining periods. Blockers identify internal approval, missing reviewers, or a period that has not ended. The page always shows both monthly sections, including their empty states; it does not load or display the historical submission archive. Sending, withdrawing, correcting, and client decisions retain their existing rules.
 
 Enable **Track hours** under **Clients → client → Modules** for clients that need time registration. This uses the existing Timesheets module setting; client access (view/review) remains separate. Clients with tracking disabled are excluded from new project choices and new time entry; existing hours and requests remain in the monthly approval view regardless of tracking status. Existing projects, recorded time, and sent requests remain available as history. New clients only participate when the module is explicitly enabled.
@@ -25,3 +27,5 @@ The approvals page also lists active hour-tracking clients as tags, independentl
 Track hours controls new registration only. Turning it off does not filter existing monthly hours or approval requests. Existing hours may still be sent when client review access is enabled; when review access is disabled, the hours remain visible with an explanation.
 
 The monthly view also reads earlier submission-based client decisions alongside period requests. Earlier records are split by work month for display, with their original statuses and recorded hours preserved. Earlier internally approved time is not listed again as unsent; unsubmitted time remains visible with its submission/approval blocker. No historical records are migrated or rewritten.
+
+Internally approved hours for clients with view-only or disabled client review access appear as **Auto approved** in the selected month, independently of Track hours. They are excluded from hours to send. Draft/unapproved time stays blocked, and existing active requests retain their actual status.

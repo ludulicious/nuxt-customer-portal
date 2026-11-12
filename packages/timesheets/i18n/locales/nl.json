@@ -558,7 +558,7 @@
         "emptyPeriod": "Geen nieuwe uren",
         "manageClients": "Klanten kiezen",
         "trackingHelp": "Schakel Uren bijhouden in bij de modules van een klant om uren te kunnen registreren. Goedkeuring door de klant stel je apart in.",
-        "monthHelp": "Uren en goedkeuringsverzoeken voor de geselecteerde maand.",
+        "monthHelp": "Uren en goedkeuringsverzoeken voor de geselecteerde maand. Verzoeken worden alleen verzonden als je kiest voor Verzoek verzenden.",
         "monthRequestsEmpty": "Geen goedkeuringsverzoeken voor deze maand",
         "trackingTitle": "Welke klanten verschijnen hier?",
         "previousYear": "Vorig jaar",

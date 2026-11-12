@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
+import { getOrganizationAvatar } from '@nuxt-customer-portal/core/shared/organization-avatar'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { clientReviewPeriods, nextReviewMonth, type ClientReviewInterval } from '../../shared/client-review-periods'
@@ -9,6 +10,8 @@ import type {
   ReviewEntrySnapshot
 } from '../../shared/types/client-review-request'
 import { notifyReviewRequest } from './client-review-request-email'
+
+type OrganizationBranding = { logo: string | null; metadata: string | null }
 
 type Executor = Pick<typeof db, 'execute'>
 export const reviewRows = async <T>(executor: Executor, query: SQL): Promise<T[]> =>
@@ -163,10 +166,11 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     name: string
     weekStartsOn: number
     accessMode: string
+    branding: OrganizationBranding
   }>(
     db,
     sql`
-    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, coalesce(w.week_starts_on, 1) as "weekStartsOn"
+    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, json_build_object('logo', o.logo, 'metadata', o.metadata) as branding, coalesce(w.week_starts_on, 1) as "weekStartsOn"
     from timesheets.workspace_client c join public.organization o on o.id = c.client_organization_id
     left join timesheets.workspace_settings w on w.organization_id = c.workspace_organization_id
     where c.workspace_organization_id = ${workspaceId} and (c.access_mode = 'REVIEW' or exists (
@@ -182,11 +186,14 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     const reviewers = await eligibleReviewers(db, link.id)
     for (const period of clientReviewPeriods(month, interval, link.weekStartsOn)) {
       const entries = await periodEntries(db, workspaceId, link.clientId, period.startsOn, period.endsOn)
-      const available = entries.filter((e) => !e.covered)
+      const available = entries.filter(
+        (e) => !e.covered && !(link.accessMode !== 'REVIEW' && e.status === 'APPROVED' && e.timer === null)
+      )
       const outstandingCount = entries.filter((e) => e.status !== 'APPROVED' || e.timer !== null).length
       result.push({
         workspaceClientId: link.id,
         clientName: link.name,
+        clientAvatar: getOrganizationAvatar(link.branding) ?? null,
         ...period,
         interval,
         totalMinutes: available.reduce((sum, e) => sum + e.snapshot.minutes, 0),
@@ -210,12 +217,14 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
   return result
 }
 
-/** Read earlier submission decisions through the same monthly view, without rewriting them. */
+/** Include earlier decisions and approved work that does not require a client request. */
 export const listSubmissionReviewRequests = async (workspaceId: string): Promise<ClientReviewRequestDto[]> => {
   const rows = await reviewRows<{
     workspaceClientId: string
     clientName: string
     supplierName: string
+    clientBranding: OrganizationBranding
+    supplierBranding: OrganizationBranding
     submissionId: string
     status: ClientReviewRequestDto['status']
     comment: string | null
@@ -224,6 +233,8 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
     db,
     sql`
     select wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
+      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
+      json_build_object('logo', provider.logo, 'metadata', provider.metadata) as "supplierBranding",
       e.submission_id as "submissionId", coalesce(cr.status::text, 'AUTO_APPROVED') as status, cr.comment,
       jsonb_build_object('id', e.id, 'date', e.entry_date::text,
         'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce(w.week_starts_on, 1) + 7) % 7))::text,
@@ -240,8 +251,13 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
     join timesheets.activity_type a on a.id = e.activity_type_id
     left join timesheets.workspace_settings w on w.organization_id = e.organization_id
     left join timesheets.client_review cr on cr.submission_id = s.id and cr.client_organization_id = e.client_organization_id
-    where e.organization_id = ${workspaceId} and e.entry_date < (select starts_on from timesheets.client_review_rollout)
-      and (cr.id is not null or s.status = 'APPROVED')
+    where e.organization_id = ${workspaceId} and (
+      (e.entry_date < (select starts_on from timesheets.client_review_rollout) and (cr.id is not null or s.status = 'APPROVED'))
+      or (wc.access_mode <> 'REVIEW' and s.status = 'APPROVED' and e.timer_started_at is null and cr.id is null
+        and not exists (select 1 from timesheets.client_review_request_entry re
+          join timesheets.client_review_request r on r.id = re.request_id
+          where re.entry_id = e.id and r.status <> 'WITHDRAWN'))
+    )
     order by e.entry_date, e.id`
   )
   const grouped = new Map<string, ClientReviewRequestDto>()
@@ -256,6 +272,8 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
         workspaceClientId: row.workspaceClientId,
         clientName: row.clientName,
         supplierName: row.supplierName,
+        clientAvatar: getOrganizationAvatar(row.clientBranding) ?? null,
+        supplierAvatar: getOrganizationAvatar(row.supplierBranding) ?? null,
         startsOn: date,
         endsOn: date,
         revision: 1,
@@ -282,10 +300,17 @@ export const listReviewRequests = async (
   clientSide: boolean,
   isAdmin: boolean
 ): Promise<ClientReviewRequestDto[]> => {
-  const requests = await reviewRows<Omit<ClientReviewRequestDto, 'entries' | 'history'>>(
+  const requests = await reviewRows<
+    Omit<ClientReviewRequestDto, 'entries' | 'history'> & {
+      clientBranding: OrganizationBranding
+      supplierBranding: OrganizationBranding
+    }
+  >(
     db,
     sql`
     select r.id, r.workspace_client_id as "workspaceClientId", c.name as "clientName", p.name as "supplierName",
+      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
+      json_build_object('logo', p.logo, 'metadata', p.metadata) as "supplierBranding",
       r.starts_on::text as "startsOn", r.ends_on::text as "endsOn", r.revision, r.status, r.version, r.supplementary,
       r.replaces_id as "replacesId", coalesce((select jsonb_agg(replaces_id order by replaces_id) from timesheets.client_review_request_replacement where request_id = r.id), '[]'::jsonb) as "replacesIds", r.message
     from timesheets.client_review_request r join timesheets.workspace_client wc on wc.id = r.workspace_client_id
@@ -294,8 +319,10 @@ export const listReviewRequests = async (
     order by r.starts_on desc, c.name, r.revision desc`
   )
   return Promise.all(
-    requests.map(async (request) => ({
+    requests.map(async ({ clientBranding, supplierBranding, ...request }) => ({
       ...request,
+      clientAvatar: getOrganizationAvatar(clientBranding) ?? null,
+      supplierAvatar: getOrganizationAvatar(supplierBranding) ?? null,
       entries: (
         await reviewRows<{ snapshot: ClientReviewRequestDto['entries'][number] }>(
           db,
