@@ -122,14 +122,15 @@ useSeoMeta({ title: sectionTitle })
       <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
       <span class="sr-only">{{ t('features.timesheets.loading') }}</span>
     </div>
-    <component
-      :is="sectionComponent"
-      v-if="data"
-      ref="sectionViewRef"
-      :key="props.section"
-      :data="data"
-      :refresh="refresh"
-      :class="hasConstrainedList ? 'min-h-0 flex-1' : ''"
-    />
+    <slot v-if="data" :data="data" :refresh="refresh">
+      <component
+        :is="sectionComponent"
+        ref="sectionViewRef"
+        :key="props.section"
+        :data="data"
+        :refresh="refresh"
+        :class="hasConstrainedList ? 'min-h-0 flex-1' : ''"
+      />
+    </slot>
   </TimesheetsPageShell>
 </template>

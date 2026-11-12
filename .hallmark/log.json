@@ -1,5 +1,12 @@
 [
   {
+    "date": "2026-11-12",
+    "macrostructure": "Approval preparation workbench with request history",
+    "theme": "existing portal system",
+    "enrichment": "none",
+    "brief": "Clarify timesheet preparation, hide empty periods, and honor per-client hour tracking"
+  },
+  {
     "date": "2026-10-20",
     "macrostructure": "Order receipt",
     "theme": "existing host checkout appearance",

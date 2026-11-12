@@ -1,47 +1,185 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import {
+  reviewPeriodIncludesMonth,
+  shiftReviewMonth,
+  showReviewPeriod,
+  reviewClientOptions
+} from '../../shared/client-review-month'
 import type { ClientReviewPeriodDto, ClientReviewRequestDto } from '../../shared/types/client-review-request'
 
 const props = defineProps<{ clientSide?: boolean }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
+// Keep request controls separate from the historical list's query parameters.
+const queryControl = (key: string, fallback: string, valid: (value: string) => boolean = () => true) =>
+  computed({
+    get: () => {
+      const value = route.query[key]
+      return typeof value === 'string' && valid(value) ? value : fallback
+    },
+    set: (value: string) => {
+      void router.replace({
+        query: {
+          ...route.query,
+          requestPage: undefined,
+          ...(key === 'reviewMonth' ? { request: undefined } : {}),
+          [key]: value === fallback ? undefined : value
+        }
+      })
+    }
+  })
 const toast = useToast()
 const prefix = 'features.timesheets.reviewPeriods.'
+const statusColors = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  AUTO_APPROVED: 'success',
+  DISPUTED: 'error',
+  WITHDRAWN: 'neutral'
+} as const
 const endpoint = computed(() => `/api/timesheets/${props.clientSide ? 'client' : 'admin'}/review-requests`)
 const {
   data: requests,
   error,
   refresh
-} = await useFetch<ClientReviewRequestDto[], import('#app').NuxtError<unknown>, string>(endpoint)
-const month = ref(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7))
-const search = ref('')
-const status = ref(typeof route.query.status === 'string' ? route.query.status : 'ALL')
-const page = ref(1)
-const periods = ref<ClientReviewPeriodDto[]>([])
-const startsOn = ref('')
+} = await useFetch<ClientReviewRequestDto[], import('#app').NuxtError<unknown>, string>(endpoint.value, {
+  watch: false
+})
+const month = queryControl(
+  'reviewMonth',
+  shiftReviewMonth(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7), -1),
+  (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+)
+const linkedRequest = requests.value?.find((request) => request.id === route.query.request)
+const preparedMonth =
+  !props.clientSide && linkedRequest && !reviewPeriodIncludesMonth(linkedRequest, month.value)
+    ? linkedRequest.startsOn.slice(0, 7)
+    : month.value
+if (!props.clientSide && preparedMonth !== month.value) {
+  await router.replace({ query: { ...route.query, reviewMonth: preparedMonth } })
+}
+const changingMonth = computed(() => !props.clientSide && month.value !== preparedMonth)
+const monthLabel = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${preparedMonth}-01T00:00:00Z`)
+  )
+)
+const requestsForMonth = computed(() =>
+  props.clientSide
+    ? (requests.value ?? [])
+    : (requests.value ?? []).filter((request) => reviewPeriodIncludesMonth(request, preparedMonth))
+)
+const search = queryControl('requestSearch', '')
+const status = queryControl('requestStatus', 'ALL', (value) =>
+  ['ALL', 'PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN', 'AUTO_APPROVED'].includes(value)
+)
+const pageQuery = queryControl('requestPage', '1', (value) => /^[1-9]\d*$/.test(value))
+const page = computed({
+  get: () => Math.min(Number(pageQuery.value), Math.max(1, Math.ceil(filtered.value.length / 10))),
+  set: (value: number) => {
+    pageQuery.value = String(value)
+  }
+})
+const {
+  data: periodData,
+  pending: periodsPending,
+  error: periodsError,
+  refresh: refreshPeriods
+} = await useFetch<{ periods: ClientReviewPeriodDto[]; startsOn: string }, import('#app').NuxtError<unknown>, string>(
+  '/api/timesheets/admin/review-periods',
+  {
+    key: `client-review-periods:${preparedMonth}`,
+    query: { month: preparedMonth },
+    immediate: !props.clientSide,
+    watch: false
+  }
+)
+const periods = computed(() => periodData.value?.periods ?? [])
+const clientQuery = queryControl('reviewClient', 'ALL')
+const clientOptions = computed(() => [
+  { label: t(prefix + 'allClients'), value: 'ALL' },
+  ...reviewClientOptions(periods.value, requestsForMonth.value)
+])
+const clientFilter = computed({
+  get: () => (clientOptions.value.some((client) => client.value === clientQuery.value) ? clientQuery.value : 'ALL'),
+  set: (value: string) => {
+    clientQuery.value = value
+  }
+})
+const clientPeriods = computed(() =>
+  periods.value.filter((period) => clientFilter.value === 'ALL' || period.workspaceClientId === clientFilter.value)
+)
+const emptyQuery = queryControl('emptyPeriods', '')
+const showEmpty = computed({
+  get: () => emptyQuery.value === 'true',
+  set: (value: boolean) => {
+    emptyQuery.value = value ? 'true' : ''
+  }
+})
+const dateLabel = (value: string) =>
+  new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(`${value}T00:00:00Z`))
+const visiblePeriods = computed(() =>
+  clientPeriods.value
+    .filter((period) => showReviewPeriod(period, showEmpty.value))
+    .toSorted(
+      (a, b) =>
+        Number(b.canSend) - Number(a.canSend) ||
+        a.clientName.localeCompare(b.clientName) ||
+        a.startsOn.localeCompare(b.startsOn)
+    )
+)
+const readyCount = computed(() => clientPeriods.value.filter((period) => period.canSend).length)
+const periodStatus = (period: ClientReviewPeriodDto) =>
+  period.canSend ? 'ready' : !period.availableCount && !period.outstandingCount ? 'emptyPeriod' : 'needsAttention'
+const sortBy = queryControl('requestSort', 'startsOn', (value) => ['startsOn', 'clientName'].includes(value))
+const directionQuery = queryControl('requestDirection', 'desc', (value) => ['asc', 'desc'].includes(value))
+const sortDir = computed<'asc' | 'desc'>({
+  get: () => (directionQuery.value === 'asc' ? 'asc' : 'desc'),
+  set: (value) => {
+    directionQuery.value = value
+  }
+})
+const requestFilters = computed(() => [
+  {
+    key: 'status',
+    placeholder: t(prefix + 'status'),
+    items: [
+      { label: t('features.timesheets.approvals.allStatuses'), value: undefined },
+      ...['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN', ...(!props.clientSide ? ['AUTO_APPROVED'] : [])].map(
+        (value) => ({
+          value,
+          label: t(prefix + 'statuses.' + value)
+        })
+      )
+    ]
+  }
+])
+const sortOptions = computed(() => [
+  { value: 'startsOn', label: t(prefix + 'period') },
+  { value: 'clientName', label: t(prefix + 'client') }
+])
 const busy = ref(false)
 const affectedRequests = ref<Array<{ id: string; clientName: string; startsOn: string; endsOn: string }>>([])
-const loadPeriods = async () => {
-  if (!props.clientSide) {
-    const result = await $fetch<{ periods: ClientReviewPeriodDto[]; startsOn: string }, string>(
-      '/api/timesheets/admin/review-periods',
-      { query: { month: month.value } }
-    )
-    periods.value = result.periods
-    startsOn.value = result.startsOn
-  }
-}
-await loadPeriods()
-watch(month, loadPeriods)
-watch([search, status], () => {
-  page.value = 1
-})
 const filtered = computed(() =>
-  (requests.value ?? []).filter(
-    (r) =>
-      (status.value === 'ALL' || r.status === status.value) &&
-      `${r.clientName} ${r.supplierName} ${r.startsOn} ${r.endsOn}`.toLowerCase().includes(search.value.toLowerCase())
-  )
+  requestsForMonth.value
+    .filter(
+      (r) =>
+        (props.clientSide || clientFilter.value === 'ALL' || r.workspaceClientId === clientFilter.value) &&
+        (status.value === 'ALL' || r.status === status.value) &&
+        `${r.clientName} ${r.supplierName} ${r.startsOn} ${r.endsOn}`.toLowerCase().includes(search.value.toLowerCase())
+    )
+    .toSorted((a, b) => {
+      const left = sortBy.value === 'clientName' ? (props.clientSide ? a.supplierName : a.clientName) : a.startsOn
+      const right = sortBy.value === 'clientName' ? (props.clientSide ? b.supplierName : b.clientName) : b.startsOn
+      return (left.localeCompare(right) || a.id.localeCompare(b.id)) * (sortDir.value === 'asc' ? 1 : -1)
+    })
 )
 const visible = computed(() => filtered.value.slice((page.value - 1) * 10, page.value * 10))
 const selected = ref<ClientReviewRequestDto | null>(null)
@@ -83,12 +221,12 @@ const submit = async () => {
       })
     }
     open.value = false
-    await Promise.all([refresh(), loadPeriods()])
+    await Promise.all([refresh(), refreshPeriods()])
     toast.add({ title: t(prefix + 'saved'), color: 'success' })
   } catch (cause) {
     const failure = cause as { data?: { message?: string } }
     toast.add({ title: t(prefix + 'error'), description: failure.data?.message, color: 'error' })
-    await Promise.all([refresh(), loadPeriods()])
+    await Promise.all([refresh(), refreshPeriods()])
   } finally {
     busy.value = false
   }
@@ -98,7 +236,7 @@ const reopen = async (submissionId: string) => {
   try {
     await $fetch<unknown, string>(`/api/timesheets/admin/review-submissions/${submissionId}/reopen`, { method: 'POST' })
     affectedRequests.value = []
-    await Promise.all([refresh(), loadPeriods()])
+    await Promise.all([refresh(), refreshPeriods()])
     toast.add({ title: t(prefix + 'reopened'), color: 'success' })
   } catch (cause) {
     const failure = cause as { data?: { message?: string; data?: { requests?: typeof affectedRequests.value } } }
@@ -123,22 +261,14 @@ const grouped = computed(() => {
   }
   return [...groups.values()]
 })
-watch(
-  [requests, () => route.query.request],
-  ([value]) => {
-    const id = typeof route.query.request === 'string' ? route.query.request : null
-    const request = value?.find((r) => r.id === id)
-    if (request) {
-      detail(request)
-    }
-  },
-  { immediate: true }
-)
+if (linkedRequest) {
+  detail(linkedRequest)
+}
 </script>
 
 <template>
-  <section class="space-y-4">
-    <h2 class="text-xl font-semibold">{{ t(prefix + (clientSide ? 'clientTitle' : 'title')) }}</h2>
+  <section class="space-y-4" :inert="changingMonth" :aria-busy="changingMonth || periodsPending">
+    <h2 v-if="clientSide" class="text-xl font-semibold">{{ t(prefix + (clientSide ? 'clientTitle' : 'title')) }}</h2>
     <UAlert v-if="error" color="error" :title="t(prefix + 'error')" />
     <UAlert v-if="affectedRequests.length" color="warning" :title="t(prefix + 'withdrawHelp')"
       ><template #description
@@ -151,51 +281,192 @@ watch(
         </ul></template
       ></UAlert
     >
-    <template v-if="!clientSide">
-      <p v-if="startsOn" class="text-sm text-muted">{{ t(prefix + 'cutover', { date: startsOn }) }}</p>
-      <UFormField :label="t(prefix + 'month')"><UInput v-model="month" type="month" /></UFormField>
-      <div class="grid gap-3 lg:grid-cols-2">
-        <UCard v-for="period in periods" :key="`${period.workspaceClientId}/${period.startsOn}`">
-          <h3 class="font-semibold">{{ period.clientName }}</h3>
-          <p>{{ period.startsOn }} – {{ period.endsOn }}</p>
-          <p>{{ t(prefix + 'hours', { hours: (period.totalMinutes / 60).toFixed(2) }) }}</p>
-          <p v-if="period.outstandingCount" class="text-sm text-warning">
-            {{ t(prefix + 'outstanding', { count: period.outstandingCount }) }}
-          </p>
-          <p v-else-if="!period.hasReviewers" class="text-sm text-warning">{{ t(prefix + 'noReviewers') }}</p>
-          <p v-else-if="!period.availableCount" class="text-sm text-muted">{{ t(prefix + 'noTime') }}</p>
-          <p v-else-if="!period.canSend" class="text-sm text-muted">{{ t(prefix + 'notReady') }}</p>
-          <ul v-if="period.outstandingEntries.length" class="mt-2 text-sm text-muted">
-            <li v-for="entry in period.outstandingEntries" :key="entry.id">{{ entry.date }} · {{ entry.person }}</li>
-          </ul>
-          <UButton class="mt-3" :disabled="!period.canSend" @click="begin('SEND', null, period)">{{
-            t(prefix + 'send')
-          }}</UButton>
+    <div
+      v-if="!clientSide"
+      class="flex flex-col gap-3 border-b border-default pb-4 xl:flex-row xl:items-end xl:justify-between"
+    >
+      <div class="min-w-0">
+        <h2 class="text-xl font-semibold">{{ monthLabel }}</h2>
+      </div>
+      <div class="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-end xl:w-auto">
+        <UFormField :label="t(prefix + 'clientFilter')" class="w-full min-w-0 sm:w-64">
+          <USelectMenu
+            v-model="clientFilter"
+            :items="clientOptions"
+            value-key="value"
+            class="w-full"
+            :loading="periodsPending"
+          />
+        </UFormField>
+        <UFormField :label="t(prefix + 'month')" class="w-full min-w-0 sm:w-80">
+          <TimesheetsMonthPicker :model-value="preparedMonth" @update:model-value="month = $event" />
+        </UFormField>
+      </div>
+    </div>
+    <section v-if="!clientSide" class="space-y-3" :aria-label="t(prefix + 'prepareTitle')">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+          <h3 class="flex items-center gap-2 text-lg font-semibold">
+            <UIcon name="i-lucide-send" class="size-5 shrink-0 text-primary" aria-hidden="true" />
+            {{ t(prefix + 'prepareTitle') }}
+          </h3>
+        </div>
+        <UCheckbox v-model="showEmpty" :label="t(prefix + 'showEmpty')" />
+      </div>
+      <div class="flex min-h-5 items-center gap-2 text-sm" role="status" aria-live="polite">
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-4 animate-spin"
+          :class="{ invisible: !changingMonth && !periodsPending }"
+          :aria-label="t(prefix + 'loading')"
+        />
+        <span v-if="!periodsError && readyCount" class="text-success">{{
+          t(prefix + 'readyCount', { count: readyCount })
+        }}</span>
+      </div>
+      <div v-if="periodsPending && !periodData" class="space-y-3" role="status" :aria-label="t(prefix + 'loading')">
+        <USkeleton v-for="index in 2" :key="index" class="h-24 w-full" />
+      </div>
+      <UAlert v-else-if="periodsError && !periodData" color="error" :title="t(prefix + 'periodsError')">
+        <template #actions
+          ><UButton variant="outline" color="neutral" @click="refreshPeriods()">{{
+            t(prefix + 'retry')
+          }}</UButton></template
+        >
+      </UAlert>
+      <UAlert
+        v-else-if="!visiblePeriods.length"
+        icon="i-lucide-clock"
+        color="neutral"
+        variant="outline"
+        :title="t(prefix + 'nothingToSend')"
+      />
+      <div v-else class="space-y-3">
+        <UCard
+          v-for="period in visiblePeriods"
+          :key="`${period.workspaceClientId}/${period.startsOn}`"
+          :ui="{ body: 'p-4 sm:p-4' }"
+        >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <UAvatar :src="period.clientAvatar || undefined" :alt="period.clientName" size="sm" />
+                <h4 class="min-w-0 font-semibold break-words">{{ period.clientName }}</h4>
+                <UBadge
+                  :color="
+                    period.canSend
+                      ? 'success'
+                      : period.availableCount || period.outstandingCount
+                        ? 'warning'
+                        : 'neutral'
+                  "
+                  variant="subtle"
+                  >{{ t(prefix + periodStatus(period)) }}</UBadge
+                >
+              </div>
+              <p class="text-sm text-muted">
+                {{ dateLabel(period.startsOn) }} – {{ dateLabel(period.endsOn) }} ·
+                {{ t(prefix + 'intervals.' + period.interval) }}
+              </p>
+              <p class="text-sm font-medium">
+                {{
+                  t(prefix + 'unsentHours', {
+                    hours: (period.totalMinutes / 60).toLocaleString(locale, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })
+                  })
+                }}
+              </p>
+              <p v-if="period.outstandingCount" class="text-sm text-warning">
+                {{ t(prefix + 'outstanding', { count: period.outstandingCount }) }}
+              </p>
+              <p
+                v-if="
+                  period.reviewEnabled && !period.hasReviewers && (period.availableCount || period.outstandingCount)
+                "
+                class="text-sm text-warning"
+              >
+                {{ t(prefix + 'noReviewers') }}
+              </p>
+              <p
+                v-if="
+                  period.reviewEnabled &&
+                  period.availableCount &&
+                  !period.canSend &&
+                  !period.outstandingCount &&
+                  period.hasReviewers
+                "
+                class="text-sm text-muted"
+              >
+                {{ t(prefix + 'periodOpen') }}
+              </p>
+              <p v-if="!period.reviewEnabled" class="text-sm text-muted">{{ t(prefix + 'reviewDisabled') }}</p>
+              <details v-if="period.outstandingEntries.length" class="pt-1 text-sm">
+                <summary class="cursor-pointer text-muted">{{ t(prefix + 'outstandingDetails') }}</summary>
+                <ul class="mt-2 space-y-1 text-muted">
+                  <li v-for="entry in period.outstandingEntries" :key="entry.id">
+                    {{ dateLabel(entry.date) }} · {{ entry.person }}
+                  </li>
+                </ul>
+              </details>
+            </div>
+            <UButton
+              v-if="period.canSend"
+              class="shrink-0 self-start whitespace-nowrap"
+              :disabled="busy"
+              icon="i-lucide-send"
+              @click="begin('SEND', null, period)"
+              >{{ t(prefix + 'send') }}</UButton
+            >
+          </div>
         </UCard>
       </div>
-      <p class="text-sm text-muted">{{ t(prefix + 'withdrawHelp') }}</p>
-    </template>
-    <div class="flex flex-wrap gap-3">
-      <UInput v-model="search" :placeholder="t(prefix + 'filter')" class="min-w-56 flex-1" />
-      <USelect
-        v-model="status"
-        :items="[
-          { value: 'ALL', label: t('features.timesheets.approvals.allStatuses') },
-          ...['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN'].map((value) => ({
-            value,
-            label: t(prefix + 'statuses.' + value)
-          }))
-        ]"
-        value-key="value"
-      />
+    </section>
+    <div :class="!clientSide ? 'space-y-2 border-t border-default pt-6' : 'space-y-2'">
+      <h3 v-if="!clientSide" class="flex items-center gap-2 text-lg font-semibold">
+        <UIcon name="i-lucide-clipboard-check" class="size-5 shrink-0 text-primary" aria-hidden="true" />
+        {{ t(prefix + 'sentTitle') }}
+      </h3>
     </div>
-    <p v-if="!filtered.length" class="text-muted">{{ t(prefix + 'empty') }}</p>
+    <PortalListToolbar
+      v-if="requestsForMonth.length"
+      v-model:search="search"
+      :search-placeholder="t(prefix + 'filter')"
+      :filters="requestFilters"
+      :filter-values="{ status: status === 'ALL' ? undefined : status }"
+      :sort-options="sortOptions"
+      :sort-by="sortBy"
+      :sort-dir="sortDir"
+      @filter="(_key, value) => (status = value || 'ALL')"
+      @sort="sortBy = $event"
+      @toggle-direction="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
+    />
+    <UAlert
+      v-if="!error && !filtered.length"
+      icon="i-lucide-inbox"
+      color="neutral"
+      variant="outline"
+      :title="t(prefix + (requestsForMonth.length ? 'noMatches' : clientSide ? 'empty' : 'monthRequestsEmpty'))"
+    />
     <UCard v-for="request in visible" :id="`request-${request.id}`" :key="request.id">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 class="font-semibold">{{ clientSide ? request.supplierName : request.clientName }}</h3>
+          <div class="flex items-center gap-2">
+            <UAvatar
+              :src="(clientSide ? request.supplierAvatar : request.clientAvatar) || undefined"
+              :alt="clientSide ? request.supplierName : request.clientName"
+              size="sm"
+            />
+            <h3 class="min-w-0 font-semibold break-words">
+              {{ clientSide ? request.supplierName : request.clientName }}
+            </h3>
+          </div>
           <p>
-            {{ request.startsOn }} – {{ request.endsOn }} · {{ t(prefix + 'revision', { number: request.revision }) }}
+            {{ dateLabel(request.startsOn) }} – {{ dateLabel(request.endsOn) }}
+            <template v-if="!request.legacySubmissionId">
+              · {{ t(prefix + 'revision', { number: request.revision }) }}</template
+            >
           </p>
           <p>
             {{
@@ -204,7 +475,9 @@ watch(
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <UBadge variant="subtle">{{ t(prefix + 'statuses.' + request.status) }}</UBadge>
+          <UBadge :color="statusColors[request.status]" variant="subtle">{{
+            t(prefix + 'statuses.' + request.status)
+          }}</UBadge>
           <UBadge v-if="request.supplementary" variant="outline">{{ t(prefix + 'supplementary') }}</UBadge>
           <UBadge v-if="request.replacesId" variant="outline">{{ t(prefix + 'replacement') }}</UBadge>
         </div>
@@ -231,7 +504,7 @@ watch(
           }}</UButton>
         </template>
         <UButton
-          v-if="!clientSide && request.status !== 'WITHDRAWN'"
+          v-if="!clientSide && !request.legacySubmissionId && request.status !== 'WITHDRAWN'"
           color="warning"
           variant="outline"
           @click="begin('WITHDRAW', request)"
@@ -247,6 +520,12 @@ watch(
     >
       <template #body>
         <UForm novalidate :state="state" :schema="schema" class="space-y-4" @submit="submit">
+          <p v-if="action === 'SEND' && selectedPeriod" class="text-sm">
+            <strong>{{ selectedPeriod.clientName }}</strong
+            ><br />
+            {{ dateLabel(selectedPeriod.startsOn) }} – {{ dateLabel(selectedPeriod.endsOn) }} ·
+            {{ t(prefix + 'hours', { hours: (selectedPeriod.totalMinutes / 60).toFixed(2) }) }}
+          </p>
           <p v-if="action === 'WITHDRAW'">{{ t(prefix + 'confirmWithdraw') }}</p>
           <UFormField name="comment" :label="t(prefix + (action === 'SEND' ? 'message' : 'comment'))"
             ><UTextarea v-model="state.comment" class="w-full"
@@ -312,7 +591,7 @@ watch(
               >{{ t(prefix + 'revision', { number: requests?.find((r) => r.id === id)?.revision ?? id }) }}</NuxtLink
             >
           </p>
-          <h3 class="font-semibold">{{ t(prefix + 'history') }}</h3>
+          <h3 v-if="selected?.history.length" class="font-semibold">{{ t(prefix + 'history') }}</h3>
           <div v-for="(event, index) in selected?.history" :key="index" class="border-t border-default pt-2">
             <p>
               {{ event.createdAt }} · {{ event.actor }} ·

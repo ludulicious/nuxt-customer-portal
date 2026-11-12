@@ -144,7 +144,9 @@ export const notifyTimesheetEvent = async (
     if (!replyClientId && !resend) {
       await send(`internal-${outcome}`, person, '/timesheets', '', reply ?? submission.rejectionComment ?? '')
     }
-    if (submission.status !== 'APPROVED') {
+    // Internal approval never requests client approval. Only an explicit manual
+    // client action may send an existing submission-based request or reminder.
+    if (submission.status !== 'APPROVED' || !replyClientId) {
       return
     }
     const reviewers = await clientEmailRecipients(submission.organizationId, submission.id)

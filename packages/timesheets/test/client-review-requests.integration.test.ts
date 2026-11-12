@@ -23,9 +23,12 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
   const invoiced = new Set<string>()
   try {
     await pool.query(`
-      CREATE TABLE public.organization (id text PRIMARY KEY, name text NOT NULL);
+      CREATE TABLE public.organization (id text PRIMARY KEY, name text NOT NULL, logo text, metadata text);
       CREATE TABLE public."user" (id text PRIMARY KEY, name text NOT NULL, email text NOT NULL);
       CREATE TABLE public.member (id text PRIMARY KEY, organization_id text NOT NULL, user_id text NOT NULL, role text NOT NULL);
+      CREATE SCHEMA clients;
+      CREATE TABLE clients.client_profile (organization_id text PRIMARY KEY, archived_at timestamp);
+      CREATE TABLE clients.client_module (organization_id text, module_id text, enabled boolean);
       CREATE SCHEMA timesheets;
       CREATE TABLE timesheets.workspace_settings (organization_id text PRIMARY KEY, timezone text, week_starts_on integer);
       CREATE TABLE timesheets.workspace_client (id text PRIMARY KEY, workspace_organization_id text NOT NULL, client_organization_id text NOT NULL, access_mode text NOT NULL);
@@ -39,8 +42,12 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
     await pool.query(readFileSync(new URL('../migrations/0007_client_review_requests.sql', import.meta.url), 'utf8'))
     await pool.query(`
       UPDATE timesheets.client_review_rollout SET starts_on = '2020-01-01';
-      INSERT INTO public.organization VALUES ('provider','Provider'), ('client','Client'), ('other','Other'), ('outsider','Outsider');
+      INSERT INTO public.organization (id, name) VALUES ('provider','Provider'), ('client','Client'), ('other','Other'), ('outsider','Outsider');
+      UPDATE public.organization SET logo = 'client-logo.png', metadata = '{"avatarLogo":"client-avatar.png"}' WHERE id = 'client';
+      UPDATE public.organization SET logo = 'supplier-logo.png', metadata = 'invalid' WHERE id = 'provider';
       INSERT INTO public."user" VALUES ('sender','Sender','sender@example.com'), ('person','Person','person@example.com'), ('person2','Second','second@example.com'), ('reviewer','Reviewer','reviewer@example.com'), ('stranger','Stranger','stranger@example.com');
+      INSERT INTO clients.client_profile VALUES ('client', null), ('other', null);
+      INSERT INTO clients.client_module VALUES ('client', 'timesheets', true), ('other', 'timesheets', true);
       INSERT INTO public.member VALUES ('m1','client','reviewer','member');
       INSERT INTO timesheets.workspace_settings VALUES ('provider','Europe/Amsterdam',1);
       INSERT INTO timesheets.workspace_client VALUES ('link','provider','client','REVIEW'), ('link2','provider','other','REVIEW');
@@ -63,6 +70,9 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         exports,
         createError: (input: { message: string }) => Object.assign(new Error(input.message), input),
         require: (id: string) => {
+          if (id.endsWith('/shared/organization-avatar')) {
+            return require('../../core/shared/organization-avatar')
+          }
           if (id.endsWith('/server/portal')) {
             return { db }
           }
@@ -92,7 +102,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
     await pool.query(`
       ALTER TABLE timesheets.time_entry ADD COLUMN weekly_timesheet_id text, ADD COLUMN created_at timestamp DEFAULT now(), ADD COLUMN updated_at timestamp DEFAULT now();
       ALTER TABLE timesheets.submission ADD COLUMN organization_id text DEFAULT 'provider';
-      ALTER TABLE timesheets.client_review ADD COLUMN status text DEFAULT 'PENDING';
+      ALTER TABLE timesheets.client_review ADD COLUMN status text DEFAULT 'PENDING', ADD COLUMN comment text;
       CREATE SCHEMA invoices;
       CREATE TABLE invoices.invoice (id text PRIMARY KEY, organization_id text, status text);
       CREATE TABLE invoices.invoice_line (id text PRIMARY KEY, invoice_id text, position integer, description text, quantity_milli integer, unit text, unit_price_minor integer, vat_rate_basis_points integer, exact_tax_minor integer, tax_details jsonb);
@@ -181,7 +191,10 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         await pool.query('DELETE FROM timesheets.workspace_client_reviewer')
         await assert.rejects(send(), /Assign an eligible/)
         await pool.query("INSERT INTO timesheets.workspace_client_reviewer VALUES ('link','reviewer')")
-        const future = (await exports.listReviewPeriods('provider', '2099-01'))[0]!
+        const future = (await exports.listReviewPeriods('provider', '2099-01')).find(
+          (period) => period.workspaceClientId === 'link'
+        )!
+        assert.equal(future.clientAvatar, 'client-avatar.png')
         await assert.rejects(
           exports.sendReviewRequest('provider', 'sender', 'link', future.startsOn, future.endsOn),
           /has not ended/
@@ -194,6 +207,10 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       requestId = (results.find((r) => r.status === 'fulfilled') as PromiseFulfilledResult<{ id: string }>).value.id
       const requests = await exports.listReviewRequests('client', 'reviewer', true, false)
       assert.equal(requests.length, 1)
+      assert.equal(requests[0]!.clientAvatar, 'client-avatar.png')
+      assert.equal(requests[0]!.supplierAvatar, 'supplier-logo.png')
+      assert.ok(!('clientBranding' in requests[0]!))
+      assert.ok(!('supplierBranding' in requests[0]!))
       assert.equal(requests[0]!.entries.length, 3)
       assert.ok(!('rate' in requests[0]!.entries[0]!))
       assert.equal((await exports.listReviewRequests('provider', 'sender', false, true))[0]!.entries[0]!.rate, 10000)
@@ -218,6 +235,54 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         /Withdraw affected/
       )
       await assert.rejects(exports.assertNoActiveReviewRequests(db, ['entry']), /Withdraw affected/)
+    })
+    await t.test('turning tracking off preserves monthly hours and approval requests', async () => {
+      await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
+      await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('off-late', 'provider', 'client', 'second', 'person', 'project', 'activity', '2020-01-03', 15, true, 10000, 'EUR')`)
+      try {
+        const periods = await exports.listReviewPeriods('provider', '2020-01')
+        const period = periods.find((period) => period.workspaceClientId === 'link' && period.availableCount > 0)!
+        assert.equal(period.totalMinutes, 15)
+        assert.equal(period.canSend, true)
+        const sent = await send()
+        assert.ok(
+          (await exports.listReviewRequests('provider', 'sender', false, true)).some(
+            (request) => request.id === requestId
+          )
+        )
+        await exports.actOnReviewRequest('provider', 'sender', true, sent.id, 1, 'WITHDRAW')
+        // Keep this fixture independent of the replacement-history scenarios below.
+        for (const table of [
+          'client_review_request_event',
+          'client_review_request_entry',
+          'client_review_request_replacement'
+        ]) {
+          await pool.query(`DELETE FROM timesheets.${table} WHERE request_id = $1`, [sent.id])
+        }
+        await pool.query('DELETE FROM timesheets.client_review_request WHERE id = $1', [sent.id])
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link'")
+        const disabledPeriod = (await exports.listReviewPeriods('provider', '2020-01')).find(
+          (candidate) => candidate.workspaceClientId === 'link' && candidate.startsOn === period.startsOn
+        )!
+        assert.equal(disabledPeriod.totalMinutes, 0)
+        const automatic = (await exports.listSubmissionReviewRequests('provider')).find((request) =>
+          request.entries.some((entry) => entry.id === 'off-late')
+        )!
+        assert.equal(automatic.status, 'AUTO_APPROVED')
+        assert.equal(
+          automatic.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          15
+        )
+        assert.equal(disabledPeriod.reviewEnabled, false)
+        assert.equal(disabledPeriod.canSend, false)
+        await assert.rejects(send(), /Review-enabled client relationship not found/)
+      } finally {
+        await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id = 'link'")
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id = 'off-late'")
+      }
     })
     await t.test('scopes requests and decisions to authorized provider/client actors and versions', async () => {
       assert.equal((await exports.listReviewRequests('outsider', 'reviewer', true, true)).length, 0)
@@ -302,6 +367,42 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(await exports.getReviewInterval(db, 'link', '2020-01-01'), 'WEEKLY')
       assert.equal(await exports.getReviewInterval(db, 'link', after.reviewIntervalEffectiveOn!), 'MONTHLY')
     })
+    await t.test('interval changes protect all requests in the starting month or later', async () => {
+      const today = await exports.reviewToday(db, 'provider')
+      const monthStart = `${today.slice(0, 7)}-01`
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
+      await pool.query(
+        `INSERT INTO timesheets.client_review_request
+        (id, workspace_client_id, starts_on, ends_on, revision, sent_by_id)
+        VALUES ('interval-guard', 'link2', $1, $1, 1, 'sender')`,
+        [monthStart]
+      )
+      for (const status of ['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN']) {
+        await pool.query("UPDATE timesheets.client_review_request SET status = $1 WHERE id = 'interval-guard'", [
+          status
+        ])
+        assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, false)
+        await assert.rejects(
+          exports.saveClientReviewSettings('provider', 'other', {
+            reviewInterval: 'MONTHLY',
+            effectiveFrom: 'CURRENT_MONTH'
+          }),
+          /Timesheets or approval requests exist/
+        )
+        assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
+      }
+      await exports.scheduleClientReviewInterval('provider', 'other', 'MONTHLY')
+      assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).scheduledReviewInterval, 'MONTHLY')
+      await pool.query("DELETE FROM timesheets.client_review_request WHERE id = 'interval-guard'")
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
+      await exports.saveClientReviewSettings('provider', 'other', {
+        reviewInterval: 'MONTHLY',
+        effectiveFrom: 'CURRENT_MONTH'
+      })
+      assert.equal(await exports.getReviewInterval(db, 'link2', today), 'MONTHLY')
+      assert.equal(await exports.getReviewInterval(db, 'link2', '2020-01-01'), 'WEEKLY')
+    })
     await t.test('legacy review creation only includes pre-cutover client slices', async () => {
       await pool.query(
         "INSERT INTO timesheets.client_review (id, submission_id, client_organization_id) VALUES ('old','submission','client'), ('new','second','client')"
@@ -316,7 +417,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         ALTER TABLE timesheets.submission ADD COLUMN weekly_timesheet_id text DEFAULT 'week', ADD COLUMN user_id text DEFAULT 'person', ADD COLUMN period_starts_on date DEFAULT '2020-01-01', ADD COLUMN period_ends_on date DEFAULT '2020-01-05', ADD COLUMN submitted_at timestamp, ADD COLUMN reviewed_at timestamp, ADD COLUMN reviewed_by_id text, ADD COLUMN rejection_comment text, ADD COLUMN version integer DEFAULT 1, ADD COLUMN created_at timestamp DEFAULT now(), ADD COLUMN updated_at timestamp DEFAULT now();
         CREATE TABLE timesheets.internal_approver_assignment (id text, organization_id text, submitter_user_id text, approver_user_id text);
         CREATE TABLE timesheets.approval_history (id text, weekly_timesheet_id text, submission_id text, action text, actor_user_id text, comment text, created_at timestamp DEFAULT now());
-        ALTER TABLE timesheets.client_review ADD COLUMN reviewer_user_id text, ADD COLUMN comment text, ADD COLUMN reviewed_at timestamp, ADD COLUMN version integer DEFAULT 1, ADD COLUMN updated_at timestamp DEFAULT now();
+        ALTER TABLE timesheets.client_review ADD COLUMN reviewer_user_id text, ADD COLUMN reviewed_at timestamp, ADD COLUMN version integer DEFAULT 1, ADD COLUMN updated_at timestamp DEFAULT now();
       `)
         const repository = {} as typeof import('../server/utils/timesheet-repository')
         runInNewContext(
@@ -398,6 +499,213 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(requests.find((r) => r.id === replacement.id)!.replacesIds.length, 2)
       assert.equal(requests.find((r) => r.id === replacement.id)!.entries.length, 4)
     })
+    await t.test('clients without required approval show automatic decisions instead of hours to send', async () => {
+      await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link2'")
+      await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('no-review-approved', 'provider', 'other', 'submission', 'person', 'project', 'activity', '2020-02-03', 60, true, 10000, 'EUR'),
+          ('no-review-draft', 'provider', 'other', null, 'person', 'project', 'activity', '2020-02-04', 30, true, 10000, 'EUR')`)
+      try {
+        const automatic = (await exports.listSubmissionReviewRequests('provider')).find(
+          (request) => request.workspaceClientId === 'link2' && request.startsOn === '2020-02-03'
+        )!
+        assert.equal(automatic.status, 'AUTO_APPROVED')
+        assert.equal(automatic.entries.length, 1)
+        assert.equal(automatic.entries[0]!.minutes, 60)
+        assert.equal(automatic.clientAvatar, null)
+        const periods = (await exports.listReviewPeriods('provider', '2020-02')).filter(
+          (period) => period.workspaceClientId === 'link2'
+        )
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          30
+        )
+        assert.ok(periods.every((period) => !period.canSend))
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link2'")
+        assert.ok(
+          (await exports.listSubmissionReviewRequests('provider')).some(
+            (request) => request.id === automatic.id && request.status === 'AUTO_APPROVED'
+          )
+        )
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id = 'link2'")
+        assert.ok(
+          !(await exports.listSubmissionReviewRequests('provider')).some((request) => request.id === automatic.id)
+        )
+        const reviewPeriods = (await exports.listReviewPeriods('provider', '2020-02')).filter(
+          (period) => period.workspaceClientId === 'link2'
+        )
+        assert.equal(
+          reviewPeriods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          90
+        )
+        // An already sent request keeps its status if review access is later disabled.
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link'")
+        assert.ok(
+          !(await exports.listSubmissionReviewRequests('provider')).some((request) =>
+            request.entries.some((entry) => entry.id === 'entry')
+          )
+        )
+      } finally {
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id IN ('no-review-approved', 'no-review-draft')")
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id IN ('link', 'link2')")
+      }
+    })
+    await t.test(
+      'earlier monthly decisions and unsubmitted hours remain visible without duplicating approved time',
+      async () => {
+        await pool.query(
+          "INSERT INTO timesheets.submission (id, status, organization_id) VALUES ('earlier-submission', 'APPROVED', 'provider')"
+        )
+        await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('august', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-08-31', 60, true, 10000, 'EUR'),
+          ('september', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-09-01', 90, true, 10000, 'EUR'),
+          ('unsubmitted-earlier', 'provider', 'client', null, 'person', 'project', 'activity', '2019-09-02', 30, true, 10000, 'EUR')`)
+        await pool.query(`INSERT INTO timesheets.client_review (id, submission_id, client_organization_id, status)
+        VALUES ('earlier-review', 'earlier-submission', 'client', 'APPROVED')`)
+        const earlier = (await exports.listSubmissionReviewRequests('provider')).filter(
+          (request) => request.legacySubmissionId === 'earlier-submission'
+        )
+        assert.equal(earlier.length, 2)
+        assert.ok(earlier.every((request) => request.clientAvatar === 'client-avatar.png'))
+        assert.ok(earlier.every((request) => request.supplierAvatar === 'supplier-logo.png'))
+        assert.equal(
+          earlier
+            .find((request) => request.startsOn === '2019-08-31')!
+            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          60
+        )
+        assert.equal(
+          earlier
+            .find((request) => request.startsOn === '2019-09-01')!
+            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          90
+        )
+        assert.ok(earlier.every((request) => request.status === 'APPROVED'))
+        assert.equal((await exports.listSubmissionReviewRequests('outsider')).length, 0)
+        const periods = await exports.listReviewPeriods('provider', '2019-09')
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          30
+        )
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.outstandingCount, 0),
+          1
+        )
+        assert.ok(periods.every((period) => !period.canSend))
+      }
+    )
+    await t.test(
+      'arbitrary starting months reject all later time and replace only unused future settings',
+      async () => {
+        await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('schedule-boundary', 'provider', 'other', null, 'person', 'project', 'activity', '2090-04-30', 60, true, 10000, 'EUR')`)
+        const previous = await exports.getReviewInterval(db, 'link2', '2090-04-01')
+        try {
+          assert.equal((await exports.getClientReviewSettings('provider', 'other')).earliestStartingMonth, '2090-05')
+          for (const startingMonth of ['2089-01', '2090-04']) {
+            await assert.rejects(
+              exports.saveClientReviewSettings('provider', 'other', {
+                startingMonth,
+                reviewInterval: 'TWO_WEEKLY'
+              }),
+              /Timesheets or approval requests exist/
+            )
+          }
+          await pool.query(`INSERT INTO timesheets.client_review_schedule (workspace_client_id, effective_on, interval)
+          VALUES ('link2', '2091-01-01', 'MONTHLY')`)
+          await exports.saveClientReviewSettings('provider', 'other', {
+            startingMonth: '2090-05',
+            reviewInterval: 'TWO_WEEKLY'
+          })
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2090-04-01'), previous)
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2090-05-01'), 'TWO_WEEKLY')
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2091-01-01'), 'TWO_WEEKLY')
+          await assert.rejects(
+            exports.saveClientReviewSettings('provider', 'other', {
+              startingMonth: '2090-13',
+              reviewInterval: 'MONTHLY'
+            }),
+            /Invalid starting month/
+          )
+          // Another client's future time does not block this client's empty months.
+          await exports.saveClientReviewSettings('provider', 'client', {
+            startingMonth: '2089-01',
+            reviewInterval: 'WEEKLY'
+          })
+          await pool.query(`INSERT INTO timesheets.client_review_request
+          (id, workspace_client_id, starts_on, ends_on, revision, sent_by_id)
+          VALUES ('schedule-future-request', 'link2', '2092-02-01', '2092-02-29', 1, 'sender')`)
+          assert.equal((await exports.getClientReviewSettings('provider', 'other')).earliestStartingMonth, '2092-03')
+          await assert.rejects(
+            exports.saveClientReviewSettings('provider', 'other', {
+              startingMonth: '2091-12',
+              reviewInterval: 'MONTHLY'
+            }),
+            /Timesheets or approval requests exist/
+          )
+          await exports.saveClientReviewSettings('provider', 'other', {
+            startingMonth: '2092-03',
+            reviewInterval: 'MONTHLY'
+          })
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2092-03-01'), 'MONTHLY')
+        } finally {
+          await pool.query("DELETE FROM timesheets.client_review_request WHERE id = 'schedule-future-request'")
+          await pool.query("DELETE FROM timesheets.time_entry WHERE id = 'schedule-boundary'")
+          await pool.query("DELETE FROM timesheets.client_review_schedule WHERE effective_on >= '2089-01-01'")
+        }
+      }
+    )
+    await t.test(
+      'empty periods require active tracking and use each client’s interval for the selected month',
+      async () => {
+        await pool.query(`INSERT INTO timesheets.client_review_schedule (workspace_client_id, effective_on, interval)
+        VALUES ('link', '2096-01-01', 'WEEKLY'), ('link', '2098-01-01', 'MONTHLY'), ('link2', '2098-01-01', 'WEEKLY')`)
+        try {
+          const periods = await exports.listReviewPeriods('provider', '2099-02')
+          const monthly = periods.filter((period) => period.workspaceClientId === 'link')
+          const weekly = periods.filter((period) => period.workspaceClientId === 'link2')
+          assert.deepEqual(
+            Array.from(monthly, ({ startsOn, endsOn, interval }) => ({ startsOn, endsOn, interval })),
+            [{ startsOn: '2099-02-01', endsOn: '2099-02-28', interval: 'MONTHLY' }]
+          )
+          assert.ok(weekly.length > 1)
+          assert.ok(weekly.every((period) => period.interval === 'WEEKLY'))
+          assert.equal(weekly[0]!.startsOn, '2099-02-01')
+          assert.equal(weekly.at(-1)!.endsOn, '2099-02-28')
+          assert.ok(
+            periods.every((period) => period.timeTrackingEnabled && !period.availableCount && !period.outstandingCount)
+          )
+          // A future interval must not change how earlier months are grouped.
+          assert.ok(
+            (await exports.listReviewPeriods('provider', '2097-02'))
+              .filter((period) => period.workspaceClientId === 'link')
+              .every((period) => period.interval === 'WEEKLY')
+          )
+          await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
+          assert.ok(
+            !(await exports.listReviewPeriods('provider', '2099-02')).some(
+              (period) => period.workspaceClientId === 'link'
+            )
+          )
+          // Recorded time still supplies this client to the monthly filter.
+          const recorded = (await exports.listReviewPeriods('provider', '2020-01')).filter(
+            (period) => period.workspaceClientId === 'link'
+          )
+          assert.ok(recorded.length > 0)
+          assert.ok(recorded.every((period) => !period.timeTrackingEnabled))
+          await pool.query("UPDATE clients.client_profile SET archived_at = now() WHERE organization_id = 'other'")
+          assert.equal((await exports.listReviewPeriods('provider', '2099-02')).length, 0)
+        } finally {
+          await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
+          await pool.query("UPDATE clients.client_profile SET archived_at = null WHERE organization_id = 'other'")
+          await pool.query(
+            "DELETE FROM timesheets.client_review_schedule WHERE effective_on IN ('2096-01-01', '2098-01-01')"
+          )
+        }
+      }
+    )
     await t.test('full module migrations apply on an empty database', async () => {
       const migrationName = `${name}_migrations_demo`
       await admin.query(`CREATE DATABASE ${migrationName}`)

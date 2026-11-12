@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
     (settings[0]?.internalApprovalsEnabled ?? true) &&
     (await hasInternalApprovalAssignment(organizationId, session.user.id))
   return {
+    internalApprovalsEnabled: workspaceEnabled && (settings[0]?.internalApprovalsEnabled ?? true),
     canEnterTime: workspaceEnabled && memberCanEnterTime,
     canApproveInternalTimesheets: hasInternalApprovalAssignments,
     hasInternalApprovalAssignments,

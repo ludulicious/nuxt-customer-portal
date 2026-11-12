@@ -10,7 +10,7 @@ const items = computed(() => [
   {
     complete: props.status.missingDefaultTariffCount === 0,
     key: 'rates',
-    to: '/admin/timesheets/rates',
+    to: '/admin/timesheets/settings/team-members',
     count: props.status.missingDefaultTariffCount
   }
 ])
