@@ -8,7 +8,15 @@ import type {
   PortalRolePolicy
 } from './types/feature'
 
-const configurablePortalFeatureIds = new Set(['timesheets', 'invoices', 'service-requests', 'invoice-timesheets'])
+const configurablePortalFeatureIds = new Set([
+  'timesheets',
+  'invoices',
+  'service-requests',
+  'invoice-timesheets',
+  'products',
+  'planning',
+  'invoice-products'
+])
 
 export const isPortalFeatureEnabled = (
   feature: PortalFeatureDefinition,
