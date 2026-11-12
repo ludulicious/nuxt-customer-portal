@@ -66,6 +66,7 @@ export interface ClientDto {
   slug: string
   logo: string | null
   accessMode: ClientAccessMode
+  timeTrackingEnabled: boolean
 }
 
 export interface ClientWorkspaceDto {

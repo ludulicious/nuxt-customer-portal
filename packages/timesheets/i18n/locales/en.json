@@ -531,8 +531,34 @@
           "WITHDRAWN": "Withdrawn"
         },
         "reopen": "Reopen submission — {person}",
-        "reopened": "Submission reopened for correction"
-      }
+        "reopened": "Submission reopened for correction",
+        "prepareTitle": "Prepare approval requests",
+        "prepareHelp": "Send recorded hours to clients after internal approval and the review period has ended.",
+        "readyCount": "{count} periods ready to send",
+        "showEmpty": "Show empty periods",
+        "ready": "Ready to send",
+        "needsAttention": "Not ready to send",
+        "unsentHours": "{hours} hours not yet requested",
+        "periodOpen": "This review period has not ended yet.",
+        "outstandingDetails": "View entries needing internal approval",
+        "nothingToSend": "No hours to prepare this month",
+        "nothingToSendHelp": "Periods appear here when time is recorded for a client with reviews enabled. Choose another month or show empty periods. Sent requests are listed below.",
+        "sentTitle": "Sent requests",
+        "sentHelp": "Track client decisions and open a request to inspect its hours and history. This list includes requests from all months.",
+        "sentEmptyHelp": "After you send hours for approval, the request and the client’s decision will appear here.",
+        "clientEmptyHelp": "Requests will appear here when your supplier sends hours for your approval.",
+        "noMatches": "No requests match your filters",
+        "noMatchesHelp": "Try a different search or status filter.",
+        "legacyHelp": "Historical reviews from the earlier submission-based workflow. New period requests are managed above.",
+        "loading": "Loading review periods",
+        "periodsError": "Unable to load review periods",
+        "retry": "Try again",
+        "client": "Client or supplier",
+        "emptyPeriod": "No new hours",
+        "manageClients": "Choose clients",
+        "trackingHelp": "Enable Track hours under a client’s Modules to include them in timesheets. Client approval is configured separately."
+      },
+      "trackHours": "Track hours"
     }
   }
 }

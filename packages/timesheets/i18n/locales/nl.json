@@ -531,8 +531,34 @@
           "WITHDRAWN": "Ingetrokken"
         },
         "reopen": "Indiening heropenen — {person}",
-        "reopened": "Indiening heropend voor correctie"
-      }
+        "reopened": "Indiening heropend voor correctie",
+        "prepareTitle": "Goedkeuringsverzoeken voorbereiden",
+        "prepareHelp": "Stuur geregistreerde uren naar klanten na interne goedkeuring en afloop van de beoordelingsperiode.",
+        "readyCount": "{count} perioden klaar om te versturen",
+        "showEmpty": "Lege perioden tonen",
+        "ready": "Klaar om te versturen",
+        "needsAttention": "Nog niet klaar om te versturen",
+        "unsentHours": "{hours} uur nog niet ter goedkeuring verstuurd",
+        "periodOpen": "Deze beoordelingsperiode is nog niet afgelopen.",
+        "outstandingDetails": "Uren bekijken die interne goedkeuring nodig hebben",
+        "nothingToSend": "Geen uren om voor te bereiden deze maand",
+        "nothingToSendHelp": "Perioden verschijnen hier zodra er uren zijn geregistreerd voor een klant met beoordelingen ingeschakeld. Kies een andere maand of toon lege perioden. Verstuurde verzoeken staan hieronder.",
+        "sentTitle": "Verstuurde verzoeken",
+        "sentHelp": "Volg beslissingen van klanten en open een verzoek om de uren en geschiedenis te bekijken. Deze lijst bevat verzoeken uit alle maanden.",
+        "sentEmptyHelp": "Nadat je uren ter goedkeuring verstuurt, verschijnen het verzoek en de beslissing van de klant hier.",
+        "clientEmptyHelp": "Verzoeken verschijnen hier zodra je leverancier uren ter goedkeuring verstuurt.",
+        "noMatches": "Geen verzoeken gevonden met deze filters",
+        "noMatchesHelp": "Probeer een andere zoekterm of statusfilter.",
+        "legacyHelp": "Historische beoordelingen uit de eerdere werkwijze per indiening. Nieuwe periodeverzoeken beheer je hierboven.",
+        "loading": "Beoordelingsperioden laden",
+        "periodsError": "Beoordelingsperioden konden niet worden geladen",
+        "retry": "Opnieuw proberen",
+        "client": "Klant of leverancier",
+        "emptyPeriod": "Geen nieuwe uren",
+        "manageClients": "Klanten kiezen",
+        "trackingHelp": "Schakel Uren bijhouden in bij de modules van een klant om uren te kunnen registreren. Goedkeuring door de klant stel je apart in."
+      },
+      "trackHours": "Uren bijhouden"
     }
   }
 }

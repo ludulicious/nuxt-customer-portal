@@ -46,7 +46,11 @@ const clientOptions = computed(() => [
     label: t('features.timesheets.admin.internalOrganization', { name: props.data.providerOrganization.name }),
     value: props.data.providerOrganization.organizationId
   },
-  ...props.data.clients.map((item) => ({ label: item.name, value: item.organizationId }))
+  ...props.data.clients
+    .filter(
+      (item) => item.timeTrackingEnabled || (props.editing && item.organizationId === form.value.clientOrganizationId)
+    )
+    .map((item) => ({ label: item.name, value: item.organizationId, disabled: !item.timeTrackingEnabled }))
 ])
 const schema = computed(() =>
   z.object({

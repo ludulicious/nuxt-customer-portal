@@ -174,7 +174,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
   ],
   clientIntegration: {
     moduleId: 'timesheets',
-    labelKey: 'features.timesheets.navigation.myTimesheet',
+    labelKey: 'features.timesheets.trackHours',
     detailComponent: 'TimesheetsClientSettingsPanel'
   },
   policy: {

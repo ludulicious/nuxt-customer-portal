@@ -26,6 +26,9 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       CREATE TABLE public.organization (id text PRIMARY KEY, name text NOT NULL);
       CREATE TABLE public."user" (id text PRIMARY KEY, name text NOT NULL, email text NOT NULL);
       CREATE TABLE public.member (id text PRIMARY KEY, organization_id text NOT NULL, user_id text NOT NULL, role text NOT NULL);
+      CREATE SCHEMA clients;
+      CREATE TABLE clients.client_profile (organization_id text PRIMARY KEY, archived_at timestamp);
+      CREATE TABLE clients.client_module (organization_id text, module_id text, enabled boolean);
       CREATE SCHEMA timesheets;
       CREATE TABLE timesheets.workspace_settings (organization_id text PRIMARY KEY, timezone text, week_starts_on integer);
       CREATE TABLE timesheets.workspace_client (id text PRIMARY KEY, workspace_organization_id text NOT NULL, client_organization_id text NOT NULL, access_mode text NOT NULL);
@@ -41,6 +44,8 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       UPDATE timesheets.client_review_rollout SET starts_on = '2020-01-01';
       INSERT INTO public.organization VALUES ('provider','Provider'), ('client','Client'), ('other','Other'), ('outsider','Outsider');
       INSERT INTO public."user" VALUES ('sender','Sender','sender@example.com'), ('person','Person','person@example.com'), ('person2','Second','second@example.com'), ('reviewer','Reviewer','reviewer@example.com'), ('stranger','Stranger','stranger@example.com');
+      INSERT INTO clients.client_profile VALUES ('client', null), ('other', null);
+      INSERT INTO clients.client_module VALUES ('client', 'timesheets', true), ('other', 'timesheets', true);
       INSERT INTO public.member VALUES ('m1','client','reviewer','member');
       INSERT INTO timesheets.workspace_settings VALUES ('provider','Europe/Amsterdam',1);
       INSERT INTO timesheets.workspace_client VALUES ('link','provider','client','REVIEW'), ('link2','provider','other','REVIEW');
@@ -219,6 +224,43 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       )
       await assert.rejects(exports.assertNoActiveReviewRequests(db, ['entry']), /Withdraw affected/)
     })
+    await t.test(
+      'disabled or archived clients are excluded from preparation and new sends without losing sent requests',
+      async () => {
+        await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
+        try {
+          assert.equal(
+            (await exports.listReviewPeriods('provider', '2020-01')).some(
+              (period) => period.workspaceClientId === 'link'
+            ),
+            false
+          )
+          await assert.rejects(send(), /Review-enabled client relationship not found/)
+          assert.ok(
+            (await exports.listReviewRequests('provider', 'sender', false, true)).some(
+              (request) => request.id === requestId
+            )
+          )
+        } finally {
+          await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
+        }
+        await pool.query("UPDATE clients.client_profile SET archived_at = now() WHERE organization_id = 'client'")
+        try {
+          assert.equal(
+            (await exports.listReviewPeriods('provider', '2020-01')).some(
+              (period) => period.workspaceClientId === 'link'
+            ),
+            false
+          )
+          await assert.rejects(send(), /Review-enabled client relationship not found/)
+        } finally {
+          await pool.query("UPDATE clients.client_profile SET archived_at = null WHERE organization_id = 'client'")
+        }
+        assert.ok(
+          (await exports.listReviewPeriods('provider', '2020-01')).some((period) => period.workspaceClientId === 'link')
+        )
+      }
+    )
     await t.test('scopes requests and decisions to authorized provider/client actors and versions', async () => {
       assert.equal((await exports.listReviewRequests('outsider', 'reviewer', true, true)).length, 0)
       assert.equal((await exports.listReviewRequests('client', 'stranger', true, false)).length, 0)

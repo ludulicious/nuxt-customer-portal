@@ -77,15 +77,26 @@ const { data, pending, refresh } = await useAsyncData(
 
 const week = computed(() => data.value?.week)
 const projects = computed(() => data.value?.projects.filter((project) => project.status === 'ACTIVE') ?? [])
+const canTrackProject = (project: { internal: boolean; clientOrganizationId: string }) =>
+  project.internal ||
+  Boolean(
+    data.value?.clients.some(
+      (client) => client.organizationId === project.clientOrganizationId && client.timeTrackingEnabled
+    )
+  )
+const selectableProjects = computed(() => projects.value.filter(canTrackProject))
 const activities = computed(() => data.value?.activities.filter((activity) => activity.active) ?? [])
 const rememberedEntryContext = ref<{ projectId: string; activityTypeId: string } | null>(null)
 const lastReusableEntryContext = computed(() => {
-  if (rememberedEntryContext.value) {
+  if (
+    rememberedEntryContext.value &&
+    selectableProjects.value.some((project) => project.id === rememberedEntryContext.value?.projectId)
+  ) {
     return rememberedEntryContext.value
   }
 
   const entry = [...(week.value?.entries ?? [])].reverse().find((candidate) => {
-    const project = projects.value.find((item) => item.id === candidate.projectId)
+    const project = selectableProjects.value.find((item) => item.id === candidate.projectId)
     return (
       project?.activityTypeIds.includes(candidate.activityTypeId) &&
       activities.value.some((item) => item.id === candidate.activityTypeId)
@@ -99,7 +110,9 @@ const editable = computed(() => Boolean(data.value?.canEnterTime))
 const dateLocked = (date: string) => isTimesheetDateLocked(date, week.value?.submissions ?? [])
 const dateEditable = (date: string) => editable.value && !dateLocked(date)
 const entryEditable = (entry: TimeEntryDto) =>
-  dateEditable(entry.entryDate) && (!entry.submissionId || ['DRAFT', 'REJECTED'].includes(entry.submissionStatus ?? ''))
+  Boolean(projects.value.find((project) => project.id === entry.projectId && canTrackProject(project))) &&
+  dateEditable(entry.entryDate) &&
+  (!entry.submissionId || ['DRAFT', 'REJECTED'].includes(entry.submissionStatus ?? ''))
 const currentMember = computed(() => data.value?.team.find((member) => member.id === week.value?.userId))
 const submissionNeedsApprover = computed(
   () =>
@@ -241,7 +254,7 @@ const activityOptions = computed(() => {
 })
 
 const projectOptions = computed(() =>
-  projects.value.map((project) => ({
+  selectableProjects.value.map((project) => ({
     label: `${project.clientName} · ${project.name}`,
     value: project.id
   }))
@@ -381,13 +394,13 @@ const focusPrefilledHours = () => {
 }
 
 const openCreate = (date = format(new Date(), 'yyyy-MM-dd'), projectId?: string, activityTypeId?: string) => {
-  if (!dateEditable(date)) {
+  if (!dateEditable(date) || (projectId && !selectableProjects.value.some((project) => project.id === projectId))) {
     return
   }
   const remembered = lastReusableEntryContext.value
   Object.assign(form, {
     id: null,
-    projectId: projectId ?? remembered?.projectId ?? projects.value[0]?.id ?? '',
+    projectId: projectId ?? remembered?.projectId ?? selectableProjects.value[0]?.id ?? '',
     activityTypeId: activityTypeId ?? remembered?.activityTypeId ?? '',
     entryDate: date,
     hours: 0,
@@ -551,7 +564,7 @@ const openTimer = () => {
   }
   Object.assign(form, {
     id: null,
-    projectId: projects.value[0]?.id ?? '',
+    projectId: selectableProjects.value[0]?.id ?? '',
     activityTypeId: '',
     entryDate: format(new Date(), 'yyyy-MM-dd'),
     hours: 0,

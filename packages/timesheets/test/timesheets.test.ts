@@ -45,7 +45,10 @@ test('internal projects use the provider organization without creating a client 
 
   assert.match(repository, /clientOrganizationId === organizationId/)
   assert.match(repository, /internal: item\.clientOrganizationId === organizationId/)
-  assert.match(repository, /clients\.length > 0 \|\| activeProjects\.some\(\(item\) => item\.internal\)/)
+  assert.match(
+    repository,
+    /clients\.some\(\(client\) => client\.timeTrackingEnabled\) \|\| activeProjects\.some\(\(item\) => item\.internal\)/
+  )
   assert.match(form, /providerOrganization\.organizationId/)
   assert.match(bootstrap, /providerOrganization/)
   assert.equal(en.features.timesheets.admin.internalOrganization, '{name} — Internal')

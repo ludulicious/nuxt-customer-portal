@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// Hallmark · Workbench: prepare → sent requests → historical disclosure; existing portal theme.
+// Pre-emit critique: P5 H4 E4 S5 R4 V4.
 import type { ApprovalQueueItemDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
 const { t } = useI18n()
@@ -68,43 +70,55 @@ useSeoMeta({ title: () => t('features.timesheets.admin.clientApprovals') })
       </div>
     </header>
     <TimesheetsReviewRequests />
-    <h2 class="text-xl font-semibold">{{ t('features.timesheets.reviewPeriods.legacy') }}</h2>
-    <TimesheetsAdminListToolbar
-      v-model:search="listing.search.value"
-      class="shrink-0"
-      :filters="filters"
-      :filter-values="listing.filters"
-      :sort-options="sortOptions"
-      :sort-by="listing.sortBy.value"
-      :sort-dir="listing.sortDir.value"
-      @filter="listing.setFilter"
-      @sort="listing.sortBy.value = $event"
-      @toggle-direction="listing.toggleSortDir"
-    />
-    <TimesheetsAdminPaginatedList
-      class="min-h-0 flex-1"
-      :pagination="listing.pagination.value"
-      :pending="listing.pending.value"
-      :loading-next="listing.loadingNextPage.value"
-      :loading-previous="listing.loadingPreviousPage.value"
-      :has-next="listing.hasNextPage.value"
-      :has-previous="listing.hasPreviousPage.value"
-      @next="listing.loadNext"
-      @previous="listing.loadPrevious"
-      @page="listing.goToPage"
-    >
-      <UAlert v-if="error || listing.error.value" color="error" :title="t('features.timesheets.dashboard.error')" />
-      <div v-else-if="listing.pending.value && !listing.items.value.length" class="space-y-3">
-        <USkeleton v-for="index in 3" :key="index" class="h-32 w-full" />
+    <details class="shrink-0 border-t border-default pt-4">
+      <summary class="cursor-pointer text-sm font-medium text-muted">
+        {{ t('features.timesheets.reviewPeriods.legacy') }}
+      </summary>
+      <div class="mt-4 space-y-4">
+        <p class="text-sm text-muted">{{ t('features.timesheets.reviewPeriods.legacyHelp') }}</p>
+        <TimesheetsAdminListToolbar
+          v-model:search="listing.search.value"
+          class="shrink-0"
+          :filters="filters"
+          :filter-values="listing.filters"
+          :sort-options="sortOptions"
+          :sort-by="listing.sortBy.value"
+          :sort-dir="listing.sortDir.value"
+          @filter="listing.setFilter"
+          @sort="listing.sortBy.value = $event"
+          @toggle-direction="listing.toggleSortDir"
+        />
+        <TimesheetsAdminPaginatedList
+          class="min-h-0 flex-1"
+          :pagination="listing.pagination.value"
+          :pending="listing.pending.value"
+          :loading-next="listing.loadingNextPage.value"
+          :loading-previous="listing.loadingPreviousPage.value"
+          :has-next="listing.hasNextPage.value"
+          :has-previous="listing.hasPreviousPage.value"
+          @next="listing.loadNext"
+          @previous="listing.loadPrevious"
+          @page="listing.goToPage"
+        >
+          <UAlert v-if="error || listing.error.value" color="error" :title="t('features.timesheets.dashboard.error')" />
+          <div v-else-if="listing.pending.value && !listing.items.value.length" class="space-y-3">
+            <USkeleton v-for="index in 3" :key="index" class="h-32 w-full" />
+          </div>
+          <UAlert
+            v-else-if="!listing.items.value.length"
+            icon="i-lucide-search-x"
+            :title="t('features.timesheets.approvals.emptyFiltered')"
+            :description="t('features.timesheets.approvals.emptyFilteredDescription')"
+            variant="outline"
+          />
+          <TimesheetsAdminApprovals
+            v-else-if="approvalData"
+            client-mode
+            :data="approvalData"
+            :refresh="listing.refresh"
+          />
+        </TimesheetsAdminPaginatedList>
       </div>
-      <UAlert
-        v-else-if="!listing.items.value.length"
-        icon="i-lucide-search-x"
-        :title="t('features.timesheets.approvals.emptyFiltered')"
-        :description="t('features.timesheets.approvals.emptyFilteredDescription')"
-        variant="outline"
-      />
-      <TimesheetsAdminApprovals v-else-if="approvalData" client-mode :data="approvalData" :refresh="listing.refresh" />
-    </TimesheetsAdminPaginatedList>
+    </details>
   </TimesheetsPageShell>
 </template>
