@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { reviewPeriodIncludesMonth } from '../../shared/client-review-month'
+import { reviewPeriodIncludesMonth, shiftReviewMonth } from '../../shared/client-review-month'
 import type { ClientReviewPeriodDto, ClientReviewRequestDto } from '../../shared/types/client-review-request'
 
 const props = defineProps<{ clientSide?: boolean }>()
@@ -30,7 +30,7 @@ const {
 } = await useFetch<ClientReviewRequestDto[], import('#app').NuxtError<unknown>, string>(endpoint)
 const month = queryControl(
   'reviewMonth',
-  new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7),
+  shiftReviewMonth(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7), -1),
   (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
 )
 const monthLabel = computed(() =>
