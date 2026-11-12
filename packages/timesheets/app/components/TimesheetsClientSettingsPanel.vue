@@ -31,7 +31,7 @@ const currentMonth = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/
 const state = reactive({
   accessMode: 'DISABLED' as 'DISABLED' | 'VIEW' | 'REVIEW',
   startingMonth: currentMonth,
-  reviewInterval: 'WEEKLY' as 'WEEKLY' | 'TWO_WEEKLY' | 'MONTHLY'
+  reviewInterval: 'MONTHLY' as 'WEEKLY' | 'TWO_WEEKLY' | 'MONTHLY'
 })
 const { data, error, refresh } = await useFetch<ClientTimesheetSettingsDto, import('#app').NuxtError<unknown>, string>(
   `/api/timesheets/admin/client-settings/${props.client.organizationId}`
