@@ -9,3 +9,5 @@ Use the client’s Track hours module switch for new time entry, project choices
 Allow client review intervals to start this month when no active client requests exist, with next-month scheduling retained and transactional conflict protection.
 
 Show active hour-tracking clients as tags on the approvals page, with administrator controls to enable or disable tracking in place.
+
+Include earlier submission-based approval decisions and unsubmitted hours in the selected monthly view, without duplicating already approved hours as unsent.

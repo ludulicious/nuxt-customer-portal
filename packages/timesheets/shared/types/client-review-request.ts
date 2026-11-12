@@ -16,6 +16,7 @@ export interface ReviewEntrySnapshot {
   submissionId: string
 }
 export interface ClientReviewRequestDto {
+  legacySubmissionId?: string
   id: string
   workspaceClientId: string
   clientName: string
@@ -23,7 +24,7 @@ export interface ClientReviewRequestDto {
   startsOn: string
   endsOn: string
   revision: number
-  status: 'PENDING' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN'
+  status: 'PENDING' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN' | 'AUTO_APPROVED'
   version: number
   supplementary: boolean
   replacesId: string | null

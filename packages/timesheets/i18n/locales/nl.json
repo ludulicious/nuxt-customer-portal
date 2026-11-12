@@ -528,7 +528,8 @@
           "PENDING": "Wacht op klant",
           "APPROVED": "Goedgekeurd",
           "DISPUTED": "Betwist",
-          "WITHDRAWN": "Ingetrokken"
+          "WITHDRAWN": "Ingetrokken",
+          "AUTO_APPROVED": "Automatisch goedgekeurd"
         },
         "reopen": "Indiening heropenen — {person}",
         "reopened": "Indiening heropend voor correctie",

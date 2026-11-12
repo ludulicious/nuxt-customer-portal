@@ -133,7 +133,9 @@ const periodEntries = async (executor: Executor, workspaceId: string, clientId: 
     executor,
     sql`
     select e.id, s.status, e.timer_started_at as timer,
-      exists (select 1 from timesheets.client_review_request_entry re join timesheets.client_review_request r on r.id = re.request_id where re.entry_id = e.id and r.status <> 'WITHDRAWN') as covered,
+      (exists (select 1 from timesheets.client_review_request_entry re join timesheets.client_review_request r on r.id = re.request_id where re.entry_id = e.id and r.status <> 'WITHDRAWN')
+        or (e.entry_date < (select starts_on from timesheets.client_review_rollout) and
+          (s.status = 'APPROVED' or exists (select 1 from timesheets.client_review cr where cr.submission_id = e.submission_id and cr.client_organization_id = e.client_organization_id)))) as covered,
       jsonb_build_object('id', e.id, 'date', e.entry_date::text, 'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce((select week_starts_on from timesheets.workspace_settings where organization_id = e.organization_id), 1) + 7) % 7))::text, 'personId', e.user_id, 'person', u.name, 'project', p.name,
         'activity', a.name, 'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
         'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
@@ -179,9 +181,6 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     const interval = await getReviewInterval(db, link.id, `${month}-01`)
     const reviewers = await eligibleReviewers(db, link.id)
     for (const period of clientReviewPeriods(month, interval, link.weekStartsOn)) {
-      if (period.startsOn < cutover) {
-        continue
-      }
       const entries = await periodEntries(db, workspaceId, link.clientId, period.startsOn, period.endsOn)
       const available = entries.filter((e) => !e.covered)
       const outstandingCount = entries.filter((e) => e.status !== 'APPROVED' || e.timer !== null).length
@@ -200,6 +199,7 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
         hasReviewers: reviewers.length > 0,
         canSend:
           link.accessMode === 'REVIEW' &&
+          period.startsOn >= cutover &&
           period.endsOn < today &&
           available.length > 0 &&
           !outstandingCount &&
@@ -208,6 +208,72 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     }
   }
   return result
+}
+
+/** Read earlier submission decisions through the same monthly view, without rewriting them. */
+export const listSubmissionReviewRequests = async (workspaceId: string): Promise<ClientReviewRequestDto[]> => {
+  const rows = await reviewRows<{
+    workspaceClientId: string
+    clientName: string
+    supplierName: string
+    submissionId: string
+    status: ClientReviewRequestDto['status']
+    comment: string | null
+    snapshot: ReviewEntrySnapshot
+  }>(
+    db,
+    sql`
+    select wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
+      e.submission_id as "submissionId", coalesce(cr.status::text, 'AUTO_APPROVED') as status, cr.comment,
+      jsonb_build_object('id', e.id, 'date', e.entry_date::text,
+        'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce(w.week_starts_on, 1) + 7) % 7))::text,
+        'personId', e.user_id, 'person', u.name, 'project', p.name, 'activity', a.name,
+        'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
+        'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
+    from timesheets.time_entry e
+    join timesheets.submission s on s.id = e.submission_id
+    join timesheets.workspace_client wc on wc.workspace_organization_id = e.organization_id and wc.client_organization_id = e.client_organization_id
+    join public.organization c on c.id = e.client_organization_id
+    join public.organization provider on provider.id = e.organization_id
+    join public."user" u on u.id = e.user_id
+    join timesheets.project p on p.id = e.project_id
+    join timesheets.activity_type a on a.id = e.activity_type_id
+    left join timesheets.workspace_settings w on w.organization_id = e.organization_id
+    left join timesheets.client_review cr on cr.submission_id = s.id and cr.client_organization_id = e.client_organization_id
+    where e.organization_id = ${workspaceId} and e.entry_date < (select starts_on from timesheets.client_review_rollout)
+      and (cr.id is not null or s.status = 'APPROVED')
+    order by e.entry_date, e.id`
+  )
+  const grouped = new Map<string, ClientReviewRequestDto>()
+  for (const row of rows) {
+    const date = row.snapshot.date
+    const id = `submission:${row.submissionId}:${row.workspaceClientId}:${date.slice(0, 7)}`
+    let request = grouped.get(id)
+    if (!request) {
+      request = {
+        id,
+        legacySubmissionId: row.submissionId,
+        workspaceClientId: row.workspaceClientId,
+        clientName: row.clientName,
+        supplierName: row.supplierName,
+        startsOn: date,
+        endsOn: date,
+        revision: 1,
+        version: 1,
+        status: row.status,
+        supplementary: false,
+        replacesId: null,
+        replacesIds: [],
+        message: row.comment,
+        entries: [],
+        history: []
+      }
+      grouped.set(id, request)
+    }
+    request.endsOn = date
+    request.entries.push(row.snapshot)
+  }
+  return [...grouped.values()]
 }
 
 export const listReviewRequests = async (

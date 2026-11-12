@@ -97,7 +97,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
     await pool.query(`
       ALTER TABLE timesheets.time_entry ADD COLUMN weekly_timesheet_id text, ADD COLUMN created_at timestamp DEFAULT now(), ADD COLUMN updated_at timestamp DEFAULT now();
       ALTER TABLE timesheets.submission ADD COLUMN organization_id text DEFAULT 'provider';
-      ALTER TABLE timesheets.client_review ADD COLUMN status text DEFAULT 'PENDING';
+      ALTER TABLE timesheets.client_review ADD COLUMN status text DEFAULT 'PENDING', ADD COLUMN comment text;
       CREATE SCHEMA invoices;
       CREATE TABLE invoices.invoice (id text PRIMARY KEY, organization_id text, status text);
       CREATE TABLE invoices.invoice_line (id text PRIMARY KEY, invoice_id text, position integer, description text, quantity_milli integer, unit text, unit_price_minor integer, vat_rate_basis_points integer, exact_tax_minor integer, tax_details jsonb);
@@ -397,7 +397,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         ALTER TABLE timesheets.submission ADD COLUMN weekly_timesheet_id text DEFAULT 'week', ADD COLUMN user_id text DEFAULT 'person', ADD COLUMN period_starts_on date DEFAULT '2020-01-01', ADD COLUMN period_ends_on date DEFAULT '2020-01-05', ADD COLUMN submitted_at timestamp, ADD COLUMN reviewed_at timestamp, ADD COLUMN reviewed_by_id text, ADD COLUMN rejection_comment text, ADD COLUMN version integer DEFAULT 1, ADD COLUMN created_at timestamp DEFAULT now(), ADD COLUMN updated_at timestamp DEFAULT now();
         CREATE TABLE timesheets.internal_approver_assignment (id text, organization_id text, submitter_user_id text, approver_user_id text);
         CREATE TABLE timesheets.approval_history (id text, weekly_timesheet_id text, submission_id text, action text, actor_user_id text, comment text, created_at timestamp DEFAULT now());
-        ALTER TABLE timesheets.client_review ADD COLUMN reviewer_user_id text, ADD COLUMN comment text, ADD COLUMN reviewed_at timestamp, ADD COLUMN version integer DEFAULT 1, ADD COLUMN updated_at timestamp DEFAULT now();
+        ALTER TABLE timesheets.client_review ADD COLUMN reviewer_user_id text, ADD COLUMN reviewed_at timestamp, ADD COLUMN version integer DEFAULT 1, ADD COLUMN updated_at timestamp DEFAULT now();
       `)
         const repository = {} as typeof import('../server/utils/timesheet-repository')
         runInNewContext(
@@ -479,6 +479,49 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(requests.find((r) => r.id === replacement.id)!.replacesIds.length, 2)
       assert.equal(requests.find((r) => r.id === replacement.id)!.entries.length, 4)
     })
+    await t.test(
+      'earlier monthly decisions and unsubmitted hours remain visible without duplicating approved time',
+      async () => {
+        await pool.query(
+          "INSERT INTO timesheets.submission (id, status, organization_id) VALUES ('earlier-submission', 'APPROVED', 'provider')"
+        )
+        await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('august', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-08-31', 60, true, 10000, 'EUR'),
+          ('september', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-09-01', 90, true, 10000, 'EUR'),
+          ('unsubmitted-earlier', 'provider', 'client', null, 'person', 'project', 'activity', '2019-09-02', 30, true, 10000, 'EUR')`)
+        await pool.query(`INSERT INTO timesheets.client_review (id, submission_id, client_organization_id, status)
+        VALUES ('earlier-review', 'earlier-submission', 'client', 'APPROVED')`)
+        const earlier = (await exports.listSubmissionReviewRequests('provider')).filter(
+          (request) => request.legacySubmissionId === 'earlier-submission'
+        )
+        assert.equal(earlier.length, 2)
+        assert.equal(
+          earlier
+            .find((request) => request.startsOn === '2019-08-31')!
+            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          60
+        )
+        assert.equal(
+          earlier
+            .find((request) => request.startsOn === '2019-09-01')!
+            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          90
+        )
+        assert.ok(earlier.every((request) => request.status === 'APPROVED'))
+        assert.equal((await exports.listSubmissionReviewRequests('outsider')).length, 0)
+        const periods = await exports.listReviewPeriods('provider', '2019-09')
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.totalMinutes, 0),
+          30
+        )
+        assert.equal(
+          periods.reduce((sum, period) => sum + period.outstandingCount, 0),
+          1
+        )
+        assert.ok(periods.every((period) => !period.canSend))
+      }
+    )
     await t.test('full module migrations apply on an empty database', async () => {
       const migrationName = `${name}_migrations_demo`
       await admin.query(`CREATE DATABASE ${migrationName}`)

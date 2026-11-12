@@ -22,6 +22,13 @@ const queryControl = (key: string, fallback: string, valid: (value: string) => b
   })
 const toast = useToast()
 const prefix = 'features.timesheets.reviewPeriods.'
+const statusColors = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  AUTO_APPROVED: 'success',
+  DISPUTED: 'error',
+  WITHDRAWN: 'neutral'
+} as const
 const endpoint = computed(() => `/api/timesheets/${props.clientSide ? 'client' : 'admin'}/review-requests`)
 const {
   data: requests,
@@ -45,7 +52,7 @@ const requestsForMonth = computed(() =>
 )
 const search = queryControl('requestSearch', '')
 const status = queryControl('requestStatus', 'ALL', (value) =>
-  ['ALL', 'PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN'].includes(value)
+  ['ALL', 'PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN', 'AUTO_APPROVED'].includes(value)
 )
 const pageQuery = queryControl('requestPage', '1', (value) => /^[1-9]\d*$/.test(value))
 const page = computed({
@@ -99,10 +106,12 @@ const requestFilters = computed(() => [
     placeholder: t(prefix + 'status'),
     items: [
       { label: t('features.timesheets.approvals.allStatuses'), value: undefined },
-      ...['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN'].map((value) => ({
-        value,
-        label: t(prefix + 'statuses.' + value)
-      }))
+      ...['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN', ...(!props.clientSide ? ['AUTO_APPROVED'] : [])].map(
+        (value) => ({
+          value,
+          label: t(prefix + 'statuses.' + value)
+        })
+      )
     ]
   }
 ])
@@ -312,9 +321,17 @@ watch(
             <div class="min-w-0 space-y-1">
               <div class="flex flex-wrap items-center gap-2">
                 <h4 class="font-semibold break-words">{{ period.clientName }}</h4>
-                <UBadge :color="period.canSend ? 'success' : 'neutral'" variant="subtle">{{
-                  t(prefix + periodStatus(period))
-                }}</UBadge>
+                <UBadge
+                  :color="
+                    period.canSend
+                      ? 'success'
+                      : period.availableCount || period.outstandingCount
+                        ? 'warning'
+                        : 'neutral'
+                  "
+                  variant="subtle"
+                  >{{ t(prefix + periodStatus(period)) }}</UBadge
+                >
               </div>
               <p class="text-sm text-muted">
                 {{ dateLabel(period.startsOn) }} – {{ dateLabel(period.endsOn) }} ·
@@ -407,8 +424,10 @@ watch(
         <div>
           <h3 class="font-semibold">{{ clientSide ? request.supplierName : request.clientName }}</h3>
           <p>
-            {{ dateLabel(request.startsOn) }} – {{ dateLabel(request.endsOn) }} ·
-            {{ t(prefix + 'revision', { number: request.revision }) }}
+            {{ dateLabel(request.startsOn) }} – {{ dateLabel(request.endsOn) }}
+            <template v-if="!request.legacySubmissionId">
+              · {{ t(prefix + 'revision', { number: request.revision }) }}</template
+            >
           </p>
           <p>
             {{
@@ -417,7 +436,9 @@ watch(
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <UBadge variant="subtle">{{ t(prefix + 'statuses.' + request.status) }}</UBadge>
+          <UBadge :color="statusColors[request.status]" variant="subtle">{{
+            t(prefix + 'statuses.' + request.status)
+          }}</UBadge>
           <UBadge v-if="request.supplementary" variant="outline">{{ t(prefix + 'supplementary') }}</UBadge>
           <UBadge v-if="request.replacesId" variant="outline">{{ t(prefix + 'replacement') }}</UBadge>
         </div>
@@ -444,7 +465,7 @@ watch(
           }}</UButton>
         </template>
         <UButton
-          v-if="!clientSide && request.status !== 'WITHDRAWN'"
+          v-if="!clientSide && !request.legacySubmissionId && request.status !== 'WITHDRAWN'"
           color="warning"
           variant="outline"
           @click="begin('WITHDRAW', request)"
@@ -532,7 +553,7 @@ watch(
               >{{ t(prefix + 'revision', { number: requests?.find((r) => r.id === id)?.revision ?? id }) }}</NuxtLink
             >
           </p>
-          <h3 class="font-semibold">{{ t(prefix + 'history') }}</h3>
+          <h3 v-if="selected?.history.length" class="font-semibold">{{ t(prefix + 'history') }}</h3>
           <div v-for="(event, index) in selected?.history" :key="index" class="border-t border-default pt-2">
             <p>
               {{ event.createdAt }} · {{ event.actor }} ·

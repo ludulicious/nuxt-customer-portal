@@ -23,3 +23,5 @@ Client review intervals can apply from **This month** when that client has no ac
 The approvals page also lists active hour-tracking clients as tags, independently of the selected month. Provider owners and administrators can add an existing active client to enable tracking or remove its tag to disable tracking. These controls use the same protected module-setting API as the Clients page and never delete clients or historical time.
 
 Track hours controls new registration only. Turning it off does not filter existing monthly hours or approval requests. Existing hours may still be sent when client review access is enabled; when review access is disabled, the hours remain visible with an explanation.
+
+The monthly view also reads earlier submission-based client decisions alongside period requests. Earlier records are split by work month for display, with their original statuses and recorded hours preserved. Earlier internally approved time is not listed again as unsent; unsubmitted time remains visible with its submission/approval blocker. No historical records are migrated or rewritten.

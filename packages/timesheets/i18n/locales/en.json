@@ -528,7 +528,8 @@
           "PENDING": "Awaiting client",
           "APPROVED": "Approved",
           "DISPUTED": "Disputed",
-          "WITHDRAWN": "Withdrawn"
+          "WITHDRAWN": "Withdrawn",
+          "AUTO_APPROVED": "Automatically approved"
         },
         "reopen": "Reopen submission — {person}",
         "reopened": "Submission reopened for correction",
