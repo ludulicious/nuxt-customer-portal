@@ -15,7 +15,7 @@ export default defineNuxtPlugin(() => {
           menuItems: module.menuItems?.filter((item) =>
             item.id === 'invoice-settings'
               ? capabilities.canConfigureInvoices
-              : item.id === 'sales-invoices'
+              : item.id === 'sales-invoices' || item.id === 'recurring-invoices'
                 ? capabilities.canManageInvoices
                 : item.id === 'invoice-viewers'
                   ? capabilities.canManageViewers

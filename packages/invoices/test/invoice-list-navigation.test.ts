@@ -351,3 +351,10 @@ test('sales links and list restoration preserve the order return path and direct
   assert.match(detail, /:back-to="ordersReturnTo \|\| invoicesReturnTo"/)
   assert.match(component, /backTo \|\| \(isClient \? '\/invoices' : '\/admin\/invoices'\)/)
 })
+
+test('sales refresh reloads both settings and invoices created by background tasks', () => {
+  const page = readFileSync(new URL('../app/pages/admin/invoices/index.vue', import.meta.url), 'utf8')
+  assert.match(page, /await refresh\(\)\s+await child\.value\?\.refreshList\(\)/)
+  assert.match(page, /@click="refreshInvoices"/)
+  assert.match(page, /:loading="refreshing"/)
+})

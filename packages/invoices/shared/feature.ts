@@ -25,6 +25,13 @@ export const invoicesFeature: PortalFeatureDefinition<InvoiceAction> = {
           audiences: ['providerAdmin']
         },
         {
+          id: 'recurring-invoices',
+          labelKey: 'features.invoices.recurring.title',
+          icon: 'i-lucide-repeat',
+          to: '/admin/invoices/recurring',
+          audiences: ['providerAdmin']
+        },
+        {
           id: 'invoice-settings',
           labelKey: 'features.invoices.admin.workspaceSettings',
           icon: 'i-lucide-settings-2',

@@ -7,6 +7,16 @@ const child = ref<{
   showCreate: boolean
 } | null>(null)
 const { data, pending, refresh } = await useAsyncData('invoices-admin', () => invoices.adminBootstrap())
+const refreshing = ref(false)
+const refreshInvoices = async () => {
+  refreshing.value = true
+  try {
+    await refresh()
+    await child.value?.refreshList()
+  } finally {
+    refreshing.value = false
+  }
+}
 const { t } = useI18n()
 useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
 </script>
@@ -49,7 +59,8 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
           variant="ghost"
           size="sm"
           :aria-label="t('common.refresh')"
-          @click="() => refresh()"
+          :loading="refreshing"
+          @click="refreshInvoices"
         />
       </div>
     </header>
