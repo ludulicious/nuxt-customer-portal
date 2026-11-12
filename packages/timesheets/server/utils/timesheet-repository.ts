@@ -12,7 +12,8 @@ import {
 import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import {
   getClient as getSharedClient,
-  listSelectableClients
+  listSelectableClients,
+  requireClientModuleEnabled
 } from '@nuxt-customer-portal/clients/server/utils/client-repository'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
 import {
@@ -401,7 +402,8 @@ export const listClients = async (organizationId: string): Promise<ClientDto[]> 
               officialName: client.officialName,
               slug: client.slug,
               logo: client.logo,
-              accessMode: link.accessMode
+              accessMode: link.accessMode,
+              timeTrackingEnabled: client.modules.some((module) => module.moduleId === 'timesheets' && module.enabled)
             }
           ]
         : []
@@ -414,7 +416,7 @@ export const listAvailableClientOrganizations = async (
   _userId: string,
   _hasSystemAccess: boolean
 ) => {
-  const [accessible, clients] = await Promise.all([listSelectableClients(), listClients(organizationId)])
+  const [accessible, clients] = await Promise.all([listSelectableClients('timesheets'), listClients(organizationId)])
   const linkedIds = new Set(clients.map((client) => client.organizationId))
   return accessible.filter((item) => !linkedIds.has(item.id))
 }
@@ -425,6 +427,7 @@ export const linkClient = async (
   _hasSystemAccess: boolean,
   clientOrganizationId: string
 ) => {
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const client = await getSharedClient(clientOrganizationId)
   if (!client) {
     throw createError({ statusCode: 404, message: 'Client organization not found' })
@@ -449,6 +452,7 @@ export const ensureTimesheetClientSettings = async (organizationId: string, clie
     await ensureSettings(organizationId)
     return null
   }
+  await requireClientModuleEnabled(clientOrganizationId, 'timesheets')
   const [existing] = await db
     .select()
     .from(workspaceClient)
@@ -1135,33 +1139,6 @@ const autoApprovePendingWeeks = async (tx: TimesheetTransaction, organizationId:
       actorUserId: submission.userId,
       comment: 'Automatically approved because internal approval was disabled'
     })
-    const representedClients = await tx
-      .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-      .from(timeEntry)
-      .innerJoin(
-        workspaceClient,
-        and(
-          eq(workspaceClient.workspaceOrganizationId, organizationId),
-          eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-          eq(workspaceClient.accessMode, 'REVIEW'),
-          isLegacyReviewEntry
-        )
-      )
-      .where(eq(timeEntry.submissionId, submission.id))
-    if (representedClients.length) {
-      await tx
-        .insert(timesheetClientReview)
-        .values(
-          representedClients.map((item) => ({
-            id: nanoid(),
-            weeklyTimesheetId: submission.weeklyTimesheetId,
-            submissionId: submission.id,
-            clientOrganizationId: item.clientOrganizationId,
-            status: 'PENDING' as const
-          }))
-        )
-        .onConflictDoNothing()
-    }
   }
   return approvedSubmissions
 }
@@ -1356,7 +1333,12 @@ export const calculateTimesheetsSetupStatus = (
 ): TimesheetsSetupStatusDto => {
   const activeActivities = activities.filter((item) => item.active)
   const activeActivityIds = new Set(activeActivities.map((item) => item.id))
-  const activeProjects = projects.filter((item) => item.status === 'ACTIVE')
+  const trackedClients = new Set(
+    clients.filter((client) => client.timeTrackingEnabled).map((client) => client.organizationId)
+  )
+  const activeProjects = projects.filter(
+    (item) => item.status === 'ACTIVE' && (item.internal || trackedClients.has(item.clientOrganizationId))
+  )
   const billableActivityIds = new Set(activeActivities.filter((item) => item.billable).map((item) => item.id))
   const billableWorkExists = activeProjects.some((item) =>
     item.activityTypeIds.some((id) => billableActivityIds.has(id))
@@ -1364,7 +1346,7 @@ export const calculateTimesheetsSetupStatus = (
   const enabledMembers = team.filter((item) => item.canEnterTime)
   const missingDefaultTariffCount = enabledMembers.filter((item) => item.defaultHourlyRateMinor === null).length
   const status = {
-    hasClient: clients.length > 0 || activeProjects.some((item) => item.internal),
+    hasClient: clients.some((client) => client.timeTrackingEnabled) || activeProjects.some((item) => item.internal),
     hasActiveActivity: activeActivities.length > 0,
     hasConfiguredProject: activeProjects.some((item) => item.activityTypeIds.some((id) => activeActivityIds.has(id))),
     billableWorkExists,
@@ -1525,7 +1507,13 @@ export const updateProject = async (
 ) => {
   const { activityTypeIds, personRates, ...projectValues } = input
   if (typeof projectValues.clientOrganizationId === 'string') {
-    await ensureTimesheetClientSettings(organizationId, projectValues.clientOrganizationId)
+    const existing = await getProject(organizationId, id)
+    if (!existing) {
+      throw createError({ statusCode: 404, message: 'Project not found' })
+    }
+    if (projectValues.clientOrganizationId !== existing.clientOrganizationId) {
+      await ensureTimesheetClientSettings(organizationId, projectValues.clientOrganizationId)
+    }
   }
   return db.transaction(async (tx) => {
     const projectFilter = and(eq(project.id, id), eq(project.organizationId, organizationId))
@@ -1669,6 +1657,9 @@ const resolveEntryContext = async (
   const selectedActivity = activities.find((item) => item.id === activityTypeId && item.active)
   if (!selectedProject) {
     throw createError({ statusCode: 400, message: 'Project is unavailable' })
+  }
+  if (!selectedProject.internal) {
+    await requireClientModuleEnabled(selectedProject.clientOrganizationId, 'timesheets')
   }
   if (!selectedActivity || !selectedProject.activityTypeIds.includes(activityTypeId)) {
     throw createError({ statusCode: 400, message: 'Activity is unavailable for this project' })
@@ -2139,33 +2130,6 @@ export const submitWeek = async (
         actorUserId: userId,
         comment: 'Automatically approved because internal approval is disabled'
       })
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submissionId))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: week.id,
-              submissionId,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
     }
     return created
   })
@@ -2265,33 +2229,6 @@ export const resubmitSubmission = async (
         actorUserId: userId,
         comment: 'Automatically approved because internal approval is disabled'
       })
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submission.id))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: submission.weeklyTimesheetId,
-              submissionId: submission.id,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
     }
     return updated
   })
@@ -2562,35 +2499,6 @@ export const reviewSubmission = async (
       actorUserId,
       comment
     })
-    if (action === 'APPROVE') {
-      const representedClients = await tx
-        .selectDistinct({ clientOrganizationId: timeEntry.clientOrganizationId })
-        .from(timeEntry)
-        .innerJoin(
-          workspaceClient,
-          and(
-            eq(workspaceClient.workspaceOrganizationId, organizationId),
-            eq(workspaceClient.clientOrganizationId, timeEntry.clientOrganizationId),
-            eq(workspaceClient.accessMode, 'REVIEW'),
-            isLegacyReviewEntry
-          )
-        )
-        .where(eq(timeEntry.submissionId, submission.id))
-      if (representedClients.length) {
-        await tx
-          .insert(timesheetClientReview)
-          .values(
-            representedClients.map((item) => ({
-              id: nanoid(),
-              weeklyTimesheetId: submission.weeklyTimesheetId,
-              submissionId: submission.id,
-              clientOrganizationId: item.clientOrganizationId,
-              status: 'PENDING' as const
-            }))
-          )
-          .onConflictDoNothing()
-      }
-    }
     if (action === 'REOPEN') {
       await tx
         .update(timesheetClientReview)

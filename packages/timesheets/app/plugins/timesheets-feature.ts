@@ -19,11 +19,11 @@ export default defineNuxtPlugin(() => {
     const keep = (id: string) =>
       id === 'client-approvals'
         ? capabilities.canReviewClientTimesheets
-        : id === 'timesheets-approvals'
-          ? capabilities.canApproveInternalTimesheets
+        : ['timesheets-approvals', 'timesheet-approvals'].includes(id)
+          ? capabilities.internalApprovalsEnabled && capabilities.canApproveInternalTimesheets
           : id === 'timesheets-admin'
             ? capabilities.canManageTimesheets
-            : ['internal-approval-settings', 'provider-client-approvals'].includes(id)
+            : id === 'provider-client-approvals'
               ? capabilities.canManageTimesheets
               : id === 'approval-reviewers'
                 ? capabilities.canManageClientReviewers
@@ -44,7 +44,9 @@ export default defineNuxtPlugin(() => {
           ? '/timesheets/internal-approvals'
           : capabilities.canViewSupplierTime
             ? '/timesheets/suppliers'
-            : '/admin/timesheets/internal-approvals'
+            : capabilities.canManageTimesheets
+              ? '/admin/timesheets/settings'
+              : '/timesheets'
     portalFeatures.registerFeature({
       ...timesheetsFeature,
       navigation: timesheetsFeature.navigation
@@ -86,6 +88,7 @@ export default defineNuxtPlugin(() => {
     })
   }
   const empty: TimesheetCapabilitiesDto = {
+    internalApprovalsEnabled: false,
     canEnterTime: false,
     canApproveInternalTimesheets: false,
     hasInternalApprovalAssignments: false,

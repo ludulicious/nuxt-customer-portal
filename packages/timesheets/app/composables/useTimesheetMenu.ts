@@ -21,12 +21,6 @@ export const useTimesheetMenu = () => {
     if (isOrganizationAdmin.value) {
       items.push(
         {
-          label: t('features.timesheets.internalApprovals.manageTitle'),
-          to: '/admin/timesheets/internal-approvals',
-          icon: 'i-lucide-user-round-check',
-          active: route.path === '/admin/timesheets/internal-approvals'
-        },
-        {
           label: t('features.timesheets.admin.projects'),
           to: '/admin/timesheets/projects',
           icon: 'i-lucide-folder-kanban',
@@ -39,22 +33,16 @@ export const useTimesheetMenu = () => {
           active: route.path === '/admin/timesheets/activities'
         },
         {
-          label: t('features.timesheets.admin.teamRates'),
-          to: '/admin/timesheets/rates',
-          icon: 'i-lucide-badge-euro',
-          active: route.path === '/admin/timesheets/rates'
+          label: t('features.timesheets.admin.reports'),
+          to: '/admin/timesheets/reports',
+          icon: 'i-lucide-chart-no-axes-combined',
+          active: route.path === '/admin/timesheets/reports'
         },
         {
           label: t('features.timesheets.admin.workspaceSettings'),
           to: '/admin/timesheets/settings',
           icon: 'i-lucide-settings-2',
-          active: route.path === '/admin/timesheets/settings'
-        },
-        {
-          label: t('features.timesheets.admin.reports'),
-          to: '/admin/timesheets/reports',
-          icon: 'i-lucide-chart-no-axes-combined',
-          active: route.path === '/admin/timesheets/reports'
+          active: route.path.startsWith('/admin/timesheets/settings')
         }
       )
     }

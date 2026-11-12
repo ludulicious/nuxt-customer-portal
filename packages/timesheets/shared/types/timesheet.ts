@@ -66,6 +66,7 @@ export interface ClientDto {
   slug: string
   logo: string | null
   accessMode: ClientAccessMode
+  timeTrackingEnabled: boolean
 }
 
 export interface ClientWorkspaceDto {
@@ -255,6 +256,7 @@ export interface TimesheetBootstrapDto {
 }
 
 export interface TimesheetCapabilitiesDto {
+  internalApprovalsEnabled: boolean
   canEnterTime: boolean
   canApproveInternalTimesheets: boolean
   hasInternalApprovalAssignments: boolean

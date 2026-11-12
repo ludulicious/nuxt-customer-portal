@@ -16,14 +16,17 @@ export interface ReviewEntrySnapshot {
   submissionId: string
 }
 export interface ClientReviewRequestDto {
+  legacySubmissionId?: string
   id: string
   workspaceClientId: string
+  clientAvatar?: string | null
   clientName: string
+  supplierAvatar?: string | null
   supplierName: string
   startsOn: string
   endsOn: string
   revision: number
-  status: 'PENDING' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN'
+  status: 'PENDING' | 'APPROVED' | 'DISPUTED' | 'WITHDRAWN' | 'AUTO_APPROVED'
   version: number
   supplementary: boolean
   replacesId: string | null
@@ -36,7 +39,9 @@ export interface ClientReviewRequestDto {
   history: Array<{ action: string; actor: string; actorId: string; comment: string | null; createdAt: string }>
 }
 export interface ClientReviewPeriodDto {
+  timeTrackingEnabled: boolean
   workspaceClientId: string
+  clientAvatar?: string | null
   clientName: string
   startsOn: string
   endsOn: string
@@ -45,11 +50,14 @@ export interface ClientReviewPeriodDto {
   outstandingEntries: Array<{ id: string; date: string; person: string }>
   outstandingCount: number
   availableCount: number
+  reviewEnabled: boolean
   hasReviewers: boolean
   canSend: boolean
 }
 
 export interface ClientTimesheetSettingsDto {
+  earliestStartingMonth: string | null
+  canChangeCurrentMonth: boolean
   accessMode: 'DISABLED' | 'VIEW' | 'REVIEW'
   reviewInterval: ClientReviewInterval
   scheduledReviewInterval: ClientReviewInterval | null

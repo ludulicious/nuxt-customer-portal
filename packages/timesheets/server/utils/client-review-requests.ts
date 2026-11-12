@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
+import { getOrganizationAvatar } from '@nuxt-customer-portal/core/shared/organization-avatar'
 import { db } from '@nuxt-customer-portal/core/server/portal'
 import { assertTimeEntriesReopenable } from '@nuxt-customer-portal/core/server/utils/business-hooks'
 import { clientReviewPeriods, nextReviewMonth, type ClientReviewInterval } from '../../shared/client-review-periods'
@@ -9,6 +10,8 @@ import type {
   ReviewEntrySnapshot
 } from '../../shared/types/client-review-request'
 import { notifyReviewRequest } from './client-review-request-email'
+
+type OrganizationBranding = { logo: string | null; metadata: string | null }
 
 type Executor = Pick<typeof db, 'execute'>
 export const reviewRows = async <T>(executor: Executor, query: SQL): Promise<T[]> =>
@@ -44,14 +47,32 @@ export const getReviewInterval = async (executor: Executor, linkId: string, date
   )
   return row?.interval ?? 'WEEKLY'
 }
+const earliestReviewMonth = async (executor: Executor, workspaceId: string, clientId: string) => {
+  const [row] = await reviewRows<{ lastDate: string | null }>(
+    executor,
+    sql`
+    select greatest(
+      (select max(entry_date) from timesheets.time_entry
+        where organization_id = ${workspaceId} and client_organization_id = ${clientId}),
+      (select max(r.ends_on) from timesheets.client_review_request r
+        join timesheets.workspace_client c on c.id = r.workspace_client_id
+        where c.workspace_organization_id = ${workspaceId} and c.client_organization_id = ${clientId})
+    )::text as "lastDate"`
+  )
+  return row?.lastDate ? nextReviewMonth(row.lastDate).slice(0, 7) : null
+}
 export const getClientReviewSettings = async (workspaceId: string, clientId: string) => {
   const today = await reviewToday(db, workspaceId)
+  const earliestStartingMonth = await earliestReviewMonth(db, workspaceId, clientId)
+  const canChangeCurrentMonth = !earliestStartingMonth || earliestStartingMonth <= today.slice(0, 7)
   const [link] = await reviewRows<{ id: string }>(
     db,
     sql`select id from timesheets.workspace_client where workspace_organization_id = ${workspaceId} and client_organization_id = ${clientId}`
   )
   if (!link) {
     return {
+      canChangeCurrentMonth,
+      earliestStartingMonth,
       reviewInterval: 'WEEKLY' as ClientReviewInterval,
       scheduledReviewInterval: null,
       reviewIntervalEffectiveOn: null,
@@ -64,6 +85,8 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
     select interval, effective_on::text as "effectiveOn" from timesheets.client_review_schedule where workspace_client_id = ${link.id} and effective_on > ${today}::date order by effective_on limit 1`
   )
   return {
+    canChangeCurrentMonth,
+    earliestStartingMonth,
     reviewInterval: await getReviewInterval(db, link.id, today),
     scheduledReviewInterval: scheduled?.interval ?? null,
     reviewIntervalEffectiveOn: scheduled?.effectiveOn ?? null,
@@ -73,7 +96,12 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
 export const saveClientReviewSettings = async (
   workspaceId: string,
   clientId: string,
-  input: { reviewInterval?: ClientReviewInterval; accessMode?: 'DISABLED' | 'VIEW' | 'REVIEW' }
+  input: {
+    reviewInterval?: ClientReviewInterval
+    accessMode?: 'DISABLED' | 'VIEW' | 'REVIEW'
+    effectiveFrom?: 'CURRENT_MONTH' | 'NEXT_MONTH'
+    startingMonth?: string
+  }
 ) => {
   await db.transaction(async (tx) => {
     await lockClient(tx, workspaceId, clientId)
@@ -85,7 +113,24 @@ export const saveClientReviewSettings = async (
       fail('Client relationship not found', 404)
     }
     if (input.reviewInterval) {
-      const effectiveOn = nextReviewMonth(await reviewToday(tx, workspaceId))
+      const today = await reviewToday(tx, workspaceId)
+      if (input.startingMonth && !/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(input.startingMonth)) {
+        fail('Invalid starting month', 400)
+      }
+      const effectiveOn = input.startingMonth
+        ? `${input.startingMonth}-01`
+        : input.effectiveFrom === 'CURRENT_MONTH'
+          ? `${today.slice(0, 7)}-01`
+          : nextReviewMonth(today)
+      const earliest = await earliestReviewMonth(tx, workspaceId, clientId)
+      if (earliest && effectiveOn.slice(0, 7) < earliest) {
+        fail('Timesheets or approval requests exist in the starting month or later')
+      }
+      // Replace unused future settings so this interval remains in effect from the chosen month.
+      if (input.startingMonth) {
+        await tx.execute(sql`delete from timesheets.client_review_schedule
+          where workspace_client_id = ${link!.id} and effective_on >= ${effectiveOn}::date`)
+      }
       await tx.execute(
         sql`insert into timesheets.client_review_schedule (workspace_client_id, effective_on, interval) values (${link!.id}, ${effectiveOn}, ${input.reviewInterval}) on conflict (workspace_client_id, effective_on) do update set interval = excluded.interval`
       )
@@ -111,7 +156,9 @@ const periodEntries = async (executor: Executor, workspaceId: string, clientId: 
     executor,
     sql`
     select e.id, s.status, e.timer_started_at as timer,
-      exists (select 1 from timesheets.client_review_request_entry re join timesheets.client_review_request r on r.id = re.request_id where re.entry_id = e.id and r.status <> 'WITHDRAWN') as covered,
+      (exists (select 1 from timesheets.client_review_request_entry re join timesheets.client_review_request r on r.id = re.request_id where re.entry_id = e.id and r.status <> 'WITHDRAWN')
+        or (e.entry_date < (select starts_on from timesheets.client_review_rollout) and
+          (s.status = 'APPROVED' or exists (select 1 from timesheets.client_review cr where cr.submission_id = e.submission_id and cr.client_organization_id = e.client_organization_id)))) as covered,
       jsonb_build_object('id', e.id, 'date', e.entry_date::text, 'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce((select week_starts_on from timesheets.workspace_settings where organization_id = e.organization_id), 1) + 7) % 7))::text, 'personId', e.user_id, 'person', u.name, 'project', p.name,
         'activity', a.name, 'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
         'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
@@ -133,13 +180,30 @@ export const eligibleReviewers = async (executor: Executor, linkId: string) =>
   )
 
 export const listReviewPeriods = async (workspaceId: string, month: string): Promise<ClientReviewPeriodDto[]> => {
-  const links = await reviewRows<{ id: string; clientId: string; name: string; weekStartsOn: number }>(
+  const trackingEnabled = sql`exists (
+    select 1 from clients.client_profile profile
+    join clients.client_module module on module.organization_id = profile.organization_id
+      and module.module_id = 'timesheets' and module.enabled = true
+    where profile.organization_id = c.client_organization_id and profile.archived_at is null
+  )`
+  const links = await reviewRows<{
+    id: string
+    clientId: string
+    name: string
+    weekStartsOn: number
+    accessMode: string
+    branding: OrganizationBranding
+    timeTrackingEnabled: boolean
+  }>(
     db,
     sql`
-    select c.id, c.client_organization_id as "clientId", o.name, coalesce(w.week_starts_on, 1) as "weekStartsOn"
+    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, json_build_object('logo', o.logo, 'metadata', o.metadata) as branding, ${trackingEnabled} as "timeTrackingEnabled", coalesce(w.week_starts_on, 1) as "weekStartsOn"
     from timesheets.workspace_client c join public.organization o on o.id = c.client_organization_id
     left join timesheets.workspace_settings w on w.organization_id = c.workspace_organization_id
-    where c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'`
+    where c.workspace_organization_id = ${workspaceId} and (${trackingEnabled} or exists (
+      select 1 from timesheets.time_entry e where e.organization_id = ${workspaceId}
+        and e.client_organization_id = c.client_organization_id
+        and e.entry_date >= ${month + '-01'}::date and e.entry_date < (${month + '-01'}::date + interval '1 month')))`
   )
   const cutover = await reviewCutover()
   const today = await reviewToday(db, workspaceId)
@@ -148,15 +212,16 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     const interval = await getReviewInterval(db, link.id, `${month}-01`)
     const reviewers = await eligibleReviewers(db, link.id)
     for (const period of clientReviewPeriods(month, interval, link.weekStartsOn)) {
-      if (period.startsOn < cutover) {
-        continue
-      }
       const entries = await periodEntries(db, workspaceId, link.clientId, period.startsOn, period.endsOn)
-      const available = entries.filter((e) => !e.covered)
+      const available = entries.filter(
+        (e) => !e.covered && !(link.accessMode !== 'REVIEW' && e.status === 'APPROVED' && e.timer === null)
+      )
       const outstandingCount = entries.filter((e) => e.status !== 'APPROVED' || e.timer !== null).length
       result.push({
         workspaceClientId: link.id,
         clientName: link.name,
+        clientAvatar: getOrganizationAvatar(link.branding) ?? null,
+        timeTrackingEnabled: link.timeTrackingEnabled,
         ...period,
         interval,
         totalMinutes: available.reduce((sum, e) => sum + e.snapshot.minutes, 0),
@@ -165,12 +230,96 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
         outstandingEntries: entries
           .filter((e) => e.status !== 'APPROVED' || e.timer !== null)
           .map((e) => ({ id: e.id, date: e.snapshot.date, person: e.snapshot.person })),
+        reviewEnabled: link.accessMode === 'REVIEW',
         hasReviewers: reviewers.length > 0,
-        canSend: period.endsOn < today && available.length > 0 && !outstandingCount && reviewers.length > 0
+        canSend:
+          link.accessMode === 'REVIEW' &&
+          period.startsOn >= cutover &&
+          period.endsOn < today &&
+          available.length > 0 &&
+          !outstandingCount &&
+          reviewers.length > 0
       })
     }
   }
   return result
+}
+
+/** Include earlier decisions and approved work that does not require a client request. */
+export const listSubmissionReviewRequests = async (workspaceId: string): Promise<ClientReviewRequestDto[]> => {
+  const rows = await reviewRows<{
+    workspaceClientId: string
+    clientName: string
+    supplierName: string
+    clientBranding: OrganizationBranding
+    supplierBranding: OrganizationBranding
+    submissionId: string
+    status: ClientReviewRequestDto['status']
+    comment: string | null
+    snapshot: ReviewEntrySnapshot
+  }>(
+    db,
+    sql`
+    select wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
+      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
+      json_build_object('logo', provider.logo, 'metadata', provider.metadata) as "supplierBranding",
+      e.submission_id as "submissionId", coalesce(cr.status::text, 'AUTO_APPROVED') as status, cr.comment,
+      jsonb_build_object('id', e.id, 'date', e.entry_date::text,
+        'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce(w.week_starts_on, 1) + 7) % 7))::text,
+        'personId', e.user_id, 'person', u.name, 'project', p.name, 'activity', a.name,
+        'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
+        'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
+    from timesheets.time_entry e
+    join timesheets.submission s on s.id = e.submission_id
+    join timesheets.workspace_client wc on wc.workspace_organization_id = e.organization_id and wc.client_organization_id = e.client_organization_id
+    join public.organization c on c.id = e.client_organization_id
+    join public.organization provider on provider.id = e.organization_id
+    join public."user" u on u.id = e.user_id
+    join timesheets.project p on p.id = e.project_id
+    join timesheets.activity_type a on a.id = e.activity_type_id
+    left join timesheets.workspace_settings w on w.organization_id = e.organization_id
+    left join timesheets.client_review cr on cr.submission_id = s.id and cr.client_organization_id = e.client_organization_id
+    where e.organization_id = ${workspaceId} and (
+      (e.entry_date < (select starts_on from timesheets.client_review_rollout) and (cr.id is not null or s.status = 'APPROVED'))
+      or (wc.access_mode <> 'REVIEW' and s.status = 'APPROVED' and e.timer_started_at is null and cr.id is null
+        and not exists (select 1 from timesheets.client_review_request_entry re
+          join timesheets.client_review_request r on r.id = re.request_id
+          where re.entry_id = e.id and r.status <> 'WITHDRAWN'))
+    )
+    order by e.entry_date, e.id`
+  )
+  const grouped = new Map<string, ClientReviewRequestDto>()
+  for (const row of rows) {
+    const date = row.snapshot.date
+    const id = `submission:${row.submissionId}:${row.workspaceClientId}:${date.slice(0, 7)}`
+    let request = grouped.get(id)
+    if (!request) {
+      request = {
+        id,
+        legacySubmissionId: row.submissionId,
+        workspaceClientId: row.workspaceClientId,
+        clientName: row.clientName,
+        supplierName: row.supplierName,
+        clientAvatar: getOrganizationAvatar(row.clientBranding) ?? null,
+        supplierAvatar: getOrganizationAvatar(row.supplierBranding) ?? null,
+        startsOn: date,
+        endsOn: date,
+        revision: 1,
+        version: 1,
+        status: row.status,
+        supplementary: false,
+        replacesId: null,
+        replacesIds: [],
+        message: row.comment,
+        entries: [],
+        history: []
+      }
+      grouped.set(id, request)
+    }
+    request.endsOn = date
+    request.entries.push(row.snapshot)
+  }
+  return [...grouped.values()]
 }
 
 export const listReviewRequests = async (
@@ -179,10 +328,17 @@ export const listReviewRequests = async (
   clientSide: boolean,
   isAdmin: boolean
 ): Promise<ClientReviewRequestDto[]> => {
-  const requests = await reviewRows<Omit<ClientReviewRequestDto, 'entries' | 'history'>>(
+  const requests = await reviewRows<
+    Omit<ClientReviewRequestDto, 'entries' | 'history'> & {
+      clientBranding: OrganizationBranding
+      supplierBranding: OrganizationBranding
+    }
+  >(
     db,
     sql`
     select r.id, r.workspace_client_id as "workspaceClientId", c.name as "clientName", p.name as "supplierName",
+      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
+      json_build_object('logo', p.logo, 'metadata', p.metadata) as "supplierBranding",
       r.starts_on::text as "startsOn", r.ends_on::text as "endsOn", r.revision, r.status, r.version, r.supplementary,
       r.replaces_id as "replacesId", coalesce((select jsonb_agg(replaces_id order by replaces_id) from timesheets.client_review_request_replacement where request_id = r.id), '[]'::jsonb) as "replacesIds", r.message
     from timesheets.client_review_request r join timesheets.workspace_client wc on wc.id = r.workspace_client_id
@@ -191,8 +347,10 @@ export const listReviewRequests = async (
     order by r.starts_on desc, c.name, r.revision desc`
   )
   return Promise.all(
-    requests.map(async (request) => ({
+    requests.map(async ({ clientBranding, supplierBranding, ...request }) => ({
       ...request,
+      clientAvatar: getOrganizationAvatar(clientBranding) ?? null,
+      supplierAvatar: getOrganizationAvatar(supplierBranding) ?? null,
       entries: (
         await reviewRows<{ snapshot: ClientReviewRequestDto['entries'][number] }>(
           db,
@@ -229,7 +387,7 @@ export const sendReviewRequest = async (
     await lockClient(tx, workspaceId, link!.clientId)
     const [currentLink] = await reviewRows<{ id: string }>(
       tx,
-      sql`select id from timesheets.workspace_client where id = ${linkId} and access_mode = 'REVIEW'`
+      sql`select c.id from timesheets.workspace_client c where c.id = ${linkId} and c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'`
     )
     if (!currentLink) {
       fail('Client review access changed; refresh and try again')

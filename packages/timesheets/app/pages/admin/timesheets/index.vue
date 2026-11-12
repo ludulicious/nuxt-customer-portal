@@ -1,5 +1,5 @@
 <script setup lang="ts">
-await navigateTo('/admin/timesheets/internal-approvals', { redirectCode: 301, replace: true })
+await navigateTo('/admin/timesheets/settings/internal-approvals', { redirectCode: 301, replace: true })
 </script>
 
 <template>

@@ -68,7 +68,7 @@ export const planningFeature: PortalFeatureDefinition<'manage' | 'read'> = {
         {
           id: 'planning-admin',
           labelKey: 'planning.settings',
-          icon: 'i-lucide-settings',
+          icon: 'i-lucide-settings-2',
           to: '/admin/planning',
           audiences: ['providerAdmin']
         }

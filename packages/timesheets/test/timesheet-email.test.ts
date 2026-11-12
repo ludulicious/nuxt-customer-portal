@@ -190,36 +190,19 @@ test('submission notifies reviewers individually and continues after provider fa
   assert.ok(h.attempts[1]!.sentAt)
 })
 
-test('automatic approval notifies the submitter and client reviewers without leaking review comments', async () => {
-  const h = harness([
-    [person],
-    [workspace],
-    [{ id: 'link', clientId: 'client' }],
-    [
-      {
-        id: 'r1',
-        name: 'Client Reviewer',
-        email: 'client@example.com',
-        clientName: 'Client A',
-        reviewId: 'review-a',
-        version: 1
-      }
-    ]
-  ])
-  await h.notify({ ...submission, status: 'APPROVED' }, 'submitted')
-  assert.deepEqual(
-    h.sent.map((mail) => mail.definition.id),
-    ['internal-approved', 'client-requested']
-  )
-  assert.equal(h.sent[1].values.client_name, 'Client A')
-  assert.equal(h.sent[0].locale, 'nl')
-  assert.equal(h.sent[1].locale, 'en')
-  assert.equal(h.sent[1].values.period, formatTimesheetPeriod(submission.periodStartsOn, submission.periodEndsOn, 'en'))
-  assert.equal(h.sent[1].values.comment, '')
-  assert.equal(
-    h.sent[1].values.action_url,
-    `https://portal.example.com/timesheets/approvals?status=PENDING&amp;userId=${submission.userId}`
-  )
+test('internal approval never sends client requests, including automatic approval on submission', async () => {
+  for (const event of ['submitted', 'approved'] as const) {
+    // Any attempt to query client recipients fails in this harness.
+    const h = harness([[person], [workspace]])
+    await h.notify({ ...submission, status: 'APPROVED' }, event)
+    assert.deepEqual(
+      h.sent.map((mail) => mail.definition.id),
+      ['internal-approved']
+    )
+    assert.equal(h.sent[0]!.to, person.email)
+    assert.equal(h.attempts.length, 0)
+    assert.equal(h.errors.length, 0)
+  }
 })
 
 test('rejection and reopening notify only the submitter', async () => {
