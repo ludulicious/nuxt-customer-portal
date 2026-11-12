@@ -51,10 +51,11 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       INSERT INTO public.member VALUES ('m1','client','reviewer','member');
       INSERT INTO timesheets.workspace_settings VALUES ('provider','Europe/Amsterdam',1);
       INSERT INTO timesheets.workspace_client VALUES ('link','provider','client','REVIEW'), ('link2','provider','other','REVIEW');
+      INSERT INTO timesheets.client_review_schedule VALUES ('link', '1900-01-01', 'WEEKLY'), ('link2', '1900-01-01', 'WEEKLY');
       INSERT INTO timesheets.workspace_client_reviewer VALUES ('link','reviewer');
       INSERT INTO timesheets.project VALUES ('project','Project');
       INSERT INTO timesheets.activity_type VALUES ('activity','Activity');
-      INSERT INTO timesheets.submission VALUES ('submission','APPROVED'), ('second','APPROVED'), ('draft','DRAFT');
+      INSERT INTO timesheets.submission VALUES ('submission','APPROVED'), ('second','APPROVED'), ('draft','SUBMITTED');
       INSERT INTO timesheets.time_entry VALUES
         ('legacy','provider','client','submission','person','project','activity','2019-12-31',60,null,true,10000,'EUR',null),
         ('entry','provider','client','submission','person','project','activity','2020-01-01',60,'Original',true,10000,'EUR',null),
@@ -171,6 +172,80 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
     const send = () =>
       exports.sendReviewRequest('provider', 'sender', 'link', '2020-01-01', '2020-01-05', 'Please review')
     let requestId = ''
+    await t.test('monthly defaults combine submitted weeks and partial weeks without draft blockers', async () => {
+      await pool.query("DELETE FROM timesheets.client_review_schedule WHERE workspace_client_id = 'link2'")
+      await pool.query("INSERT INTO public.member VALUES ('monthly-reviewer', 'other', 'reviewer', 'member')")
+      await pool.query("INSERT INTO timesheets.workspace_client_reviewer VALUES ('link2', 'reviewer')")
+      await pool.query(`INSERT INTO timesheets.submission (id, status) VALUES
+        ('monthly-approved', 'APPROVED'), ('monthly-pending', 'SUBMITTED'),
+        ('monthly-draft', 'DRAFT'), ('monthly-rejected', 'REJECTED');
+        INSERT INTO timesheets.time_entry
+          (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id,
+            entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES
+          ('monthly-first', 'provider', 'other', 'monthly-approved', 'person', 'project', 'activity', '2020-03-02', 60, true, 10000, 'EUR'),
+          ('monthly-partial', 'provider', 'other', 'monthly-approved', 'person', 'project', 'activity', '2020-03-05', 90, true, 10000, 'EUR'),
+          ('monthly-pending', 'provider', 'other', 'monthly-pending', 'person', 'project', 'activity', '2020-03-09', 30, true, 10000, 'EUR'),
+          ('monthly-unsubmitted', 'provider', 'other', null, 'person', 'project', 'activity', '2020-03-06', 120, true, 10000, 'EUR'),
+          ('monthly-draft', 'provider', 'other', 'monthly-draft', 'person', 'project', 'activity', '2020-03-07', 120, true, 10000, 'EUR'),
+          ('monthly-rejected', 'provider', 'other', 'monthly-rejected', 'person', 'project', 'activity', '2020-03-08', 120, true, 10000, 'EUR'),
+          ('monthly-previous', 'provider', 'other', 'monthly-approved', 'person', 'project', 'activity', '2020-02-29', 120, true, 10000, 'EUR')`)
+      let sentId: string | undefined
+      try {
+        assert.equal(await exports.getReviewInterval(db, 'link2', '2020-03-01'), 'MONTHLY')
+        assert.equal((await exports.getClientReviewSettings('provider', 'other')).reviewInterval, 'MONTHLY')
+        assert.equal((await exports.getClientReviewSettings('provider', 'outsider')).reviewInterval, 'MONTHLY')
+        const periods = (await exports.listReviewPeriods('provider', '2020-03')).filter(
+          (period) => period.workspaceClientId === 'link2'
+        )
+        assert.equal(periods.length, 1)
+        const period = periods[0]!
+        assert.equal(period.interval, 'MONTHLY')
+        assert.equal(period.startsOn, '2020-03-01')
+        assert.equal(period.endsOn, '2020-03-31')
+        assert.equal(period.totalMinutes, 180)
+        assert.equal(period.availableCount, 3)
+        assert.equal(period.outstandingCount, 1)
+        assert.equal(period.outstandingEntries[0]!.id, 'monthly-pending')
+        assert.equal(period.canSend, false)
+        await assert.rejects(
+          exports.sendReviewRequest('provider', 'sender', 'link2', period.startsOn, period.endsOn),
+          /Resolve outstanding/
+        )
+        await pool.query("UPDATE timesheets.submission SET status = 'APPROVED' WHERE id = 'monthly-pending'")
+        const ready = (await exports.listReviewPeriods('provider', '2020-03')).find(
+          (period) => period.workspaceClientId === 'link2'
+        )!
+        assert.equal(ready.canSend, true)
+        assert.equal(ready.outstandingCount, 0)
+        sentId = (await exports.sendReviewRequest('provider', 'sender', 'link2', ready.startsOn, ready.endsOn)).id
+        const sent = (await exports.listReviewRequests('provider', 'sender', false, true)).find(
+          (request) => request.id === sentId
+        )!
+        assert.deepEqual(Array.from(sent.entries, (entry) => entry.id).sort(), [
+          'monthly-first',
+          'monthly-partial',
+          'monthly-pending'
+        ])
+        assert.equal(
+          sent.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+          180
+        )
+      } finally {
+        if (sentId) {
+          await exports.actOnReviewRequest('provider', 'sender', true, sentId, 1, 'WITHDRAW')
+          await pool.query('DELETE FROM timesheets.client_review_request_event WHERE request_id = $1', [sentId])
+          await pool.query('DELETE FROM timesheets.client_review_request_entry WHERE request_id = $1', [sentId])
+          await pool.query('DELETE FROM timesheets.client_review_request WHERE id = $1', [sentId])
+        }
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id LIKE 'monthly-%'")
+        await pool.query("DELETE FROM timesheets.submission WHERE id LIKE 'monthly-%'")
+        await pool.query("DELETE FROM timesheets.workspace_client_reviewer WHERE workspace_client_id = 'link2'")
+        await pool.query("DELETE FROM public.member WHERE id = 'monthly-reviewer'")
+        await pool.query("INSERT INTO timesheets.client_review_schedule VALUES ('link2', '1900-01-01', 'WEEKLY')")
+        notifications.length = 0
+      }
+    })
     await t.test(
       'blocks outstanding and empty periods, invalid boundaries, open periods, and missing reviewers',
       async () => {
@@ -312,6 +387,11 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.ok(!(await invoiceSources()).has('entry'))
       await pool.query("UPDATE timesheets.submission SET status = 'DRAFT' WHERE id = 'submission'")
       await pool.query("UPDATE timesheets.time_entry SET duration_minutes = 90 WHERE id = 'entry'")
+      const reopened = (await exports.listReviewPeriods('provider', '2020-01')).find(
+        (period) => period.workspaceClientId === 'link' && period.startsOn === '2020-01-01'
+      )!
+      assert.equal(reopened.outstandingCount, 0)
+      await pool.query("UPDATE timesheets.submission SET status = 'SUBMITTED' WHERE id = 'submission'")
       await assert.rejects(send(), /Resolve outstanding/)
       await pool.query("UPDATE timesheets.submission SET status = 'APPROVED' WHERE id = 'submission'")
       const replacement = await send()
@@ -518,7 +598,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         )
         assert.equal(
           periods.reduce((sum, period) => sum + period.totalMinutes, 0),
-          30
+          0
         )
         assert.ok(periods.every((period) => !period.canSend))
         await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link2'")
@@ -536,7 +616,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         )
         assert.equal(
           reviewPeriods.reduce((sum, period) => sum + period.totalMinutes, 0),
-          90
+          60
         )
         // An already sent request keeps its status if review access is later disabled.
         await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link'")
@@ -550,51 +630,48 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id IN ('link', 'link2')")
       }
     })
-    await t.test(
-      'earlier monthly decisions and unsubmitted hours remain visible without duplicating approved time',
-      async () => {
-        await pool.query(
-          "INSERT INTO timesheets.submission (id, status, organization_id) VALUES ('earlier-submission', 'APPROVED', 'provider')"
-        )
-        await pool.query(`INSERT INTO timesheets.time_entry
+    await t.test('earlier monthly decisions remain visible without drafts or duplicate approved time', async () => {
+      await pool.query(
+        "INSERT INTO timesheets.submission (id, status, organization_id) VALUES ('earlier-submission', 'APPROVED', 'provider')"
+      )
+      await pool.query(`INSERT INTO timesheets.time_entry
         (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
         VALUES ('august', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-08-31', 60, true, 10000, 'EUR'),
           ('september', 'provider', 'client', 'earlier-submission', 'person', 'project', 'activity', '2019-09-01', 90, true, 10000, 'EUR'),
           ('unsubmitted-earlier', 'provider', 'client', null, 'person', 'project', 'activity', '2019-09-02', 30, true, 10000, 'EUR')`)
-        await pool.query(`INSERT INTO timesheets.client_review (id, submission_id, client_organization_id, status)
+      await pool.query(`INSERT INTO timesheets.client_review (id, submission_id, client_organization_id, status)
         VALUES ('earlier-review', 'earlier-submission', 'client', 'APPROVED')`)
-        const earlier = (await exports.listSubmissionReviewRequests('provider')).filter(
-          (request) => request.legacySubmissionId === 'earlier-submission'
-        )
-        assert.equal(earlier.length, 2)
-        assert.ok(earlier.every((request) => request.clientAvatar === 'client-avatar.png'))
-        assert.ok(earlier.every((request) => request.supplierAvatar === 'supplier-logo.png'))
-        assert.equal(
-          earlier
-            .find((request) => request.startsOn === '2019-08-31')!
-            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
-          60
-        )
-        assert.equal(
-          earlier
-            .find((request) => request.startsOn === '2019-09-01')!
-            .entries.reduce((sum, entry) => sum + entry.minutes, 0),
-          90
-        )
-        assert.ok(earlier.every((request) => request.status === 'APPROVED'))
-        assert.equal((await exports.listSubmissionReviewRequests('outsider')).length, 0)
-        const periods = await exports.listReviewPeriods('provider', '2019-09')
-        assert.equal(
-          periods.reduce((sum, period) => sum + period.totalMinutes, 0),
-          30
-        )
-        assert.equal(
-          periods.reduce((sum, period) => sum + period.outstandingCount, 0),
-          1
-        )
-        assert.ok(periods.every((period) => !period.canSend))
-      }
-    )
+      const earlier = (await exports.listSubmissionReviewRequests('provider')).filter(
+        (request) => request.legacySubmissionId === 'earlier-submission'
+      )
+      assert.equal(earlier.length, 2)
+      assert.ok(earlier.every((request) => request.clientAvatar === 'client-avatar.png'))
+      assert.ok(earlier.every((request) => request.supplierAvatar === 'supplier-logo.png'))
+      assert.equal(
+        earlier
+          .find((request) => request.startsOn === '2019-08-31')!
+          .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+        60
+      )
+      assert.equal(
+        earlier
+          .find((request) => request.startsOn === '2019-09-01')!
+          .entries.reduce((sum, entry) => sum + entry.minutes, 0),
+        90
+      )
+      assert.ok(earlier.every((request) => request.status === 'APPROVED'))
+      assert.equal((await exports.listSubmissionReviewRequests('outsider')).length, 0)
+      const periods = await exports.listReviewPeriods('provider', '2019-09')
+      assert.equal(
+        periods.reduce((sum, period) => sum + period.totalMinutes, 0),
+        0
+      )
+      assert.equal(
+        periods.reduce((sum, period) => sum + period.outstandingCount, 0),
+        0
+      )
+      assert.ok(periods.every((period) => !period.canSend))
+    })
     await t.test(
       'arbitrary starting months reject all later time and replace only unused future settings',
       async () => {
