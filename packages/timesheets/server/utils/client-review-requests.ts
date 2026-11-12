@@ -45,7 +45,7 @@ export const getReviewInterval = async (executor: Executor, linkId: string, date
     sql`
     select interval from timesheets.client_review_schedule where workspace_client_id = ${linkId} and effective_on <= ${date}::date order by effective_on desc limit 1`
   )
-  return row?.interval ?? 'WEEKLY'
+  return row?.interval ?? 'MONTHLY'
 }
 const earliestReviewMonth = async (executor: Executor, workspaceId: string, clientId: string) => {
   const [row] = await reviewRows<{ lastDate: string | null }>(
@@ -73,7 +73,7 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
     return {
       canChangeCurrentMonth,
       earliestStartingMonth,
-      reviewInterval: 'WEEKLY' as ClientReviewInterval,
+      reviewInterval: 'MONTHLY' as ClientReviewInterval,
       scheduledReviewInterval: null,
       reviewIntervalEffectiveOn: null,
       reviewStartsOn: await reviewCutover()
@@ -162,10 +162,11 @@ const periodEntries = async (executor: Executor, workspaceId: string, clientId: 
       jsonb_build_object('id', e.id, 'date', e.entry_date::text, 'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce((select week_starts_on from timesheets.workspace_settings where organization_id = e.organization_id), 1) + 7) % 7))::text, 'personId', e.user_id, 'person', u.name, 'project', p.name,
         'activity', a.name, 'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
         'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
-    from timesheets.time_entry e left join timesheets.submission s on s.id = e.submission_id
+    from timesheets.time_entry e join timesheets.submission s on s.id = e.submission_id
     join public."user" u on u.id = e.user_id join timesheets.project p on p.id = e.project_id
     join timesheets.activity_type a on a.id = e.activity_type_id
     where e.organization_id = ${workspaceId} and e.client_organization_id = ${clientId} and e.entry_date between ${from}::date and ${to}::date
+      and s.status in ('SUBMITTED', 'APPROVED')
     order by e.entry_date, u.name, p.name, e.id`
   )
 
