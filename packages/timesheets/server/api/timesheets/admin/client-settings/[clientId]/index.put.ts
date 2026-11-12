@@ -11,7 +11,8 @@ import { ensureTimesheetClientSettings } from '@nuxt-customer-portal/timesheets/
 
 const schema = z.object({
   accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
-  reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY']).optional()
+  reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY']).optional(),
+  effectiveFrom: z.enum(['CURRENT_MONTH', 'NEXT_MONTH']).default('NEXT_MONTH')
 })
 
 export default defineEventHandler(async (event) => {

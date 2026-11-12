@@ -344,6 +344,42 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(await exports.getReviewInterval(db, 'link', '2020-01-01'), 'WEEKLY')
       assert.equal(await exports.getReviewInterval(db, 'link', after.reviewIntervalEffectiveOn!), 'MONTHLY')
     })
+    await t.test('current-month interval changes protect pending, approved and disputed client requests', async () => {
+      const today = await exports.reviewToday(db, 'provider')
+      const monthStart = `${today.slice(0, 7)}-01`
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
+      await pool.query(
+        `INSERT INTO timesheets.client_review_request
+        (id, workspace_client_id, starts_on, ends_on, revision, sent_by_id)
+        VALUES ('interval-guard', 'link2', $1, $1, 1, 'sender')`,
+        [monthStart]
+      )
+      for (const status of ['PENDING', 'APPROVED', 'DISPUTED']) {
+        await pool.query("UPDATE timesheets.client_review_request SET status = $1 WHERE id = 'interval-guard'", [
+          status
+        ])
+        assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, false)
+        await assert.rejects(
+          exports.saveClientReviewSettings('provider', 'other', {
+            reviewInterval: 'MONTHLY',
+            effectiveFrom: 'CURRENT_MONTH'
+          }),
+          /Withdraw active client requests/
+        )
+        assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
+      }
+      await exports.scheduleClientReviewInterval('provider', 'other', 'MONTHLY')
+      assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).scheduledReviewInterval, 'MONTHLY')
+      await pool.query("UPDATE timesheets.client_review_request SET status = 'WITHDRAWN' WHERE id = 'interval-guard'")
+      assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
+      await exports.saveClientReviewSettings('provider', 'other', {
+        reviewInterval: 'MONTHLY',
+        effectiveFrom: 'CURRENT_MONTH'
+      })
+      assert.equal(await exports.getReviewInterval(db, 'link2', today), 'MONTHLY')
+      assert.equal(await exports.getReviewInterval(db, 'link2', '2020-01-01'), 'WEEKLY')
+    })
     await t.test('legacy review creation only includes pre-cutover client slices', async () => {
       await pool.query(
         "INSERT INTO timesheets.client_review (id, submission_id, client_organization_id) VALUES ('old','submission','client'), ('new','second','client')"

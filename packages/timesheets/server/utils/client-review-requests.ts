@@ -44,6 +44,17 @@ export const getReviewInterval = async (executor: Executor, linkId: string, date
   )
   return row?.interval ?? 'WEEKLY'
 }
+const canChangeCurrentReviewMonth = async (executor: Executor, linkId: string, today: string) => {
+  const startsOn = `${today.slice(0, 7)}-01`
+  const [result] = await reviewRows<{ blocked: boolean }>(
+    executor,
+    sql`
+    select exists (select 1 from timesheets.client_review_request
+      where workspace_client_id = ${linkId} and status <> 'WITHDRAWN'
+        and starts_on < ${nextReviewMonth(today)}::date and ends_on >= ${startsOn}::date) as blocked`
+  )
+  return !result!.blocked
+}
 export const getClientReviewSettings = async (workspaceId: string, clientId: string) => {
   const today = await reviewToday(db, workspaceId)
   const [link] = await reviewRows<{ id: string }>(
@@ -52,6 +63,7 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
   )
   if (!link) {
     return {
+      canChangeCurrentMonth: true,
       reviewInterval: 'WEEKLY' as ClientReviewInterval,
       scheduledReviewInterval: null,
       reviewIntervalEffectiveOn: null,
@@ -64,6 +76,7 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
     select interval, effective_on::text as "effectiveOn" from timesheets.client_review_schedule where workspace_client_id = ${link.id} and effective_on > ${today}::date order by effective_on limit 1`
   )
   return {
+    canChangeCurrentMonth: await canChangeCurrentReviewMonth(db, link.id, today),
     reviewInterval: await getReviewInterval(db, link.id, today),
     scheduledReviewInterval: scheduled?.interval ?? null,
     reviewIntervalEffectiveOn: scheduled?.effectiveOn ?? null,
@@ -73,7 +86,11 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
 export const saveClientReviewSettings = async (
   workspaceId: string,
   clientId: string,
-  input: { reviewInterval?: ClientReviewInterval; accessMode?: 'DISABLED' | 'VIEW' | 'REVIEW' }
+  input: {
+    reviewInterval?: ClientReviewInterval
+    accessMode?: 'DISABLED' | 'VIEW' | 'REVIEW'
+    effectiveFrom?: 'CURRENT_MONTH' | 'NEXT_MONTH'
+  }
 ) => {
   await db.transaction(async (tx) => {
     await lockClient(tx, workspaceId, clientId)
@@ -85,7 +102,12 @@ export const saveClientReviewSettings = async (
       fail('Client relationship not found', 404)
     }
     if (input.reviewInterval) {
-      const effectiveOn = nextReviewMonth(await reviewToday(tx, workspaceId))
+      const today = await reviewToday(tx, workspaceId)
+      const currentMonth = input.effectiveFrom === 'CURRENT_MONTH'
+      if (currentMonth && !(await canChangeCurrentReviewMonth(tx, link!.id, today))) {
+        fail('Withdraw active client requests before changing the current month')
+      }
+      const effectiveOn = currentMonth ? `${today.slice(0, 7)}-01` : nextReviewMonth(today)
       await tx.execute(
         sql`insert into timesheets.client_review_schedule (workspace_client_id, effective_on, interval) values (${link!.id}, ${effectiveOn}, ${input.reviewInterval}) on conflict (workspace_client_id, effective_on) do update set interval = excluded.interval`
       )

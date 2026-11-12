@@ -50,6 +50,7 @@ export interface ClientReviewPeriodDto {
 }
 
 export interface ClientTimesheetSettingsDto {
+  canChangeCurrentMonth: boolean
   accessMode: 'DISABLED' | 'VIEW' | 'REVIEW'
   reviewInterval: ClientReviewInterval
   scheduledReviewInterval: ClientReviewInterval | null

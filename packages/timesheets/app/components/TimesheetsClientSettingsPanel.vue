@@ -9,13 +9,15 @@ const toast = useToast()
 const busy = ref(false)
 const state = reactive({
   accessMode: 'DISABLED' as 'DISABLED' | 'VIEW' | 'REVIEW',
+  effectiveFrom: 'NEXT_MONTH' as 'CURRENT_MONTH' | 'NEXT_MONTH',
   reviewInterval: 'WEEKLY' as 'WEEKLY' | 'TWO_WEEKLY' | 'MONTHLY'
 })
 const schema = z.object({
   accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
-  reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY'])
+  reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY']),
+  effectiveFrom: z.enum(['CURRENT_MONTH', 'NEXT_MONTH'])
 })
-const { data } = await useFetch<ClientTimesheetSettingsDto, import('#app').NuxtError<unknown>, string>(
+const { data, error, refresh } = await useFetch<ClientTimesheetSettingsDto, import('#app').NuxtError<unknown>, string>(
   `/api/timesheets/admin/client-settings/${props.client.organizationId}`
 )
 if (data.value) {
@@ -31,7 +33,20 @@ const save = async () => {
         body: state
       }
     )
+    Object.assign(state, {
+      reviewInterval: data.value.scheduledReviewInterval ?? data.value.reviewInterval,
+      effectiveFrom: 'NEXT_MONTH'
+    })
     toast.add({ title: t('features.timesheets.messages.saved'), color: 'success' })
+  } catch (cause) {
+    const conflict = (cause as { statusCode?: number }).statusCode === 409
+    toast.add({
+      title: t('features.timesheets.messages.saveError'),
+      description: t(`features.timesheets.reviewPeriods.${conflict ? 'intervalConflict' : 'error'}`),
+      color: 'error'
+    })
+    await refresh()
+    state.effectiveFrom = 'NEXT_MONTH'
   } finally {
     busy.value = false
   }
@@ -43,7 +58,8 @@ const save = async () => {
     <template #header>
       <h2 class="font-semibold">{{ t('features.timesheets.admin.clientSettings') }}</h2>
     </template>
-    <UForm novalidate :state="state" :schema="schema" class="space-y-4" @submit="save">
+    <UAlert v-if="error" color="error" :title="t('features.timesheets.reviewPeriods.error')" />
+    <UForm v-else-if="data" novalidate :state="state" :schema="schema" class="space-y-4" @submit="save">
       <UFormField name="accessMode" :label="t('features.timesheets.timesheetAccess')">
         <USelect
           v-model="state.accessMode"
@@ -60,7 +76,11 @@ const save = async () => {
         v-if="state.accessMode === 'REVIEW'"
         name="reviewInterval"
         :label="t('features.timesheets.reviewPeriods.interval')"
-        :description="t('features.timesheets.reviewPeriods.nextMonth')"
+        :description="
+          t(
+            `features.timesheets.reviewPeriods.${data.canChangeCurrentMonth ? 'currentMonthHelp' : 'protectedMonthHelp'}`
+          )
+        "
       >
         <USelect
           v-model="state.reviewInterval"
@@ -71,6 +91,20 @@ const save = async () => {
             }))
           "
           value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField
+        v-if="state.accessMode === 'REVIEW' && data.canChangeCurrentMonth"
+        name="effectiveFrom"
+        :label="t('features.timesheets.reviewPeriods.appliesFrom')"
+      >
+        <USelect
+          v-model="state.effectiveFrom"
+          :items="[
+            { value: 'CURRENT_MONTH', label: t('features.timesheets.reviewPeriods.currentMonth') },
+            { value: 'NEXT_MONTH', label: t('features.timesheets.reviewPeriods.followingMonth') }
+          ]"
           class="w-full"
         />
       </UFormField>

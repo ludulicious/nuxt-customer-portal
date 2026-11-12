@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { reviewPeriodIncludesMonth } from '../../shared/client-review-month'
 import type { ClientReviewPeriodDto, ClientReviewRequestDto } from '../../shared/types/client-review-request'
 
 const props = defineProps<{ clientSide?: boolean }>()
@@ -31,6 +32,16 @@ const month = queryControl(
   'reviewMonth',
   new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7),
   (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+)
+const monthLabel = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${month.value}-01T00:00:00Z`)
+  )
+)
+const requestsForMonth = computed(() =>
+  props.clientSide
+    ? (requests.value ?? [])
+    : (requests.value ?? []).filter((request) => reviewPeriodIncludesMonth(request, month.value))
 )
 const search = queryControl('requestSearch', '')
 const status = queryControl('requestStatus', 'ALL', (value) =>
@@ -129,7 +140,7 @@ const loadPeriods = async () => {
 await loadPeriods()
 watch(month, loadPeriods)
 const filtered = computed(() =>
-  (requests.value ?? [])
+  requestsForMonth.value
     .filter(
       (r) =>
         (status.value === 'ALL' || r.status === status.value) &&
@@ -227,6 +238,9 @@ watch(
     const id = typeof route.query.request === 'string' ? route.query.request : null
     const request = value?.find((r) => r.id === id)
     if (request) {
+      if (!props.clientSide && !reviewPeriodIncludesMonth(request, month.value)) {
+        month.value = request.startsOn.slice(0, 7)
+      }
       detail(request)
     }
   },
@@ -249,31 +263,29 @@ watch(
         </ul></template
       ></UAlert
     >
-    <section v-if="!clientSide" class="space-y-4" :aria-label="t(prefix + 'prepareTitle')">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div
+      v-if="!clientSide"
+      class="flex flex-col gap-3 border-b border-default pb-4 sm:flex-row sm:items-end sm:justify-between"
+    >
+      <div class="min-w-0">
+        <h2 class="text-xl font-semibold">{{ monthLabel }}</h2>
+        <p class="text-sm text-muted">{{ t(prefix + 'monthHelp') }}</p>
+      </div>
+      <UFormField :label="t(prefix + 'month')" class="w-full sm:w-80">
+        <TimesheetsMonthPicker v-model="month" />
+      </UFormField>
+    </div>
+    <section v-if="!clientSide" class="space-y-3" :aria-label="t(prefix + 'prepareTitle')">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="min-w-0">
-          <h2 class="text-xl font-semibold">{{ t(prefix + 'prepareTitle') }}</h2>
+          <h3 class="text-lg font-semibold">{{ t(prefix + 'prepareTitle') }}</h3>
           <p class="text-sm text-muted">{{ t(prefix + 'prepareHelp') }}</p>
         </div>
-        <UFormField :label="t(prefix + 'month')" class="w-full sm:w-48">
-          <UInput v-model="month" type="month" class="w-full" />
-        </UFormField>
-      </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p class="max-w-prose text-sm text-muted">{{ t(prefix + 'trackingHelp') }}</p>
-        <UButton
-          to="/clients"
-          icon="i-lucide-users"
-          color="neutral"
-          variant="outline"
-          class="shrink-0 self-start whitespace-nowrap"
-          >{{ t(prefix + 'manageClients') }}</UButton
-        >
-      </div>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-muted" aria-live="polite">{{ t(prefix + 'readyCount', { count: readyCount }) }}</p>
         <UCheckbox v-model="showEmpty" :label="t(prefix + 'showEmpty')" />
       </div>
+      <p v-if="!periodsPending && !periodsError && readyCount" class="text-sm text-success" aria-live="polite">
+        {{ t(prefix + 'readyCount', { count: readyCount }) }}
+      </p>
       <div v-if="periodsPending" class="space-y-3" role="status" :aria-label="t(prefix + 'loading')">
         <USkeleton v-for="index in 2" :key="index" class="h-24 w-full" />
       </div>
@@ -299,7 +311,7 @@ watch(
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0 space-y-1">
               <div class="flex flex-wrap items-center gap-2">
-                <h3 class="font-semibold break-words">{{ period.clientName }}</h3>
+                <h4 class="font-semibold break-words">{{ period.clientName }}</h4>
                 <UBadge :color="period.canSend ? 'success' : 'neutral'" variant="subtle">{{
                   t(prefix + periodStatus(period))
                 }}</UBadge>
@@ -355,10 +367,11 @@ watch(
       </div>
     </section>
     <div :class="!clientSide ? 'space-y-2 border-t border-default pt-6' : 'space-y-2'">
-      <h2 v-if="!clientSide" class="text-xl font-semibold">{{ t(prefix + 'sentTitle') }}</h2>
-      <p v-if="!clientSide" class="text-sm text-muted">{{ t(prefix + 'sentHelp') }}</p>
+      <h3 v-if="!clientSide" class="text-lg font-semibold">{{ t(prefix + 'sentTitle') }}</h3>
+      <p v-if="!clientSide" class="text-sm text-muted">{{ t(prefix + 'sentHelp', { month: monthLabel }) }}</p>
     </div>
     <PortalListToolbar
+      v-if="requestsForMonth.length"
       v-model:search="search"
       :search-placeholder="t(prefix + 'filter')"
       :filters="requestFilters"
@@ -375,8 +388,10 @@ watch(
       icon="i-lucide-inbox"
       color="neutral"
       variant="outline"
-      :title="t(prefix + (requests?.length ? 'noMatches' : 'empty'))"
-      :description="t(prefix + (requests?.length ? 'noMatchesHelp' : clientSide ? 'clientEmptyHelp' : 'sentEmptyHelp'))"
+      :title="t(prefix + (requestsForMonth.length ? 'noMatches' : clientSide ? 'empty' : 'monthRequestsEmpty'))"
+      :description="
+        t(prefix + (requestsForMonth.length ? 'noMatchesHelp' : clientSide ? 'clientEmptyHelp' : 'sentEmptyHelp'))
+      "
     />
     <UCard v-for="request in visible" :id="`request-${request.id}`" :key="request.id">
       <div class="flex flex-wrap items-start justify-between gap-3">
@@ -429,6 +444,13 @@ watch(
       </div>
     </UCard>
     <UPagination v-if="filtered.length > 10" v-model:page="page" :total="filtered.length" :items-per-page="10" />
+    <details v-if="!clientSide" class="border-t border-default pt-4 text-sm text-muted">
+      <summary class="cursor-pointer font-medium">{{ t(prefix + 'trackingTitle') }}</summary>
+      <p class="mt-2 max-w-prose">{{ t(prefix + 'trackingHelp') }}</p>
+      <UButton to="/clients" icon="i-lucide-users" color="neutral" variant="link" class="mt-2 px-0 whitespace-nowrap">{{
+        t(prefix + 'manageClients')
+      }}</UButton>
+    </details>
     <UModal
       v-if="open"
       v-model:open="open"
