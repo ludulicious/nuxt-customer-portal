@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { shiftReviewMonth } from '../../shared/client-review-month'
 
+const props = defineProps<{ min?: string; disabled?: boolean }>()
+const minimum = computed(() => props.min ?? '0001-01')
 const month = defineModel<string>({ required: true })
 const { t, locale } = useI18n()
 const open = ref(false)
@@ -27,11 +29,12 @@ const months = computed(() =>
     }
   })
 )
-watch(open, (value) => {
+const setOpen = (value: boolean) => {
+  open.value = value
   if (value) {
     year.value = Number(month.value.slice(0, 4))
   }
-})
+}
 const select = (value: string) => {
   month.value = value
   open.value = false
@@ -44,12 +47,12 @@ const select = (value: string) => {
       icon="i-lucide-chevron-left"
       color="neutral"
       variant="outline"
-      :disabled="month <= '0001-01'"
+      :disabled="disabled || month <= minimum"
       :aria-label="t('features.timesheets.reviewPeriods.previousMonth')"
       @click="month = shiftReviewMonth(month, -1)"
     />
     <div class="min-w-0 flex-1">
-      <UPopover v-model:open="open">
+      <UPopover :open="open" @update:open="setOpen">
         <UButton
           color="neutral"
           variant="outline"
@@ -57,6 +60,7 @@ const select = (value: string) => {
           trailing-icon="i-lucide-chevron-down"
           class="w-full justify-between whitespace-nowrap"
           :label="label"
+          :disabled="disabled"
           :aria-label="`${t('features.timesheets.reviewPeriods.month')}: ${label}`"
         />
         <template #content>
@@ -66,7 +70,7 @@ const select = (value: string) => {
                 icon="i-lucide-chevron-left"
                 color="neutral"
                 variant="ghost"
-                :disabled="year <= 1"
+                :disabled="disabled || year <= Number(minimum.slice(0, 4))"
                 :aria-label="t('features.timesheets.reviewPeriods.previousYear')"
                 @click="year--"
               />
@@ -75,7 +79,7 @@ const select = (value: string) => {
                 icon="i-lucide-chevron-right"
                 color="neutral"
                 variant="ghost"
-                :disabled="year >= 9999"
+                :disabled="disabled || year >= 9999"
                 :aria-label="t('features.timesheets.reviewPeriods.nextYear')"
                 @click="year++"
               />
@@ -85,6 +89,7 @@ const select = (value: string) => {
                 v-for="item in months"
                 :key="item.value"
                 :label="item.label"
+                :disabled="disabled || item.value < minimum"
                 :aria-label="item.accessibleLabel"
                 :aria-pressed="month === item.value"
                 :color="month === item.value ? 'primary' : 'neutral'"
@@ -101,7 +106,7 @@ const select = (value: string) => {
       icon="i-lucide-chevron-right"
       color="neutral"
       variant="outline"
-      :disabled="month >= '9999-12'"
+      :disabled="disabled || month >= '9999-12'"
       :aria-label="t('features.timesheets.reviewPeriods.nextMonthLabel')"
       @click="month = shiftReviewMonth(month, 1)"
     />

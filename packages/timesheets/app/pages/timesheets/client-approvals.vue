@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const route = useRoute()
+// Re-enter async setup for a new month; Suspense retains the prepared month until it is ready.
+const reviewKey = computed(() => `${route.query.reviewMonth ?? 'previous'}:${route.query.request ?? ''}`)
 useSeoMeta({ title: () => t('features.timesheets.admin.clientApprovals') })
 </script>
 
@@ -12,12 +15,11 @@ useSeoMeta({ title: () => t('features.timesheets.admin.clientApprovals') })
           <h1 class="text-2xl font-semibold text-highlighted">
             {{ t('features.timesheets.admin.clientApprovals') }}
           </h1>
-          <p class="hidden text-sm text-muted sm:block">
-            {{ t('features.timesheets.admin.clientApprovalsSubtitle') }}
-          </p>
         </div>
       </div>
     </header>
-    <TimesheetsReviewRequests />
+    <Suspense :timeout="-1">
+      <TimesheetsReviewRequests :key="reviewKey" />
+    </Suspense>
   </TimesheetsPageShell>
 </template>

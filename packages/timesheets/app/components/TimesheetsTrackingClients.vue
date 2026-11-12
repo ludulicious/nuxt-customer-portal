@@ -91,7 +91,6 @@ const cancel = () => {
         >{{ t(prefix + 'add') }}</UButton
       >
     </div>
-    <p class="max-w-prose text-sm text-muted">{{ t(prefix + 'help') }}</p>
     <USkeleton v-if="pending && !data" class="h-8 w-48" />
     <UAlert v-else-if="error" color="error" :title="t(prefix + 'loadError')">
       <template #actions

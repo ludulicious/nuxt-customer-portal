@@ -39,6 +39,7 @@ export interface ClientReviewRequestDto {
   history: Array<{ action: string; actor: string; actorId: string; comment: string | null; createdAt: string }>
 }
 export interface ClientReviewPeriodDto {
+  timeTrackingEnabled: boolean
   workspaceClientId: string
   clientAvatar?: string | null
   clientName: string
@@ -55,6 +56,7 @@ export interface ClientReviewPeriodDto {
 }
 
 export interface ClientTimesheetSettingsDto {
+  earliestStartingMonth: string | null
   canChangeCurrentMonth: boolean
   accessMode: 'DISABLED' | 'VIEW' | 'REVIEW'
   reviewInterval: ClientReviewInterval

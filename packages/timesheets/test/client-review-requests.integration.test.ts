@@ -367,7 +367,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(await exports.getReviewInterval(db, 'link', '2020-01-01'), 'WEEKLY')
       assert.equal(await exports.getReviewInterval(db, 'link', after.reviewIntervalEffectiveOn!), 'MONTHLY')
     })
-    await t.test('current-month interval changes protect pending, approved and disputed client requests', async () => {
+    await t.test('interval changes protect all requests in the starting month or later', async () => {
       const today = await exports.reviewToday(db, 'provider')
       const monthStart = `${today.slice(0, 7)}-01`
       assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
@@ -377,7 +377,7 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         VALUES ('interval-guard', 'link2', $1, $1, 1, 'sender')`,
         [monthStart]
       )
-      for (const status of ['PENDING', 'APPROVED', 'DISPUTED']) {
+      for (const status of ['PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN']) {
         await pool.query("UPDATE timesheets.client_review_request SET status = $1 WHERE id = 'interval-guard'", [
           status
         ])
@@ -387,14 +387,14 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
             reviewInterval: 'MONTHLY',
             effectiveFrom: 'CURRENT_MONTH'
           }),
-          /Withdraw active client requests/
+          /Timesheets or approval requests exist/
         )
         assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
       }
       await exports.scheduleClientReviewInterval('provider', 'other', 'MONTHLY')
       assert.equal(await exports.getReviewInterval(db, 'link2', today), 'WEEKLY')
       assert.equal((await exports.getClientReviewSettings('provider', 'other')).scheduledReviewInterval, 'MONTHLY')
-      await pool.query("UPDATE timesheets.client_review_request SET status = 'WITHDRAWN' WHERE id = 'interval-guard'")
+      await pool.query("DELETE FROM timesheets.client_review_request WHERE id = 'interval-guard'")
       assert.equal((await exports.getClientReviewSettings('provider', 'other')).canChangeCurrentMonth, true)
       await exports.saveClientReviewSettings('provider', 'other', {
         reviewInterval: 'MONTHLY',
@@ -593,6 +593,117 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
           1
         )
         assert.ok(periods.every((period) => !period.canSend))
+      }
+    )
+    await t.test(
+      'arbitrary starting months reject all later time and replace only unused future settings',
+      async () => {
+        await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('schedule-boundary', 'provider', 'other', null, 'person', 'project', 'activity', '2090-04-30', 60, true, 10000, 'EUR')`)
+        const previous = await exports.getReviewInterval(db, 'link2', '2090-04-01')
+        try {
+          assert.equal((await exports.getClientReviewSettings('provider', 'other')).earliestStartingMonth, '2090-05')
+          for (const startingMonth of ['2089-01', '2090-04']) {
+            await assert.rejects(
+              exports.saveClientReviewSettings('provider', 'other', {
+                startingMonth,
+                reviewInterval: 'TWO_WEEKLY'
+              }),
+              /Timesheets or approval requests exist/
+            )
+          }
+          await pool.query(`INSERT INTO timesheets.client_review_schedule (workspace_client_id, effective_on, interval)
+          VALUES ('link2', '2091-01-01', 'MONTHLY')`)
+          await exports.saveClientReviewSettings('provider', 'other', {
+            startingMonth: '2090-05',
+            reviewInterval: 'TWO_WEEKLY'
+          })
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2090-04-01'), previous)
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2090-05-01'), 'TWO_WEEKLY')
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2091-01-01'), 'TWO_WEEKLY')
+          await assert.rejects(
+            exports.saveClientReviewSettings('provider', 'other', {
+              startingMonth: '2090-13',
+              reviewInterval: 'MONTHLY'
+            }),
+            /Invalid starting month/
+          )
+          // Another client's future time does not block this client's empty months.
+          await exports.saveClientReviewSettings('provider', 'client', {
+            startingMonth: '2089-01',
+            reviewInterval: 'WEEKLY'
+          })
+          await pool.query(`INSERT INTO timesheets.client_review_request
+          (id, workspace_client_id, starts_on, ends_on, revision, sent_by_id)
+          VALUES ('schedule-future-request', 'link2', '2092-02-01', '2092-02-29', 1, 'sender')`)
+          assert.equal((await exports.getClientReviewSettings('provider', 'other')).earliestStartingMonth, '2092-03')
+          await assert.rejects(
+            exports.saveClientReviewSettings('provider', 'other', {
+              startingMonth: '2091-12',
+              reviewInterval: 'MONTHLY'
+            }),
+            /Timesheets or approval requests exist/
+          )
+          await exports.saveClientReviewSettings('provider', 'other', {
+            startingMonth: '2092-03',
+            reviewInterval: 'MONTHLY'
+          })
+          assert.equal(await exports.getReviewInterval(db, 'link2', '2092-03-01'), 'MONTHLY')
+        } finally {
+          await pool.query("DELETE FROM timesheets.client_review_request WHERE id = 'schedule-future-request'")
+          await pool.query("DELETE FROM timesheets.time_entry WHERE id = 'schedule-boundary'")
+          await pool.query("DELETE FROM timesheets.client_review_schedule WHERE effective_on >= '2089-01-01'")
+        }
+      }
+    )
+    await t.test(
+      'empty periods require active tracking and use each client’s interval for the selected month',
+      async () => {
+        await pool.query(`INSERT INTO timesheets.client_review_schedule (workspace_client_id, effective_on, interval)
+        VALUES ('link', '2096-01-01', 'WEEKLY'), ('link', '2098-01-01', 'MONTHLY'), ('link2', '2098-01-01', 'WEEKLY')`)
+        try {
+          const periods = await exports.listReviewPeriods('provider', '2099-02')
+          const monthly = periods.filter((period) => period.workspaceClientId === 'link')
+          const weekly = periods.filter((period) => period.workspaceClientId === 'link2')
+          assert.deepEqual(
+            Array.from(monthly, ({ startsOn, endsOn, interval }) => ({ startsOn, endsOn, interval })),
+            [{ startsOn: '2099-02-01', endsOn: '2099-02-28', interval: 'MONTHLY' }]
+          )
+          assert.ok(weekly.length > 1)
+          assert.ok(weekly.every((period) => period.interval === 'WEEKLY'))
+          assert.equal(weekly[0]!.startsOn, '2099-02-01')
+          assert.equal(weekly.at(-1)!.endsOn, '2099-02-28')
+          assert.ok(
+            periods.every((period) => period.timeTrackingEnabled && !period.availableCount && !period.outstandingCount)
+          )
+          // A future interval must not change how earlier months are grouped.
+          assert.ok(
+            (await exports.listReviewPeriods('provider', '2097-02'))
+              .filter((period) => period.workspaceClientId === 'link')
+              .every((period) => period.interval === 'WEEKLY')
+          )
+          await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
+          assert.ok(
+            !(await exports.listReviewPeriods('provider', '2099-02')).some(
+              (period) => period.workspaceClientId === 'link'
+            )
+          )
+          // Recorded time still supplies this client to the monthly filter.
+          const recorded = (await exports.listReviewPeriods('provider', '2020-01')).filter(
+            (period) => period.workspaceClientId === 'link'
+          )
+          assert.ok(recorded.length > 0)
+          assert.ok(recorded.every((period) => !period.timeTrackingEnabled))
+          await pool.query("UPDATE clients.client_profile SET archived_at = now() WHERE organization_id = 'other'")
+          assert.equal((await exports.listReviewPeriods('provider', '2099-02')).length, 0)
+        } finally {
+          await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
+          await pool.query("UPDATE clients.client_profile SET archived_at = null WHERE organization_id = 'other'")
+          await pool.query(
+            "DELETE FROM timesheets.client_review_schedule WHERE effective_on IN ('2096-01-01', '2098-01-01')"
+          )
+        }
       }
     )
     await t.test('full module migrations apply on an empty database', async () => {

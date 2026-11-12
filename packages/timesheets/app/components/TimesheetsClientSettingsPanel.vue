@@ -7,22 +7,48 @@ const props = defineProps<{ client: GenericClientDto }>()
 const { t } = useI18n()
 const toast = useToast()
 const busy = ref(false)
+const currentMonth = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7)
 const state = reactive({
   accessMode: 'DISABLED' as 'DISABLED' | 'VIEW' | 'REVIEW',
-  effectiveFrom: 'NEXT_MONTH' as 'CURRENT_MONTH' | 'NEXT_MONTH',
+  startingMonth: currentMonth,
   reviewInterval: 'WEEKLY' as 'WEEKLY' | 'TWO_WEEKLY' | 'MONTHLY'
-})
-const schema = z.object({
-  accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
-  reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY']),
-  effectiveFrom: z.enum(['CURRENT_MONTH', 'NEXT_MONTH'])
 })
 const { data, error, refresh } = await useFetch<ClientTimesheetSettingsDto, import('#app').NuxtError<unknown>, string>(
   `/api/timesheets/admin/client-settings/${props.client.organizationId}`
 )
-if (data.value) {
-  Object.assign(state, data.value, { reviewInterval: data.value.scheduledReviewInterval ?? data.value.reviewInterval })
+const schema = computed(() =>
+  z.object({
+    accessMode: z.enum(['DISABLED', 'VIEW', 'REVIEW']),
+    reviewInterval: z.enum(['WEEKLY', 'TWO_WEEKLY', 'MONTHLY']),
+    startingMonth: z
+      .string()
+      .regex(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/)
+      .refine(
+        (value) =>
+          state.accessMode !== 'REVIEW' ||
+          !data.value?.earliestStartingMonth ||
+          value >= data.value.earliestStartingMonth,
+        t('features.timesheets.reviewPeriods.intervalConflict')
+      )
+  })
+)
+const applySettings = () => {
+  if (!data.value) {
+    return
+  }
+  Object.assign(state, {
+    accessMode: data.value.accessMode,
+    reviewInterval: data.value.scheduledReviewInterval ?? data.value.reviewInterval,
+    startingMonth: [
+      currentMonth,
+      data.value.earliestStartingMonth ?? '',
+      data.value.reviewIntervalEffectiveOn?.slice(0, 7) ?? ''
+    ]
+      .sort()
+      .at(-1)!
+  })
 }
+applySettings()
 const save = async () => {
   busy.value = true
   try {
@@ -30,13 +56,15 @@ const save = async () => {
       `/api/timesheets/admin/client-settings/${props.client.organizationId}`,
       {
         method: 'PUT',
-        body: state
+        body: {
+          accessMode: state.accessMode,
+          ...(state.accessMode === 'REVIEW'
+            ? { reviewInterval: state.reviewInterval, startingMonth: state.startingMonth }
+            : {})
+        }
       }
     )
-    Object.assign(state, {
-      reviewInterval: data.value.scheduledReviewInterval ?? data.value.reviewInterval,
-      effectiveFrom: 'NEXT_MONTH'
-    })
+    state.reviewInterval = data.value.scheduledReviewInterval ?? data.value.reviewInterval
     toast.add({ title: t('features.timesheets.messages.saved'), color: 'success' })
   } catch (cause) {
     const conflict = (cause as { statusCode?: number }).statusCode === 409
@@ -46,7 +74,7 @@ const save = async () => {
       color: 'error'
     })
     await refresh()
-    state.effectiveFrom = 'NEXT_MONTH'
+    applySettings()
   } finally {
     busy.value = false
   }
@@ -76,11 +104,6 @@ const save = async () => {
         v-if="state.accessMode === 'REVIEW'"
         name="reviewInterval"
         :label="t('features.timesheets.reviewPeriods.interval')"
-        :description="
-          t(
-            `features.timesheets.reviewPeriods.${data.canChangeCurrentMonth ? 'currentMonthHelp' : 'protectedMonthHelp'}`
-          )
-        "
       >
         <USelect
           v-model="state.reviewInterval"
@@ -95,17 +118,14 @@ const save = async () => {
         />
       </UFormField>
       <UFormField
-        v-if="state.accessMode === 'REVIEW' && data.canChangeCurrentMonth"
-        name="effectiveFrom"
-        :label="t('features.timesheets.reviewPeriods.appliesFrom')"
+        v-if="state.accessMode === 'REVIEW'"
+        name="startingMonth"
+        :label="t('features.timesheets.reviewPeriods.startingMonth')"
       >
-        <USelect
-          v-model="state.effectiveFrom"
-          :items="[
-            { value: 'CURRENT_MONTH', label: t('features.timesheets.reviewPeriods.currentMonth') },
-            { value: 'NEXT_MONTH', label: t('features.timesheets.reviewPeriods.followingMonth') }
-          ]"
-          class="w-full"
+        <TimesheetsMonthPicker
+          v-model="state.startingMonth"
+          :min="data.earliestStartingMonth || undefined"
+          :disabled="busy"
         />
       </UFormField>
       <p v-if="data?.reviewIntervalEffectiveOn" class="text-sm text-muted">

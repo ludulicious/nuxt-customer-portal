@@ -47,26 +47,32 @@ export const getReviewInterval = async (executor: Executor, linkId: string, date
   )
   return row?.interval ?? 'WEEKLY'
 }
-const canChangeCurrentReviewMonth = async (executor: Executor, linkId: string, today: string) => {
-  const startsOn = `${today.slice(0, 7)}-01`
-  const [result] = await reviewRows<{ blocked: boolean }>(
+const earliestReviewMonth = async (executor: Executor, workspaceId: string, clientId: string) => {
+  const [row] = await reviewRows<{ lastDate: string | null }>(
     executor,
     sql`
-    select exists (select 1 from timesheets.client_review_request
-      where workspace_client_id = ${linkId} and status <> 'WITHDRAWN'
-        and starts_on < ${nextReviewMonth(today)}::date and ends_on >= ${startsOn}::date) as blocked`
+    select greatest(
+      (select max(entry_date) from timesheets.time_entry
+        where organization_id = ${workspaceId} and client_organization_id = ${clientId}),
+      (select max(r.ends_on) from timesheets.client_review_request r
+        join timesheets.workspace_client c on c.id = r.workspace_client_id
+        where c.workspace_organization_id = ${workspaceId} and c.client_organization_id = ${clientId})
+    )::text as "lastDate"`
   )
-  return !result!.blocked
+  return row?.lastDate ? nextReviewMonth(row.lastDate).slice(0, 7) : null
 }
 export const getClientReviewSettings = async (workspaceId: string, clientId: string) => {
   const today = await reviewToday(db, workspaceId)
+  const earliestStartingMonth = await earliestReviewMonth(db, workspaceId, clientId)
+  const canChangeCurrentMonth = !earliestStartingMonth || earliestStartingMonth <= today.slice(0, 7)
   const [link] = await reviewRows<{ id: string }>(
     db,
     sql`select id from timesheets.workspace_client where workspace_organization_id = ${workspaceId} and client_organization_id = ${clientId}`
   )
   if (!link) {
     return {
-      canChangeCurrentMonth: true,
+      canChangeCurrentMonth,
+      earliestStartingMonth,
       reviewInterval: 'WEEKLY' as ClientReviewInterval,
       scheduledReviewInterval: null,
       reviewIntervalEffectiveOn: null,
@@ -79,7 +85,8 @@ export const getClientReviewSettings = async (workspaceId: string, clientId: str
     select interval, effective_on::text as "effectiveOn" from timesheets.client_review_schedule where workspace_client_id = ${link.id} and effective_on > ${today}::date order by effective_on limit 1`
   )
   return {
-    canChangeCurrentMonth: await canChangeCurrentReviewMonth(db, link.id, today),
+    canChangeCurrentMonth,
+    earliestStartingMonth,
     reviewInterval: await getReviewInterval(db, link.id, today),
     scheduledReviewInterval: scheduled?.interval ?? null,
     reviewIntervalEffectiveOn: scheduled?.effectiveOn ?? null,
@@ -93,6 +100,7 @@ export const saveClientReviewSettings = async (
     reviewInterval?: ClientReviewInterval
     accessMode?: 'DISABLED' | 'VIEW' | 'REVIEW'
     effectiveFrom?: 'CURRENT_MONTH' | 'NEXT_MONTH'
+    startingMonth?: string
   }
 ) => {
   await db.transaction(async (tx) => {
@@ -106,11 +114,23 @@ export const saveClientReviewSettings = async (
     }
     if (input.reviewInterval) {
       const today = await reviewToday(tx, workspaceId)
-      const currentMonth = input.effectiveFrom === 'CURRENT_MONTH'
-      if (currentMonth && !(await canChangeCurrentReviewMonth(tx, link!.id, today))) {
-        fail('Withdraw active client requests before changing the current month')
+      if (input.startingMonth && !/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(input.startingMonth)) {
+        fail('Invalid starting month', 400)
       }
-      const effectiveOn = currentMonth ? `${today.slice(0, 7)}-01` : nextReviewMonth(today)
+      const effectiveOn = input.startingMonth
+        ? `${input.startingMonth}-01`
+        : input.effectiveFrom === 'CURRENT_MONTH'
+          ? `${today.slice(0, 7)}-01`
+          : nextReviewMonth(today)
+      const earliest = await earliestReviewMonth(tx, workspaceId, clientId)
+      if (earliest && effectiveOn.slice(0, 7) < earliest) {
+        fail('Timesheets or approval requests exist in the starting month or later')
+      }
+      // Replace unused future settings so this interval remains in effect from the chosen month.
+      if (input.startingMonth) {
+        await tx.execute(sql`delete from timesheets.client_review_schedule
+          where workspace_client_id = ${link!.id} and effective_on >= ${effectiveOn}::date`)
+      }
       await tx.execute(
         sql`insert into timesheets.client_review_schedule (workspace_client_id, effective_on, interval) values (${link!.id}, ${effectiveOn}, ${input.reviewInterval}) on conflict (workspace_client_id, effective_on) do update set interval = excluded.interval`
       )
@@ -160,6 +180,12 @@ export const eligibleReviewers = async (executor: Executor, linkId: string) =>
   )
 
 export const listReviewPeriods = async (workspaceId: string, month: string): Promise<ClientReviewPeriodDto[]> => {
+  const trackingEnabled = sql`exists (
+    select 1 from clients.client_profile profile
+    join clients.client_module module on module.organization_id = profile.organization_id
+      and module.module_id = 'timesheets' and module.enabled = true
+    where profile.organization_id = c.client_organization_id and profile.archived_at is null
+  )`
   const links = await reviewRows<{
     id: string
     clientId: string
@@ -167,13 +193,14 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
     weekStartsOn: number
     accessMode: string
     branding: OrganizationBranding
+    timeTrackingEnabled: boolean
   }>(
     db,
     sql`
-    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, json_build_object('logo', o.logo, 'metadata', o.metadata) as branding, coalesce(w.week_starts_on, 1) as "weekStartsOn"
+    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, json_build_object('logo', o.logo, 'metadata', o.metadata) as branding, ${trackingEnabled} as "timeTrackingEnabled", coalesce(w.week_starts_on, 1) as "weekStartsOn"
     from timesheets.workspace_client c join public.organization o on o.id = c.client_organization_id
     left join timesheets.workspace_settings w on w.organization_id = c.workspace_organization_id
-    where c.workspace_organization_id = ${workspaceId} and (c.access_mode = 'REVIEW' or exists (
+    where c.workspace_organization_id = ${workspaceId} and (${trackingEnabled} or exists (
       select 1 from timesheets.time_entry e where e.organization_id = ${workspaceId}
         and e.client_organization_id = c.client_organization_id
         and e.entry_date >= ${month + '-01'}::date and e.entry_date < (${month + '-01'}::date + interval '1 month')))`
@@ -194,6 +221,7 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
         workspaceClientId: link.id,
         clientName: link.name,
         clientAvatar: getOrganizationAvatar(link.branding) ?? null,
+        timeTrackingEnabled: link.timeTrackingEnabled,
         ...period,
         interval,
         totalMinutes: available.reduce((sum, e) => sum + e.snapshot.minutes, 0),
