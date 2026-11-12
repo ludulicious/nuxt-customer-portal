@@ -334,17 +334,26 @@ watch(
                 {{ t(prefix + 'outstanding', { count: period.outstandingCount }) }}
               </p>
               <p
-                v-if="!period.hasReviewers && (period.availableCount || period.outstandingCount)"
+                v-if="
+                  period.reviewEnabled && !period.hasReviewers && (period.availableCount || period.outstandingCount)
+                "
                 class="text-sm text-warning"
               >
                 {{ t(prefix + 'noReviewers') }}
               </p>
               <p
-                v-if="period.availableCount && !period.canSend && !period.outstandingCount && period.hasReviewers"
+                v-if="
+                  period.reviewEnabled &&
+                  period.availableCount &&
+                  !period.canSend &&
+                  !period.outstandingCount &&
+                  period.hasReviewers
+                "
                 class="text-sm text-muted"
               >
                 {{ t(prefix + 'periodOpen') }}
               </p>
+              <p v-if="!period.reviewEnabled" class="text-sm text-muted">{{ t(prefix + 'reviewDisabled') }}</p>
               <details v-if="period.outstandingEntries.length" class="pt-1 text-sm">
                 <summary class="cursor-pointer text-muted">{{ t(prefix + 'outstandingDetails') }}</summary>
                 <ul class="mt-2 space-y-1 text-muted">
@@ -444,13 +453,7 @@ watch(
       </div>
     </UCard>
     <UPagination v-if="filtered.length > 10" v-model:page="page" :total="filtered.length" :items-per-page="10" />
-    <details v-if="!clientSide" class="border-t border-default pt-4 text-sm text-muted">
-      <summary class="cursor-pointer font-medium">{{ t(prefix + 'trackingTitle') }}</summary>
-      <p class="mt-2 max-w-prose">{{ t(prefix + 'trackingHelp') }}</p>
-      <UButton to="/clients" icon="i-lucide-users" color="neutral" variant="link" class="mt-2 px-0 whitespace-nowrap">{{
-        t(prefix + 'manageClients')
-      }}</UButton>
-    </details>
+    <TimesheetsTrackingClients v-if="!clientSide" @changed="loadPeriods" />
     <UModal
       v-if="open"
       v-model:open="open"

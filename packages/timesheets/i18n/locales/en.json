@@ -569,9 +569,22 @@
         "appliesFrom": "Apply change from",
         "currentMonth": "This month",
         "followingMonth": "Next month",
-        "intervalConflict": "A client approval request exists for this month. Withdraw it first, or apply the interval from next month."
+        "intervalConflict": "A client approval request exists for this month. Withdraw it first, or apply the interval from next month.",
+        "reviewDisabled": "Client review access must be enabled before requesting approval."
       },
-      "trackHours": "Track hours"
+      "trackHours": "Track hours",
+      "trackingClients": {
+        "title": "Clients with hour tracking",
+        "help": "Active clients with Track hours enabled. Removing a client here turns tracking off; recorded hours and approval history are kept.",
+        "add": "Add client",
+        "select": "Choose an active client",
+        "enable": "Enable tracking",
+        "required": "Choose an active client without hour tracking.",
+        "empty": "No active clients have hour tracking enabled.",
+        "remove": "Turn off hour tracking for {name}",
+        "error": "Unable to change hour tracking",
+        "loadError": "Unable to load clients"
+      }
     }
   }
 }

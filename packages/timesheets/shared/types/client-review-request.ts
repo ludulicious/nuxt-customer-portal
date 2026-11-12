@@ -45,6 +45,7 @@ export interface ClientReviewPeriodDto {
   outstandingEntries: Array<{ id: string; date: string; person: string }>
   outstandingCount: number
   availableCount: number
+  reviewEnabled: boolean
   hasReviewers: boolean
   canSend: boolean
 }

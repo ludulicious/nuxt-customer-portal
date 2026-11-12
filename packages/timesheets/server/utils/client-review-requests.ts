@@ -155,15 +155,22 @@ export const eligibleReviewers = async (executor: Executor, linkId: string) =>
   )
 
 export const listReviewPeriods = async (workspaceId: string, month: string): Promise<ClientReviewPeriodDto[]> => {
-  const links = await reviewRows<{ id: string; clientId: string; name: string; weekStartsOn: number }>(
+  const links = await reviewRows<{
+    id: string
+    clientId: string
+    name: string
+    weekStartsOn: number
+    accessMode: string
+  }>(
     db,
     sql`
-    select c.id, c.client_organization_id as "clientId", o.name, coalesce(w.week_starts_on, 1) as "weekStartsOn"
+    select c.id, c.client_organization_id as "clientId", c.access_mode as "accessMode", o.name, coalesce(w.week_starts_on, 1) as "weekStartsOn"
     from timesheets.workspace_client c join public.organization o on o.id = c.client_organization_id
     left join timesheets.workspace_settings w on w.organization_id = c.workspace_organization_id
-    where c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'
-      and exists (select 1 from clients.client_module cm join clients.client_profile cp on cp.organization_id = cm.organization_id
-        where cm.organization_id = c.client_organization_id and cm.module_id = 'timesheets' and cm.enabled = true and cp.archived_at is null)`
+    where c.workspace_organization_id = ${workspaceId} and (c.access_mode = 'REVIEW' or exists (
+      select 1 from timesheets.time_entry e where e.organization_id = ${workspaceId}
+        and e.client_organization_id = c.client_organization_id
+        and e.entry_date >= ${month + '-01'}::date and e.entry_date < (${month + '-01'}::date + interval '1 month')))`
   )
   const cutover = await reviewCutover()
   const today = await reviewToday(db, workspaceId)
@@ -189,8 +196,14 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
         outstandingEntries: entries
           .filter((e) => e.status !== 'APPROVED' || e.timer !== null)
           .map((e) => ({ id: e.id, date: e.snapshot.date, person: e.snapshot.person })),
+        reviewEnabled: link.accessMode === 'REVIEW',
         hasReviewers: reviewers.length > 0,
-        canSend: period.endsOn < today && available.length > 0 && !outstandingCount && reviewers.length > 0
+        canSend:
+          link.accessMode === 'REVIEW' &&
+          period.endsOn < today &&
+          available.length > 0 &&
+          !outstandingCount &&
+          reviewers.length > 0
       })
     }
   }
@@ -245,9 +258,7 @@ export const sendReviewRequest = async (
       sql`
       select c.client_organization_id as "clientId", coalesce(w.week_starts_on, 1) as "weekStartsOn" from timesheets.workspace_client c
       left join timesheets.workspace_settings w on w.organization_id = c.workspace_organization_id
-      where c.id = ${linkId} and c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'
-      and exists (select 1 from clients.client_module cm join clients.client_profile cp on cp.organization_id = cm.organization_id
-        where cm.organization_id = c.client_organization_id and cm.module_id = 'timesheets' and cm.enabled = true and cp.archived_at is null)`
+      where c.id = ${linkId} and c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'`
     )
     if (!link) {
       fail('Review-enabled client relationship not found', 404)
@@ -255,9 +266,7 @@ export const sendReviewRequest = async (
     await lockClient(tx, workspaceId, link!.clientId)
     const [currentLink] = await reviewRows<{ id: string }>(
       tx,
-      sql`select c.id from timesheets.workspace_client c where c.id = ${linkId} and c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'
-      and exists (select 1 from clients.client_module cm join clients.client_profile cp on cp.organization_id = cm.organization_id
-        where cm.organization_id = c.client_organization_id and cm.module_id = 'timesheets' and cm.enabled = true and cp.archived_at is null)`
+      sql`select c.id from timesheets.workspace_client c where c.id = ${linkId} and c.workspace_organization_id = ${workspaceId} and c.access_mode = 'REVIEW'`
     )
     if (!currentLink) {
       fail('Client review access changed; refresh and try again')

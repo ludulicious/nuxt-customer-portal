@@ -569,9 +569,22 @@
         "appliesFrom": "Wijziging laten ingaan vanaf",
         "currentMonth": "Deze maand",
         "followingMonth": "Volgende maand",
-        "intervalConflict": "Er bestaat een goedkeuringsverzoek voor deze maand. Trek dit eerst in of laat het interval volgende maand ingaan."
+        "intervalConflict": "Er bestaat een goedkeuringsverzoek voor deze maand. Trek dit eerst in of laat het interval volgende maand ingaan.",
+        "reviewDisabled": "Schakel beoordeling door de klant in voordat je goedkeuring aanvraagt."
       },
-      "trackHours": "Uren bijhouden"
+      "trackHours": "Uren bijhouden",
+      "trackingClients": {
+        "title": "Klanten met urenregistratie",
+        "help": "Actieve klanten met Uren bijhouden ingeschakeld. Verwijderen uit deze lijst schakelt dit uit; geregistreerde uren en goedkeuringsgeschiedenis blijven bewaard.",
+        "add": "Klant toevoegen",
+        "select": "Kies een actieve klant",
+        "enable": "Uren bijhouden inschakelen",
+        "required": "Kies een actieve klant waarvoor uren bijhouden nog uitstaat.",
+        "empty": "Geen actieve klanten hebben uren bijhouden ingeschakeld.",
+        "remove": "Uren bijhouden uitschakelen voor {name}",
+        "error": "Uren bijhouden kon niet worden gewijzigd",
+        "loadError": "Klanten konden niet worden geladen"
+      }
     }
   }
 }

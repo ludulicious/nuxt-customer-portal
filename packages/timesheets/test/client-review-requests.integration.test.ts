@@ -224,43 +224,46 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       )
       await assert.rejects(exports.assertNoActiveReviewRequests(db, ['entry']), /Withdraw affected/)
     })
-    await t.test(
-      'disabled or archived clients are excluded from preparation and new sends without losing sent requests',
-      async () => {
-        await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
-        try {
-          assert.equal(
-            (await exports.listReviewPeriods('provider', '2020-01')).some(
-              (period) => period.workspaceClientId === 'link'
-            ),
-            false
-          )
-          await assert.rejects(send(), /Review-enabled client relationship not found/)
-          assert.ok(
-            (await exports.listReviewRequests('provider', 'sender', false, true)).some(
-              (request) => request.id === requestId
-            )
-          )
-        } finally {
-          await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
-        }
-        await pool.query("UPDATE clients.client_profile SET archived_at = now() WHERE organization_id = 'client'")
-        try {
-          assert.equal(
-            (await exports.listReviewPeriods('provider', '2020-01')).some(
-              (period) => period.workspaceClientId === 'link'
-            ),
-            false
-          )
-          await assert.rejects(send(), /Review-enabled client relationship not found/)
-        } finally {
-          await pool.query("UPDATE clients.client_profile SET archived_at = null WHERE organization_id = 'client'")
-        }
+    await t.test('turning tracking off preserves monthly hours and approval requests', async () => {
+      await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
+      await pool.query(`INSERT INTO timesheets.time_entry
+        (id, organization_id, client_organization_id, submission_id, user_id, project_id, activity_type_id, entry_date, duration_minutes, billable_snapshot, hourly_rate_minor_snapshot, currency_snapshot)
+        VALUES ('off-late', 'provider', 'client', 'second', 'person', 'project', 'activity', '2020-01-03', 15, true, 10000, 'EUR')`)
+      try {
+        const periods = await exports.listReviewPeriods('provider', '2020-01')
+        const period = periods.find((period) => period.workspaceClientId === 'link' && period.availableCount > 0)!
+        assert.equal(period.totalMinutes, 15)
+        assert.equal(period.canSend, true)
+        const sent = await send()
         assert.ok(
-          (await exports.listReviewPeriods('provider', '2020-01')).some((period) => period.workspaceClientId === 'link')
+          (await exports.listReviewRequests('provider', 'sender', false, true)).some(
+            (request) => request.id === requestId
+          )
         )
+        await exports.actOnReviewRequest('provider', 'sender', true, sent.id, 1, 'WITHDRAW')
+        // Keep this fixture independent of the replacement-history scenarios below.
+        for (const table of [
+          'client_review_request_event',
+          'client_review_request_entry',
+          'client_review_request_replacement'
+        ]) {
+          await pool.query(`DELETE FROM timesheets.${table} WHERE request_id = $1`, [sent.id])
+        }
+        await pool.query('DELETE FROM timesheets.client_review_request WHERE id = $1', [sent.id])
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'DISABLED' WHERE id = 'link'")
+        const disabledPeriod = (await exports.listReviewPeriods('provider', '2020-01')).find(
+          (period) => period.workspaceClientId === 'link' && period.availableCount > 0
+        )!
+        assert.equal(disabledPeriod.totalMinutes, 15)
+        assert.equal(disabledPeriod.reviewEnabled, false)
+        assert.equal(disabledPeriod.canSend, false)
+        await assert.rejects(send(), /Review-enabled client relationship not found/)
+      } finally {
+        await pool.query("UPDATE clients.client_module SET enabled = true WHERE organization_id = 'client'")
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id = 'link'")
+        await pool.query("DELETE FROM timesheets.time_entry WHERE id = 'off-late'")
       }
-    )
+    })
     await t.test('scopes requests and decisions to authorized provider/client actors and versions', async () => {
       assert.equal((await exports.listReviewRequests('outsider', 'reviewer', true, true)).length, 0)
       assert.equal((await exports.listReviewRequests('client', 'stranger', true, false)).length, 0)
