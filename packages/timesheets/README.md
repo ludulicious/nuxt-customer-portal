@@ -22,7 +22,7 @@ Enable **Track hours** under **Clients → client → Modules** for clients that
 
 Client review intervals have a **Starting month** selected with the Nuxt UI month picker. A change is allowed only when that client has no recorded time or approval requests in that month or later. Drafts and future-dated time also protect their months. Eligibility is rechecked under the same client lock used for entry changes and request sending. Earlier schedules are preserved; unused schedules from the chosen month onward are replaced.
 
-The approvals page also lists active hour-tracking clients as tags, independently of the selected month. Provider owners and administrators can add an existing active client to enable tracking or remove its tag to disable tracking. These controls use the same protected module-setting API as the Clients page and never delete clients or historical time.
+Workspace settings → Clients lists all active clients in searchable cards, with filters for tracking on or off. Provider owners and administrators use each client’s labelled Track hours switch to enable or disable tracking. For tracked clients, select the card or edit action to open access and approval interval/starting month settings inline. These controls use the same protected module-setting API as the Clients page and never delete clients or historical time.
 
 Track hours controls new registration only. Turning it off does not filter existing monthly hours or approval requests. Existing hours may still be sent when client review access is enabled; when review access is disabled, the hours remain visible with an explanation.
 
@@ -33,3 +33,5 @@ Internally approved hours for clients with view-only or disabled client review a
 The shared **Client** filter contains active clients with Track hours enabled and clients with recorded hours or requests in the selected month. It filters both monthly sections. **Show empty periods** only exposes empty periods for active tracked clients; recorded work remains visible independently of tracking or archive status. Periods follow the client's approval interval effective for the selected month, so monthly and weekly clients can appear together.
 
 Month navigation remounts the review component inside Suspense. Requests and periods are awaited in setup with automatic fetch watching disabled; the previous prepared month stays mounted until the next month is ready. Filtering is computed from those datasets without manual watchers.
+
+Workspace settings appears after Reports. General preferences, Clients, Team members, and Internal approval settings have separate tabs with icons; existing internal-approval settings and team-rate links redirect to their new tabs. The Timesheets sidebar entry remains available independently of internal approvals; only the internal approval queue depends on enabled approvals and assigned approvers. Changing the approval switch refreshes navigation immediately.

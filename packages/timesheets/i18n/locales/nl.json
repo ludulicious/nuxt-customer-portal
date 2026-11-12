@@ -273,6 +273,7 @@
         "clients": "Klanten",
         "projects": "Projecten",
         "activities": "Activiteiten",
+        "teamMembers": "Teamleden",
         "teamRates": "Teamtarieven",
         "sectionSubtitles": {
           "approvals": "Beoordeel ingediende urenstaten die op goedkeuring wachten.",
@@ -346,6 +347,7 @@
         "moneyBudget": "Geldbudget",
         "projectRates": "Projectspecifieke tarieven",
         "saveOverrides": "Afwijkingen opslaan",
+        "generalSettings": "Algemeen",
         "workspaceSettings": "Werkruimte-instellingen",
         "clientSettings": "Urenstaten-instellingen voor klant",
         "currency": "Valuta",
@@ -578,16 +580,24 @@
       },
       "trackHours": "Uren bijhouden",
       "trackingClients": {
+        "edit": "Instellingen voor {name} bewerken",
         "title": "Uren bijhouden",
         "help": "Actieve klanten met Uren bijhouden ingeschakeld. Verwijderen uit deze lijst schakelt dit uit; geregistreerde uren en goedkeuringsgeschiedenis blijven bewaard.",
         "add": "Klant toevoegen",
         "select": "Kies een actieve klant",
         "enable": "Uren bijhouden inschakelen",
         "required": "Kies een actieve klant waarvoor uren bijhouden nog uitstaat.",
-        "empty": "Geen klanten geselecteerd.",
+        "empty": "Geen actieve cliënten.",
         "remove": "Uren bijhouden uitschakelen voor {name}",
         "error": "Uren bijhouden kon niet worden gewijzigd",
-        "loadError": "Klanten konden niet worden geladen"
+        "loadError": "Klanten konden niet worden geladen",
+        "search": "Zoek cliënten",
+        "name": "Naam",
+        "noResults": "Geen cliënten gevonden.",
+        "all": "Alle cliënten",
+        "on": "Urenregistratie aan",
+        "off": "Urenregistratie uit",
+        "toggle": "Uren registreren voor {name}"
       }
     }
   }

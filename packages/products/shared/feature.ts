@@ -77,7 +77,7 @@ export const productsFeature: PortalFeatureDefinition<'manage' | 'read'> = {
         },
         {
           id: 'store-settings',
-          icon: 'i-lucide-settings',
+          icon: 'i-lucide-settings-2',
           labelKey: 'products.settings',
           to: '/admin/products/settings',
           audiences: ['providerAdmin']

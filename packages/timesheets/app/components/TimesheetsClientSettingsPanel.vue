@@ -3,10 +3,30 @@ import { z } from 'zod'
 import type { ClientTimesheetSettingsDto } from '../../shared/types/client-review-request'
 import type { GenericClientDto } from '@nuxt-customer-portal/clients/types'
 
-const props = defineProps<{ client: GenericClientDto }>()
+const props = defineProps<{ client: GenericClientDto; showClient?: boolean }>()
+const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const busy = ref(false)
+const formRef = ref<{ $el: HTMLElement } | null>(null)
+onMounted(async () => {
+  if (!props.showClient) {
+    return
+  }
+  await nextTick()
+  const form = formRef.value?.$el
+  if (!form) {
+    return
+  }
+  const headerHeight = document.querySelector('header')?.getBoundingClientRect().height || 72
+  form.scrollIntoView({
+    behavior: 'smooth',
+    block: form.offsetHeight <= window.innerHeight - headerHeight - 32 ? 'center' : 'start'
+  })
+  form
+    .querySelector<HTMLElement>('button[role="combobox"]:not([disabled]), input:not([disabled])')
+    ?.focus({ preventScroll: true })
+})
 const currentMonth = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7)
 const state = reactive({
   accessMode: 'DISABLED' as 'DISABLED' | 'VIEW' | 'REVIEW',
@@ -65,6 +85,7 @@ const save = async () => {
       }
     )
     state.reviewInterval = data.value.scheduledReviewInterval ?? data.value.reviewInterval
+    clearNuxtData((key) => key.startsWith('client-review-periods:'))
     toast.add({ title: t('features.timesheets.messages.saved'), color: 'success' })
   } catch (cause) {
     const conflict = (cause as { statusCode?: number }).statusCode === 409
@@ -84,10 +105,31 @@ const save = async () => {
 <template>
   <UCard>
     <template #header>
-      <h2 class="font-semibold">{{ t('features.timesheets.admin.clientSettings') }}</h2>
+      <div class="flex min-w-0 items-center gap-2">
+        <UAvatar v-if="showClient" :src="client.avatarLogo || client.logo || undefined" :alt="client.name" size="sm" />
+        <h2 class="flex-1 font-semibold">
+          {{ showClient ? client.name : t('features.timesheets.admin.clientSettings') }}
+        </h2>
+        <UButton
+          v-if="showClient"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          :aria-label="t('features.timesheets.cancel')"
+          @click="emit('close')"
+        />
+      </div>
     </template>
     <UAlert v-if="error" color="error" :title="t('features.timesheets.reviewPeriods.error')" />
-    <UForm v-else-if="data" novalidate :state="state" :schema="schema" class="space-y-4" @submit="save">
+    <UForm
+      v-else-if="data"
+      ref="formRef"
+      novalidate
+      :state="state"
+      :schema="schema"
+      class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+      @submit="save"
+    >
       <UFormField name="accessMode" :label="t('features.timesheets.timesheetAccess')">
         <USelect
           v-model="state.accessMode"
@@ -128,7 +170,7 @@ const save = async () => {
           :disabled="busy"
         />
       </UFormField>
-      <p v-if="data?.reviewIntervalEffectiveOn" class="text-sm text-muted">
+      <p v-if="data?.reviewIntervalEffectiveOn" class="text-sm text-muted md:col-span-2 xl:col-span-3">
         {{
           t('features.timesheets.reviewPeriods.scheduled', {
             date: data.reviewIntervalEffectiveOn,
@@ -136,8 +178,11 @@ const save = async () => {
           })
         }}
       </p>
-      <div class="flex justify-end">
-        <UButton type="submit" icon="i-lucide-save" class="ml-auto flex min-w-28 justify-center" :loading="busy">{{
+      <div class="flex justify-end gap-2 md:col-span-2 xl:col-span-3">
+        <UButton v-if="showClient" color="neutral" variant="outline" @click="emit('close')">{{
+          t('features.timesheets.cancel')
+        }}</UButton>
+        <UButton type="submit" icon="i-lucide-save" class="flex min-w-28 justify-center" :loading="busy">{{
           t('features.timesheets.save')
         }}</UButton>
       </div>

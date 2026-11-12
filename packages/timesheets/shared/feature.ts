@@ -37,7 +37,7 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
       id: 'timesheets-admin',
       labelKey: 'features.timesheets.navigation.manage',
       icon: 'i-lucide-chart-no-axes-combined',
-      to: '/admin/timesheets/internal-approvals',
+      to: '/admin/timesheets/settings',
       audiences: ['providerAdmin'],
       location: 'admin',
       order: 130
@@ -97,13 +97,6 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
           audiences: ['providerAdmin']
         },
         {
-          id: 'internal-approval-settings',
-          labelKey: 'features.timesheets.internalApprovals.manageTitle',
-          icon: 'i-lucide-user-round-check',
-          to: '/admin/timesheets/internal-approvals',
-          audiences: ['providerAdmin']
-        },
-        {
           id: 'timesheet-projects',
           labelKey: 'features.timesheets.admin.projects',
           icon: 'i-lucide-folder-kanban',
@@ -118,10 +111,10 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
           audiences: ['providerAdmin']
         },
         {
-          id: 'timesheet-rates',
-          labelKey: 'features.timesheets.admin.teamRates',
-          icon: 'i-lucide-badge-euro',
-          to: '/admin/timesheets/rates',
+          id: 'timesheet-reports',
+          labelKey: 'features.timesheets.admin.reports',
+          icon: 'i-lucide-chart-no-axes-combined',
+          to: '/admin/timesheets/reports',
           audiences: ['providerAdmin']
         },
         {
@@ -129,13 +122,6 @@ export const timesheetsFeature: PortalFeatureDefinition<TimesheetAction> = {
           labelKey: 'features.timesheets.admin.workspaceSettings',
           icon: 'i-lucide-settings-2',
           to: '/admin/timesheets/settings',
-          audiences: ['providerAdmin']
-        },
-        {
-          id: 'timesheet-reports',
-          labelKey: 'features.timesheets.admin.reports',
-          icon: 'i-lucide-chart-no-axes-combined',
-          to: '/admin/timesheets/reports',
           audiences: ['providerAdmin']
         }
       ]

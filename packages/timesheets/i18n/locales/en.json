@@ -273,6 +273,7 @@
         "clients": "Clients",
         "projects": "Projects",
         "activities": "Activities",
+        "teamMembers": "Team members",
         "teamRates": "Team rates",
         "sectionSubtitles": {
           "approvals": "Review submitted timesheets that are waiting for approval.",
@@ -346,6 +347,7 @@
         "moneyBudget": "Money budget",
         "projectRates": "Project-specific rates",
         "saveOverrides": "Save overrides",
+        "generalSettings": "General",
         "workspaceSettings": "Workspace settings",
         "clientSettings": "Timesheets client settings",
         "currency": "Currency",
@@ -578,16 +580,24 @@
       },
       "trackHours": "Track hours",
       "trackingClients": {
+        "edit": "Edit settings for {name}",
         "title": "Track hours",
         "help": "Active clients with Track hours enabled. Removing a client here turns tracking off; recorded hours and approval history are kept.",
         "add": "Add client",
         "select": "Choose an active client",
         "enable": "Enable tracking",
         "required": "Choose an active client without hour tracking.",
-        "empty": "No clients selected.",
+        "empty": "No active clients.",
         "remove": "Turn off hour tracking for {name}",
         "error": "Unable to change hour tracking",
-        "loadError": "Unable to load clients"
+        "loadError": "Unable to load clients",
+        "search": "Search clients",
+        "name": "Name",
+        "noResults": "No matching clients.",
+        "all": "All clients",
+        "on": "Tracking on",
+        "off": "Tracking off",
+        "toggle": "Track hours for {name}"
       }
     }
   }

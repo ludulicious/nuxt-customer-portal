@@ -256,6 +256,7 @@ export interface TimesheetBootstrapDto {
 }
 
 export interface TimesheetCapabilitiesDto {
+  internalApprovalsEnabled: boolean
   canEnterTime: boolean
   canApproveInternalTimesheets: boolean
   hasInternalApprovalAssignments: boolean

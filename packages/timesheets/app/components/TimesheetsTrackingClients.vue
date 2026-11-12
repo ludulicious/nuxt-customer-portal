@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { z } from 'zod'
+import type { GenericClientDto } from '@nuxt-customer-portal/clients/types'
 
-const emit = defineEmits<{ changed: [] }>()
 const { t } = useI18n()
 const prefix = 'features.timesheets.trackingClients.'
 const api = useClients()
@@ -10,7 +9,7 @@ const { activeOrganizationType, activeOrganizationRole } = usePortalSession()
 const canManage = computed(
   () => activeOrganizationType.value === 'PROVIDER' && ['owner', 'admin'].includes(activeOrganizationRole.value ?? '')
 )
-type TrackingClient = { id: string; name: string; enabled: boolean }
+type TrackingClient = GenericClientDto & { enabled: boolean }
 const { data, pending, error, refresh } = await useAsyncData('timesheets-tracking-clients', async () => {
   const clients = new Map<string, TrackingClient>()
   let page = 1
@@ -19,8 +18,7 @@ const { data, pending, error, refresh } = await useAsyncData('timesheets-trackin
     for (const client of result.items) {
       if (!client.archivedAt) {
         clients.set(client.id, {
-          id: client.id,
-          name: client.name,
+          ...client,
           enabled: client.modules.some((module) => module.moduleId === 'timesheets' && module.enabled)
         })
       }
@@ -33,21 +31,37 @@ const { data, pending, error, refresh } = await useAsyncData('timesheets-trackin
   return [...clients.values()].sort((a, b) => a.name.localeCompare(b.name))
 })
 const tracked = computed(() => data.value?.filter((client) => client.enabled) ?? [])
-const available = computed(
-  () =>
-    data.value?.filter((client) => !client.enabled).map((client) => ({ label: client.name, value: client.id })) ?? []
+const route = useRoute()
+const router = useRouter()
+const selectedClientId = computed({
+  get: () => tracked.value.find((client) => client.id === route.query.client)?.id ?? '',
+  set: (clientId: string) => {
+    void router.replace({ query: { ...route.query, client: clientId || undefined } })
+  }
+})
+const search = computed({
+  get: () => String(route.query.search ?? ''),
+  set: (value: string) => {
+    void router.replace({ query: { ...route.query, search: value || undefined } })
+  }
+})
+const sortDir = computed(() => (route.query.direction === 'desc' ? 'desc' : 'asc'))
+const trackingFilter = computed(() =>
+  ['on', 'off'].includes(String(route.query.tracking)) ? String(route.query.tracking) : undefined
 )
-const adding = ref(false)
+const visibleClients = computed(() =>
+  (data.value ?? [])
+    .filter((client) => !trackingFilter.value || client.enabled === (trackingFilter.value === 'on'))
+    .filter((client) => client.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name) * (sortDir.value === 'asc' ? 1 : -1))
+)
+const toggleClient = (id: string) => {
+  selectedClientId.value = selectedClientId.value === id ? '' : id
+}
+onKeyStroke('Escape', () => {
+  selectedClientId.value = ''
+})
 const busyId = ref<string | null>(null)
-const state = reactive({ clientId: '' })
-const schema = computed(() =>
-  z.object({
-    clientId: z
-      .string()
-      .min(1, t(prefix + 'required'))
-      .refine((id) => available.value.some((client) => client.value === id), t(prefix + 'required'))
-  })
-)
 const update = async (id: string, enabled: boolean) => {
   if (!canManage.value || busyId.value) {
     return
@@ -55,12 +69,11 @@ const update = async (id: string, enabled: boolean) => {
   busyId.value = id
   try {
     await api.setModule(id, 'timesheets', enabled)
-    if (enabled) {
-      adding.value = false
-      state.clientId = ''
+    if (!enabled && selectedClientId.value === id) {
+      selectedClientId.value = ''
     }
     await refresh()
-    emit('changed')
+    clearNuxtData((key) => key.startsWith('client-review-periods:'))
     clearNuxtData('timesheet-week')
     clearNuxtData('timesheets-dashboard')
   } catch {
@@ -69,28 +82,10 @@ const update = async (id: string, enabled: boolean) => {
     busyId.value = null
   }
 }
-const add = () => update(state.clientId, true)
-const cancel = () => {
-  adding.value = false
-  state.clientId = ''
-}
 </script>
 
 <template>
-  <section class="space-y-3 border-t border-default pt-4" :aria-label="t(prefix + 'title')">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <h3 class="text-sm font-semibold">{{ t(prefix + 'title') }}</h3>
-      <UButton
-        v-if="canManage && !adding"
-        icon="i-lucide-plus"
-        color="neutral"
-        variant="outline"
-        size="sm"
-        :disabled="pending || Boolean(error) || !available.length || Boolean(busyId)"
-        @click="adding = true"
-        >{{ t(prefix + 'add') }}</UButton
-      >
-    </div>
+  <section class="space-y-4" :aria-label="t(prefix + 'title')">
     <USkeleton v-if="pending && !data" class="h-8 w-48" />
     <UAlert v-else-if="error" color="error" :title="t(prefix + 'loadError')">
       <template #actions
@@ -100,60 +95,79 @@ const cancel = () => {
       >
     </UAlert>
     <template v-else>
-      <div v-if="tracked.length" class="flex flex-wrap gap-2" role="list" :aria-label="t(prefix + 'title')">
-        <UBadge
-          v-for="client in tracked"
-          :key="client.id"
-          color="neutral"
-          variant="soft"
-          size="lg"
-          role="listitem"
-          class="max-w-full gap-1"
-        >
-          <span class="min-w-0 break-words whitespace-normal">{{ client.name }}</span>
-          <UButton
-            v-if="canManage"
-            icon="i-lucide-x"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            class="shrink-0 p-0.5"
-            :aria-label="t(prefix + 'remove', { name: client.name })"
-            :title="t(prefix + 'remove', { name: client.name })"
-            :disabled="Boolean(busyId)"
-            :loading="busyId === client.id"
-            @click="update(client.id, false)"
-          />
-        </UBadge>
-      </div>
-      <p v-else class="text-sm text-muted">{{ t(prefix + 'empty') }}</p>
-      <UForm
-        v-if="canManage && adding"
-        novalidate
-        :schema="schema"
-        :state="state"
-        class="space-y-3 rounded-md border border-default p-3"
-        @submit="add"
-      >
-        <UFormField name="clientId" :label="t(prefix + 'select')" required>
-          <USelectMenu
-            v-model="state.clientId"
-            :items="available"
-            value-key="value"
-            :placeholder="t(prefix + 'select')"
-            class="w-full"
-            :disabled="Boolean(busyId)"
-          />
-        </UFormField>
-        <div class="flex flex-wrap justify-end gap-2">
-          <UButton color="neutral" variant="outline" :disabled="Boolean(busyId)" @click="cancel">{{
-            t('features.timesheets.reviewPeriods.cancel')
-          }}</UButton>
-          <UButton type="submit" :disabled="!state.clientId" :loading="Boolean(busyId)">{{
-            t(prefix + 'enable')
-          }}</UButton>
+      <PortalListToolbar
+        v-if="data?.length"
+        v-model:search="search"
+        :search-placeholder="t(prefix + 'search')"
+        :filters="[
+          {
+            key: 'tracking',
+            placeholder: t(prefix + 'all'),
+            items: [
+              { label: t(prefix + 'all'), value: undefined },
+              { label: t(prefix + 'on'), value: 'on' },
+              { label: t(prefix + 'off'), value: 'off' }
+            ]
+          }
+        ]"
+        :filter-values="{ tracking: trackingFilter }"
+        :sort-options="[{ label: t(prefix + 'name'), value: 'name' }]"
+        sort-by="name"
+        :sort-dir="sortDir"
+        @filter="
+          (_key: string, value: string | undefined) => router.replace({ query: { ...route.query, tracking: value } })
+        "
+        @toggle-direction="
+          router.replace({ query: { ...route.query, direction: sortDir === 'asc' ? 'desc' : undefined } })
+        "
+      />
+      <UEmpty v-if="!data?.length" icon="i-lucide-building-2" :title="t(prefix + 'empty')" variant="outline" />
+      <p v-else-if="!visibleClients.length" class="text-sm text-muted">{{ t(prefix + 'noResults') }}</p>
+      <div class="grid gap-3">
+        <div v-for="client in visibleClients" :key="client.id" class="space-y-3">
+          <UCard :class="selectedClientId === client.id ? 'ring-primary' : 'hover:ring-primary/50'">
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-3 text-left rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-expanded="selectedClientId === client.id"
+                :disabled="!client.enabled"
+                @click="toggleClient(client.id)"
+              >
+                <UAvatar :src="client.avatarLogo || client.logo || undefined" :alt="client.name" size="md" />
+                <span class="truncate font-semibold">{{ client.name }}</span>
+              </button>
+              <UButton
+                v-if="client.enabled"
+                icon="i-lucide-pencil"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                :aria-label="t(prefix + 'edit', { name: client.name })"
+                @click="toggleClient(client.id)"
+              />
+              <USwitch
+                v-if="canManage"
+                :model-value="client.enabled"
+                :label="t(prefix + 'title')"
+                :disabled="Boolean(busyId)"
+                :aria-label="t(prefix + 'toggle', { name: client.name })"
+                @update:model-value="update(client.id, $event)"
+              />
+            </div>
+          </UCard>
+          <Suspense :timeout="-1">
+            <TimesheetsClientSettingsPanel
+              v-if="selectedClientId === client.id"
+              :key="client.id"
+              :client="client"
+              show-client
+              @close="selectedClientId = ''"
+            />
+            <template #fallback><USkeleton class="h-64 w-full" /></template>
+          </Suspense>
         </div>
-      </UForm>
+      </div>
     </template>
   </section>
 </template>

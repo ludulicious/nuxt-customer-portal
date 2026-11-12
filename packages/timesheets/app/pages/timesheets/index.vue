@@ -1294,7 +1294,7 @@ const runningDuration = computed(() => {
             variant="outline"
           >
             <template v-if="isOrganizationAdmin" #actions>
-              <UButton to="/admin/timesheets/rates" size="sm" color="warning">
+              <UButton to="/admin/timesheets/settings/team-members" size="sm" color="warning">
                 {{ t('features.timesheets.errors.configureRates') }}
               </UButton>
             </template>
@@ -1431,7 +1431,7 @@ const runningDuration = computed(() => {
             :description="t('features.timesheets.errors.internalApproverRequired')"
           >
             <template v-if="isOrganizationAdmin" #actions>
-              <UButton to="/admin/timesheets/internal-approvals" color="warning" variant="outline" size="sm">
+              <UButton to="/admin/timesheets/settings/internal-approvals" color="warning" variant="outline" size="sm">
                 {{ t('features.timesheets.errors.configureApprovers') }}
               </UButton>
             </template>
@@ -1490,7 +1490,7 @@ const runningDuration = computed(() => {
             variant="outline"
           >
             <template v-if="isOrganizationAdmin" #actions>
-              <UButton to="/admin/timesheets/rates" size="sm" color="warning">
+              <UButton to="/admin/timesheets/settings/team-members" size="sm" color="warning">
                 {{ t('features.timesheets.errors.configureRates') }}
               </UButton>
             </template>

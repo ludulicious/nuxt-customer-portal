@@ -513,7 +513,6 @@ if (linkedRequest) {
       </div>
     </UCard>
     <UPagination v-if="filtered.length > 10" v-model:page="page" :total="filtered.length" :items-per-page="10" />
-    <TimesheetsTrackingClients v-if="!clientSide" @changed="refreshPeriods()" />
     <UModal
       v-if="open"
       v-model:open="open"
