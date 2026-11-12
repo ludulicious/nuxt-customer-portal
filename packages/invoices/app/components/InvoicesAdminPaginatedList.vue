@@ -9,6 +9,7 @@ const props = defineProps<{
   hasNext: boolean
   hasPrevious: boolean
   initialScrollTop?: number
+  totalRecordsKey?: string
 }>()
 const emit = defineEmits<{ next: []; previous: []; page: [page: number]; scroll: [scrollTop: number] }>()
 const scrollContainer = ref<HTMLElement | null>(null)
@@ -75,7 +76,7 @@ onMounted(async () => {
     <footer
       class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-t border-default px-1 pt-3 text-sm text-muted"
     >
-      <span>{{ $t('features.invoices.admin.list.totalRecords', pagination.total) }}</span>
+      <span>{{ $t(totalRecordsKey ?? 'features.invoices.admin.list.totalRecords', pagination.total) }}</span>
       <UPagination
         v-if="pagination.pageCount > 1"
         :page="pagination.page"

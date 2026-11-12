@@ -1,6 +1,7 @@
 import { boolean, date, index, integer, jsonb, pgSchema, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { organization, user } from '@nuxt-customer-portal/core/schema'
+import type { RecurringInvoiceInput } from '../../../shared/recurring-invoice'
 
 export const invoicesSchema = pgSchema('invoices')
 export const invoiceStatus = invoicesSchema.enum('invoice_status', ['DRAFT', 'ISSUED', 'PAID', 'VOID'])
@@ -101,6 +102,31 @@ export const invoiceClientViewer = invoicesSchema.table(
   ]
 )
 
+export const recurringInvoice = invoicesSchema.table(
+  'recurring_invoice',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    createdById: text('created_by_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+    name: text('name').notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    template: jsonb('template').$type<RecurringInvoiceInput>().notNull(),
+    nextDate: date('next_date', { mode: 'string' }),
+    lastGeneratedDate: date('last_generated_date', { mode: 'string' }),
+    lastAttemptAt: timestamp('last_attempt_at', { mode: 'date' }),
+    lastError: text('last_error'),
+    ...audit
+  },
+  (table) => [
+    index('recurring_invoice_org_idx').on(table.organizationId),
+    index('recurring_invoice_due_idx').on(table.enabled, table.nextDate)
+  ]
+)
+
 export const invoice = invoicesSchema.table(
   'invoice',
   {
@@ -112,6 +138,8 @@ export const invoice = invoicesSchema.table(
     number: text('number').notNull(),
     documentType: text('document_type').default('invoice').notNull(),
     originalInvoiceId: text('original_invoice_id'),
+    recurringInvoiceId: text('recurring_invoice_id').references(() => recurringInvoice.id, { onDelete: 'restrict' }),
+    scheduledDate: date('scheduled_date', { mode: 'string' }),
     externalReference: text('external_reference'),
     importMetadata: jsonb('import_metadata').$type<Record<string, unknown>>(),
     agreedTotalMinor: integer('agreed_total_minor'),
@@ -144,6 +172,7 @@ export const invoice = invoicesSchema.table(
   },
   (table) => [
     uniqueIndex('invoice_org_number_uidx').on(table.organizationId, table.number),
+    uniqueIndex('invoice_recurring_date_uidx').on(table.recurringInvoiceId, table.scheduledDate),
     index('invoice_org_status_idx').on(table.organizationId, table.status),
     index('invoice_client_idx').on(table.clientOrganizationId)
   ]

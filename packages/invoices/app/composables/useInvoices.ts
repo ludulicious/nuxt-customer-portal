@@ -10,6 +10,10 @@ import type {
   InvoiceEmailStatusRefreshDto,
   InvoiceSettingsDto
 } from '@nuxt-customer-portal/invoices/shared/types/invoice'
+import type {
+  RecurringInvoiceInput,
+  RecurringInvoiceDto
+} from '@nuxt-customer-portal/invoices/shared/recurring-invoice'
 
 export interface InvoicesAdminBootstrap {
   settings: InvoiceSettingsDto
@@ -18,6 +22,11 @@ export interface InvoicesAdminBootstrap {
 }
 
 export const useInvoices = () => ({
+  saveRecurringInvoice: (input: RecurringInvoiceInput, id?: string) =>
+    $fetch<RecurringInvoiceDto, string>(id ? `/api/invoices/admin/recurring/${id}` : '/api/invoices/admin/recurring', {
+      method: id ? 'PUT' : 'POST',
+      body: input
+    }),
   clientAccessOverview: (clientId: string) =>
     $fetch<InvoiceClientAccessOverviewDto, string>(`/api/invoices/admin/clients/${clientId}/access`),
   adminBootstrap: () => $fetch<InvoicesAdminBootstrap, string>('/api/invoices/admin/bootstrap'),
