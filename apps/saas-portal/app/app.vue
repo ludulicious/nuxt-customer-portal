@@ -59,7 +59,13 @@ useHead(() => ({
   link: [
     {
       rel: 'icon',
-      href: colorMode.value === 'dark' ? compactIcons.value.dark : compactIcons.value.light
+      href: compactIcons.value.light,
+      media: '(prefers-color-scheme: light)'
+    },
+    {
+      rel: 'icon',
+      href: compactIcons.value.dark,
+      media: '(prefers-color-scheme: dark)'
     },
     { rel: 'apple-touch-icon', href: compactIcons.value.touch }
   ]
