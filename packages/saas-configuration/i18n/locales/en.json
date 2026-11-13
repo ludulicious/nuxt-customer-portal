@@ -174,7 +174,8 @@
         "primaryAction": "View details",
         "secondaryAccent": "Secondary accent"
       },
-      "websiteOriginsDescription": "Allow these websites to display the signed-in account and sign out using this portal. Only add websites you control and trust. Enter each full HTTPS address without a path and press Enter. Leave empty to disable."
+      "websiteOriginsDescription": "Allow these websites to display the signed-in account and sign out using this portal. Only add websites you control and trust. Enter each full HTTPS address without a path and press Enter. Leave empty to disable.",
+      "demoReadOnly": "Demo settings are read-only. Personal settings previews are planned for a later version."
     }
   }
 }

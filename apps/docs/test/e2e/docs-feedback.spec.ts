@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { documentationDefaults } from '../../shared/documentation'
 
-test('offers actionable, source-pinned documentation feedback', async ({ page }) => {
+test('offers actionable, source-linked documentation feedback', async ({ page }) => {
   await page.goto('/architecture/layers', { waitUntil: 'networkidle' })
 
   await expect(page.getByRole('heading', { name: 'Help improve this page' })).toBeVisible()
@@ -50,16 +50,16 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   await expect(page.getByRole('heading', { level: 1, name: 'Create a feature layer' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Define the feature' })).toBeVisible()
   await expect(page.getByText('PortalFeatureDefinition<NoteAction>', { exact: false }).first()).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Distribute a feature layer' }).last()).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Share and maintain a module' }).last()).toHaveAttribute(
     'href',
     '/contributing/distribute-a-layer'
   )
 
   await page.goto('/contributing/distribute-a-layer')
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Distribute a feature layer' })).toBeVisible()
-  await expect(page.getByText("Official layers use Nuxt's npm-layer model", { exact: false })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Package contract' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Share and maintain a module' })).toBeVisible()
+  await expect(page.getByText('Official modules are source code', { exact: false })).toBeVisible()
+  await expect(page.getByText('There is no official npm distribution path.', { exact: false })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Edit this page' })).toHaveAttribute(
     'href',
     `${documentationDefaults.docsRepositoryUrl}/edit/${documentationDefaults.docsRepositoryBranch}/apps/docs/content/7.contributing/3.distribute-a-layer.md`
@@ -69,7 +69,7 @@ test('feature-layer contributor journey reaches an honest distribution contract'
   expect(accessibility.violations).toEqual([])
 })
 
-test('product source map connects contributor terms to immutable implementations', async ({ page }) => {
+test('product source map connects contributor terms to repository implementations', async ({ page }) => {
   await page.goto('/reference/source-map')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Product source map' })).toBeVisible()
@@ -100,11 +100,11 @@ test('product source map connects contributor terms to immutable implementations
   expect(accessibility.violations).toEqual([])
 })
 
-test('platform catalog explains ownership and the pinned API surface', async ({ page }) => {
+test('platform catalog explains ownership and the documented API surface', async ({ page }) => {
   await page.goto('/modules/platform-layers')
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Platform layers' })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Decide where a change belongs' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Platform modules' })).toBeVisible()
+  await expect(page.getByText('The main application', { exact: false }).first()).toBeVisible()
   for (const layer of [
     'core',
     'ui',
@@ -112,9 +112,7 @@ test('platform catalog explains ownership and the pinned API surface', async ({ 
     'organizations',
     'clients',
     'administration',
-    'saas-configuration',
-    'preset',
-    'kit'
+    'saas-configuration'
   ]) {
     await expect(page.getByText(layer, { exact: true }).first()).toBeVisible()
   }

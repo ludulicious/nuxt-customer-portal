@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import assert from 'node:assert/strict'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
@@ -5,14 +6,18 @@ import test from 'node:test'
 import { upsertPortalFeature } from '../shared/feature-registry'
 import type { PortalFeatureDefinition } from '../shared/types/feature'
 
-const root = new URL('../../..', import.meta.url).pathname
+const root = fileURLToPath(new URL('../../..', import.meta.url))
 
 const walk = async (directory: string): Promise<string[]> =>
   (
     await Promise.all(
-      (await readdir(directory, { withFileTypes: true })).map((entry) =>
-        entry.isDirectory() ? walk(join(directory, entry.name)) : [join(directory, entry.name)]
-      )
+      (await readdir(directory, { withFileTypes: true }))
+        .filter((entry) => !['node_modules', '.nuxt', '.output'].includes(entry.name))
+        .map((entry) =>
+          entry.isDirectory()
+            ? walk(join(directory, entry.name).replaceAll('\\', '/'))
+            : [join(directory, entry.name).replaceAll('\\', '/')]
+        )
     )
   ).flat()
 
@@ -35,8 +40,7 @@ test('every translated layer has matching English and Dutch key trees', async ()
     'packages/organizations',
     'packages/administration',
     'packages/service-requests',
-    'packages/timesheets',
-    'apps/demo-apex/layers/public-site'
+    'packages/timesheets'
   ]
   const keys = (value: unknown, prefix = ''): string[] =>
     value && typeof value === 'object'
@@ -69,8 +73,8 @@ test('packages use public package exports rather than host or filesystem contrac
       if (relative(join(root, 'packages'), target).startsWith('..')) {
         violations.push(relative(root, file))
       }
-      const sourcePackage = relative(join(root, 'packages'), file).split('/')[0]
-      const targetPackage = relative(join(root, 'packages'), target).split('/')[0]
+      const sourcePackage = relative(join(root, 'packages'), file).replaceAll('\\', '/').split('/')[0]
+      const targetPackage = relative(join(root, 'packages'), target).replaceAll('\\', '/').split('/')[0]
       if (sourcePackage !== targetPackage && !targetPackage.startsWith('..')) {
         violations.push(relative(root, file))
       }
@@ -80,7 +84,7 @@ test('packages use public package exports rather than host or filesystem contrac
 })
 
 test('platform packages do not import optional business features', async () => {
-  const platformPackages = ['core', 'ui', 'authentication', 'organizations', 'administration', 'preset']
+  const platformPackages = ['core', 'ui', 'authentication', 'organizations', 'administration']
   const violations: string[] = []
   for (const packageName of platformPackages) {
     const files = (await walk(join(root, 'packages', packageName))).filter((file) => /\.(?:ts|vue)$/.test(file))

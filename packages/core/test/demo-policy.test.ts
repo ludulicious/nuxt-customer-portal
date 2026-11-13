@@ -27,6 +27,8 @@ test('demo denies account and access mutations through every API family', () => 
     '/api/organizations/accept-invitation',
     '/api/invoices/admin/invoices/x/email',
     '/api/admin/email/test',
+    '/api/admin/portal-settings',
+    '/api/admin/portal-settings/complete',
     '/api/unknown-new-feature'
   ]) {
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {

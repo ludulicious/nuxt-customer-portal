@@ -8,7 +8,7 @@ Add `@nuxt-customer-portal/planning` as a dependency and to `portal.config.ts` a
 
 ```ts
 layers: [
-  '@nuxt-customer-portal/preset',
+  '@nuxt-customer-portal/core',
   '@nuxt-customer-portal/products',
   '@nuxt-customer-portal/invoice-products',
   '@nuxt-customer-portal/planning'

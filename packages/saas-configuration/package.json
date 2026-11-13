@@ -1,6 +1,5 @@
 {
   "name": "@nuxt-customer-portal/saas-configuration",
-  "version": "0.12.1",
   "type": "module",
   "main": "./nuxt.config.ts",
   "exports": {
@@ -35,19 +34,5 @@
     "type": "git",
     "url": "git+https://github.com/ludulicious/nuxt-customer-portal.git"
   },
-  "files": [
-    "LICENSE",
-    "CHANGELOG.md",
-    "README.md",
-    "app",
-    "server",
-    "shared",
-    "i18n",
-    "migrations",
-    "nuxt.config.ts",
-    "portal.manifest.mjs"
-  ],
-  "publishConfig": {
-    "access": "public"
-  }
+  "private": true
 }

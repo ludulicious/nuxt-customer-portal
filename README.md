@@ -2,87 +2,65 @@
 
 **A customer portal you can make your own.**
 
-Start with client access, timesheets, approvals, and invoicing. Extend it with modules built around your business. Nuxt Customer Portal is open source under the MIT License, built with Nuxt, and used by our small software agency for timesheets and invoicing.
+Nuxt Customer Portal is the application for client access, timesheets, approvals, invoicing, products and appointments. It is open source under the MIT License and built with Nuxt. The main application is in [apps/saas-portal](apps/saas-portal); separate modules live in [packages](packages).
 
-[Documentation](https://nuxt-customer-portal.com) · [Try the demo](https://demo.nuxt-customer-portal.com) · [Installation](https://nuxt-customer-portal.com/getting-started/installation) · [Build a module](https://nuxt-customer-portal.com/contributing/create-a-layer)
+[Documentation](https://nuxt-customer-portal.com) ? [Try the demo](https://demo.nuxt-customer-portal.com) ? [Build a module](https://nuxt-customer-portal.com/contributing/create-a-layer)
 
-## Create your portal
+## Install from source
 
-```bash
-npx @nuxt-customer-portal/kit@latest init my-portal
+Use Node.js 22.19 or newer on a supported LTS release, pnpm 10.30.2, and PostgreSQL 16. pnpm is the only supported package manager. Fork the project to use another package manager.
+
+```sh
+git clone https://github.com/ludulicious/nuxt-customer-portal.git
+cd nuxt-customer-portal
+corepack enable
+pnpm install --frozen-lockfile
+cp apps/saas-portal/.env.example apps/saas-portal/.env
 ```
 
-The wizard creates the configurable application, generates secrets, installs
-packages, prepares a new database, and creates your administrator. Then start the
-app and finish branding and module setup in your browser. The command requires
-matching published packages; see [Installation](https://nuxt-customer-portal.com/getting-started/installation)
-for prerequisites and the source-checkout option before publication.
+Configure the database URL, unique secrets, provider name/slug, and reserved administrator email in that file. [Installation](https://nuxt-customer-portal.com/getting-started/installation) covers PostgreSQL and secret generation.
 
-## Start with a working workflow
+```sh
+pnpm db:doctor
+pnpm db:migrate
+pnpm portal provider bootstrap --organization-name "My Portal" --organization-slug my-portal
+pnpm dev
+```
 
-- **Your team** records time against client projects, submits weeks, and reviews approvals.
-- **Your clients** sign in to their own organization to view shared time, approve or dispute it when assigned as reviewers, and access issued invoices when enabled.
-- **Your agency** creates free-form invoices or invoices approved billable time, sends PDFs, and records payments.
+Open http://localhost:3052/signup, register the reserved administrator email, verify it using your configured email provider, and complete onboarding. For a verified initial administrator before email delivery is available, use the documented provider seed/admin commands in [manual setup](https://nuxt-customer-portal.com/getting-started/manual-installation).
 
-Client access is configurable: creating a client record does not automatically expose all its time or invoices. See [client access](https://nuxt-customer-portal.com/guides/client-access) and the [first workflow](https://nuxt-customer-portal.com/getting-started/first-workflow).
+## Install with Docker
 
-Timesheets and Invoices work independently. The optional Invoice Timesheets bridge connects approved time to invoice creation.
+Use the published image with PostgreSQL. Set a verified release tag or immutable digest in PORTAL_IMAGE; copy [.env.example](.env.example) to .env and replace the placeholders.
 
-## Extend it around your business
+```sh
+docker compose up -d
+```
 
-The portal provides authentication, organizations, client management, permissions, and a shared UI. A module adds its own pages, API, translations, and database schema, and registers its navigation, dashboard widgets, and policies with the portal.
+The image checks configuration and applies pending migrations before starting. Database and file volumes persist across container restarts. See [deployment](https://nuxt-customer-portal.com/getting-started/deployment) for HTTPS, backups, upgrades, and email configuration.
 
-Keep a module in your application or distribute it as a Nuxt layer. Your host owns branding and presentation. You can build on the existing workflows without putting your business logic into portal core.
+## Work with the code
 
-- [Understand the architecture](https://nuxt-customer-portal.com/architecture/overview)
-- [Create a feature layer](https://nuxt-customer-portal.com/contributing/create-a-layer)
-- [Distribute a feature layer](https://nuxt-customer-portal.com/contributing/distribute-a-layer)
+- [apps/saas-portal](apps/saas-portal): host configuration, branding and integrated demo layer.
+- [packages](packages): core, shared UI, authentication, organizations, administration, clients and business modules.
+- [scripts/portal.mjs](scripts/portal.mjs): migrations, diagnostics, provider/admin operations and Harvest import.
+- [apps/docs](apps/docs): documentation website.
 
-Service Requests is an optional example extension for developers. It demonstrates a smaller module and is not required for the timesheet and invoicing setup.
+Modules are private pnpm workspace dependencies. They are developed and released with this application. See [architecture](https://nuxt-customer-portal.com/architecture/overview), [customization](https://nuxt-customer-portal.com/getting-started/customization), and [contributing](CONTRIBUTING.md).
 
-## Choose how to start
-
-| Goal                               | Start here                                                                                                                 |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Explore the interface              | [Public demo](https://demo.nuxt-customer-portal.com)                                                                       |
-| Evaluate with help setting up      | [Request a hosted evaluation at PortalNuxt](https://portalnuxt.com)                                                        |
-| Build your own portal              | [Install the packages in a Nuxt application](https://nuxt-customer-portal.com/getting-started/installation)                |
-| Configure the included application | [`apps/saas-portal`](apps/saas-portal) and [customization](https://nuxt-customer-portal.com/getting-started/customization) |
-| Work on the project itself         | [Contributing](CONTRIBUTING.md)                                                                                            |
-
-Keep all official packages on the same version. Read the [compatibility and release guidance](https://nuxt-customer-portal.com/reference/compatibility-and-releases) before adopting or upgrading.
-
-## Packages
-
-| Package                                    | Purpose                                                                          |
-| ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `@nuxt-customer-portal/core`               | Headless auth/session, tenancy, authorization, registry, database, and contracts |
-| `@nuxt-customer-portal/ui`                 | Neutral fallback layouts, dashboard, navigation, modals, and notifications       |
-| `@nuxt-customer-portal/authentication`     | Authentication routes and forms                                                  |
-| `@nuxt-customer-portal/organizations`      | Profile, organizations, membership, and invitations                              |
-| `@nuxt-customer-portal/clients`            | Shared client profiles, memberships, and module activation                       |
-| `@nuxt-customer-portal/service-requests`   | Optional example extension for module developers                                 |
-| `@nuxt-customer-portal/timesheets`         | Optional time, approval, and reporting feature                                   |
-| `@nuxt-customer-portal/invoices`           | Standalone invoicing, delivery, payment, and client-access feature               |
-| `@nuxt-customer-portal/invoice-timesheets` | Optional bridge for invoicing approved Timesheets entries                        |
-| `@nuxt-customer-portal/preset`             | Core, UI, authentication, provider organizations, and clients                    |
-| `@nuxt-customer-portal/kit`                | Portal configuration, diagnostics, and migration CLI                             |
-
-Development currently focuses on the repository source and the SaaS portal Docker image. Npm publication, package-distribution checks, and installer verification are paused. Existing packages and installer source remain available, but are not a release target. Publishing a GitHub release triggers source-code verification and portal Docker image publication; no package version bump or Changeset consumption is required for Docker-only releases. Prepare documentation on a branch and verify the Docker release before announcing it; see the [documentation release checklist](apps/docs/README.md#release-checklist).
-
-## Repository development
-
-```bash
-pnpm install --frozen-lockfile
+```sh
 pnpm test
 pnpm typecheck
 pnpm build
+pnpm dev:docs
 ```
 
-Run `pnpm dev:apex`, `pnpm dev:brutal`, `pnpm --filter @nuxt-customer-portal/saas-portal dev`, or `pnpm dev:docs`. Apex uses a conventional header/sidebar shell; Brutal uses an independent editorial command-bar/two-pane shell. The SaaS portal adds guided, organization-specific configuration for branding, appearance, modules, public content, support, and legal pages.
+## Demo
 
-The unchanged combined migration history is under `legacy/drizzle`. Use `db adopt-legacy` to verify and map a recognized installation before stamping package baselines.
+The public demo runs this same app/image on a separate deployment and database. Identity switching, fictional business data and daily resets are built in. Portal settings are read-only; personal settings previews are deferred. Demo mode is disabled by default. See [demo operations](apps/saas-portal/layers/demo/README.md).
 
-Copyright © 2026 Nuxt Customer Portal contributors. Distributed under the [MIT License](LICENSE).
+## Releases
 
-The example apps support an optional [anonymous shared demo](apps/demo-layer/README.md) with sample identities, six months of business history, and daily resets. Use a dedicated demo database and follow the deployment instructions before enabling it.
+One product version in package.json identifies the source release and Docker image. Release notes live in [CHANGELOG.md](CHANGELOG.md). Full source verification must pass before Docker publication. There is no npm distribution or installer.
+
+Copyright ? 2026 Nuxt Customer Portal contributors. Distributed under the [MIT License](LICENSE).

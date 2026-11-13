@@ -1,0 +1,38 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-portal}
+    volumes:
+      - portal-database:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U portal -d ${POSTGRES_DB:-portal}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  portal:
+    image: ${PORTAL_IMAGE:?Set PORTAL_IMAGE to a verified release tag or digest}
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://portal:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB:-portal}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3052}
+      BETTER_AUTH_URL: ${PUBLIC_URL:-http://localhost:3052}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      PORTAL_ENCRYPTION_KEY: ${PORTAL_ENCRYPTION_KEY:?Set PORTAL_ENCRYPTION_KEY}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:?Set ADMIN_EMAILS}
+      PORTAL_REGISTRATION_MODE: open
+      PORTAL_PROVIDER_NAME: ${PORTAL_PROVIDER_NAME:-Customer Portal}
+      PORTAL_PROVIDER_SLUG: ${PORTAL_PROVIDER_SLUG:-portal}
+      NUXT_PORTAL_DEMO_ENABLED: ${NUXT_PORTAL_DEMO_ENABLED:-false}
+      NUXT_PUBLIC_PORTAL_DEMO_ENABLED: ${NUXT_PUBLIC_PORTAL_DEMO_ENABLED:-false}
+    ports:
+      - '3052:3000'
+    volumes:
+      - portal-files:/app/apps/saas-portal/.data
+volumes:
+  portal-database:
+  portal-files:

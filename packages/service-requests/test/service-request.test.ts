@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import test from 'node:test'
-import rootEn from '../../../apps/demo-apex/i18n/locales/en.json' with { type: 'json' }
-import rootNl from '../../../apps/demo-apex/i18n/locales/nl.json' with { type: 'json' }
+import rootEn from '../../../apps/saas-portal/i18n/locales/en.json' with { type: 'json' }
+import rootNl from '../../../apps/saas-portal/i18n/locales/nl.json' with { type: 'json' }
 import layerEn from '../i18n/locales/en.json' with { type: 'json' }
 import layerNl from '../i18n/locales/nl.json' with { type: 'json' }
 import coreEn from '../../core/i18n/locales/en.json' with { type: 'json' }
@@ -31,7 +31,7 @@ test('all app translation references exist in both locales', () => {
     nl: new Set([...objectKeys(rootNl), ...objectKeys(coreNl), ...objectKeys(layerNl)])
   }
   const files = [
-    ...sourceFiles(new URL('../../../apps/demo-apex/app/', import.meta.url)),
+    ...sourceFiles(new URL('../../../apps/saas-portal/app/', import.meta.url)),
     ...sourceFiles(new URL('../app/', import.meta.url))
   ]
 

@@ -148,8 +148,8 @@ export * from './service-requests'
 Generate and run Drizzle migrations:
 
 ```bash
-npx drizzle-kit generate
-npx drizzle-kit migrate
+pnpm exec drizzle-kit generate
+pnpm exec drizzle-kit migrate
 ```
 
 Note: Drizzle will automatically detect the new service request schema when you generate migrations.

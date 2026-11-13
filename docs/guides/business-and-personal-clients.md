@@ -12,7 +12,7 @@ export default definePortalConfig({
     defaultModules: ['timesheets', 'invoices']
   },
   layers: [
-    '@nuxt-customer-portal/preset',
+    '@nuxt-customer-portal/core',
     '@nuxt-customer-portal/timesheets',
     '@nuxt-customer-portal/invoices',
     '@nuxt-customer-portal/invoice-timesheets'

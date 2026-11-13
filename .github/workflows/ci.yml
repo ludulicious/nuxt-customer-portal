@@ -39,7 +39,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:saas-boundary
-      - run: pnpm test:packages
+      - run: pnpm test:modules
+      - run: pnpm test:tooling
+      - run: pnpm test:demo
       - run: pnpm format:check
       - run: pnpm --filter @nuxt-customer-portal/saas-portal typecheck
       - if: steps.changes.outputs.docs == 'true'

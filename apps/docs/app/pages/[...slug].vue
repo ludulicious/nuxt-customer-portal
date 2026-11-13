@@ -58,7 +58,7 @@ const links = computed(() => {
       </template>
     </UPageHeader>
 
-    <UPageBody>
+    <UPageBody class="docs-article">
       <ContentRenderer v-if="page" :value="page" />
 
       <DocsFeedback :github-path="page.githubPath" :title="page.title" />

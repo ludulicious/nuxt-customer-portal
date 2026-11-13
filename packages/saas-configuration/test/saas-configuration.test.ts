@@ -124,7 +124,8 @@ test('release deployment publishes only the verified portal image without npm pu
   assert.match(workflow, /uses: \.\/\.github\/workflows\/release-portal-image\.yml/)
   assert.doesNotMatch(workflow, /^ {2}publish:/m)
   assert.doesNotMatch(workflow, /id-token:|npm publish|pnpm release-packages|registry-url:/)
-  assert.doesNotMatch(workflow, /Check release package versions|manifest\.version|expected release version/)
+  assert.match(workflow, /Validate product version/)
+  assert.match(workflow, /Release tag must match the root product version/)
 })
 
 test('release verification checks source code without npm distribution or installer jobs', async () => {
@@ -137,8 +138,8 @@ test('release verification checks source code without npm distribution or instal
   assert.match(workflow, /run: pnpm test\s/)
   assert.match(workflow, /pnpm format:check/)
   assert.match(workflow, /pnpm typecheck/)
-  assert.match(workflow, /--if-present build/)
-  assert.match(workflow, /pnpm test:e2e:demos/)
+  assert.match(workflow, /pnpm build/)
+  assert.match(workflow, /pnpm test:e2e/)
   assert.doesNotMatch(workflow, /pnpm test:e2e:docs|docs-image:/)
   assert.ok(workflow.includes('ref: ${{ needs.source.outputs.commit_sha }}'))
   assert.doesNotMatch(workflow, /^ {2}(?:consumers|starter):/m)

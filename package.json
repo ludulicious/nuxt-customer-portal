@@ -1,47 +1,44 @@
 {
-  "name": "nuxt-customer-portal-monorepo",
+  "name": "nuxt-customer-portal",
   "version": "0.12.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm -r --if-present build",
-    "dev:apex": "pnpm --filter @nuxt-customer-portal/demo-apex dev",
-    "dev:brutal": "pnpm --filter @nuxt-customer-portal/demo-brutal dev",
-    "dev:saas-portal": "pnpm --filter @nuxt-customer-portal/saas-portal dev",
+    "preinstall": "node scripts/require-pnpm.mjs",
+    "dev": "pnpm --filter @nuxt-customer-portal/saas-portal dev",
+    "dev:saas-portal": "pnpm dev",
     "dev:docs": "pnpm --filter @nuxt-customer-portal/docs dev",
+    "build": "pnpm --filter @nuxt-customer-portal/saas-portal build",
+    "build:docs": "pnpm --filter @nuxt-customer-portal/docs build",
+    "preview": "pnpm --filter @nuxt-customer-portal/saas-portal preview",
+    "portal": "node scripts/portal.mjs",
+    "db:doctor": "pnpm portal doctor",
+    "db:status": "pnpm portal db status",
+    "db:migrate": "pnpm portal db migrate",
     "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.dispute.created,charge.dispute.updated,charge.dispute.closed,charge.dispute.funds_withdrawn,charge.dispute.funds_reinstated --forward-to http://localhost:3052/api/store/webhooks/stripe",
     "format": "prettier --write . && eslint . --fix && prettier --write . && eslint .",
     "format:check": "prettier --check . && eslint .",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm test:packages && pnpm test:docs",
-    "test:demo": "node --import tsx --test packages/core/test/demo-policy.test.ts apps/demo-layer/test/reset.test.ts",
-    "test:packages": "node --import tsx --test packages/*/test/*.test.ts",
+    "test": "pnpm test:modules && pnpm test:tooling && pnpm test:demo && pnpm test:docs",
+    "test:modules": "node --import tsx --test packages/*/test/*.test.ts",
+    "test:tooling": "node --import tsx --test scripts/test/*.test.ts",
+    "test:demo": "node --import tsx --test packages/core/test/demo-policy.test.ts apps/saas-portal/layers/demo/test/reset.test.ts",
     "test:docs": "pnpm --filter @nuxt-customer-portal/docs test:docs",
     "test:e2e:docs": "pnpm --filter @nuxt-customer-portal/docs test:e2e",
-    "test:e2e:demos": "playwright test",
+    "test:e2e": "node --import tsx test/e2e/portal.setup.ts && playwright test",
     "verify:docs-links": "pnpm --filter @nuxt-customer-portal/docs verify:public-links",
     "verify:saas-boundary": "node --import tsx scripts/verify-saas-boundary.ts",
-    "pack:check": "node --import tsx scripts/verify-packages.ts",
-    "pack:consumers": "node --import tsx scripts/verify-packages.ts --consumers",
-    "pack:consumer:pnpm": "node --import tsx scripts/verify-packages.ts --consumers --manager=pnpm",
-    "pack:consumer:npm": "node --import tsx scripts/verify-packages.ts --consumers --manager=npm",
-    "pack:consumer:yarn": "node --import tsx scripts/verify-packages.ts --consumers --manager=yarn",
-    "pack:consumer:bun": "node --import tsx scripts/verify-packages.ts --consumers --manager=bun",
-    "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-package-versions.mjs",
-    "release-packages": "node scripts/publish-packages.mjs",
-    "test:starter": "node --import tsx --test packages/kit/test/starter.test.ts",
-    "pack:starter": "node --import tsx scripts/verify-packages.ts --starter --manager=pnpm"
+    "test:db": "node --import tsx scripts/test/migrations.integration.ts"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
     "@playwright/test": "^1.62.1",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "tsx": "^4.23.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@types/pg": "8.15.5"
   },
   "pnpm": {
     "overrides": {
@@ -49,5 +46,14 @@
       "sharp": "0.35.3"
     }
   },
-  "packageManager": "pnpm@10.30.2+sha512.36cdc707e7b7940a988c9c1ecf88d084f8514b5c3f085f53a2e244c2921d3b2545bc20dd4ebe1fc245feec463bb298aecea7a63ed1f7680b877dc6379d8d0cb4"
+  "packageManager": "pnpm@10.30.2+sha512.36cdc707e7b7940a988c9c1ecf88d084f8514b5c3f085f53a2e244c2921d3b2545bc20dd4ebe1fc245feec463bb298aecea7a63ed1f7680b877dc6379d8d0cb4",
+  "engines": {
+    "node": ">=22.19.0",
+    "pnpm": "10.30.2"
+  },
+  "dependencies": {
+    "better-auth": "1.6.25",
+    "jiti": "^2.6.1",
+    "pg": "^8.22.0"
+  }
 }

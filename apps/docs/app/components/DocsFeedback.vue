@@ -22,7 +22,7 @@ const { editPageUrl, reportPageUrl, sourceRevisionLabel, sourceRevisionUrl } = u
         documentation source.
       </p>
       <p class="mt-2 text-sm text-muted">
-        Verified against Customer Portal
+        Customer Portal source reference
         <a
           class="font-medium text-primary underline underline-offset-2"
           :href="sourceRevisionUrl"

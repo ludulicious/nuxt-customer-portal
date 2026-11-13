@@ -30,11 +30,15 @@ Documentation pull request or reason none is needed:
 
 ## Verification
 
-- [ ] `pnpm test:features`
-- [ ] `pnpm validate:feature-locales`
-- [ ] `pnpm lint`
+- [ ] `pnpm test:modules`
+- [ ] `pnpm test:tooling`
+- [ ] `pnpm test:demo`
+- [ ] `pnpm test:docs`
+- [ ] `pnpm format`
+- [ ] `pnpm format:check`
 - [ ] `pnpm typecheck`
 - [ ] `pnpm build`
+- [ ] `pnpm test:e2e` against disposable normal/demo databases
 - [ ] Relevant migrations, when present, were tested on an empty database and representative pre-change data.
 - [ ] A new or changed reusable layer was tested both absent from the host and in a clean Customer Portal checkout.
 

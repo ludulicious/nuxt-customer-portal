@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 env:
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci_test
   PUBLIC_URL: http://localhost:3000
   BETTER_AUTH_URL: http://localhost:3000
   BETTER_AUTH_SECRET: customer-portal-ci-secret-at-least-32-characters
@@ -58,7 +58,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: customer_portal_ci
+          POSTGRES_DB: customer_portal_ci_test
         ports:
           - 5432:5432
         options: >-
@@ -80,16 +80,22 @@ jobs:
       - run: pnpm test
       - run: pnpm format:check
       - run: pnpm typecheck
-      - run: pnpm --filter '!@nuxt-customer-portal/docs' -r --if-present build
-      - name: Migrate demo test database
-        working-directory: apps/demo-apex
-        run: node ../../packages/kit/bin/nuxt-customer-portal.mjs db migrate
+      - run: pnpm test:db
+        env:
+          PORTAL_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/customer_portal_ci_test
+      - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e:demos
-      - name: Upload failed demo browser results
+      - run: pnpm test:e2e
+        env:
+          E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/portal_release_e2e
+      - name: Verify daily demo reset
+        run: node --import tsx apps/saas-portal/layers/demo/test/database.integration.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/portal_release_e2e_demo
+      - name: Upload failed portal browser results
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: demo-browser-results
-          path: test-results/demo-shells
+          name: portal-browser-results
+          path: test-results/portal
           if-no-files-found: ignore

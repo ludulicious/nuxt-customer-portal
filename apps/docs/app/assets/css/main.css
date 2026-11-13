@@ -11,6 +11,10 @@
 
 @source "../../../content/**/*";
 
+.docs-article :where(p, li, a) {
+  overflow-wrap: anywhere;
+}
+
 @theme static {
   --container-8xl: 90rem;
   --font-sans: var(--font-body);

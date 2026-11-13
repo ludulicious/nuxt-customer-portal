@@ -7,22 +7,6 @@ export type DocumentationCatalogEntry = {
 }
 export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
-    path: '/getting-started/manual-installation',
-    title: 'Manual installation',
-    description:
-      'Create a Nuxt portal with client access, timesheets, approvals, and invoicing, then sign in as its owner.'
-  },
-  {
-    path: '/getting-started/first-workflow',
-    title: 'Your first portal workflow',
-    description: 'Set up a client, record and approve time, create an invoice, and check what your client can access.'
-  },
-  {
-    path: '/guides/client-access',
-    title: 'Give clients portal access',
-    description: 'Invite client members and control their access to shared timesheets, reviews, and issued invoices.'
-  },
-  {
     path: '/getting-started',
     title: 'Introduction',
     description:
@@ -31,8 +15,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
     path: '/getting-started/installation',
     title: 'Installation',
-    description:
-      'Run the interactive setup command to create your own configurable portal, database, and administrator account.'
+    description: 'Install the SaaS portal by cloning the repository or running its Docker image.'
   },
   {
     path: '/getting-started/usage',
@@ -43,7 +26,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     path: '/getting-started/deployment',
     title: 'Deployment',
     description:
-      'Build Customer Portal, apply migrations safely, configure its public origin, and verify a production release.'
+      'Deploy the source-built SaaS portal or verified Docker image with persistent data and matching origins.'
   },
   {
     path: '/getting-started/ai-access',
@@ -53,17 +36,27 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
     path: '/getting-started/customization',
     title: 'Customize and brand the portal',
-    description: 'Build a host-owned shell while reusing neutral portal primitives and feature contributions.'
+    description: 'Configure the main SaaS portal or edit its host and module code directly.'
+  },
+  {
+    path: '/getting-started/first-workflow',
+    title: 'Your first portal workflow',
+    description: 'Set up a client, record and approve time, create an invoice, and check what your client can access.'
+  },
+  {
+    path: '/getting-started/manual-installation',
+    title: 'Manual setup and administration',
+    description: 'Operate the source checkout and prepare an administrator without the removed installer.'
   },
   {
     path: '/architecture/overview',
     title: 'Architecture overview',
-    description: 'How the thin host, portal core, and feature layers combine into one Customer Portal application.'
+    description: 'How the SaaS portal host, private workspace modules and repository operations form one application.'
   },
   {
     path: '/architecture/layers',
     title: 'Nuxt layers',
-    description: 'Compose official npm layers and local providers through the package-ready portal configuration.'
+    description: 'Compose private workspace modules and local feature layers in the SaaS portal source.'
   },
   {
     path: '/architecture/core-contracts',
@@ -96,6 +89,16 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     description: 'Standalone sales and received invoices with PDF, email, payment, and access workflows.'
   },
   {
+    path: '/modules/service-requests',
+    title: 'Service Requests example',
+    description: 'A compact reference feature showing the complete Customer Portal layer lifecycle.'
+  },
+  {
+    path: '/modules/platform-layers',
+    title: 'Platform modules',
+    description: 'The private source modules that provide the portal foundation and configuration.'
+  },
+  {
     path: '/modules/products',
     title: 'Products and Store',
     description:
@@ -106,16 +109,6 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     title: 'Planning and Appointments',
     description:
       'Add provider availability, appointment booking, calendars, meetings, and retryable synchronization to service products.'
-  },
-  {
-    path: '/modules/service-requests',
-    title: 'Service Requests example',
-    description: 'A compact reference feature showing the complete Customer Portal layer lifecycle.'
-  },
-  {
-    path: '/modules/platform-layers',
-    title: 'Platform layers',
-    description: 'Understand the reusable foundation packages, their ownership boundaries, and host-owned presentation.'
   },
   {
     path: '/reference',
@@ -141,7 +134,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
     path: '/reference/compatibility-and-releases',
     title: 'Compatibility and releases',
-    description: 'Package compatibility, linked versioning, migrations, and MIT licensing.'
+    description: 'One product release covers the source checkout, private modules and verified Docker image.'
   },
   {
     path: '/reference/glossary',
@@ -152,7 +145,7 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   {
     path: '/reference/source-map',
     title: 'Product source map',
-    description: 'Open the Nuxt Customer Portal monorepo files behind packages, demos, migrations, and boundary checks.'
+    description: 'Find the application, private modules, operational scripts and integrated demo in the repository.'
   },
   {
     path: '/operations',
@@ -187,6 +180,16 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
     title: 'User guides',
     description:
       'Complete everyday Customer Portal tasks as a member, approver, client reviewer, or organization administrator.'
+  },
+  {
+    path: '/guides/client-access',
+    title: 'Give clients portal access',
+    description: 'Invite client members and control their access to shared timesheets, reviews, and issued invoices.'
+  },
+  {
+    path: '/guides/harvest-migration',
+    title: 'Migrate from Harvest',
+    description: 'Preview and import a Harvest account into your portal without duplicate records or invoice emails.'
   },
   {
     path: '/guides/account-and-organizations',
@@ -238,11 +241,6 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
       'Turn approved time into invoices, deliver PDFs and attachments, send reminders, and register payments.'
   },
   {
-    path: '/guides/harvest-migration',
-    title: 'Migrate from Harvest',
-    description: 'Preview and import a Harvest account into your portal without duplicate records or invoice emails.'
-  },
-  {
     path: '/contributing',
     title: 'Contributing',
     description:
@@ -256,9 +254,8 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   },
   {
     path: '/contributing/distribute-a-layer',
-    title: 'Distribute a feature layer',
-    description:
-      'Package a Nuxt layer with explicit exports, peers, manifests, migrations, and clean-consumer verification.'
+    title: 'Share and maintain a module',
+    description: 'Maintain a source module in the workspace or share its code with another project.'
   },
   {
     path: '/contributing/documentation',
@@ -267,9 +264,8 @@ export const documentationCatalog: DocumentationCatalogEntry[] = [
   },
   {
     path: '/contributing/testing',
-    title: 'Testing contributions',
-    description:
-      'Verify feature contracts, authorization, locales, migrations, UI behavior, and layer portability before review.'
+    title: 'Testing',
+    description: 'Verify module behavior, repository operations and normal/demo portal UI using disposable data.'
   },
   {
     path: '/contributing/propose-a-module',

@@ -1,6 +1,5 @@
 {
   "name": "@nuxt-customer-portal/authentication",
-  "version": "0.12.1",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -9,22 +8,9 @@
   },
   "type": "module",
   "main": "./nuxt.config.ts",
-  "files": [
-    "LICENSE",
-    "CHANGELOG.md",
-    "app",
-    "i18n",
-    "shared",
-    "nuxt.config.ts",
-    "portal.manifest.mjs",
-    "README.md"
-  ],
   "exports": {
     ".": "./nuxt.config.ts",
     "./portal-manifest": "./portal.manifest.mjs"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "dependencies": {
     "@nuxt-customer-portal/core": "workspace:^",
@@ -38,5 +24,6 @@
   },
   "devDependencies": {
     "nuxt": "^4.5.1"
-  }
+  },
+  "private": true
 }
