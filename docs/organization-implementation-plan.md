@@ -38,8 +38,8 @@ plugins: [
 The better-auth organization plugin provides its own database schema through Drizzle. The schema is defined in `db/schema/auth-schema.ts`. Run Drizzle migrations to add all necessary tables:
 
 ```bash
-npx drizzle-kit generate
-npx drizzle-kit migrate
+pnpm exec drizzle-kit generate
+pnpm exec drizzle-kit migrate
 ```
 
 This will automatically create:
@@ -60,8 +60,8 @@ The migration will add these tables with proper relationships and indexes. No ma
 After defining schema changes, generate Drizzle migrations:
 
 ```bash
-npx drizzle-kit generate
-npx drizzle-kit migrate
+pnpm exec drizzle-kit generate
+pnpm exec drizzle-kit migrate
 ```
 
 ## Phase 3: Implement Auto-Creation Logic
@@ -844,7 +844,7 @@ onMounted(() => {
 
 - [x] Research better-auth organization plugin documentation and API
 - [x] Configure organization plugin in lib/auth.ts
-- [x] Run better-auth migration: `npx @better-auth/cli migrate`
+- [x] Run better-auth migration: `pnpm dlx @better-auth/cli migrate`
 - [x] Add organization client plugin to lib/auth-client.ts
 - [x] Create useCurrentOrganization composable using better-auth client
 - [x] Create useOrganizationHelpers composable

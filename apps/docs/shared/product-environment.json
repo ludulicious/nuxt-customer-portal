@@ -26,7 +26,6 @@
     "PORTAL_GOOGLE_ENABLED",
     "PORTAL_PROVIDER_NAME",
     "PORTAL_REGISTRATION_MODE",
-    "PORTAL_STARTER_TEST_DATABASE_URL",
     "PORTAL_TERMS_URL",
     "PUBLIC_URL",
     "RELEASE_TAG",
@@ -34,16 +33,8 @@
     "RESEND_FROM_EMAIL"
   ],
   "libraryVariables": ["BETTER_AUTH_SECRET"],
-  "runtimeVariables": ["HOST", "PORT"],
+  "runtimeVariables": ["HOST", "PORT", "NUXT_PORTAL_DEMO_ENABLED", "NUXT_PUBLIC_PORTAL_DEMO_ENABLED"],
   "exampleOnlyVariables": ["PORTAL_PROVIDER_SLUG"],
-  "exampleExclusions": [
-    "CI",
-    "DEMO_TEST_URL",
-    "GITHUB_TOKEN",
-    "NODE_ENV",
-    "PORTAL_DEMO",
-    "PORTAL_STARTER_TEST_DATABASE_URL",
-    "RELEASE_TAG"
-  ],
+  "exampleExclusions": ["CI", "DEMO_TEST_URL", "GITHUB_TOKEN", "NODE_ENV", "PORTAL_DEMO", "RELEASE_TAG"],
   "knownExampleOmissions": []
 }

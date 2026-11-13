@@ -4,10 +4,17 @@
 
 # Node dependencies
 node_modules
+**/node_modules
+.data
+**/.data
+test-results
+playwright-report
 
 # Nuxt build cache and output (generated inside Docker)
 .nuxt
 .output
+**/.output
+**/.nuxt
 
 # Environment files (should be passed at runtime)
 .env*

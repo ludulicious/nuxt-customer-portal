@@ -12,7 +12,8 @@ export default defineConfig({
     trace: 'on-first-retry'
   },
   webServer: {
-    command: 'PORT=4173 HOST=localhost node .output/server/index.mjs',
+    command: 'node .output/server/index.mjs',
+    env: { PORT: '4173', HOST: 'localhost' },
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

@@ -3,6 +3,7 @@ import type { PortalOnboardingStep, PortalSettings } from '../../shared/settings
 import { portalOnboardingSteps, portalSettingsSchema } from '../../shared/settings'
 import { primaryForeground } from '../../shared/primary-contrast'
 
+const demo = useRuntimeConfig().public.portalDemo?.enabled === true
 const props = defineProps<{ onboarding?: boolean }>()
 const { t } = useI18n()
 const route = useRoute()
@@ -99,7 +100,7 @@ const stepLabels = computed<Record<PortalOnboardingStep, string>>(() => ({
   review: t('saasSettings.editor.steps.review')
 }))
 async function save(next?: PortalOnboardingStep) {
-  if (!state.value) {
+  if (demo || !state.value) {
     return false
   }
   const parsed = portalSettingsSchema.safeParse(state.value)
@@ -129,7 +130,7 @@ async function save(next?: PortalOnboardingStep) {
   }
 }
 async function complete() {
-  if (!state.value) {
+  if (demo || !state.value) {
     return
   }
   busy.value = true
@@ -222,6 +223,13 @@ async function submitForm() {
               }}
             </h2>
           </header>
+          <UAlert
+            v-if="demo && !activeSettingsSection"
+            color="neutral"
+            variant="soft"
+            :title="t('saasSettings.editor.demoReadOnly')"
+            class="mb-4"
+          />
           <PortalSettingsContribution
             v-if="activeSettingsSection"
             :key="activeSettingsSection.id"
@@ -232,6 +240,7 @@ async function submitForm() {
             class="settings-form"
             :state="state"
             :schema="portalSettingsSchema"
+            :disabled="demo"
             novalidate
             @submit="submitForm"
             @error="showError(t('saasSettings.editor.messages.reviewSettings'))"
@@ -260,6 +269,7 @@ async function submitForm() {
                 icon="i-lucide-save"
                 class="ml-auto flex min-w-28 justify-center"
                 :loading="busy"
+                :disabled="demo"
               >
                 {{ t('saasSettings.editor.actions.save') }} </UButton
               ><UButton
@@ -268,6 +278,7 @@ async function submitForm() {
                 icon="i-lucide-save"
                 class="ml-auto flex min-w-28 justify-center"
                 :loading="busy"
+                :disabled="demo"
                 trailing-icon="i-lucide-arrow-right"
               >
                 {{ t('saasSettings.editor.actions.saveContinue') }} </UButton

@@ -1,6 +1,5 @@
 {
   "name": "@nuxt-customer-portal/saas-portal",
-  "version": "0.12.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,8 +14,6 @@
     "@iconify-json/lucide": "^1.2.121",
     "@nuxt-customer-portal/invoice-timesheets": "workspace:*",
     "@nuxt-customer-portal/invoices": "workspace:*",
-    "@nuxt-customer-portal/kit": "workspace:*",
-    "@nuxt-customer-portal/preset": "workspace:*",
     "@nuxt-customer-portal/saas-configuration": "workspace:*",
     "@nuxt-customer-portal/service-requests": "workspace:*",
     "@nuxt-customer-portal/timesheets": "workspace:*",
@@ -28,13 +25,22 @@
     "nuxt": "^4.5.1",
     "@nuxt-customer-portal/products": "workspace:*",
     "@nuxt-customer-portal/invoice-products": "workspace:*",
-    "@nuxt-customer-portal/planning": "workspace:*"
+    "@nuxt-customer-portal/planning": "workspace:*",
+    "@nuxt-customer-portal/core": "workspace:*",
+    "@nuxt-customer-portal/ui": "workspace:*",
+    "@nuxt-customer-portal/authentication": "workspace:*",
+    "@nuxt-customer-portal/organizations": "workspace:*",
+    "@nuxt-customer-portal/administration": "workspace:*",
+    "@nuxt-customer-portal/clients": "workspace:*",
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
     "eslint": "^10.8.0",
     "tailwindcss": "4.3.3",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.3.9"
+    "vue-tsc": "^3.3.9",
+    "@types/pg": "8.15.5"
   }
 }

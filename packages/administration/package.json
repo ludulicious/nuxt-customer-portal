@@ -1,6 +1,5 @@
 {
   "name": "@nuxt-customer-portal/administration",
-  "version": "0.12.1",
   "license": "MIT",
   "homepage": "https://nuxt-customer-portal.com",
   "repository": {
@@ -9,17 +8,6 @@
   },
   "type": "module",
   "main": "./nuxt.config.ts",
-  "files": [
-    "LICENSE",
-    "CHANGELOG.md",
-    "app",
-    "i18n",
-    "server",
-    "shared",
-    "nuxt.config.ts",
-    "portal.manifest.mjs",
-    "README.md"
-  ],
   "exports": {
     ".": "./nuxt.config.ts",
     "./feature": "./shared/feature.ts",
@@ -27,9 +15,6 @@
     "./app/*": "./app/*.ts",
     "./server/*": "./server/*.ts",
     "./shared/*": "./shared/*.ts"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "dependencies": {
     "@nuxt-customer-portal/core": "workspace:^",
@@ -47,5 +32,6 @@
   },
   "devDependencies": {
     "nuxt": "^4.5.1"
-  }
+  },
+  "private": true
 }

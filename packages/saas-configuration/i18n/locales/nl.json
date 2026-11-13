@@ -174,7 +174,8 @@
         "primaryAction": "Details bekijken",
         "secondaryAccent": "Secundair accent"
       },
-      "websiteOriginsDescription": "Deze websites mogen het ingelogde account tonen en uitloggen via dit portaal. Voeg alleen websites toe die u beheert en vertrouwt. Voer elk volledig HTTPS-adres zonder pad in en druk op Enter. Laat leeg om uit te schakelen."
+      "websiteOriginsDescription": "Deze websites mogen het ingelogde account tonen en uitloggen via dit portaal. Voeg alleen websites toe die u beheert en vertrouwt. Voer elk volledig HTTPS-adres zonder pad in en druk op Enter. Laat leeg om uit te schakelen.",
+      "demoReadOnly": "Demo-instellingen zijn alleen-lezen. Persoonlijke voorbeelden zijn gepland voor een latere versie."
     }
   }
 }

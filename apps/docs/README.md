@@ -1,6 +1,6 @@
 # Customer Portal website
 
-The documentation application for [Nuxt Customer Portal](https://github.com/ludulicious/nuxt-customer-portal), an MIT-licensed collection of reusable Nuxt layers. It is maintained in the canonical monorepo under `apps/docs` and served from [nuxt-customer-portal.com](https://nuxt-customer-portal.com).
+The documentation application for [Nuxt Customer Portal](https://github.com/ludulicious/nuxt-customer-portal), an MIT-licensed SaaS portal application with private source modules. It is maintained in the canonical monorepo under `apps/docs` and served from [nuxt-customer-portal.com](https://nuxt-customer-portal.com).
 
 The site covers:
 
@@ -73,28 +73,16 @@ Keep `--frozen-lockfile` enabled in the Dockerfile. Build this image manually wh
 
 ## Source verification
 
-Every documentation page shows the immutable Customer Portal commit against which its behavior was reviewed. Defaults live in `shared/documentation.ts` and can be overridden with the public runtime variables in `.env.example`.
+Every documentation page shows its Customer Portal source reference. Development documentation follows master; release deployments can pin an immutable commit. Defaults live in `shared/documentation.ts` and can be overridden with the public runtime variables in `.env.example`.
 
 When documentation moves to a newer product revision, update `NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT`, review affected guides and references, then run the complete verification suite. Documentation reports open in this repository with the page URL and verified Customer Portal revision prefilled; product bugs and module proposals remain in the Customer Portal repository.
 
 ## Release checklist
 
-Prepare documentation changes on a branch. GitHub releases publish only the SaaS portal Docker image after source-code verification. Npm publication, package-distribution checks, and installer verification are paused; they are not prerequisites for Docker releases. Do not announce new npm versions or advance npm installation guides based on a GitHub or Docker release.
+1. Confirm the source release and Docker workflow verified the intended product version and commit. Record its image digest.
+2. Run pnpm test:docs, pnpm --filter @nuxt-customer-portal/docs typecheck, and pnpm test:e2e:docs from the repository root.
+3. Verify the matching image in a disposable deployment with PostgreSQL: startup, migrations, owner login, client creation, time entry, approvals and invoicing.
+4. Review source/Docker instructions and source references, then deploy the matching documentation. Set NUXT_PUBLIC_PRODUCT_SOURCE_COMMIT to the release commit when pinning a release-specific site.
+5. Check the docs hosting branch and deployment settings before merging, and verify public links before announcing availability.
 
-1. Confirm `release-saas-portal.yml` completed verification and published the intended portal image. Record its version, immutable digest, and verified source commit.
-2. Run the docs checks below. No tarball packaging, package-manager consumer matrix, or generated installer verification is required.
-3. Verify the published SaaS portal Docker image in a disposable deployment with PostgreSQL before announcing the release. Check startup and migrations, owner login, client creation, time entry, approvals, and an invoice. Test client access with a separate client account and a test email recipient.
-4. Keep existing npm installation guides on previously verified registry versions. Do not present unpublished source changes as available through the installer.
-5. Check the docs deployment host's branch and auto-deploy settings before merging. GitHub workflows do not establish that host's deployment behavior.
-6. Deploy the matching docs and README, verify the public links, and then announce the release.
-
-Run from the repository root:
-
-```bash
-pnpm test:docs
-pnpm --filter @nuxt-customer-portal/docs lint
-pnpm --filter @nuxt-customer-portal/docs typecheck
-pnpm test:e2e:docs
-```
-
-The content tests check metadata, source links, internal routes, and the MCP catalog. Playwright builds the documentation and checks its rendered journeys and accessibility. Review new or changed pages at desktop and mobile widths as well.
+Installation documentation supports source checkout and Docker only. Modules remain private workspaces; there is no npm release checklist or generated installer.

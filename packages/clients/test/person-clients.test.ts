@@ -5,7 +5,7 @@ import {
   clientUpdateSchema,
   genericClientListQuerySchema
 } from '../server/utils/client-validation'
-import { definePortalConfig } from '../../kit/src/runtime.mjs'
+import { definePortalConfig } from '../../core/shared/portal-config.mjs'
 
 test('existing company creation defaults to organization and still needs company fields', () => {
   assert.equal(
@@ -56,20 +56,20 @@ test('personal name parts are updated together and remain independent from displ
   assert.equal(clientUpdateSchema.safeParse({ lastName: 'Last' }).success, false)
 })
 test('configuration is B2B by default and validates personal registration', () => {
-  assert.deepEqual(definePortalConfig({ layers: ['@nuxt-customer-portal/preset'] }).clients.allowedTypes, [
+  assert.deepEqual(definePortalConfig({ layers: ['@nuxt-customer-portal/core'] }).clients.allowedTypes, [
     'organization'
   ])
   assert.equal(
     definePortalConfig({
-      layers: ['@nuxt-customer-portal/preset'],
+      layers: ['@nuxt-customer-portal/core'],
       clients: { allowedTypes: ['organization', 'person'], personalSelfRegistration: true }
     }).clients.personalSelfRegistration,
     true
   )
   assert.throws(() =>
-    definePortalConfig({ layers: ['@nuxt-customer-portal/preset'], clients: { personalSelfRegistration: true } })
+    definePortalConfig({ layers: ['@nuxt-customer-portal/core'], clients: { personalSelfRegistration: true } })
   )
-  assert.throws(() => definePortalConfig({ layers: ['@nuxt-customer-portal/preset'], clients: { allowedTypes: [] } }))
+  assert.throws(() => definePortalConfig({ layers: ['@nuxt-customer-portal/core'], clients: { allowedTypes: [] } }))
 })
 
 test('runtime rejects B2B personal creation and incompatible authentication registration', async () => {

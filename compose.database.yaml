@@ -1,0 +1,18 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: portal
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - portal-database:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U portal -d portal']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  portal-database:

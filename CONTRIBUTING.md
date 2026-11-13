@@ -1,70 +1,52 @@
 # Contributing to Nuxt Customer Portal
 
-Nuxt Customer Portal is an MIT-licensed monorepo of reusable Nuxt layers, demo hosts, a migration kit, and its documentation site. Start with the [contribution guide](https://nuxt-customer-portal.com/contributing).
+The SaaS portal in apps/saas-portal is the main application. Its private modules live under packages/, its operational scripts under scripts/, and its documentation website under apps/docs. Contributions use the repository MIT license.
 
-## Before contributing
+## Local development
 
-1. Search existing [issues](https://github.com/ludulicious/nuxt-customer-portal/issues) and pull requests.
-2. Discuss a new package, migration provider, or substantial contract change before implementing it.
-3. Keep one issue and pull request focused on one problem.
-4. Never include customer data, credentials, cookies, database exports, invoices, or timesheets in fixtures or reports.
+Use Node.js 22.19 or newer on a supported LTS release and pnpm 10.30.2. pnpm is the only supported package manager; use a fork for another manager. Follow [installation](https://nuxt-customer-portal.com/getting-started/installation) to configure PostgreSQL, secrets, migrations and your administrator. Run pnpm dev from the repository root and open http://localhost:3052.
 
-Contributions are accepted under the repository [MIT license](LICENSE).
+Keep customer data and secrets out of fixtures, logs and reports. Use synthetic data and disposable databases for tests. The application .env stays in apps/saas-portal; root .env is used by the Docker Compose example.
 
-## Local setup
+## Module boundaries
 
-```bash
-pnpm install --frozen-lockfile
-cp apps/demo-apex/.env.example apps/demo-apex/.env
-pnpm dev:apex
-```
+- Keep capabilities in packages/<id> as private pnpm workspaces and application branding/composition in apps/saas-portal.
+- Import shared contracts through declared workspace exports. Keep core visually headless, UI neutral, and optional business modules independent.
+- Register navigation, widgets and permissions through PortalFeatureDefinition. Authorize every server operation and derive tenant scope from the authenticated organization.
+- Keep released SQL migrations immutable and give each module its own manifest and migration stream.
+- Keep English and Dutch translations aligned. Use Nuxt UI forms with Zod, novalidate and displayed errors.
+- Conditionally mount modals with v-if and bind their boolean open state using v-model:open.
 
-Use a local PostgreSQL database and synthetic records. Run `pnpm --filter @nuxt-customer-portal/demo-apex portal doctor` to inspect the selected providers before applying migrations.
-
-## Native image dependencies
-
-The workspace pins Sharp to `0.35.3` with a root pnpm override. Keep application hosts such as marpos.nl aligned to that version: mixing Sharp versions can make Nitro's versioned native-package layout break libvips lookup in Alpine containers. Root overrides are not inherited by consumers of published packages; those hosts must configure their own override. When updating this pin, verify Nuxt image resizing, social images, and product image processing in the generated Linux container without a custom library search path.
-
-## Architecture rules
-
-- Put reusable platform and business capabilities in `packages/<id>` and keep host branding in `apps/*`.
-- Keep `@nuxt-customer-portal/core` visually headless. Shared shell primitives and fallback layouts belong to `ui`.
-- Import cross-package contracts only through documented package exports such as `@nuxt-customer-portal/core/feature` and `@nuxt-customer-portal/core/server`.
-- Do not add host aliases, physical cross-package imports, or dependencies from platform packages to optional features.
-- Register navigation, dashboard widgets, policies, and surfaces through `PortalFeatureDefinition`.
-- Authorize every server operation and derive tenant scope from the authenticated active organization.
-- Give each provider an immutable migration stream and a `portal-manifest` export. Never edit a released migration.
-- Keep English and Dutch locale trees aligned and localize production-facing text.
-- Declare every runtime import in the owning package; keep Nuxt and framework packages as compatible peers and development dependencies.
-
-Read [Layers](docs/LAYERS.md), [Create a feature layer](https://nuxt-customer-portal.com/contributing/create-a-layer), and [Database migrations](https://nuxt-customer-portal.com/architecture/database-migrations) before changing a package boundary.
+The workspace pins Sharp to 0.35.3. When changing it, verify image processing in the Linux image as well as local development.
 
 ## Verification
 
-Pull requests run a lightweight `CI / validate` job: source unit tests, formatting and lint checks, the SaaS boundary check, and the SaaS portal type check. Documentation content tests run when docs, shared dependency configuration, package manifests, or workflow files change. Npm publication, package tarball/consumer compatibility checks, and installer/starter verification jobs are paused. Superseded PR runs are cancelled. Merges to `master` do not repeat CI.
-
-Run the same core checks locally:
-
-```bash
+```sh
 pnpm verify:saas-boundary
-pnpm test:packages
+pnpm test
+pnpm typecheck
+pnpm build
+pnpm format
 pnpm format:check
-pnpm --filter @nuxt-customer-portal/saas-portal typecheck
-pnpm test:docs
 ```
 
-For larger changes, run **Full release verification** in Actions and supply a branch, tag, or commit. It also runs automatically on pull requests that change release workflows or package manifests. This runs source verification without publishing: all type checks and application builds, source/docs content tests, and demo browser tests with a migrated PostgreSQL database. Every job uses the same resolved commit. There is no separate lint pass because `format:check` already includes ESLint. Failed demo browser checks upload their JSON report, screenshots, and traces as the `demo-browser-results` artifact. The existing migration CLI remains in use to prepare the demo test database; this is not an installer verification job. Documentation browser tests and the standalone docs Docker build are separate manual checks, not gates for the SaaS portal image.
+For browser tests, use a dedicated PostgreSQL service with permission to create test databases. Set E2E_DATABASE_URL to a disposable database ending in _e2e, for example postgresql://portal:portal-test-only@localhost:55435/portal_browser_e2e. The setup creates/migrates that database and its _demo companion, seeds a synthetic administrator, and preserves existing test data on repeat runs. Never use a customer database.
 
-Package-distribution scripts, installer source, and their source-level unit tests are retained for possible future use. They do not create a package-release obligation; do not restore tarball, consumer-manager, or generated-installer CI jobs without revisiting the current Docker-first scope.
+```sh
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
 
-A published GitHub release starts **Release portal image** (`release-saas-portal.yml`). It resolves the existing stable release tag and runs full source verification once. Only the SaaS portal Docker image is published; npm publication is disabled, and public package versions do not need to match the image tag. The Docker publisher depends on complete verification and checks out its exact commit. A failed, cancelled, or skipped verification blocks publication. Rerun the release workflow with `release_tag` to retry an existing tag; the Docker publisher is reusable only and has no independent publication trigger. Historical tagged workflows and reruns retain their original configuration; use `release-saas-portal.yml` from the updated default branch for Docker-only retries without retired package/installer jobs.
+The same production build is tested in normal and demo modes on desktop and mobile. Demo reset integration is in apps/saas-portal/layers/demo/test/database.integration.ts and requires a disposable migrated _demo database. Documentation has separate content tests (pnpm test:docs), browser tests (pnpm test:e2e:docs), and a standalone Docker build.
 
-Keep `CI / validate` as the only required PR check. Remove obsolete consumer, starter, or docs-image requirements from repository rules if configured; those jobs no longer exist. This change does not alter repository rules automatically.
+PR CI runs module/tooling/demo tests, formatting, the boundary check and portal typecheck. Documentation tests run for relevant changes. Full release verification adds all source tests, typechecks, the portal build, normal/demo browser tests and daily reset integration before Docker publication.
 
-Add focused tests for changed policies, routes, schemas, migration ordering, and failure behavior. Optional packages must still build when other optional features are absent. Full verification does not replace the manual release checks in the documentation release checklist.
+## Releases and pull requests
 
-## Documentation and pull requests
+Track work with GitHub issues and use task branches and PRs targeting master. Include behavior, migration impact, documentation changes and checks actually run. Run pnpm format and pnpm format:check before pushing.
 
-Documentation lives in `apps/docs` in this repository. Update it in the same pull request when setup, configuration, architecture, migrations, permissions, routes, or workflows change.
+Record changes in the root CHANGELOG.md under Unreleased. One version in the root package.json identifies source releases and Docker images; private modules have no independent versions or changelogs. Package Changesets, npm distribution and generated installers have been removed.
 
-Describe the user problem, affected packages, authorization and tenant impact, schema and migration impact, English and Dutch UI impact, documentation changes, and verification performed. Include screenshots for visible changes. Report vulnerabilities through [SECURITY.md](SECURITY.md), never through a public issue.
+A published GitHub release resolves its exact tag commit and runs full source verification. Docker publication depends on that verified commit. Do not bypass the gate or announce an image before its digest is available. Production deployment and release publication require an explicit request.
+
+Use the GitHub plugin for GitHub operations. Report vulnerabilities through [SECURITY.md](SECURITY.md).

@@ -116,22 +116,6 @@
       "pageCount": 0,
       "apiHandlerCount": 0,
       "apiFamilies": []
-    },
-    {
-      "id": "preset",
-      "kind": "foundation",
-      "documentationPath": "/modules/platform-layers",
-      "pageCount": 0,
-      "apiHandlerCount": 0,
-      "apiFamilies": []
-    },
-    {
-      "id": "kit",
-      "kind": "foundation",
-      "documentationPath": "/modules/platform-layers",
-      "pageCount": 0,
-      "apiHandlerCount": 0,
-      "apiFamilies": []
     }
   ]
 }

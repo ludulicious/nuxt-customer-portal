@@ -1,14 +1,14 @@
 # Configurable portal
 
 The branding, module selection, homepage, legal pages, and browser onboarding used
-by the included SaaS portal and the `nuxt-customer-portal init` starter.
+by the main SaaS portal application.
 
 The package includes the configurable host's Apex and Brutal presentation assets.
 It runs against the portal's own database and authentication. It does not include
 a hosted provisioning service or SaaS control plane.
 
-Install it alongside the portal preset, and include it in `portal.config.ts` so
-the kit applies its settings migration. A seeded system administrator completes
+The main SaaS portal includes this private workspace module in `portal.config.ts`.
+Repository migration commands apply its settings migration. A seeded system administrator completes
 branding, module, homepage, and legal setup at `/onboarding` before regular portal
 access is enabled. See the [installation guide](https://nuxt-customer-portal.com/getting-started/installation).
 

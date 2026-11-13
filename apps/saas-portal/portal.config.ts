@@ -1,4 +1,4 @@
-import { definePortalConfig } from '@nuxt-customer-portal/kit'
+import { definePortalConfig } from '@nuxt-customer-portal/core/config'
 
 export default definePortalConfig({
   clients: {
@@ -7,7 +7,12 @@ export default definePortalConfig({
     defaultModules: ['timesheets', 'invoices']
   },
   layers: [
-    '@nuxt-customer-portal/preset',
+    '@nuxt-customer-portal/administration',
+    '@nuxt-customer-portal/clients',
+    '@nuxt-customer-portal/organizations',
+    '@nuxt-customer-portal/authentication',
+    '@nuxt-customer-portal/ui',
+    '@nuxt-customer-portal/core',
     '@nuxt-customer-portal/service-requests',
     '@nuxt-customer-portal/timesheets',
     '@nuxt-customer-portal/invoices',

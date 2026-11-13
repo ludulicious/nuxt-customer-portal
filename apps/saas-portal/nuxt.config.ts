@@ -6,7 +6,7 @@ const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
   .filter(Boolean)
 
 export default defineNuxtConfig({
-  extends: portal.nuxtLayers,
+  extends: ['./layers/demo', ...portal.nuxtLayers],
   modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@nuxtjs/i18n', '@pinia/nuxt'],
   ssr: false,
   css: ['~/assets/css/main.css'],

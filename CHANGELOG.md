@@ -1,3 +1,51 @@
+# Changelog
+
+## Unreleased
+
+- Make the SaaS portal the primary source and Docker application, with private modules, pnpm-only tooling, and an integrated demo mode.
+
+Clarify client approvals with one month filter for both hours to send and approval requests, compact review periods, hidden empty periods, explicit sending blockers, and no historical archive on the monthly screen.
+
+Use the client’s Track hours module switch for new time entry, project choices, and review preparation, while preserving historical time and sent requests.
+
+Allow an arbitrary starting month for review intervals when no recorded time or approval requests exist in that month or later, with transactional conflict protection and preservation of earlier schedules.
+
+Show active hour-tracking clients as tags on the approvals page, with administrator controls to enable or disable tracking in place.
+
+Include earlier submission-based approval decisions and unsubmitted hours in the selected monthly view, without duplicating already approved hours as unsent.
+
+Show company avatars on monthly hours and approval request cards, falling back to logos or initials.
+
+Send client approval requests only after an explicit manual action; internal approvals and submissions never create or email client requests automatically.
+
+Show internally approved hours as Auto approved when the client does not require review, without duplicating them under hours to send.
+
+Scope empty periods to active tracked clients and add a shared monthly client filter, with icons for both approval sections.
+
+Reduce repetitive page explanations and shorten labels and empty states in English and Dutch.
+
+Prepare each selected month in async setup and retain the previous view with Suspense to avoid intermediate loading layout shifts.
+
+Hide Planning and Store navigation, dashboard widgets, and other feature contributions when their modules are disabled in portal settings. Apply the same module filtering to product invoicing integrations.
+
+Make the invoice Attach file action open the file chooser directly and upload the selected file, with busy-state protection and same-file retry support.
+
+Restrict invoice line dragging to the left handle and disable drag and keyboard reordering while a line editor is open.
+
+Add recurring invoice schedules with daily, weekly, monthly, quarterly and yearly periods, inclusive start/end dates, timezone-aware draft generation with same-run catch-up, localized current- and previous-period placeholders for billing in advance or arrears, and pause/resume administration.
+
+Only include submitted or internally approved timesheets in client approval preparation and sending. Draft, reopened, and rejected timesheets no longer appear as awaiting internal approval or block sending other submitted work.
+
+Default client approval periods to monthly when no interval is configured, grouping submitted weeks and partial weeks by work date. Preserve explicitly configured weekly, fortnightly, and monthly intervals.
+
+Align Workspace settings labels and icons across Timesheets, Planning, and Store. Place Timesheets settings after Reports and move internal approval configuration into a Workspace settings tab, retaining redirects for existing links.
+
+Keep time entry available independently of internal approvals, and correctly restrict the internal approval queue to assigned approvers while approvals are enabled.
+
+Move client tracking into the Clients tab of Timesheets Workspace settings. Show all active clients with search, tracking filters and labelled switches, plus inline editing of client access, approval interval and its protected starting month.
+
+Move Team rates into the Team members tab after Clients, and add icons to each settings tab.
+
 # Nuxt Customer Portal
 
 ## 0.12.1

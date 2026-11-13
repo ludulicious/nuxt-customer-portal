@@ -2,9 +2,9 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
 # Install pnpm and build tools for native modules
-ENV PNPM_VERSION=10.26.1
+ENV PNPM_VERSION=10.30.2
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm i -g pnpm@$PNPM_VERSION
+RUN corepack enable && corepack prepare pnpm@$PNPM_VERSION --activate
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++
 
 # Install exactly the dependency graph committed in the lockfile

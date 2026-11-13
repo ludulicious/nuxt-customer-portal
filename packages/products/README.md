@@ -109,7 +109,7 @@ Not included: physical products, shipping, inventory, booking capacity, cart UI 
 
 ## Tests
 
-Run `pnpm test:packages` and the host's Nuxt typecheck. To include the Products integration test, set `PRODUCTS_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** whose name starts with `codex_products_test_`. That test applies migrations and creates fixtures; never point it at portal data.
+Run `pnpm test:modules` and the host's Nuxt typecheck. To include the Products integration test, set `PRODUCTS_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** whose name starts with `codex_products_test_`. That test applies migrations and creates fixtures; never point it at portal data.
 
 ### Store currencies and free products
 
@@ -216,7 +216,7 @@ Image IDs are independent of product asset IDs. Library entries are not yet sele
 
 ### Media verification
 
-Run `pnpm test:packages` for unit/regression coverage. To include storage and API integration coverage, set `PRODUCTS_MEDIA_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** named `codex_products_test_*`, then run:
+Run `pnpm test:modules` for unit/regression coverage. To include storage and API integration coverage, set `PRODUCTS_MEDIA_TEST_DATABASE_URL` to an **empty disposable PostgreSQL database** named `codex_products_test_*`, then run:
 
 ```sh
 node --import tsx --test packages/products/test/media.test.ts packages/products/test/media-database.test.ts

@@ -192,13 +192,13 @@ describe('documentation content', () => {
     expect(community).toContain('nuxt-customer-portal/blob/master/CONTRIBUTING.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SUPPORT.md')
     expect(community).toContain('nuxt-customer-portal/blob/master/SECURITY.md')
-    expect(installation).toContain('@nuxt-customer-portal/kit@latest init my-portal')
-    expect(installation).toContain('pnpm dlx')
-    expect(installation).toContain('npm install')
-    expect(installation).toContain('yarn dlx')
-    expect(installation).toContain('bunx')
-    expect(manualInstallation).toContain('@nuxt-customer-portal/preset@latest')
-    expect(manualInstallation).toContain('@nuxt-customer-portal/kit@latest')
+    expect(installation).toContain('git clone https://github.com/ludulicious/nuxt-customer-portal.git')
+    expect(installation).toContain('pnpm install --frozen-lockfile')
+    expect(installation).toContain('docker compose up -d')
+    expect(installation).toContain('pnpm is the only supported package manager')
+    expect(installation).not.toMatch(/\bnpx |pnpm dlx|yarn dlx|bunx|\bnpm install/)
+    expect(manualInstallation).toContain('pnpm portal provider seed')
+    expect(manualInstallation).toContain('pnpm portal admin grant')
   })
 
   it('maps documented product internals to source-backed monorepo links', () => {
@@ -310,7 +310,6 @@ describe('documentation content', () => {
       'GITHUB_TOKEN',
       'NODE_ENV',
       'PORTAL_DEMO',
-      'PORTAL_STARTER_TEST_DATABASE_URL',
       'RELEASE_TAG'
     ])
     expect(configuration).toContain('Better Auth secret reference')
@@ -329,8 +328,9 @@ describe('documentation content', () => {
     expect(creationGuide).toContain("size: 'full'")
     expect(creationGuide).toContain('localPortalLayer')
     expect(creationGuide).toContain('administration.organization.detail')
-    expect(distributionGuide).toContain('package entry point is `nuxt.config.ts`')
-    expect(distributionGuide).toContain('pnpm pack')
+    expect(distributionGuide).toContain('entry point is nuxt.config.ts')
+    expect(distributionGuide).toContain('private pnpm workspaces')
+    expect(distributionGuide).not.toContain('pnpm pack')
     expect(distributionGuide.toLowerCase()).toContain('cross-organization requests are rejected')
   })
 })

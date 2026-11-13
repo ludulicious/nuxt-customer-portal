@@ -81,6 +81,7 @@ useSeoMeta({
 <template>
   <UTheme :props="theme.props" :ui="theme.ui">
     <UApp :locale="uiLocale">
+      <DemoBanner />
       <NuxtLoadingIndicator />
       <NuxtLayout>
         <NuxtPage />
