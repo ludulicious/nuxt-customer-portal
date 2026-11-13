@@ -2,7 +2,40 @@
 
 ## Unreleased
 
-- Make the SaaS portal the primary source and Docker application, with private modules, pnpm-only tooling, and an integrated demo mode.
+## 0.13.0 ? 2026-11-13
+
+### SaaS portal as the main application
+
+- Keep apps/saas-portal as the sole portal application and apps/docs as the documentation website. Retain business and platform modules as separate private pnpm workspaces under packages/ with their existing internal imports.
+- Support installation by source checkout or the Docker image. pnpm 10.30.2 is the only supported package manager; other managers require a fork. Node.js 22.19 or newer on a supported Nuxt-compatible LTS release is required for source development.
+- Remove the kit, generated-project installer, preset composition package, alternate Apex/Brutal apps, npm publishing/consumer checks and package Changesets. Use one root product version and changelog for source and Docker releases.
+- Preserve migrations, diagnostics, provider/admin setup and Harvest import as repository operations. Core exports the configuration helpers; the main app composes its modules explicitly.
+- Rewrite setup, customization, architecture, module development and release documentation around the repository code. Add source/Docker Compose examples and keep the documentation catalog and source references aligned.
+- Normalize CRLF line endings when checking documentation metadata, so the content tests work in Windows checkouts as well as Linux CI.
+
+### Integrated demo
+
+- Run the same app and Docker image in a separate demo deployment with seven fictional identities, business fixtures and daily resets.
+- Seed completed onboarding and enabled modules. Branding, appearance, content and module settings are read-only; visitor-specific settings remain deferred.
+- Gate requests until initialization completes. Refuse mismatched demo flags, non-demo databases and populated databases without reset metadata. Preserve role/tenant checks and restrictions on account/access changes and external effects.
+
+### Upgrade from 0.12.5
+
+- Back up PostgreSQL and file storage. There are no new SQL migrations in this release relative to 0.12.5, and existing migration filenames, checksums and journal columns are preserved.
+- Source users should use the repository checkout instead of a generated host or installed official packages. Port host customizations into apps/saas-portal and retain the existing database and secrets. Internal workspace imports keep their names.
+- Replace old kit commands with repository-root commands: pnpm db:doctor, pnpm db:status, pnpm db:migrate and pnpm portal for provider/admin and Harvest operations. Docker startup calls the same scripts automatically.
+- Docker users should pin ghcr.io/ludulicious/nuxt-customer-portal:0.13.0 or its immutable digest. Startup applies any outstanding migrations before serving traffic; keep existing persistent data and storage configuration.
+- Demo deployments must use their own database ending in _demo and set both NUXT_PORTAL_DEMO_ENABLED=true and NUXT_PUBLIC_PORTAL_DEMO_ENABLED=true. Both flags remain disabled for normal installations. Retire old Apex/Brutal app deployments after moving to the main image.
+- Private modules no longer have independent versions or releases. The historical package_version migration-journal column remains compatible and records the product version for new entries.
+
+## 0.12.2?0.12.5 ? Historical Docker releases
+
+These releases previously advanced the Docker image while the root/package version stayed at 0.12.1. The pending notes below describe changes already delivered in that series; they are retained here as product history rather than presented as new 0.13.0 features.
+
+- 0.12.2: Invoice attachment selection, handle-only line sorting and connected website support.
+- 0.12.3: Source-code verification and verification-gated Docker release automation.
+- 0.12.4: Portal favicons, client approval clarity and consolidated workspace settings.
+- 0.12.5: Recurring invoice schedules, submitted-only monthly client approval preparation and disabled-module navigation filtering.
 
 Clarify client approvals with one month filter for both hours to send and approval requests, compact review periods, hidden empty periods, explicit sending blockers, and no historical archive on the monthly screen.
 
@@ -45,8 +78,6 @@ Keep time entry available independently of internal approvals, and correctly res
 Move client tracking into the Clients tab of Timesheets Workspace settings. Show all active clients with search, tracking filters and labelled switches, plus inline editing of client access, approval interval and its protected starting month.
 
 Move Team rates into the Team members tab after Clients, and add icons to each settings tab.
-
-# Nuxt Customer Portal
 
 ## 0.12.1
 

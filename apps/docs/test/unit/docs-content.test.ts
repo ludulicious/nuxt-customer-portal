@@ -38,7 +38,7 @@ function publicRoute(file: string): string {
 }
 
 function frontmatterValue(source: string, key: string): string | undefined {
-  const frontmatter = source.match(/^---\n([\s\S]*?)\n---/)?.[1]
+  const frontmatter = source.replaceAll('\r\n', '\n').match(/^---\n([\s\S]*?)\n---/)?.[1]
   return frontmatter?.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]?.replace(/^['"]|['"]$/g, '')
 }
 
