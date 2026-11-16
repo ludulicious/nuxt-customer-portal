@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { clientsIcon } from '@nuxt-customer-portal/clients/shared/feature'
 import { isClientSlugConflict } from '@nuxt-customer-portal/clients/shared/client-slug'
-import type { ClientListResponse, GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
+import type { ClientListResponse, ClientSummaryDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -23,6 +23,7 @@ const sortDir = ref<'asc' | 'desc'>(route.query.sortDir === 'desc' ? 'desc' : 'a
 const page = ref(Math.max(1, Number(route.query.page) || 1))
 const result = ref<ClientListResponse | null>(null)
 const pending = ref(false)
+const loadError = ref(false)
 const busy = ref(false)
 const formOpen = ref(false)
 const clientForm = useTemplateRef('clientForm')
@@ -63,7 +64,7 @@ const listReturnPath = computed(() => {
   return suffix ? `/clients?${suffix}` : '/clients'
 })
 
-const clientDetailTo = (client: GenericClientDto) => ({
+const clientDetailTo = (client: Pick<ClientSummaryDto, 'slug'>) => ({
   path: `/clients/${encodeURIComponent(client.slug)}`,
   query: { returnTo: listReturnPath.value }
 })
@@ -72,10 +73,15 @@ let loadVersion = 0
 const load = async () => {
   const version = ++loadVersion
   pending.value = true
+  loadError.value = false
   try {
     const response = await api.list({ ...requestQuery(), page: page.value, pageSize: 20 })
     if (version === loadVersion) {
       result.value = response
+    }
+  } catch {
+    if (version === loadVersion) {
+      loadError.value = true
     }
   } finally {
     if (version === loadVersion) {
@@ -196,7 +202,7 @@ const goToPage = async (value: number) => {
   listContainer.value?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-await load()
+void load()
 onMounted(() => {
   void restoreScroll()
 })
@@ -277,7 +283,16 @@ onMounted(() => {
 
         <ClientsClientForm v-if="formOpen" ref="clientForm" :busy="busy" @submit="save" @cancel="formOpen = false" />
 
-        <UCard v-if="!clients.length && !pending && !formOpen" variant="subtle">
+        <UAlert v-if="loadError" color="error" :title="t('features.clients.loadFailed')" />
+        <div
+          v-if="pending && !result"
+          role="status"
+          :aria-label="t('common.loading')"
+          class="flex justify-center py-10 text-muted"
+        >
+          <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+        </div>
+        <UCard v-else-if="!clients.length && !loadError && !pending && !formOpen" variant="subtle">
           <div class="flex flex-col items-center gap-3 py-10 text-center">
             <UIcon name="i-lucide-building-2" class="size-10 text-muted" />
             <div>

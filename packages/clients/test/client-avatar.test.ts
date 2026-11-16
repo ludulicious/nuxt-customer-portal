@@ -49,8 +49,9 @@ test('organization clients keep their logo rather than a member profile image', 
 
 test('client list and detail views consume the centrally resolved avatar', async () => {
   const repository = await readFile(new URL('../server/utils/client-repository.ts', import.meta.url), 'utf8')
-  assert.match(repository, /avatarLogo: getClientAvatar\(row, clientMembers\) \?\? null/)
-  assert.match(repository, /items: await hydrateClients\(rows\)/)
+  assert.match(repository, /const avatar = getClientAvatar\(row, clientMembers\)/)
+  assert.match(repository, /portalImageUrl\('user', avatarOwner.userId, 'avatar', avatar\)/)
+  assert.match(repository, /items: await summarizeClients\(rows\)/)
   assert.match(repository, /return \(await hydrateClients\(rows\)\)\[0\]/)
 
   for (const path of ['../app/pages/clients/index.vue', '../app/components/ClientsClientDetail.vue']) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GenericClientDto } from '@nuxt-customer-portal/clients/types'
+import type { ClientSummaryDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const { t } = useI18n()
 const prefix = 'features.timesheets.trackingClients.'
@@ -9,7 +9,7 @@ const { activeOrganizationType, activeOrganizationRole } = usePortalSession()
 const canManage = computed(
   () => activeOrganizationType.value === 'PROVIDER' && ['owner', 'admin'].includes(activeOrganizationRole.value ?? '')
 )
-type TrackingClient = GenericClientDto & { enabled: boolean }
+type TrackingClient = ClientSummaryDto & { enabled: boolean }
 const { data, pending, error, refresh } = await useAsyncData('timesheets-tracking-clients', async () => {
   const clients = new Map<string, TrackingClient>()
   let page = 1

@@ -5,10 +5,16 @@ import { db } from '@nuxt-customer-portal/core/server/portal'
 import { invitation, member, organization, user } from '@nuxt-customer-portal/core/schema'
 import { clientModule, clientProfile } from '@nuxt-customer-portal/clients/server/db/schema/clients'
 import { runClientCreatedHooks } from '@nuxt-customer-portal/core/server/utils/business-hooks'
-import type { GenericClientDto, ClientListResponse } from '@nuxt-customer-portal/clients/shared/types/client'
+import type {
+  GenericClientDto,
+  ClientListResponse,
+  ClientSummaryDto
+} from '@nuxt-customer-portal/clients/shared/types/client'
 import type { ClientCreateInput, GenericClientListQuery, ClientUpdateInput } from './client-validation'
 
 import { getProviderTimezone } from '@nuxt-customer-portal/core/server/utils/timezones'
+import { clientSummary } from './client-summary'
+import { portalImageUrl } from '@nuxt-customer-portal/core/server/utils/portal-image'
 import { requireAllowedClientType } from './client-configuration'
 
 const normalizeNullable = (value: string | null | undefined) => value?.trim() || null
@@ -95,6 +101,9 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
   return rows.map((row) => {
     const clientMembers = members.filter((item) => item.organizationId === row.organizationId)
     const personalMember = row.clientType === 'person' ? clientMembers[0] : undefined
+    const avatarOwner =
+      row.clientType === 'person' ? clientMembers.find((item) => item.role === 'owner' && item.image) : undefined
+    const avatar = getClientAvatar(row, clientMembers)
     return {
       id: row.organizationId,
       organizationId: row.organizationId,
@@ -103,7 +112,9 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
       lastName: row.clientType === 'person' ? (row.lastName ?? personalMember?.lastName ?? null) : null,
       slug: row.slug,
       logo: row.logo,
-      avatarLogo: getClientAvatar(row, clientMembers) ?? null,
+      avatarLogo: avatarOwner
+        ? portalImageUrl('user', avatarOwner.userId, 'avatar', avatar)
+        : portalImageUrl('organization', row.organizationId, 'avatar', avatar),
       clientType: row.clientType,
       timezone: row.timezone,
       schedulingTimezone: row.timezone || providerTimezone,
@@ -122,7 +133,7 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
         userId: item.userId,
         name: item.name,
         email: item.email,
-        image: item.image,
+        image: portalImageUrl('user', item.userId, 'avatar', item.image),
         role: item.role,
         phone: item.phone,
         jobTitle: item.jobTitle
@@ -137,6 +148,49 @@ const hydrateClients = async (rows: ClientRow[]): Promise<GenericClientDto[]> =>
           expiresAt: item.expiresAt.toISOString()
         }))
     }
+  })
+}
+
+const summarizeClients = async (rows: ClientRow[]): Promise<ClientSummaryDto[]> => {
+  if (!rows.length) {
+    return []
+  }
+  const personalIds = rows.filter((row) => row.clientType === 'person').map((row) => row.organizationId)
+  const [providerTimezone, owners, modules] = await Promise.all([
+    getProviderTimezone(),
+    personalIds.length
+      ? db
+          .select({
+            organizationId: member.organizationId,
+            userId: user.id,
+            image: user.image,
+            firstName: user.firstName,
+            lastName: user.lastName
+          })
+          .from(member)
+          .innerJoin(user, eq(user.id, member.userId))
+          .where(and(inArray(member.organizationId, personalIds), eq(member.role, 'owner')))
+      : Promise.resolve([]),
+    db
+      .select()
+      .from(clientModule)
+      .where(
+        inArray(
+          clientModule.organizationId,
+          rows.map((row) => row.organizationId)
+        )
+      )
+  ])
+  return rows.map((row) => {
+    const owner = owners.find((item) => item.organizationId === row.organizationId)
+    return clientSummary(
+      row,
+      providerTimezone,
+      modules
+        .filter((item) => item.organizationId === row.organizationId)
+        .map((item) => ({ moduleId: item.moduleId, enabled: item.enabled })),
+      owner
+    )
   })
 }
 
@@ -190,7 +244,7 @@ export const listGenericClientsPage = async (query: GenericClientListQuery): Pro
   const totalItems = Number(countRow?.total ?? 0)
   const totalPages = Math.max(1, Math.ceil(totalItems / query.pageSize))
   return {
-    items: await hydrateClients(rows),
+    items: await summarizeClients(rows),
     pagination: {
       page: query.page,
       pageSize: query.pageSize,

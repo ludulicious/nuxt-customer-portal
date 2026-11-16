@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import type { ActivityTypeDto, ProjectDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 import TimesheetsAdminActivities from './TimesheetsAdminActivities.vue'
 import TimesheetsAdminApprovals from './TimesheetsAdminApprovals.vue'
 import TimesheetsAdminProjects from './TimesheetsAdminProjects.vue'
@@ -52,7 +53,26 @@ const hasConstrainedList = computed(() => ['projects', 'activities'].includes(pr
 const createLabel = computed(() =>
   createLabelKeys[props.section] ? t(`features.timesheets.admin.${createLabelKeys[props.section]}`) : ''
 )
-const { data, pending, refresh } = await useAsyncData(`timesheets-admin-${props.section}`, () =>
+const projectListing =
+  props.section === 'projects'
+    ? useTimesheetsAdminList<ProjectDto>({
+        endpoint: '/api/timesheets/admin/projects',
+        filterKeys: ['clientOrganizationId', 'status'],
+        defaultFilters: { status: 'ACTIVE' },
+        defaultSort: 'name'
+      })
+    : undefined
+const activityListing =
+  props.section === 'activities'
+    ? useTimesheetsAdminList<ActivityTypeDto>({
+        endpoint: '/api/timesheets/admin/activities',
+        filterKeys: ['active', 'billable'],
+        defaultSort: 'name'
+      })
+    : undefined
+void projectListing?.load()
+void activityListing?.load()
+const { data, pending, error, refresh } = useLazyAsyncData(`timesheets-admin-${props.section}`, () =>
   timesheets.adminBootstrap(props.section)
 )
 const openCreate = () => sectionViewRef.value?.openCreate()
@@ -75,6 +95,7 @@ useSeoMeta({ title: sectionTitle })
   <TimesheetsPageShell
     class="timesheet-admin h-full min-h-0"
     :setup-status="data?.setupStatus"
+    :setup-status-pending="!data && !error"
     :class="hasConstrainedList ? 'flex flex-col overflow-hidden' : 'space-y-6 overflow-y-auto'"
   >
     <header :class="hasConstrainedList ? 'mb-6 shrink-0' : ''">
@@ -122,12 +143,14 @@ useSeoMeta({ title: sectionTitle })
       <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
       <span class="sr-only">{{ t('features.timesheets.loading') }}</span>
     </div>
+    <UAlert v-if="error" color="error" :title="t('features.timesheets.messages.fetchError')" />
     <slot v-if="data" :data="data" :refresh="refresh">
       <component
         :is="sectionComponent"
         ref="sectionViewRef"
         :key="props.section"
         :data="data"
+        :listing="projectListing ?? activityListing"
         :refresh="refresh"
         :class="hasConstrainedList ? 'min-h-0 flex-1' : ''"
       />

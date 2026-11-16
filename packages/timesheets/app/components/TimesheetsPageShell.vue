@@ -6,20 +6,25 @@ const props = withDefaults(
     as?: string
     width?: 'wide' | 'narrow'
     setupStatus?: TimesheetsSetupStatusDto
+    setupStatusPending?: boolean
   }>(),
   {
     as: 'div',
     width: 'wide',
-    setupStatus: undefined
+    setupStatus: undefined,
+    setupStatusPending: false
   }
 )
 const { isOrganizationAdmin } = useTimesheetMenu()
 const { activeOrganizationType } = usePortalSession()
 const timesheets = useTimesheets()
-const { data: loadedSetupStatus } = await useAsyncData<TimesheetsSetupStatusDto | null>(
+const { data: loadedSetupStatus } = useLazyAsyncData<TimesheetsSetupStatusDto | null>(
   'timesheets-setup-status',
   async () =>
-    activeOrganizationType.value === 'PROVIDER' && isOrganizationAdmin.value && !props.setupStatus
+    activeOrganizationType.value === 'PROVIDER' &&
+    isOrganizationAdmin.value &&
+    !props.setupStatus &&
+    !props.setupStatusPending
       ? await timesheets.setupStatus()
       : null
 )

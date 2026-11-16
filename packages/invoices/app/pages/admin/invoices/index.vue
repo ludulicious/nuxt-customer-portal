@@ -6,13 +6,12 @@ const child = ref<{
   canCreate: boolean
   showCreate: boolean
 } | null>(null)
-const { data, pending, refresh } = await useAsyncData('invoices-admin', () => invoices.adminBootstrap())
+const { data, pending, error, refresh } = useLazyAsyncData('invoices-admin-list-context', () => invoices.listContext())
 const refreshing = ref(false)
 const refreshInvoices = async () => {
   refreshing.value = true
   try {
-    await refresh()
-    await child.value?.refreshList()
+    await Promise.all([refresh(), child.value?.refreshList()])
   } finally {
     refreshing.value = false
   }
@@ -64,9 +63,12 @@ useSeoMeta({ title: () => t('features.invoices.salesInvoices') })
         />
       </div>
     </header>
-    <div v-if="pending && !data" class="flex justify-center py-12">
-      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
-    </div>
-    <InvoicesAdminInvoices v-if="data" ref="child" :data="data" :refresh="refresh" class="min-h-0 flex-1" />
+    <InvoicesAdminInvoiceList
+      ref="child"
+      :context="data ?? undefined"
+      :context-pending="pending"
+      :context-error="error"
+      class="min-h-0 flex-1"
+    />
   </section>
 </template>

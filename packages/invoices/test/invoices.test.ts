@@ -18,7 +18,8 @@ test('invoice creation has a dedicated route and a non-shrinking scrollable form
   const toolbar = readFileSync(new URL('../../ui/app/components/PortalListToolbar.vue', import.meta.url), 'utf8')
   assert.match(page, /create-page/)
   assert.match(component, /navigateTo\('\/admin\/invoices\/new'\)/)
-  assert.match(component, /v-if="!createPage"/)
+  const list = readFileSync(new URL('../app/components/InvoicesAdminInvoiceList.vue', import.meta.url), 'utf8')
+  assert.match(list, /useInvoicesAdminList<InvoiceSummaryDto>/)
   assert.match(component, /formOpen \? 'overflow-y-auto py-1'/)
   assert.match(component, /v-if="formOpen" class="shrink-0 scroll-mt-6"/)
   assert.match(toolbar, /useElementSize\(toolbar\)/)
@@ -70,7 +71,7 @@ test('invoice email previews preserve paragraph breaks in the editable message',
 
 test('both invoice creation flows open the newly created invoice detail', () => {
   const component = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
-  const save = component.split('const save = async () => {')[1]!.split('const statusColor')[0]!
+  const save = component.split('const save = async () => {')[1]!.split('if (props.createPage)')[0]!
   assert.match(
     save,
     /const created =[\s\S]*await availableProviders\.value\[0\]\.create\(input\)[\s\S]*await api\.createInvoice\(input\)/

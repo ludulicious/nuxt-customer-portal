@@ -6,6 +6,7 @@
       "backToClients": "Back to clients",
       "openClient": "Open {name}",
       "loading": "Loading client",
+      "loadFailed": "Clients could not be loaded",
       "notFound": "Client not found",
       "profile": "Client details",
       "lifecycle": "Status and deletion",

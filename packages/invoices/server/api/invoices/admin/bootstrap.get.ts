@@ -1,5 +1,6 @@
 import { requireFeatureAccess } from '@nuxt-customer-portal/core/server/portal'
 import { invoicesFeature } from '@nuxt-customer-portal/invoices/shared/feature'
+import { portalImageUrl } from '@nuxt-customer-portal/core/server/utils/portal-image'
 import {
   getInvoiceSettings,
   getOrganizationInvoiceProfile,
@@ -13,5 +14,12 @@ export default defineEventHandler(async (event) => {
     listInvoiceClients(organizationId),
     getOrganizationInvoiceProfile(organizationId)
   ])
-  return { settings, clients, organizationProfile }
+  return {
+    settings,
+    clients,
+    organizationProfile: {
+      ...organizationProfile,
+      logo: portalImageUrl('organization', organizationId, 'logo', organizationProfile.logo)
+    }
+  }
 })

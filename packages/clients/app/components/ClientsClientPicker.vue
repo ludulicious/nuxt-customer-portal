@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { GenericClientDto } from '@nuxt-customer-portal/clients/shared/types/client'
+import type { ClientSummaryDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
 const props = defineProps<{ modelValue?: string; moduleId?: string; label?: string; required?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
-const { data: clients, status } = await useFetch<GenericClientDto[], import('#app').NuxtError<unknown>, string>(
+const { data: clients, status } = await useFetch<ClientSummaryDto[], import('#app').NuxtError<unknown>, string>(
   '/api/clients/selectable',
   {
     query: computed(() => ({ moduleId: props.moduleId }))

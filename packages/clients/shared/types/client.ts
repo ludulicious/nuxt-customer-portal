@@ -43,8 +43,10 @@ export interface GenericClientDto {
   invitations: ClientInvitationDto[]
 }
 
+export type ClientSummaryDto = Omit<GenericClientDto, 'members' | 'invitations'>
+
 export interface ClientListResponse {
-  items: GenericClientDto[]
+  items: ClientSummaryDto[]
   pagination: {
     page: number
     pageSize: number

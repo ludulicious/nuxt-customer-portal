@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Speed up portal navigation with authenticated, versioned avatar/logo thumbnails, smaller client and invoice list responses, and independent loading of collections and supporting data. Apply sales invoice search, filters, totals, sorting and pagination in PostgreSQL without loading document images or histories.
+
 ## 0.13.0 ? 2026-11-13
 
 ### SaaS portal as the main application

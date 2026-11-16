@@ -6,6 +6,7 @@
       "backToClients": "Terug naar klanten",
       "openClient": "Open {name}",
       "loading": "Klant laden",
+      "loadFailed": "De klanten konden niet worden geladen",
       "notFound": "Klant niet gevonden",
       "profile": "Klantgegevens",
       "lifecycle": "Status en verwijderen",

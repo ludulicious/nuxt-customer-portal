@@ -25,6 +25,7 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const { organizationId, session } = await requireFeatureAccess(event, timesheetsFeature.policy, 'manage')
   const section = String(getQuery(event).section ?? '')
+  const focused = ['projects', 'project-detail', 'activities', 'reports'].includes(section)
   const settings = await ensureSettings(organizationId)
   const [
     providerOrganizations,
@@ -41,11 +42,13 @@ export default defineEventHandler(async (event) => {
       .from(organization)
       .where(eq(organization.id, organizationId))
       .limit(1),
-    section === 'clients' ? Promise.resolve([]) : listClients(organizationId),
-    listAvailableClientOrganizations(organizationId, session.user.id, session.user.role === 'admin'),
-    section === 'projects' ? Promise.resolve([]) : listProjects(organizationId),
-    section === 'activities' ? Promise.resolve([]) : listActivities(organizationId),
-    listTeam(organizationId),
+    section === 'clients' || section === 'activities' ? Promise.resolve([]) : listClients(organizationId),
+    focused
+      ? Promise.resolve([])
+      : listAvailableClientOrganizations(organizationId, session.user.id, session.user.role === 'admin'),
+    focused && section !== 'reports' ? Promise.resolve([]) : listProjects(organizationId),
+    ['activities', 'reports'].includes(section) ? Promise.resolve([]) : listActivities(organizationId),
+    focused && section !== 'project-detail' ? Promise.resolve([]) : listTeam(organizationId),
     Promise.resolve([]),
     getTimesheetsSetupStatus(organizationId)
   ])
