@@ -64,3 +64,11 @@ export interface ClientTimesheetSettingsDto {
   reviewIntervalEffectiveOn: string | null
   reviewStartsOn: string
 }
+
+export interface ClientReviewRequestSummaryDto extends Omit<ClientReviewRequestDto, 'entries' | 'history'> {
+  totalMinutes: number
+  people: string[]
+  submissions: Array<{ submissionId: string; person: string }>
+  reviewerUserId: string | null
+  reviewedAt: string | null
+}

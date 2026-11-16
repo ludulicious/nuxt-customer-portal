@@ -6,7 +6,11 @@ import {
   showReviewPeriod,
   reviewClientOptions
 } from '../../shared/client-review-month'
-import type { ClientReviewPeriodDto, ClientReviewRequestDto } from '../../shared/types/client-review-request'
+import type {
+  ClientReviewPeriodDto,
+  ClientReviewRequestDto,
+  ClientReviewRequestSummaryDto
+} from '../../shared/types/client-review-request'
 
 const props = defineProps<{ clientSide?: boolean }>()
 const { t, locale } = useI18n()
@@ -40,19 +44,19 @@ const statusColors = {
   WITHDRAWN: 'neutral'
 } as const
 const endpoint = computed(() => `/api/timesheets/${props.clientSide ? 'client' : 'admin'}/review-requests`)
-const {
-  data: requests,
-  error,
-  refresh
-} = await useFetch<ClientReviewRequestDto[], import('#app').NuxtError<unknown>, string>(endpoint.value, {
-  watch: false
-})
 const month = queryControl(
   'reviewMonth',
   shiftReviewMonth(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 7), -1),
   (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
 )
-const linkedRequest = requests.value?.find((request) => request.id === route.query.request)
+const linkedId = typeof route.query.request === 'string' ? route.query.request : null
+const linkedResult = linkedId
+  ? await useFetch<ClientReviewRequestDto, import('#app').NuxtError<unknown>, string>(
+      `${endpoint.value}/${encodeURIComponent(linkedId)}`,
+      { watch: false }
+    )
+  : null
+const linkedRequest = linkedResult?.data.value
 const preparedMonth =
   !props.clientSide && linkedRequest && !reviewPeriodIncludesMonth(linkedRequest, month.value)
     ? linkedRequest.startsOn.slice(0, 7)
@@ -66,11 +70,6 @@ const monthLabel = computed(() =>
     new Date(`${preparedMonth}-01T00:00:00Z`)
   )
 )
-const requestsForMonth = computed(() =>
-  props.clientSide
-    ? (requests.value ?? [])
-    : (requests.value ?? []).filter((request) => reviewPeriodIncludesMonth(request, preparedMonth))
-)
 const search = queryControl('requestSearch', '')
 const status = queryControl('requestStatus', 'ALL', (value) =>
   ['ALL', 'PENDING', 'APPROVED', 'DISPUTED', 'WITHDRAWN', 'AUTO_APPROVED'].includes(value)
@@ -82,20 +81,28 @@ const page = computed({
     pageQuery.value = String(value)
   }
 })
-const {
-  data: periodData,
-  pending: periodsPending,
-  error: periodsError,
-  refresh: refreshPeriods
-} = await useFetch<{ periods: ClientReviewPeriodDto[]; startsOn: string }, import('#app').NuxtError<unknown>, string>(
-  '/api/timesheets/admin/review-periods',
+const requestFetch = useFetch<ClientReviewRequestSummaryDto[], import('#app').NuxtError<unknown>, string>(
+  endpoint.value,
   {
-    key: `client-review-periods:${preparedMonth}`,
-    query: { month: preparedMonth },
-    immediate: !props.clientSide,
+    query: { summary: 'true', ...(!props.clientSide ? { month: preparedMonth } : {}) },
     watch: false
   }
 )
+const periodFetch = useFetch<
+  { periods: ClientReviewPeriodDto[]; startsOn: string },
+  import('#app').NuxtError<unknown>,
+  string
+>('/api/timesheets/admin/review-periods', {
+  key: `client-review-periods:${preparedMonth}`,
+  query: { month: preparedMonth },
+  immediate: !props.clientSide,
+  watch: false
+})
+const [
+  { data: requests, error, refresh },
+  { data: periodData, pending: periodsPending, error: periodsError, refresh: refreshPeriods }
+] = await Promise.all([requestFetch, periodFetch])
+const requestsForMonth = computed(() => requests.value ?? [])
 const periods = computed(() => periodData.value?.periods ?? [])
 const clientQuery = queryControl('reviewClient', 'ALL')
 const clientOptions = computed(() => [
@@ -183,6 +190,10 @@ const filtered = computed(() =>
 )
 const visible = computed(() => filtered.value.slice((page.value - 1) * 10, page.value * 10))
 const selected = ref<ClientReviewRequestDto | null>(null)
+const actionRequest = ref<ClientReviewRequestSummaryDto | null>(null)
+const detailPending = ref(false)
+const detailError = ref(false)
+let detailGeneration = 0
 const selectedPeriod = ref<ClientReviewPeriodDto | null>(null)
 const action = ref<'SEND' | 'APPROVE' | 'DISPUTE' | 'WITHDRAW'>('SEND')
 const open = ref(false)
@@ -193,11 +204,11 @@ const schema = computed(() =>
 )
 const begin = (
   nextAction: typeof action.value,
-  request: ClientReviewRequestDto | null = null,
+  request: ClientReviewRequestSummaryDto | null = null,
   period: ClientReviewPeriodDto | null = null
 ) => {
   action.value = nextAction
-  selected.value = request
+  actionRequest.value = request
   selectedPeriod.value = period
   state.comment = ''
   open.value = true
@@ -210,14 +221,14 @@ const submit = async () => {
         method: 'POST',
         body: { ...selectedPeriod.value, message: state.comment }
       })
-    } else if (selected.value) {
+    } else if (actionRequest.value) {
       const url =
         action.value === 'WITHDRAW'
-          ? `/api/timesheets/admin/review-requests/${selected.value.id}/withdraw`
-          : `/api/timesheets/client/review-requests/${selected.value.id}`
+          ? `/api/timesheets/admin/review-requests/${actionRequest.value.id}/withdraw`
+          : `/api/timesheets/client/review-requests/${actionRequest.value.id}`
       await $fetch<unknown, string>(url, {
         method: 'POST',
-        body: { version: selected.value.version, action: action.value, comment: state.comment }
+        body: { version: actionRequest.value.version, action: action.value, comment: state.comment }
       })
     }
     open.value = false
@@ -246,9 +257,25 @@ const reopen = async (submissionId: string) => {
     busy.value = false
   }
 }
-const detail = (request: ClientReviewRequestDto) => {
-  selected.value = request
+const detail = async (request: ClientReviewRequestSummaryDto) => {
+  const generation = ++detailGeneration
   detailsOpen.value = true
+  detailPending.value = true
+  detailError.value = false
+  try {
+    const result = await $fetch<ClientReviewRequestDto, string>(`${endpoint.value}/${encodeURIComponent(request.id)}`)
+    if (generation === detailGeneration) {
+      selected.value = result
+    }
+  } catch {
+    if (generation === detailGeneration) {
+      detailError.value = true
+    }
+  } finally {
+    if (generation === detailGeneration) {
+      detailPending.value = false
+    }
+  }
 }
 const grouped = computed(() => {
   const groups = new Map<string, { person: string; project: string; week: string; minutes: number }>()
@@ -262,14 +289,15 @@ const grouped = computed(() => {
   return [...groups.values()]
 })
 if (linkedRequest) {
-  detail(linkedRequest)
+  selected.value = linkedRequest
+  detailsOpen.value = true
 }
 </script>
 
 <template>
   <section class="space-y-4" :inert="changingMonth" :aria-busy="changingMonth || periodsPending">
     <h2 v-if="clientSide" class="text-xl font-semibold">{{ t(prefix + (clientSide ? 'clientTitle' : 'title')) }}</h2>
-    <UAlert v-if="error" color="error" :title="t(prefix + 'error')" />
+    <UAlert v-if="error || linkedResult?.error.value" color="error" :title="t(prefix + 'error')" />
     <UAlert v-if="affectedRequests.length" color="warning" :title="t(prefix + 'withdrawHelp')"
       ><template #description
         ><ul>
@@ -469,9 +497,7 @@ if (linkedRequest) {
             >
           </p>
           <p>
-            {{
-              t(prefix + 'hours', { hours: (request.entries.reduce((sum, e) => sum + e.minutes, 0) / 60).toFixed(2) })
-            }}
+            {{ t(prefix + 'hours', { hours: (request.totalMinutes / 60).toFixed(2) }) }}
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -484,9 +510,7 @@ if (linkedRequest) {
       </div>
       <div v-if="!clientSide && request.status === 'WITHDRAWN'" class="mt-3 flex flex-wrap gap-2">
         <UButton
-          v-for="entry in request.entries.filter(
-            (entry, index, entries) => entries.findIndex((other) => other.submissionId === entry.submissionId) === index
-          )"
+          v-for="entry in request.submissions"
           :key="entry.submissionId"
           :disabled="busy"
           variant="outline"
@@ -539,7 +563,11 @@ if (linkedRequest) {
     </UModal>
     <UModal v-if="detailsOpen" v-model:open="detailsOpen" :title="t(prefix + 'entries')" :ui="{ content: 'max-w-5xl' }">
       <template #body>
-        <div class="space-y-4 overflow-x-auto">
+        <div v-if="detailPending" class="flex justify-center py-8" role="status" :aria-label="t('common.loading')">
+          <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+        </div>
+        <UAlert v-else-if="detailError" color="error" :title="t(prefix + 'error')" />
+        <div v-else class="space-y-4 overflow-x-auto">
           <p>{{ selected?.startsOn }} – {{ selected?.endsOn }}</p>
           <table class="w-full text-left text-sm">
             <thead>

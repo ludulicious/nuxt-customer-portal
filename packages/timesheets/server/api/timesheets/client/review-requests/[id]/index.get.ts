@@ -8,9 +8,10 @@ export default defineEventHandler(async (event) => {
       organizationId,
       session.user.id,
       true,
-      ['owner', 'admin'].includes(role) || session.user.role === 'admin'
+      ['owner', 'admin'].includes(role) || session.user.role === 'admin',
+      { id: getRouterParam(event, 'id')! }
     )
-  ).find((request) => request.id === getRouterParam(event, 'id'))
+  )[0]
   if (!request) {
     throw createError({ statusCode: 404, message: 'Review request not found' })
   }

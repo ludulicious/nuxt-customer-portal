@@ -3,6 +3,7 @@ import sharp from 'sharp'
 
 export type PortalImageKind = 'user' | 'organization'
 export type PortalImageField = 'avatar' | 'logo'
+export type PortalImageSize = 96 | 512 | 960 | 1600
 
 export const portalImageVersion = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 24)
 
@@ -23,7 +24,7 @@ const pending = new Map<string, Promise<Buffer>>()
 let cacheBytes = 0
 const maxCacheBytes = 16 * 1024 * 1024
 
-export const portalImageThumbnail = async (value: string, size: 96 | 512) => {
+export const portalImageThumbnail = async (value: string, size: PortalImageSize) => {
   const key = `${portalImageVersion(value)}:${size}`
   const cached = thumbnails.get(key)
   if (cached) {

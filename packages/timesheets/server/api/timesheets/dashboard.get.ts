@@ -1,4 +1,4 @@
-import { listReviewRequests } from '@nuxt-customer-portal/timesheets/server/utils/client-review-requests'
+import { listReviewRequestSummaries } from '@nuxt-customer-portal/timesheets/server/utils/client-review-requests'
 import { selectClientDashboardApprovals } from '@nuxt-customer-portal/timesheets/shared/client-approval-dashboard'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, requireActiveOrganizationRole } from '@nuxt-customer-portal/core/server/portal'
@@ -47,36 +47,38 @@ export default defineEventHandler(async (event): Promise<TimesheetsDashboardDto>
     (settings?.internalApprovalsEnabled ?? true) &&
     (await hasInternalApprovalAssignment(organizationId, session.user.id))
 
-  const [bootstrap, approvalQueue, clientApprovals, reviewerSuppliers, supplierTimesheets] = await Promise.all([
-    canEnterTime ? getBootstrap(organizationId, session.user.id) : Promise.resolve(null),
-    hasInternalApprovals ? listApprovalQueue(organizationId, session.user.id) : Promise.resolve([]),
-    reviewWorkspaces.length ? listClientApprovals(organizationId, session.user.id, isAdmin) : Promise.resolve(null),
-    isAdmin && reviewWorkspaces.length
-      ? listClientReviewerSuppliers(organizationId, session.user.id)
-      : Promise.resolve([]),
-    canViewSupplierTime ? listClientSupplierTimesheets(organizationId, session.user.id, isAdmin) : Promise.resolve([])
-  ])
+  const [bootstrap, approvalQueue, clientApprovals, reviewerSuppliers, supplierTimesheets, periodRequests] =
+    await Promise.all([
+      canEnterTime ? getBootstrap(organizationId, session.user.id) : Promise.resolve(null),
+      hasInternalApprovals ? listApprovalQueue(organizationId, session.user.id) : Promise.resolve([]),
+      reviewWorkspaces.length ? listClientApprovals(organizationId, session.user.id, isAdmin) : Promise.resolve(null),
+      isAdmin && reviewWorkspaces.length
+        ? listClientReviewerSuppliers(organizationId, session.user.id)
+        : Promise.resolve([]),
+      canViewSupplierTime
+        ? listClientSupplierTimesheets(organizationId, session.user.id, isAdmin)
+        : Promise.resolve([]),
+      reviewWorkspaces.length
+        ? listReviewRequestSummaries(organizationId, session.user.id, true, isAdmin, { images: false })
+        : Promise.resolve([])
+    ])
 
   const pendingInternal = approvalQueue.filter((item) => item.status === 'SUBMITTED')
-  const periodRequests = reviewWorkspaces.length
-    ? await listReviewRequests(organizationId, session.user.id, true, isAdmin)
-    : []
   const periodItems = periodRequests
     .filter((r) => r.status === 'PENDING' || r.status === 'APPROVED')
     .map((request) => {
-      const decision = request.history.findLast((e) => e.action === 'APPROVED')
       return {
         id: request.id,
         supplierName: request.supplierName,
-        person: [...new Set(request.entries.map((e) => e.person))].join(', '),
+        person: request.people.join(', '),
         weekStartsOn: request.startsOn,
         periodStartsOn: request.startsOn,
         periodEndsOn: request.endsOn,
-        totalMinutes: request.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+        totalMinutes: request.totalMinutes,
         status: request.status as 'PENDING' | 'APPROVED',
         canAct: request.status === 'PENDING',
-        reviewerUserId: decision?.actorId ?? null,
-        reviewedAt: decision?.createdAt ?? null
+        reviewerUserId: request.reviewerUserId,
+        reviewedAt: request.reviewedAt
       }
     })
   const clientDashboard = selectClientDashboardApprovals(

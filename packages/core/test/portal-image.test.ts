@@ -67,3 +67,24 @@ test('image responses cache privately, revalidate with ETags and reject stale ve
   assert.equal(stale.status, 404)
   assert.equal(stale.headers.get('cache-control'), 'private, no-store')
 })
+
+test('public branding thumbnails cache without cookies and preserve useful background resolution', async () => {
+  const original = await sharp({ create: { width: 2000, height: 1200, channels: 3, background: '#2090aa' } })
+    .png()
+    .toBuffer()
+  const value = `data:image/png;base64,${original.toString('base64')}`
+  const app = createApp({ onError: () => {} }).use(
+    eventHandler((event) => portalImageResponse(event, value, 'logo', { public: true, size: 1600 }))
+  )
+  const request = toWebHandler(app)
+  const url = `http://localhost/api/portal/public/images/authBackgroundDesktop?v=${portalImageVersion(value)}`
+  const response = await request(new Request(url))
+  assert.equal(response.status, 200)
+  assert.match(response.headers.get('cache-control')!, /^public, max-age=86400, immutable$/)
+  assert.equal(response.headers.get('vary'), null)
+  const metadata = await sharp(Buffer.from(await response.arrayBuffer())).metadata()
+  assert.equal(metadata.width, 1600)
+  assert.equal(metadata.height, 960)
+  const cached = await request(new Request(url, { headers: { 'if-none-match': response.headers.get('etag')! } }))
+  assert.equal(cached.status, 304)
+})

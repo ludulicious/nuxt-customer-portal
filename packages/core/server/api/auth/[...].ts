@@ -1,5 +1,6 @@
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
-import { toWebRequest } from 'h3'
+import { toWebRequest, getRequestURL } from 'h3'
+import { organizationListImageResponse } from '../../utils/organization-images'
 
 defineRouteMeta({
   openAPI: {
@@ -14,5 +15,8 @@ defineRouteMeta({
 
 export default defineEventHandler(async (event) => {
   // The auth.handler expects a standard Request object
-  return auth.handler(toWebRequest(event))
+  const response = await auth.handler(toWebRequest(event))
+  return event.method === 'GET' && getRequestURL(event).pathname === '/api/auth/organization/list'
+    ? organizationListImageResponse(response)
+    : response
 })

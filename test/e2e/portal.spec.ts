@@ -209,3 +209,188 @@ test('profile images stay small through startup, uploads, profile edits and remo
     await pool.end()
   }
 })
+
+test('approval cards load summaries alongside periods and fetch time details on demand', async ({
+  page,
+  baseURL
+}, info) => {
+  test.skip(info.project.name.startsWith('demo'))
+  const signedIn = await page.request.post('/api/auth/sign-in/email', {
+    headers: {
+      origin: baseURL!,
+      'x-forwarded-for': info.project.name === 'portal-mobile' ? '192.0.2.52' : '192.0.2.51'
+    },
+    data: { email: 'owner@example.test', password: 'Portal-e2e-password-2026!' }
+  })
+  expect(signedIn.ok(), await signedIn.text()).toBeTruthy()
+  const organizations = await (await page.request.get('/api/auth/organization/list')).json()
+  expect(
+    (
+      await page.request.post('/api/auth/organization/set-active', {
+        headers: { origin: baseURL! },
+        data: { organizationId: organizations[0].id }
+      })
+    ).ok()
+  ).toBeTruthy()
+  const request = {
+    id: 'performance-request',
+    workspaceClientId: 'performance-link',
+    clientName: 'Performance client',
+    supplierName: 'Test Portal',
+    startsOn: '2020-01-01',
+    endsOn: '2020-01-31',
+    revision: 1,
+    status: 'PENDING',
+    version: 1,
+    supplementary: false,
+    replacesId: null,
+    replacesIds: [],
+    message: null,
+    totalMinutes: 120,
+    people: ['Test person'],
+    submissions: [],
+    reviewerUserId: null,
+    reviewedAt: null
+  }
+  let releaseSummary!: () => void
+  const periodsStarted = new Promise<void>((resolve) => {
+    releaseSummary = resolve
+  })
+  let summaryCalls = 0
+  let detailCalls = 0
+  await page.route('**/api/timesheets/admin/review-periods?**', async (route) => {
+    releaseSummary()
+    await route.fulfill({ json: { periods: [], startsOn: '2020-01-01' } })
+  })
+  await page.route('**/api/timesheets/admin/review-requests?**', async (route) => {
+    const url = new URL(route.request().url())
+    expect(url.searchParams.get('summary')).toBe('true')
+    expect(url.searchParams.get('month')).toBe('2020-01')
+    summaryCalls++
+    // A sequential implementation cannot render the cards until this barrier releases.
+    await periodsStarted
+    await route.fulfill({ json: [request] })
+  })
+  await page.route('**/api/timesheets/admin/review-requests/performance-request', async (route) => {
+    detailCalls++
+    await route.fulfill({
+      json: {
+        ...request,
+        entries: [
+          {
+            id: 'entry',
+            date: '2020-01-06',
+            weekStartsOn: '2020-01-06',
+            personId: 'person',
+            person: 'Test person',
+            project: 'Test project',
+            activity: 'Work',
+            minutes: 120,
+            note: 'Loaded on demand',
+            submissionId: 'submission'
+          }
+        ],
+        history: [
+          {
+            action: 'SENT',
+            actor: 'Portal Owner',
+            actorId: 'owner',
+            comment: 'Review these hours',
+            createdAt: '2020-02-01'
+          }
+        ]
+      }
+    })
+  })
+  await page.goto('/timesheets/client-approvals?reviewMonth=2020-01')
+  await expect(page.getByRole('heading', { name: 'Performance client', exact: true })).toBeVisible()
+  expect(summaryCalls).toBe(1)
+  expect(detailCalls).toBe(0)
+  await page.getByRole('button', { name: 'View details', exact: true }).click()
+  await expect(page.getByRole('dialog').getByText('Loaded on demand')).toBeVisible()
+  await expect(page.getByRole('dialog').getByText('Review these hours')).toBeVisible()
+  expect(detailCalls).toBe(1)
+  await page.goto('/timesheets/client-approvals?request=performance-request')
+  await expect(page.getByRole('dialog').getByText('Loaded on demand')).toBeVisible()
+  await expect(page).toHaveURL(/reviewMonth=2020-01/)
+})
+
+test('startup branding is compact while originals remain editable', async ({ page, baseURL }, info) => {
+  test.skip(info.project.name.startsWith('demo'))
+  const pool = new Pool({ connectionString: process.env.E2E_DATABASE_URL! })
+  const signedIn = await page.request.post('/api/auth/sign-in/email', {
+    headers: {
+      origin: baseURL!,
+      'x-forwarded-for': info.project.name === 'portal-mobile' ? '192.0.2.62' : '192.0.2.61'
+    },
+    data: { email: 'owner@example.test', password: 'Portal-e2e-password-2026!' }
+  })
+  expect(signedIn.ok(), await signedIn.text()).toBeTruthy()
+  const organizations = await (await page.request.get('/api/auth/organization/list')).json()
+  const organizationId = organizations[0].id
+  expect(
+    (
+      await page.request.post('/api/auth/organization/set-active', {
+        headers: { origin: baseURL! },
+        data: { organizationId }
+      })
+    ).ok()
+  ).toBeTruthy()
+  const saved = await (await page.request.get('/api/admin/portal-settings')).json()
+  const original = (await pool.query('select logo, metadata from organization where id=$1', [organizationId])).rows[0]
+  try {
+    const image =
+      'data:image/png;base64,' +
+      (
+        await sharp(randomBytes(640 * 640 * 3), { raw: { width: 640, height: 640, channels: 3 } })
+          .png()
+          .toBuffer()
+      ).toString('base64')
+    await pool.query('update organization set logo=$1, metadata=$2 where id=$3', [
+      image,
+      JSON.stringify({ avatarLogo: image }),
+      organizationId
+    ])
+    const settings = structuredClone(saved.settings)
+    settings.appearance.headerBranding = 'full-logo'
+    settings.branding.logoLight = image
+    settings.branding.markLight = image
+    const update = await page.request.put('/api/admin/portal-settings', { data: { settings } })
+    expect(update.ok(), await update.text()).toBeTruthy()
+    const publicResponse = await page.request.get('/api/portal/public')
+    const publicText = await publicResponse.text()
+    expect(publicText.length).toBeLessThan(20_000)
+    expect(publicText).not.toContain('data:image/')
+    const branding = JSON.parse(publicText).branding
+    const logo = await page.request.get(branding.logoLight)
+    expect(logo.ok()).toBeTruthy()
+    expect(logo.headers()['cache-control']).toContain('public,')
+    expect((await sharp(await logo.body()).metadata()).width).toBe(512)
+    const mark = await page.request.get(branding.markLight)
+    expect((await sharp(await mark.body()).metadata()).width).toBe(96)
+    const listed = await (await page.request.get('/api/auth/organization/list')).json()
+    expect(JSON.stringify(listed).length).toBeLessThan(5000)
+    expect(JSON.stringify(listed)).not.toContain('data:image/')
+    const permissions = await (await page.request.get('/api/auth/permissions')).json()
+    expect(JSON.stringify(permissions).length).toBeLessThan(15_000)
+    expect(JSON.stringify(permissions)).not.toContain('data:image/')
+    const privateLogo = await page.request.get(permissions.activeOrganization.logo)
+    expect(privateLogo.ok()).toBeTruthy()
+    expect(privateLogo.headers()['cache-control']).toContain('private,')
+    expect((await sharp(await privateLogo.body()).metadata()).width).toBe(512)
+    expect((await (await page.request.get('/api/admin/portal-settings')).json()).settings.branding.logoLight).toBe(
+      image
+    )
+    expect((await pool.query('select logo from organization where id=$1', [organizationId])).rows[0].logo).toBe(image)
+    await page.goto('/dashboard')
+    await expect(page.locator(`img[src="${branding.logoLight}"]`).first()).toHaveJSProperty('naturalWidth', 512)
+  } finally {
+    await pool.query('update organization set logo=$1, metadata=$2 where id=$3', [
+      original.logo,
+      original.metadata,
+      organizationId
+    ])
+    await page.request.put('/api/admin/portal-settings', { data: { settings: saved.settings } })
+    await pool.end()
+  }
+})
