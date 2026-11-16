@@ -36,6 +36,7 @@ import { isSystemAdminEmail, parseSystemAdminEmails } from './admin-email-allowl
 import { runUserIdentityChangedHooks } from './business-hooks'
 import { socialAuthProviders } from '../../shared/social-auth'
 import { resolveWebsiteOrigins } from './website-origins'
+import { prepareProfileImage, profileImageUrl, ProfileImageError } from './profile-image'
 
 /**
  * Generate an ID in the same format as better-auth uses (nanoid)
@@ -43,6 +44,21 @@ import { resolveWebsiteOrigins } from './website-origins'
  */
 export function generateId(): string {
   return nanoid()
+}
+
+const authUserImage = async <T extends { image?: string | null }>(user: T, userId?: string) => {
+  const { image, ...fields } = user
+  try {
+    const normalized = await prepareProfileImage(image, userId)
+    // Better Auth merges hook data into the original update. Explicit undefined
+    // removes a display reference from the adapter write instead of retaining it.
+    return { ...fields, image: normalized }
+  } catch (error) {
+    if (error instanceof ProfileImageError) {
+      throw new APIError('BAD_REQUEST', { code: error.code, message: error.message })
+    }
+    throw error
+  }
 }
 
 const portalAuthConfig = useRuntimeConfig().portalAuth
@@ -279,8 +295,11 @@ export const auth = betterAuth({
             }
           }
 
-          if (isSystemAdminEmail(user.email, systemAdminEmails)) {
-            return { data: { ...user, role: 'admin' } }
+          return {
+            data: {
+              ...(await authUserImage(user)),
+              ...(isSystemAdminEmail(user.email, systemAdminEmails) ? { role: 'admin' } : {})
+            }
           }
         },
         after: async (user) => {
@@ -321,6 +340,14 @@ export const auth = betterAuth({
         }
       },
       update: {
+        before: async (user, ctx) => {
+          if (user.image === undefined) {
+            return { data: user }
+          }
+          const current = ctx ? await getSessionFromCtx(ctx) : null
+          const targetId = typeof ctx?.body?.userId === 'string' ? ctx.body.userId : current?.user.id
+          return { data: await authUserImage(user, targetId) }
+        },
         after: async (updatedUser) => {
           await runUserIdentityChangedHooks(db, updatedUser.id, {
             firstName: typeof updatedUser.firstName === 'string' ? updatedUser.firstName : null,
@@ -446,7 +473,7 @@ export const auth = betterAuth({
       },
       defaultRole: 'user'
     }),
-    customSession(async (sessionData) => {
+    customSession(async (sessionData, ctx) => {
       // Destructure user and session from the input object
       const { user, session } = sessionData
       // Fetch the account for the user
@@ -461,6 +488,7 @@ export const auth = betterAuth({
         ...session, // Spread the original session part
         user: {
           ...user, // Spread the original user part
+          image: profileImageUrl(user.id, user.image, ctx.context.baseURL),
           providerId: account?.providerId || null // Add providerId to user object
         }
       }

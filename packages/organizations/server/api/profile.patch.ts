@@ -10,6 +10,11 @@ import { db } from '@nuxt-customer-portal/core/server/utils/db'
 import { user as userTable } from '@nuxt-customer-portal/core/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
 import type { SessionUser } from '@nuxt-customer-portal/core/shared/types/index'
+import {
+  prepareProfileImage,
+  profileImageUrl,
+  ProfileImageError
+} from '@nuxt-customer-portal/core/server/utils/profile-image'
 
 defineRouteMeta({
   openAPI: {
@@ -105,12 +110,22 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
     updateData.lastName = validatedData.lastName
   }
   if (validatedData.image !== undefined) {
-    updateData.image = validatedData.image
+    try {
+      const image = await prepareProfileImage(validatedData.image, user.id)
+      if (image !== undefined) {
+        updateData.image = image
+      }
+    } catch (error) {
+      if (error instanceof ProfileImageError) {
+        throw createError({ statusCode: 400, message: error.message, data: { field: 'image', code: error.code } })
+      }
+      throw error
+    }
   }
 
   // Save the profile and linked private client names atomically.
   const updatedUser = await db.transaction(async (tx) => {
-    const [updated] = await tx.update(userTable).set(updateData).where(eq(userTable.id, user.id)).returning({
+    const fields = {
       id: userTable.id,
       name: userTable.name,
       firstName: userTable.firstName,
@@ -118,7 +133,10 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
       email: userTable.email,
       image: userTable.image,
       timezone: userTable.timezone
-    })
+    }
+    const [updated] = Object.keys(updateData).length
+      ? await tx.update(userTable).set(updateData).where(eq(userTable.id, user.id)).returning(fields)
+      : await tx.select(fields).from(userTable).where(eq(userTable.id, user.id))
     if (updated && updateData.name !== undefined) {
       await runUserDisplayNameChangedHooks(tx, user.id, updated.name)
     }
@@ -144,7 +162,7 @@ export default defineEventHandler(async (event): Promise<UpdateProfileResponse> 
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
       email: updatedUser.email,
-      image: updatedUser.image,
+      image: profileImageUrl(updatedUser.id, updatedUser.image),
       timezone: updatedUser.timezone
     }
   }

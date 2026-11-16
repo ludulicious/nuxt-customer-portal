@@ -182,7 +182,7 @@
       "nameDescription": "Je weergavenaam",
       "namePlaceholder": "Voer je naam in",
       "profilePicture": "Profielfoto",
-      "profilePictureDescription": "JPG, GIF of PNG. Max. 1MB.",
+      "profilePictureDescription": "JPG, PNG, GIF of WebP, maximaal 5 MB. Wordt automatisch verkleind.",
       "chooseAvatar": "Kiezen",
       "firstName": "Voornaam",
       "lastName": "Achternaam",
@@ -205,6 +205,8 @@
     "validation": {
       "atLeastOneField": "Ten minste één veld (naam of afbeelding) moet worden ingevuld",
       "imageInvalidUrl": "Afbeelding moet een geldige URL zijn",
+      "imageTooLarge": "Kies een afbeelding kleiner dan 5 MB",
+      "imageInvalidFile": "Kies een geldige JPG-, PNG-, GIF- of WebP-afbeelding",
       "nameMaxLength": "Naam moet minder dan 255 tekens zijn",
       "nameRequired": "Naam is verplicht",
       "firstNameRequired": "Voornaam is verplicht",

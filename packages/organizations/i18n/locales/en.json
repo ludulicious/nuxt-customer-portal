@@ -182,7 +182,7 @@
       "nameDescription": "Your display name",
       "namePlaceholder": "Enter your name",
       "profilePicture": "Profile Picture",
-      "profilePictureDescription": "JPG, GIF or PNG. 1MB Max.",
+      "profilePictureDescription": "JPG, PNG, GIF or WebP, up to 5 MB. Resized automatically.",
       "chooseAvatar": "Choose",
       "firstName": "First name",
       "lastName": "Last name",
@@ -205,6 +205,8 @@
     "validation": {
       "atLeastOneField": "At least one field (name or image) must be provided",
       "imageInvalidUrl": "Image must be a valid URL",
+      "imageTooLarge": "Choose an image smaller than 5 MB",
+      "imageInvalidFile": "Choose a valid JPG, PNG, GIF or WebP image",
       "nameMaxLength": "Name must be less than 255 characters",
       "nameRequired": "Name is required",
       "firstNameRequired": "First name is required",

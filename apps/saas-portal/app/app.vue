@@ -7,6 +7,12 @@ const { locale } = useI18n()
 const colorMode = useColorMode()
 const settings = useState<Pick<PortalSettings, 'branding' | 'appearance'> | null>('portal-runtime-settings')
 const theme = computed(() => resolvePortalTheme(settings.value?.appearance?.theme))
+// Private thumbnail routes need browser cookies and already return sized images.
+// IPX treats relative API URLs as local files and rejects them.
+const themeProps = computed(() => ({
+  ...theme.value.props,
+  avatar: { ...theme.value.props.avatar, as: { img: 'img' } }
+}))
 const uiLocale = computed(() => (locale.value === 'nl' ? nl : en))
 
 const defaultMarks = {
@@ -79,7 +85,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UTheme :props="theme.props" :ui="theme.ui">
+  <UTheme :props="themeProps" :ui="theme.ui">
     <UApp :locale="uiLocale">
       <DemoBanner />
       <NuxtLoadingIndicator />
