@@ -2,7 +2,19 @@
 
 ## Unreleased
 
-- Keep profile photos out of session/profile JSON by returning authenticated avatar URLs, including for existing uploads. Resize new embedded profile photos to at most 256 pixels and 32 KiB of WebP data, reuse one startup session request, and render avatars directly without IPX. Validate uploads and preserve unchanged avatar references when editing a profile.
+## 0.13.2 - 2026-11-16
+
+### Profile photos and startup performance
+
+- Return authenticated avatar URLs in session and profile JSON, including for existing large uploads, and serve cached 96-pixel WebP thumbnails.
+- Accept embedded JPG, PNG, GIF and WebP uploads up to 5 MB. Resize new profile photos to at most 256 pixels and 32 KiB of WebP data, with inline English and Dutch validation errors.
+- Reuse the reactive startup session request instead of fetching the session separately first.
+- Render avatars directly without IPX to fix private image authorization errors. Preserve stored photos when unchanged or stale avatar references are submitted through profile or Better Auth updates.
+
+### Upgrade from 0.13.1
+
+- No database or image migration is required. Existing embedded photos use thumbnail URLs immediately; new uploads use the smaller storage format. External image URLs remain supported.
+- Use source tag `v0.13.2` or the verified `ghcr.io/ludulicious/nuxt-customer-portal:0.13.2` image. Publication does not deploy production or migrate a production database.
 
 ## 0.13.1 - 2026-11-16
 
