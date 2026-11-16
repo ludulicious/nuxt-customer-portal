@@ -13,6 +13,6 @@ WORKDIR /app/apps/saas-portal
 COPY apps/saas-portal/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
-HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=5 CMD curl --fail --silent http://localhost:3000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=5 CMD curl --fail --silent http://localhost:3000/api/health || exit 1
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", ".output/server/index.mjs"]
