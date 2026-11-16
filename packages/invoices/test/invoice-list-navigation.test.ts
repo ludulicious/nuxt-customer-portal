@@ -341,20 +341,20 @@ test('unavailable session storage does not prevent loading or navigating away', 
 })
 
 test('sales links and list restoration preserve the order return path and direct-detail fallback', () => {
-  const list = readFileSync(new URL('../app/components/InvoicesAdminInvoices.vue', import.meta.url), 'utf8')
+  const list = readFileSync(new URL('../app/components/InvoicesAdminInvoiceList.vue', import.meta.url), 'utf8')
   const detail = readFileSync(new URL('../app/pages/admin/invoices/[id].vue', import.meta.url), 'utf8')
   const component = readFileSync(new URL('../app/components/InvoicesInvoiceDetail.vue', import.meta.url), 'utf8')
   assert.equal(list.match(/invoicesReturnTo: route.fullPath/g)?.length, 2)
   assert.match(list, /:initial-scroll-top="listing.initialScrollTop.value"/)
   assert.match(list, /@scroll="listing.updateScroll"/)
-  assert.match(list, /await listing.restore\(\)/)
+  assert.match(list, /void listing.restore\(\)/)
   assert.match(detail, /:back-to="ordersReturnTo \|\| invoicesReturnTo"/)
   assert.match(component, /backTo \|\| \(isClient \? '\/invoices' : '\/admin\/invoices'\)/)
 })
 
 test('sales refresh reloads both settings and invoices created by background tasks', () => {
   const page = readFileSync(new URL('../app/pages/admin/invoices/index.vue', import.meta.url), 'utf8')
-  assert.match(page, /await refresh\(\)\s+await child\.value\?\.refreshList\(\)/)
+  assert.match(page, /await Promise\.all\(\[refresh\(\), child\.value\?\.refreshList\(\)\]\)/)
   assert.match(page, /@click="refreshInvoices"/)
   assert.match(page, /:loading="refreshing"/)
 })

@@ -3,7 +3,11 @@ import type { ComponentPublicInstance } from 'vue'
 import type { TimesheetsAdminBootstrap } from '@nuxt-customer-portal/timesheets/app/composables/useTimesheets'
 import type { ProjectDto } from '@nuxt-customer-portal/timesheets/shared/types/timesheet'
 
-const props = defineProps<{ data: TimesheetsAdminBootstrap; refresh: () => Promise<unknown> }>()
+const props = defineProps<{
+  data: TimesheetsAdminBootstrap
+  refresh: () => Promise<unknown>
+  listing?: ReturnType<typeof useTimesheetsAdminList<ProjectDto>>
+}>()
 const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
@@ -20,12 +24,14 @@ const form = reactive({
   budgetAmount: null as number | null,
   activityTypeIds: [] as string[]
 })
-const listing = useTimesheetsAdminList<ProjectDto>({
-  endpoint: '/api/timesheets/admin/projects',
-  filterKeys: ['clientOrganizationId', 'status'],
-  defaultFilters: { status: 'ACTIVE' },
-  defaultSort: 'name'
-})
+const listing =
+  props.listing ??
+  useTimesheetsAdminList<ProjectDto>({
+    endpoint: '/api/timesheets/admin/projects',
+    filterKeys: ['clientOrganizationId', 'status'],
+    defaultFilters: { status: 'ACTIVE' },
+    defaultSort: 'name'
+  })
 const activeProjects = listing.items
 const internalOrganizationLabel = computed(() =>
   t('features.timesheets.admin.internalOrganization', { name: props.data.providerOrganization.name })
@@ -144,7 +150,9 @@ defineExpose({
   refreshList: () => listing.refresh(),
   showCreate: computed(() => Boolean(activeProjects.value.length) && !formOpen.value)
 })
-await listing.load()
+if (!props.listing) {
+  void listing.load()
+}
 </script>
 
 <template>

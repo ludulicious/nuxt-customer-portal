@@ -21,6 +21,11 @@ export interface InvoicesAdminBootstrap {
   organizationProfile: InvoiceSettingsDto & { name: string; logo: string | null }
 }
 
+export interface InvoiceListContext {
+  clients: Array<{ organizationId: string; name: string }>
+  canCreate: boolean
+}
+
 export const useInvoices = () => ({
   saveRecurringInvoice: (input: RecurringInvoiceInput, id?: string) =>
     $fetch<RecurringInvoiceDto, string>(id ? `/api/invoices/admin/recurring/${id}` : '/api/invoices/admin/recurring', {
@@ -30,6 +35,7 @@ export const useInvoices = () => ({
   clientAccessOverview: (clientId: string) =>
     $fetch<InvoiceClientAccessOverviewDto, string>(`/api/invoices/admin/clients/${clientId}/access`),
   adminBootstrap: () => $fetch<InvoicesAdminBootstrap, string>('/api/invoices/admin/bootstrap'),
+  listContext: () => $fetch<InvoiceListContext, string>('/api/invoices/admin/list-context'),
   getSettings: () => $fetch<InvoiceSettingsDto, string>('/api/invoices/admin/settings'),
   updateSettings: (input: Omit<InvoiceSettingsDto, 'organizationId'>) =>
     $fetch<unknown, string>('/api/invoices/admin/settings', { method: 'PUT', body: input }),

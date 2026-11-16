@@ -412,6 +412,7 @@
         "clearBudget": "Clear budget"
       },
       "messages": {
+        "fetchError": "Timesheet data could not be loaded",
         "saved": "Time saved",
         "saveError": "The change could not be saved",
         "projectCreated": "Project created",

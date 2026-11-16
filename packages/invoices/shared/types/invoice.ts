@@ -97,6 +97,25 @@ export interface InvoiceDto {
   reminderCount: number
   lastReminderSentAt: string | null
 }
+export type InvoiceSummaryDto = Pick<
+  InvoiceDto,
+  | 'id'
+  | 'number'
+  | 'status'
+  | 'currency'
+  | 'issueDate'
+  | 'dueDate'
+  | 'subject'
+  | 'recipientName'
+  | 'clientOrganizationId'
+  | 'totalMinor'
+  | 'outstandingMinor'
+  | 'isOverdue'
+  | 'daysOverdue'
+  | 'reminderCount'
+  | 'lastReminderSentAt'
+>
+
 export type ClientInvoiceSummaryDto = Pick<
   InvoiceDto,
   | 'id'

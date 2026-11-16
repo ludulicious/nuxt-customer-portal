@@ -412,6 +412,7 @@
         "clearBudget": "Budget wissen"
       },
       "messages": {
+        "fetchError": "De urenregistratie kon niet worden geladen",
         "saved": "Tijd opgeslagen",
         "saveError": "De wijziging kon niet worden opgeslagen",
         "projectCreated": "Project gemaakt",

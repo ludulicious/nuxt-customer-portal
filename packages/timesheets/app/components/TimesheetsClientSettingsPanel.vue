@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { ClientTimesheetSettingsDto } from '../../shared/types/client-review-request'
-import type { GenericClientDto } from '@nuxt-customer-portal/clients/types'
+import type { ClientSummaryDto } from '@nuxt-customer-portal/clients/shared/types/client'
 
-const props = defineProps<{ client: GenericClientDto; showClient?: boolean }>()
+const props = defineProps<{
+  client: Pick<ClientSummaryDto, 'organizationId' | 'name' | 'avatarLogo' | 'logo'>
+  showClient?: boolean
+}>()
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const toast = useToast()

@@ -12,6 +12,7 @@ import { member, organization, user } from './db/schema/auth-schema'
 import { auth } from '@nuxt-customer-portal/core/server/utils/auth'
 import { db } from '@nuxt-customer-portal/core/server/utils/db'
 import { getUserOrganizationRole } from '@nuxt-customer-portal/core/server/utils/permissions'
+import { portalImageUrl } from './utils/portal-image'
 
 export { db }
 export type { PortalSession } from '@nuxt-customer-portal/core/shared/portal-session'
@@ -118,8 +119,8 @@ export const requireActiveOrganizationRole = async (event: H3Event) => {
  * Stable portal-core projections used by feature layers. Keeping these here
  * prevents features from importing host authentication tables at runtime.
  */
-export const listPortalOrganizationMembers = async (organizationId: string) =>
-  db
+export const listPortalOrganizationMembers = async (organizationId: string) => {
+  const rows = await db
     .select({
       id: user.id,
       name: user.name,
@@ -133,6 +134,8 @@ export const listPortalOrganizationMembers = async (organizationId: string) =>
     .innerJoin(user, eq(user.id, member.userId))
     .where(eq(member.organizationId, organizationId))
     .orderBy(asc(user.name), asc(user.email))
+  return rows.map((row) => ({ ...row, image: portalImageUrl('user', row.id, 'avatar', row.image) }))
+}
 
 export const searchPortalOrganizations = async (workspaceOrganizationId: string, search?: string) =>
   db

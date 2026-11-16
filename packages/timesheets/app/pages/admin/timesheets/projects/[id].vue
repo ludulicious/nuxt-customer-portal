@@ -20,7 +20,7 @@ const {
   data,
   pending: dataPending,
   refresh: refreshData
-} = await useAsyncData('timesheets-admin-project-detail', () => timesheets.adminBootstrap('projects'))
+} = await useAsyncData('timesheets-admin-project-detail', () => timesheets.adminBootstrap('project-detail'))
 const pending = computed(() => projectPending.value || dataPending.value)
 useSeoMeta({ title: computed(() => project.value?.name ?? t('features.timesheets.admin.projects')) })
 const handleDeleted = async () => {

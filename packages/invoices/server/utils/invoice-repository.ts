@@ -98,7 +98,16 @@ export const listInvoiceClients = async (_organizationId: string) => {
     ? await db.select().from(billingContact).where(inArray(billingContact.organizationId, ids))
     : []
   return clients.map((client) => ({
-    ...client,
+    id: client.id,
+    organizationId: client.organizationId,
+    clientType: client.clientType,
+    name: client.name,
+    officialName: client.officialName,
+    address: client.address,
+    registrationNumber: client.registrationNumber,
+    vatNumber: client.vatNumber,
+    invoiceEmail: client.invoiceEmail,
+    preferredLocale: client.preferredLocale,
     contacts:
       client.clientType === 'person'
         ? []
