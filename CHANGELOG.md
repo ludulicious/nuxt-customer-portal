@@ -2,12 +2,24 @@
 
 ## Unreleased
 
+## 0.13.3 - 2026-11-16
+
 ### Approval and startup performance
 
 - Return versioned thumbnail URLs for embedded portal branding, organization selector images, permissions, and approval cards. Use public caching for public branding and authenticated private caching for organization and review images; preserve originals for editing and documents.
 - Load approval cards from compact summaries, filter provider requests by month in PostgreSQL, and fetch entry snapshots and history when opening time details. Start the request list and available review periods together.
 - Build client dashboard approval totals from summaries without loading entry snapshots, histories, or branding, alongside the other dashboard queries.
 - Keep existing detailed collection API responses available; summary consumers can request `summary=true` and an optional `month=YYYY-MM`. No database migration is required.
+
+### Container health checks
+
+- Run portal and documentation Docker health checks every 30 seconds.
+
+### Upgrade from 0.13.2
+
+- No database or image migration is required. Existing embedded organization and portal branding images use versioned thumbnails; original uploads remain available for editing and documents.
+- Approval collection APIs retain their detailed response by default. Consumers can request compact summaries with `summary=true`, use `month=YYYY-MM` for month-scoped results, and fetch a single request's details by ID.
+- Use source tag `v0.13.3` or the verified `ghcr.io/ludulicious/nuxt-customer-portal:0.13.3` image. Publication does not deploy production or migrate a production database.
 
 ## 0.13.2 - 2026-11-16
 
