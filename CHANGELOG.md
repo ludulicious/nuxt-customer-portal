@@ -2,7 +2,20 @@
 
 ## Unreleased
 
-- Speed up portal navigation with authenticated, versioned avatar/logo thumbnails, smaller client and invoice list responses, and independent loading of collections and supporting data. Apply sales invoice search, filters, totals, sorting and pagination in PostgreSQL without loading document images or histories.
+## 0.13.1 - 2026-11-16
+
+### Portal navigation performance
+
+- Serve embedded avatars and organization logos through authenticated, versioned WebP thumbnails with private browser caching and ETags. Preserve stored originals for editing and invoice documents.
+- Return client summaries without member or invitation graphs, and sales invoice summaries without document logos, lines or histories.
+- Load sales invoice collections independently of filter options and the invoice wizard. Start Timesheets Projects and Activities list requests alongside section-specific supporting data, and show loading and error states without blocking navigation.
+- Apply sales invoice search, filters, totals, overdue calculation, natural number sorting and pagination in PostgreSQL with organization scoping.
+
+### Upgrade from 0.13.0
+
+- No database or image migration is required. Existing image uploads and external image URLs remain supported.
+- API consumers that need client members/invitations or invoice document fields should use the corresponding detail endpoints instead of collection responses.
+- Use source tag `v0.13.1` or the verified `ghcr.io/ludulicious/nuxt-customer-portal:0.13.1` image. Publication does not deploy production or migrate a production database.
 
 ## 0.13.0 ? 2026-11-13
 
