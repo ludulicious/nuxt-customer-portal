@@ -7,8 +7,10 @@ import { clientReviewPeriods, nextReviewMonth, type ClientReviewInterval } from 
 import type {
   ClientReviewPeriodDto,
   ClientReviewRequestDto,
+  ClientReviewRequestSummaryDto,
   ReviewEntrySnapshot
 } from '../../shared/types/client-review-request'
+import { reviewImageUrl } from './review-images'
 import { notifyReviewRequest } from './client-review-request-email'
 
 type OrganizationBranding = { logo: string | null; metadata: string | null }
@@ -221,7 +223,7 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
       result.push({
         workspaceClientId: link.id,
         clientName: link.name,
-        clientAvatar: getOrganizationAvatar(link.branding) ?? null,
+        clientAvatar: reviewImageUrl(link.id, 'client', link.branding),
         timeTrackingEnabled: link.timeTrackingEnabled,
         ...period,
         interval,
@@ -246,30 +248,68 @@ export const listReviewPeriods = async (workspaceId: string, month: string): Pro
   return result
 }
 
-/** Include earlier decisions and approved work that does not require a client request. */
-export const listSubmissionReviewRequests = async (workspaceId: string): Promise<ClientReviewRequestDto[]> => {
-  const rows = await reviewRows<{
-    workspaceClientId: string
-    clientName: string
-    supplierName: string
+interface ReviewRequestOptions {
+  month?: string
+  id?: string
+  images?: boolean
+}
+type RequestRecord = Omit<ClientReviewRequestDto, 'entries' | 'history'>
+const imageReferences = async <T extends { workspaceClientId: string }>(rows: T[]): Promise<T[]> => {
+  const ids = [...new Set(rows.map((row) => row.workspaceClientId))]
+  if (!ids.length) {
+    return rows
+  }
+  const branding = await reviewRows<{
+    id: string
     clientBranding: OrganizationBranding
     supplierBranding: OrganizationBranding
-    submissionId: string
-    status: ClientReviewRequestDto['status']
-    comment: string | null
-    snapshot: ReviewEntrySnapshot
   }>(
     db,
     sql`
-    select wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
-      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
-      json_build_object('logo', provider.logo, 'metadata', provider.metadata) as "supplierBranding",
-      e.submission_id as "submissionId", coalesce(cr.status::text, 'AUTO_APPROVED') as status, cr.comment,
-      jsonb_build_object('id', e.id, 'date', e.entry_date::text,
-        'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce(w.week_starts_on, 1) + 7) % 7))::text,
-        'personId', e.user_id, 'person', u.name, 'project', p.name, 'activity', a.name,
-        'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
-        'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
+    select wc.id, json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
+      json_build_object('logo', p.logo, 'metadata', p.metadata) as "supplierBranding"
+    from timesheets.workspace_client wc
+    join public.organization c on c.id = wc.client_organization_id
+    join public.organization p on p.id = wc.workspace_organization_id
+    where wc.id in (${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `
+    )})`
+  )
+  const byId = new Map(
+    branding.map((row) => [
+      row.id,
+      {
+        clientAvatar: reviewImageUrl(row.id, 'client', row.clientBranding),
+        supplierAvatar: reviewImageUrl(row.id, 'supplier', row.supplierBranding)
+      }
+    ])
+  )
+  return rows.map((row) => ({ ...row, ...byId.get(row.workspaceClientId) }))
+}
+
+export const readReviewImage = async (
+  organizationId: string,
+  userId: string,
+  isAdmin: boolean,
+  linkId: string,
+  side: 'client' | 'supplier'
+) => {
+  const [row] = await reviewRows<{ branding: OrganizationBranding }>(
+    db,
+    sql`
+    select json_build_object('logo', o.logo, 'metadata', o.metadata) as branding
+    from timesheets.workspace_client wc
+    join public.organization o on o.id = ${side === 'client' ? sql`wc.client_organization_id` : sql`wc.workspace_organization_id`}
+    where wc.id = ${linkId} and (
+      (wc.workspace_organization_id = ${organizationId} and ${isAdmin}) or
+      (wc.client_organization_id = ${organizationId} and wc.access_mode = 'REVIEW' and
+        (${isAdmin} or exists (select 1 from timesheets.workspace_client_reviewer a where a.workspace_client_id = wc.id and a.user_id = ${userId}))))`
+  )
+  return row ? (getOrganizationAvatar(row.branding) ?? null) : null
+}
+
+const submissionReviewSource = (workspaceId: string, options: ReviewRequestOptions) => sql`
     from timesheets.time_entry e
     join timesheets.submission s on s.id = e.submission_id
     join timesheets.workspace_client wc on wc.workspace_organization_id = e.organization_id and wc.client_organization_id = e.client_organization_id
@@ -280,14 +320,41 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
     join timesheets.activity_type a on a.id = e.activity_type_id
     left join timesheets.workspace_settings w on w.organization_id = e.organization_id
     left join timesheets.client_review cr on cr.submission_id = s.id and cr.client_organization_id = e.client_organization_id
-    where e.organization_id = ${workspaceId} and (
+    where e.organization_id = ${workspaceId}
+      ${options.month ? sql`and e.entry_date >= ${options.month + '-01'}::date and e.entry_date < (${options.month + '-01'}::date + interval '1 month')` : sql``}
+      ${options.id ? sql`and ('submission:' || e.submission_id || ':' || wc.id || ':' || to_char(e.entry_date, 'YYYY-MM')) = ${options.id}` : sql``}
+      and (
       (e.entry_date < (select starts_on from timesheets.client_review_rollout) and (cr.id is not null or s.status = 'APPROVED'))
       or (wc.access_mode <> 'REVIEW' and s.status = 'APPROVED' and e.timer_started_at is null and cr.id is null
         and not exists (select 1 from timesheets.client_review_request_entry re
           join timesheets.client_review_request r on r.id = re.request_id
           where re.entry_id = e.id and r.status <> 'WITHDRAWN'))
-    )
-    order by e.entry_date, e.id`
+    )`
+
+/** Include earlier decisions and approved work that does not require a client request. */
+export const listSubmissionReviewRequests = async (
+  workspaceId: string,
+  options: ReviewRequestOptions = {}
+): Promise<ClientReviewRequestDto[]> => {
+  const rows = await reviewRows<{
+    workspaceClientId: string
+    clientName: string
+    supplierName: string
+    submissionId: string
+    status: ClientReviewRequestDto['status']
+    comment: string | null
+    snapshot: ReviewEntrySnapshot
+  }>(
+    db,
+    sql`
+    select wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
+      e.submission_id as "submissionId", coalesce(cr.status::text, 'AUTO_APPROVED') as status, cr.comment,
+      jsonb_build_object('id', e.id, 'date', e.entry_date::text,
+        'weekStartsOn', (e.entry_date - ((extract(dow from e.entry_date)::integer - coalesce(w.week_starts_on, 1) + 7) % 7))::text,
+        'personId', e.user_id, 'person', u.name, 'project', p.name, 'activity', a.name,
+        'minutes', e.duration_minutes, 'note', e.note, 'billable', e.billable_snapshot,
+        'rate', e.hourly_rate_minor_snapshot, 'currency', e.currency_snapshot, 'submissionId', e.submission_id) as snapshot
+    ${submissionReviewSource(workspaceId, options)} order by e.entry_date, e.id`
   )
   const grouped = new Map<string, ClientReviewRequestDto>()
   for (const row of rows) {
@@ -301,8 +368,6 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
         workspaceClientId: row.workspaceClientId,
         clientName: row.clientName,
         supplierName: row.supplierName,
-        clientAvatar: getOrganizationAvatar(row.clientBranding) ?? null,
-        supplierAvatar: getOrganizationAvatar(row.supplierBranding) ?? null,
         startsOn: date,
         endsOn: date,
         revision: 1,
@@ -320,48 +385,128 @@ export const listSubmissionReviewRequests = async (workspaceId: string): Promise
     request.endsOn = date
     request.entries.push(row.snapshot)
   }
-  return [...grouped.values()]
+  return imageReferences([...grouped.values()])
+}
+
+export const listSubmissionReviewRequestSummaries = async (
+  workspaceId: string,
+  options: ReviewRequestOptions = {}
+): Promise<ClientReviewRequestSummaryDto[]> =>
+  imageReferences(
+    await reviewRows<ClientReviewRequestSummaryDto>(
+      db,
+      sql`
+    select ('submission:' || e.submission_id || ':' || wc.id || ':' || to_char(e.entry_date, 'YYYY-MM')) as id,
+      e.submission_id as "legacySubmissionId", wc.id as "workspaceClientId", c.name as "clientName", provider.name as "supplierName",
+      min(e.entry_date)::text as "startsOn", max(e.entry_date)::text as "endsOn",
+      1 as revision, 1 as version, coalesce(cr.status::text, 'AUTO_APPROVED') as status,
+      false as supplementary, null as "replacesId", '[]'::jsonb as "replacesIds", cr.comment as message,
+      sum(e.duration_minutes)::integer as "totalMinutes", jsonb_agg(distinct u.name) as people,
+      '[]'::jsonb as submissions, null as "reviewerUserId", null as "reviewedAt"
+    ${submissionReviewSource(workspaceId, options)}
+    group by e.submission_id, wc.id, c.name, provider.name, to_char(e.entry_date, 'YYYY-MM'), cr.status, cr.comment
+    order by min(e.entry_date) desc, wc.id, e.submission_id`
+    )
+  )
+
+const reviewRequestRecords = async (
+  organizationId: string,
+  userId: string,
+  clientSide: boolean,
+  isAdmin: boolean,
+  options: ReviewRequestOptions
+) =>
+  reviewRows<RequestRecord>(
+    db,
+    sql`
+    select r.id, r.workspace_client_id as "workspaceClientId", c.name as "clientName", p.name as "supplierName",
+      r.starts_on::text as "startsOn", r.ends_on::text as "endsOn", r.revision, r.status, r.version, r.supplementary,
+      r.replaces_id as "replacesId", coalesce((select jsonb_agg(replaces_id order by replaces_id) from timesheets.client_review_request_replacement where request_id = r.id), '[]'::jsonb) as "replacesIds", r.message
+    from timesheets.client_review_request r join timesheets.workspace_client wc on wc.id = r.workspace_client_id
+    join public.organization c on c.id = wc.client_organization_id join public.organization p on p.id = wc.workspace_organization_id
+    where ${clientSide ? sql`wc.client_organization_id = ${organizationId} and wc.access_mode = 'REVIEW' and (${isAdmin} or exists (select 1 from timesheets.workspace_client_reviewer a where a.workspace_client_id = wc.id and a.user_id = ${userId}))` : sql`wc.workspace_organization_id = ${organizationId}`}
+      ${options.month ? sql`and r.ends_on >= ${options.month + '-01'}::date and r.starts_on < (${options.month + '-01'}::date + interval '1 month')` : sql``}
+      ${options.id ? sql`and r.id = ${options.id}` : sql``}
+    order by r.starts_on desc, c.name, r.revision desc`
+  )
+
+export const listReviewRequestSummaries = async (
+  organizationId: string,
+  userId: string,
+  clientSide: boolean,
+  isAdmin: boolean,
+  options: ReviewRequestOptions = {}
+): Promise<ClientReviewRequestSummaryDto[]> => {
+  const requests = await reviewRequestRecords(organizationId, userId, clientSide, isAdmin, options)
+  if (!requests.length) {
+    return []
+  }
+  const ids = sql.join(
+    requests.map((r) => sql`${r.id}`),
+    sql`, `
+  )
+  const totals = await reviewRows<{
+    id: string
+    totalMinutes: number
+    people: string[]
+    submissions: ClientReviewRequestSummaryDto['submissions']
+    reviewerUserId: string | null
+    reviewedAt: string | null
+  }>(
+    db,
+    sql`
+    select r.id, coalesce(sum((e.snapshot->>'minutes')::integer),0)::integer as "totalMinutes",
+      coalesce(jsonb_agg(distinct e.snapshot->>'person') filter (where e.entry_id is not null), '[]'::jsonb) as people,
+      case when r.status = 'WITHDRAWN' and ${!clientSide} then
+        coalesce(jsonb_agg(distinct jsonb_build_object('submissionId', e.snapshot->>'submissionId', 'person', e.snapshot->>'person')) filter (where e.entry_id is not null), '[]'::jsonb)
+        else '[]'::jsonb end as submissions,
+      decision.actor_id as "reviewerUserId", decision.created_at::text as "reviewedAt"
+    from timesheets.client_review_request r
+    left join timesheets.client_review_request_entry e on e.request_id = r.id
+    left join (select distinct on (request_id) request_id, actor_id, created_at from timesheets.client_review_request_event
+      where request_id in (${ids}) and action = 'APPROVED' order by request_id, created_at desc, id desc) decision on decision.request_id = r.id
+    where r.id in (${ids}) group by r.id, decision.actor_id, decision.created_at`
+  )
+  const byId = new Map(totals.map((row) => [row.id, row]))
+  const summaries = requests.map((request) => ({ ...request, ...byId.get(request.id)! }))
+  return options.images === false ? summaries : imageReferences(summaries)
 }
 
 export const listReviewRequests = async (
   organizationId: string,
   userId: string,
   clientSide: boolean,
-  isAdmin: boolean
+  isAdmin: boolean,
+  options: ReviewRequestOptions = {}
 ): Promise<ClientReviewRequestDto[]> => {
-  const requests = await reviewRows<
-    Omit<ClientReviewRequestDto, 'entries' | 'history'> & {
-      clientBranding: OrganizationBranding
-      supplierBranding: OrganizationBranding
-    }
-  >(
-    db,
-    sql`
-    select r.id, r.workspace_client_id as "workspaceClientId", c.name as "clientName", p.name as "supplierName",
-      json_build_object('logo', c.logo, 'metadata', c.metadata) as "clientBranding",
-      json_build_object('logo', p.logo, 'metadata', p.metadata) as "supplierBranding",
-      r.starts_on::text as "startsOn", r.ends_on::text as "endsOn", r.revision, r.status, r.version, r.supplementary,
-      r.replaces_id as "replacesId", coalesce((select jsonb_agg(replaces_id order by replaces_id) from timesheets.client_review_request_replacement where request_id = r.id), '[]'::jsonb) as "replacesIds", r.message
-    from timesheets.client_review_request r join timesheets.workspace_client wc on wc.id = r.workspace_client_id
-    join public.organization c on c.id = wc.client_organization_id join public.organization p on p.id = wc.workspace_organization_id
-    where ${clientSide ? sql`wc.client_organization_id = ${organizationId} and wc.access_mode = 'REVIEW' and (${isAdmin} or exists (select 1 from timesheets.workspace_client_reviewer a where a.workspace_client_id = wc.id and a.user_id = ${userId}))` : sql`wc.workspace_organization_id = ${organizationId}`}
-    order by r.starts_on desc, c.name, r.revision desc`
+  const requests = await reviewRequestRecords(organizationId, userId, clientSide, isAdmin, options)
+  if (!requests.length) {
+    return []
+  }
+  const ids = sql.join(
+    requests.map((r) => sql`${r.id}`),
+    sql`, `
   )
-  return Promise.all(
-    requests.map(async ({ clientBranding, supplierBranding, ...request }) => ({
+  const [entries, history] = await Promise.all([
+    reviewRows<{ requestId: string; snapshot: ClientReviewRequestDto['entries'][number] }>(
+      db,
+      sql`
+      select request_id as "requestId", ${clientSide ? sql`snapshot - 'rate' - 'currency' - 'billable'` : sql`snapshot`} as snapshot
+      from timesheets.client_review_request_entry where request_id in (${ids}) order by snapshot->>'date', snapshot->>'person', entry_id`
+    ),
+    reviewRows<ClientReviewRequestDto['history'][number] & { requestId: string }>(
+      db,
+      sql`
+      select e.request_id as "requestId", e.action, u.name as actor, e.actor_id as "actorId", e.comment, e.created_at::text as "createdAt"
+      from timesheets.client_review_request_event e join public."user" u on u.id = e.actor_id
+      where request_id in (${ids}) order by e.created_at, e.id`
+    )
+  ])
+  return imageReferences(
+    requests.map((request) => ({
       ...request,
-      clientAvatar: getOrganizationAvatar(clientBranding) ?? null,
-      supplierAvatar: getOrganizationAvatar(supplierBranding) ?? null,
-      entries: (
-        await reviewRows<{ snapshot: ClientReviewRequestDto['entries'][number] }>(
-          db,
-          sql`select ${clientSide ? sql`snapshot - 'rate' - 'currency' - 'billable'` : sql`snapshot`} as snapshot from timesheets.client_review_request_entry where request_id = ${request.id} order by snapshot->>'date', snapshot->>'person', entry_id`
-        )
-      ).map((e) => e.snapshot),
-      history: await reviewRows<ClientReviewRequestDto['history'][number]>(
-        db,
-        sql`select e.action, u.name as actor, e.actor_id as "actorId", e.comment, e.created_at::text as "createdAt" from timesheets.client_review_request_event e join public."user" u on u.id = e.actor_id where request_id = ${request.id} order by e.created_at, e.id`
-      )
+      entries: entries.filter((e) => e.requestId === request.id).map((e) => e.snapshot),
+      history: history.filter((e) => e.requestId === request.id).map(({ requestId: _id, ...entry }) => entry)
     }))
   )
 }

@@ -86,6 +86,9 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
               }
             }
           }
+          if (id === './review-images') {
+            return require('../server/utils/review-images')
+          }
           if (id === './client-review-request-email') {
             return {
               notifyReviewRequest: async (id: string, action: string) => {
@@ -311,6 +314,93 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       )
       await assert.rejects(exports.assertNoActiveReviewRequests(db, ['entry']), /Withdraw affected/)
     })
+    await t.test('month-scoped summaries match snapshots without downloading entries or histories', async () => {
+      const details = await exports.listReviewRequests('provider', 'sender', false, true, { month: '2020-01' })
+      const summaries = await exports.listReviewRequestSummaries('provider', 'sender', false, true, {
+        month: '2020-01'
+      })
+      assert.equal(summaries.length, details.length)
+      for (const summary of summaries) {
+        const detail = details.find((row) => row.id === summary.id)!
+        assert.equal(
+          summary.totalMinutes,
+          detail.entries.reduce((sum, entry) => sum + entry.minutes, 0)
+        )
+        assert.deepEqual([...summary.people].sort(), [...new Set(detail.entries.map((entry) => entry.person))].sort())
+        assert.ok(!('entries' in summary))
+        assert.ok(!('history' in summary))
+        assert.equal(summary.reviewerUserId, null)
+      }
+      assert.equal(
+        (await exports.listReviewRequestSummaries('provider', 'sender', false, true, { month: '2020-02' })).length,
+        0
+      )
+      await pool.query(
+        "INSERT INTO timesheets.client_review_request (id, workspace_client_id, starts_on, ends_on, revision, sent_by_id) VALUES ('overlap', 'link', '2019-12-30', '2020-01-05', 1, 'sender')"
+      )
+      try {
+        for (const month of ['2019-12', '2020-01']) {
+          assert.ok(
+            (await exports.listReviewRequestSummaries('provider', 'sender', false, true, { month })).some(
+              (request) => request.id === 'overlap'
+            )
+          )
+        }
+      } finally {
+        await pool.query("DELETE FROM timesheets.client_review_request WHERE id = 'overlap'")
+      }
+      assert.equal((await exports.listReviewRequests('provider', 'sender', false, true, { id: requestId })).length, 1)
+      assert.equal((await exports.listReviewRequests('provider', 'sender', false, true, { id: 'missing' })).length, 0)
+      assert.equal((await exports.listReviewRequestSummaries('client', 'stranger', true, false)).length, 0)
+      assert.equal((await exports.listReviewRequestSummaries('outsider', 'reviewer', true, true)).length, 0)
+      const dashboard = await exports.listReviewRequestSummaries('client', 'reviewer', true, false, { images: false })
+      assert.equal(dashboard[0]!.totalMinutes, summaries[0]!.totalMinutes)
+      assert.ok(!('clientAvatar' in dashboard[0]!))
+      assert.ok(!('supplierAvatar' in dashboard[0]!))
+    })
+    await t.test('large branding becomes compact scoped URLs with reviewer authorization and revocation', async () => {
+      const large = 'data:image/png;base64,' + 'A'.repeat(1_000_000)
+      try {
+        await pool.query("UPDATE public.organization SET logo = $1, metadata = $2 WHERE id IN ('client', 'provider')", [
+          large,
+          JSON.stringify({ avatarLogo: large })
+        ])
+        const summaries = await exports.listReviewRequestSummaries('client', 'reviewer', true, false)
+        const details = await exports.listReviewRequests('client', 'reviewer', true, false, { id: requestId })
+        const encoded = JSON.stringify({ summaries, details })
+        assert.ok(encoded.length < 12_000)
+        assert.ok(!encoded.includes('data:image/'))
+        assert.match(
+          summaries[0]!.supplierAvatar!,
+          /^\/api\/timesheets\/review-images\/link\/supplier\?v=[a-f0-9]{24}$/
+        )
+        for (const side of ['client', 'supplier'] as const) {
+          assert.equal(await exports.readReviewImage('client', 'reviewer', false, 'link', side), large)
+          assert.equal(await exports.readReviewImage('provider', 'sender', true, 'link', side), large)
+          assert.equal(await exports.readReviewImage('provider', 'sender', false, 'link', side), null)
+          assert.equal(await exports.readReviewImage('outsider', 'reviewer', true, 'link', side), null)
+          assert.equal(await exports.readReviewImage('client', 'stranger', false, 'link', side), null)
+        }
+        await pool.query(
+          "DELETE FROM timesheets.workspace_client_reviewer WHERE workspace_client_id = 'link' AND user_id = 'reviewer'"
+        )
+        assert.equal(await exports.readReviewImage('client', 'reviewer', false, 'link', 'supplier'), null)
+        await pool.query("INSERT INTO timesheets.workspace_client_reviewer VALUES ('link', 'reviewer')")
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'VIEW' WHERE id = 'link'")
+        assert.equal(await exports.readReviewImage('client', 'reviewer', true, 'link', 'supplier'), null)
+      } finally {
+        await pool.query("UPDATE timesheets.workspace_client SET access_mode = 'REVIEW' WHERE id = 'link'")
+        await pool.query(
+          "INSERT INTO timesheets.workspace_client_reviewer SELECT 'link', 'reviewer' WHERE NOT EXISTS (SELECT 1 FROM timesheets.workspace_client_reviewer WHERE workspace_client_id = 'link' AND user_id = 'reviewer')"
+        )
+        await pool.query(
+          "UPDATE public.organization SET logo = 'client-logo.png', metadata = '{\"avatarLogo\":\"client-avatar.png\"}' WHERE id = 'client'"
+        )
+        await pool.query(
+          "UPDATE public.organization SET logo = 'supplier-logo.png', metadata = 'invalid' WHERE id = 'provider'"
+        )
+      }
+    })
     await t.test('turning tracking off preserves monthly hours and approval requests', async () => {
       await pool.query("UPDATE clients.client_module SET enabled = false WHERE organization_id = 'client'")
       await pool.query(`INSERT INTO timesheets.time_entry
@@ -401,6 +491,15 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
       assert.equal(requests.find((r) => r.id === replacement.id)!.replacesId, requestId)
       assert.equal(requests.find((r) => r.id === replacement.id)!.entries.find((e) => e.id === 'entry')!.minutes, 90)
       await exports.actOnReviewRequest('client', 'reviewer', false, replacement.id, 1, 'APPROVE')
+      const summaries = await exports.listReviewRequestSummaries('provider', 'sender', false, true)
+      const withdrawn = summaries.find((request) => request.id === requestId)!
+      assert.equal(withdrawn.status, 'WITHDRAWN')
+      assert.equal(withdrawn.submissions.length, 3)
+      const clientSummaries = await exports.listReviewRequestSummaries('client', 'reviewer', true, false)
+      assert.equal(clientSummaries.find((request) => request.id === requestId)!.submissions.length, 0)
+      const approved = summaries.find((request) => request.id === replacement.id)!
+      assert.equal(approved.reviewerUserId, 'reviewer')
+      assert.ok(approved.reviewedAt)
       requestId = replacement.id
       assert.ok((await invoiceSources()).has('entry'))
       assert.equal(requests.find((r) => r.id === replacement.id)!.supplementary, false)
@@ -660,6 +759,18 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
         90
       )
       assert.ok(earlier.every((request) => request.status === 'APPROVED'))
+      const summaries = await exports.listSubmissionReviewRequestSummaries('provider', { month: '2019-09' })
+      const summary = summaries.find((request) => request.legacySubmissionId === 'earlier-submission')!
+      assert.equal(summary.totalMinutes, 90)
+      assert.ok(!('entries' in summary))
+      assert.ok(!('history' in summary))
+      assert.ok(!summaries.some((request) => request.startsOn < '2019-09-01'))
+      const detail = await exports.listSubmissionReviewRequests('provider', { id: summary.id })
+      assert.equal(detail.length, 1)
+      assert.equal(detail[0]!.entries.length, 1)
+      assert.equal(detail[0]!.entries[0]!.id, 'september')
+      assert.equal((await exports.listSubmissionReviewRequests('outsider', { id: summary.id })).length, 0)
+
       assert.equal((await exports.listSubmissionReviewRequests('outsider')).length, 0)
       const periods = await exports.listReviewPeriods('provider', '2019-09')
       assert.equal(
@@ -807,10 +918,13 @@ test('client period requests against isolated PostgreSQL', { skip: !databaseUrl 
           (await migrationPool.query('select count(*) from timesheets.client_review_rollout')).rows[0].count,
           '1'
         )
-        const demo = {} as typeof import('../../../apps/demo-layer/server/utils/demo-reset')
+        const demo = {} as typeof import('../../../apps/saas-portal/layers/demo/server/utils/demo-reset')
         runInNewContext(
           ts.transpileModule(
-            readFileSync(new URL('../../../apps/demo-layer/server/utils/demo-reset.ts', import.meta.url), 'utf8'),
+            readFileSync(
+              new URL('../../../apps/saas-portal/layers/demo/server/utils/demo-reset.ts', import.meta.url),
+              'utf8'
+            ),
             { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
           ).outputText,
           {

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { runInNewContext } from 'node:vm'
+import ts from 'typescript'
+import { publicBranding } from '../server/utils/public-branding'
 import { defaultPortalSettings, portalSettingsSchema } from '../shared/settings'
 
 test('existing SaaS settings opt out of external website access and each instance has its own origins', () => {
@@ -19,11 +21,21 @@ test('public portal settings never expose connected website origins', async () =
   const settings = defaultPortalSettings()
   settings.websiteOrigins = ['https://private-client.example']
   const source = readFileSync(new URL('../server/api/portal/public.get.ts', import.meta.url), 'utf8')
-  const handler = runInNewContext(source.replace('export default ', ''), {
-    defineEventHandler: (callback: () => Promise<unknown>) => callback,
-    readPortalSettings: async () => ({ settings, completed: true })
-  })
-  const result = await handler()
+  const exports = {} as { default: () => Promise<{ completed: boolean }> }
+  runInNewContext(
+    ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
+      .outputText,
+    {
+      exports,
+      require: (id: string) => {
+        assert.equal(id, '../../utils/public-branding')
+        return { publicBranding }
+      },
+      defineEventHandler: (callback: () => Promise<unknown>) => callback,
+      readPortalSettings: async () => ({ settings, completed: true })
+    }
+  )
+  const result = await exports.default()
   assert.equal(result.completed, true)
   assert.equal(Object.hasOwn(result, 'websiteOrigins'), false)
   assert.equal(JSON.stringify(result).includes('private-client.example'), false)
