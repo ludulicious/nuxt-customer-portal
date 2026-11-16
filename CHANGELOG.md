@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep profile photos out of session/profile JSON by returning authenticated avatar URLs, including for existing uploads. Resize new embedded profile photos to at most 256 pixels and 32 KiB of WebP data, reuse one startup session request, and render avatars directly without IPX. Validate uploads and preserve unchanged avatar references when editing a profile.
+
 ## 0.13.1 - 2026-11-16
 
 ### Portal navigation performance

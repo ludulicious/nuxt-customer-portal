@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
+import { PROFILE_IMAGE_INPUT_LIMIT } from '@nuxt-customer-portal/core/shared/profile-image'
 
 const { t } = useI18n()
 
@@ -31,6 +32,7 @@ const schema = z.object({
 })
 
 type Schema = z.output<typeof schema>
+const profileForm = useTemplateRef<Form<Schema>>('profileForm')
 
 // Form state
 const form = reactive<Partial<Schema>>({
@@ -147,6 +149,20 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
       form.image = response.user.image || ''
     }
   } catch (error: unknown) {
+    const payload = (error as { data?: { data?: { code?: string } } })?.data?.data
+    if (payload?.code === 'PROFILE_IMAGE_INVALID' || payload?.code === 'PROFILE_IMAGE_TOO_LARGE') {
+      profileForm.value?.setErrors([
+        {
+          name: 'image',
+          message: t(
+            payload.code === 'PROFILE_IMAGE_TOO_LARGE'
+              ? 'profile.validation.imageTooLarge'
+              : 'profile.validation.imageInvalidFile'
+          )
+        }
+      ])
+      return
+    }
     console.error('Error updating profile:', error)
     const errorMessage =
       (error as { data?: { message?: string }; message?: string })?.data?.message ||
@@ -188,6 +204,21 @@ function onFileChange(e: Event) {
   }
 
   const file = input.files[0]!
+  if (file.size > PROFILE_IMAGE_INPUT_LIMIT || !/\.(?:jpe?g|png|gif|webp)$/i.test(file.name)) {
+    profileForm.value?.setErrors([
+      {
+        name: 'image',
+        message: t(
+          file.size > PROFILE_IMAGE_INPUT_LIMIT
+            ? 'profile.validation.imageTooLarge'
+            : 'profile.validation.imageInvalidFile'
+        )
+      }
+    ])
+    input.value = ''
+    return
+  }
+  profileForm.value?.clear('image')
 
   // Revoke previous blob URL if it exists
   if (form.image && form.image.startsWith('blob:')) {
@@ -224,7 +255,7 @@ onUnmounted(() => {
   <TimezonePreferences />
   <component :is="resolveComponent('ClientsPersonalAddress')" v-if="useRuntimeConfig().public.clients" />
   <AppCard class="mb-8" :title="$t('profile.sections.profileInfo')">
-    <UForm novalidate :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
+    <UForm ref="profileForm" novalidate :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
       <!-- Profile Picture Section -->
       <UFormField
         :label="$t('profile.fields.profilePicture')"
@@ -241,7 +272,7 @@ onUnmounted(() => {
             class="ring-2 ring-gray-200 dark:ring-gray-700"
           />
           <UButton :label="$t('profile.fields.chooseAvatar')" color="primary" variant="outline" @click="onFileClick" />
-          <input ref="fileRef" type="file" class="hidden" accept=".jpg, .jpeg, .png, .gif" @change="onFileChange" />
+          <input ref="fileRef" type="file" class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp" @change="onFileChange" />
         </div>
       </UFormField>
 

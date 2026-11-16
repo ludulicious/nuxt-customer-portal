@@ -5,24 +5,21 @@ export default defineNuxtPlugin({
   name: 'auth',
   async setup() {
     const userStore = useUserStore()
-    // const organizationStore = useOrganization()
     try {
-      const sessionData = await authClient.getSession()
-      await userStore.setSession(sessionData?.data as unknown as AuthSessionResponse)
+      const { data: session } = await authClient.useSession(useFetch)
+      await userStore.setSession(session.value as unknown as AuthSessionResponse | null)
+
+      // Reuse the same reactive request used by route middleware. Fetching a
+      // separate getSession() first downloads the session twice during startup.
+      watch(
+        () => session.value,
+        async (newSession) => {
+          await userStore.setSession(newSession as unknown as AuthSessionResponse | null)
+        },
+        { deep: true }
+      )
     } catch (error) {
       console.log('getSession error:', error)
     }
-
-    const { data: session } = await authClient.useSession(useFetch)
-
-    // Also watch for session changes to handle OTP verification and logout
-    watch(
-      () => session.value,
-      async (newSession) => {
-        const sessionData = newSession as unknown as AuthSessionResponse | null
-        await userStore.setSession(sessionData)
-      },
-      { deep: true }
-    )
   }
 })
